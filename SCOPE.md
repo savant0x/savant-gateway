@@ -29,6 +29,10 @@ surfaces, then add route-level HTTP coverage. The operator selected
   build in `verify`, CI, and the pre-push hook. Committed as `4374c00`; FID-012
   closed and archived after `npm run verify` exit 0 (107/107 unit tests,
   quality PASS over 189 files, 51-route build, 100 HTTP checks).
+- [x] **S27 — Session closed with a handoff.** Both FIDs are archived;
+  `dev/session-summaries/2026-10-29-analytics-and-http-suite.md` records the
+  session receipt, the final gate output, the unpushed-commit state, and the
+  remaining B1/B4/B5 blockers.
 
 ## Current Session — 2026-10-29 (D6/D50, provider registry, and model groups)
 

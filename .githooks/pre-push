@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Pre-push hook: verify the pushed tree before it reaches the remote.
+# Mirrors protocol.config.yaml and fails closed.
+
+set -uo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT" || exit 1
+
+run_gate() {
+  local label="$1"
+  shift
+
+  echo "pre-push: $label"
+  "$@"
+  local status=$?
+
+  if [ "$status" -ne 0 ]; then
+    echo "pre-push: $label failed with exit $status — push refused" >&2
+    exit "$status"
+  fi
+}
+
+run_gate "attribution guard" node scripts/attribution-guard.mjs
+run_gate "lint" npm run lint
+run_gate "typecheck" npm run typecheck
+run_gate "tests" npm test
+run_gate "quality" npm run quality
+run_gate "build" npm run build
+
+echo "pre-push: all gates passed"

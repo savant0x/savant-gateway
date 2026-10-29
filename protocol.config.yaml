@@ -1,0 +1,76 @@
+# Protocol Config — project-specific configuration for ECHO Protocol
+#
+# The commands below are the gates the repository actually runs. There is no
+# `fid:verify` binary here; FID closure is checked by review against
+# templates/FID-TEMPLATE.md and the commit recorded in the FID.
+
+project:
+  name: 'savant-gateway'
+  description: 'A Next.js gateway for upstream free models, with hashed consumer keys, streaming, and usage metering.'
+  version: '0.1.0'
+
+protocol:
+  version: '0.2.0'
+  strict_mode: true
+
+language: 'typescript'
+
+commands:
+  build: 'npm run build'
+  test: 'npm test'
+  type_check: 'npm run typecheck'
+  lint: 'npm run lint'
+  quality: 'npm run quality'
+  verify: 'npm run verify'
+
+paths:
+  src: null
+  tests: 'tests/'
+  docs: null
+  dev: 'dev/'
+  fids: 'dev/fids/'
+  fids_archive: 'dev/fids/archive/'
+  session_summaries: 'dev/session-summaries/'
+  learnings: 'dev/LEARNINGS.md'
+
+# The file-length ceiling is enforced by scripts/quality-report.mjs. The other
+# values are review criteria, not machine gates.
+quality:
+  max_file_lines: 400
+  max_function_lines: 50
+  max_line_length: 100
+  max_complexity: 10
+  max_params: 4
+  max_comment_density: 0.33
+  max_nesting_depth: 3
+
+testing:
+  fuzz_enabled: false
+  mutation_enabled: false
+  coverage_threshold: 80
+  test_timeout: 30
+  parallel_tests: true
+
+fid:
+  auto_create: true
+  severity_levels: ['critical', 'high', 'medium', 'low']
+  max_open_fids: 20
+
+perfection_loop:
+  max_iterations: 10
+  change_threshold: 0.10
+  convergence_threshold: 0.02
+  convergence_passes: 2
+  oscillation_limit: 3
+
+session:
+  auto_summary: true
+  summary_interval: 30
+  max_session_hours: 4
+  autonomy_level: 3
+
+# No coding agent may be credited in this repository. The rule is enforced by
+# scripts/attribution-guard.mjs from the commit-msg hook, the pre-push hook and
+# the attribution-guard CI workflow.
+attribution:
+  policy: 'no-agent-credit'

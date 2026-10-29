@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Commit-message hook: no coding agent may be credited in this repository.
+# The same rule is enforced again before push and in CI.
+
+set -u
+
+MESSAGE_FILE="${1-}"
+
+if [ -z "$MESSAGE_FILE" ] || [ ! -f "$MESSAGE_FILE" ] || [ ! -r "$MESSAGE_FILE" ]; then
+  echo "commit-msg: Git did not provide a readable commit-message file" >&2
+  exit 2
+fi
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "commit-msg: node is required for the attribution guard" >&2
+  exit 2
+fi
+
+node "$(git rev-parse --show-toplevel)/scripts/attribution-guard.mjs" --message-file "$MESSAGE_FILE"

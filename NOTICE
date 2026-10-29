@@ -1,0 +1,8 @@
+Savant Gateway
+Copyright 2026 savant0x
+
+This product includes software derived from the HeroUI Next.js template
+(Copyright (c) 2023 Next UI), licensed under the MIT License.
+
+The upstream provider endpoints named in .env.example are configuration
+defaults, not a claim of affiliation.

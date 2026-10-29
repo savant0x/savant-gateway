@@ -1,0 +1,79 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-fira-code);
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+::selection {
+  background: color-mix(in oklab, var(--accent) 35%, transparent);
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.hero-glow {
+  background:
+    radial-gradient(circle at 12% 0%, color-mix(in oklab, var(--accent) 16%, transparent), transparent 34rem),
+    radial-gradient(circle at 92% 8%, color-mix(in oklab, var(--accent) 9%, transparent), transparent 28rem);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.data-table th {
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  font-weight: 500;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 0.7rem 0.75rem;
+  border-top: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+  vertical-align: middle;
+}
+
+.data-table tbody tr:hover {
+  background: color-mix(in oklab, var(--surface) 55%, transparent);
+}
+
+.scroll-shell {
+  overflow: auto;
+  scrollbar-width: thin;
+}
+
+.step-number {
+  display: inline-flex;
+  width: 1.35rem;
+  height: 1.35rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--accent) 16%, transparent);
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 600;
+}

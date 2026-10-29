@@ -1,0 +1,66 @@
+import type { ModelSummary } from "@/lib/types";
+
+import { Card, Chip } from "@heroui/react";
+
+export function AccessChip({ model }: { model: ModelSummary }) {
+  if (model.access === "free") {
+    return (
+      <Chip color="success" size="sm" variant="soft">
+        free
+      </Chip>
+    );
+  }
+
+  if (model.access === "subscription") {
+    return (
+      <Chip color="warning" size="sm" variant="soft">
+        subscription
+      </Chip>
+    );
+  }
+
+  return (
+    <Chip color="default" size="sm" variant="soft">
+      paid
+    </Chip>
+  );
+}
+
+export function StatusChip({ status }: { status: string }) {
+  const color =
+    status === "active" || status === "ok"
+      ? "success"
+      : status === "exhausted" || status === "cancelled"
+        ? "warning"
+        : status === "error" || status === "revoked"
+          ? "danger"
+          : "default";
+
+  return (
+    <Chip color={color} size="sm" variant="soft">
+      {status}
+    </Chip>
+  );
+}
+
+export function StatCard({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+}) {
+  return (
+    <Card className="min-h-[6.5rem]" variant="secondary">
+      <Card.Content className="pt-5">
+        <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted">
+          {label}
+        </p>
+        <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
+        <p className="mt-1 text-xs text-muted">{detail}</p>
+      </Card.Content>
+    </Card>
+  );
+}

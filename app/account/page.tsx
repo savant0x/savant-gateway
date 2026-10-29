@@ -135,6 +135,10 @@ export default async function AccountPage({
               Browse model ids and sell prices in the{" "}
               <a className="text-accent hover:underline" href="/models">
                 public catalog
+              </a>{" "}
+              or read the{" "}
+              <a className="text-accent hover:underline" href="/docs">
+                API reference
               </a>
               . Free-pool models work with zero balance; paid rows settle
               against available credit.

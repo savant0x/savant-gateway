@@ -11,6 +11,7 @@ export const siteConfig = {
   url: process.env.NEXT_PUBLIC_SITE_URL?.trim() || "http://localhost:3000",
   navItems: [
     { label: "Models", href: "/models" },
+    { label: "API reference", href: "/docs" },
     { label: "How it works", href: "/#how-it-works" },
     { label: "Quick start", href: "/#quickstart" },
   ],

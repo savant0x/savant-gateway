@@ -43,6 +43,9 @@ export function SiteFooter() {
             <Link className="text-muted hover:text-foreground" href="/models">
               Models
             </Link>
+            <Link className="text-muted hover:text-foreground" href="/docs">
+              API reference
+            </Link>
             <Link
               className="text-muted hover:text-foreground"
               href="/#quickstart"

@@ -105,6 +105,7 @@ usage in SQLite.
 
 - `app/page.tsx` — public landing at `/`.
 - `app/models` — public full catalog with sell prices.
+- `app/docs` — public API reference for external consumers.
 - `app/signup`, `app/login`, `app/account` — customer authentication and
   account console.
 - `app/dashboard` — operator console.
@@ -134,8 +135,8 @@ usage in SQLite.
   amount parsing.
 - `lib/admin-session.ts` — pure token, password, cookie, and origin logic.
 - `lib/store/*` — persistence split by responsibility.
-- `components/landing/*`, `components/catalog/*`, `components/dashboard/*`,
-  `components/admin/*` — UI.
+- `components/landing/*`, `components/catalog/*`, `components/docs/*`,
+  `components/dashboard/*`, `components/admin/*` — UI.
 - `assets/` — source brand files; served copies live in `public/`.
 
 ## Verification

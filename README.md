@@ -29,6 +29,7 @@ The gateway does seven things:
 |---|---|---|
 | `/` | Public | Landing page with live catalog counts and a request sample. |
 | `/models` | Public | Searchable, sortable, paginated full catalog with sell prices. |
+| `/docs` | Public | API reference: auth, model payload, provider/family/group, chat, errors. |
 | `/signup` | Public | Create a customer account. |
 | `/login` | Public | Customer sign-in. |
 | `/account` | Customer session | Balance, top-ups, keys, usage, ledger, and quick start. |

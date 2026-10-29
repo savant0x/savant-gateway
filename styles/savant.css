@@ -178,6 +178,10 @@ summary {
   font-style: normal;
   font-weight: 500;
 }
+/* Identity, not a text link: the mark keeps its own colours on hover. */
+.brand-mark .brand-word {
+  color: var(--foreground);
+}
 .site-shell {
   min-height: 100vh;
   background: var(--background);
@@ -219,7 +223,17 @@ summary {
 }
 .public-nav-links a:hover,
 .nav-utility:hover {
-  color: var(--accent);
+  color: var(--red);
+}
+/*
+ * Secondary accent: text links lean into the fire red on hover. CTAs keep their
+ * own background treatment, and the workspace/admin shells keep the accent for
+ * hover so it stays distinct from their active and destructive states.
+ */
+.site-shell a:not(.savant-cta):hover,
+.auth-surface a:not(.savant-cta):hover,
+.site-chrome a:not(.savant-cta):hover {
+  color: var(--red);
 }
 .nav-actions {
   margin-left: auto;

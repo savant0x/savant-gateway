@@ -3,6 +3,16 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — Fire-red link hover
+
+- **FID-2026-1029-028 — low — Public text links hover into the fire red.**
+  Hover shared the cyan accent with active state, kickers and figures, and
+  footer, docs and account-nav links had no hover colour at all. One rule now
+  paints `.site-shell`, `.auth-surface` and `.site-chrome` text links `--red`
+  on hover, CTAs keep their own background treatment, and the wordmark is
+  pinned so the logo does not recolour. Admin and workspace chrome keep accent
+  hover, where red would collide with their active and destructive states.
+
 ## 2026-10-29 — Landing stats band
 
 - **FID-2026-1029-027 — low — The catalog counters are a bordered band.** The

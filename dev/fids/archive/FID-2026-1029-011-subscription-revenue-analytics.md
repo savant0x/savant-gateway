@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1029-011-subscription-revenue-analytics.md`
 **ID:** FID-2026-1029-011
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Created:** 2026-10-29 14:20
 **Automation level:** 2
 **YAGNI-Compliance:** Verified
@@ -244,13 +244,22 @@ Per-plan aggregation:
 
 ### Verification Receipt
 
-- verified: pending implementation
-- lint: pending
-- typecheck: pending
-- test tests/revenue.test.mjs: pending
-- test tests/analytics.test.mjs: pending
-- quality: pending
-- build: pending
+- verified: 2026-10-29, committed as `ba233c6`
+- lint: `npm run lint` exit 0, zero errors, zero warnings
+- typecheck: `npm run typecheck` exit 0
+- test tests/revenue.test.mjs: 5 passed, 0 failed
+- test tests/analytics.test.mjs: 3 passed, 0 failed
+- test (full suite): `npm test` 107 passed, 0 failed, 0 skipped
+- quality: PASS (400-line ceiling, 189 files scanned)
+- build: `npm run build` exit 0, compiled successfully, 51 routes
+- verify: `npm run verify` exit 0
+- render receipt: disposable-database production build, 21 rendered-value
+  checks plus the auth checks below, all PASS
+- call graph: `readAnalyticsData` is called by `lib/store/analytics.ts:17`,
+  which is reached from `app/admin/(panel)/analytics/page.tsx:43` and
+  `app/admin/(panel)/page.tsx:15`; `totalRevenueMicros`, `planRevenueMicros`,
+  `mrrMicros`, `activeSubscribers`, and `byPlan` are consumed by the analytics
+  page, the overview panel, the chart, and `components/admin/analytics-plans.tsx`
 
 ## Perfection Loop
 
@@ -313,9 +322,9 @@ Per-plan aggregation:
     stacked, and the maximum is taken across all three. The empty state checks
     all three.
 15. **Does `lib/analytics.ts` create a client/server boundary problem?** No. It
-    imports only types and a type-only database handle; the `server-only`
-    marker stays on `lib/store/analytics.ts`, which remains the only production
-    entry point.
+    imports types, the pure `lib/revenue.ts` helper, and a type-only database
+    handle; the `server-only` marker stays on `lib/store/analytics.ts`, which
+    remains the only production entry point.
 
 ### Loop 2 — Independent audit and self-correction
 
@@ -350,13 +359,64 @@ Per-plan aggregation:
   says so.
 - **CHANGE DELTA:** 3%.
 
+### Loop 4 — Implementation, gates, and render receipt
+
+- **GREEN:** Implemented the plan with these corrections:
+  - The standalone `InvoiceTotalsRow` query was removed. `planRevenueMicros` and
+    `paidInvoiceCount` are summed from the same per-plan rows the table renders,
+    so the card and the table cannot disagree.
+  - `readPlanRows` now returns the plan map plus the active, past-due, canceling,
+    manual, and MRR counters from one subscription pass; total MRR is not
+    recomputed from the rounded per-plan values.
+  - `lib/schema/subscriptions.ts` imports `./columns.ts` with an explicit
+    extension. The production schema is unchanged; the extension is what lets
+    Node's type stripping import the real schema in `tests/analytics.test.mjs`.
+  - `lib/analytics.ts` uses `Array.from(map.values())` because the project
+    targets ES5; spreading a `MapIterator` fails `tsc`.
+  - `dayKeys` stays private to `lib/analytics.ts`; only `readAnalyticsData`
+    needs it.
+- **AUDIT:** `npm run verify` exit 0: lint clean, typecheck clean, 107/107 tests
+  pass, quality PASS over 189 files, build exit 0 with 51 routes. The focused
+  suites pass 8/8 (`tests/revenue.test.mjs` 5, `tests/analytics.test.mjs` 3).
+  The call-graph grep above shows production consumers for every new field.
+- **RENDER RECEIPT:** A disposable database was created by the production app
+  under `DB_PATH`, seeded through a second SQLite connection with 2 usage rows,
+  3 plans, 5 subscriptions, 7 invoices, and 2 models, then fetched with an admin
+  session. The rendered `/admin/analytics` contained `$163.00` total revenue,
+  `$3.00` credit revenue, `$160.00` plan revenue, `$1.50` cost, `+$161.50` total
+  margin, `$20.00` MRR, `1 canceling`, `1 past due`, `1 manual comps excluded`,
+  and plan rows `Annual` `$120.00`, `Starter` `$40.00`, `Comp` `$0.00`. The
+  rendered `/admin` contained `30d revenue`, `$163.00`, `$160.00`, and
+  `+$161.50`. An anonymous `/admin/analytics` request returned `307` to
+  `/admin/login`; a wrong password returned `401`; the correct password set
+  `sg_admin` and the authenticated page returned `200`.
+- **ADVERSARIAL:** The receipt excludes a 45-day-old invoice, a failed invoice,
+  a void invoice, and a EUR invoice; the card still shows `$160.00`, proving the
+  range, status, and currency filters. It seeds a manual comp and a canceling
+  subscription; MRR is `$20.00`, not `$50.00` or `$70.00`, proving the exclusion
+  policy. It seeds included usage with `$0` charge and `$0.50` cost, so credit
+  margin and total margin stay distinct.
+- **CHANGE DELTA:** 12% from the converged FID (query consolidation, schema
+  import extension, ES5 iteration, and receipt evidence).
+
 ## Resolution
 
-- **Closed Date:** pending
-- **Fix Description:** pending
-- **Tests Added:** pending
-- **Verification Evidence:** pending
-- **Archived:** pending
+- **Closed Date:** 2026-10-29
+- **Fix Description:** Admin revenue now separates credit revenue from paid plan
+  invoices, adds total revenue and total margin, exposes paid-invoice count,
+  subscriber counts, MRR, and a per-plan table, plots credit/plan/cost as three
+  chart series, and relabels the top-models table as credit-only. The query
+  layer moved to `lib/analytics.ts` so the real SQL runs in Node tests; the pure
+  run-rate and margin math lives in `lib/revenue.ts`. Billing, routing, invoice
+  recording, and Stripe handling are unchanged.
+- **Tests Added:** `tests/revenue.test.mjs` (5 tests) and
+  `tests/analytics.test.mjs` (3 tests, seeded against the real subscription
+  schema). Full suite 107/107.
+- **Verification Evidence:** `npm run verify` exit 0; lint and typecheck clean;
+  quality PASS over 189 files; 51-route build; disposable-database render
+  receipt with 21 rendered-value checks and the auth checks recorded in Loop 4.
+- **Archived:** `dev/fids/archive/FID-2026-1029-011-subscription-revenue-analytics.md`
+- **Commit:** `ba233c6`
 
 ## Lessons Learned
 

@@ -118,9 +118,25 @@ upstream cost, and usage in SQLite.
 - **The public shape never carries cost.** `ModelSummary` has sell prices
   only; `AdminModelSummary` adds cost, margin, price source, and catalog
   presence. Keep the split when adding fields.
-- **Analytics reads `usage_events` directly.** There is no rollup table or
-  background job. Ranges are 7, 30, or 90 days; empty days are zero-filled in
-  UTC. A failed upstream call writes a zero-charge error row.
+- **Analytics has two revenue clocks.** `usage_events.charged_micros` is credit
+  revenue recognized at settlement; `subscription_invoices.amount_micros` with
+  `status = 'paid'` and `currency = 'usd'` is plan revenue recognized at
+  `COALESCE(paid_at, created_at)`. The admin surfaces show them separately and
+  add `totalRevenueMicros`; never fold plan cash into `chargedMicros`. A top-up
+  is prepaid credit, not revenue at purchase. There is no refund or credit-note
+  table, so a refunded invoice stays in recorded cash; the UI states this.
+- **MRR is a current run-rate, not range revenue.** It counts only active,
+  Stripe-sourced subscriptions that are not set to cancel at period end; manual
+  comps and past-due subscriptions are excluded and counted separately. Yearly
+  prices divide by 12 and round to the nearest micro-dollar
+  (`lib/revenue.ts`). Per-plan invoice revenue is range-scoped; subscriber
+  counts and MRR are point-in-time.
+- **Analytics reads `usage_events` and `subscription_invoices` directly.** There
+  is no rollup table or background job. Ranges are 7, 30, or 90 days; empty days
+  are zero-filled in UTC. The SQL lives in `lib/analytics.ts` so Node tests can
+  run it against the real schema; `lib/store/analytics.ts` is the `server-only`
+  wrapper over the singleton connection. A failed upstream call writes a
+  zero-charge error row, and an included plan call writes cost with zero charge.
 - **SQLite is local state.** `data/` is ignored and not part of the
   deliverable. Deleting it and syncing again is the reset path.
 - **Customer identity is server-side and revocable.** `POST /api/auth/signup`
@@ -197,7 +213,10 @@ upstream cost, and usage in SQLite.
 - `lib/stripe-subscriptions.ts` — Stripe customer, subscription checkout,
   portal, cancellation, and period sync.
 - `lib/store/topups.ts` — pending top-ups and idempotent fulfillment.
-- `lib/store/analytics.ts` — revenue/cost/margin queries.
+- `lib/analytics.ts` — testable analytics SQL: usage totals/series/models, paid
+  invoice totals/series, per-plan revenue, subscriber counts, and MRR.
+- `lib/revenue.ts` — pure MRR normalization and gross-margin basis points.
+- `lib/store/analytics.ts` — `server-only` wrapper over `lib/analytics.ts`.
 - `lib/customer.ts`, `lib/password.ts`, `lib/customer-session.ts`,
   `lib/customer-auth.ts` — validation, scrypt, opaque sessions, guards.
 - `lib/stripe.ts`, `lib/topup-amount.ts` — Stripe config/client and exact
@@ -220,10 +239,11 @@ provider/family/group correction. Live provider checks require `PROVIDER_KEY`
 and are not run in CI. Unit tests cover scrypt hashing, customer validation,
 exact top-up parsing, opaque session shape and cookie flags, admin token
 tampering, expiry, password rotation, epoch revocation, origin checks, the
-login limiter, HTTP key extraction, pricing arithmetic, and family
+login limiter, HTTP key extraction, pricing arithmetic, revenue/MRR math,
+in-memory analytics aggregation against the real subscription schema, family
 normalization, provider-registry validation, provider-scoped catalog identity,
 and Anthropic request/response/stream translation. The current tree builds 51
-routes, runs 99 tests, and scans 186 files. FID-2026-1029-007 adds the group
+routes, runs 107 tests, and scans 189 files. FID-2026-1029-007 adds the group
 receipt: a zero-cost free model moved to a paid group charged 160 micros after
 a provider sync. FID-2026-1029-008 adds the subscription receipt: a signed
 `invoice.paid` activated exactly one period, an included call charged zero with
@@ -231,6 +251,12 @@ a provider sync. FID-2026-1029-008 adds the subscription receipt: a signed
 `credit` plan charged 9 micros at 5000 bps, and a signed top-up credited $5.00
 once. FID-2026-1029-010 adds the multi-provider receipt: the additive
 migration preserved 45 existing Savant models, seeded CommandCode as
-unconfigured, and added the provider columns. A real Stripe card payment and
-real paid upstream inference remain unverified; the provider account has no
-paid balance, and CommandCode has no configured credential.
+unconfigured, and added the provider columns. FID-2026-1029-011 adds the
+revenue-analytics receipt: a disposable database rendered $163.00 total revenue
+($3.00 credit + $160.00 plans), $1.50 cost, +$161.50 total margin, $20.00 MRR,
+4 active/1 past-due/1 canceling/1 manual subscribers, and plan rows of $120.00,
+$40.00, and $0.00; anonymous `/admin/analytics` redirected 307 to login, a
+wrong password returned 401, and the authenticated page returned 200. A real
+Stripe card payment and real paid upstream inference remain unverified; the
+provider account has no paid balance, and CommandCode has no configured
+credential.

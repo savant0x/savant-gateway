@@ -13,10 +13,12 @@ surfaces, then add route-level HTTP coverage. The operator selected
   It separates credit revenue from paid-invoice plan revenue, adds total
   revenue and total margin, subscriber counts, MRR, and a per-plan table, and
   leaves billing, routing, invoice recording, and Stripe handling unchanged.
-- [ ] **S25 — Analytics implemented and verified.** Pending: pure revenue math,
-  testable query layer, in-memory aggregation test, admin analytics and
-  overview updates, disposable-database render receipt, gates, commit, FID
-  closure and archive, and record updates.
+- [x] **S25 — Analytics implemented and verified.** `lib/revenue.ts` and
+  `lib/analytics.ts` hold the pure math and testable SQL; the admin analytics,
+  overview, chart, and per-plan table consume credit and plan revenue
+  separately. Committed as `ba233c6`; FID-011 closed and archived after
+  `npm run verify` exit 0 (107/107 tests, quality PASS over 189 files, 51-route
+  build) and a 21-check disposable-database render receipt.
 - [ ] **S26 — B2 route-level HTTP suite (FID-012).** Pending the analytics
   implementation; the operator ruling above lifts the B2 blocker.
 

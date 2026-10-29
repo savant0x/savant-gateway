@@ -3,6 +3,34 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — Subscription revenue analytics
+
+- **FID-2026-1029-011 — medium — Subscription plan revenue in admin analytics.**
+  The admin overview and analytics page now show credit revenue
+  (`usage_events.charged_micros`, recognized at settlement) separately from plan
+  revenue (paid `subscription_invoices`, recognized at `paid_at`), plus total
+  revenue, total margin, paid-invoice count, active/past-due/canceling/manual
+  subscriber counts, and MRR. A per-plan table reports range invoice revenue and
+  current run-rate; the daily chart plots credit, plan, and upstream cost as
+  grouped bars; the top-models table is explicitly credit-only. MRR counts
+  active Stripe subscriptions that are not set to cancel, normalizes yearly
+  prices to a month, and excludes manual comps and past-due plans. The query
+  layer moved to `lib/analytics.ts` with an injectable database handle and clock
+  so Node tests execute the real SQL; `lib/revenue.ts` holds the pure run-rate
+  and margin math. An additive `(status, paid_at)` invoice index supports the
+  range scan. Billing, routing, invoice recording, and Stripe handling are
+  unchanged. Refunds and credit notes are not tracked, so a paid invoice stays
+  in recorded cash after a refund; plan revenue is cash-basis while cost is
+  usage-basis. Tests: `tests/revenue.test.mjs` (5) and
+  `tests/analytics.test.mjs` (3). Gates: `npm run verify` exit 0, 107/107 tests,
+  quality PASS over 189 files, 51-route build. A disposable-database receipt
+  rendered $163.00 total revenue ($3.00 credit + $160.00 plans), $1.50 cost,
+  +$161.50 total margin, $20.00 MRR, 4 active/1 past-due/1 canceling/1 manual
+  subscribers, and plan rows of $120.00, $40.00, and $0.00; anonymous analytics
+  redirected 307 to login, a wrong password returned 401, and the authenticated
+  page returned 200. Committed as `ba233c6`; FID-011 is closed against that
+  commit and archived.
+
 ## 2026-10-29 — Subscription plans and entitlements
 
 - **FID-2026-1029-008 — high — Customer subscription plans, entitlement

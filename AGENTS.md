@@ -1,9 +1,9 @@
 # Savant Gateway
 
-A Next.js gateway for the provider's full model catalog: provider sync,
-customer accounts with scoped keys, prepaid credit and Stripe-confirmed
-top-ups, OpenAI-compatible chat completions with streaming, operator sell
-prices, credit settlement, and revenue/cost analytics.
+A Next.js gateway for one or more upstream providers' full model catalogs:
+provider-scoped sync, customer accounts with scoped keys, prepaid credit and
+Stripe-confirmed top-ups, OpenAI-compatible chat completions with streaming,
+operator sell prices, credit settlement, and revenue/cost analytics.
 
 ## Governance Boot Gate
 
@@ -33,8 +33,9 @@ the Perfection Loop. The operator is the approval boundary.
 
 ## Domain Vocabulary
 
-- **Provider:** Savant Gateway. `/v1/models` must publish
-  `owned_by: "savant-gateway"`.
+- **Provider:** an upstream account in the registry (slug, wire protocol,
+  base URL, credential variable name). The public owner stays Savant Gateway:
+  `/v1/models` must publish `owned_by: "savant-gateway"`.
 - **Family:** the model line (GPT, Claude, DeepSeek, …), serialized as
   `family`. The legacy `models.provider` column stores this family label.
 - **Group:** `free`, `paid`, or `subscription`. UI data calls it `access`;
@@ -49,10 +50,11 @@ Never store or emit the upstream `"Free"` sentinel as a family.
    session summary, or FID. The rule is enforced by
    `scripts/attribution-guard.mjs` in the commit hook, pre-push hook, and CI.
    There is no authorized exception.
-2. **No secrets in the tree.** `PROVIDER_KEY`, `ADMIN_PASSWORD`,
-   `ADMIN_SESSION_SECRET`, `STRIPE_SECRET_KEY`, and `STRIPE_WEBHOOK_SECRET`
-   belong in `.env.local` only. Never print, log, commit, or expose them to the
-   browser.
+2. **No secrets in the tree.** `PROVIDER_KEY`, `COMMANDCODE_API_KEY`,
+   `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, `STRIPE_SECRET_KEY`, and
+   `STRIPE_WEBHOOK_SECRET` belong in `.env.local` only. The provider registry
+   stores only the environment-variable name. Never print, log, commit, or
+   expose a value to the browser.
 3. **Read before edit.** Read every touched file 0-EOF; no skimming. Never edit
    a project file through a scripted transform.
 4. **Verify before claim.** Run the declared gates and paste real output. A
@@ -95,18 +97,20 @@ noted:
 ```text
 app/                    landing (/), public catalog (/models), customer auth,
                         account (/account), console, admin
-app/admin/(panel)/      authenticated overview, customers, catalog, pricing,
-                        analytics
+app/admin/(panel)/      authenticated overview, customers, catalog, providers,
+                        pricing, analytics
 app/api/auth/           signup, login, logout, me
 app/api/account/        scoped keys and Stripe checkout
 app/api/webhooks/       signature-verified Stripe fulfillment
-app/api/admin/          session, catalog, pricing, and credit management
+app/api/admin/          session, catalog, provider registry, pricing, credit
 components/landing/     public landing sections
 components/catalog/     public full-catalog table
 components/account/     auth forms, customer header, keys, top-up, history
 components/dashboard/   console sections and shared UI primitives
 components/admin/       admin shell, tables, pricing editor, analytics
-lib/provider.ts         upstream provider client and catalog sync
+lib/providers/          registry, provider-scoped sync, OpenAI/Anthropic adapters
+lib/provider.ts         compatibility re-export over lib/providers/
+lib/schema/             provider schema and shared migration helpers
 lib/pricing.ts          micro-dollar, markup, margin, hold, and estimate math
 lib/gateway.ts          key auth, full-catalog routing, reservation
 lib/gateway-stream.ts   streaming relay and settlement on close
@@ -120,7 +124,7 @@ lib/topup-amount.ts     exact top-up amount parsing
 lib/admin-session.ts    session token signing and password verification
 lib/admin-auth.ts       server-side admin guards and cookie handling
 lib/store/              split persistence modules
-lib/db.ts               SQLite schema and additive migrations
+lib/db.ts               SQLite bootstrap and additive migrations
 assets/                 source logos and favicons; public copies live in public/
 tests/                  Node test-runner suites
 scripts/                quality and attribution gates

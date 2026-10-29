@@ -6,6 +6,8 @@ import { dirname, join, resolve } from "node:path";
 import Database from "better-sqlite3";
 
 import { normalizeFamilyName } from "./model-family";
+import { ensureColumn, type DatabaseHandle } from "./schema/columns";
+import { providerSchema } from "./schema/providers";
 
 const configuredDbPath = process.env.DB_PATH?.trim();
 
@@ -21,26 +23,6 @@ if (dbPath !== ":memory:") {
 }
 
 type GlobalDb = typeof globalThis & { gatewayDb?: Database.Database };
-type DatabaseHandle = Database.Database;
-
-function hasColumn(database: DatabaseHandle, table: string, column: string) {
-  const rows = database.prepare(`PRAGMA table_info(${table})`).all() as Array<{
-    name: string;
-  }>;
-
-  return rows.some((row) => row.name === column);
-}
-
-function ensureColumn(
-  database: DatabaseHandle,
-  table: string,
-  column: string,
-  definition: string,
-) {
-  if (hasColumn(database, table, column)) return;
-
-  database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
-}
 
 function baseSchema(database: DatabaseHandle) {
   database.exec(`
@@ -341,6 +323,7 @@ function createDb() {
   v2Schema(database);
   customerSchema(database);
   freePoolSchema(database);
+  providerSchema(database);
   normalizeLegacyFamilies(database);
   seed(database);
 

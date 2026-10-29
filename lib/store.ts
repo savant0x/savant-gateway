@@ -22,14 +22,26 @@ export {
 } from "./store/keys";
 export {
   applyCatalogMarkup,
+  getModelByUpstreamId,
   getModelForGateway,
   listAllModels,
   listModels,
   replaceModels,
+  setModelCost,
   setModelPricing,
   setModelStatus,
 } from "./store/models";
-export { getProviderStatus, saveProviderStatus } from "./store/provider";
+export {
+  createProvider,
+  deleteProvider,
+  getDefaultProvider,
+  getProvider,
+  getProviderStatusBySlug,
+  listProviders,
+  setProviderEnabled,
+  updateProvider,
+} from "./store/providers";
+export { getProviderStatus } from "./store/provider";
 export { reserveFreeCall } from "./store/free-pool";
 export { listAdminUsage, listUsage, recordUsage } from "./store/usage";
 export {

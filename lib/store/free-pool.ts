@@ -18,11 +18,14 @@ import {
 } from "../free-pool";
 
 import { HOLD_TTL_MS } from "./billing";
-import { getProviderStatus } from "./provider";
+import { getProviderStatusBySlug } from "./providers";
 import { getSetting, saveSetting } from "./settings";
 
-const ALERT_KEY = "free_pool.provider_alerted_at";
 const ALERT_INTERVAL_MS = 60 * 60 * 1000;
+
+function alertKey(slug: string) {
+  return `free_pool.provider_alerted_at.${slug}`;
+}
 
 export type FreeAdmissionResult =
   | { ok: true; reservation: FreePoolReservation }
@@ -46,6 +49,7 @@ function reservedWeighted(
   userId: string | null,
   day: string | null,
   at: string,
+  providerSlug?: string,
 ) {
   if (userId && day) {
     const row = db
@@ -63,23 +67,23 @@ function reservedWeighted(
     .prepare(
       `SELECT COALESCE(SUM(weighted_tokens), 0) AS total
        FROM free_pool_reservations
-       WHERE expires_at > ?`,
+       WHERE expires_at > ? AND (? IS NULL OR provider_slug = ?)`,
     )
-    .get(at) as { total: number };
+    .get(at, providerSlug ?? null, providerSlug ?? null) as { total: number };
 
   return Math.max(0, row.total);
 }
 
-function consumedSince(status: ProviderStatus) {
+function consumedSince(status: ProviderStatus, providerSlug: string) {
   if (!status.syncedAt) return 0;
 
   const row = db
     .prepare(
       `SELECT COALESCE(SUM(weighted_tokens), 0) AS total
        FROM usage_events
-       WHERE created_at >= ? AND weighted_tokens > 0`,
+       WHERE provider_slug = ? AND created_at >= ? AND weighted_tokens > 0`,
     )
-    .get(status.syncedAt) as { total: number };
+    .get(providerSlug, status.syncedAt) as { total: number };
 
   return Math.max(0, row.total);
 }
@@ -88,31 +92,39 @@ function consumedSince(status: ProviderStatus) {
  * Effective provider remaining: the last synced remaining figure minus every
  * weighted free token recorded since that sync, minus in-flight reservations.
  */
-function providerRemaining(status: ProviderStatus, at: string) {
+function providerRemaining(
+  status: ProviderStatus,
+  at: string,
+  providerSlug: string,
+) {
   if (status.subscriptionTokensRemaining === null) return null;
 
   return Math.max(
     0,
     Math.floor(
       status.subscriptionTokensRemaining -
-        consumedSince(status) -
-        reservedWeighted(null, null, at),
+        consumedSince(status, providerSlug) -
+        reservedWeighted(null, null, at, providerSlug),
     ),
   );
 }
 
-function maybeAlert(remaining: number | null, config: FreePoolConfig) {
+function maybeAlert(
+  remaining: number | null,
+  config: FreePoolConfig,
+  providerSlug: string,
+) {
   if (remaining === null || remaining > config.providerAlertThreshold) return;
 
   const now = Date.now();
-  const last = Number(getSetting(ALERT_KEY) ?? 0);
+  const last = Number(getSetting(alertKey(providerSlug)) ?? 0);
 
   if (Number.isFinite(last) && now - last < ALERT_INTERVAL_MS) return;
 
-  saveSetting(ALERT_KEY, String(now));
+  saveSetting(alertKey(providerSlug), String(now));
   // eslint-disable-next-line no-console
   console.warn(
-    `[free-pool] provider remaining is ${remaining} weighted tokens, at or below the ${config.providerAlertThreshold} alert threshold.`,
+    `[free-pool] ${providerSlug} remaining is ${remaining} weighted tokens, at or below the ${config.providerAlertThreshold} alert threshold.`,
   );
 }
 
@@ -140,8 +152,8 @@ export function reserveFreeCall(input: {
         "DELETE FROM free_pool_reservations WHERE expires_at <= ?",
       ).run(at);
 
-      const status = getProviderStatus();
-      const remaining = providerRemaining(status, at);
+      const status = getProviderStatusBySlug(input.model.upstreamSlug);
+      const remaining = providerRemaining(status, at, input.model.upstreamSlug);
       const next = decideFreeAdmission({
         config,
         promptTokens: input.promptTokens,
@@ -161,14 +173,15 @@ export function reserveFreeCall(input: {
 
       db.prepare(
         `INSERT INTO free_pool_reservations
-        (id, user_id, api_key_id, model_id, day, weighted_tokens,
-         created_at, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id, user_id, api_key_id, model_id, provider_slug, day,
+         weighted_tokens, created_at, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).run(
         reservationId,
         input.auth.userId,
         input.auth.keyId,
         input.model.id,
+        input.model.upstreamSlug,
         day,
         next.estimatedWeightedTokens,
         at,
@@ -184,7 +197,11 @@ export function reserveFreeCall(input: {
   }
 
   if (outcome.alert) {
-    maybeAlert(outcome.alert.remaining, outcome.alert.config);
+    maybeAlert(
+      outcome.alert.remaining,
+      outcome.alert.config,
+      input.model.upstreamSlug,
+    );
   }
 
   return {

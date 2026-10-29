@@ -18,12 +18,27 @@ distinguish verified behavior from unverified claims.
   Closed against `4782ce1`. Gates: `npm run verify` exit 0, 62/62 tests,
   quality PASS over 127 files, 33-route build. Tests:
   `tests/free-pool.test.mjs` plus sanitizer cases in `tests/http.test.mjs`.
-- **FID-2026-1029-010 — high — Multi-provider registry.** Converged design for
-  a `providers` entity with per-provider credential variable names, scoped
-  catalog sync and model identity, OpenAI Chat Completions and Anthropic
-  Messages adapters, manual cost mapping, provider-scoped free-pool admission,
-  and admin provider controls. CommandCode is the intended second upstream.
-  No provider code changed; implementation is registered as B5 in `SCOPE.md`.
+- **FID-2026-1029-010 — high — Multi-provider registry.** Implemented the
+  `providers` entity: per-provider protocol, base URL, credential variable
+  name, static headers, capability flags, enabled state, and runtime status.
+  Models are now scoped by `(upstream_slug, upstream_id)` with their own
+  `family`, wire `protocol`, and `cost_source`; a sync only delists that
+  provider's vanished rows. `lib/providers/` holds the registry, scoped sync,
+  and OpenAI Chat Completions and Anthropic Messages adapters (request,
+  response, stream mapping, usage, and error translation). Paid rows without a
+  known cost cannot be enabled; operators enter manual costs that survive
+  sync. Free-pool admission uses the serving provider's remaining figure while
+  the daily allowance stays per user. Admin → Providers registers, edits,
+  enables, disables, deletes, tests, and syncs upstreams; the legacy
+  `POST /api/provider/sync` remains an alias for syncing every enabled
+  provider. Existing Savant models, ids, keys, balances, and usage rows are
+  untouched by the additive migration, and CommandCode is seeded unconfigured.
+  Tests: `tests/providers.test.mjs`, `tests/provider-catalog.test.mjs`, and
+  `tests/anthropic-translate.test.mjs`. Gates: `npm run verify` exit 0, 79/79
+  tests, quality PASS over 152 files, 39-route build. A disposable-database
+  boot kept all 45 existing models on `savant`, seeded both providers, and
+  added the `provider_slug` columns. Live CommandCode inference is not run:
+  no credential or second-upstream account is configured.
 
 ## 2026-10-29 — Rebuild closure and record reconciliation
 

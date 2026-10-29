@@ -21,10 +21,13 @@ import {
   jsonError,
   upstreamUnavailable,
 } from "./http";
-import { providerChatCompletion, readProviderError } from "./provider";
+import { callProvider } from "./providers";
+import { readProviderError } from "./providers/request";
 import {
   authenticateApiKey,
+  getModelByUpstreamId,
   getModelForGateway,
+  getProvider,
   reserveFreeCall,
   type FreePoolReservation,
   type GatewayModel,
@@ -56,7 +59,7 @@ function resolveModel(publicId: string) {
     if (model) return model;
   }
 
-  return undefined;
+  return getModelByUpstreamId(publicId);
 }
 
 function safeUpstreamMessage(status: number, message: string) {
@@ -178,7 +181,9 @@ export async function handleChatCompletions(request: Request) {
     return jsonError(404, `Unknown model: ${body.model}`, "model_not_found");
   }
 
-  if (model.status !== "active") {
+  const provider = getProvider(model.upstreamSlug);
+
+  if (model.status !== "active" || !provider?.enabled) {
     return jsonError(
       503,
       `Model ${model.id} is currently unavailable`,
@@ -264,7 +269,8 @@ export async function handleChatCompletions(request: Request) {
   let upstream: Response;
 
   try {
-    upstream = await providerChatCompletion(
+    upstream = await callProvider(
+      model,
       payload,
       AbortSignal.timeout(streaming ? 300_000 : 120_000),
     );

@@ -23,19 +23,23 @@ export function getOverviewStats(): OverviewStats {
   const row = db
     .prepare(
       `SELECT
-        (SELECT COUNT(*) FROM models
-         WHERE in_catalog = 1 AND status = 'active') AS model_count,
-        (SELECT COUNT(*) FROM models
-         WHERE in_catalog = 1 AND status = 'active'
-           AND allow_free = 1 AND token_weight > 0) AS free_model_count,
-        (SELECT COUNT(*) FROM models
-         WHERE in_catalog = 1 AND status = 'active'
-           AND NOT (allow_free = 1 AND token_weight > 0)
-           AND id NOT LIKE 'free/%') AS paid_model_count,
-        (SELECT COUNT(*) FROM models
-         WHERE in_catalog = 1 AND status = 'active'
-           AND NOT (allow_free = 1 AND token_weight > 0)
-           AND id LIKE 'free/%') AS subscription_model_count,
+        (SELECT COUNT(*) FROM models m
+         JOIN providers p ON p.slug = m.upstream_slug AND p.enabled = 1
+         WHERE m.in_catalog = 1 AND m.status = 'active') AS model_count,
+        (SELECT COUNT(*) FROM models m
+         JOIN providers p ON p.slug = m.upstream_slug AND p.enabled = 1
+         WHERE m.in_catalog = 1 AND m.status = 'active'
+           AND m.allow_free = 1 AND m.token_weight > 0) AS free_model_count,
+        (SELECT COUNT(*) FROM models m
+         JOIN providers p ON p.slug = m.upstream_slug AND p.enabled = 1
+         WHERE m.in_catalog = 1 AND m.status = 'active'
+           AND NOT (m.allow_free = 1 AND m.token_weight > 0)
+           AND m.upstream_id NOT LIKE 'free/%') AS paid_model_count,
+        (SELECT COUNT(*) FROM models m
+         JOIN providers p ON p.slug = m.upstream_slug AND p.enabled = 1
+         WHERE m.in_catalog = 1 AND m.status = 'active'
+           AND NOT (m.allow_free = 1 AND m.token_weight > 0)
+           AND m.upstream_id LIKE 'free/%') AS subscription_model_count,
         (SELECT COUNT(*) FROM api_keys WHERE status = 'active') AS key_count,
         (SELECT COUNT(*) FROM usage_events) AS request_count,
         (SELECT COALESCE(SUM(input_tokens + output_tokens), 0)

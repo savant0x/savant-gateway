@@ -85,15 +85,16 @@ export function recordUsage(input: UsageSettlement) {
 
     db.prepare(
       `INSERT INTO usage_events
-        (id, user_id, api_key_id, model_id, input_tokens, output_tokens,
-         weighted_tokens, cost_micros, charged_micros, estimated, status,
-         latency_ms, error, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id, user_id, api_key_id, model_id, provider_slug, input_tokens,
+         output_tokens, weighted_tokens, cost_micros, charged_micros,
+         estimated, status, latency_ms, error, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       `usage_${randomUUID()}`,
       input.auth.userId,
       input.auth.keyId,
       input.model.id,
+      input.model.upstreamSlug,
       inputTokens,
       outputTokens,
       weightedTokens,

@@ -7,6 +7,7 @@ const ITEMS = [
   { href: "/admin", icon: "fa-gauge-high", label: "Overview" },
   { href: "/admin/customers", icon: "fa-users", label: "Customers" },
   { href: "/admin/catalog", icon: "fa-layer-group", label: "Catalog" },
+  { href: "/admin/providers", icon: "fa-plug", label: "Providers" },
   { href: "/admin/pricing", icon: "fa-calculator", label: "Pricing" },
   { href: "/admin/analytics", icon: "fa-chart-line", label: "Analytics" },
 ] as const;

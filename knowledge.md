@@ -2,26 +2,28 @@
 
 ## What this is
 
-A local-first gateway in front of an OpenAI-compatible upstream provider. It
-syncs the provider catalog, mints local consumer keys, routes models through
-one streaming endpoint (free rows immediately, non-free rows once priced),
-prices paid calls in integer micro-dollars,
-settles them against tenant credit, and records revenue, upstream cost, and
-usage in SQLite.
+A local-first gateway in front of one or more upstream providers, speaking
+OpenAI Chat Completions or Anthropic Messages. It syncs each provider catalog,
+mints local consumer keys, routes models through one streaming endpoint (free
+rows immediately, non-free rows once priced), prices paid calls in integer
+micro-dollars, settles them against tenant credit, and records revenue,
+upstream cost, and usage in SQLite.
 
 ## Facts that are easy to get wrong
 
-- **Provider, family, and group are different words.** Savant Gateway is the
-  provider (`owned_by: "savant-gateway"`). The family is the model line (GPT,
+- **Provider, family, and group are different words.** A provider is an
+  upstream account in the registry; the public owner is always Savant Gateway
+  (`owned_by: "savant-gateway"`). The family is the model line (GPT,
   Claude, DeepSeek, …), serialized as `family`; the legacy `models.provider`
   column stores that family label. The group is `free`, `paid`, or
   `subscription`, serialized as `access` in UI data and `group` in
   `/v1/models`. Never store or emit `"Free"` as a family.
 - **Free means `allowFree && tokenWeight > 0`.** The provider marks some
   subscription rows with `allowFree`, but only weighted free-pool rows are
-  zero-charge. The `free/` id prefix is the group signal; family normalization
-  strips it. `accessFor` in `lib/store/shared.ts` and `isFreeCall` in
-  `lib/gateway.ts` must stay in agreement.
+  zero-charge. The upstream `free/` id prefix is the group signal; it is not
+  the family, and a non-default provider's public id is namespaced as
+  `{slug}/{upstream_id}`. `accessFor` in `lib/store/shared.ts` and
+  `isFreeCall` in `lib/gateway.ts` must stay in agreement.
 - **Legacy `provider='Free'` rows are repaired on boot.**
   `normalizeLegacyFamilies` in `lib/db.ts` infers the family from the id and
   rewrites the row. `lib/model-family.ts` is the single source for that
@@ -46,14 +48,15 @@ usage in SQLite.
   atomic and expired holds are swept before a new reservation.
 - **Usage is weighted only for free-pool calls.** `weighted_tokens` is
   `total × weight` when the model is free with a positive weight, and zero
-  otherwise. The provider free pool is shared across the one provider key.
+  otherwise. Each provider has its own free-pool remainder; usage rows carry
+  `provider_slug`, and the per-user daily allowance is global.
 - **Free calls pass an admission gate before dispatch.**
   `reserveFreeCall` in `lib/store/free-pool.ts` checks the user’s daily
   weighted allowance, the effective provider remaining (last synced remaining
   minus weighted usage since that sync minus live reservations), and the
-  provider’s `subscription.allowed` flag. It inserts a reservation in the same
-  immediate transaction as the decision; settlement releases it and records
-  actual weighted usage. Limits: `FREE_DAILY_WEIGHTED_TOKENS` (default
+  serving provider’s `subscription.allowed` flag. It inserts a reservation in
+  the same immediate transaction as the decision; settlement releases it and
+  records actual weighted usage. Limits: `FREE_DAILY_WEIGHTED_TOKENS` (default
   500,000), `FREE_PROVIDER_REMAINING_FLOOR` (1,000,000),
   `FREE_PROVIDER_ALERT_THRESHOLD` (2,000,000). A blocked call returns `429`
   with `Retry-After` and, for the per-user allowance, `X-RateLimit-Reset`.
@@ -105,8 +108,10 @@ usage in SQLite.
   Stripe receives cents; the database receives micros.
 - **A zero balance still works on free-pool models.** Paid requests are the
   only ones that reserve credit.
-- **The provider key is server-only.** `PROVIDER_KEY` is read through
-  `lib/provider.ts`; never place it in `NEXT_PUBLIC_*` or any client component.
+- **Provider keys are server-only.** Each provider row names an environment
+  variable (`PROVIDER_KEY`, `COMMANDCODE_API_KEY`); `lib/providers/request.ts`
+  reads the value at request time. Never place a key in `NEXT_PUBLIC_*`, the
+  database, an admin response, or a client component.
 - **Font Awesome Free is imported once.** `app/layout.tsx` imports
   `@fortawesome/fontawesome-free/css/all.min.css`; components use
   `<i className="fa-solid fa-…" />`.
@@ -120,16 +125,20 @@ usage in SQLite.
   account console.
 - `app/dashboard` — operator console.
 - `app/admin/(panel)` — authenticated shell; overview, customers, catalog,
-  pricing, analytics. `app/admin/login` is the only unauthenticated admin page.
+  providers, pricing, analytics. `app/admin/login` is the only unauthenticated
+  admin page.
 - `app/api/auth/*` — signup, login, logout, and current-customer endpoints.
 - `app/api/account/*` — scoped keys and Stripe checkout creation.
 - `app/api/webhooks/stripe` — signature-verified, idempotent fulfillment.
-- `app/api/admin/*` — session, catalog status, pricing, and credit endpoints.
+- `app/api/admin/*` — session, catalog status, provider registry, pricing, and
+  credit endpoints.
 - `app/api/*` — console actions (loopback or admin session).
 - `app/v1/chat/completions` — the gateway entry point.
 - `app/v1/models` — authenticated catalog with provider owner, family,
   group, and sell prices.
-- `lib/provider.ts` — upstream client, metadata, sync.
+- `lib/providers/` — provider registry, provider-scoped sync, OpenAI and
+  Anthropic adapters. `lib/provider.ts` is a compatibility re-export.
+- `lib/schema/` — provider schema and shared migration helpers.
 - `lib/pricing.ts` — pure pricing and estimation arithmetic.
 - `lib/gateway.ts` — auth, routing, reservation, response handling.
 - `lib/gateway-stream.ts` — SSE relay and settle-on-close.
@@ -162,6 +171,11 @@ and are not run in CI. Unit tests cover scrypt hashing, customer validation,
 exact top-up parsing, opaque session shape and cookie flags, admin token
 tampering, expiry, password rotation, epoch revocation, origin checks, the
 login limiter, HTTP key extraction, pricing arithmetic, and family
-normalization. The current tree builds 33 routes and scans 125 files. A real
-Stripe card payment and real paid upstream inference remain unverified; the
-provider account has no paid balance.
+normalization, provider-registry validation, provider-scoped catalog identity,
+and Anthropic request/response/stream translation. The current tree builds 39
+routes, runs 79 tests, and scans 152 files. FID-2026-1029-010 adds the
+multi-provider receipt: the additive migration preserved 45 existing Savant
+models, seeded CommandCode as unconfigured, and added the provider columns. A
+real Stripe card payment and real paid upstream inference remain unverified;
+the provider account has no paid balance, and CommandCode has no configured
+credential.

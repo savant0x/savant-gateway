@@ -40,6 +40,9 @@ export type ModelSummary = {
 };
 
 export type AdminModelSummary = ModelSummary & {
+  upstreamSlug: string;
+  protocol: "chat" | "messages";
+  costSource: "synced" | "manual" | "unknown";
   costInputPer1M: number;
   costOutputPer1M: number;
   priceSource: "auto" | "manual";
@@ -202,8 +205,11 @@ export type AnalyticsData = {
 export type SyncedModel = {
   id: string;
   upstreamId: string;
+  upstreamSlug: string;
   name: string;
   family: string;
+  protocol: "chat" | "messages";
+  costSource: "synced" | "unknown";
   contextWindow: string;
   tokenWeight: number;
   costInputMicros: number;

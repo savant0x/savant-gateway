@@ -34,6 +34,20 @@ support behind one backend.
 - [x] **S7 — Verification and closure.** `npm run verify` exit 0: 62/62 tests,
   quality PASS over 127 files, 33-route build. Committed as `4782ce1`; FID-009
   is closed against that commit and archived.
+- [x] **S8 — FID-010 implemented.** `providers` registry with per-provider
+  protocol, base URL, credential variable name, headers, capabilities,
+  enabled state, and runtime status; `models` scoped by `(upstream_slug,
+  upstream_id)` with `family`, `protocol`, and `cost_source`; scoped sync that
+  only delists the syncing provider's rows; OpenAI Chat Completions and
+  Anthropic Messages adapters; manual cost entry that gates activation and
+  survives sync; provider-scoped free-pool floors; and Admin → Providers with
+  register, edit, enable/disable, delete, test, and per-provider sync.
+- [x] **S9 — FID-010 verified.** `npm run verify` exit 0: 79/79 tests, quality
+  PASS over 152 files, 39-route build. A disposable copy of `data/gateway.db`
+  booted on the additive migration: both providers seeded, all 45 existing
+  models still on `savant`, and `provider_slug` present on usage and
+  reservations. Live CommandCode inference was not run: no credential. FID-010
+  records the receipt and remains uncommitted pending operator review.
 
 ## Prior Session — 2026-10-29 (model groups and subscriptions)
 
@@ -329,11 +343,10 @@ Recorded read-only under the approved review item; any fix remains blocked pendi
   schema. Local signed-webhook coverage is possible, but a real recurring
   Checkout and Stripe-delivered invoice remain blocked by the missing test
   credentials already registered in B1.
-- **B5 — FID-2026-1029-010 implementation.** Blocked pending the operator's
-  go-ahead and a CommandCode account/credential. The FID is converged; no
-  provider table, adapter, route, or UI exists yet. Registration must not add a
-  secret to the tree — the key belongs in `.env.local` under the configured
-  variable name.
+- **B5 — FID-2026-1029-010 implementation.** Resolved 2026-10-29: implemented
+  and verified in S8/S9; the remaining gate is operator review and a commit.
+  Live CommandCode inference still needs `COMMANDCODE_API_KEY` in `.env.local`;
+  no secret belongs in the tree.
 
 ## Operator Rulings
 

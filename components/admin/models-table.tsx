@@ -6,6 +6,7 @@ import { Button, Card, Chip, Input, Spinner } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { ModelCostEditor } from "@/components/admin/model-cost-editor";
 import { AccessChip, StatusChip } from "@/components/dashboard/chips";
 import { formatPricePer1M } from "@/components/dashboard/format";
 import { Pagination } from "@/components/ui/pagination";
@@ -43,6 +44,7 @@ export function AdminModelsTable({
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
+  const [providerFilter, setProviderFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +53,9 @@ export function AdminModelsTable({
     const needle = query.trim().toLowerCase();
 
     return models.filter((model) => {
+      if (providerFilter !== "all" && model.upstreamSlug !== providerFilter) {
+        return false;
+      }
       if (filter === "active" && model.status !== "active") return false;
       if (filter === "disabled" && model.status !== "disabled") return false;
       if (filter === "free" && model.access !== "free") return false;
@@ -69,10 +74,16 @@ export function AdminModelsTable({
       return (
         model.id.toLowerCase().includes(needle) ||
         model.name.toLowerCase().includes(needle) ||
-        model.family.toLowerCase().includes(needle)
+        model.family.toLowerCase().includes(needle) ||
+        model.upstreamSlug.toLowerCase().includes(needle)
       );
     });
-  }, [filter, models, query]);
+  }, [filter, models, providerFilter, query]);
+
+  const providers = useMemo(
+    () => Array.from(new Set(models.map((model) => model.upstreamSlug))).sort(),
+    [models],
+  );
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, pageCount);
@@ -135,7 +146,9 @@ export function AdminModelsTable({
             <Card.Title>Catalog controls</Card.Title>
             <Card.Description>
               Disabled models leave the public catalog and the gateway. A
-              delisted row vanished upstream but keeps its prices and history.
+              delisted row vanished from one provider but keeps its prices and
+              history. Paid rows need a known upstream cost before they can be
+              enabled.
             </Card.Description>
           </div>
           <Chip color="default" size="sm" variant="soft">
@@ -154,6 +167,25 @@ export function AdminModelsTable({
               applyFilter(() => setQuery(event.target.value))
             }
           />
+          <div className="flex flex-wrap gap-1.5">
+            <Button
+              size="sm"
+              variant={providerFilter === "all" ? "primary" : "secondary"}
+              onPress={() => applyFilter(() => setProviderFilter("all"))}
+            >
+              All providers
+            </Button>
+            {providers.map((provider) => (
+              <Button
+                key={provider}
+                size="sm"
+                variant={providerFilter === provider ? "primary" : "secondary"}
+                onPress={() => applyFilter(() => setProviderFilter(provider))}
+              >
+                {provider}
+              </Button>
+            ))}
+          </div>
           <div className="flex flex-wrap gap-1.5">
             {FILTERS.map((item) => (
               <Button
@@ -184,6 +216,7 @@ export function AdminModelsTable({
               <thead>
                 <tr>
                   <th>Model</th>
+                  <th>Provider</th>
                   <th>Family</th>
                   <th>Group</th>
                   <th>Status</th>
@@ -211,6 +244,10 @@ export function AdminModelsTable({
                         {model.id}
                       </div>
                     </td>
+                    <td className="whitespace-nowrap text-muted">
+                      {model.upstreamSlug}
+                      <p className="text-[11px]">{model.protocol}</p>
+                    </td>
                     <td className="text-muted">{model.family}</td>
                     <td>
                       <AccessChip model={model} />
@@ -221,10 +258,8 @@ export function AdminModelsTable({
                     <td className="whitespace-nowrap text-right">
                       {price(model)}
                     </td>
-                    <td className="whitespace-nowrap text-right text-muted">
-                      {model.access === "free"
-                        ? "—"
-                        : `${formatPricePer1M(model.costInputPer1M)} / ${formatPricePer1M(model.costOutputPer1M)}`}
+                    <td className="text-right">
+                      <ModelCostEditor model={model} />
                     </td>
                     <td className="text-muted">{model.contextWindow}</td>
                     <td>

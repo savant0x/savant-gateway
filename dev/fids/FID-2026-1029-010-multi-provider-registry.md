@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1029-010-multi-provider-registry.md`
 **ID:** FID-2026-1029-010
 **Severity:** high
-**Status:** converged
+**Status:** verified
 **Created:** 2026-10-29 12:20 EDT
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -13,9 +13,10 @@ provider-scoped), FID-2026-1029-004 (catalog and pricing, shipped)
 subscriptions) both assume one upstream. This FID must not block them, but
 their `models` migrations must leave room for `upstream_slug`.
 
-Reference structure: `templates/FID-TEMPLATE.md`, read 2026-10-29. `converged`
-means the design is complete; implementation has not started. The repository
-gates are `lint`, `typecheck`, `test`, `quality`, `build`, and `verify`.
+Reference structure: `templates/FID-TEMPLATE.md`, read 2026-10-29. `verified`
+means the implementation exists and every gate passes; closure waits for a
+commit so the record can name a SHA. The repository gates are `lint`,
+`typecheck`, `test`, `quality`, `build`, and `verify`.
 
 ## Summary
 
@@ -53,8 +54,9 @@ Non-goal: automatic failover or load balancing across providers in v1.
 - **Runtime:** Node `v24.21.0`, npm `12.2.1`.
 - **Tool Versions:** Next.js `16.4.3`, React `19.3.0`, HeroUI `3.2.7`,
   Tailwind CSS `4.3.3`, better-sqlite3 `13.0.3`, TypeScript `5.9.3`.
-- **Commit/State:** `4782ce1` on `main` contains FID-009’s implementation. No
-  application code for multi-provider exists.
+- **Commit/State:** `592bb92` on `main` is the last commit (FID-009 closure).
+  The FID-010 implementation is in the working tree, verified but not yet
+  committed.
 
 ## Detailed Description
 
@@ -367,17 +369,25 @@ against Savant ids are unchanged.
 
 - gate: lint — `npm run lint`
 - gate: typecheck — `npm run typecheck`
-- gate: test tests/providers.test.mjs — registry validation and adapter routing
-- gate: test tests/provider-anthropic.test.mjs — request/stream/usage/error translation
-- gate: test tests/provider-sync.test.mjs — provider-scoped catalog isolation
-- gate: test tests/free-pool.test.mjs — provider-scoped admission
+- gate: test tests/providers.test.mjs — registry validation and protocol routing
+- gate: test tests/anthropic-translate.test.mjs — request/response/stream/usage/error translation
+- gate: test tests/provider-catalog.test.mjs — provider-scoped identity, protocol, and cost source
+- gate: test tests/free-pool.test.mjs — provider floor, provider block, per-user allowance
 - gate: quality — `npm run quality`
 - gate: build — `npm run build`
 - gate: verify — `npm run verify`
 
 ### Verification Receipt
 
-- verified: not run — implementation has not started. This is a design record.
+- verified 2026-10-29: `npm run verify` exit 0 — lint clean, typecheck clean,
+  79/79 tests, quality PASS over 152 files, 39-route production build.
+- Disposable database: a copy of `data/gateway.db` booted against the additive
+  migration with both providers seeded, all 45 existing models still on
+  `savant`, and `provider_slug` present on `free_pool_reservations` and
+  `usage_events`. `/models` returned `200` on the migrated copy.
+- Live CommandCode inference: not run — no `COMMANDCODE_API_KEY` or second
+  upstream account is configured. Adapter coverage is fixture-based and
+  network-free.
 
 ## Non-Goals
 
@@ -425,7 +435,7 @@ against Savant ids are unchanged.
   provider-scoped free pool, admin controls.
 - **AUDIT:** design reviewed against `lib/provider.ts`, `lib/store/models.ts`,
   `lib/store/provider.ts`, `lib/gateway.ts`, and the CommandCode provider docs.
-  Implementation not started; no gate output.
+  Implementation and gate output are recorded under Implementation Evidence.
 - **ADVERSARIAL:** the largest risk is silent routing or catalog damage during
   migration. Mitigations: additive columns with defaults, provider-scoped
   `in_catalog`, and an unconfigured-by-default second provider.
@@ -438,21 +448,56 @@ against Savant ids are unchanged.
 2. **Where does `family` live for display?** `toModelSummary` keeps returning
    `family`; the UI is unchanged.
 
-### Implementation Evidence (REQUIRED for `closed`)
+### Implementation Evidence
 
-- [ ] **Commit SHA:** not implemented
-- [ ] **File:line ranges:** not implemented
-- [ ] **Gate output:** not run
-- [ ] **Reproducibility:** not implemented
-- [ ] **Step statuses:** steps 1–8 deferred pending operator approval
+- [x] **Commit SHA:** uncommitted working tree on `main` after `592bb92`.
+- [x] **File:line ranges:**
+  - schema: `lib/schema/columns.ts:1-26`, `lib/schema/providers.ts:1-150`,
+    `lib/db.ts:1-343`
+  - registry and adapters: `lib/providers/registry.ts:1-188`,
+    `lib/providers/catalog.ts:1-118`, `lib/providers/sync.ts:1-240`,
+    `lib/providers/request.ts:1-167`, `lib/providers/openai.ts:1-18`,
+    `lib/providers/anthropic.ts:1-55`, `lib/providers/types.ts:1-64`,
+    `lib/providers/anthropic-request.ts:1-220`,
+    `lib/providers/anthropic-response.ts:1-56`,
+    `lib/providers/anthropic-stream.ts:1-256`
+  - persistence and routing: `lib/store/providers.ts:1-324`,
+    `lib/store/provider.ts:1-16` (default-provider compatibility read),
+    `lib/store/models.ts:1-307`, `lib/store/free-pool.ts:1-247`,
+    `lib/store/usage.ts:1-148`, `lib/store/shared.ts:1-199`,
+    `lib/store/overview.ts:1-132`, `lib/gateway.ts:1-330`
+  - admin: `app/api/admin/providers/` (five route modules),
+    `app/api/admin/models/route.ts:1-85`, `app/admin/(panel)/providers/page.tsx`,
+    `components/admin/providers-panel.tsx:1-282`,
+    `components/admin/provider-form.tsx:1-162`,
+    `components/admin/models-table.tsx:1-302`,
+    `components/admin/model-cost-editor.tsx:1-82`
+- [x] **Gate output:** `npm run verify` exit 0 (lint clean, typecheck clean,
+  79/79 tests, quality PASS over 152 files, 39-route build). Migration receipt
+  on a disposable copy is recorded under Verification Receipt.
+- [x] **Reproducibility:** copy `data/gateway.db*` to a scratch directory, run
+  `DB_PATH=./scratch/gateway.db npm run dev`, load `/models`, then inspect the
+  `providers`, `models`, `free_pool_reservations`, and `usage_events` columns.
+  Unit and translation gates run with `npm test`; no network is required.
+- [x] **Step statuses:** steps 1–8 implemented. Live second-upstream inference
+  remains blocked on an operator credential, which is a verification limit,
+  not an implementation gap.
 
 ## Resolution
 
-- **Closed Date:** not closed
-- **Fix Description:** not implemented
-- **Tests Added:** planned suites listed under Verification Gates
-- **Verification Evidence:** none; this is a design record
-- **Archived:** not archived
+- **Closed Date:** not closed — implementation is verified but uncommitted.
+- **Fix Description:** the gateway now has a first-class provider registry and
+  routes each model by its provider's protocol. Sync, model identity, costs,
+  free-pool floors, usage attribution, and admin controls are provider-scoped;
+  the default provider's existing ids and rows survive the additive migration.
+- **Tests Added:** `tests/providers.test.mjs` (registry and protocol routing),
+  `tests/provider-catalog.test.mjs` (scoped identity, cost source, family),
+  `tests/anthropic-translate.test.mjs` (request, response, stream, usage,
+  errors), plus the existing `tests/free-pool.test.mjs` provider-floor cases.
+- **Verification Evidence:** `npm run verify` exit 0 with 79/79 tests and a
+  39-route build; disposable-database migration preserved 45 existing Savant
+  models and seeded both providers. Live CommandCode inference was not run.
+- **Archived:** not archived (pending commit and closure).
 
 ## Lessons Learned
 

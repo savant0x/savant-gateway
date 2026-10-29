@@ -1,7 +1,8 @@
 # Savant Gateway
 
-A Next.js gateway that puts a clean, priced product layer in front of an
-OpenAI-compatible upstream provider.
+A Next.js gateway that puts a clean, priced product layer in front of one or
+more upstream providers, whether they speak OpenAI Chat Completions or
+Anthropic Messages.
 
 [![ECHO](https://img.shields.io/badge/ECHO-v0.1.2_single--agent-%23000000?style=flat-square&logo=github&logoColor=%2300fbff)](dev/echo-v0.1.2-single-agent.md)
 [![Next.js](https://img.shields.io/badge/Next.js-16-%23000000?style=flat-square&logo=nextdotjs&logoColor=%2300fbff)](https://nextjs.org/)
@@ -10,14 +11,15 @@ OpenAI-compatible upstream provider.
 
 The gateway does seven things:
 
-- syncs the upstream balance, subscription, model catalog, and public metadata;
+- syncs each provider's balance, subscription, model catalog, and public
+  metadata without letting one sync hide another provider's models;
 - stores upstream cost, our sell price, and charged revenue as separate fields;
 - creates customer accounts with scrypt password hashes and revocable,
   server-side sessions;
 - mints account-owned consumer keys, stored only as SHA-256 hashes;
 - routes every active catalog model through one OpenAI-compatible
   `POST /v1/chat/completions` endpoint once it is free or priced, streaming or
-  JSON;
+  JSON, translating to each provider's wire protocol;
 - reserves credit for paid calls, settles actual usage, and keeps a ledger;
 - sells prepaid credit through Stripe Checkout, credits it only from a
   signature-verified webhook, and records weighted tokens, revenue, cost,
@@ -37,6 +39,7 @@ The gateway does seven things:
 | `/admin` | Admin session | Revenue, cost, margin, credit, provider status, recent usage. |
 | `/admin/customers` | Admin session | Signup accounts, balances, request volume, and top-ups. |
 | `/admin/catalog` | Admin session | Every row, including disabled and delisted models. |
+| `/admin/providers` | Admin session | Upstream registry: credentials variable names, capabilities, enable, test, sync. |
 | `/admin/pricing` | Admin session | Inline sell prices, markup, cost, margin, blended profit. |
 | `/admin/analytics` | Admin session | 7/30/90-day revenue, cost, margin, tokens, latency, top models. |
 | `/v1/*` | Consumer key | The OpenAI-compatible gateway. |
@@ -62,7 +65,7 @@ header cannot mint keys or read usage. See [SECURITY.md](SECURITY.md).
 ```bash
 npm install
 cp .env.example .env.local
-# put the upstream key in PROVIDER_KEY
+# put the upstream key in PROVIDER_KEY; COMMANDCODE_API_KEY is optional
 # set ADMIN_PASSWORD (12+ chars) and ADMIN_SESSION_SECRET (32+ chars)
 # optional: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, NEXT_PUBLIC_SITE_URL
 npm run dev
@@ -88,14 +91,15 @@ secret, so rotating either invalidates existing sessions.
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `PROVIDER_KEY` | Yes | Upstream key. Sent as `Authorization: Bearer …`. Server-only. |
+| `PROVIDER_KEY` | Yes | Default upstream key. Server-only. |
+| `COMMANDCODE_API_KEY` | For CommandCode | Second upstream key. The registry stores only the variable name. Server-only. |
 | `ADMIN_PASSWORD` | For admin | 12+ characters. Compared in constant time. |
 | `ADMIN_SESSION_SECRET` | For admin | 32+ characters. Signs the eight-hour admin cookie. |
 | `STRIPE_SECRET_KEY` | For top-ups | Server-only Stripe key. Absent disables checkout with `503`. |
 | `STRIPE_WEBHOOK_SECRET` | For top-ups | Signing secret for `/api/webhooks/stripe`. Checkout stays disabled without it. |
 | `NEXT_PUBLIC_SITE_URL` | Production | Canonical origin for metadata and Stripe redirects. Defaults to `http://localhost:3000`. |
 | `DB_PATH` | No | SQLite file. Defaults to `./data/gateway.db`. |
-| `PROVIDER_BASE_URL` | No | Defaults to `https://api.apinex.bond/v1`. |
+| `PROVIDER_BASE_URL` | No | Seeds the default provider's base URL on first boot. Defaults to `https://api.apinex.bond/v1`. |
 | `PROVIDER_PUBLIC_MODELS_URL` | No | Defaults to `https://apinex.bond/api/public/models`. |
 
 Do not put any secret in a `NEXT_PUBLIC_*` variable.
@@ -104,13 +108,36 @@ Do not put any secret in a `NEXT_PUBLIC_*` variable.
 
 These three words mean different things and must not be collapsed:
 
-- **Provider** — Savant Gateway. `/v1/models` publishes
-  `owned_by: "savant-gateway"`.
+- **Provider** — an upstream account registered in Admin → Providers. The
+  public owner is always Savant Gateway (`owned_by: "savant-gateway"`);
+  upstream identity is internal routing metadata.
 - **Family** — the upstream model line: GPT, Claude, DeepSeek, Gemini, GLM,
   Kimi, Grok, and so on. It is the `family` field; the internal
   `models.provider` column stores this family label.
 - **Group** — the price group: `free`, `paid`, or `subscription`. The UI
   serializes it as `access`; `/v1/models` publishes it as `group`.
+
+### Provider registry
+
+A provider is a row, not an environment triple. Admin → Providers stores the
+slug, label, wire protocol (`openai`, `anthropic`, or `both`), base URL,
+credential **variable name**, static headers, capability flags, enabled flag,
+and runtime status. The credential value never enters SQLite, an API response,
+a log, or the browser.
+
+- Sync is scoped: rows are keyed by `(upstream_slug, upstream_id)`, and a sync
+  only marks that provider's vanished models `in_catalog = 0`.
+- Identity is scoped: the default provider keeps raw model ids; other providers
+  publish `{slug}/{upstream_id}`. `/v1/models` still says
+  `owned_by: "savant-gateway"`.
+- Protocol is chosen per model. A `both` provider uses the model's
+  `supported_endpoints` (Claude → `messages`, OpenAI-style → `chat`); models
+  with no servable endpoint are not catalogued.
+- Paid rows without a known upstream cost are `cost_source = 'unknown'` and
+  cannot be enabled until an operator enters both costs. Manual costs survive
+  every sync.
+- Disabling a provider hides its models from the public catalog and returns
+  `503 model_unavailable` for calls, without deleting rows.
 
 ## How it works
 
@@ -120,13 +147,13 @@ browser / SDK
    ▼
 POST /v1/chat/completions
    │  hash key → active key + active user
-   │  resolve model → active + in catalog
+   │  resolve model → provider + protocol + active + in catalog
    │  free pool?  yes → allowance + provider floor → reserve weighted tokens
    │              no  → priced? → reserve credit hold
    ▼
-upstream /v1/chat/completions
-   │  Authorization: Bearer <PROVIDER_KEY>
-   │  src: gate
+upstream (the model's provider)
+   │  openai kind:    POST /chat/completions, Bearer <key variable>
+   │  anthropic kind: POST /messages, x-api-key <key variable>
    ▼
 stream or JSON back to the caller
    │
@@ -265,7 +292,14 @@ are follow-ups, not claimed capabilities.
 | `POST` | `/api/admin/pricing` | Admin session | `{ markupBps, applyToAll }` bulk repricing. |
 | `GET` | `/api/admin/credit` | Admin session | Tenant balance, holds, and recent ledger. |
 | `POST` | `/api/admin/credit` | Admin session | `{ amountUsd, note }` operator credit grant. |
-| `POST` | `/api/provider/sync` | Admin (loopback in dev) | Fetch balance, subscription, models, metadata. |
+| `GET` | `/api/admin/providers` | Admin session | Providers with status, capabilities, and model counts. |
+| `POST` | `/api/admin/providers` | Admin session | Register a provider; accepts a credential variable name, never a secret. |
+| `PATCH` | `/api/admin/providers/:slug` | Admin session | Label, URL, headers, capabilities, enabled, sort order. |
+| `DELETE` | `/api/admin/providers/:slug` | Admin session | Remove a provider that owns no catalog rows. |
+| `POST` | `/api/admin/providers/:slug/test` | Admin session | Credential and `/models` probe. |
+| `POST` | `/api/admin/providers/:slug/sync` | Admin session | Sync one provider. |
+| `POST` | `/api/admin/providers/sync` | Admin session | Sync every enabled provider. |
+| `POST` | `/api/provider/sync` | Admin (loopback in dev) | Legacy alias for syncing every enabled provider. |
 | `GET` | `/api/keys` | Admin (loopback in dev) | List masked local-tenant keys. |
 | `POST` | `/api/keys` | Admin (loopback in dev) | Create a local-tenant key; returns the secret once. |
 | `DELETE` | `/api/keys/:id` | Admin (loopback in dev) | Revoke a local-tenant key. |
@@ -289,12 +323,12 @@ app/
   account/                 customer balance, keys, usage, top-ups
   dashboard/               operator console
   admin/(panel)/           authenticated overview, customers, catalog,
-                           pricing, analytics
+                           providers, pricing, analytics
   admin/login/             admin sign-in
   api/auth/                signup, login, logout, me
   api/account/             scoped keys and Stripe checkout
   api/webhooks/stripe/     signature-verified top-up fulfillment
-  api/admin/               session, catalog, pricing, and credit management
+  api/admin/               session, catalog, providers, pricing, credit
   api/                     console actions (loopback or admin)
   v1/chat/completions/     OpenAI-compatible gateway
   v1/models/               OpenAI-compatible model list
@@ -306,7 +340,8 @@ components/
   admin/                   admin shell, tables, pricing editor, analytics
   ui/                      shared primitives
 lib/
-  provider.ts              upstream client, metadata, catalog sync
+  providers/               registry, scoped sync, OpenAI and Anthropic adapters
+  schema/                  provider schema and shared migration helpers
   pricing.ts               pure micro-dollar, markup, margin, and estimate math
   gateway.ts               auth, routing, reservation, response handling
   gateway-stream.ts        streaming relay and settlement on close
@@ -321,7 +356,7 @@ lib/
   admin-session.ts         token signing, password and origin checks
   admin-auth.ts            server-only guards and cookie helpers
   admin-rate-limit.ts      fixed-window limiters
-  db.ts                    SQLite schema and additive migrations
+  db.ts                    SQLite bootstrap and additive migrations
   store/                   persistence split by responsibility
   types.ts                 shared serializable types
 assets/                    source logos and favicons
@@ -344,6 +379,10 @@ Loop before code. FIDs live in `dev/fids/` and use
 
 Current records:
 
+- [FID-2026-1029-010](dev/fids/FID-2026-1029-010-multi-provider-registry.md) —
+  active, implemented provider registry: per-provider credentials, scoped sync
+  and model identity, OpenAI and Anthropic adapters, manual cost mapping,
+  provider-scoped free pool, and admin controls (pending commit).
 - [FID-2026-1029-007](dev/fids/FID-2026-1029-007-model-group-control.md) —
   active, converged design for first-class model groups: custom groups,
   operator assignment, sync-safe membership, group-aware billing, and a
@@ -395,7 +434,8 @@ rejects coding-agent attribution anywhere in the commit history.
 
 FID-2026-1029-006 records its 2026-10-29 closure receipt: `npm run verify` exit
 0 with 48 tests, quality PASS over 122 files, and a 32-route production build at
-that time. The current tree builds 33 routes and scans 125 files. On a
+that time. The current tree builds 39 routes, runs 79 tests, and scans 152
+files. On a
 disposable database: two signups returned `201`, a duplicate returned `409`, a
 wrong password returned `401`, the `sg_session` cookie is `HttpOnly`,
 `SameSite=Lax`, `Secure`, seven days, customer B could not revoke customer A's
@@ -407,7 +447,9 @@ signature were ignored or rejected, logout made the old session `401`, and
 `307` for signed-out `/dashboard` and `403` for a spoofed-Host operator API,
 while an admin session restored both. FID-2026-1029-004 holds the pricing and
 paid-routing receipt; FID-2026-1029-005 holds the provider/family/group
-receipt.
+receipt; FID-2026-1029-010 holds the multi-provider registry receipt, including
+the additive migration on a disposable database. Live CommandCode inference is
+not run because no second-upstream credential is configured.
 
 A live Stripe card payment was not completed: no live Stripe keys were
 available. The fulfillment path was exercised with a Stripe-signed test event
@@ -427,7 +469,11 @@ as completed payments or completed paid-provider calls.
   prices them and the upstream account is entitled to them.
 - No per-key rate limiting or concurrency control. Signup, login, and top-up
   limits are in-memory fixed windows and reset on restart.
-- One provider key and one shared provider pool.
+- No automatic failover or load balancing: each model has one provider, and
+  a failed provider fails its own models.
+- CommandCode does not publish machine-readable pricing, so its costs are
+  operator-entered; free-pool admission still enforces each provider's own
+  remaining figure and the global per-user daily allowance.
 - The local console tenant (`user_dev`) remains operator-granted and separate
   from customer accounts. Its loopback bypass is development-only; production
   requires an admin session.

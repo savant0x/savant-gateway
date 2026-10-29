@@ -15,8 +15,12 @@ import { blendedProfitMicros, marginBps, microsToPrice } from "../pricing";
 export type ModelRow = {
   id: string;
   upstream_id: string;
+  upstream_slug: string;
   name: string;
   provider: string;
+  family: string | null;
+  protocol: "chat" | "messages";
+  cost_source: "synced" | "manual" | "unknown";
   context_window: string;
   token_weight: number;
   input_price_micros: number;
@@ -62,8 +66,11 @@ export type UsageRow = {
 export type GatewayModel = {
   id: string;
   upstreamId: string;
+  upstreamSlug: string;
   name: string;
   family: string;
+  protocol: "chat" | "messages";
+  costSource: "synced" | "manual" | "unknown";
   contextWindow: string;
   tokenWeight: number;
   costInputMicros: number;
@@ -103,11 +110,13 @@ export type ProviderStatusInput = {
 };
 
 export function accessFor(
-  row: Pick<ModelRow, "allow_free" | "token_weight" | "provider" | "id">,
+  row: Pick<ModelRow, "allow_free" | "token_weight" | "upstream_id">,
 ): ModelAccess {
   if (row.allow_free === 1 && row.token_weight > 0) return "free";
 
-  return row.id.startsWith("free/") ? "subscription" : "paid";
+  // The `free/` scope belongs to the upstream id; a non-default provider's
+  // public id is namespaced and must not change the price group.
+  return row.upstream_id.startsWith("free/") ? "subscription" : "paid";
 }
 
 export function toModelSummary(row: ModelRow): ModelSummary {
@@ -115,7 +124,7 @@ export function toModelSummary(row: ModelRow): ModelSummary {
     id: row.id,
     upstreamId: row.upstream_id,
     name: row.name,
-    family: row.provider,
+    family: row.family ?? row.provider,
     contextWindow: row.context_window,
     tokenWeight: row.token_weight,
     allowFree: row.allow_free === 1,
@@ -135,6 +144,9 @@ export function toAdminModelSummary(row: ModelRow): AdminModelSummary {
 
   return {
     ...summary,
+    upstreamSlug: row.upstream_slug,
+    protocol: row.protocol,
+    costSource: row.cost_source,
     costInputPer1M: microsToPrice(row.input_price_micros),
     costOutputPer1M: microsToPrice(row.output_price_micros),
     priceSource: row.price_source,

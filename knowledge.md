@@ -159,6 +159,14 @@ upstream cost, and usage in SQLite.
 - **Top-up amounts are exact.** `lib/topup-amount.ts` parses dollars without
   floating point, enforces $5–$500, and returns cents plus micro-dollars.
   Stripe receives cents; the database receives micros.
+- **Route-level verification is a separate post-build gate.** `npm test` stays
+  pure and in-memory. `npm run test:http` (`scripts/http-suite.mjs`) boots
+  `next start` from the production build against a disposable `DB_PATH`, seeds
+  through a second `better-sqlite3` connection because the app's store modules
+  are `server-only`, points one provider at an in-process mock upstream, and
+  asserts real HTTP behavior. It is wired after `build` in `npm run verify`,
+  CI, and the pre-push hook, and it fails fast when `.next/BUILD_ID` is
+  missing.
 - **A zero balance still works on free-group models.** Paid requests are the
   only ones that reserve credit. A zero-cost model moved to a paid group is a
   paid request and needs credit.
@@ -256,7 +264,16 @@ revenue-analytics receipt: a disposable database rendered $163.00 total revenue
 ($3.00 credit + $160.00 plans), $1.50 cost, +$161.50 total margin, $20.00 MRR,
 4 active/1 past-due/1 canceling/1 manual subscribers, and plan rows of $120.00,
 $40.00, and $0.00; anonymous `/admin/analytics` redirected 307 to login, a
-wrong password returned 401, and the authenticated page returned 200. A real
-Stripe card payment and real paid upstream inference remain unverified; the
+wrong password returned 401, and the authenticated page returned 200.
+FID-2026-1029-012 adds the route-level HTTP receipt: `npm run test:http` boots
+the production build against a disposable database, seeds a mock provider and a
+paid model through a second SQLite connection, and passes 100 checks — signup
+sets a hardened `sg_session` and logout revokes it, duplicate signup is 409 and
+foreign-origin mutations are 403, a cross-account key revoke returns 404, a
+signed webhook credits once and a replay is a no-op, an invalid signature is
+400, an amount mismatch stays pending, a paid call debits exactly 200 micros
+with a `credit` usage row, an unfunded call is 402, and anonymous `/admin`
+redirects to login. The suite is a post-build gate, not part of `npm test`.
+A real Stripe card payment and real paid upstream inference remain unverified; the
 provider account has no paid balance, and CommandCode has no configured
 credential.

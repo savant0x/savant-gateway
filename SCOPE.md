@@ -19,8 +19,16 @@ surfaces, then add route-level HTTP coverage. The operator selected
   separately. Committed as `ba233c6`; FID-011 closed and archived after
   `npm run verify` exit 0 (107/107 tests, quality PASS over 189 files, 51-route
   build) and a 21-check disposable-database render receipt.
-- [ ] **S26 — B2 route-level HTTP suite (FID-012).** Pending the analytics
-  implementation; the operator ruling above lifts the B2 blocker.
+- [x] **S26 — B2 route-level HTTP suite implemented and verified.**
+  `scripts/http-suite.mjs` plus `harness.mjs`, `seed.mjs`, and `checks.mjs` boot
+  the production build against a disposable database, seed a mock provider and
+  paid model through a second SQLite connection, and run 100 HTTP checks across
+  signup/session/logout/login, cross-account key ownership, signed webhook
+  credit/replay/invalid/mismatch, exact paid-call settlement, unfunded
+  rejection, and admin session behavior. `npm run test:http` is wired after
+  build in `verify`, CI, and the pre-push hook. Committed as `4374c00`; FID-012
+  closed and archived after `npm run verify` exit 0 (107/107 unit tests,
+  quality PASS over 189 files, 51-route build, 100 HTTP checks).
 
 ## Current Session — 2026-10-29 (D6/D50, provider registry, and model groups)
 
@@ -440,12 +448,13 @@ Recorded read-only under the approved review item; any fix remains blocked pendi
   are not verified. Re-attempt immediately when test keys and a funded or mock
   upstream are available. Evidence:
   `dev/session-summaries/2026-10-29-customer-e2e-verification.md` (H1, H4).
-- **B2 — Route-level HTTP verification.** Blocked pending an operator ruling on
-  adding a route-level suite. The current 99 tests cover helpers, pricing,
-  groups, plans, providers, free-pool policy, and sanitization;
-  no test exercises signup cookies, cross-account key ownership, webhook replay,
-  or paid settlement over HTTP, so those paths can regress while `npm test`
-  stays green. Evidence: the handoff's H5 and the current `tests/` listing.
+- **B2 — Route-level HTTP verification.** Resolved 2026-10-29:
+  `npm run test:http` boots the production build against a disposable database
+  and covers signup cookies, logout/login, cross-account key ownership, signed
+  webhook credit/replay/invalid/mismatch, exact paid settlement, unfunded
+  rejection, and admin session behavior with 100 checks. FID-012 is closed and
+  archived against `4374c00`; the gate runs after build in `verify`, CI, and the
+  pre-push hook.
 - **B3 — FID-2026-1029-007 implementation.** Resolved 2026-10-29:
   implemented and verified in S10–S13, committed as `161ddcc`, and closed and
   archived as FID-007. The group schema, routes, tests, and admin surface exist.

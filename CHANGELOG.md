@@ -3,6 +3,27 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — Route-level HTTP suite
+
+- **FID-2026-1029-012 — high — Route-level HTTP verification.** Added a
+  post-build `npm run test:http` gate that boots the production server against a
+  disposable SQLite database, seeds one mock provider and one paid model through
+  a second connection, and exercises 100 assertions over real HTTP: signup
+  returns `201` with an HttpOnly/SameSite=Lax/Secure `sg_session`; logout revokes
+  it and login mints a new one; duplicate signup is `409` and foreign-origin
+  mutations are `403`; one customer cannot list or revoke another's API key; a
+  signed Stripe `checkout.session.completed` event credits exactly once, a
+  replay is a no-op, an invalid signature is `400`, and an amount mismatch
+  leaves the top-up pending; a paid call debits exactly 200 micros through a
+  mock upstream, forwards the configured provider key, translates the model id,
+  and writes a `credit` usage row; an unfunded call is `402`; and the admin
+  session boundary redirects anonymous pages, rejects a wrong password, and
+  serves the customer page with a hardened `sg_admin` cookie. Wired into
+  `package.json`, `protocol.config.yaml`, CI after build, and the pre-push hook
+  after build. No production code changed. Gates: `npm run verify` exit 0,
+  107/107 unit tests, quality PASS over 189 files, 51-route build, 100 HTTP
+  checks. Committed as `4374c00`; FID-012 is closed and archived.
+
 ## 2026-10-29 — Subscription revenue analytics
 
 - **FID-2026-1029-011 — medium — Subscription plan revenue in admin analytics.**

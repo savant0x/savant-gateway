@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1029-012-route-level-http-suite.md`
 **ID:** FID-2026-1029-012
 **Severity:** high
-**Status:** converged
+**Status:** closed
 **Created:** 2026-10-29 16:10
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -185,14 +185,17 @@ asserts externally observable contracts.
 
 ### Verification Receipt
 
-- verified: pending implementation
-- lint: pending
-- typecheck: pending
-- test: pending
-- quality: pending
-- build: pending
-- http: pending
-- verify: pending
+- verified: 2026-10-29, implementation committed as `4374c00`
+- lint: `npm run lint` exit 0, zero errors, zero warnings
+- typecheck: `npm run typecheck` exit 0
+- test: `npm test` 107 passed, 0 failed, 0 skipped
+- quality: PASS (400-line ceiling, 189 files scanned)
+- build: `npm run build` exit 0, compiled successfully, 51 routes
+- http: `npm run test:http` exit 0, 100 checks PASS
+- verify: `npm run verify` exit 0
+- negative control: changing the expected debit to `49_999_799` made the suite
+  fail with `expected 49999799, got 49999800` and exit 1; the expectation was
+  restored before the final run
 
 ## Perfection Loop
 
@@ -284,13 +287,102 @@ asserts externally observable contracts.
   `fulfillTopup` is exercised, not just the happy path.
 - **CHANGE DELTA:** 2% (converged).
 
+### Loop 4 — Implementation and verification
+
+- **GREEN:** Implemented the suite in four modules: `scripts/http-suite.mjs`
+  (92 lines, orchestration), `scripts/http-suite/harness.mjs` (408 lines,
+  workspace, ports, mock upstream, server lifecycle, HTTP helpers, cookies,
+  assertions, signing), `scripts/http-suite/seed.mjs` (87 lines, provider/model
+  and top-up seeding through a second connection), and
+  `scripts/http-suite/checks.mjs` (552 lines, the scenarios). Wired
+  `test:http` into `package.json`, `protocol.config.yaml`, CI after build, and
+  the pre-push hook after build. No production code changed.
+- **AUDIT:** The first run exposed a test-client defect: the suite sent the raw
+  session token as the whole `Cookie` header, so `/api/auth/me` returned `401`.
+  The route was correct; the client now sends `sg_session=<token>` and
+  `sg_admin=<token>`. After the fix, `npm run test:http` exited 0 with 100
+  checks. `npm run verify` exited 0: lint clean, typecheck clean, 107/107 unit
+  tests, quality PASS over 189 files, 51-route build, 100 HTTP checks.
+- **ADVERSARIAL:** The negative control above proves an incorrect money
+  expectation fails the gate rather than passing on status codes alone. The mock
+  upstream returns `401` unless the gateway forwards
+  `Bearer <HTTP_SUITE_PROVIDER_KEY>`, so a missing key forward becomes a `502`
+  and fails the settlement checks. Replay is checked by balance, paid top-up
+  count, and ledger count, not only by the response body. The amount-mismatch
+  event proves the expected-amount guard leaves the top-up pending.
+- **CHANGE DELTA:** 6% from the converged FID (implementation detail, the
+  session-header correction, and the negative control).
+
+### Implementation Evidence (REQUIRED for `closed`)
+
+- [x] **Commit SHA:** `4374c00` — `test(http): add route-level HTTP suite
+  (FID-2026-1029-012)`
+- [x] **File:line ranges:**
+  - `package.json:17` — `test:http`; `package.json:19` — `verify` appends it.
+  - `protocol.config.yaml:34` — `test_http` gate declaration.
+  - `.github/workflows/ci.yml:29` — CI step after build.
+  - `.githooks/pre-push:30` — local gate after build.
+  - `scripts/http-suite.mjs:41-72` — spawn, readiness, schema, seed, checks,
+    summary.
+  - `scripts/http-suite/harness.mjs:77-163` — mock upstream; `165-197` — server
+    spawn; `199-223` — readiness; `225-254` — schema wait; `330-364` — cookie
+    assertions; `366-372` — webhook signing; `392-408` — teardown.
+  - `scripts/http-suite/seed.mjs:3-32` — provider/model seed; `34-45` — pending
+    top-up; `47-86` — ledger and usage readers.
+  - `scripts/http-suite/checks.mjs:101-254` — signup/session/logout/login;
+    `256-291` — key isolation; `293-392` — webhook credit/replay/invalid/mismatch;
+    `394-481` — settlement and unfunded rejection; `483-542` — admin session;
+    `544-552` — scenario order.
+- [x] **Gate output:** `npm run verify` exit 0 with the exact counts in the
+  Verification Receipt; the HTTP suite printed 100 `PASS` lines and
+  `http-suite: 100 checks PASS`.
+- [x] **Reproducibility:** `npm run build && npm run test:http` reproduces the
+  result from a clean tree; grep for `test:http` finds the four wiring points
+  above, and grep for `runChecks` finds the orchestrator call and the definition.
+- [x] **Step statuses:**
+  1. harness module — implemented
+  2. seed module — implemented
+  3. checks module — implemented
+  4. orchestrator — implemented
+  5. package and verify wiring — implemented
+  6. config, CI, and pre-push wiring — implemented
+  7. verification, closure, archive, and records — implemented
+
+### Code Verification Evidence
+
+- [x] Files referenced in Affected Components exist.
+- [x] Implementation matches the Proposed Solution: a post-build process gate,
+  disposable database, second-connection seeding, local mock upstream, signed
+  webhook events, and HTTP assertions.
+- [x] Typecheck, tests, lint, quality, build, and the HTTP gate pass with the
+  pasted output in the Verification Receipt.
+- [x] Production call-graph evidence: `test:http` is declared in
+  `package.json:17`, invoked by `package.json:19`, `ci.yml:29`, and
+  `pre-push:30`; `scripts/http-suite.mjs:61` calls `runChecks`, defined at
+  `scripts/http-suite/checks.mjs:544`.
+- [x] FID status reflects the implementation state: implemented, verified, and
+  closed against `4374c00`.
+
 ## Resolution
 
-- **Closed Date:** pending
-- **Fix Description:** pending
-- **Tests Added:** pending
-- **Verification Evidence:** pending
-- **Archived:** pending
+- **Closed Date:** 2026-10-29 16:40
+- **Fix Description:** Added a post-build HTTP suite that boots the production
+  server against a disposable database, seeds one mock provider and one paid
+  model through a second SQLite connection, and exercises 100 checks across
+  signup/session/logout/login, cross-account key ownership, signed webhook
+  credit and replay, invalid signature and amount mismatch, paid-call
+  settlement, unfunded rejection, and the admin session boundary. Wired
+  `test:http` into `package.json`, `protocol.config.yaml`, CI after build, and
+  the pre-push hook after build. No production code changed.
+- **Tests Added:** `scripts/http-suite.mjs` plus `harness.mjs`, `seed.mjs`, and
+  `checks.mjs`; 100 route-level assertions. The existing 107 unit tests are
+  unchanged.
+- **Verification Evidence:** `npm run verify` exit 0: lint and typecheck clean,
+  107/107 unit tests, quality PASS over 189 files, 51-route build, and 100 HTTP
+  checks. The negative control failed at `49_999_799` with `expected 49999799,
+  got 49999800` and exited 1 before being restored.
+- **Archived:** `dev/fids/archive/FID-2026-1029-012-route-level-http-suite.md`
+- **Commit:** `4374c00`
 
 ## Lessons Learned
 

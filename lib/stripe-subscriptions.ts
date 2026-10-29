@@ -1,9 +1,9 @@
 import "server-only";
 
-import type Stripe from "stripe";
 import type { PlanSummary } from "./types";
 
 import { db } from "./db";
+import { readStripeSubscriptionSnapshot } from "./plan-lifecycle";
 import { readStripeConfig, stripeClient } from "./stripe";
 
 type Env = Readonly<Record<string, string | undefined>>;
@@ -132,59 +132,6 @@ export async function setStripeCancellation(
   return client().subscriptions.update(stripeId, {
     cancel_at_period_end: cancelAtPeriodEnd,
   });
-}
-
-function epoch(value: unknown) {
-  return typeof value === "number" && Number.isFinite(value) && value > 0
-    ? new Date(value * 1000).toISOString()
-    : null;
-}
-
-export type StripeSubscriptionSnapshot = {
-  status: string;
-  stripeCustomerId: string;
-  periodStart: string;
-  periodEnd: string;
-  cancelAtPeriodEnd: boolean;
-};
-
-/** Reads period fields from either the subscription or its first item. */
-export function readStripeSubscriptionSnapshot(
-  subscription: Stripe.Subscription,
-  now = Date.now(),
-): StripeSubscriptionSnapshot {
-  const raw = subscription as unknown as {
-    current_period_start?: number;
-    current_period_end?: number;
-    cancel_at_period_end?: boolean;
-    status?: string;
-    customer?: string | { id: string };
-    items?: {
-      data?: Array<{
-        current_period_start?: number;
-        current_period_end?: number;
-      }>;
-    };
-  };
-  const item = raw.items?.data?.[0];
-  const periodStart =
-    epoch(raw.current_period_start) ??
-    epoch(item?.current_period_start) ??
-    new Date(now).toISOString();
-  const periodEnd =
-    epoch(raw.current_period_end) ??
-    epoch(item?.current_period_end) ??
-    new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString();
-  const customer =
-    typeof raw.customer === "string" ? raw.customer : (raw.customer?.id ?? "");
-
-  return {
-    status: raw.status ?? subscription.status,
-    stripeCustomerId: customer,
-    periodStart,
-    periodEnd,
-    cancelAtPeriodEnd: raw.cancel_at_period_end === true,
-  };
 }
 
 export async function fetchStripeSubscription(stripeId: string) {

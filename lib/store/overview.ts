@@ -13,7 +13,9 @@ import { db } from "../db";
 
 import { getAccountSummary, listCreditLedger } from "./billing";
 import { listApiKeys } from "./keys";
-import { listAllModels, listModels } from "./models";
+import { PUBLIC_MODEL_SCOPE } from "./model-sql";
+import { listAllModels } from "./models";
+import { listModels } from "./public-catalog";
 import { summarizePricing } from "./pricing";
 import { getProviderStatus } from "./provider";
 import { listAdminUsage, listUsage } from "./usage";
@@ -25,21 +27,21 @@ export function getOverviewStats(): OverviewStats {
         (SELECT COUNT(*) FROM models m
          JOIN providers p ON p.slug = m.upstream_slug AND p.enabled = 1
          JOIN model_groups g ON g.slug = m.group_slug
-         WHERE m.in_catalog = 1 AND m.status = 'active') AS model_count,
+         WHERE ${PUBLIC_MODEL_SCOPE}) AS model_count,
         (SELECT COUNT(*) FROM models m
          JOIN providers p ON p.slug = m.upstream_slug AND p.enabled = 1
          JOIN model_groups g ON g.slug = m.group_slug
-         WHERE m.in_catalog = 1 AND m.status = 'active'
+         WHERE ${PUBLIC_MODEL_SCOPE}
            AND g.billing_mode = 'free') AS free_model_count,
         (SELECT COUNT(*) FROM models m
          JOIN providers p ON p.slug = m.upstream_slug AND p.enabled = 1
          JOIN model_groups g ON g.slug = m.group_slug
-         WHERE m.in_catalog = 1 AND m.status = 'active'
+         WHERE ${PUBLIC_MODEL_SCOPE}
            AND g.billing_mode = 'paid') AS paid_model_count,
         (SELECT COUNT(*) FROM models m
          JOIN providers p ON p.slug = m.upstream_slug AND p.enabled = 1
          JOIN model_groups g ON g.slug = m.group_slug
-         WHERE m.in_catalog = 1 AND m.status = 'active'
+         WHERE ${PUBLIC_MODEL_SCOPE}
            AND g.billing_mode = 'subscription') AS subscription_model_count,
         (SELECT COUNT(*) FROM api_keys WHERE status = 'active') AS key_count,
         (SELECT COUNT(*) FROM usage_events) AS request_count,

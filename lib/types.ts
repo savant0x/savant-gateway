@@ -7,6 +7,7 @@ export type ModelGroupSummary = {
   description: string | null;
   sortOrder: number;
   isSystem: boolean;
+  hidden: boolean;
   modelCount: number;
 };
 

@@ -310,13 +310,17 @@ export function markSubscriptionPastDue(input: {
   return getSubscriptionSummary(row.id);
 }
 
-/** Keeps incomplete checkouts unentitled until a signed invoice is paid. */
+/**
+ * Keeps incomplete checkouts unentitled until a signed invoice is paid. A null
+ * period means the event carried none, so the stored value is preserved rather
+ * than replaced with a plausible date.
+ */
 export function reconcileStripeSubscription(input: {
   stripeSubscriptionId: string;
   stripeCustomerId: string;
   status: string;
-  periodStart: string;
-  periodEnd: string;
+  periodStart: string | null;
+  periodEnd: string | null;
   cancelAtPeriodEnd: boolean;
 }) {
   const row = subscriptionRowByStripeId(input.stripeSubscriptionId);
@@ -326,7 +330,7 @@ export function reconcileStripeSubscription(input: {
   const mapped = mapStripeSubscriptionStatus(
     input.status,
     input.cancelAtPeriodEnd,
-    input.periodEnd,
+    input.periodEnd ?? row.current_period_end,
   );
   const nextStatus =
     row.status === "incomplete" && mapped === "active" ? "incomplete" : mapped;
@@ -334,8 +338,10 @@ export function reconcileStripeSubscription(input: {
   db.transaction(() => {
     db.prepare(
       `UPDATE subscriptions
-       SET status = ?, stripe_customer_id = ?, current_period_start = ?,
-           current_period_end = ?, cancel_at_period_end = ?, updated_at = ?
+       SET status = ?, stripe_customer_id = ?,
+           current_period_start = COALESCE(?, current_period_start),
+           current_period_end = COALESCE(?, current_period_end),
+           cancel_at_period_end = ?, updated_at = ?
        WHERE id = ?`,
     ).run(
       nextStatus,

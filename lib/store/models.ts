@@ -1,17 +1,12 @@
 import "server-only";
 
-import type {
-  AdminModelSummary,
-  ModelAccess,
-  ModelSummary,
-  SyncedModel,
-} from "../types";
+import type { AdminModelSummary, ModelAccess, SyncedModel } from "../types";
 
-import { createTtlCache } from "../cache";
 import { db, nowIso } from "../db";
 import { defaultGroupSlug, pricesForGroup } from "../model-groups";
 import { defaultSellMicros } from "../pricing";
 
+import { MODEL_SELECT } from "./model-sql";
 import { getMarkupBps } from "./settings";
 import {
   accessFor,
@@ -19,40 +14,7 @@ import {
   type ModelRow,
   toAdminModelSummary,
   toGatewayModel,
-  toModelSummary,
 } from "./shared";
-
-const PUBLIC_SCOPE = "m.in_catalog = 1 AND m.status = 'active'";
-/** Display projection only; the billing lookup path is never cached. */
-const publicCatalogCache = createTtlCache<ModelSummary[]>(5_000);
-const MODEL_SELECT = `
-  SELECT m.*, g.label AS group_label, g.billing_mode AS group_billing_mode
-  FROM models m
-  LEFT JOIN model_groups g ON g.slug = m.group_slug
-`;
-
-export function listModels(): ModelSummary[] {
-  const cached = publicCatalogCache.get();
-
-  if (cached) return cached;
-
-  const rows = db
-    .prepare(
-      `${MODEL_SELECT}
-       JOIN providers p ON p.slug = m.upstream_slug AND p.enabled = 1
-       WHERE ${PUBLIC_SCOPE}
-       ORDER BY CASE WHEN g.billing_mode = 'free' THEN 0 ELSE 1 END,
-                COALESCE(g.sort_order, 9999) ASC, m.provider ASC,
-                m.sort_order ASC, m.name ASC`,
-    )
-    .all() as ModelRow[];
-
-  const models = rows.map(toModelSummary);
-
-  publicCatalogCache.set(models);
-
-  return models;
-}
 
 export function listAllModels(): AdminModelSummary[] {
   const rows = db

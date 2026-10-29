@@ -10,6 +10,7 @@ export type GroupDraft = {
   billingMode: ModelAccess;
   description: string;
   sortOrder: string;
+  hidden: boolean;
 };
 
 export const EMPTY_GROUP_DRAFT: GroupDraft = {
@@ -18,6 +19,7 @@ export const EMPTY_GROUP_DRAFT: GroupDraft = {
   billingMode: "paid",
   description: "",
   sortOrder: "10",
+  hidden: false,
 };
 
 const MODES: Array<{ value: ModelAccess; label: string }> = [
@@ -79,6 +81,20 @@ export function GroupFields({
           onChange={(event) => onChange({ sortOrder: event.target.value })}
         />
       </div>
+      <label className="flex items-start gap-3 rounded-xl border border-black/10 px-3 py-2 sm:col-span-2 dark:border-white/10">
+        <input
+          aria-label="Hide group from the public catalog"
+          checked={draft.hidden}
+          className="mt-0.5 size-4 shrink-0 accent-accent"
+          type="checkbox"
+          onChange={(event) => onChange({ hidden: event.target.checked })}
+        />
+        <span className="text-xs text-muted">
+          <span className="block text-foreground">Hide group</span>
+          Removes its models from the public catalog and model list. Existing
+          keys can still call the models by id, and billing is unchanged.
+        </span>
+      </label>
     </div>
   );
 }

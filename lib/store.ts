@@ -25,12 +25,12 @@ export {
   getModelByUpstreamId,
   getModelForGateway,
   listAllModels,
-  listModels,
   replaceModels,
   setModelCost,
   setModelPricing,
   setModelStatus,
 } from "./store/models";
+export { clearPublicCatalogCache, listModels } from "./store/public-catalog";
 export {
   createPlan,
   deletePlan,

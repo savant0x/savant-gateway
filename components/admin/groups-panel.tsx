@@ -27,6 +27,7 @@ function draftFrom(group: ModelGroupSummary): GroupDraft {
     billingMode: group.billingMode,
     description: group.description ?? "",
     sortOrder: String(group.sortOrder),
+    hidden: group.hidden,
   };
 }
 
@@ -106,6 +107,7 @@ export function GroupsPanel({ groups }: { groups: ModelGroupSummary[] }) {
         billingMode: createDraft.billingMode,
         description: createDraft.description,
         sortOrder,
+        hidden: createDraft.hidden,
       },
       message: `Created ${createDraft.label || "group"}.`,
     });
@@ -134,6 +136,7 @@ export function GroupsPanel({ groups }: { groups: ModelGroupSummary[] }) {
         billingMode: editDraft.billingMode,
         description: editDraft.description,
         sortOrder,
+        hidden: editDraft.hidden,
       },
       message: `Updated ${editDraft.label}.`,
     });
@@ -255,6 +258,11 @@ export function GroupsPanel({ groups }: { groups: ModelGroupSummary[] }) {
                       {group.isSystem ? (
                         <Chip color="default" size="sm" variant="soft">
                           system
+                        </Chip>
+                      ) : null}
+                      {group.hidden ? (
+                        <Chip color="danger" size="sm" variant="soft">
+                          hidden
                         </Chip>
                       ) : null}
                     </div>

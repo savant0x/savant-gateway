@@ -1,3 +1,4 @@
+import type Stripe from "stripe";
 import type { PlanInterval } from "./types";
 
 /** Adds a calendar month/year while clamping to the last day of the month. */
@@ -91,14 +92,48 @@ export function subscriptionBlocksCalls(status: string) {
   return status === "past_due";
 }
 
-export function subscriptionGrantsAccess(
-  status: string,
-  periodEnd: string,
-  now = Date.now(),
-) {
-  if (status !== "active") return false;
+export type StripeSubscriptionSnapshot = {
+  status: string;
+  stripeCustomerId: string;
+  /** Null when Stripe reported no period; never a plausible substitute. */
+  periodStart: string | null;
+  periodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+};
 
-  const end = Date.parse(periodEnd);
+function epoch(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) && value > 0
+    ? new Date(value * 1000).toISOString()
+    : null;
+}
 
-  return !Number.isFinite(end) || end > now;
+/** Reads period fields from either the subscription or its first item. */
+export function readStripeSubscriptionSnapshot(
+  subscription: Stripe.Subscription,
+): StripeSubscriptionSnapshot {
+  const raw = subscription as unknown as {
+    current_period_start?: number;
+    current_period_end?: number;
+    cancel_at_period_end?: boolean;
+    status?: string;
+    customer?: string | { id: string };
+    items?: {
+      data?: Array<{
+        current_period_start?: number;
+        current_period_end?: number;
+      }>;
+    };
+  };
+  const item = raw.items?.data?.[0];
+  const customer =
+    typeof raw.customer === "string" ? raw.customer : (raw.customer?.id ?? "");
+
+  return {
+    status: raw.status ?? subscription.status,
+    stripeCustomerId: customer,
+    periodStart:
+      epoch(raw.current_period_start) ?? epoch(item?.current_period_start),
+    periodEnd: epoch(raw.current_period_end) ?? epoch(item?.current_period_end),
+    cancelAtPeriodEnd: raw.cancel_at_period_end === true,
+  };
 }

@@ -3,6 +3,35 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — Subscription production truth
+
+- **FID-2026-1029-031 — high — No invented billing periods, no unpurchasable tier.**
+  Three surfaces stated things no source supported. `readStripeSubscriptionSnapshot`
+  fell back to `period_start = now` and `period_end = now + 30 days` when Stripe
+  reported neither, and `invoice.paid` invented a 30-day window when the invoice
+  line carried no period — both wrote an allowance window no payment covered.
+  The snapshot reader moved into the pure lifecycle module and now returns null
+  periods, reconcile keeps the stored period with `COALESCE`, and an invoice that
+  cannot be dated is ignored (Stripe retries) instead of activated. Separately,
+  the catalog published 10 plan-gated models while the plans table held zero rows;
+  the public scope now requires an active plan to cover a plan-gated model, so the
+  catalog, `/v1/models`, the landing grid and the public counts publish 34 rows
+  with no plan, 44 once an active plan covers the subscription group, and 34 again
+  when it is drafted. The dead `subscriptionGrantsAccess` helper was removed.
+  Tests: `tests/plans.test.mjs` (+1 case, 3 scenarios). The quality gate still
+  fails on two pre-existing oversize files, recorded in SCOPE.
+
+## 2026-10-29 — Hide a group
+
+- **FID-2026-1029-030 — low — Groups can be hidden from the public catalog.**
+  `model_groups` carried no visibility control, so taking a tier off the public
+  page meant disabling models one by one or deleting the group. A `hidden`
+  column now removes a group's models from the catalog page, the landing grid,
+  `/v1/models` and the public model counts, while billing, plan membership and
+  direct-by-id calls are untouched. Admin → Groups has a "Hide group" checkbox
+  and a `hidden` chip. Verified on a scratch DB: 44 visible, 33 with `free`
+  hidden, 23 with `free` and `subscription` hidden, 44 after unhiding.
+
 ## 2026-10-29 — Money integrity audit
 
 - **FID-2026-1029-029 — high — Charges reach the credit ledger; money is exact.**

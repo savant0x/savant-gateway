@@ -4,6 +4,8 @@ import type { ModelAccess, ModelGroupSummary } from "../types";
 
 import { db, nowIso } from "../db";
 
+import { clearPublicCatalogCache } from "./public-catalog";
+
 type GroupRow = {
   slug: string;
   label: string;
@@ -11,6 +13,7 @@ type GroupRow = {
   description: string | null;
   sort_order: number;
   is_system: number;
+  hidden: number;
   created_at: string;
   updated_at: string;
   model_count: number;
@@ -34,6 +37,7 @@ function toSummary(row: GroupRow): ModelGroupSummary {
     description: row.description,
     sortOrder: row.sort_order,
     isSystem: row.is_system === 1,
+    hidden: row.hidden === 1,
     modelCount: row.model_count,
   };
 }
@@ -71,6 +75,7 @@ export function createModelGroup(input: {
   billingMode: ModelAccess;
   description: string | null;
   sortOrder: number;
+  hidden: boolean;
 }): GroupMutation {
   if (readGroup(input.slug)) {
     return {
@@ -92,18 +97,21 @@ export function createModelGroup(input: {
 
   db.prepare(
     `INSERT INTO model_groups
-      (slug, label, billing_mode, description, sort_order, is_system,
+      (slug, label, billing_mode, description, sort_order, is_system, hidden,
        created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, 0, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?)`,
   ).run(
     input.slug,
     input.label,
     input.billingMode,
     input.description,
     input.sortOrder,
+    input.hidden ? 1 : 0,
     now,
     now,
   );
+
+  clearPublicCatalogCache();
 
   return { ok: true, group: getModelGroup(input.slug)! };
 }
@@ -115,6 +123,7 @@ export function updateModelGroup(
     billingMode: ModelAccess;
     description: string | null;
     sortOrder: number;
+    hidden: boolean;
   },
 ): GroupMutation {
   const current = readGroup(slug);
@@ -143,13 +152,14 @@ export function updateModelGroup(
     db.prepare(
       `UPDATE model_groups
        SET label = ?, billing_mode = ?, description = ?, sort_order = ?,
-           updated_at = ?
+           hidden = ?, updated_at = ?
        WHERE slug = ?`,
     ).run(
       input.label,
       input.billingMode,
       input.description,
       input.sortOrder,
+      input.hidden ? 1 : 0,
       nowIso(),
       slug,
     );
@@ -162,6 +172,8 @@ export function updateModelGroup(
       ).run(slug);
     }
   })();
+
+  clearPublicCatalogCache();
 
   return { ok: true, group: getModelGroup(slug)! };
 }
@@ -197,6 +209,8 @@ export function assignModelGroup(
       ).run(modelId);
     }
   })();
+
+  clearPublicCatalogCache();
 
   return "ok";
 }
@@ -266,6 +280,8 @@ export function deleteModelGroup(
 
     db.prepare("DELETE FROM model_groups WHERE slug = ?").run(slug);
   })();
+
+  clearPublicCatalogCache();
 
   return { ok: true };
 }

@@ -16,6 +16,8 @@ export type GroupValues = {
   billingMode: ModelAccess;
   description: string | null;
   sortOrder: number;
+  /** Keep the group's models out of the public catalog and model list. */
+  hidden: boolean;
 };
 
 export type GroupCreateValues = GroupValues & { slug: string };
@@ -165,6 +167,10 @@ function readCommon(input: unknown): GroupReadResult<GroupValues> {
   const description = readDescription(record.description);
   const sortOrder = readSortOrder(record.sortOrder);
 
+  if (record.hidden !== undefined && typeof record.hidden !== "boolean") {
+    return { ok: false, error: "Hidden must be true or false." };
+  }
+
   if (!label) {
     return { ok: false, error: "Label must be 1 to 40 characters." };
   }
@@ -191,6 +197,7 @@ function readCommon(input: unknown): GroupReadResult<GroupValues> {
       billingMode,
       description: description.value,
       sortOrder,
+      hidden: record.hidden === true,
     },
   };
 }

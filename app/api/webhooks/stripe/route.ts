@@ -1,8 +1,10 @@
 import type Stripe from "stripe";
 
-import { intervalEndIso } from "@/lib/plan-lifecycle";
+import {
+  intervalEndIso,
+  readStripeSubscriptionSnapshot,
+} from "@/lib/plan-lifecycle";
 import { readStripeConfig, stripeClient } from "@/lib/stripe";
-import { readStripeSubscriptionSnapshot } from "@/lib/stripe-subscriptions";
 import {
   activateSubscription,
   attachStripeCheckout,
@@ -59,7 +61,7 @@ function metadataOf(value: unknown) {
     : {};
 }
 
-function epochIso(value: unknown, fallback: string) {
+function epochIso(value: unknown, fallback: string | null = null) {
   return typeof value === "number" && value > 0
     ? new Date(value * 1000).toISOString()
     : fallback;
@@ -76,17 +78,17 @@ function invoiceMetadata(invoice: InvoiceLike) {
   return invoice.parent?.subscription_details?.metadata ?? {};
 }
 
+/** Null when the invoice reports no line period and no stored period exists. */
 function invoicePeriod(
   invoice: InvoiceLike,
-  fallbackStart: string,
-  fallbackEnd: string,
+  fallbackStart: string | null,
+  fallbackEnd: string | null,
 ) {
   const line = invoice.lines?.data?.[0]?.period;
+  const start = epochIso(line?.start, fallbackStart);
+  const end = epochIso(line?.end, fallbackEnd);
 
-  return {
-    start: epochIso(line?.start, fallbackStart),
-    end: epochIso(line?.end, fallbackEnd),
-  };
+  return start && end ? { start, end } : null;
 }
 
 function claimEvent(id: string, type: string) {
@@ -165,10 +167,7 @@ async function handleEvent(event: Stripe.Event) {
     const stripeId = subscription.id;
     const metadata = metadataOf(subscription);
     const localId = metadata.subscriptionId ?? "";
-    const snapshot = readStripeSubscriptionSnapshot(
-      subscription,
-      event.created * 1000,
-    );
+    const snapshot = readStripeSubscriptionSnapshot(subscription);
 
     if (localId && stripeId) {
       attachStripeCheckout({
@@ -230,11 +229,19 @@ async function handleEvent(event: Stripe.Event) {
 
     const existing = getSubscriptionSummary(localId);
     const paidAt = epochIso(invoice.status_transitions?.paid_at, nowIso());
-    const fallback = existing?.currentPeriodStart ?? nowIso();
-    const fallbackEnd = existing
-      ? intervalEndIso(fallback, existing.plan.interval)
-      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-    const period = invoicePeriod(invoice, fallback, fallbackEnd);
+    const fallbackStart = existing?.currentPeriodStart ?? null;
+    const fallbackEnd =
+      existing && fallbackStart
+        ? intervalEndIso(fallbackStart, existing.plan.interval)
+        : null;
+    const period = invoicePeriod(invoice, fallbackStart, fallbackEnd);
+
+    if (!period) {
+      // No dated line and no stored period: activating here would invent the
+      // allowance window. Refuse, release the claim, and let Stripe retry.
+      return { ignored: "invoice_period_unavailable" };
+    }
+
     const amount =
       event.type === "invoice.paid"
         ? (invoice.amount_paid ?? 0)

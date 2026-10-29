@@ -24,6 +24,14 @@ export function modelGroupSchema(database: DatabaseHandle) {
     );
   `);
 
+  // Hiding a group removes its models from the public catalog while leaving
+  // them callable by id and fully visible to the operator.
+  ensureColumn(
+    database,
+    "model_groups",
+    "hidden",
+    "INTEGER NOT NULL DEFAULT 0",
+  );
   ensureColumn(database, "models", "group_slug", "TEXT");
   ensureColumn(
     database,

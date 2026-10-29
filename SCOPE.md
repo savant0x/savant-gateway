@@ -2,6 +2,61 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-29 (production truth for the subscription surface)
+
+Operator ruling: **production only; test mode and dummy data are not a
+category.** "none of this is 'test mode' echo means we only build for
+production. So any form of 'dummy data' or anything not functional or up to spec
+needs to be fully addressed." Interpreted scope recorded before the code change
+(Law 2, Level 3 recorded presentation).
+
+- [x] **T1 — Invented billing periods removed.** `readStripeSubscriptionSnapshot`
+  fabricated `period_start = now` and `period_end = now + 30 days` when Stripe
+  omitted the fields, and `invoice.paid` fabricated a 30-day window for an
+  unknown invoice period. Both wrote a period no payment covers. Now the pure
+  reader returns null periods (`lib/plan-lifecycle.ts:111`).
+- [x] **T2 — Reconcile preserves stored periods.** `reconcileStripeSubscription`
+  accepts nullable periods and keeps the stored value with `COALESCE`
+  (`lib/store/subscriptions.ts:342`); an invoice with no datable period is
+  ignored so Stripe retries (`app/api/webhooks/stripe/route.ts:242`).
+- [x] **T3 — Nothing unpurchasable is advertised.** `PUBLIC_MODEL_SCOPE`
+  (`lib/store/model-sql.ts:19`) drops plan-gated rows no active plan covers; the
+  catalog read (`lib/store/public-catalog.ts:19`) and the public counts share it.
+  Measured before: 0 plans, 10 plan-gated rows published with a "sold with a
+  plan" footnote. Measured after: 34 rows with no plan, 44 with an active plan
+  covering the group, 34 once drafted.
+- [x] **T4 — Dead access rule removed.** `subscriptionGrantsAccess` had no
+  production caller; admission is `sweepSubscriptions` plus the stored status.
+  Removed with its two test assertions.
+- [x] **T5 — Verification.** eslint clean, typecheck pass, 186/186 tests, build
+  pass. Quality FAIL on two files already over the ceiling at HEAD (N5, N6).
+  Live `listModels()` on a scratch database: 34 / 44 / 34.
+
+Findings recorded during this pass:
+
+- **N5 — `lib/gateway.ts` is 413 lines against the 400-line ceiling (low).**
+  Pre-existing: 412 lines at HEAD. The file mixes key auth, billing-source
+  routing and dispatch; a split needs an operator ruling on the seam because the
+  money path is involved.
+- **N6 — `components/catalog/model-catalog-table.tsx` is 468 lines (low).**
+  Pre-existing: 467 at HEAD. Filters, sorting and row markup want separating;
+  the same ruling applies.
+- N5 and N6 are why `npm run quality` still exits non-zero; every other gate is
+  green and no file touched in this pass is over the ceiling.
+
+Blocked items (specific blockers, re-attempted the moment they clear):
+
+- **B6 — Sell plans for real.** Blocked on the operator's Stripe credentials
+  (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` in `.env.local`) and a public
+  webhook endpoint. Without them checkout returns `503`, so no plan can be sold
+  and no active plan can exist. Nothing in code substitutes for the credential.
+- **B7 — Included-allowance capacity policy (N4).** Blocked pending an operator
+  ruling on policy: included subscription usage spends paid upstream capacity
+  without passing the free-pool floor or the 15 RPM ceiling.
+- **B8 — Funded upstream wallet.** Blocked on operator funding; the paid balance
+  is `$0`, so an included allowance routed to a paid upstream model fails upstream
+  while local accounting says the customer is entitled.
+
 ## Current Session — 2026-10-29 (free-pool allocation, context banner, launch analysis)
 
 Operator request: repair the stale records; establish how the trial credit system

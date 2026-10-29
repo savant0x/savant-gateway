@@ -29,6 +29,23 @@ upstream cost, and usage in SQLite.
   and charged. `accessFor` in `lib/store/shared.ts`, `isFreeCall` in
   `lib/gateway.ts`, and `recordUsage` in `lib/store/usage.ts` must agree on the
   group's billing mode.
+- **A plan tier is published only when it can be bought.**
+  `PUBLIC_MODEL_SCOPE` in `lib/store/model-sql.ts` drops `subscription`-group
+  models unless an active plan covers the group or the model explicitly, so the
+  catalog never offers a row that answers `403 subscription_required`. Activating
+  a plan restores its rows within the five-second catalog memo; a draft or
+  archived plan restores nothing. Trials are unaffected because trial offers are
+  built from paid models.
+- **A billing period is only ever what Stripe said.**
+  `readStripeSubscriptionSnapshot` returns null periods rather than inventing a
+  30-day window, `reconcileStripeSubscription` keeps the stored period when the
+  event carries none, and an invoice with no datable line is ignored so Stripe
+  retries it. Never reintroduce a "sensible default" date on this path.
+- **Hidden is not disabled.** `model_groups.hidden` only filters the public
+  projection (`PUBLIC_SCOPE` in `lib/store/models.ts`) and the public model
+  counts, so a hidden group's models leave the catalog page, the landing grid
+  and `/v1/models`. Billing, plan membership and calls by known id are
+  unchanged; `models.status = 'disabled'` remains the hard block.
 - **A plan is not a group and a subscription is not a plan.** A plan is the
   purchasable product: price, month/year interval, included weighted-token
   allowance, overage mode/markup, groups, and optional models. A subscription

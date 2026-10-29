@@ -6,7 +6,7 @@ import {
   intervalEndIso,
   mapStripeSubscriptionStatus,
   planPriceUsd,
-  subscriptionGrantsAccess,
+  readStripeSubscriptionSnapshot,
 } from "../lib/plan-lifecycle.ts";
 import {
   allowanceFor,
@@ -60,10 +60,19 @@ test("plan validation rejects reserved slugs, bad prices, and bad inclusions", (
     readPlanValues({ ...microsInput, priceMicros: 1_000 }).ok,
     false,
   );
-  assert.equal(readPlanValues({ ...VALID, includedWeightedTokens: -1 }).ok, false);
-  assert.equal(readPlanValues({ ...VALID, overageMarkupBps: 100_001 }).ok, false);
+  assert.equal(
+    readPlanValues({ ...VALID, includedWeightedTokens: -1 }).ok,
+    false,
+  );
+  assert.equal(
+    readPlanValues({ ...VALID, overageMarkupBps: 100_001 }).ok,
+    false,
+  );
   assert.equal(readPlanValues({ ...VALID, groups: "starter" }).ok, false);
-  assert.equal(readPlanValues({ ...VALID, groups: ["starter", " "] }).ok, false);
+  assert.equal(
+    readPlanValues({ ...VALID, groups: ["starter", " "] }).ok,
+    false,
+  );
   assert.equal(readPlanValues({ ...VALID, currency: "eur" }).ok, false);
 });
 
@@ -101,13 +110,16 @@ test("allowance math excludes used and held reservations", () => {
 
   assert.equal(allowance.remainingWeightedTokens, 500);
   assert.equal(allowance.usedBps, 4000);
-  assert.deepEqual(decideAllowance({
-    includedWeightedTokens: 1000,
-    usedWeightedTokens: 400,
-    heldWeightedTokens: 100,
-    estimateWeightedTokens: 500,
-    overageMode: "block",
-  }), { kind: "included", remaining: 500 });
+  assert.deepEqual(
+    decideAllowance({
+      includedWeightedTokens: 1000,
+      usedWeightedTokens: 400,
+      heldWeightedTokens: 100,
+      estimateWeightedTokens: 500,
+      overageMode: "block",
+    }),
+    { kind: "included", remaining: 500 },
+  );
 });
 
 test("exhausted block plans block and credit plans fall through", () => {
@@ -171,7 +183,10 @@ test("calendar intervals clamp month ends", () => {
     "2025-02-28T00:00:00.000Z",
   );
   assert.equal(
-    addPlanInterval(new Date("2026-12-15T00:00:00.000Z"), "month").toISOString(),
+    addPlanInterval(
+      new Date("2026-12-15T00:00:00.000Z"),
+      "month",
+    ).toISOString(),
     "2027-01-15T00:00:00.000Z",
   );
 });
@@ -180,10 +195,7 @@ test("Stripe status maps to local lifecycle and expired access", () => {
   assert.equal(mapStripeSubscriptionStatus("active"), "active");
   assert.equal(mapStripeSubscriptionStatus("trialing"), "active");
   assert.equal(mapStripeSubscriptionStatus("past_due"), "past_due");
-  assert.equal(
-    mapStripeSubscriptionStatus("unpaid"),
-    "past_due",
-  );
+  assert.equal(mapStripeSubscriptionStatus("unpaid"), "past_due");
   assert.equal(mapStripeSubscriptionStatus("incomplete_expired"), "expired");
   assert.equal(mapStripeSubscriptionStatus("canceled"), "canceled");
   assert.equal(
@@ -195,9 +207,57 @@ test("Stripe status maps to local lifecycle and expired access", () => {
     ),
     "canceled",
   );
+});
+
+test("Stripe snapshots never invent a billing period", () => {
+  const bare = readStripeSubscriptionSnapshot({
+    id: "sub_bare",
+    status: "active",
+    customer: "cus_bare",
+    items: { data: [{}] },
+  });
+
+  assert.equal(bare.periodStart, null);
+  assert.equal(bare.periodEnd, null);
+  assert.equal(bare.stripeCustomerId, "cus_bare");
+  assert.equal(bare.status, "active");
+
+  const itemDated = readStripeSubscriptionSnapshot({
+    id: "sub_item",
+    status: "trialing",
+    customer: { id: "cus_item" },
+    items: {
+      data: [
+        {
+          current_period_start: 1_767_225_600,
+          current_period_end: 1_769_817_600,
+        },
+      ],
+    },
+  });
+
   assert.equal(
-    subscriptionGrantsAccess("active", "2026-01-01T00:00:00.000Z", Date.now()),
-    false,
+    itemDated.periodStart,
+    new Date(1_767_225_600 * 1000).toISOString(),
   );
-  assert.equal(subscriptionGrantsAccess("past_due", "2099-01-01T00:00:00.000Z"), false);
+  assert.equal(
+    itemDated.periodEnd,
+    new Date(1_769_817_600 * 1000).toISOString(),
+  );
+
+  const topDated = readStripeSubscriptionSnapshot({
+    id: "sub_top",
+    status: "active",
+    customer: "cus_top",
+    current_period_start: 1_767_225_600,
+    current_period_end: 1_769_817_600,
+    cancel_at_period_end: true,
+    items: { data: [{}] },
+  });
+
+  assert.equal(topDated.cancelAtPeriodEnd, true);
+  assert.equal(
+    topDated.periodEnd,
+    new Date(1_769_817_600 * 1000).toISOString(),
+  );
 });

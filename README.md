@@ -121,7 +121,7 @@ browser / SDK
 POST /v1/chat/completions
    │  hash key → active key + active user
    │  resolve model → active + in catalog
-   │  free pool?  yes → weighted metering, zero charge
+   │  free pool?  yes → allowance + provider floor → reserve weighted tokens
    │              no  → priced? → reserve credit hold
    ▼
 upstream /v1/chat/completions
@@ -144,7 +144,10 @@ active counts, and sell prices — never keys, upstream cost, or ledger rows.
 - **Free** = `allowFree` is true **and** the provider gives the row a positive
   `tokenWeight`. Only these rows are zero-charge. They are metered in the
   provider's weighted units; `free/gpt-6-luna` at weight 3 consumes 948 units
-  for 316 raw tokens. `free/` is the price-group scope, not the family.
+  for 316 raw tokens. `free/` is the price-group scope, not the family. Free
+  calls pass admission first: a per-user daily weighted allowance, the
+  effective provider remaining, and `subscription.allowed`. A refusal is `429`
+  with `Retry-After`; limits are the `FREE_*` variables in `.env.example`.
 - **Subscription** = a `free/*` row the provider does not actually grant on the
   free pool. It is visible in the catalog but blocked unless the operator sets
   a sell price and the upstream account is entitled to it.
@@ -341,6 +344,15 @@ Loop before code. FIDs live in `dev/fids/` and use
 
 Current records:
 
+- [FID-2026-1029-007](dev/fids/FID-2026-1029-007-model-group-control.md) —
+  active, converged design for first-class model groups: custom groups,
+  operator assignment, sync-safe membership, group-aware billing, and a
+  Groups admin surface (implementation not started).
+- [FID-2026-1029-008](dev/fids/FID-2026-1029-008-subscription-plans-and-entitlements.md) —
+  active, converged design for customer subscriptions: priced plans, included
+  groups and models, entitlement snapshots, weighted-token allowances,
+  recurring Stripe billing, overage policy, and admin/customer controls
+  (implementation not started; depends on FID-007).
 - [FID-2026-1029-001](dev/fids/archive/FID-2026-1029-001-nextjs-gateway-rebuild.md) —
   historical rebuild record, closed against `bf3da9a`; the current tree was
   established by FID-002.
@@ -359,6 +371,10 @@ Current records:
 - [FID-2026-1029-006](dev/fids/archive/FID-2026-1029-006-customer-accounts-and-credit-topups.md) —
   customer signup, account ownership, scoped keys and usage, Stripe Checkout
   top-ups, and webhook-confirmed credit (closed against `455ddb5`).
+
+Audit report: [D1–D50 audit report](dev/audits/2026-10-29-d1-d50-audit-report.md)
+— the fifty legacy findings with severity, current status, evidence, and a
+remediation index.
 
 ## Quality gates
 

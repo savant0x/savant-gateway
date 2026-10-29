@@ -1,7 +1,11 @@
 import "server-only";
 
 import type { CreditHold } from "./store/billing";
-import type { AuthenticatedKey, GatewayModel } from "./store/shared";
+import type {
+  AuthenticatedKey,
+  FreePoolReservation,
+  GatewayModel,
+} from "./store/shared";
 
 import { computeTokenCostMicros } from "./pricing";
 import { recordUsage } from "./store/usage";
@@ -15,6 +19,7 @@ export type GatewayCallContext = {
   auth: AuthenticatedKey;
   model: GatewayModel;
   hold: CreditHold | null;
+  freeReservation: FreePoolReservation | null;
   startedAt: number;
   promptTokens: number;
 };
@@ -144,6 +149,7 @@ export function settleCall(
     costMicros: prices.costMicros,
     estimated: options.estimated ?? false,
     hold: context.hold,
+    freeReservation: context.freeReservation,
   });
 }
 

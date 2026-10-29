@@ -5,6 +5,38 @@ export const CORS_HEADERS = {
   "Access-Control-Max-Age": "86400",
 } as const;
 
+/**
+ * Logs the operator-facing detail and returns a generic client message. Local
+ * exception text must never reach a public caller; only validated 4xx input
+ * errors may return specific messages.
+ */
+export function sanitizeError(
+  scope: string,
+  error: unknown,
+  clientMessage = "Internal server error",
+) {
+  const detail =
+    error instanceof Error ? (error.stack ?? error.message) : String(error);
+
+  // eslint-disable-next-line no-console
+  console.error(`[${scope}] ${detail}`);
+
+  return clientMessage;
+}
+
+/** The public 502 shape for a local provider-fetch failure. */
+export function upstreamUnavailable(error: unknown) {
+  return jsonError(
+    502,
+    sanitizeError(
+      "gateway.provider_fetch",
+      error,
+      "Could not reach the provider",
+    ),
+    "upstream_error",
+  );
+}
+
 export function jsonError(
   status: number,
   message: string,

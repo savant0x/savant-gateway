@@ -47,6 +47,16 @@ usage in SQLite.
 - **Usage is weighted only for free-pool calls.** `weighted_tokens` is
   `total × weight` when the model is free with a positive weight, and zero
   otherwise. The provider free pool is shared across the one provider key.
+- **Free calls pass an admission gate before dispatch.**
+  `reserveFreeCall` in `lib/store/free-pool.ts` checks the user’s daily
+  weighted allowance, the effective provider remaining (last synced remaining
+  minus weighted usage since that sync minus live reservations), and the
+  provider’s `subscription.allowed` flag. It inserts a reservation in the same
+  immediate transaction as the decision; settlement releases it and records
+  actual weighted usage. Limits: `FREE_DAILY_WEIGHTED_TOKENS` (default
+  500,000), `FREE_PROVIDER_REMAINING_FLOOR` (1,000,000),
+  `FREE_PROVIDER_ALERT_THRESHOLD` (2,000,000). A blocked call returns `429`
+  with `Retry-After` and, for the per-user allowance, `X-RateLimit-Reset`.
 - **Operator `/api/*` requires an admin session in production.**
   `ALLOW_LOOPBACK_CONSOLE` in `lib/admin-auth.ts` enables the loopback branch
   only outside production, and `/dashboard` redirects to `/admin/login` in a

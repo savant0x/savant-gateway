@@ -81,6 +81,12 @@ export type AuthenticatedKey = {
   keyPrefix: string;
 };
 
+export type FreePoolReservation = {
+  id: string;
+  day: string;
+  weightedTokens: number;
+};
+
 export type ProviderStatusInput = {
   status: ProviderStatus["status"];
   balanceUsd: number | null;

@@ -3,6 +3,28 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — D6/D50 remediation and provider-registry design
+
+- **FID-2026-1029-009 — high (D50), low (D6) — Sanitize client errors and
+  enforce free-pool admission control.** `sanitizeError` in `lib/http.ts` logs
+  local exception detail server-side and returns fixed text on the public
+  provider-fetch path, the admin credit grant (now `500`), and provider sync.
+  Free calls now reserve weighted tokens before dispatch against a per-user
+  UTC-daily allowance and the effective provider remaining, returning `429`
+  with `Retry-After` and `X-RateLimit-Reset` on refusal. Reservations settle in
+  the usage transaction; new tables are `free_pool_usage` and
+  `free_pool_reservations`. Limits are `FREE_DAILY_WEIGHTED_TOKENS`,
+  `FREE_PROVIDER_REMAINING_FLOOR`, and `FREE_PROVIDER_ALERT_THRESHOLD`.
+  Status `verified`, not closed: uncommitted. Gates: `npm run verify` exit 0,
+  62/62 tests, quality PASS over 127 files, 33-route build. Tests:
+  `tests/free-pool.test.mjs` plus sanitizer cases in `tests/http.test.mjs`.
+- **FID-2026-1029-010 — high — Multi-provider registry.** Converged design for
+  a `providers` entity with per-provider credential variable names, scoped
+  catalog sync and model identity, OpenAI Chat Completions and Anthropic
+  Messages adapters, manual cost mapping, provider-scoped free-pool admission,
+  and admin provider controls. CommandCode is the intended second upstream.
+  No provider code changed; implementation is registered as B5 in `SCOPE.md`.
+
 ## 2026-10-29 — Rebuild closure and record reconciliation
 
 - **FID-2026-1029-001 — high — Rebuild the gateway on Next.js 16 + HeroUI v3.**

@@ -5,6 +5,24 @@ import { clampMarkupBps, DEFAULT_MARKUP_BPS } from "../pricing";
 
 const MARKUP_KEY = "pricing.markup_bps";
 
+export function getSetting(key: string): string | null {
+  const row = db
+    .prepare("SELECT value FROM settings WHERE key = ?")
+    .get(key) as { value: string } | undefined;
+
+  return row?.value ?? null;
+}
+
+export function saveSetting(key: string, value: string) {
+  db.prepare(
+    `INSERT INTO settings (key, value, updated_at)
+     VALUES (?, ?, ?)
+     ON CONFLICT(key) DO UPDATE SET
+       value = excluded.value,
+       updated_at = excluded.updated_at`,
+  ).run(key, value, nowIso());
+}
+
 export function getMarkupBps(): number {
   const row = db
     .prepare("SELECT value FROM settings WHERE key = ?")

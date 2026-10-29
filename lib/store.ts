@@ -2,6 +2,7 @@ import "server-only";
 
 export type {
   AuthenticatedKey,
+  FreePoolReservation,
   GatewayModel,
   ProviderStatusInput,
 } from "./store/shared";
@@ -29,6 +30,7 @@ export {
   setModelStatus,
 } from "./store/models";
 export { getProviderStatus, saveProviderStatus } from "./store/provider";
+export { reserveFreeCall } from "./store/free-pool";
 export { listAdminUsage, listUsage, recordUsage } from "./store/usage";
 export {
   DEFAULT_TENANT,

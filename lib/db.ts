@@ -285,6 +285,33 @@ function customerSchema(database: DatabaseHandle) {
   `);
 }
 
+function freePoolSchema(database: DatabaseHandle) {
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS free_pool_usage (
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      day TEXT NOT NULL,
+      weighted_tokens INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (user_id, day)
+    );
+
+    CREATE TABLE IF NOT EXISTS free_pool_reservations (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      api_key_id TEXT REFERENCES api_keys(id) ON DELETE SET NULL,
+      model_id TEXT NOT NULL,
+      day TEXT NOT NULL,
+      weighted_tokens INTEGER NOT NULL,
+      created_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS free_pool_reservations_user_idx
+      ON free_pool_reservations(user_id, day);
+    CREATE INDEX IF NOT EXISTS free_pool_reservations_expiry_idx
+      ON free_pool_reservations(expires_at);
+  `);
+}
+
 function seed(database: DatabaseHandle) {
   const now = new Date().toISOString();
 
@@ -313,6 +340,7 @@ function createDb() {
   baseSchema(database);
   v2Schema(database);
   customerSchema(database);
+  freePoolSchema(database);
   normalizeLegacyFamilies(database);
   seed(database);
 

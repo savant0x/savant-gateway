@@ -2,7 +2,57 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
-## Current Session — 2026-10-29 (governance reconciliation)
+## Current Session — 2026-10-29 (D6/D50 remediation and provider registry)
+
+Operator request: fix the two open audit findings — sanitize client-facing error
+responses and add free-pool admission control with per-user limits,
+provider-remaining enforcement, and tests — and draft a provider-registry FID
+for CommandCode as a second provider, with OpenAI- and Anthropic-protocol
+support behind one backend.
+
+- [x] **S1 — D6 fixed.** `sanitizeError` in `lib/http.ts` logs details
+  server-side and returns generic text for the provider fetch, the admin credit
+  grant (now `500`), and provider sync (config errors keep their `400`).
+- [x] **S2 — D50 fixed.** Free calls now reserve weighted tokens before
+  dispatch against a per-user daily allowance and the effective provider
+  remaining, with `429`/`Retry-After`/`X-RateLimit-Reset` on refusal and
+  actual weighted usage settled in the usage transaction.
+- [x] **S3 — Tests added.** `tests/free-pool.test.mjs` covers config, weighting,
+  boundaries, reservations, the provider floor, provider block, alerts, and
+  reset times; `tests/http.test.mjs` covers the sanitizer.
+- [x] **S4 — FID-009 authored.**
+  `dev/fids/FID-2026-1029-009-error-sanitization-and-free-pool-admission.md`
+  records the implementation and the remaining gate receipt.
+- [x] **S5 — FID-010 authored.**
+  `dev/fids/FID-2026-1029-010-multi-provider-registry.md` is converged:
+  provider entity, per-provider credentials, provider-scoped sync, OpenAI and
+  Anthropic adapters, manual cost mapping, provider-scoped free pool, and
+  admin controls. No provider code changed; implementation is B5.
+- [x] **S6 — Records updated.** Audit report D6/D50 marked fixed, CHANGELOG,
+  `.env.example`, and `knowledge.md` updated, and this scope records the new
+  work.
+- [x] **S7 — Verification.** `npm run verify` exit 0: 62/62 tests, quality PASS
+  over 127 files, 33-route build. Working tree uncommitted; FID-009 is
+  `verified`, not `closed`.
+
+## Prior Session — 2026-10-29 (model groups and subscriptions)
+
+Operator request: author FIDs that give complete control of model groups and a
+real customer subscription service, including what each plan includes and what
+it costs. This is a records-only pass; no application code changed.
+
+- [x] **G1 — Group FID authored.** `dev/fids/FID-2026-1029-007-model-group-control.md`
+  is converged with a schema, API, UI, migration, test, and verification plan.
+- [x] **G2 — Group scope recorded.** The FID is registered here; implementation
+  has not started and no source file changed.
+- [x] **G3 — Subscription FID authored.**
+  `dev/fids/FID-2026-1029-008-subscription-plans-and-entitlements.md` is
+  converged with plans, entitlement snapshots, recurring Stripe billing,
+  allowance metering, admin and customer surfaces, tests, and gates.
+- [x] **G4 — Dependency recorded.** FID-008 builds on FID-007's
+  `model_groups` and `models.group_slug`; both remain design-only.
+
+## Prior Session — 2026-10-29 (governance reconciliation)
 
 Operator request: reconcile FID-2026-1029-001, FID-2026-1029-006, and SCOPE
 with the current repository. This is a records-only pass; no application code
@@ -270,6 +320,20 @@ Recorded read-only under the approved review item; any fix remains blocked pendi
   no test exercises signup cookies, cross-account key ownership, webhook replay,
   or paid settlement over HTTP, so those paths can regress while `npm test`
   stays green. Evidence: the handoff's H5 and the current `tests/` listing.
+- **B3 — FID-2026-1029-007 implementation.** Blocked pending the operator's
+  go-ahead. The FID is converged but no code, migration, test, or route exists
+  yet. The work is gated on that approval rather than silently expanding this
+  records-only pass.
+- **B4 — FID-2026-1029-008 implementation and real Stripe subscription
+  receipt.** Blocked pending the operator's go-ahead and FID-007's group
+  schema. Local signed-webhook coverage is possible, but a real recurring
+  Checkout and Stripe-delivered invoice remain blocked by the missing test
+  credentials already registered in B1.
+- **B5 — FID-2026-1029-010 implementation.** Blocked pending the operator's
+  go-ahead and a CommandCode account/credential. The FID is converged; no
+  provider table, adapter, route, or UI exists yet. Registration must not add a
+  secret to the tree — the key belongs in `.env.local` under the configured
+  variable name.
 
 ## Operator Rulings
 
@@ -277,6 +341,23 @@ Recorded read-only under the approved review item; any fix remains blocked pendi
   controls, margin math, a credit ledger, analytics, full model tables, and
   Font Awesome Free. Build for production even though development is local.
 - 2026-10-29: **Abandon the legacy Vite/Fastify product shell and rebuild on Next.js 16 + HeroUI v3.** Preserve only the verified provider/gateway core: provider client, model sync, consumer-key auth, free-model routing, streaming, and usage metering. The old tree was removed after the core was extracted into `lib/`. This ruling lifts the review's read-only constraint.
+- 2026-10-29: **Complete model-group control.** Model groups are operator-owned,
+  not derived labels. The operator can create custom groups, assign any model,
+  move a model between free, paid, and subscription billing modes, delete a
+  custom group only by reassigning its models, and keep manual assignments
+  across provider sync. FID-2026-1029-007 is the implementation contract; no
+  code changed in the authoring pass.
+- 2026-10-29: **Real subscription service, not a catalog label.** Plans must
+  carry a price, interval, included groups/models, weighted-token allowance,
+  overage policy, entitlement snapshot, recurring Stripe lifecycle, and
+  admin/customer controls. FID-2026-1029-008 is the contract; it depends on
+  FID-007 for groups and grants nothing until implemented.
+- 2026-10-29: **Close D6 and D50, and support two upstream protocols.** Error
+  sanitization and free-pool admission control are implementation work, not
+  design-only records. The gateway will support both OpenAI-compatible and
+  Anthropic Messages upstreams from one backend, configured by the operator;
+  CommandCode is the intended second provider. FID-2026-1029-009 covers the
+  remediation; FID-2026-1029-010 is the provider-registry contract.
 
 ## Progress Log
 
@@ -336,6 +417,28 @@ Git repository and the template's required local commit could not exist. Fresh g
   `dev/session-summaries/2026-10-29-customer-e2e-verification.md`. No code or
   runtime data changed; the real Checkout and paid completion are registered as
   B1, not treated as complete.
+- 2026-10-29: **D1–D50 audit report compiled.** Standalone report at
+  `dev/audits/2026-10-29-d1-d50-audit-report.md`: 50 findings, 5 high, 2 open
+  (D6 error-message exposure, D50 free-pool admission control), 1 accepted
+  (D23 single-process rate limiters), 47 closed (22 fixed, 25 superseded).
+  Current evidence: lint 0 warnings, 48/48 tests, quality PASS. No application
+  code changed.
+- 2026-10-29: **FID-2026-1029-007 authored.** The admin has no group write
+  path: `accessFor` derives free/paid/subscription from provider flags, the
+  catalog PATCH accepts only status, free rows are hard-zeroed, and a sync
+  rewrites `allow_free`. The FID defines a `model_groups` table, manual/auto
+  membership, group CRUD, assignment, group-aware pricing/routing, usage group
+  snapshots, dynamic public filters, and additive `group_*` API fields while
+  keeping `access` and `/v1/models` `group` stable. No code, migration, test,
+  or runtime data changed; implementation is B3.
+- 2026-10-29: **FID-2026-1029-008 authored.** “Subscription” currently means
+  a `free/*` catalog bucket: `accessFor` derives it, `isFreeCall` sends it
+  down the paid path, unpriced rows return 503, and the Stripe webhook handles
+  one-time top-ups only. The FID defines plans, plan groups/models, entitlement
+  snapshots, periods, holds, invoices, recurring Checkout, invoice-driven
+  activation, overage block/credit, manual comps, and admin/customer pages.
+  No code, migration, test, or runtime data changed; implementation is B4 and
+  depends on FID-007 (B3).
 - 2026-10-29: **Governance records reconciled.** FID-2026-1029-001 is closed
   against `bf3da9a` and archived; FID-2026-1029-006's archived metadata now says
   `closed`, matching its `Closed Date` and `Closed Against: 455ddb5`. The
@@ -343,3 +446,21 @@ Git repository and the template's required local commit could not exist. Fresh g
   Stripe Checkout and route-level HTTP coverage are registered as B1/B2 rather
   than left outside the register. Fresh `npm run verify` exit 0: 48/48 tests,
   quality PASS over 125 files, 33-route build.
+- 2026-10-29: **D6 and D50 implemented (FID-2026-1029-009).** D6: `sanitizeError`
+  logs local exception detail server-side and returns fixed text on the public
+  provider-fetch path, the admin credit grant, and provider sync. D50: free
+  calls reserve weighted tokens before dispatch in one immediate SQLite
+  transaction, enforce a per-user UTC-daily allowance and the effective provider
+  remaining, and settle actual weighted usage with the usage row. New tables
+  `free_pool_usage` and `free_pool_reservations`. New env limits documented in
+  `.env.example`. Tests: `tests/free-pool.test.mjs` and two sanitizer cases in
+  `tests/http.test.mjs`. Receipt: `npm run verify` exit 0, 62/62 tests, quality
+  PASS over 127 files, 33-route build. Uncommitted; FID-009 is `verified`, not
+  closed.
+- 2026-10-29: **FID-2026-1029-010 authored.** The provider-registry contract
+  covers a `providers` entity, per-provider credential variable names (values
+  stay in `.env.local`), provider-scoped sync and model identity, OpenAI Chat
+  Completions and Anthropic Messages adapters, manual cost mapping with a
+  no-silent-zero-cost rule, provider-scoped free-pool admission, and admin
+  provider controls. CommandCode is the intended second upstream; registration
+  is B5 and no provider code changed.

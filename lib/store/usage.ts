@@ -6,8 +6,10 @@ import { randomUUID } from "node:crypto";
 
 import { db, nowIso } from "../db";
 
+import { settleFreeReservation } from "./free-pool";
 import {
   type AuthenticatedKey,
+  type FreePoolReservation,
   type GatewayModel,
   type UsageRow,
   toAdminUsageSummary,
@@ -26,6 +28,7 @@ export type UsageSettlement = {
   costMicros: number;
   estimated?: boolean;
   hold?: { id: string; holdMicros: number } | null;
+  freeReservation?: FreePoolReservation | null;
 };
 
 /**
@@ -70,6 +73,14 @@ export function recordUsage(input: UsageSettlement) {
          SET credit_micros = credit_micros - ?
          WHERE id = ?`,
       ).run(chargedMicros, input.auth.userId);
+    }
+
+    if (input.freeReservation) {
+      settleFreeReservation({
+        reservation: input.freeReservation,
+        userId: input.auth.userId,
+        weightedTokens,
+      });
     }
 
     db.prepare(

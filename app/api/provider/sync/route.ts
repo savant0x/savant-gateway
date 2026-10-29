@@ -1,4 +1,5 @@
 import { guardLocalOrAdmin } from "@/lib/admin-auth";
+import { sanitizeError } from "@/lib/http";
 import { ProviderConfigError, syncProvider } from "@/lib/provider";
 
 export const runtime = "nodejs";
@@ -14,10 +15,13 @@ export async function POST(request: Request) {
 
     return Response.json({ ok: true, ...summary });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Provider sync failed";
-    const status = error instanceof ProviderConfigError ? 400 : 502;
+    if (error instanceof ProviderConfigError) {
+      return Response.json({ error: error.message }, { status: 400 });
+    }
 
-    return Response.json({ error: message }, { status });
+    return Response.json(
+      { error: sanitizeError("provider.sync", error, "Provider sync failed") },
+      { status: 502 },
+    );
   }
 }

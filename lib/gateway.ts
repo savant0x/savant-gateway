@@ -15,11 +15,18 @@ import {
   settleCall,
 } from "./gateway-settle";
 import { streamCompletion } from "./gateway-stream";
-import { CORS_HEADERS, extractApiKey, jsonError } from "./http";
+import {
+  CORS_HEADERS,
+  extractApiKey,
+  jsonError,
+  upstreamUnavailable,
+} from "./http";
 import { providerChatCompletion, readProviderError } from "./provider";
 import {
   authenticateApiKey,
   getModelForGateway,
+  reserveFreeCall,
+  type FreePoolReservation,
   type GatewayModel,
 } from "./store";
 import { reserveCreditHold, type CreditHold } from "./store/billing";
@@ -181,11 +188,33 @@ export async function handleChatCompletions(request: Request) {
 
   const free = isFreeCall(model);
   let hold: CreditHold | null = null;
+  let freeReservation: FreePoolReservation | null = null;
   let promptTokens = estimatePromptTokens(body.messages, body.tools);
   let outputBudget = 0;
   let requestedBudget: number | null = null;
 
-  if (!free) {
+  if (free) {
+    const reservationBudget =
+      readRequestedOutputBudget(body) ?? DEFAULT_OUTPUT_BUDGET;
+    const admission = reserveFreeCall({
+      auth,
+      model,
+      promptTokens,
+      outputBudget: reservationBudget,
+    });
+
+    if (!admission.ok) {
+      const blocked = admission.blocked;
+
+      return jsonError(blocked.status, blocked.message, blocked.type, {
+        "Retry-After": String(blocked.retryAfterSeconds),
+        ...(blocked.resetAt ? { "X-RateLimit-Reset": blocked.resetAt } : {}),
+      });
+    }
+
+    freeReservation = admission.reservation;
+    outputBudget = reservationBudget;
+  } else {
     if (model.sellInputMicros <= 0 && model.sellOutputMicros <= 0) {
       return jsonError(
         503,
@@ -210,7 +239,7 @@ export async function handleChatCompletions(request: Request) {
   };
   const streaming = body.stream === true;
 
-  if (!free && requestedBudget === null) {
+  if (requestedBudget === null && outputBudget > 0) {
     payload.max_tokens = outputBudget;
   }
 
@@ -227,6 +256,7 @@ export async function handleChatCompletions(request: Request) {
     auth,
     model,
     hold,
+    freeReservation,
     startedAt: Date.now(),
     promptTokens,
   };
@@ -243,11 +273,7 @@ export async function handleChatCompletions(request: Request) {
       error: error instanceof Error ? error.message : "Provider unreachable",
     });
 
-    return jsonError(
-      502,
-      error instanceof Error ? error.message : "Could not reach the provider",
-      "upstream_error",
-    );
+    return upstreamUnavailable(error);
   }
 
   if (!upstream.ok) {

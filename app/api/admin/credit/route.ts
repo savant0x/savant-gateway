@@ -1,4 +1,5 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
+import { sanitizeError } from "@/lib/http";
 import { readPriceInput } from "@/lib/pricing";
 import { getAccountSummary, grantCredit, listCreditLedger } from "@/lib/store";
 
@@ -53,8 +54,8 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     return adminError(
-      400,
-      error instanceof Error ? error.message : "Could not grant credit.",
+      500,
+      sanitizeError("admin.credit.grant", error, "Could not grant credit."),
     );
   }
 }

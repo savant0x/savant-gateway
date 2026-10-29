@@ -63,7 +63,7 @@ export type GatewayModel = {
   id: string;
   upstreamId: string;
   name: string;
-  provider: string;
+  family: string;
   contextWindow: string;
   tokenWeight: number;
   costInputMicros: number;
@@ -101,10 +101,7 @@ export function accessFor(
 ): ModelAccess {
   if (row.allow_free === 1 && row.token_weight > 0) return "free";
 
-  const looksLikePool =
-    row.provider.toLowerCase() === "free" || row.id.startsWith("free/");
-
-  return looksLikePool ? "subscription" : "paid";
+  return row.id.startsWith("free/") ? "subscription" : "paid";
 }
 
 export function toModelSummary(row: ModelRow): ModelSummary {
@@ -112,7 +109,7 @@ export function toModelSummary(row: ModelRow): ModelSummary {
     id: row.id,
     upstreamId: row.upstream_id,
     name: row.name,
-    provider: row.provider,
+    family: row.provider,
     contextWindow: row.context_window,
     tokenWeight: row.token_weight,
     allowFree: row.allow_free === 1,

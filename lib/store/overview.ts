@@ -31,11 +31,11 @@ export function getOverviewStats(): OverviewStats {
         (SELECT COUNT(*) FROM models
          WHERE in_catalog = 1 AND status = 'active'
            AND NOT (allow_free = 1 AND token_weight > 0)
-           AND provider <> 'Free' AND id NOT LIKE 'free/%') AS paid_model_count,
+           AND id NOT LIKE 'free/%') AS paid_model_count,
         (SELECT COUNT(*) FROM models
          WHERE in_catalog = 1 AND status = 'active'
            AND NOT (allow_free = 1 AND token_weight > 0)
-           AND (provider = 'Free' OR id LIKE 'free/%')) AS subscription_model_count,
+           AND id LIKE 'free/%') AS subscription_model_count,
         (SELECT COUNT(*) FROM api_keys WHERE status = 'active') AS key_count,
         (SELECT COUNT(*) FROM usage_events) AS request_count,
         (SELECT COALESCE(SUM(input_tokens + output_tokens), 0)

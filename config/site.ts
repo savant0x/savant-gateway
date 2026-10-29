@@ -1,6 +1,10 @@
 export const siteConfig = {
   name: "Savant Gateway",
   shortName: "Savant",
+  provider: {
+    name: "Savant Gateway",
+    slug: "savant-gateway",
+  },
   tagline: "The full provider catalog, one OpenAI-compatible endpoint.",
   description:
     "An OpenAI-compatible gateway for the provider's full catalog: cost-aware pricing, hashed consumer keys, credit settlement, and usage analytics.",

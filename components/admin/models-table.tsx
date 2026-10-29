@@ -69,7 +69,7 @@ export function AdminModelsTable({
       return (
         model.id.toLowerCase().includes(needle) ||
         model.name.toLowerCase().includes(needle) ||
-        model.provider.toLowerCase().includes(needle)
+        model.family.toLowerCase().includes(needle)
       );
     });
   }, [filter, models, query]);
@@ -148,7 +148,7 @@ export function AdminModelsTable({
           <Input
             aria-label="Search models"
             className="w-full"
-            placeholder="Search id, name, or provider"
+            placeholder="Search id, name, or family"
             value={query}
             onChange={(event) =>
               applyFilter(() => setQuery(event.target.value))
@@ -184,7 +184,8 @@ export function AdminModelsTable({
               <thead>
                 <tr>
                   <th>Model</th>
-                  <th>Access</th>
+                  <th>Family</th>
+                  <th>Group</th>
                   <th>Status</th>
                   <th className="text-right">Sell / 1M</th>
                   <th className="text-right">Cost / 1M</th>
@@ -210,6 +211,7 @@ export function AdminModelsTable({
                         {model.id}
                       </div>
                     </td>
+                    <td className="text-muted">{model.family}</td>
                     <td>
                       <AccessChip model={model} />
                     </td>

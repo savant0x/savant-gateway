@@ -72,6 +72,7 @@ export function PricingRow({
           {model.id}
         </div>
       </td>
+      <td className="text-muted">{model.family}</td>
       <td>
         <AccessChip model={model} />
       </td>

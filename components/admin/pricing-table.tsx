@@ -62,7 +62,7 @@ export function PricingTable({
       return (
         model.id.toLowerCase().includes(needle) ||
         model.name.toLowerCase().includes(needle) ||
-        model.provider.toLowerCase().includes(needle)
+        model.family.toLowerCase().includes(needle)
       );
     });
   }, [catalog, filter, query]);
@@ -174,7 +174,7 @@ export function PricingTable({
           <Input
             aria-label="Search priced models"
             className="w-full"
-            placeholder="Search model, id, or provider"
+            placeholder="Search model, id, or family"
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);
@@ -219,7 +219,8 @@ export function PricingTable({
               <thead>
                 <tr>
                   <th>Model</th>
-                  <th>Access</th>
+                  <th>Family</th>
+                  <th>Group</th>
                   <th className="text-right">Cost in / out</th>
                   <th className="text-right">Sell in / out</th>
                   <th className="text-right">Margin</th>

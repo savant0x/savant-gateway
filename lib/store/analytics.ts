@@ -42,7 +42,7 @@ type PointRow = {
 type ModelRow = {
   model_id: string | null;
   model_name: string | null;
-  provider: string | null;
+  family: string | null;
   requests: number;
   tokens: number;
   charged_micros: number;
@@ -105,7 +105,7 @@ export function getAnalyticsData(rangeDays: AnalyticsRange): AnalyticsData {
     .prepare(
       `SELECT u.model_id AS model_id,
               m.name AS model_name,
-              m.provider AS provider,
+              m.provider AS family,
               COUNT(*) AS requests,
               COALESCE(SUM(u.input_tokens + u.output_tokens), 0) AS tokens,
               COALESCE(SUM(u.charged_micros), 0) AS charged_micros,
@@ -154,7 +154,7 @@ export function getAnalyticsData(rangeDays: AnalyticsRange): AnalyticsData {
   const models: AnalyticsModel[] = modelRows.map((row) => ({
     modelId: row.model_id ?? "unknown",
     modelName: row.model_name ?? row.model_id ?? "Unknown model",
-    provider: row.provider ?? "—",
+    family: row.family ?? "—",
     requests: row.requests,
     tokens: row.tokens,
     chargedMicros: row.charged_micros,

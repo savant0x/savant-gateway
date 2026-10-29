@@ -1,3 +1,4 @@
+import { siteConfig } from "@/config/site";
 import { guardLocalOrAdmin } from "@/lib/admin-auth";
 import { listModels } from "@/lib/store";
 
@@ -9,5 +10,8 @@ export async function GET(request: Request) {
 
   if (blocked) return blocked;
 
-  return Response.json({ models: listModels() });
+  return Response.json({
+    provider: siteConfig.provider.name,
+    models: listModels(),
+  });
 }

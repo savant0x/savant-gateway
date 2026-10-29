@@ -9,7 +9,7 @@ import { formatNumber, formatPricePer1M } from "@/components/dashboard/format";
 import { Pagination } from "@/components/ui/pagination";
 
 type AccessFilter = "all" | ModelAccess;
-type SortKey = "name" | "provider" | "price-asc" | "price-desc";
+type SortKey = "name" | "family" | "price-asc" | "price-desc";
 
 const ACCESS_FILTERS: Array<{ key: AccessFilter; label: string }> = [
   { key: "all", label: "All" },
@@ -20,7 +20,7 @@ const ACCESS_FILTERS: Array<{ key: AccessFilter; label: string }> = [
 
 const SORTS: Array<{ key: SortKey; label: string }> = [
   { key: "name", label: "Name" },
-  { key: "provider", label: "Provider" },
+  { key: "family", label: "Family" },
   { key: "price-asc", label: "Input price ↑" },
   { key: "price-desc", label: "Input price ↓" },
 ];
@@ -46,13 +46,13 @@ export function ModelCatalogTable({
 }) {
   const [query, setQuery] = useState("");
   const [access, setAccess] = useState<AccessFilter>("all");
-  const [provider, setProvider] = useState("all");
+  const [family, setFamily] = useState("all");
   const [sort, setSort] = useState<SortKey>("name");
   const [page, setPage] = useState(1);
 
-  const providers = useMemo(
+  const families = useMemo(
     () =>
-      Array.from(new Set(models.map((model) => model.provider))).sort((a, b) =>
+      Array.from(new Set(models.map((model) => model.family))).sort((a, b) =>
         a.localeCompare(b),
       ),
     [models],
@@ -62,20 +62,20 @@ export function ModelCatalogTable({
     const needle = query.trim().toLowerCase();
     const rows = models.filter((model) => {
       if (access !== "all" && model.access !== access) return false;
-      if (provider !== "all" && model.provider !== provider) return false;
+      if (family !== "all" && model.family !== family) return false;
       if (!needle) return true;
 
       return (
         model.id.toLowerCase().includes(needle) ||
         model.name.toLowerCase().includes(needle) ||
-        model.provider.toLowerCase().includes(needle)
+        model.family.toLowerCase().includes(needle)
       );
     });
 
     return rows.sort((left, right) => {
-      if (sort === "provider") {
+      if (sort === "family") {
         return (
-          left.provider.localeCompare(right.provider) ||
+          left.family.localeCompare(right.family) ||
           left.name.localeCompare(right.name)
         );
       }
@@ -96,7 +96,7 @@ export function ModelCatalogTable({
 
       return left.name.localeCompare(right.name);
     });
-  }, [access, models, provider, query, sort]);
+  }, [access, family, models, query, sort]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, pageCount);
@@ -122,7 +122,7 @@ export function ModelCatalogTable({
             />
             <input
               className="h-10 w-full rounded-xl border border-black/10 bg-background pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-muted focus:border-accent dark:border-white/10"
-              placeholder="Search model, id, or provider"
+              placeholder="Search model, id, or family"
               type="search"
               value={query}
               onChange={(event) =>
@@ -133,7 +133,7 @@ export function ModelCatalogTable({
 
           <div className="flex flex-wrap gap-2">
             <select
-              aria-label="Filter by access"
+              aria-label="Filter by group"
               className="h-10 rounded-xl border border-black/10 bg-background px-3 text-xs outline-none focus:border-accent dark:border-white/10"
               value={access}
               onChange={(event) =>
@@ -148,15 +148,15 @@ export function ModelCatalogTable({
             </select>
 
             <select
-              aria-label="Filter by provider"
+              aria-label="Filter by family"
               className="h-10 max-w-[11rem] rounded-xl border border-black/10 bg-background px-3 text-xs outline-none focus:border-accent dark:border-white/10"
-              value={provider}
+              value={family}
               onChange={(event) =>
-                resetPage(() => setProvider(event.target.value))
+                resetPage(() => setFamily(event.target.value))
               }
             >
-              <option value="all">All providers</option>
-              {providers.map((name) => (
+              <option value="all">All families</option>
+              {families.map((name) => (
                 <option key={name} value={name}>
                   {name}
                 </option>
@@ -187,7 +187,8 @@ export function ModelCatalogTable({
             {formatNumber(filtered.length)} shown
           </span>
           <span>
-            Prices are USD per 1M tokens and exclude upstream provider terms.
+            Provider: Savant Gateway. Prices are USD per 1M tokens and exclude
+            upstream provider terms.
           </span>
         </div>
       </div>
@@ -202,9 +203,9 @@ export function ModelCatalogTable({
             <thead>
               <tr>
                 <th>Model</th>
-                <th>Provider</th>
+                <th>Family</th>
                 <th>Context</th>
-                <th>Access</th>
+                <th>Group</th>
                 <th className="text-right">Input / 1M</th>
                 <th className="text-right">Output / 1M</th>
               </tr>
@@ -234,7 +235,7 @@ export function ModelCatalogTable({
                       {model.id}
                     </div>
                   </td>
-                  <td className="text-muted">{model.provider}</td>
+                  <td className="text-muted">{model.family}</td>
                   <td className="whitespace-nowrap text-muted">
                     {model.contextWindow}
                   </td>
@@ -263,7 +264,7 @@ export function ModelCatalogTable({
         />
       </div>
 
-      {filtered.length > 0 && access === "all" && provider === "all" ? (
+      {filtered.length > 0 && access === "all" && family === "all" ? (
         <div className="border-t border-black/10 px-4 py-2 text-[11px] text-muted dark:border-white/10">
           <i aria-hidden className="fa-solid fa-circle-info mr-1.5" />
           Effective prices; the gateway enforces the same values at request

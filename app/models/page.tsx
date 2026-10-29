@@ -7,6 +7,7 @@ import { formatNumber } from "@/components/dashboard/format";
 import { primaryCta, secondaryCta } from "@/components/landing/cta";
 import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
+import { siteConfig } from "@/config/site";
 import { getCatalogData } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Model catalog",
   description:
-    "Every model on Savant Gateway with its access tier and per-million-token price.",
+    "Every model on Savant Gateway with its family, price group, and per-million-token price.",
 };
 
 export default function ModelsPage() {
@@ -28,19 +29,27 @@ export default function ModelsPage() {
         <section className="hero-glow border-b border-white/10">
           <div className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <p className="text-xs font-medium uppercase tracking-[0.18em] text-cyan-300">
-              Full catalog
+              Savant Gateway · provider catalog
             </p>
             <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">
-              One endpoint. Every model the provider carries.
+              One endpoint. Every model Savant Gateway carries.
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-muted">
-              Free-pool models are included with the gateway. Paid models debit
-              the tenant&apos;s credit balance at the listed sell price. The
+              Savant Gateway is the provider; free, paid, and subscription are
+              price groups. Free-pool models are included. Paid models debit the
+              tenant&apos;s credit balance at the listed sell price. The
               upstream key stays on the server, and upstream cost is never part
               of the public catalog.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-2 text-xs">
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+                <i
+                  aria-hidden
+                  className="fa-solid fa-server mr-2 text-cyan-300"
+                />
+                Provider: {siteConfig.provider.name}
+              </span>
               <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
                 <i
                   aria-hidden

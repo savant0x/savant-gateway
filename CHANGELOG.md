@@ -3,6 +3,20 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — Provider, family, and price-group semantics
+
+- **FID-2026-1029-005 — medium — Separate the provider identity from the model
+  family and price group.** The catalog had stored the upstream `"Free"`
+  sentinel as the model provider for 21 rows, and `/v1/models` published
+  `owned_by: "Free"`. Savant Gateway is now the provider (`owned_by:
+  "savant-gateway"`); the model family (GPT, Claude, DeepSeek, …) is serialized
+  as `family`; and free/paid/subscription is the price group (`group` in
+  `/v1/models`, `access` in UI data). Legacy `provider='Free'` rows are
+  repaired at boot from the model id, syncs can no longer reintroduce the
+  sentinel, and the public catalog, admin tables, and analytics use Family and
+  Group labels. Adds `lib/model-family.ts` and `tests/model-family.test.mjs`
+  (4 tests; 30 total).
+
 ## 2026-10-29 — Full catalog, sell-price math, credits, and analytics
 
 - **FID-2026-1029-004 — high — Sell the full provider catalog with credit

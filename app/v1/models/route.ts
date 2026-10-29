@@ -1,3 +1,4 @@
+import { siteConfig } from "@/config/site";
 import { CORS_HEADERS, extractApiKey, jsonError } from "@/lib/http";
 import { authenticateApiKey, listModels } from "@/lib/store";
 
@@ -22,12 +23,13 @@ export async function GET(request: Request) {
   const data = listModels().map((model) => ({
     id: model.id,
     object: "model",
-    owned_by: model.provider,
+    owned_by: siteConfig.provider.slug,
     name: model.name,
+    family: model.family,
+    group: model.access,
     context_window: model.contextWindow,
     token_weight: model.tokenWeight,
     allow_free: model.allowFree,
-    access: model.access,
     input_price_per_1m: model.inputPricePer1M,
     output_price_per_1m: model.outputPricePer1M,
     currency: "usd",

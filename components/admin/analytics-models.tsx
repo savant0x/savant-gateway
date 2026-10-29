@@ -37,7 +37,7 @@ export function AnalyticsModels({ models }: { models: AnalyticsModel[] }) {
             <thead>
               <tr>
                 <th>Model</th>
-                <th>Provider</th>
+                <th>Family</th>
                 <th className="text-right">Requests</th>
                 <th className="text-right">Tokens</th>
                 <th className="text-right">Revenue</th>
@@ -60,7 +60,7 @@ export function AnalyticsModels({ models }: { models: AnalyticsModel[] }) {
                         {row.modelId}
                       </div>
                     </td>
-                    <td className="text-muted">{row.provider}</td>
+                    <td className="text-muted">{row.family}</td>
                     <td className="text-right">{formatNumber(row.requests)}</td>
                     <td className="text-right text-muted">
                       {formatCompact(row.tokens)}

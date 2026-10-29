@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SyncedModel } from "./types";
 
+import { normalizeFamilyName } from "./model-family";
 import { replaceModels } from "./store/models";
 import { saveProviderStatus } from "./store/provider";
 import { getMarkupBps } from "./store/settings";
@@ -233,14 +234,6 @@ function displayNameFromId(modelId: string) {
     .join(" ");
 }
 
-function inferProvider(modelId: string) {
-  const prefix = modelId.includes("/")
-    ? modelId.slice(0, modelId.indexOf("/"))
-    : modelId.split("-")[0];
-
-  return prefix ? displayNameFromId(prefix) : "Other";
-}
-
 function buildSyncedModels(
   models: ProviderModel[],
   metadata: Map<string, PublicModel>,
@@ -254,13 +247,12 @@ function buildSyncedModels(
     if (!id || seen.has(id)) continue;
     seen.add(id);
     const spec = metadata.get(id);
-    const provider =
-      String(spec?.provider ?? "").trim() ||
-      (id.startsWith("free/") ? "Free" : inferProvider(id));
+    const family = normalizeFamilyName(id, String(spec?.provider ?? ""));
     // `allowFree` is set on paid models too, but only the `free/*` pool is usable
-    // on a zero-balance account. Treat everything else as paid/subscription.
+    // on a zero-balance account. The id prefix is the price-group signal; the
+    // family is never a group name.
     const isFreePool =
-      (id.startsWith("free/") || provider.toLowerCase() === "free") &&
+      id.startsWith("free/") &&
       (typeof spec?.allowFree === "boolean" ? spec.allowFree : true);
     const weight = isFreePool
       ? Math.max(1, Math.round(numberOrNull(spec?.weight) ?? 1))
@@ -277,7 +269,7 @@ function buildSyncedModels(
       upstreamId: id,
       name:
         String(spec?.name ?? item.name ?? "").trim() || displayNameFromId(id),
-      provider,
+      family,
       contextWindow:
         String(spec?.contextWindow ?? item.context_window ?? "").trim() || "—",
       tokenWeight: weight,
@@ -293,7 +285,7 @@ function buildSyncedModels(
   rows.sort((a, b) => {
     if (a.allowFree !== b.allowFree) return a.allowFree ? -1 : 1;
 
-    return a.provider.localeCompare(b.provider) || a.name.localeCompare(b.name);
+    return a.family.localeCompare(b.family) || a.name.localeCompare(b.name);
   });
 
   return rows.map((row, index) => ({ ...row, sortOrder: (index + 1) * 10 }));

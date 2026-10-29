@@ -86,6 +86,18 @@ secret, so rotating either invalidates existing sessions.
 
 Do not put any secret in a `NEXT_PUBLIC_*` variable.
 
+## Catalog vocabulary
+
+These three words mean different things and must not be collapsed:
+
+- **Provider** — Savant Gateway. `/v1/models` publishes
+  `owned_by: "savant-gateway"`.
+- **Family** — the upstream model line: GPT, Claude, DeepSeek, Gemini, GLM,
+  Kimi, Grok, and so on. It is the `family` field; the internal
+  `models.provider` column stores this family label.
+- **Group** — the price group: `free`, `paid`, or `subscription`. The UI
+  serializes it as `access`; `/v1/models` publishes it as `group`.
+
 ## How it works
 
 ```text
@@ -118,7 +130,7 @@ active counts, and sell prices — never keys, upstream cost, or ledger rows.
 - **Free** = `allowFree` is true **and** the provider gives the row a positive
   `tokenWeight`. Only these rows are zero-charge. They are metered in the
   provider's weighted units; `free/gpt-6-luna` at weight 3 consumes 948 units
-  for 316 raw tokens.
+  for 316 raw tokens. `free/` is the price-group scope, not the family.
 - **Subscription** = a `free/*` row the provider does not actually grant on the
   free pool. It is visible in the catalog but blocked unless the operator sets
   a sell price and the upstream account is entitled to it.
@@ -172,7 +184,7 @@ granted. Paid requests default to a 4,096-token output budget and accept up to
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
 | `POST` | `/v1/chat/completions` | Consumer key | OpenAI-compatible chat, streaming or JSON. |
-| `GET` | `/v1/models` | Consumer key | Active catalog with access tier and sell prices. |
+| `GET` | `/v1/models` | Consumer key | Active catalog with `owned_by`, `family`, `group`, and sell prices. |
 | `POST` | `/api/admin/session` | Password | Sign in; sets the admin cookie. |
 | `DELETE` | `/api/admin/session` | Same-origin | Sign out and bump the session epoch. |
 | `GET` | `/api/admin/models` | Admin session | Full catalog, including disabled and delisted rows. |

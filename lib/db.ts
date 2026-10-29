@@ -5,6 +5,8 @@ import { dirname, join, resolve } from "node:path";
 
 import Database from "better-sqlite3";
 
+import { normalizeFamilyName } from "./model-family";
+
 const configuredDbPath = process.env.DB_PATH?.trim();
 
 export const dbPath =
@@ -225,6 +227,28 @@ function v2Schema(database: DatabaseHandle) {
     .run(new Date().toISOString());
 }
 
+/** Rewrites legacy rows where the upstream price-group sentinel leaked into
+ * the family column. Idempotent: after the first boot no row matches. */
+function normalizeLegacyFamilies(database: DatabaseHandle) {
+  const rows = database
+    .prepare(
+      "SELECT id, provider FROM models WHERE lower(trim(provider)) IN ('free', '')",
+    )
+    .all() as Array<{ id: string; provider: string }>;
+
+  if (rows.length === 0) return;
+
+  const update = database.prepare(
+    "UPDATE models SET provider = ? WHERE id = ?",
+  );
+
+  database.transaction(() => {
+    for (const row of rows) {
+      update.run(normalizeFamilyName(row.id, row.provider), row.id);
+    }
+  })();
+}
+
 function seed(database: DatabaseHandle) {
   const now = new Date().toISOString();
 
@@ -252,6 +276,7 @@ function createDb() {
 
   baseSchema(database);
   v2Schema(database);
+  normalizeLegacyFamilies(database);
   seed(database);
 
   return database;

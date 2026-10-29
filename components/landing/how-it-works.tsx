@@ -1,7 +1,7 @@
 const STEPS = [
   {
     title: "Sync the upstream catalog",
-    body: "The server reads the provider key, records balance and subscription state, and imports every model with its cost, capabilities, and access tier.",
+    body: "The server reads the upstream key, records balance and subscription state, and imports every model with its cost, capabilities, and price group.",
   },
   {
     title: "Set sell prices",

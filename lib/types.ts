@@ -25,7 +25,7 @@ export type ModelSummary = {
   id: string;
   upstreamId: string;
   name: string;
-  provider: string;
+  family: string;
   contextWindow: string;
   tokenWeight: number;
   allowFree: boolean;
@@ -171,7 +171,7 @@ export type AnalyticsPoint = {
 export type AnalyticsModel = {
   modelId: string;
   modelName: string;
-  provider: string;
+  family: string;
   requests: number;
   tokens: number;
   chargedMicros: number;
@@ -203,7 +203,7 @@ export type SyncedModel = {
   id: string;
   upstreamId: string;
   name: string;
-  provider: string;
+  family: string;
   contextWindow: string;
   tokenWeight: number;
   costInputMicros: number;

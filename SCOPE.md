@@ -2,7 +2,33 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-28 | Session autonomy level: 3 (default; review is read-only)
 
-## Current Session — 2026-10-29 (FID-2026-1029-004)
+## Current Session — 2026-10-29 (FID-2026-1029-005)
+
+Operator correction: the catalog was reporting `provider: "Free"`. Savant
+Gateway is the provider; `free` is the price group, and the family is the
+model line.
+
+- [x] **P1 — Vocabulary.** Provider = Savant Gateway; family = GPT/Claude/…;
+  group = free/paid/subscription.
+- [x] **P2 — Data boundary.** Normalize `"Free"` out of the family during
+  sync; repair legacy rows on boot.
+- [x] **P3 — API.** `/v1/models` publishes `owned_by: "savant-gateway"`,
+  `family`, and `group`; `/api/models` publishes the provider identity and
+  `family`.
+- [x] **P4 — UI.** Public catalog, landing preview, admin catalog, pricing,
+  and analytics use Family and Group; `/models` states the provider identity.
+- [x] **P5 — Verification.** Unit tests, gates, live sync, and API/UI receipts.
+
+Findings:
+
+- **F7 — the upstream group sentinel was stored as a provider (medium).** 21
+  rows had `provider='Free'`; `/v1/models` reported `owned_by: "Free"`. Fixed
+  at sync, boot migration, API, and UI. No routing or money math changed.
+- **F8 — the serializable field was named `provider` (low).** Renamed to
+  `family` on model and analytics shapes; the internal DB column stays for
+  compatibility.
+
+## Prior Session — 2026-10-29 (FID-2026-1029-004)
 
 Operator request: ship a full provider catalog rather than a free-only pool,
 add a pricing/math surface for adjusting sell prices and seeing profit and
@@ -215,3 +241,11 @@ Recorded read-only under the approved review item; any fix remains blocked pendi
   micros with zero holds left, unpriced 503, 70k budget 400, underfunded
   overrun negative and next call 402. Real paid upstream inference remains
   unverified because the provider account has no paid balance.
+- 2026-10-29: **Provider/family/group correction (FID-2026-1029-005).**
+  `npm run verify` exit 0 (30/30 tests, 92 files, 20 routes). Live: boot
+  migration removed all 21 `provider='Free'` rows; sync again returned 45
+  models and zero free sentinels; `/api/models` returned
+  `provider: "Savant Gateway"`, `family: "DeepSeek"`, no legacy `provider`
+  key; `/v1/models` returned `owned_by: "savant-gateway"`, `family:
+  "DeepSeek"`, `group: "free"`; `/models` and the three admin tables render
+  Family/Group with no Provider column.

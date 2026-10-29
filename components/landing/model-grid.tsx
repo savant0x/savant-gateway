@@ -82,9 +82,9 @@ export function ModelGrid({ data }: { data: LandingData }) {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-muted">Provider</dt>
+                  <dt className="text-muted">Family</dt>
                   <dd className="mt-0.5 truncate font-medium">
-                    {model.provider}
+                    {model.family}
                   </dd>
                 </div>
               </dl>

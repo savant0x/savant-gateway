@@ -11,10 +11,21 @@ usage in SQLite.
 
 ## Facts that are easy to get wrong
 
+- **Provider, family, and group are different words.** Savant Gateway is the
+  provider (`owned_by: "savant-gateway"`). The family is the model line (GPT,
+  Claude, DeepSeek, …), serialized as `family`; the legacy `models.provider`
+  column stores that family label. The group is `free`, `paid`, or
+  `subscription`, serialized as `access` in UI data and `group` in
+  `/v1/models`. Never store or emit `"Free"` as a family.
 - **Free means `allowFree && tokenWeight > 0`.** The provider marks some
   subscription rows with `allowFree`, but only weighted free-pool rows are
-  zero-charge. `accessFor` in `lib/store/shared.ts` and `isFreeCall` in
+  zero-charge. The `free/` id prefix is the group signal; family normalization
+  strips it. `accessFor` in `lib/store/shared.ts` and `isFreeCall` in
   `lib/gateway.ts` must stay in agreement.
+- **Legacy `provider='Free'` rows are repaired on boot.**
+  `normalizeLegacyFamilies` in `lib/db.ts` infers the family from the id and
+  rewrites the row. `lib/model-family.ts` is the single source for that
+  mapping.
 - **Cost, sell price, and charge are three different numbers.**
   `models.input_price_micros` / `output_price_micros` are upstream cost;
   `models.sell_input_micros` / `sell_output_micros` are our price;
@@ -77,7 +88,8 @@ usage in SQLite.
 - `app/api/admin/*` — session, catalog status, pricing, and credit endpoints.
 - `app/api/*` — console actions (loopback or admin session).
 - `app/v1/chat/completions` — the gateway entry point.
-- `app/v1/models` — authenticated catalog with access tier and sell prices.
+- `app/v1/models` — authenticated catalog with provider owner, family,
+  group, and sell prices.
 - `lib/provider.ts` — upstream client, metadata, sync.
 - `lib/pricing.ts` — pure pricing and estimation arithmetic.
 - `lib/gateway.ts` — auth, routing, reservation, response handling.
@@ -94,10 +106,11 @@ usage in SQLite.
 ## Verification
 
 `npm run verify` is the full local gate. FID-2026-1029-004 records the current
-receipt (26 tests, quality PASS over 91 files, 20-route build) and the live
-production smoke. Live provider checks require `PROVIDER_KEY` and are not run
-in CI. Unit tests cover admin token tampering, expiry, password rotation, epoch
+full-catalog receipt, and FID-2026-1029-005 records the provider/family/group
+correction (30 tests, quality PASS over 92 files, 20-route build, live API and
+UI checks). Live provider checks require `PROVIDER_KEY` and are not run in CI.
+Unit tests cover admin token tampering, expiry, password rotation, epoch
 revocation, cookie flags, origin checks, the login limiter, HTTP key
-extraction, and pricing arithmetic. The paid money path has a disposable-DB
-receipt; the provider account has no paid balance, so real paid upstream
-inference remains unverified.
+extraction, pricing arithmetic, and family normalization. The paid money path
+has a disposable-DB receipt; the provider account has no paid balance, so real
+paid upstream inference remains unverified.

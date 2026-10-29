@@ -30,6 +30,17 @@ the Perfection Loop. The operator is the approval boundary.
 - **TypeScript** strict, Node `>=22.18.0`
 - **npm** for installs and gates
 
+## Domain Vocabulary
+
+- **Provider:** Savant Gateway. `/v1/models` must publish
+  `owned_by: "savant-gateway"`.
+- **Family:** the model line (GPT, Claude, DeepSeek, …), serialized as
+  `family`. The legacy `models.provider` column stores this family label.
+- **Group:** `free`, `paid`, or `subscription`. UI data calls it `access`;
+  `/v1/models` calls it `group`.
+
+Never store or emit the upstream `"Free"` sentinel as a family.
+
 ## Non-Negotiables
 
 1. **No coding-agent credit.** No agent may be named in a commit message,

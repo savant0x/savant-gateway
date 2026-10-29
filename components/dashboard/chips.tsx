@@ -47,15 +47,20 @@ export function StatCard({
   label,
   value,
   detail,
+  icon,
 }: {
   label: string;
   value: string;
   detail: string;
+  icon?: string;
 }) {
   return (
     <Card className="min-h-[6.5rem]" variant="secondary">
       <Card.Content className="pt-5">
-        <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted">
+        <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.12em] text-muted">
+          {icon ? (
+            <i aria-hidden className={`fa-solid ${icon} text-accent`} />
+          ) : null}
           {label}
         </p>
         <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>

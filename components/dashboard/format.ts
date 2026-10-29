@@ -36,6 +36,61 @@ export function formatDate(value: string | null | undefined) {
   return `${dateFormatter.format(date)} UTC`;
 }
 
+export function formatPricePer1M(value: number | null | undefined) {
+  if (value == null) return "—";
+  if (value === 0) return "$0.00";
+
+  return `$${value.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 6,
+  })}`;
+}
+
+export function formatPreciseMoney(value: number | null | undefined) {
+  if (value == null) return "—";
+
+  const absolute = Math.abs(value);
+  const digits = absolute > 0 && absolute < 0.01 ? 4 : 2;
+
+  return `$${value.toFixed(digits)}`;
+}
+
+export function formatMicros(value: number | null | undefined) {
+  return formatPreciseMoney(value == null ? null : value / 1_000_000);
+}
+
+export function formatSignedMicros(value: number | null | undefined) {
+  if (value == null) return "—";
+
+  const sign = value > 0 ? "+" : value < 0 ? "-" : "";
+
+  return `${sign}${formatMicros(Math.abs(value))}`;
+}
+
+export function formatMarginPercent(bps: number | null | undefined) {
+  if (bps == null) return "—";
+
+  return `${(bps / 100).toFixed(1)}%`;
+}
+
+export function formatRatePercent(bps: number | null | undefined) {
+  if (bps == null) return "—";
+
+  return `${(bps / 100).toFixed(2)}%`;
+}
+
+export function formatDay(value: string) {
+  const date = new Date(`${value}T00:00:00Z`);
+
+  if (Number.isNaN(date.getTime())) return value;
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}
+
 export function formatUsage(value: unknown) {
   if (!value || typeof value !== "object") return null;
 

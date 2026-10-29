@@ -23,20 +23,20 @@ export function SiteHeader() {
               {siteConfig.name}
             </span>
             <span className="hidden text-[11px] text-muted sm:block">
-              OpenAI-compatible · free pool
+              OpenAI-compatible · full catalog
             </span>
           </span>
         </Link>
 
         <nav className="ml-auto hidden items-center gap-1 md:flex">
           {siteConfig.navItems.map((item) => (
-            <a
+            <Link
               key={item.href}
               className="rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-white/5 hover:text-foreground"
               href={item.href}
             >
               {item.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
@@ -45,6 +45,7 @@ export function SiteHeader() {
             className={`${primaryCta} hidden sm:inline-flex`}
             href="/dashboard"
           >
+            <i aria-hidden className="fa-solid fa-terminal mr-2" />
             Open console
           </Link>
         </div>

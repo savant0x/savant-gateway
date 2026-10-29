@@ -21,7 +21,7 @@ export default function Error({
         <Card.Header>
           <Card.Title>Something went wrong</Card.Title>
           <Card.Description>
-            The dashboard could not load. Check the server logs, then retry.
+            The page could not load. Check the server logs, then retry.
           </Card.Description>
         </Card.Header>
         <Card.Content>

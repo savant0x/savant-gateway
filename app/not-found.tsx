@@ -13,7 +13,7 @@ export default function NotFound() {
         </Card.Header>
         <Card.Footer className="justify-center">
           <Link className="button button--primary button--md" href="/">
-            Back to dashboard
+            Back to home
           </Link>
         </Card.Footer>
       </Card>

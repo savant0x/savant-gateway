@@ -2,7 +2,9 @@ import "server-only";
 
 import type { SyncedModel } from "./types";
 
-import { replaceModels, saveProviderStatus } from "./store";
+import { replaceModels } from "./store/models";
+import { saveProviderStatus } from "./store/provider";
+import { getMarkupBps } from "./store/settings";
 
 const DEFAULT_BASE_URL = "https://api.apinex.bond/v1";
 const DEFAULT_PUBLIC_MODELS_URL = "https://apinex.bond/api/public/models";
@@ -78,12 +80,6 @@ function baseUrl() {
   return (process.env.PROVIDER_BASE_URL?.trim() || DEFAULT_BASE_URL).replace(
     /\/+$/,
     "",
-  );
-}
-
-function publicModelsUrl() {
-  return (
-    process.env.PROVIDER_PUBLIC_MODELS_URL?.trim() || DEFAULT_PUBLIC_MODELS_URL
   );
 }
 
@@ -203,7 +199,9 @@ export async function fetchProviderModels(): Promise<ProviderModel[]> {
 }
 
 export async function fetchPublicModels(): Promise<Map<string, PublicModel>> {
-  const response = await fetch(publicModelsUrl(), {
+  const url =
+    process.env.PROVIDER_PUBLIC_MODELS_URL?.trim() || DEFAULT_PUBLIC_MODELS_URL;
+  const response = await fetch(url, {
     headers: { Accept: "application/json", src: "gate" },
     signal: AbortSignal.timeout(10_000),
   });
@@ -267,12 +265,12 @@ function buildSyncedModels(
     const weight = isFreePool
       ? Math.max(1, Math.round(numberOrNull(spec?.weight) ?? 1))
       : 0;
-    const inputPrice = isFreePool
+    const inputCost = isFreePool
       ? 0
       : Math.max(0, numberOrNull(spec?.dollarsPer1M) ?? 0);
-    const outputPrice = isFreePool
+    const outputCost = isFreePool
       ? 0
-      : Math.max(0, numberOrNull(spec?.outputDollarsPer1M) ?? inputPrice);
+      : Math.max(0, numberOrNull(spec?.outputDollarsPer1M) ?? inputCost);
 
     rows.push({
       id,
@@ -283,8 +281,8 @@ function buildSyncedModels(
       contextWindow:
         String(spec?.contextWindow ?? item.context_window ?? "").trim() || "—",
       tokenWeight: weight,
-      inputPriceMicros: Math.round(inputPrice * 1_000_000),
-      outputPriceMicros: Math.round(outputPrice * 1_000_000),
+      costInputMicros: Math.round(inputCost * 1_000_000),
+      costOutputMicros: Math.round(outputCost * 1_000_000),
       allowFree: isFreePool,
       supportsTools: Boolean(spec?.supportsTools),
       supportsVision: Boolean(spec?.supportsVision),
@@ -304,6 +302,8 @@ function buildSyncedModels(
 export type SyncSummary = {
   imported: number;
   free: number;
+  paid: number;
+  subscriptionOnly: number;
   balance: ProviderBalance | null;
   subscription: ProviderSubscription | null;
   warnings: string[];
@@ -363,12 +363,21 @@ export async function syncProvider(): Promise<SyncSummary> {
   );
   const synced = buildSyncedModels(modelsResult.value, metadata);
 
-  replaceModels(synced);
+  replaceModels(synced, getMarkupBps());
+
+  const free = synced.filter(
+    (model) => model.allowFree && model.tokenWeight > 0,
+  ).length;
+  const paid = synced.filter(
+    (model) =>
+      !(model.allowFree && model.tokenWeight > 0) && model.costInputMicros > 0,
+  ).length;
 
   return {
     imported: synced.length,
-    free: synced.filter((model) => model.allowFree && model.tokenWeight > 0)
-      .length,
+    free,
+    paid,
+    subscriptionOnly: synced.length - free - paid,
     balance,
     subscription,
     warnings,

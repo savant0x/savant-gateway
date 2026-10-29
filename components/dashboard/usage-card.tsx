@@ -3,7 +3,7 @@ import type { UsageSummary } from "@/lib/types";
 import { Card, Chip } from "@heroui/react";
 
 import { StatusChip } from "./chips";
-import { formatDate, formatMoney, formatNumber } from "./format";
+import { formatDate, formatMicros, formatNumber } from "./format";
 
 export function UsageCard({ usage }: { usage: UsageSummary[] }) {
   return (
@@ -14,7 +14,7 @@ export function UsageCard({ usage }: { usage: UsageSummary[] }) {
             <Card.Title>Recent usage</Card.Title>
             <Card.Description>
               One row per completed or attempted upstream call, including
-              streamed completions.
+              streamed completions. The charge is the settled debit.
             </Card.Description>
           </div>
           <Chip color="default" size="sm" variant="soft">
@@ -37,7 +37,7 @@ export function UsageCard({ usage }: { usage: UsageSummary[] }) {
                   <th>Key</th>
                   <th>Tokens</th>
                   <th>Weighted</th>
-                  <th>Cost</th>
+                  <th>Charged</th>
                   <th>Latency</th>
                   <th>Status</th>
                 </tr>
@@ -67,7 +67,7 @@ export function UsageCard({ usage }: { usage: UsageSummary[] }) {
                       {formatNumber(row.weightedTokens)}
                     </td>
                     <td className="text-muted">
-                      {formatMoney(row.costMicros / 1_000_000)}
+                      {formatMicros(row.chargedMicros)}
                     </td>
                     <td className="text-muted">
                       {formatNumber(row.latencyMs)} ms

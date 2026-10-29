@@ -17,11 +17,12 @@ export function FinalCta() {
         />
         <div className="relative max-w-2xl">
           <h2 className="text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
-            Ready to route the free pool?
+            Ready to route the whole catalog?
           </h2>
           <p className="mt-3 text-sm leading-6 text-muted">
-            The console creates keys, runs a real completion, and shows the
-            weighted usage row it produced. Admin stays behind its own password.
+            The console creates keys, funds the tenant, runs a real completion,
+            and shows the charged usage row it produced. Admin keeps pricing and
+            analytics behind its own password.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Link className={primaryCta} href="/dashboard">

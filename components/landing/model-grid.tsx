@@ -1,6 +1,22 @@
-import type { LandingData } from "@/lib/types";
+import type { LandingData, ModelSummary } from "@/lib/types";
 
-import { Chip } from "@heroui/react";
+import Link from "next/link";
+
+import { AccessChip } from "@/components/dashboard/chips";
+import { formatPricePer1M } from "@/components/dashboard/format";
+
+function priceLabel(model: ModelSummary, direction: "input" | "output") {
+  if (model.access === "free") return "Free";
+
+  if (model.inputPricePer1M === 0 && model.outputPricePer1M === 0) {
+    return "Subscription";
+  }
+
+  const value =
+    direction === "input" ? model.inputPricePer1M : model.outputPricePer1M;
+
+  return formatPricePer1M(value);
+}
 
 export function ModelGrid({ data }: { data: LandingData }) {
   return (
@@ -14,26 +30,31 @@ export function ModelGrid({ data }: { data: LandingData }) {
             Live catalog
           </p>
           <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em]">
-            The free pool, as synced.
+            The full catalog, not a free-tier teaser.
           </h2>
           <p className="mt-2 max-w-xl text-sm leading-6 text-muted">
-            Only models the provider exposes on the free pool are routable. Paid
-            catalog entries are stored but blocked locally.
+            Free, subscription-only, and priced models share one endpoint. Sell
+            prices are set and audited in admin; upstream cost never ships to
+            the client.
           </p>
         </div>
-        <Chip color="accent" size="sm" variant="soft">
-          {data.stats.freeModelCount} free models
-        </Chip>
+        <Link
+          className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-muted transition-colors hover:border-cyan-300/30 hover:text-foreground"
+          href="/models"
+        >
+          Compare all {data.stats.modelCount} models
+          <i aria-hidden className="fa-solid fa-arrow-right text-xs" />
+        </Link>
       </div>
 
-      {data.freeModels.length === 0 ? (
+      {data.models.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-8 text-sm text-muted">
           The catalog is empty. Open the console, sync the provider, and this
           section fills from the upstream catalog.
         </div>
       ) : (
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {data.freeModels.map((model) => (
+          {data.models.map((model) => (
             <article
               key={model.id}
               className="group rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition-colors hover:border-cyan-300/30 hover:bg-white/[0.05]"
@@ -47,9 +68,7 @@ export function ModelGrid({ data }: { data: LandingData }) {
                     {model.id}
                   </p>
                 </div>
-                <span className="shrink-0 rounded-full border border-cyan-300/30 bg-cyan-300/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-cyan-200">
-                  free
-                </span>
+                <AccessChip model={model} />
               </div>
               <dl className="mt-5 grid grid-cols-3 gap-2 text-[11px]">
                 <div>
@@ -57,9 +76,9 @@ export function ModelGrid({ data }: { data: LandingData }) {
                   <dd className="mt-0.5 font-medium">{model.contextWindow}</dd>
                 </div>
                 <div>
-                  <dt className="text-muted">Weight</dt>
+                  <dt className="text-muted">Sell price</dt>
                   <dd className="mt-0.5 font-medium">
-                    {model.tokenWeight > 0 ? `${model.tokenWeight}×` : "—"}
+                    {priceLabel(model, "input")} in
                   </dd>
                 </div>
                 <div>
@@ -69,6 +88,9 @@ export function ModelGrid({ data }: { data: LandingData }) {
                   </dd>
                 </div>
               </dl>
+              <p className="mt-4 text-[11px] text-muted">
+                Output {priceLabel(model, "output")} / 1M
+              </p>
             </article>
           ))}
         </div>

@@ -26,6 +26,7 @@ export function LogoutButton() {
       variant="secondary"
       onPress={handleLogout}
     >
+      <i aria-hidden className="fa-solid fa-arrow-right-from-bracket" />
       {pending ? "Signing out" : "Sign out"}
     </Button>
   );

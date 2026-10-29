@@ -15,21 +15,22 @@ export function Hero({ provider }: { provider: ProviderStatus }) {
       <div className="max-w-3xl">
         <div className="flex flex-wrap gap-2">
           <Chip color="accent" size="sm" variant="soft">
-            Next.js 16
+            Full catalog
           </Chip>
           <Chip color="accent" size="sm" variant="soft">
-            HeroUI v3
+            Credit settled
           </Chip>
           <Chip color="default" size="sm" variant="soft">
             SQLite
           </Chip>
         </div>
         <h1 className="mt-4 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
-          A thin gateway, built clean.
+          Every model, one gateway.
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
-          One provider integration, hashed consumer keys, free-model routing,
-          and usage metering. No payment stubs, no hidden admin surface.
+          Sync the provider, price the paid rows, and route the whole catalog
+          through one OpenAI-compatible endpoint. Free calls stay free; paid
+          calls settle against tenant credit.
         </p>
       </div>
 
@@ -39,6 +40,7 @@ export function Hero({ provider }: { provider: ProviderStatus }) {
           className="inline-flex h-9 items-center justify-center rounded-xl border border-black/10 bg-surface px-4 text-sm font-medium transition-colors hover:border-accent/40 dark:border-white/10"
           href="#keys"
         >
+          <i aria-hidden className="fa-solid fa-key mr-2 text-accent" />
           Create a consumer key
         </a>
         <span className="text-xs text-muted">

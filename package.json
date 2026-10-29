@@ -19,6 +19,7 @@
 		"prepare": "git config core.hooksPath .githooks && git config commit.template .gitmessage"
 	},
 	"dependencies": {
+		"@fortawesome/fontawesome-free": "^6.7.2",
 		"@heroui/react": "3.2.7",
 		"@heroui/styles": "3.2.7",
 		"better-sqlite3": "13.0.3",

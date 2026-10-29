@@ -38,12 +38,8 @@ next-env.d.ts
 pnpm-lock.yaml
 yarn.lock
 bun.lockb
-# local database and logs
-/data/*.db
-/data/*.db-wal
-/data/*.db-shm
-/data/*.log
-/data/*.pid
+# local database, cookies, and runtime logs
+/data/
 
 # local agent/runtime state
 .freebuff/

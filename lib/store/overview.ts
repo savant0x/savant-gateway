@@ -2,7 +2,9 @@ import "server-only";
 
 import type {
   AdminOverview,
+  CatalogData,
   LandingData,
+  ModelSummary,
   Overview,
   OverviewStats,
   PublicProviderStatus,
@@ -10,25 +12,40 @@ import type {
 
 import { db } from "../db";
 
+import { getAccountSummary, listCreditLedger } from "./billing";
 import { listApiKeys } from "./keys";
 import { listAllModels, listModels } from "./models";
+import { summarizePricing } from "./pricing";
 import { getProviderStatus } from "./provider";
-import { listUsage } from "./usage";
+import { listAdminUsage, listUsage } from "./usage";
 
 export function getOverviewStats(): OverviewStats {
   const row = db
     .prepare(
       `SELECT
-        (SELECT COUNT(*) FROM models WHERE status = 'active') AS model_count,
         (SELECT COUNT(*) FROM models
-         WHERE status = 'active' AND allow_free = 1 AND token_weight > 0) AS free_model_count,
+         WHERE in_catalog = 1 AND status = 'active') AS model_count,
+        (SELECT COUNT(*) FROM models
+         WHERE in_catalog = 1 AND status = 'active'
+           AND allow_free = 1 AND token_weight > 0) AS free_model_count,
+        (SELECT COUNT(*) FROM models
+         WHERE in_catalog = 1 AND status = 'active'
+           AND NOT (allow_free = 1 AND token_weight > 0)
+           AND provider <> 'Free' AND id NOT LIKE 'free/%') AS paid_model_count,
+        (SELECT COUNT(*) FROM models
+         WHERE in_catalog = 1 AND status = 'active'
+           AND NOT (allow_free = 1 AND token_weight > 0)
+           AND (provider = 'Free' OR id LIKE 'free/%')) AS subscription_model_count,
         (SELECT COUNT(*) FROM api_keys WHERE status = 'active') AS key_count,
         (SELECT COUNT(*) FROM usage_events) AS request_count,
-        (SELECT COALESCE(SUM(input_tokens + output_tokens), 0) FROM usage_events) AS total_tokens`,
+        (SELECT COALESCE(SUM(input_tokens + output_tokens), 0)
+         FROM usage_events) AS total_tokens`,
     )
     .get() as {
     model_count: number;
     free_model_count: number;
+    paid_model_count: number;
+    subscription_model_count: number;
     key_count: number;
     request_count: number;
     total_tokens: number;
@@ -37,6 +54,8 @@ export function getOverviewStats(): OverviewStats {
   return {
     modelCount: row.model_count,
     freeModelCount: row.free_model_count,
+    paidModelCount: row.paid_model_count,
+    subscriptionModelCount: row.subscription_model_count,
     keyCount: row.key_count,
     requestCount: row.request_count,
     totalTokens: row.total_tokens,
@@ -46,6 +65,7 @@ export function getOverviewStats(): OverviewStats {
 export function getOverview(): Overview {
   return {
     provider: getProviderStatus(),
+    account: getAccountSummary(),
     models: listModels(),
     keys: listApiKeys(),
     usage: listUsage(25),
@@ -67,19 +87,42 @@ function toPublicProvider(): PublicProviderStatus {
   };
 }
 
+function previewModels(models: ModelSummary[]) {
+  const free = models.filter((model) => model.access === "free").slice(0, 2);
+  const paid = models.filter((model) => model.access === "paid").slice(0, 4);
+
+  return [...paid, ...free];
+}
+
 export function getLandingData(): LandingData {
   const models = listModels();
 
   return {
     provider: toPublicProvider(),
-    freeModels: models.filter((model) => model.access === "free").slice(0, 6),
+    models: previewModels(models),
     stats: getOverviewStats(),
   };
 }
 
-export function getAdminOverview(): AdminOverview {
+export function getCatalogData(): CatalogData {
   return {
-    ...getOverview(),
-    allModels: listAllModels(),
+    models: listModels(),
+    stats: getOverviewStats(),
+    provider: toPublicProvider(),
+  };
+}
+
+export function getAdminOverview(): AdminOverview {
+  const models = listAllModels();
+
+  return {
+    provider: getProviderStatus(),
+    account: getAccountSummary(),
+    models,
+    keys: listApiKeys(),
+    usage: listAdminUsage(25),
+    stats: getOverviewStats(),
+    pricing: summarizePricing(models),
+    ledger: listCreditLedger(10),
   };
 }

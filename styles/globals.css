@@ -56,6 +56,11 @@ body {
   vertical-align: middle;
 }
 
+.data-table th.text-right,
+.data-table td.text-right {
+  text-align: right;
+}
+
 .data-table tbody tr:hover {
   background: color-mix(in oklab, var(--surface) 55%, transparent);
 }

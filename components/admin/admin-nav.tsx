@@ -1,0 +1,41 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+const ITEMS = [
+  { href: "/admin", icon: "fa-gauge-high", label: "Overview" },
+  { href: "/admin/catalog", icon: "fa-layer-group", label: "Catalog" },
+  { href: "/admin/pricing", icon: "fa-calculator", label: "Pricing" },
+  { href: "/admin/analytics", icon: "fa-chart-line", label: "Analytics" },
+] as const;
+
+export function AdminNav() {
+  const pathname = usePathname();
+
+  return (
+    <nav className="hidden items-center gap-1 md:flex">
+      {ITEMS.map((item) => {
+        const active =
+          item.href === "/admin"
+            ? pathname === "/admin"
+            : pathname.startsWith(item.href);
+
+        return (
+          <Link
+            key={item.href}
+            className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
+              active
+                ? "bg-cyan-300/10 text-cyan-100"
+                : "text-muted hover:bg-white/5 hover:text-foreground"
+            }`}
+            href={item.href}
+          >
+            <i aria-hidden className={`fa-solid ${item.icon} text-xs`} />
+            {item.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}

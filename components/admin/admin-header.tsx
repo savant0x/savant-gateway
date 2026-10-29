@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { AdminNav } from "./admin-nav";
 import { LogoutButton } from "./logout-button";
 
 import { siteConfig } from "@/config/site";
@@ -23,44 +24,23 @@ export function AdminHeader() {
           Admin
         </span>
 
-        <nav className="ml-auto hidden items-center gap-1 md:flex">
-          <a
-            className="rounded-lg px-3 py-2 text-sm text-muted hover:bg-white/5 hover:text-foreground"
-            href="#provider"
-          >
-            Provider
-          </a>
-          <a
-            className="rounded-lg px-3 py-2 text-sm text-muted hover:bg-white/5 hover:text-foreground"
-            href="#models"
-          >
-            Models
-          </a>
-          <a
-            className="rounded-lg px-3 py-2 text-sm text-muted hover:bg-white/5 hover:text-foreground"
-            href="#keys"
-          >
-            Keys
-          </a>
-          <a
-            className="rounded-lg px-3 py-2 text-sm text-muted hover:bg-white/5 hover:text-foreground"
-            href="#usage"
-          >
-            Usage
-          </a>
-        </nav>
+        <div className="ml-auto">
+          <AdminNav />
+        </div>
 
-        <div className="ml-auto flex items-center gap-2 md:ml-3">
+        <div className="flex items-center gap-2 md:ml-3">
           <Link
-            className="hidden text-sm text-muted hover:text-foreground sm:block"
+            className="hidden items-center gap-1.5 text-sm text-muted hover:text-foreground sm:flex"
             href="/"
           >
+            <i aria-hidden className="fa-solid fa-globe text-xs" />
             Site
           </Link>
           <Link
-            className="hidden text-sm text-muted hover:text-foreground sm:block"
+            className="flex items-center gap-1.5 text-sm text-muted hover:text-foreground"
             href="/dashboard"
           >
+            <i aria-hidden className="fa-solid fa-terminal text-xs" />
             Console
           </Link>
           <LogoutButton />

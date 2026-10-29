@@ -48,17 +48,18 @@ export function LoginScreen({
             Restricted surface
           </p>
           <h1 className="mt-3 text-4xl font-semibold tracking-[-0.04em]">
-            Provider, models, keys, usage.
+            Provider, pricing, credit, analytics.
           </h1>
           <p className="mt-4 max-w-md text-sm leading-6 text-muted">
-            The admin panel is separate from the console. It can sync the
-            upstream catalog, disable models, and mint or revoke consumer keys.
-            Every mutation is checked against a signed HttpOnly session.
+            The admin panel is separate from the console. It syncs the full
+            upstream catalog, prices every paid row, funds tenant credit, and
+            shows the revenue and margin those calls produced.
           </p>
           <ul className="mt-6 space-y-2 text-sm text-muted">
             <li>· Password compared in constant time</li>
             <li>· Eight-hour signed session, rotated with the password</li>
             <li>· Five failed attempts per client, then a ten-minute pause</li>
+            <li>· Every pricing and credit mutation is same-origin checked</li>
           </ul>
         </div>
 

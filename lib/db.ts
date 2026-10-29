@@ -19,15 +19,28 @@ if (dbPath !== ":memory:") {
 }
 
 type GlobalDb = typeof globalThis & { gatewayDb?: Database.Database };
+type DatabaseHandle = Database.Database;
 
-function createDb() {
-  const database = new Database(dbPath);
+function hasColumn(database: DatabaseHandle, table: string, column: string) {
+  const rows = database.prepare(`PRAGMA table_info(${table})`).all() as Array<{
+    name: string;
+  }>;
 
-  database.pragma("journal_mode = WAL");
-  database.pragma("synchronous = NORMAL");
-  database.pragma("busy_timeout = 5000");
-  database.pragma("foreign_keys = ON");
+  return rows.some((row) => row.name === column);
+}
 
+function ensureColumn(
+  database: DatabaseHandle,
+  table: string,
+  column: string,
+  definition: string,
+) {
+  if (hasColumn(database, table, column)) return;
+
+  database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+}
+
+function baseSchema(database: DatabaseHandle) {
   database.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
@@ -81,7 +94,8 @@ function createDb() {
       error TEXT,
       created_at TEXT NOT NULL
     );
-    CREATE INDEX IF NOT EXISTS usage_events_created_idx ON usage_events(created_at);
+    CREATE INDEX IF NOT EXISTS usage_events_created_idx
+      ON usage_events(created_at);
 
     CREATE TABLE IF NOT EXISTS admin_state (
       id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -105,19 +119,140 @@ function createDb() {
       error TEXT
     );
   `);
+}
+
+function v2Schema(database: DatabaseHandle) {
+  ensureColumn(
+    database,
+    "models",
+    "sell_input_micros",
+    "INTEGER NOT NULL DEFAULT 0",
+  );
+  ensureColumn(
+    database,
+    "models",
+    "sell_output_micros",
+    "INTEGER NOT NULL DEFAULT 0",
+  );
+  ensureColumn(
+    database,
+    "models",
+    "price_source",
+    "TEXT NOT NULL DEFAULT 'auto'",
+  );
+  ensureColumn(database, "models", "in_catalog", "INTEGER NOT NULL DEFAULT 1");
+  ensureColumn(
+    database,
+    "users",
+    "credit_micros",
+    "INTEGER NOT NULL DEFAULT 0",
+  );
+  ensureColumn(database, "users", "held_micros", "INTEGER NOT NULL DEFAULT 0");
+  ensureColumn(
+    database,
+    "usage_events",
+    "charged_micros",
+    "INTEGER NOT NULL DEFAULT 0",
+  );
+  ensureColumn(
+    database,
+    "usage_events",
+    "estimated",
+    "INTEGER NOT NULL DEFAULT 0",
+  );
+
+  database.exec(`
+    CREATE INDEX IF NOT EXISTS models_catalog_idx
+      ON models(in_catalog, status);
+    CREATE INDEX IF NOT EXISTS usage_events_model_idx
+      ON usage_events(model_id, created_at);
+
+    CREATE TABLE IF NOT EXISTS credit_holds (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      api_key_id TEXT REFERENCES api_keys(id) ON DELETE SET NULL,
+      model_id TEXT NOT NULL,
+      hold_micros INTEGER NOT NULL,
+      created_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS credit_holds_user_idx ON credit_holds(user_id);
+    CREATE INDEX IF NOT EXISTS credit_holds_expiry_idx ON credit_holds(expires_at);
+
+    CREATE TABLE IF NOT EXISTS credit_ledger (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      kind TEXT NOT NULL,
+      amount_micros INTEGER NOT NULL,
+      balance_after_micros INTEGER NOT NULL,
+      note TEXT,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS credit_ledger_user_idx
+      ON credit_ledger(user_id, created_at);
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+  `);
+
+  // One-time backfill for rows created before sell prices existed. Rows with
+  // price_source='manual' are never touched.
+  database
+    .prepare(
+      `UPDATE models
+       SET sell_input_micros = CASE
+             WHEN allow_free = 1 OR input_price_micros <= 0 THEN 0
+             ELSE MAX(1, CAST(ROUND(input_price_micros * 1.3) AS INTEGER))
+           END,
+           sell_output_micros = CASE
+             WHEN allow_free = 1 OR output_price_micros <= 0 THEN 0
+             ELSE MAX(1, CAST(ROUND(output_price_micros * 1.3) AS INTEGER))
+           END
+       WHERE price_source = 'auto'
+         AND sell_input_micros = 0
+         AND sell_output_micros = 0`,
+    )
+    .run();
+
+  database
+    .prepare(
+      `INSERT OR IGNORE INTO settings (key, value, updated_at)
+       VALUES ('pricing.markup_bps', '3000', ?)`,
+    )
+    .run(new Date().toISOString());
+}
+
+function seed(database: DatabaseHandle) {
+  const now = new Date().toISOString();
 
   database
     .prepare(
       `INSERT OR IGNORE INTO users (id, email, name, status, created_at)
        VALUES ('user_dev', 'dev@local', 'Local Developer', 'active', ?)`,
     )
-    .run(new Date().toISOString());
+    .run(now);
 
   database
     .prepare(
       "INSERT OR IGNORE INTO admin_state (id, session_epoch) VALUES (1, 0)",
     )
     .run();
+}
+
+function createDb() {
+  const database = new Database(dbPath);
+
+  database.pragma("journal_mode = WAL");
+  database.pragma("synchronous = NORMAL");
+  database.pragma("busy_timeout = 5000");
+  database.pragma("foreign_keys = ON");
+
+  baseSchema(database);
+  v2Schema(database);
+  seed(database);
 
   return database;
 }

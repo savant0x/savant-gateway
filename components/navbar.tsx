@@ -6,9 +6,9 @@ import { ThemeToggle } from "./theme-toggle";
 import { siteConfig } from "@/config/site";
 
 const CONSOLE_NAV = [
-  { label: "Models", href: "#models" },
-  { label: "Keys", href: "#keys" },
-  { label: "Usage", href: "#usage" },
+  { label: "Models", href: "#models", icon: "fa-layer-group" },
+  { label: "Keys", href: "#keys", icon: "fa-key" },
+  { label: "Usage", href: "#usage", icon: "fa-wave-square" },
 ] as const;
 
 export function Navbar() {
@@ -37,9 +37,10 @@ export function Navbar() {
           {CONSOLE_NAV.map((item) => (
             <a
               key={item.href}
-              className="rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-surface hover:text-foreground"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-surface hover:text-foreground"
               href={item.href}
             >
+              <i aria-hidden className={`fa-solid ${item.icon} text-xs`} />
               {item.label}
             </a>
           ))}
@@ -47,15 +48,24 @@ export function Navbar() {
 
         <div className="ml-auto flex items-center gap-1 md:ml-2">
           <Link
-            className="hidden rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-surface hover:text-foreground sm:block"
+            className="hidden items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-surface hover:text-foreground lg:flex"
+            href="/models"
+          >
+            <i aria-hidden className="fa-solid fa-layer-group text-xs" />
+            Full catalog
+          </Link>
+          <Link
+            className="hidden items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-surface hover:text-foreground sm:flex"
             href="/"
           >
+            <i aria-hidden className="fa-solid fa-globe text-xs" />
             Site
           </Link>
           <Link
-            className="rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-surface hover:text-foreground"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-surface hover:text-foreground"
             href={siteConfig.adminHref}
           >
+            <i aria-hidden className="fa-solid fa-shield-halved text-xs" />
             Admin
           </Link>
           <ThemeToggle />

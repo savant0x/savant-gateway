@@ -20,35 +20,36 @@ export function QuickStart() {
             Quick start
           </p>
           <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em]">
-            Point it at the provider, then call it.
+            Sync, price, then call it.
           </h2>
           <ol className="mt-6 space-y-4 text-sm leading-6 text-muted">
             <li className="flex gap-3">
               <span className="step-number">1</span>
               <span>
                 Put <code className="mono text-foreground">PROVIDER_KEY</code>{" "}
-                in <code className="mono text-foreground">.env.local</code> and
-                start the app.
+                in <code className="mono text-foreground">.env.local</code>,
+                then sync from the console or admin.
               </span>
             </li>
             <li className="flex gap-3">
               <span className="step-number">2</span>
               <span>
-                Open the console, sync the provider, and create a consumer key.
-                Copy the secret from the one-time panel.
+                Review sell prices in admin pricing. Paid calls debit the tenant
+                credit; free-pool calls never do.
               </span>
             </li>
             <li className="flex gap-3">
               <span className="step-number">3</span>
               <span>
-                Send the request. Streaming is a boolean in the same body; set
-                it to <code className="mono text-foreground">false</code> for a
-                single JSON response.
+                Create a consumer key and send the request. Streaming is a
+                boolean in the same body; set it to{" "}
+                <code className="mono text-foreground">false</code> for a single
+                JSON response.
               </span>
             </li>
           </ol>
-          <Link className={`${secondaryCta} mt-7`} href="/dashboard">
-            Open the console
+          <Link className={`${secondaryCta} mt-7`} href="/models">
+            Browse the catalog
           </Link>
         </div>
 

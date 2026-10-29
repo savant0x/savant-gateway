@@ -1,15 +1,15 @@
 const STEPS = [
   {
     title: "Sync the upstream catalog",
-    body: "The server reads the provider key, records balance and subscription state, and imports every model with its real free/paid signal.",
+    body: "The server reads the provider key, records balance and subscription state, and imports every model with its cost, capabilities, and access tier.",
   },
   {
-    title: "Mint a consumer key",
-    body: "Keys are generated locally and stored only as SHA-256 hashes. The full sk-… secret is returned once, at creation.",
+    title: "Set sell prices",
+    body: "A default markup prices the catalog. Admin edits individual rows or reapplies a markup, with margin and blended profit computed from the same integers the gateway charges.",
   },
   {
-    title: "Call the OpenAI endpoint",
-    body: "Route requests through /v1/chat/completions. Free models stream or return JSON; paid models are rejected before upstream spend.",
+    title: "Call any model",
+    body: "Mint a consumer key and fund the tenant credit. Free models stream immediately; paid models reserve a hold, settle actual usage, and write revenue and cost to analytics.",
   },
 ];
 
@@ -24,7 +24,7 @@ export function HowItWorks() {
           The path
         </p>
         <h2 className="mt-2 max-w-2xl text-3xl font-semibold tracking-[-0.03em]">
-          Three steps from provider key to a live completion.
+          Three steps from provider key to a billed completion.
         </h2>
 
         <ol className="mt-10 grid gap-4 md:grid-cols-3">

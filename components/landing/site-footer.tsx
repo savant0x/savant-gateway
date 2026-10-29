@@ -37,7 +37,7 @@ export function SiteFooter() {
             >
               Admin
             </Link>
-            <Link className="text-muted hover:text-foreground" href="/#models">
+            <Link className="text-muted hover:text-foreground" href="/models">
               Models
             </Link>
             <Link
@@ -50,7 +50,7 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-10 flex flex-col gap-2 border-t border-white/10 pt-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
-          <span>{siteConfig.name} · local-first development build</span>
+          <span>{siteConfig.name} · OpenAI-compatible gateway</span>
           <span>Not affiliated with the upstream provider.</span>
         </div>
       </div>

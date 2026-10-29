@@ -15,19 +15,19 @@ const CURL_SAMPLE = `curl http://localhost:3000/v1/chat/completions \\
   }'`;
 
 export function Hero({ data }: { data: LandingData }) {
-  const freeCount = data.stats.freeModelCount;
+  const priced = data.stats.paidModelCount + data.stats.subscriptionModelCount;
 
   return (
     <section className="hero-glow relative overflow-hidden border-b border-white/10">
-      <div className="mx-auto grid w-full max-w-7xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:py-28 lg:px-8">
+      <div className="mx-auto grid w-full max-w-7xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-28">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-cyan-200">
               OpenAI-compatible
             </span>
             <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-muted">
-              {freeCount > 0
-                ? `${freeCount} free models ready`
+              {data.stats.modelCount > 0
+                ? `${data.stats.modelCount} models · ${data.stats.freeModelCount} free`
                 : "Catalog not synced yet"}
             </span>
           </div>
@@ -36,24 +36,25 @@ export function Hero({ data }: { data: LandingData }) {
             One key.
             <br />
             <span className="bg-gradient-to-r from-cyan-200 via-cyan-300 to-sky-400 bg-clip-text text-transparent">
-              Every free model
+              Every model
             </span>
             <br />
-            your provider allows.
+            your provider carries.
           </h1>
 
           <p className="mt-6 max-w-xl text-base leading-7 text-muted">
-            Savant Gateway syncs your upstream catalog, mints hashed consumer
-            keys, and routes the free pool through one streaming endpoint. Usage
-            is metered in the provider&apos;s weighted units, not guesses.
+            Savant Gateway syncs the full upstream catalog, prices every paid
+            row against its upstream cost, and settles each call from a credit
+            ledger. Free models stay free; everything else is routed, billed,
+            and visible in analytics.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link className={primaryCta} href="/dashboard">
-              Open the console
+            <Link className={primaryCta} href="/models">
+              Browse the catalog
             </Link>
-            <Link className={secondaryCta} href="/#quickstart">
-              See the request
+            <Link className={secondaryCta} href="/dashboard">
+              Open the console
             </Link>
           </div>
 
@@ -73,17 +74,17 @@ export function Hero({ data }: { data: LandingData }) {
             <div className="mt-3 grid grid-cols-3 gap-2 text-center">
               <div className="rounded-xl border border-white/10 bg-white/[0.03] px-2 py-3">
                 <p className="text-lg font-semibold">{data.stats.modelCount}</p>
-                <p className="text-[11px] text-muted">models synced</p>
+                <p className="text-[11px] text-muted">catalogued</p>
               </div>
               <div className="rounded-xl border border-white/10 bg-white/[0.03] px-2 py-3">
-                <p className="text-lg font-semibold text-cyan-300">
+                <p className="text-lg font-semibold text-cyan-300">{priced}</p>
+                <p className="text-[11px] text-muted">priced rows</p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] px-2 py-3">
+                <p className="text-lg font-semibold text-emerald-300">
                   {data.stats.freeModelCount}
                 </p>
                 <p className="text-[11px] text-muted">free pool</p>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-white/[0.03] px-2 py-3">
-                <p className="text-lg font-semibold">{data.provider.status}</p>
-                <p className="text-[11px] text-muted">provider</p>
               </div>
             </div>
           </div>

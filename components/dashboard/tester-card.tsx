@@ -5,9 +5,9 @@ import type { ModelSummary } from "@/lib/types";
 import { Button, Card, Input, Spinner, TextArea } from "@heroui/react";
 import { useState } from "react";
 
-import { formatUsage, responseError } from "./format";
+import { formatPricePer1M, formatUsage, responseError } from "./format";
 
-export function TesterCard({ freeModels }: { freeModels: ModelSummary[] }) {
+export function TesterCard({ models }: { models: ModelSummary[] }) {
   const [testKey, setTestKey] = useState("");
   const [testModel, setTestModel] = useState("");
   const [prompt, setPrompt] = useState(
@@ -19,14 +19,16 @@ export function TesterCard({ freeModels }: { freeModels: ModelSummary[] }) {
   const [testUsage, setTestUsage] = useState<string | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
 
-  const defaultFreeModel =
-    freeModels.find((model) => model.id === "free/gpt-6-luna")?.id ??
-    freeModels[0]?.id ??
+  const defaultModel =
+    models.find((model) => model.id === "free/gpt-6-luna")?.id ??
+    models.find((model) => model.access === "free")?.id ??
+    models[0]?.id ??
     "";
   const selectedModel =
-    testModel && freeModels.some((model) => model.id === testModel)
+    testModel && models.some((model) => model.id === testModel)
       ? testModel
-      : defaultFreeModel;
+      : defaultModel;
+  const selected = models.find((model) => model.id === selectedModel);
 
   async function handleTest() {
     setTesting(true);
@@ -37,7 +39,7 @@ export function TesterCard({ freeModels }: { freeModels: ModelSummary[] }) {
     try {
       if (!testKey.trim()) throw new Error("Paste a consumer key first.");
       if (!selectedModel)
-        throw new Error("Sync the provider and choose a free model first.");
+        throw new Error("Sync the provider and choose a model first.");
 
       const response = await fetch("/v1/chat/completions", {
         method: "POST",
@@ -138,8 +140,8 @@ export function TesterCard({ freeModels }: { freeModels: ModelSummary[] }) {
         <Card.Title>Gateway tester</Card.Title>
         <Card.Description>
           Sends a real request to{" "}
-          <code className="mono">/v1/chat/completions</code> with the consumer
-          key.
+          <code className="mono">/v1/chat/completions</code>. Paid models debit
+          the tenant credit at the sell price.
         </Card.Description>
       </Card.Header>
       <Card.Content className="space-y-3">
@@ -166,25 +168,33 @@ export function TesterCard({ freeModels }: { freeModels: ModelSummary[] }) {
             className="mb-1 block text-xs font-medium text-muted"
             htmlFor="gateway-model"
           >
-            Free model
+            Model
           </label>
           <select
             className="h-10 w-full rounded-xl border border-black/10 bg-surface px-3 text-sm outline-none focus:border-accent dark:border-white/10"
-            disabled={freeModels.length === 0}
+            disabled={models.length === 0}
             id="gateway-model"
             value={selectedModel}
             onChange={(event) => setTestModel(event.target.value)}
           >
-            {freeModels.length === 0 ? (
+            {models.length === 0 ? (
               <option value="">Sync the provider first</option>
             ) : (
-              freeModels.map((model) => (
+              models.map((model) => (
                 <option key={model.id} value={model.id}>
-                  {model.name} · {model.id}
+                  {model.name} · {model.access} · {model.id}
                 </option>
               ))
             )}
           </select>
+          {selected && selected.access !== "free" ? (
+            <p className="mt-1.5 text-[11px] text-muted">
+              <i aria-hidden className="fa-solid fa-wallet mr-1 text-accent" />
+              {formatPricePer1M(selected.inputPricePer1M)} in /{" "}
+              {formatPricePer1M(selected.outputPricePer1M)} out per 1M · settled
+              from credit
+            </p>
+          ) : null}
         </div>
 
         <div className="block">
@@ -197,7 +207,7 @@ export function TesterCard({ freeModels }: { freeModels: ModelSummary[] }) {
           <TextArea
             className="w-full"
             id="gateway-prompt"
-            rows={4}
+            rows={3}
             value={prompt}
             onChange={(event) => setPrompt(event.target.value)}
           />
@@ -214,7 +224,7 @@ export function TesterCard({ freeModels }: { freeModels: ModelSummary[] }) {
             Stream response
           </label>
           <Button
-            isDisabled={testing || freeModels.length === 0}
+            isDisabled={testing || models.length === 0}
             variant="primary"
             onPress={handleTest}
           >

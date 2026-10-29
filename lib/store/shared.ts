@@ -1,12 +1,16 @@
 import "server-only";
 
 import type {
+  AdminModelSummary,
+  AdminUsageSummary,
   KeySummary,
   ModelAccess,
   ModelSummary,
   ProviderStatus,
   UsageSummary,
 } from "../types";
+
+import { blendedProfitMicros, marginBps, microsToPrice } from "../pricing";
 
 export type ModelRow = {
   id: string;
@@ -17,6 +21,10 @@ export type ModelRow = {
   token_weight: number;
   input_price_micros: number;
   output_price_micros: number;
+  sell_input_micros: number;
+  sell_output_micros: number;
+  price_source: "auto" | "manual";
+  in_catalog: number;
   allow_free: number;
   supports_tools: number;
   supports_vision: number;
@@ -43,6 +51,7 @@ export type UsageRow = {
   input_tokens: number;
   output_tokens: number;
   weighted_tokens: number;
+  charged_micros: number;
   cost_micros: number;
   status: string;
   latency_ms: number;
@@ -57,10 +66,13 @@ export type GatewayModel = {
   provider: string;
   contextWindow: string;
   tokenWeight: number;
-  inputPriceMicros: number;
-  outputPriceMicros: number;
+  costInputMicros: number;
+  costOutputMicros: number;
+  sellInputMicros: number;
+  sellOutputMicros: number;
   allowFree: boolean;
   status: string;
+  inCatalog: boolean;
 };
 
 export type AuthenticatedKey = {
@@ -89,10 +101,10 @@ export function accessFor(
 ): ModelAccess {
   if (row.allow_free === 1 && row.token_weight > 0) return "free";
 
-  const looksFree =
+  const looksLikePool =
     row.provider.toLowerCase() === "free" || row.id.startsWith("free/");
 
-  return looksFree ? "subscription" : "paid";
+  return looksLikePool ? "subscription" : "paid";
 }
 
 export function toModelSummary(row: ModelRow): ModelSummary {
@@ -105,13 +117,34 @@ export function toModelSummary(row: ModelRow): ModelSummary {
     tokenWeight: row.token_weight,
     allowFree: row.allow_free === 1,
     access: accessFor(row),
-    inputPricePer1M: row.input_price_micros / 1_000_000,
-    outputPricePer1M: row.output_price_micros / 1_000_000,
+    inputPricePer1M: microsToPrice(row.sell_input_micros),
+    outputPricePer1M: microsToPrice(row.sell_output_micros),
     supportsTools: row.supports_tools === 1,
     supportsVision: row.supports_vision === 1,
     health: row.health,
     status: row.status,
     syncedAt: row.synced_at,
+  };
+}
+
+export function toAdminModelSummary(row: ModelRow): AdminModelSummary {
+  const summary = toModelSummary(row);
+
+  return {
+    ...summary,
+    costInputPer1M: microsToPrice(row.input_price_micros),
+    costOutputPer1M: microsToPrice(row.output_price_micros),
+    priceSource: row.price_source,
+    inputMarginBps: marginBps(row.input_price_micros, row.sell_input_micros),
+    outputMarginBps: marginBps(row.output_price_micros, row.sell_output_micros),
+    blendedProfitMicros: blendedProfitMicros({
+      costInputMicros: row.input_price_micros,
+      costOutputMicros: row.output_price_micros,
+      sellInputMicros: row.sell_input_micros,
+      sellOutputMicros: row.sell_output_micros,
+    }),
+    inCatalog: row.in_catalog === 1,
+    sortOrder: row.sort_order,
   };
 }
 
@@ -135,10 +168,17 @@ export function toUsageSummary(row: UsageRow): UsageSummary {
     inputTokens: row.input_tokens,
     outputTokens: row.output_tokens,
     weightedTokens: row.weighted_tokens,
-    costMicros: row.cost_micros,
+    chargedMicros: row.charged_micros,
     status: row.status,
     latencyMs: row.latency_ms,
     error: row.error,
     createdAt: row.created_at,
+  };
+}
+
+export function toAdminUsageSummary(row: UsageRow): AdminUsageSummary {
+  return {
+    ...toUsageSummary(row),
+    costMicros: row.cost_micros,
   };
 }

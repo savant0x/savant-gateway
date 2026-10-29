@@ -1,7 +1,7 @@
 {
   "name": "Savant Gateway",
   "short_name": "Savant",
-  "description": "An OpenAI-compatible gateway for upstream free models.",
+  "description": "An OpenAI-compatible gateway for the full provider catalog, with pricing, credits, and usage analytics.",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",

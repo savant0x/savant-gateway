@@ -1,41 +1,28 @@
 import "server-only";
 
 import {
+  DEFAULT_OUTPUT_BUDGET,
+  MAX_OUTPUT_BUDGET,
+  computeHoldMicros,
+  estimatePromptTokens,
+  estimateTokensFromText,
+  readRequestedOutputBudget,
+} from "./pricing";
+import {
+  completionText,
+  type GatewayCallContext,
+  readUsage,
+  settleCall,
+} from "./gateway-settle";
+import { streamCompletion } from "./gateway-stream";
+import { CORS_HEADERS, extractApiKey, jsonError } from "./http";
+import { providerChatCompletion, readProviderError } from "./provider";
+import {
   authenticateApiKey,
   getModelForGateway,
-  recordUsage,
-  type AuthenticatedKey,
   type GatewayModel,
 } from "./store";
-import { providerChatCompletion, readProviderError } from "./provider";
-import { CORS_HEADERS, extractApiKey, jsonError } from "./http";
-
-type TokenUsage = {
-  inputTokens: number;
-  outputTokens: number;
-};
-
-function toTokenCount(value: unknown) {
-  const parsed = Number(value);
-
-  return Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : 0;
-}
-
-function readUsage(value: unknown): TokenUsage | null {
-  if (!value || typeof value !== "object") return null;
-
-  const usage = (value as Record<string, unknown>).usage;
-
-  if (!usage || typeof usage !== "object") return null;
-
-  const record = usage as Record<string, unknown>;
-  const inputTokens = toTokenCount(record.prompt_tokens ?? record.input_tokens);
-  const outputTokens = toTokenCount(
-    record.completion_tokens ?? record.output_tokens,
-  );
-
-  return { inputTokens, outputTokens };
-}
+import { reserveCreditHold, type CreditHold } from "./store/billing";
 
 function resolveModel(publicId: string) {
   const exact = getModelForGateway(publicId);
@@ -72,118 +59,77 @@ function safeUpstreamMessage(status: number, message: string) {
   return message || "Provider request failed";
 }
 
-function streamCompletion(
-  upstream: Response,
-  auth: AuthenticatedKey,
+function isFreeCall(model: GatewayModel) {
+  return model.allowFree && model.tokenWeight > 0;
+}
+
+type PaidReservation =
+  | { blocked: Response }
+  | {
+      blocked: null;
+      hold: CreditHold;
+      promptTokens: number;
+      outputBudget: number;
+      requestedBudget: number | null;
+    };
+
+function reservePaidCall(
   model: GatewayModel,
-  startedAt: number,
-) {
-  const reader = upstream.body?.getReader();
+  auth: { keyId: string; userId: string },
+  body: Record<string, unknown>,
+): PaidReservation {
+  const requestedBudget = readRequestedOutputBudget(body);
 
-  if (!reader) {
-    recordUsage({
-      auth,
-      model,
-      inputTokens: 0,
-      outputTokens: 0,
-      status: "error",
-      latencyMs: Date.now() - startedAt,
-      error: "Provider returned an empty stream",
-    });
-
-    return jsonError(
-      502,
-      "Provider returned an empty stream",
-      "upstream_error",
-    );
+  if (requestedBudget !== null && requestedBudget > MAX_OUTPUT_BUDGET) {
+    return {
+      blocked: jsonError(400, `max_tokens cannot exceed ${MAX_OUTPUT_BUDGET}.`),
+    };
   }
 
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let usage: TokenUsage = { inputTokens: 0, outputTokens: 0 };
-  let settled = false;
+  const outputBudget = requestedBudget ?? DEFAULT_OUTPUT_BUDGET;
+  const promptTokens = estimatePromptTokens(body.messages, body.tools);
+  const holdMicros = computeHoldMicros({
+    inputTokens: promptTokens,
+    outputTokens: outputBudget,
+    sellInputMicros: model.sellInputMicros,
+    sellOutputMicros: model.sellOutputMicros,
+  });
+  const hold = reserveCreditHold({
+    userId: auth.userId,
+    keyId: auth.keyId,
+    modelId: model.id,
+    holdMicros,
+  });
 
-  const finish = (status: "ok" | "error" | "cancelled", error?: string) => {
-    if (settled) return;
-    settled = true;
+  if (!hold) {
+    return {
+      blocked: jsonError(
+        402,
+        "Insufficient credit balance for this request. Add credit in the operator console.",
+        "insufficient_quota",
+      ),
+    };
+  }
 
-    try {
-      recordUsage({
-        auth,
-        model,
-        inputTokens: usage.inputTokens,
-        outputTokens: usage.outputTokens,
-        status,
-        latencyMs: Date.now() - startedAt,
-        error,
-      });
-    } catch {
-      // Usage recording must never break a response that is already streaming.
-    }
+  return {
+    blocked: null,
+    hold,
+    promptTokens,
+    outputBudget,
+    requestedBudget,
   };
+}
 
-  const stream = new ReadableStream<Uint8Array>({
-    async start(controller) {
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
+function failureStatus(status: number) {
+  return status === 400 || status === 402 || status === 429 ? status : 502;
+}
 
-          if (done) break;
+function retryHeaders(upstream: Response): Record<string, string> {
+  const retryAfter = upstream.headers.get("retry-after");
 
-          controller.enqueue(value);
-          buffer += decoder.decode(value, { stream: true });
+  if (!retryAfter) return {};
 
-          let newline = buffer.indexOf("\n");
-
-          while (newline >= 0) {
-            const line = buffer.slice(0, newline).replace(/\r$/, "");
-
-            buffer = buffer.slice(newline + 1);
-
-            if (line.startsWith("data:")) {
-              const raw = line.slice(5).trim();
-
-              if (raw && raw !== "[DONE]") {
-                try {
-                  const parsed = JSON.parse(raw) as Record<string, unknown>;
-                  const next = readUsage(parsed);
-
-                  if (next) usage = next;
-                } catch {
-                  // Keep forwarding malformed provider chunks; only usage parsing is best-effort.
-                }
-              }
-            }
-
-            newline = buffer.indexOf("\n");
-          }
-        }
-
-        controller.close();
-        finish("ok");
-      } catch (error) {
-        if (settled) return;
-
-        controller.error(error);
-        finish("error", error instanceof Error ? error.message : String(error));
-      }
-    },
-    cancel(reason) {
-      reader.cancel(reason).catch(() => {});
-      finish("cancelled", "Client disconnected");
-    },
-  });
-
-  return new Response(stream, {
-    status: 200,
-    headers: {
-      ...CORS_HEADERS,
-      "Content-Type": "text/event-stream; charset=utf-8",
-      "Cache-Control": "no-cache, no-transform",
-      Connection: "keep-alive",
-      "X-Accel-Buffering": "no",
-    },
-  });
+  return { "Retry-After": retryAfter };
 }
 
 export async function handleChatCompletions(request: Request) {
@@ -221,7 +167,7 @@ export async function handleChatCompletions(request: Request) {
 
   const model = resolveModel(body.model.trim());
 
-  if (!model) {
+  if (!model || !model.inCatalog) {
     return jsonError(404, `Unknown model: ${body.model}`, "model_not_found");
   }
 
@@ -233,23 +179,40 @@ export async function handleChatCompletions(request: Request) {
     );
   }
 
-  const isFree = model.allowFree && model.tokenWeight > 0;
+  const free = isFreeCall(model);
+  let hold: CreditHold | null = null;
+  let promptTokens = estimatePromptTokens(body.messages, body.tools);
+  let outputBudget = 0;
+  let requestedBudget: number | null = null;
 
-  if (!isFree) {
-    const subscriptionOnly =
-      model.provider.toLowerCase() === "free" || model.id.startsWith("free/");
+  if (!free) {
+    if (model.sellInputMicros <= 0 && model.sellOutputMicros <= 0) {
+      return jsonError(
+        503,
+        `Model ${model.id} is not priced yet. Set a sell price in the operator console.`,
+        "model_unpriced",
+      );
+    }
 
-    return jsonError(
-      402,
-      subscriptionOnly
-        ? "This model requires a provider subscription and is not included in the free pool."
-        : "Paid model billing is not implemented yet. Use a free model for now.",
-      "insufficient_quota",
-    );
+    const reservation = reservePaidCall(model, auth, body);
+
+    if (reservation.blocked) return reservation.blocked;
+
+    hold = reservation.hold;
+    promptTokens = reservation.promptTokens;
+    outputBudget = reservation.outputBudget;
+    requestedBudget = reservation.requestedBudget;
   }
 
-  const payload: Record<string, unknown> = { ...body, model: model.upstreamId };
+  const payload: Record<string, unknown> = {
+    ...body,
+    model: model.upstreamId,
+  };
   const streaming = body.stream === true;
+
+  if (!free && requestedBudget === null) {
+    payload.max_tokens = outputBudget;
+  }
 
   if (streaming) {
     const existing =
@@ -260,7 +223,14 @@ export async function handleChatCompletions(request: Request) {
     payload.stream_options = { ...existing, include_usage: true };
   }
 
-  const startedAt = Date.now();
+  const context: GatewayCallContext = {
+    auth,
+    model,
+    hold,
+    startedAt: Date.now(),
+    promptTokens,
+  };
+
   let upstream: Response;
 
   try {
@@ -269,6 +239,10 @@ export async function handleChatCompletions(request: Request) {
       AbortSignal.timeout(streaming ? 300_000 : 120_000),
     );
   } catch (error) {
+    settleCall(context, { inputTokens: 0, outputTokens: 0 }, "error", {
+      error: error instanceof Error ? error.message : "Provider unreachable",
+    });
+
     return jsonError(
       502,
       error instanceof Error ? error.message : "Could not reach the provider",
@@ -278,34 +252,25 @@ export async function handleChatCompletions(request: Request) {
 
   if (!upstream.ok) {
     const message = await readProviderError(upstream);
-    const status =
-      upstream.status === 400 ||
-      upstream.status === 402 ||
-      upstream.status === 429
-        ? upstream.status
-        : 502;
+
+    settleCall(context, { inputTokens: 0, outputTokens: 0 }, "error", {
+      error: message,
+    });
 
     return jsonError(
-      status,
+      failureStatus(upstream.status),
       safeUpstreamMessage(upstream.status, message),
       "upstream_error",
+      retryHeaders(upstream),
     );
   }
 
-  if (streaming) {
-    return streamCompletion(upstream, auth, model, startedAt);
-  }
+  if (streaming) return streamCompletion(upstream, context);
 
   const data = await upstream.json().catch(() => null);
 
   if (!data) {
-    recordUsage({
-      auth,
-      model,
-      inputTokens: 0,
-      outputTokens: 0,
-      status: "error",
-      latencyMs: Date.now() - startedAt,
+    settleCall(context, { inputTokens: 0, outputTokens: 0 }, "error", {
       error: "Provider returned invalid JSON",
     });
 
@@ -316,16 +281,18 @@ export async function handleChatCompletions(request: Request) {
     );
   }
 
-  const usage = readUsage(data) ?? { inputTokens: 0, outputTokens: 0 };
+  const usage = readUsage(data);
+  const estimated = usage === null;
+  const inputTokens = usage?.inputTokens ?? promptTokens;
+  const outputTokens =
+    usage?.outputTokens ?? estimateTokensFromText(completionText(data));
 
-  recordUsage({
-    auth,
-    model,
-    inputTokens: usage.inputTokens,
-    outputTokens: usage.outputTokens,
-    status: "ok",
-    latencyMs: Date.now() - startedAt,
-  });
+  settleCall(
+    context,
+    { inputTokens, outputTokens },
+    "ok",
+    estimated ? { estimated: true } : {},
+  );
 
   return Response.json(data, { headers: CORS_HEADERS });
 }

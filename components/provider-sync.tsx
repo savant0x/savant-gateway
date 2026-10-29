@@ -24,6 +24,8 @@ export function ProviderSyncButton({
       const payload = (await response.json().catch(() => null)) as {
         imported?: number;
         free?: number;
+        paid?: number;
+        subscriptionOnly?: number;
         warnings?: string[];
         error?: string;
       } | null;
@@ -41,7 +43,7 @@ export function ProviderSyncButton({
       }
 
       setNotice(
-        `Synced ${payload?.imported ?? 0} models, ${payload?.free ?? 0} free.${
+        `Synced ${payload?.imported ?? 0} models · ${payload?.free ?? 0} free · ${payload?.paid ?? 0} priced · ${payload?.subscriptionOnly ?? 0} subscription-only.${
           payload?.warnings?.length ? ` ${payload.warnings.join(" ")}` : ""
         }`,
       );

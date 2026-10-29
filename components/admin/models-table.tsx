@@ -1,25 +1,49 @@
 "use client";
 
-import type { ModelSummary } from "@/lib/types";
+import type { AdminModelSummary } from "@/lib/types";
 
 import { Button, Card, Chip, Input, Spinner } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { AccessChip, StatusChip } from "@/components/dashboard/chips";
+import { formatPricePer1M } from "@/components/dashboard/format";
+import { Pagination } from "@/components/ui/pagination";
 
-type Filter = "all" | "free" | "disabled";
+type Filter =
+  "all" | "active" | "disabled" | "free" | "paid" | "unpriced" | "delisted";
 
 const FILTERS: Array<{ key: Filter; label: string }> = [
   { key: "all", label: "All" },
-  { key: "free", label: "Free" },
+  { key: "active", label: "Active" },
   { key: "disabled", label: "Disabled" },
+  { key: "free", label: "Free" },
+  { key: "paid", label: "Paid" },
+  { key: "unpriced", label: "Unpriced" },
+  { key: "delisted", label: "Delisted" },
 ];
 
-export function AdminModelsTable({ models }: { models: ModelSummary[] }) {
+function price(model: AdminModelSummary) {
+  if (model.access === "free") return "Free";
+
+  if (model.inputPricePer1M === 0 && model.outputPricePer1M === 0) {
+    return model.access === "subscription" ? "Subscription" : "Unpriced";
+  }
+
+  return `${formatPricePer1M(model.inputPricePer1M)} / ${formatPricePer1M(model.outputPricePer1M)}`;
+}
+
+export function AdminModelsTable({
+  models,
+  pageSize = 20,
+}: {
+  models: AdminModelSummary[];
+  pageSize?: number;
+}) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
+  const [page, setPage] = useState(1);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,8 +51,19 @@ export function AdminModelsTable({ models }: { models: ModelSummary[] }) {
     const needle = query.trim().toLowerCase();
 
     return models.filter((model) => {
-      if (filter === "free" && model.access !== "free") return false;
+      if (filter === "active" && model.status !== "active") return false;
       if (filter === "disabled" && model.status !== "disabled") return false;
+      if (filter === "free" && model.access !== "free") return false;
+      if (filter === "paid" && model.access !== "paid") return false;
+      if (filter === "delisted" && model.inCatalog) return false;
+      if (
+        filter === "unpriced" &&
+        (model.access === "free" ||
+          model.inputPricePer1M > 0 ||
+          model.outputPricePer1M > 0)
+      ) {
+        return false;
+      }
       if (!needle) return true;
 
       return (
@@ -39,7 +74,14 @@ export function AdminModelsTable({ models }: { models: ModelSummary[] }) {
     });
   }, [filter, models, query]);
 
-  async function toggle(model: ModelSummary) {
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const rows = filtered.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
+
+  async function toggle(model: AdminModelSummary) {
     const next = model.status === "active" ? "disabled" : "active";
 
     setBusyId(model.id);
@@ -80,6 +122,11 @@ export function AdminModelsTable({ models }: { models: ModelSummary[] }) {
     }
   }
 
+  function applyFilter(next: () => void) {
+    next();
+    setPage(1);
+  }
+
   return (
     <Card>
       <Card.Header>
@@ -87,8 +134,8 @@ export function AdminModelsTable({ models }: { models: ModelSummary[] }) {
           <div>
             <Card.Title>Catalog controls</Card.Title>
             <Card.Description>
-              Disabled models disappear from the public catalog and the gateway.
-              The status survives a provider sync.
+              Disabled models leave the public catalog and the gateway. A
+              delisted row vanished upstream but keeps its prices and history.
             </Card.Description>
           </div>
           <Chip color="default" size="sm" variant="soft">
@@ -97,21 +144,23 @@ export function AdminModelsTable({ models }: { models: ModelSummary[] }) {
         </div>
       </Card.Header>
       <Card.Content className="space-y-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-3">
           <Input
             aria-label="Search models"
             className="w-full"
             placeholder="Search id, name, or provider"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) =>
+              applyFilter(() => setQuery(event.target.value))
+            }
           />
-          <div className="flex shrink-0 gap-1">
+          <div className="flex flex-wrap gap-1.5">
             {FILTERS.map((item) => (
               <Button
                 key={item.key}
                 size="sm"
                 variant={filter === item.key ? "primary" : "secondary"}
-                onPress={() => setFilter(item.key)}
+                onPress={() => applyFilter(() => setFilter(item.key))}
               >
                 {item.label}
               </Button>
@@ -127,27 +176,37 @@ export function AdminModelsTable({ models }: { models: ModelSummary[] }) {
 
         {models.length === 0 ? (
           <p className="rounded-xl bg-surface p-4 text-sm text-muted">
-            No models yet. Sync the provider above to import the catalog.
+            No models yet. Sync the provider to import the catalog.
           </p>
         ) : (
-          <div className="scroll-shell max-h-[32rem]">
+          <div className="scroll-shell max-h-[36rem]">
             <table className="data-table">
               <thead>
                 <tr>
                   <th>Model</th>
                   <th>Access</th>
                   <th>Status</th>
-                  <th>Weight</th>
+                  <th className="text-right">Sell / 1M</th>
+                  <th className="text-right">Cost / 1M</th>
                   <th>Context</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((model) => (
+                {rows.map((model) => (
                   <tr key={model.id}>
-                    <td>
-                      <div className="font-medium">{model.name}</div>
-                      <div className="mono mt-0.5 text-[11px] text-muted">
+                    <td className="max-w-[22rem]">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate font-medium">
+                          {model.name}
+                        </span>
+                        {!model.inCatalog ? (
+                          <Chip color="warning" size="sm" variant="soft">
+                            delisted
+                          </Chip>
+                        ) : null}
+                      </div>
+                      <div className="mono mt-0.5 truncate text-[11px] text-muted">
                         {model.id}
                       </div>
                     </td>
@@ -157,13 +216,18 @@ export function AdminModelsTable({ models }: { models: ModelSummary[] }) {
                     <td>
                       <StatusChip status={model.status} />
                     </td>
-                    <td className="text-muted">
-                      {model.tokenWeight > 0 ? `${model.tokenWeight}×` : "—"}
+                    <td className="whitespace-nowrap text-right">
+                      {price(model)}
+                    </td>
+                    <td className="whitespace-nowrap text-right text-muted">
+                      {model.access === "free"
+                        ? "—"
+                        : `${formatPricePer1M(model.costInputPer1M)} / ${formatPricePer1M(model.costOutputPer1M)}`}
                     </td>
                     <td className="text-muted">{model.contextWindow}</td>
                     <td>
                       <Button
-                        isDisabled={busyId === model.id}
+                        isDisabled={busyId === model.id || !model.inCatalog}
                         size="sm"
                         variant={
                           model.status === "active"
@@ -188,6 +252,13 @@ export function AdminModelsTable({ models }: { models: ModelSummary[] }) {
             No models match this filter.
           </p>
         ) : null}
+
+        <Pagination
+          page={currentPage}
+          pageCount={pageCount}
+          total={filtered.length}
+          onChange={setPage}
+        />
       </Card.Content>
     </Card>
   );

@@ -3,6 +3,28 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — Full catalog, sell-price math, credits, and analytics
+
+- **FID-2026-1029-004 — high — Sell the full provider catalog with credit
+  settlement and pricing analytics.** All 45 active provider rows are public
+  instead of only the free pool; free rows route immediately and non-free rows
+  route once priced. Adds separate upstream-cost and
+  sell-price fields, a 30% default markup, inline per-row pricing, bulk
+  repricing, and per-direction plus blended margin. Paid calls reserve an
+  estimated credit hold, settle actual usage in one transaction, and write
+  revenue and cost to the usage row; free-pool calls stay zero-charge and
+  weighted-metered. Adds a public `/models` table with search, sort, filters,
+  and pagination; an authenticated admin shell with overview, catalog, pricing,
+  and analytics pages; operator credit grants and a ledger; 7/30/90-day
+  revenue, cost, margin, token, latency, error-rate, and top-model reporting;
+  and Font Awesome Free. Provider sync is now an additive upsert that preserves
+  manual prices, operator disables, and delisted rows. Settlement deliberately
+  charges actual usage rather than capping at the hold, so the pre-flight
+  reservation cannot underbill an overrun; an unfunded overrun leaves a
+  negative balance and the next paid call returns `402`. Tests: 26 total (10
+  new pricing tests). Closed against `2623912`; archived at
+  `dev/fids/archive/FID-2026-1029-004-full-catalog-pricing-analytics.md`.
+
 ## 2026-10-29 — Landing page, admin panel, and canonical protocol
 
 - **FID-2026-1029-003 — high — Public landing, authenticated admin panel, and

@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1029-004-full-catalog-pricing-analytics.md`
 **ID:** FID-2026-1029-004
 **Severity:** high
-**Status:** converged
+**Status:** closed
 **Created:** 2026-10-29 02:10 EDT
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -130,7 +130,10 @@ ls: cannot access 'node_modules/@fortawesome': No such file or directory
 - [x] High: money math and a new debit path touch every paid request. A
   rounding error, blocked hold, or double settlement misprices the product.
   Containment: pure pricing functions with unit tests, one SQLite transaction
-  per settlement, a hold ceiling, and live HTTP receipts with real usage rows.
+  per settlement, a bounded output budget, and live HTTP receipts with real
+  usage rows. The hold is admission control, not a price ceiling; an actual
+  charge above the estimate can leave the tenant balance negative and block
+  the next paid call until it is funded.
 - The catalog upsert replaces a destructive sync, so a bug can hide rows or
   resurrect disabled ones. Containment: `in_catalog` is separate from
   `status`, and the receipt checks a sync across both.
@@ -249,9 +252,15 @@ data.
    tokens from the request and completion tokens from response/stream text
    (4 chars/token) and charge the same formula. The row records `ok` with real
    charged micros; the approximation is documented.
-7. **What if the hold is smaller than actual usage?** Charge is capped at the
-   hold, and paid requests get an output budget (`max_tokens` or 4096,
-   maximum 65536) so the hold covers the budget. Free requests are not capped.
+7. **What if the hold is smaller than actual usage?** The hold is admission
+   control, not a cap: settlement charges the provider-reported actual usage.
+   Paid requests get an output budget (`max_tokens` or 4096, maximum 65536) to
+   keep the estimate close, but a provider that counts more prompt tokens than
+   estimated can still overrun it. That overrun is debited, may make the
+   tenant balance negative, and the next paid call is rejected with `402`
+   until credit is granted. Free requests are not budget-capped. This was
+   corrected during Loop 2 after the first implementation capped the charge at
+   the hold and underbilled a 33-micro call reserved at 15 micros.
 8. **What happens to delisted models?** `in_catalog` goes to 0; rows, prices,
    and status are retained. Usage history keeps its model id.
 9. **Does the public API expose upstream cost?** No. `ModelSummary` carries
@@ -260,46 +269,181 @@ data.
 10. **Is analytics real-time?** It reads `usage_events` per request range; no
     rollup table or background job is introduced in this slice.
 
+### Verification Receipt
+
+- verified: 2026-10-29T06:47:00Z (local 2026-10-29 02:47 EDT)
+- tree: `2623912` plus the closure copy and documentation changes in the
+  closing docs commit
+- `npm run lint`: exit 0, no warnings
+- `npm run typecheck`: exit 0
+- `npm test`: exit 0, 26 tests / 26 pass / 0 fail (158 ms)
+- `npm run quality`: exit 0, PASS (400-line ceiling, 91 files scanned)
+- `npm run build`: exit 0, Next 16.4.3, 20 routes
+- `npm run verify`: exit 0 (full chain above)
+
+```text
+quality: PASS (400-line ceiling, 91 files scanned)
+✓ Compiled successfully in 889ms
+✓ Generating static pages using 15 workers (2/2)
+VERIFY_EXIT=0
+```
+
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [ ] Commit SHA
-- [ ] File:line ranges
-- [ ] Gate output
-- [ ] Reproducibility
-- [ ] Step statuses
+- [x] **Commit SHA:** `2623912` — `feat(catalog): sell the full catalog with
+      credits, pricing math, and analytics (FID-2026-1029-004)`. The closure
+      records and this receipt land in the following docs commit.
+- [x] **File:line ranges:**
+  - `lib/pricing.ts:1-160` — markup, margin, blended profit, token cost,
+    holds, estimates, input validation.
+  - `lib/store/settings.ts:1-42` — durable default markup.
+  - `lib/store/billing.ts:1-212` — credit grants, ledger, atomic reserve,
+    expiry sweep, release.
+  - `lib/store/models.ts:52-222` — manual pricing, additive sync, bulk markup.
+  - `lib/store/usage.ts:37-105` — one transaction for hold release, debit, and
+    usage row.
+  - `lib/gateway.ts:62-135` — free classification and paid reservation.
+  - `lib/gateway.ts:135-298` — full-catalog routing, budget limits, settlement.
+  - `lib/gateway-stream.ts:13-129` — streaming metering and settle-on-close.
+  - `lib/gateway-settle.ts:123-152` — cost/charge calculation and settlement.
+  - `lib/store/analytics.ts:71-165` — range totals, daily series, top models.
+  - `app/api/admin/pricing/route.ts:22-95` — price PATCH and markup POST.
+  - `app/api/admin/credit/route.ts:1-60` — credit GET/POST.
+  - `app/admin/(panel)/layout.tsx:1-31` — one authenticated admin shell.
+  - `app/admin/(panel)/pricing/page.tsx:1-124` — pricing math surface.
+  - `app/admin/(panel)/analytics/page.tsx:1-164` — revenue/cost/margin.
+  - `app/models/page.tsx:1-102` — public full catalog.
+  - `components/catalog/model-catalog-table.tsx:40-210` — search, filter,
+    sort, pagination over every active model.
+  - `components/admin/pricing-table.tsx:25-262` — inline edits and live margin.
+  - `lib/db.ts:128-220` — additive sell-price, credit, ledger, usage, and
+    settings migrations.
+  - `app/layout.tsx:1` — Font Awesome Free stylesheet import.
+- [x] **Gate output:** pasted in Verification Receipt above; raw log kept at
+      `/tmp/sg-verify.log` during the session. Exit 0 on every gate.
+- [x] **Reproducibility:** grep finds every anchor, e.g.
+      `grep -n "export function reserveCreditHold" lib/store/billing.ts` →
+      `148`; `grep -n "export function getAnalyticsData"
+      lib/store/analytics.ts` → `71`; `grep -n "export async function
+      handleChatCompletions" lib/gateway.ts` → `135`.
+- [x] **Step statuses:**
+  1. Additive schema and settings store — **implemented** (`lib/db.ts`,
+     `lib/store/settings.ts`).
+  2. Pure pricing arithmetic and tests — **implemented** (`lib/pricing.ts`,
+     `tests/pricing.test.mjs`, 10 tests).
+  3. Additive upsert sync and two model shapes — **implemented**
+     (`lib/store/models.ts`, `lib/types.ts`).
+  4. Credit holds, settlement, ledger, admin grant — **implemented**
+     (`lib/store/billing.ts`, `lib/store/usage.ts`,
+     `app/api/admin/credit/route.ts`).
+  5. Full-catalog routing with reservation and settlement — **implemented**
+     (`lib/gateway.ts`, `lib/gateway-stream.ts`, `lib/gateway-settle.ts`).
+  6. Public catalog table and landing copy — **implemented** (`app/models`,
+     `components/catalog`, landing components).
+  7. Authenticated admin shell, catalog, pricing, analytics, icons —
+     **implemented** (`app/admin/(panel)/*`, `components/admin/*`,
+     Font Awesome Free).
+  8. Gates, live receipts, records, commit — **implemented** (this receipt).
 
 ### Code Verification Evidence
 
-- [ ] Affected paths exist
-- [ ] Code matches the proposed solution
-- [ ] Gates pass with pasted output
-- [ ] Production call graph verified
-- [ ] FID status reflects the actual state
+- [x] Files referenced in Affected Components exist; `npm run build` resolved
+      all 20 routes.
+- [x] Implementation matches the Proposed Solution, with one deliberate
+      correction recorded in Loop 2: settlement is no longer capped at the
+      reservation.
+- [x] Typecheck, lint, tests, quality, and build pass with pasted output above.
+- [x] Production call-graph evidence: live `POST /api/provider/sync` imported
+      45 models (11 free, 24 paid, 10 subscription-only); `/api/models`
+      returned 45 public rows with sell-price fields and no cost fields;
+      `/api/admin/pricing` returned the manual `gpt-6.1-sol` row at cost
+      `$0.30` / sell `$0.40` / margin `2500` bps; unauthenticated `/admin`
+      returned `307` to `/admin/login`; all four admin pages returned `200`
+      with a real session; a foreign-origin PATCH returned `403`. A final smoke
+      on the rebuilt bundle after the copy fix returned `200` for `/`,
+      `/models`, `/dashboard`, and all four admin pages; the pricing API still
+      reported 24 priced / 10 unpriced / 11 free with `gpt-6.1-sol` at 2500 bps.
+- [x] FID status reflects the actual state: closed against `2623912` after the
+      gates and receipts above.
 
 ### Loop 2 — Independent audit and self-correction
 
-- **RED:** Pending implementation audit.
-- **GREEN:** Pending.
-- **AUDIT:** Pending.
-- **ADVERSARIAL:** Pending.
-- **CHANGE DELTA:** Pending.
+- **RED:** The first settlement implementation capped the debit at the hold. A
+  synthetic paid call reserved 15 micros but the provider reported 33 micros
+  of usage, so the gateway would have underbilled by 18 micros. The analytics
+  footnote still described the removed cap. A stale `allowFree`-only free test
+  would also have treated zero-margin subscription rows as free.
+- **GREEN:** Settlement now debits the actual charge; the hold only gates
+  admission. An overrun can leave the balance negative and blocks the next
+  paid call. The public and admin copy was corrected. Free classification is
+  `allowFree && tokenWeight > 0`, matching the provider’s weighted free pool.
+- **AUDIT:** Disposable-DB receipt: a paid hold settled 33 micros on actual
+  usage; a streaming call settled 322,000 micros with zero holds left; an
+  unpriced row returned `503 model_unpriced`; a 70k output budget returned
+  `400`; an underfunded actual charge produced a negative balance and the next
+  paid call returned `402`. Final-tree live smoke: `/models` 200 with a table,
+  admin pages 200 with a session, `/api/models` 45 rows and no cost keys.
+- **ADVERSARIAL:** A client can still consume upstream output after
+  disconnecting; the stream path settles on close with estimated delivered
+  tokens. The estimate is approximate and flagged; it is not a promise of
+  exact provider accounting. Operator price edits can set a sell price below
+  cost; the UI shows negative margin rather than blocking a deliberate loss
+  leader. Refunds and multi-tenant signup remain out of scope and are stated.
+- **CHANGE DELTA:** 14% (settlement semantics, copy, and receipts).
 
 ### Loop 3 — Final convergence
 
-- **RED:** Pending final audit.
-- **GREEN:** Pending.
-- **AUDIT:** Pending.
-- **ADVERSARIAL:** Pending.
-- **CHANGE DELTA:** Pending.
+- **RED:** Final audit risks: stale docs claiming free-only product access;
+  cost leaking through a public shape; a sync destroying manual prices or
+  operator disables; admin pages not actually gated; unbounded output budgets;
+  an icon import that never reaches the client.
+- **GREEN:** Docs and copy now describe paid access, credits, and margins.
+  Public `ModelSummary` has no cost fields; the live `/api/models` response
+  matched. The sync is an upsert with `in_catalog` separate from `status`.
+  Admin layout calls `requireAdminPage()` and unauthenticated `/admin`
+  redirects. Output budgets are clamped at 65,536. Font Awesome classes render
+  on the public page.
+- **AUDIT:** Sync receipt preserved manual `gpt-6.1-sol` pricing and a disabled
+  `deepseek-v4-flash` row; the model was re-enabled afterward. Quality gate
+  scanned 91 files with no file above 400 lines. Build listed all 20 routes.
+- **ADVERSARIAL:** Remaining structural limit: one local tenant (`user_dev`),
+  no customer signup or checkout, SQLite single-instance storage, and one
+  provider key. The UI states these limits; they are not presented as finished
+  multi-tenant billing.
+- **CHANGE DELTA:** 2% (final copy and record corrections; no functional
+  change after the gate run).
 
 ## Resolution
 
-- **Closed Date:** Pending.
-- **Fix Description:** Pending.
-- **Tests Added:** Pending.
-- **Verification Evidence:** Pending.
-- **Archived:** Pending.
+- **Closed Date:** 2026-10-29 02:45 EDT
+- **Fix Description:** The gateway now exposes and routes every active catalog
+  model. Upstream cost, sell price, and charged revenue are separate integer
+  micro-dollar fields. Operators edit sell prices inline, apply a global
+  markup, and see per-direction and blended margin. Paid calls reserve a
+  credit hold, settle actual usage in one transaction, and write revenue and
+  cost on the same usage row. A public `/models` table lists the full catalog
+  with sell prices only; admin has authenticated overview, catalog, pricing,
+  and analytics pages. Analytics reports revenue, upstream cost, gross margin,
+  requests, tokens, latency, error rate, a daily series, and top models over
+  7/30/90 days. Font Awesome Free supplies the icon surface. Sync is additive
+  and preserves manual prices, disables, and delisted rows.
+- **Tests Added:** Yes — `tests/pricing.test.mjs` covers price conversion,
+  markup defaults and clamping, margin edge cases, blended profit, holds,
+  token cost, estimation, output budgets, input validation, and average
+  margin. Total suite: 26 tests, all passing.
+- **Verification Evidence:** `npm run verify` exit 0; live production smoke
+  receipts above; disposable-DB money path receipts above.
+- **Archived:** 2026-10-29 02:45 EDT — moved to `dev/fids/archive/` with this
+  receipt.
 
 ## Lessons Learned
 
-Pending.
+A reservation is not a price. The pre-flight hold protects the balance from
+obvious overspend, but only provider-reported usage is revenue; capping the
+charge at the estimate silently gives away the difference. Test the overrun
+path deliberately with a hold smaller than actual usage, not only the happy
+path. Also keep public and admin model shapes separate from the start: the
+cheapest way to prevent a cost leak is to make the cost key impossible to
+serialize into the public response. Finally, an additive sync is a product
+requirement, not a refactor: deleting and rebuilding rows would erase the
+operator’s prices and disables on every sync.

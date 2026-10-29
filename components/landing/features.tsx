@@ -2,7 +2,7 @@ const FEATURES = [
   {
     icon: "fa-layer-group",
     title: "Full catalog routing",
-    body: "Every active model is routable, not only the free pool. Access tiers and capabilities are synced from the provider catalog.",
+    body: "Every active model is catalogued behind one endpoint. Free rows route immediately; a non-free row routes once the operator sets its sell price.",
   },
   {
     icon: "fa-calculator",

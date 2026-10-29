@@ -2,7 +2,48 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-28 | Session autonomy level: 3 (default; review is read-only)
 
-## Current Session — 2026-10-29 (automation level 3)
+## Current Session — 2026-10-29 (FID-2026-1029-004)
+
+Operator request: ship a full provider catalog rather than a free-only pool,
+add a pricing/math surface for adjusting sell prices and seeing profit and
+margins, add analytics, use all models in tables, add Font Awesome Free, and
+build it as production software even though it runs on localhost.
+
+- [x] **P1 — Schema.** Additive sell-price, price-source, catalog-presence,
+  credit, hold, ledger, charged-revenue, and settings storage.
+- [x] **P2 — Math.** Pure micro-dollar pricing, markup, margin, blended profit,
+  token cost, hold, estimate, and validation helpers with unit tests.
+- [x] **P3 — Catalog.** Additive sync that preserves manual prices, disables,
+  and delisted rows; public and admin model shapes.
+- [x] **P4 — Credits.** Atomic reservation, expiry sweep, actual-usage
+  settlement, ledger, and operator grants.
+- [x] **P5 — Routing.** Every active model routable once priced; unpriced
+  non-free rows rejected; paid holds settled on JSON, stream, cancel, and
+  error.
+- [x] **P6 — Public surface.** `/models` table with search, sort, access
+  filters, and pagination; landing copy and preview updated.
+- [x] **P7 — Admin surface.** Authenticated shell with overview, catalog,
+  pricing, and analytics; inline price edits and bulk markup.
+- [x] **P8 — Icons.** Font Awesome Free installed and applied across public,
+  console, and admin shells.
+- [x] **P9 — Verification and records.** Gates, production-server smoke,
+  disposable-DB money receipt, FID closure, changelog, commit, push.
+
+Findings during implementation, all completed in the same pass:
+
+- **F4 — the hold capped the charge (high).** A paid call reserved 15 micros
+  but the provider reported 33 micros of usage; the first settlement charged
+  15, silently underbilling. Settlement now debits the actual charge and lets
+  an overrun leave a negative balance that blocks the next paid call with
+  `402`. The UI copy that described the cap was corrected.
+- **F5 — analytics copy claimed a cap after the fix (low).** The analytics
+  footnote still said revenue was “capped by the reservation.” Corrected to
+  describe the hold as admission control and actual usage as the charge.
+- **F6 — `data/` was only partially ignored (medium).** The admin cookie jar
+  and verification JSON were untracked but not ignored. `/data/` is now
+  ignored as a whole; no runtime state can enter a commit.
+
+## Prior Session — 2026-10-29 (FID-2026-1029-003, automation level 3)
 
 Operator request: build a proper landing page and a working admin panel, use the
 supplied logo/favicon assets, and replace the condensed ECHO summary with the
@@ -134,6 +175,9 @@ Recorded read-only under the approved review item; any fix remains blocked pendi
 
 ## Operator Rulings
 
+- 2026-10-29: **Sell the full catalog, not only free models.** Add sell-price
+  controls, margin math, a credit ledger, analytics, full model tables, and
+  Font Awesome Free. Build for production even though development is local.
 - 2026-10-29: **Abandon the legacy Vite/Fastify product shell and rebuild on Next.js 16 + HeroUI v3.** Preserve only the verified provider/gateway core: provider client, model sync, consumer-key auth, free-model routing, streaming, and usage metering. The old tree was removed after the core was extracted into `lib/`. This ruling lifts the review's read-only constraint.
 
 ## Progress Log
@@ -155,4 +199,19 @@ Recorded read-only under the approved review item; any fix remains blocked pendi
 - 2026-10-29: **Live verification of the rebuild:** `POST /api/provider/sync` → 200, 45 models imported, **11 free-pool models** (not 35); provider status `active`, balance `$0`, RPM 15, free pool remaining ~19.18M. `POST /api/keys` → 201; `GET /v1/models` with that key → 200, 45 models; `POST /v1/chat/completions` with `free/gpt-6-luna` → 200 in 1.5s, real answer; streaming → 200 `text/event-stream`, real answer. Missing key → 401; fake key → 401. Paid `gpt-6-luna` and `claude-fable-5.1` → 402 locally. UI-created key + browser tester → 200; usage rows recorded weighted tokens (990 and 948 for 330/316 raw tokens at weight 3).
 - 2026-10-29: **D49 correction discovered during the rebuild:** APInex public metadata marks 35 models with `allowFree`, including paid models that return `402 Insufficient balance` on a zero-balance account. The new catalog therefore uses the `free/*` pool as the authoritative free signal; paid models are catalogued but blocked locally. Test keys and usage rows were deleted after verification; the synced catalog and provider status remain.
 - 2026-10-29: **Repository published and governance gates wired.** The project is now a Git repository at `https://github.com/savant0x/savant-gateway` (public, `main`). This supersedes the FID-001 note that no Git repository or template gates exist: `quality`, `test`, `check` and `verify` now exist, along with `.githooks` and two CI workflows. FID-2026-1029-002 is closed against `bf3da9a` and archived under `dev/fids/archive/`. The provider adapter was renamed `lib/apinex.ts` → `lib/provider.ts` and residual reseller naming was stripped from source and UI; the vendor hostnames in `.env.example` remain because they are the upstream URLs. Local gates after the rename: `npm run check` 0, `npm test` 6/6, `npm run quality` PASS (40 files), `npm run build` 0. GitHub: `ci` and `attribution-guard` both green.
-- 2026-10-29: **FID structure created** under `dev/fids/` with `archive/`, plus preserved audit baselines in `dev/fids/audit/`. `FID-2026-1029-001-nextjs-gateway-rebuild.md` records the operator ruling and rebuild using the operator-supplied `templates/FID-TEMPLATE.md` structure. Status is `verified`, not `closed`: this workspace has no Git repository, so the template's required local commit cannot exist and the FID is not archived. Fresh gates: `npm run check` exit 0; `npm run build` exit 0; read-only database counts 45 models / 11 free / 0 keys / 0 usage. Documentary audit passes measured 3.101%, 2.168%, 0.610% and 0.435% (two consecutive passes below 2%, converged as a record only). Open findings recorded in the FID: spoofable Host-header local guard, usage-row copy overclaim, cancelled-stream under-recording. The template's `fid:verify`, `quality:report`, `scope:check`, `validate:repository`, `progression` and `balance` gates do not exist here; actual gates are `lint`, `typecheck`, `check` and `build`.
+- 2026-10-29: **FID structure created** under `dev/fids/` with `archive/`, plus preserved audit baselines in `dev/fids/audit/`. `FID-2026-1029-001-nextjs-gateway-rebuild.md` records the operator ruling and rebuild using the operator-supplied `templates/FID-TEMPLATE.md` structure. Status is `verified`, not `closed`: this workspace has no Git repository, so the template's required local commit cannot exist and the FID is not archived. Fresh gates: `npm run check` exit 0; `npm run build` exit 0; read-only database counts 45 models / 11 free / 0 keys / 0 usage. Documentary audit passes measured 3.101%, 2.168%, 0.610% and 0.435% (two consecutive passes below 2%, converged as a record only). Open findings recorded in the FID: spoofable Host-header local guard, usage-row copy overclaim, cancelled-stream under-recording. The template's  `fid:verify`, `quality:report`, `scope:check`, `validate:repository`,
+  `progression` and `balance` gates do not exist here; actual gates are `lint`,
+  `typecheck`, `check` and `build`.
+- 2026-10-29: **Full-catalog product shipped (FID-2026-1029-004).** Final tree
+  `2623912`: `npm run verify` exit 0 (lint 0 warnings, typecheck 0, 26/26 tests,
+  quality PASS over 91 files, 20-route build). Production server on
+  `localhost:3100`: `/models` 200 with sell prices only, admin pages 200 with a
+  real session, unauthenticated `/admin` 307, foreign-origin PATCH 403,
+  `/api/models` 45 rows with no cost keys, manual `gpt-6.1-sol` at cost `$0.30`
+  / sell `$0.40` / 2500 bps. Provider sync imported 45 (11 free, 24 paid, 10
+  subscription-only), preserved the manual price and a disabled model, and the
+  model was re-enabled after the receipt. Money path on a disposable database:
+  33-micro actual charge settled above a 15-micro hold, stream settled 322,000
+  micros with zero holds left, unpriced 503, 70k budget 400, underfunded
+  overrun negative and next call 402. Real paid upstream inference remains
+  unverified because the provider account has no paid balance.

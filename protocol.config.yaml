@@ -11,7 +11,7 @@
 
 project:
   name: 'savant-gateway'
-  description: 'A Next.js gateway for upstream free models, with hashed consumer keys, streaming, and usage metering.'
+  description: 'A Next.js gateway for the full provider catalog, with hashed consumer keys, sell-price math, credit settlement, streaming, and revenue analytics.'
   version: '0.1.0'
 
 protocol:

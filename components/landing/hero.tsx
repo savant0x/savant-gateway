@@ -15,7 +15,7 @@ const CURL_SAMPLE = `curl http://localhost:3000/v1/chat/completions \\
   }'`;
 
 export function Hero({ data }: { data: LandingData }) {
-  const priced = data.stats.paidModelCount + data.stats.subscriptionModelCount;
+  const nonFree = data.stats.paidModelCount + data.stats.subscriptionModelCount;
 
   return (
     <section className="hero-glow relative overflow-hidden border-b border-white/10">
@@ -43,10 +43,10 @@ export function Hero({ data }: { data: LandingData }) {
           </h1>
 
           <p className="mt-6 max-w-xl text-base leading-7 text-muted">
-            Savant Gateway syncs the full upstream catalog, prices every paid
-            row against its upstream cost, and settles each call from a credit
-            ledger. Free models stay free; everything else is routed, billed,
-            and visible in analytics.
+            Savant Gateway syncs the full upstream catalog, prices paid rows
+            against their upstream cost, and settles each call from a credit
+            ledger. Free models stay free; paid rows are billed once priced, and
+            every call is visible in analytics.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -77,8 +77,8 @@ export function Hero({ data }: { data: LandingData }) {
                 <p className="text-[11px] text-muted">catalogued</p>
               </div>
               <div className="rounded-xl border border-white/10 bg-white/[0.03] px-2 py-3">
-                <p className="text-lg font-semibold text-cyan-300">{priced}</p>
-                <p className="text-[11px] text-muted">priced rows</p>
+                <p className="text-lg font-semibold text-cyan-300">{nonFree}</p>
+                <p className="text-[11px] text-muted">non-free rows</p>
               </div>
               <div className="rounded-xl border border-white/10 bg-white/[0.03] px-2 py-3">
                 <p className="text-lg font-semibold text-emerald-300">

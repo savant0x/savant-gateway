@@ -9,7 +9,7 @@ function priceLabel(model: ModelSummary, direction: "input" | "output") {
   if (model.access === "free") return "Free";
 
   if (model.inputPricePer1M === 0 && model.outputPricePer1M === 0) {
-    return "Subscription";
+    return "Not priced";
   }
 
   const value =
@@ -33,9 +33,9 @@ export function ModelGrid({ data }: { data: LandingData }) {
             The full catalog, not a free-tier teaser.
           </h2>
           <p className="mt-2 max-w-xl text-sm leading-6 text-muted">
-            Free, subscription-only, and priced models share one endpoint. Sell
-            prices are set and audited in admin; upstream cost never ships to
-            the client.
+            Free, subscription-only, and priced models share one endpoint.
+            Non-free rows need a sell price before the gateway accepts them;
+            upstream cost never ships to the client.
           </p>
         </div>
         <Link

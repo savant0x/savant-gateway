@@ -15,7 +15,7 @@ export function StatsStrip({ data }: { data: LandingData }) {
       icon: "fa-gift",
     },
     {
-      label: "Priced models",
+      label: "Non-free rows",
       value: formatNumber(
         data.stats.paidModelCount + data.stats.subscriptionModelCount,
       ),

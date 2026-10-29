@@ -1,7 +1,8 @@
 # Savant Gateway
 
-A Next.js gateway for upstream free models: provider sync, hashed consumer keys,
-OpenAI-compatible chat completions with streaming, and weighted usage metering.
+A Next.js gateway for the provider's full model catalog: provider sync, hashed
+consumer keys, OpenAI-compatible chat completions with streaming, operator
+sell prices, credit settlement, and revenue/cost analytics.
 
 ## Governance Boot Gate
 
@@ -24,6 +25,7 @@ the Perfection Loop. The operator is the approval boundary.
 
 - **Next.js 16** App Router + route handlers (Turbopack)
 - **HeroUI v3** with Tailwind CSS 4
+- **Font Awesome Free** for icons
 - **SQLite** via `better-sqlite3` (local development storage)
 - **TypeScript** strict, Node `>=22.18.0`
 - **npm** for installs and gates
@@ -78,17 +80,22 @@ noted:
 ## Layout
 
 ```text
-app/                    routes: landing (/), console (/dashboard), admin (/admin)
-app/api/admin/          admin session and admin-only management endpoints
+app/                    landing (/), public catalog (/models), console, admin
+app/admin/(panel)/      authenticated overview, catalog, pricing, analytics
+app/api/admin/          session, catalog, pricing, and credit management
 components/landing/     public landing sections
+components/catalog/     public full-catalog table
 components/dashboard/   console sections and shared UI primitives
-components/admin/       admin panel sections
+components/admin/       admin shell, tables, pricing editor, analytics
 lib/provider.ts         upstream provider client and catalog sync
-lib/gateway.ts          key auth, free-pool routing, streaming, metering
+lib/pricing.ts          micro-dollar, markup, margin, hold, and estimate math
+lib/gateway.ts          key auth, full-catalog routing, reservation
+lib/gateway-stream.ts   streaming relay and settlement on close
+lib/gateway-settle.ts   usage parsing, cost/charge, settlement
 lib/admin-session.ts    session token signing and password verification
 lib/admin-auth.ts       server-side admin guards and cookie handling
 lib/store/              split persistence modules
-lib/db.ts               SQLite schema and connection
+lib/db.ts               SQLite schema and additive migrations
 assets/                 source logos and favicons; public copies live in public/
 tests/                  Node test-runner suites
 scripts/                quality and attribution gates

@@ -53,8 +53,8 @@ Non-goal: automatic failover or load balancing across providers in v1.
 - **Runtime:** Node `v24.21.0`, npm `12.2.1`.
 - **Tool Versions:** Next.js `16.4.3`, React `19.3.0`, HeroUI `3.2.7`,
   Tailwind CSS `4.3.3`, better-sqlite3 `13.0.3`, TypeScript `5.9.3`.
-- **Commit/State:** working tree on `main` with FID-009 implemented and
-  uncommitted. No application code for multi-provider exists.
+- **Commit/State:** `4782ce1` on `main` contains FID-009’s implementation. No
+  application code for multi-provider exists.
 
 ## Detailed Description
 

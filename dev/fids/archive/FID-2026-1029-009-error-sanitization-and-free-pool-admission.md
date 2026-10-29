@@ -3,7 +3,8 @@
 **Filename:** `FID-2026-1029-009-error-sanitization-and-free-pool-admission.md`
 **ID:** FID-2026-1029-009
 **Severity:** high (D50), low (D6)
-**Status:** verified
+**Status:** closed
+**Closed Against:** `4782ce1aa9a3d6a42bb81e12d953a8d41d56127f`
 **Created:** 2026-10-29 12:05 EDT
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -36,8 +37,8 @@ admission state lives in two new tables.
 - **Runtime:** Node `v24.21.0`, npm `12.2.1`.
 - **Tool Versions:** Next.js `16.4.3`, React `19.3.0`, HeroUI `3.2.7`,
   Tailwind CSS `4.3.3`, better-sqlite3 `13.0.3`, TypeScript `5.9.3`.
-- **Commit/State:** working tree on `main` with the implementation described
-  below uncommitted. No provider call was made while implementing this FID.
+- **Commit/State:** implementation closed against `4782ce1` on `main`. No
+  provider call was made while implementing this FID.
 
 ## Detailed Description
 
@@ -210,8 +211,8 @@ a provider outage must not silently disable the local cap.
 - test: 62 tests, 62 pass, 0 fail, 0 skipped
 - quality: PASS (400-line ceiling, 127 files scanned)
 - build: exit 0, 33 routes
-- State: working tree on `48c21e1` plus these uncommitted changes. No commit
-  exists yet, so the FID is `verified`, not `closed`.
+- State: committed as `4782ce1` on `main`; the worktree is clean for this
+  slice.
 
 ## Non-Goals
 
@@ -254,7 +255,7 @@ a provider outage must not silently disable the local cap.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [ ] **Commit SHA:** uncommitted at time of writing (`48c21e1` is the base)
+- [x] **Commit SHA:** `4782ce1aa9a3d6a42bb81e12d953a8d41d56127f`
 - [x] **File:line ranges:** `lib/http.ts` sanitizer; `lib/free-pool.ts`;
   `lib/store/free-pool.ts`; `lib/gateway.ts` free branch; `lib/store/usage.ts`
   settlement; `lib/db.ts` free-pool schema
@@ -266,12 +267,12 @@ a provider outage must not silently disable the local cap.
 
 ## Resolution
 
-- **Closed Date:** not closed — closure is blocked on a commit and archive move
+- **Closed Date:** 2026-10-29 11:36 EDT
 - **Fix Description:** see Proposed Solution
 - **Tests Added:** `tests/free-pool.test.mjs`, two `tests/http.test.mjs` cases
 - **Verification Evidence:** `npm run verify` exit 0, 62/62 tests, quality PASS
   over 127 files, 33-route build at 2026-10-29T11:29:05-0400
-- **Archived:** not archived
+- **Archived:** 2026-10-29 11:36 EDT
 
 ## Lessons Learned
 

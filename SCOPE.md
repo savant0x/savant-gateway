@@ -31,9 +31,9 @@ support behind one backend.
 - [x] **S6 — Records updated.** Audit report D6/D50 marked fixed, CHANGELOG,
   `.env.example`, and `knowledge.md` updated, and this scope records the new
   work.
-- [x] **S7 — Verification.** `npm run verify` exit 0: 62/62 tests, quality PASS
-  over 127 files, 33-route build. Working tree uncommitted; FID-009 is
-  `verified`, not `closed`.
+- [x] **S7 — Verification and closure.** `npm run verify` exit 0: 62/62 tests,
+  quality PASS over 127 files, 33-route build. Committed as `4782ce1`; FID-009
+  is closed against that commit and archived.
 
 ## Prior Session — 2026-10-29 (model groups and subscriptions)
 
@@ -455,8 +455,8 @@ Git repository and the template's required local commit could not exist. Fresh g
   `free_pool_usage` and `free_pool_reservations`. New env limits documented in
   `.env.example`. Tests: `tests/free-pool.test.mjs` and two sanitizer cases in
   `tests/http.test.mjs`. Receipt: `npm run verify` exit 0, 62/62 tests, quality
-  PASS over 127 files, 33-route build. Uncommitted; FID-009 is `verified`, not
-  closed.
+  PASS over 127 files, 33-route build. Committed as `4782ce1`; FID-009 is closed
+  against that commit and archived.
 - 2026-10-29: **FID-2026-1029-010 authored.** The provider-registry contract
   covers a `providers` entity, per-provider credential variable names (values
   stay in `.env.local`), provider-scoped sync and model identity, OpenAI Chat

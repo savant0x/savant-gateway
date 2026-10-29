@@ -15,8 +15,8 @@ distinguish verified behavior from unverified claims.
   the usage transaction; new tables are `free_pool_usage` and
   `free_pool_reservations`. Limits are `FREE_DAILY_WEIGHTED_TOKENS`,
   `FREE_PROVIDER_REMAINING_FLOOR`, and `FREE_PROVIDER_ALERT_THRESHOLD`.
-  Status `verified`, not closed: uncommitted. Gates: `npm run verify` exit 0,
-  62/62 tests, quality PASS over 127 files, 33-route build. Tests:
+  Closed against `4782ce1`. Gates: `npm run verify` exit 0, 62/62 tests,
+  quality PASS over 127 files, 33-route build. Tests:
   `tests/free-pool.test.mjs` plus sanitizer cases in `tests/http.test.mjs`.
 - **FID-2026-1029-010 — high — Multi-provider registry.** Converged design for
   a `providers` entity with per-provider credential variable names, scoped

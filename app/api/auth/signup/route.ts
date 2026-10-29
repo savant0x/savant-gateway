@@ -15,7 +15,11 @@ import {
 import { clientKey, signupLimiter } from "@/lib/customer-rate-limit";
 import { isSameOriginRequest } from "@/lib/admin-session";
 import { hashPassword } from "@/lib/password";
-import { createCustomer, createCustomerSession } from "@/lib/store";
+import {
+  createCustomer,
+  createCustomerSession,
+  findCustomerByEmail,
+} from "@/lib/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,6 +62,12 @@ export async function POST(request: Request) {
     validateName(name) || validateEmail(email) || validateNewPassword(password);
 
   if (problem) return customerError(400, problem);
+
+  // Reject a known email before paying for scrypt or hitting the unique
+  // constraint. The insert catch still covers the concurrent-signup race.
+  if (findCustomerByEmail(email)) {
+    return customerError(409, "An account with this email already exists.");
+  }
 
   const passwordHash = hashPassword(password);
 

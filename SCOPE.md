@@ -2,6 +2,24 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-29 (subscription revenue analytics, then HTTP suite)
+
+Operator request: make subscription plan revenue visible in the admin revenue
+surfaces, then add route-level HTTP coverage. The operator selected
+"Both, analytics first."
+
+- [x] **S24 — Analytics FID authored.**
+  `dev/fids/FID-2026-1029-011-subscription-revenue-analytics.md` is converged.
+  It separates credit revenue from paid-invoice plan revenue, adds total
+  revenue and total margin, subscriber counts, MRR, and a per-plan table, and
+  leaves billing, routing, invoice recording, and Stripe handling unchanged.
+- [ ] **S25 — Analytics implemented and verified.** Pending: pure revenue math,
+  testable query layer, in-memory aggregation test, admin analytics and
+  overview updates, disposable-database render receipt, gates, commit, FID
+  closure and archive, and record updates.
+- [ ] **S26 — B2 route-level HTTP suite (FID-012).** Pending the analytics
+  implementation; the operator ruling above lifts the B2 blocker.
+
 ## Current Session — 2026-10-29 (D6/D50, provider registry, and model groups)
 
 Operator request: fix the two open audit findings — sanitize client-facing error

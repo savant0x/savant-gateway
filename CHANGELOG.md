@@ -3,6 +3,19 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — Provider metadata integrity
+
+- **FID-2026-1029-014 — high — Correct quota and catalog metadata.** Preserve
+  upstream weights independently of free eligibility, accept both context
+  spellings and retain authenticated fields when public metadata is partial.
+  Reject null, blank, boolean, negative and nonfinite prices as unknown rather
+  than treating them as known zero costs. Six new regression tests; full gates
+  passed with 113 unit tests, quality (191 files), 51-route build and 100 HTTP
+  checks. Applies on subsequent sync; live catalog not changed by verification.
+  Added a concrete trial conversion proposal with six exact paid-pair candidates
+  and five unmatched free models. Trial routing remains unimplemented pending
+  entitlement selection. Committed `ae9c363`; FID-014 closed and archived.
+
 ## 2026-10-29 — Savant visual system
 
 - **FID-2026-1029-013 — medium — Whole-site brand and catalog presentation.**

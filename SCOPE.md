@@ -4,13 +4,18 @@ Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
 ## Current Session — Launch continuation
 
-- [ ] **L1 — Provider metadata prerequisites.** Automation level 3. Resume
-  launch work under `dev/fids/FID-2026-1029-014-provider-metadata-integrity.md`:
+- [x] **L1 — Provider metadata prerequisites.** Automation level 3. Resume
+  launch work under `dev/fids/archive/FID-2026-1029-014-provider-metadata-integrity.md`:
   preserve subscription weights, context aliases, partial-source fallback and
-  accurate known-cost status. Verify, commit and archive.
+  accurate known-cost status. Verified: 113 unit tests, 100 HTTP checks, clean
+  lint/typecheck, quality and build. Committed `ae9c363`; FID-014 archived.
 - [ ] **L2 — Trial conversion.** Resumed investigation; entitlement amount is
   pending the operator response to the trial-size question. No amount enabled.
   Wallet funding and Stripe remain governed by the quoted launch timing.
+  Concrete review proposal: `docs/trial-conversion-contract.md`, including six
+  exact paired candidates and five unpaired models. Grant policy remains
+  blocked pending the operator's entitlement amount decision, as recorded in
+  `docs/launch-readiness.md`; no trial conversion is enabled.
 
 ## Current Session — 2026-10-29 (launch planning and visual redesign)
 

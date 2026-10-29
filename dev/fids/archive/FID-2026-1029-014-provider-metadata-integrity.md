@@ -3,8 +3,10 @@
 **Filename:** `FID-2026-1029-014-provider-metadata-integrity.md`
 **ID:** FID-2026-1029-014
 **Severity:** high
-**Status:** converged
+**Status:** closed
 **Created:** 2026-10-29
+**Closed Against:** `ae9c363`
+**Archived:** 2026-10-29
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
 
@@ -113,8 +115,8 @@ Implementation exists in catalog.ts/types.ts with six regression tests.
 113/113 tests passed; quality PASS (400-line ceiling, 191 files scanned);
 51-route production build compiled successfully; http-suite: 100 checks PASS.
 Manual audit confirmed syncProvider → buildSyncedModels → replaceModels and
-preserved allowFree/group independence. All four steps implemented; closure
-awaits the implementation commit.
+preserved allowFree/group independence. All four steps implemented. Committed
+as `ae9c363`; archived after code, gate and call-graph verification.
 
 ## Lessons Learned
 

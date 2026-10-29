@@ -24,3 +24,7 @@ with explicit candidates, no guessed substitutions, lifetime grant uniqueness,
 atomic reservation/settlement requirements, migration decisions and acceptance.
 This is a proposal, not a trial implementation. Trial amount selection remains
 pending operator input; credentials and funding retain their existing timing.
+
+FID-014 implementation committed as `ae9c363`, closed and archived with its
+verification receipt. L1 complete; L2 remains active pending the trial amount
+decision. The launch checklist requires this operator-selected entitlement.

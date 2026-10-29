@@ -17,6 +17,7 @@ import {
 } from "./gateway-settle";
 import { markupSellMicros, subscriptionWeightedTokens } from "./plans";
 import { streamCompletion } from "./gateway-stream";
+import { reserveTrialRoute } from "./gateway-trial";
 import {
   CORS_HEADERS,
   extractApiKey,
@@ -30,7 +31,6 @@ import {
   getModelByUpstreamId,
   getModelForGateway,
   getProvider,
-  reserveFreeCall,
   resolveSubscriptionAccess,
   type FreePoolReservation,
   type GatewayModel,
@@ -246,23 +246,18 @@ export async function handleChatCompletions(request: Request) {
   } else if (access.kind === "none" && free) {
     const reservationBudget =
       readRequestedOutputBudget(body) ?? DEFAULT_OUTPUT_BUDGET;
-    const admission = reserveFreeCall({
+    const admission = reserveTrialRoute({
       auth,
       model,
       promptTokens,
       outputBudget: reservationBudget,
     });
 
-    if (!admission.ok) {
-      const blocked = admission.blocked;
+    if (admission.blocked) return admission.blocked;
 
-      return jsonError(blocked.status, blocked.message, blocked.type, {
-        "Retry-After": String(blocked.retryAfterSeconds),
-        ...(blocked.resetAt ? { "X-RateLimit-Reset": blocked.resetAt } : {}),
-      });
-    }
-
-    freeReservation = admission.reservation;
+    freeReservation = admission.freeReservation;
+    hold = admission.hold;
+    settleModel = admission.model;
     outputBudget = reservationBudget;
   } else if (access.kind === "none" && model.billingMode === "subscription") {
     return jsonError(
@@ -290,7 +285,7 @@ export async function handleChatCompletions(request: Request) {
 
   const payload: Record<string, unknown> = {
     ...body,
-    model: model.upstreamId,
+    model: settleModel.upstreamId,
   };
   const streaming = body.stream === true;
 
@@ -321,7 +316,7 @@ export async function handleChatCompletions(request: Request) {
 
   try {
     upstream = await callProvider(
-      model,
+      settleModel,
       payload,
       AbortSignal.timeout(streaming ? 300_000 : 120_000),
     );

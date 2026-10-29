@@ -23,7 +23,8 @@ export type FreeAdmissionAllowed = {
 
 export type FreeAdmissionBlocked = {
   allowed: false;
-  reason: "provider_blocked" | "provider_pool" | "user_allowance";
+  reason:
+    "provider_blocked" | "provider_pool" | "user_allowance" | "trial_exhausted";
   status: 402 | 429;
   type: "insufficient_quota" | "rate_limit_error";
   message: string;

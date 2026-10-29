@@ -1,8 +1,9 @@
 # Trial conversion contract
 
-Status: implementation proposal, 2026-10-29. Trial routing is not enabled.
-The operator's trial-size selection is pending. This contract makes the next
-implementation reviewable without assuming an entitlement amount.
+Status: disabled implementation, 2026-10-29. FID-015 implements the grant ledger
+and routing with configurable amounts; 100,000 is the development default, not
+an activated customer entitlement. The pair map is empty and gateway grant
+budget zero by default. Final offering selection remains a launch decision.
 
 ## Customer behavior
 
@@ -46,11 +47,26 @@ automatic conversion unless an equivalent paid route is explicitly approved.
 In particular, do not assume `deepseek-v4-pro` matches a dated model revision
 or that `kimi-k3.1-pro` matches `kimi-k3`.
 
-## Persistence and admission
+## Implemented persistence
+
+The ledger snapshots recorded historical daily usage against the first grant;
+existing customers do not receive a fresh free allowance on conversion. Each
+reservation accepts exactly one settlement and remains after expiry for late
+accounting. The existing free reservation links customer/key/model/provider;
+the trial reservation shares its id. Usage records preserve requested model,
+serving upstream id, billing source and charges. Trial remains billing source
+`free`, distinguished by its durable reservation/grant record.
+
+Pair configuration uses the explicit environment map. Account UI shows lifetime
+balances and paid rates; `/v1/models` adds `trial_paid_transition`. This is
+implemented infrastructure; public catalog presentation, versioned pair admin
+controls and full upstream capacity management remain activation requirements.
+
+## Activation requirements
 
 - One immutable grant per customer with a uniqueness constraint, original amount,
   issued time and eligibility evidence. Existing daily usage is not silently
-  converted into a fresh grant. Activation requires an explicit migration policy.
+  converted into a fresh grant. The implemented policy subtracts historical usage.
 - Reservation rows reference customer, key, public model, serving model, provider,
   grant, estimated weight, expiry and request identity. Use immediate SQLite
   transactions so competing keys cannot both reserve the last tokens.

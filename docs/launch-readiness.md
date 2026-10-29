@@ -11,9 +11,11 @@ top-up. Once funded, an explicitly paired paid upstream model serves subsequent
 requests under the same public model id and customer key. Exhausted paid credit
 stops requests; it never renews the trial.
 
-The trial size is an operator decision. The discussed 100,000 weighted tokens
-is a proposal, not an enabled entitlement. The current platform instead has a
-recurring per-user daily free allowance and separate credit/subscription paths.
+Trial conversion is implemented behind `TRIAL_ENABLED=false`. Its configurable
+development default is 100,000 weighted tokens, not an enabled entitlement.
+Without activation, existing daily free allowances and credit/subscription paths
+remain in effect. Activation requires an explicit pair map, verified customer
+email and a positive gateway grant budget; defaults issue no trial grants.
 
 ## Upstream capacity
 
@@ -34,13 +36,20 @@ Sources: [reseller guide](https://apinex.bond/developers/resell),
 ## Before enabling trial conversion
 
 - [ ] Choose the lifetime trial size, eligible models, and eligibility rules.
-- [ ] Implement an atomic trial ledger: grants, reservations, actual weighted
+- [x] Implement an atomic trial ledger: grants, reservations, actual weighted
   settlement, exhaustion, and one-time issuance. New keys cannot mint trials.
+  FID-015 adds durable grants and reservations, replay protection, historical
+  usage migration and exact-boundary/late-settlement tests. Token usage uses
+  raw tokens times the model weight until exact upstream accounting is added.
 - [ ] Replace automatic daily customer free access with the lifetime trial.
 - [ ] Configure explicit free-to-paid model pairs. Never silently substitute a
   different model where a corresponding paid version is unavailable.
 - [ ] Implement the funded routing transition and show trial versus paid usage,
   remaining balances, prices, and exhaustion honestly in the customer UI.
+  Backend routing, account lifetime balance/rates, requested/serving model
+  records and model API transition rates are implemented under FID-015.
+  Public catalog labels/paid-rate presentation must be updated for activation;
+  today's Free labels describe the currently active legacy mode.
 - [ ] Refresh upstream capacity automatically; enforce a shared safety reserve
   and concurrent holds across every local billing mode. Handle UTC reset,
   unlimited plans, unavailable quota reads, and upstream subscription-only rows.
@@ -58,6 +67,14 @@ Sources: [reseller guide](https://apinex.bond/developers/resell),
 The concrete persistence, admission and model-pair proposal is in
 `trial-conversion-contract.md`. Six of eleven stored free models have exact
 paid-id counterparts; the other five must not receive guessed substitutions.
+
+Implemented configuration: `TRIAL_ENABLED`, `TRIAL_WEIGHTED_TOKENS`,
+`TRIAL_GATEWAY_GRANT_BUDGET`, and `TRIAL_MODEL_PAIRS` in `.env.example`.
+The budget caps lifetime grant issuance across the gateway, not upstream daily
+usage. Example pair format: `{"free/gpt-6-luna":"gpt-6-luna"}`. Do not enable
+this example without verifying equivalence and completing the launch controls.
+Unpaired or disabled paid routes fail closed. Stale (>5 minutes) or unknown
+quota refuses trial admission; automatic quota refresh is still required.
 
 ## Payment and funding setup
 
@@ -107,3 +124,10 @@ gateway completion and exact paid settlement against a mock upstream. A separate
 live APInex Chat Completions request returned HTTP 200 with `gateway-ok` and
 315 raw tokens. These checks do not prove a live payment, a funded paid upstream
 call, or the proposed trial-to-paid transition. None of those are claimed ready.
+
+FID-015 adds a production-build disposable trial HTTP suite to `test:http`:
+trial → 402 → test credit → explicit paid upstream → exact unequal-rate debit,
+JSON/SSE settlement, competing holds, stale/depleted capacity and disabled pair
+rejection. This proves local routing with a mock upstream, not a real payment
+or funded upstream call. Browser checks verify account balances/rates fit at
+1440, 390 and 320 pixels. Trial activation remains off.

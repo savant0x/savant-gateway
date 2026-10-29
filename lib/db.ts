@@ -10,6 +10,7 @@ import { ensureColumn, type DatabaseHandle } from "./schema/columns";
 import { modelGroupSchema } from "./schema/groups";
 import { providerSchema } from "./schema/providers";
 import { subscriptionSchema } from "./schema/subscriptions";
+import { trialSchema } from "./schema/trials";
 
 const configuredDbPath = process.env.DB_PATH?.trim();
 
@@ -328,6 +329,7 @@ function createDb() {
   providerSchema(database);
   modelGroupSchema(database);
   subscriptionSchema(database);
+  trialSchema(database);
   normalizeLegacyFamilies(database);
   seed(database);
 

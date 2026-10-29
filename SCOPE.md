@@ -9,13 +9,14 @@ Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
   preserve subscription weights, context aliases, partial-source fallback and
   accurate known-cost status. Verified: 113 unit tests, 100 HTTP checks, clean
   lint/typecheck, quality and build. Committed `ae9c363`; FID-014 archived.
-- [ ] **L2 — Trial conversion.** Resumed investigation; entitlement amount is
-  pending the operator response to the trial-size question. No amount enabled.
+- [ ] **L2 — Trial conversion.** Operator resumed implementation under
+  `dev/fids/FID-2026-1029-015-lifetime-trial-routing.md`. Configurable amount
+  with 100,000 development default; activation off, empty pairs, zero grant budget.
   Wallet funding and Stripe remain governed by the quoted launch timing.
   Concrete review proposal: `docs/trial-conversion-contract.md`, including six
   exact paired candidates and five unpaired models. Grant policy remains
-  blocked pending the operator's entitlement amount decision, as recorded in
-  `docs/launch-readiness.md`; no trial conversion is enabled.
+  configurable rather than blocking implementation on amount selection. Final
+  activation and offering decisions remain explicit launch requirements.
 
 ## Current Session — 2026-10-29 (launch planning and visual redesign)
 
@@ -48,8 +49,8 @@ visual design. Brand clarification: "Savant as a brand is designed w/ cyberpunk/
   archived. Lint zero warnings, typecheck, 107 unit tests, quality (191 files),
   51-route build and 100 HTTP checks passed.
 
-Trial implementation remains paused while its offering is being settled;
-this visual pass must not claim unimplemented trials or payment readiness.
+The earlier visual pass left trial implementation paused. L2 now resumes its
+disabled infrastructure; activation and payment readiness remain unclaimed.
 
 ## Current Session — 2026-10-29 (subscription revenue analytics, then HTTP suite)
 

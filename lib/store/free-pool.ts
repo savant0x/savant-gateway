@@ -12,10 +12,13 @@ import { randomUUID } from "node:crypto";
 import { db, nowIso } from "../db";
 import {
   decideFreeAdmission,
+  estimateWeightedTokens,
   type FreeAdmissionBlocked,
   type FreePoolConfig,
   readFreePoolConfig,
 } from "../free-pool";
+import { reserveTrial, settleTrial } from "../trial-ledger";
+import { readTrialConfig } from "../trials";
 
 import { HOLD_TTL_MS } from "./billing";
 import { getProviderStatusBySlug } from "./providers";
@@ -154,19 +157,81 @@ export function reserveFreeCall(input: {
 
       const status = getProviderStatusBySlug(input.model.upstreamSlug);
       const remaining = providerRemaining(status, at, input.model.upstreamSlug);
+      const trial = readTrialConfig();
+      const estimate = estimateWeightedTokens(
+        input.promptTokens,
+        input.outputBudget,
+        input.model.tokenWeight,
+      );
+
+      if (
+        trial.enabled &&
+        (remaining === null ||
+          !status.syncedAt ||
+          !Number.isFinite(Date.parse(status.syncedAt)) ||
+          nowMs - Date.parse(status.syncedAt) > 300_000 ||
+          remaining - estimate < config.providerRemainingFloor)
+      ) {
+        return {
+          decision: {
+            allowed: false as const,
+            reason: "provider_pool" as const,
+            status: 429 as const,
+            type: "insufficient_quota" as const,
+            message:
+              "Trial capacity is temporarily unavailable. Try again later.",
+            retryAfterSeconds: 300,
+            resetAt: null,
+          },
+          alert: null,
+        };
+      }
+
       const next = decideFreeAdmission({
-        config,
+        config: trial.enabled
+          ? { ...config, dailyWeightedTokens: Number.MAX_SAFE_INTEGER }
+          : config,
         promptTokens: input.promptTokens,
         outputBudget: input.outputBudget,
         tokenWeight: input.model.tokenWeight,
-        usedWeightedTokens: usedWeighted(input.auth.userId, day),
-        reservedWeightedTokens: reservedWeighted(input.auth.userId, day, at),
+        usedWeightedTokens: trial.enabled
+          ? 0
+          : usedWeighted(input.auth.userId, day),
+        reservedWeightedTokens: trial.enabled
+          ? 0
+          : reservedWeighted(input.auth.userId, day, at),
         providerRemaining: remaining,
         providerAllowed: status.subscriptionAllowed,
         now: nowMs,
       });
 
       if (!next.allowed) return { decision: next, alert: null };
+
+      if (
+        trial.enabled &&
+        !reserveTrial(db, {
+          userId: input.auth.userId,
+          id: reservationId,
+          estimated: estimate,
+          now: at,
+          expiresAt: new Date(nowMs + HOLD_TTL_MS).toISOString(),
+          config: trial,
+        })
+      ) {
+        return {
+          decision: {
+            allowed: false as const,
+            reason: "trial_exhausted" as const,
+            status: 402 as const,
+            type: "insufficient_quota" as const,
+            message:
+              "Trial allowance unavailable or insufficient. Add prepaid credit to continue.",
+            retryAfterSeconds: 0,
+            resetAt: null,
+          },
+          alert: null,
+        };
+      }
 
       const alert =
         next.alert && remaining !== null ? { remaining, config } : null;
@@ -229,6 +294,13 @@ export function settleFreeReservation(input: {
   ).run(input.reservation.id, input.userId);
 
   const weighted = Math.max(0, Math.floor(input.weightedTokens));
+
+  settleTrial(db, {
+    id: input.reservation.id,
+    userId: input.userId,
+    actual: weighted,
+    now: input.settledAt ?? nowIso(),
+  });
 
   if (weighted === 0) return;
 

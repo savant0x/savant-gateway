@@ -1,6 +1,7 @@
 import { siteConfig } from "@/config/site";
 import { CORS_HEADERS, extractApiKey, jsonError } from "@/lib/http";
 import { authenticateApiKey, listModels } from "@/lib/store";
+import { trialOffer } from "@/lib/store/trial-offer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,6 +23,7 @@ export async function GET(request: Request) {
 
   const data = listModels().map((model) => ({
     id: model.id,
+    trial_paid_transition: trialOffer(model.id),
     object: "model",
     owned_by: siteConfig.provider.slug,
     name: model.name,

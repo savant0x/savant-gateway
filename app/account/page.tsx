@@ -8,6 +8,7 @@ import { BillingHistory } from "@/components/account/billing-history";
 import { CustomerKeysCard } from "@/components/account/keys-card";
 import { SubscriptionCard } from "@/components/account/subscription-card";
 import { TopupCard } from "@/components/account/topup-card";
+import { TrialCard } from "@/components/account/trial-card";
 import { StatCard } from "@/components/dashboard/chips";
 import {
   formatCompact,
@@ -127,6 +128,8 @@ export default async function AccountPage({
           />
         </section>
 
+        <TrialCard userId={customer.id} />
+
         <section className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
           <TopupCard configured={stripe.configured} reason={stripe.reason} />
           <CustomerKeysCard keys={data.keys} />
@@ -160,9 +163,10 @@ export default async function AccountPage({
               <a className="text-accent hover:underline" href="/docs">
                 API reference
               </a>
-              . Free-pool models work with zero balance; paid rows settle
-              against available credit. Plan-only rows need a subscription that
-              includes them.
+              . Access follows your trial allowance, available credit and plan
+              entitlements. Plan-only rows need a subscription that includes
+              them. Paid usage stops when available credit cannot cover a
+              request.
             </p>
           </Card.Content>
         </Card>

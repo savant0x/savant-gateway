@@ -44,6 +44,7 @@ try {
     dbPath: workspace.dbPath,
     env: {
       ADMIN_PASSWORD,
+      TRIAL_ENABLED: "false",
       ADMIN_SESSION_SECRET: ADMIN_SECRET,
       STRIPE_SECRET_KEY: "sk_test_http_suite_placeholder",
       STRIPE_WEBHOOK_SECRET: WEBHOOK_SECRET,

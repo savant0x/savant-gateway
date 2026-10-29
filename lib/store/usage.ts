@@ -62,6 +62,16 @@ export function recordUsage(input: UsageSettlement) {
   let subscriptionPeriodId = input.subscriptionPeriodId ?? null;
 
   db.transaction(() => {
+    if (input.freeReservation) {
+      const settled = db
+        .prepare(
+          "SELECT settled_at FROM trial_reservations WHERE id = ? AND user_id = ?",
+        )
+        .get(input.freeReservation.id, input.auth.userId) as
+        { settled_at: string | null } | undefined;
+
+      if (settled?.settled_at) return;
+    }
     if (input.hold) {
       const hold = db
         .prepare(
@@ -107,12 +117,12 @@ export function recordUsage(input: UsageSettlement) {
 
     db.prepare(
       `INSERT INTO usage_events
-        (id, user_id, api_key_id, model_id, provider_slug, group_slug,
+        (id, user_id, api_key_id, model_id, provider_slug, group_slug, serving_upstream_id,
          input_tokens, output_tokens, weighted_tokens, cost_micros,
          charged_micros, estimated, status, latency_ms, error, created_at,
          billing_source, subscription_id, subscription_period_id,
          included_weighted_tokens)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       `usage_${randomUUID()}`,
       input.auth.userId,
@@ -120,6 +130,7 @@ export function recordUsage(input: UsageSettlement) {
       input.model.id,
       input.model.upstreamSlug,
       input.model.groupSlug,
+      input.model.upstreamId,
       inputTokens,
       outputTokens,
       weightedTokens,

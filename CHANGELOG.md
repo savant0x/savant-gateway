@@ -3,6 +3,23 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — Disabled lifetime trial infrastructure
+
+- **FID-2026-1029-015 — high — One-time trial ledger and paid routing.** Added
+  durable per-customer grants, concurrent reservations, replay-safe settlement
+  and historical free-usage offsets. Configurable development default 100,000
+  weighted tokens; activation off, pair map empty, gateway grant budget zero.
+  Verified email and finite issuance budget gate grants. Explicit paid pairs
+  reuse credit holds after trial exhaustion; unavailable pairs fail closed,
+  and temporary pool depletion never triggers charging. Usage records requested
+  and serving model identities. Account UI shows lifetime balance and transition
+  prices; model API adds trial_paid_transition. Added ledger unit tests and a
+  production-build trial HTTP suite to test:http/verify. Receipt: 118 unit tests,
+  zero-warning lint/typecheck, quality (197 files), 51-route build, existing 100
+  HTTP checks plus trial suite PASS; account browser checks at 1440/390/320.
+  Activation controls and live payment/funding acceptance remain documented
+  launch requirements. This change does not enable the trial offering.
+
 ## 2026-10-29 — Provider metadata integrity
 
 - **FID-2026-1029-014 — high — Correct quota and catalog metadata.** Preserve

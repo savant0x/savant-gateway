@@ -1,11 +1,17 @@
 import "server-only";
 
-import type { Overview, OverviewStats } from "../types";
+import type {
+  AdminOverview,
+  LandingData,
+  Overview,
+  OverviewStats,
+  PublicProviderStatus,
+} from "../types";
 
 import { db } from "../db";
 
 import { listApiKeys } from "./keys";
-import { listModels } from "./models";
+import { listAllModels, listModels } from "./models";
 import { getProviderStatus } from "./provider";
 import { listUsage } from "./usage";
 
@@ -13,8 +19,9 @@ export function getOverviewStats(): OverviewStats {
   const row = db
     .prepare(
       `SELECT
-        (SELECT COUNT(*) FROM models) AS model_count,
-        (SELECT COUNT(*) FROM models WHERE allow_free = 1 AND token_weight > 0) AS free_model_count,
+        (SELECT COUNT(*) FROM models WHERE status = 'active') AS model_count,
+        (SELECT COUNT(*) FROM models
+         WHERE status = 'active' AND allow_free = 1 AND token_weight > 0) AS free_model_count,
         (SELECT COUNT(*) FROM api_keys WHERE status = 'active') AS key_count,
         (SELECT COUNT(*) FROM usage_events) AS request_count,
         (SELECT COALESCE(SUM(input_tokens + output_tokens), 0) FROM usage_events) AS total_tokens`,
@@ -43,5 +50,36 @@ export function getOverview(): Overview {
     keys: listApiKeys(),
     usage: listUsage(25),
     stats: getOverviewStats(),
+  };
+}
+
+function toPublicProvider(): PublicProviderStatus {
+  const provider = getProviderStatus();
+
+  return {
+    configured: provider.configured,
+    status: provider.status,
+    subscriptionMode: provider.subscriptionMode,
+    subscriptionTokenLimit: provider.subscriptionTokenLimit,
+    subscriptionTokensUsed: provider.subscriptionTokensUsed,
+    subscriptionTokensRemaining: provider.subscriptionTokensRemaining,
+    syncedAt: provider.syncedAt,
+  };
+}
+
+export function getLandingData(): LandingData {
+  const models = listModels();
+
+  return {
+    provider: toPublicProvider(),
+    freeModels: models.filter((model) => model.access === "free").slice(0, 6),
+    stats: getOverviewStats(),
+  };
+}
+
+export function getAdminOverview(): AdminOverview {
+  return {
+    ...getOverview(),
+    allModels: listAllModels(),
   };
 }

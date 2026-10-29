@@ -1,182 +1,210 @@
 # FID: [Short Description]
 
-**Filename:** `FID-YYYY-MMDD-NNN-short-description.md`
+**Filename:** `FID-YYYY-MMDD-NNN-[short-description].md`
 **ID:** FID-YYYY-MMDD-NNN
 **Severity:** critical | high | medium | low
-**Status:** created | analyzed | converged | verified | closed
-**Created:** YYYY-MM-DD HH:MM (actual time; never invent historical time)
+**Status:** created | analyzed | fixed | verified | converged | closed
+> (`converged` is the correct pre-implementation status per
+> FID-2026-0915-004; `fixed` is deprecated-but-accepted legacy language —
+> do not use it for new FIDs. The receipt contract still keys to
+> `fixed | verified` so archived records remain valid.)
+**Created:** YYYY-MM-DD HH:MM
 **Automation level:** 1 | 2 | 3
+> (Authority this FID needs to be actioned **without asking**: `1` approval-gated,
+> `2` within approved scope, `3` fully automatable. The session ceiling is
+> `protocol.config.yaml` → `session.autonomy_level`; an item is actioned without
+> approval only when its level is ≤ the session level. No level lifts the G-laws,
+> credential handling, Law 3, or the project-directory boundary — see
+> "Automation Levels" in the governing protocol.)
 **YAGNI-Compliance:** Pending | Verified | Debt-Incurred
 
-Reference structure: `C:/Users/spenc/dev/savant-code/templates/FID-TEMPLATE.md`,
-read 2026-10-28. This project uses npm and `protocol.config.yaml`; Savant's Bun
-workspace gates and fingerprint tooling are not installed here. `fixed` is an
-accepted legacy status, not a status for new plans. `implemented` is a step
-status, never a FID status. Use `converged` before implementation; close and
-archive only after implementation, actual verification and a local commit.
+> **Project application (savant-gateway).** This repository uses npm, not Bun,
+> and it does **not** ship `fid:verify`, `quality:report` beyond
+> `npm run quality`, `scope:check`, or `validate:repository`. The gates that
+> actually exist are declared in `protocol.config.yaml` and repeated below.
+> FID closure is checked by review against this template, the gate output, and
+> the commit recorded in the FID. `implemented` is a step status, never a FID
+> status. Use `converged` before implementation and close only after the code,
+> the gates, and a local commit exist.
+
+---
 
 ## Summary
 
-Describe the observed finding and desired result in one paragraph.
+One-paragraph description of the finding.
 
 ## Environment
 
-- **OS:** actual platform/version.
-- **Language/Runtime:** installed language/runtime versions.
-- **Tool Versions:** relevant installed tools.
-- **Commit/State:** exact Git SHA and relevant pre-existing working changes.
+- **OS:** [OS and version]
+- **Language/Runtime:** [Language and version]
+- **Tool Versions:** [Relevant tool versions]
+- **Commit/State:** [Git SHA or state description]
 
 ## Detailed Description
 
 ### Problem
 
-Describe observed behavior, including the failing case.
+What is the issue? What behavior was observed?
 
 ### Expected Behavior
 
-Describe the behavior the implementation must establish.
+What should happen instead?
 
 ### Root Cause
 
-Explain the mechanism and evidence distinguishing it from other hypotheses.
+What is the underlying cause?
 
 ### Evidence
 
-Paste actual command output or current `file:line` with quoted code. Identify
-historical evidence by date. Absence claims include the exact search command
-and its exit/result. Mark inaccessible evidence `NEEDS-REVIEW`.
+Include logs, screenshots, code snippets, or test output.
+
+```text
+[Paste evidence here]
+```
 
 ## Impact Assessment
 
 ### Affected Components
 
-List real paths and production entry points, data/migration impact and dependencies.
+- [Component 1]
+- [Component 2]
 
 ### Risk Level
 
-Select the matching severity and explain the consequence and containment.
-
-- [ ] Critical: crash, data loss or security vulnerability.
-- [ ] High: major feature broken.
-- [ ] Medium: degraded behavior or missing verification.
-- [ ] Low: minor or cosmetic issue.
+- [ ] Critical: System crash, data loss, or security vulnerability
+- [ ] High: Major feature broken, no workaround
+- [ ] Medium: Feature degraded, workaround exists
+- [ ] Low: Minor issue, cosmetic, or edge case
 
 ## Proposed Solution
 
 ### Approach
 
-Search for existing helpers first. Explain reuse, alternatives and robust
-defaults. Address all applicable Five Questions in the governing protocol;
-state concrete limits rather than claiming untested scale or security.
+How should this be fixed?
 
 ### Steps
 
-Number each action. Before implementation identify it as planned. At closure
-each is `implemented` or `blocked`; only a dated, verbatim operator ruling
-can authorize a different disposition. A blocked step never means completed.
+1. [Step 1]
+2. [Step 2]
+3. [Step 3]
 
 ### Verification
 
-Name existing tests/probes or exact new artifact paths. Every promised artifact
-must exist and be exercised by a declared gate before verification is claimed.
-Include failure, boundary and production-call tests, not only successful input.
+How will we confirm the fix works?
+
+> Every promised test artifact must name its repo-relative
+> `tests/*.test.mjs` path, and that path must also appear under Verification
+> Gates. This project has no stamping tool; the reviewer checks that every
+> promised test exists and actually ran (`node --test tests/` runs all of them).
 
 ## Verification Gates
 
-List exact commands from `protocol.config.yaml` and applicable existing checks:
+Declare the gates that prove this FID's claimed verification against the
+current tree. Use the exact commands from `protocol.config.yaml`:
 
-- `npx tsc --noEmit`
-- `npm run lint`
-- `npm run build` (includes contrast)
-- `npm run progression` when progression/shared helpers are affected.
-- `npm run balance` when economy calibration is affected.
-- Exact feature test commands and environment, including an isolated database
-  for any mutation test. Never run the world-resetting golden path on the save.
-- Current source/call-graph searches and explicit document checks.
+- `- gate: lint` — `npm run lint`, zero warnings.
+- `- gate: typecheck` — `npm run typecheck`.
+- `- gate: test tests/http.test.mjs` — one line per test file, using the real
+  repo-relative path. `npm test` runs the whole directory.
+- `- gate: quality` — `npm run quality`; mandatory for any FID that touches
+  `app/`, `components/`, `config/`, or `lib/`.
+- `- gate: build` — `npm run build`.
+- `- gate: verify` — `npm run verify`, when the full set is claimed.
 
-This project has `fid:verify`, `quality:report`, `scope:check` and
-`validate:repository` commands. The verifier accepts an `echo-contract` with
-registered gates, durable tests, production evidence/callers and a real commit.
-Read `scripts/lib/{fid-contract,gate-registry}.ts` before declaring one. New
-feature probes must be registered and runnable before a verification receipt
-can claim them. `created`, `analyzed`, `converged` and `fixed` checks validate
-planning structure only; they do not run implementation gates. Never create
-a pretend fingerprint or point receipt tests at scratch artifacts. The build
-gate registry and `npm run build` have distinct command lists; record which ran.
+Record a receipt with the date, each command, its exit code, and the relevant
+output. There is no fingerprint tool: the paste and the commit are the
+receipt. Any edit after verification means the evidence is historical and must
+be re-run before the claim is repeated.
+
+```markdown
+## Verification Gates
+
+- gate: lint
+- gate: typecheck
+- gate: test tests/http.test.mjs
+- gate: quality
+- gate: build
 
 ### Verification Receipt
 
-Record execution date, exact commands, exit codes and relevant pasted output.
-Distinguish fresh checks from historical browser/HTTP evidence and missing
-checks. A closed historical receipt does not guarantee the current bytes.
+- verified: YYYY-MM-DDTHH:MM:SSZ
+- lint: exit 0
+- typecheck: exit 0
+- test tests/http.test.mjs: exit 0
+- quality: exit 0 (400-line ceiling)
+- build: exit 0
+```
 
 ## Perfection Loop
 
-The loop audits this document before code. Initial authoring creates the baseline;
-subsequent corrective passes have a measured character edit distance of at most
-10% of the preceding document. Convergence needs two stable passes below 2%,
-with no actionable plan findings. Maximum ten passes; escalate oscillation.
-Receipt-only additions after implementation do not establish earlier convergence.
-
 ### Loop 1 — RED
 
-- **RED:** observed defects with exact output or source quotes.
-- **GREEN:** proposed changes and answered questions.
-- **AUDIT:** static checks and independent manual challenge of the plan.
-- **ADVERSARIAL:** failure/boundary/security and wiring counterexamples.
-- **CHANGE DELTA:** baseline or measured change percentage with method.
+- **RED:** [Issues identified]
+- **GREEN:** [Fixes applied]
+- **AUDIT:** [Verification results]
+- **ADVERSARIAL:** [Independent challenge]
+- **CHANGE DELTA:** [Percentage of FID text changed]
 
 ### Missed Questions
 
-List each overlooked question, answer from inspection, and incorporate the
-answer in the solution. Cover ownership, retries, concurrency, migration,
-failure handling, observability and honest UI claims where applicable.
+> Surface every question that should have been asked when this FID was created, answer it with the most robust default
+> derivable from inspection, and fold the answer back into the relevant sections.
+
+1. [Missed question → answer]
+2. [Missed question → answer]
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [ ] **Commit SHA:** exact existing implementation commit(s).
-- [ ] **File:line ranges:** current key paths, lines and quoted implementation.
-- [ ] **Gate output:** actual command output and exit codes.
-- [ ] **Reproducibility:** exact searches and runtime commands/environment.
-- [ ] **Step statuses:** every solution step accounted for.
+> A FID **cannot** be set to `closed` without this section filled. No silent
+> deferrals — every step must be `implemented`, `blocked`, or `deferred`
+> (operator-approved only).
+
+- [ ] **Commit SHA:** The exact commit(s) where implementation landed
+- [ ] **File:line ranges:** Specific files and line numbers of the key changes
+- [ ] **Gate output:** Pasted output from typecheck/tests/lint proving the implementation is clean
+- [ ] **Reproducibility:** Another agent can grep for the changes and find matches in the working tree
+- [ ] **Step statuses:** Every Proposed Solution step is marked `implemented`, `blocked`, or `deferred` (operator-approved)
 
 ### Code Verification Evidence
 
-- [ ] Affected paths exist.
-- [ ] Code matches the final solution, including documented corrections.
-- [ ] Declared gates pass with output; missing gates are stated honestly.
-- [ ] New/repaired production wiring has actual caller matches.
-- [ ] FID status reflects code and verification rather than the original plan.
+> Before marking status as `fixed` or `verified`, verify that referenced code exists. FID metadata is a claim; code is
+> ground truth.
+
+- [ ] Files referenced in Affected Components exist
+- [ ] Implementation matches the Proposed Solution
+- [ ] Typecheck/tests/lint pass with pasted tool output
+- [ ] Production call-graph evidence is present for new or repaired wiring
+- [ ] FID status reflects the actual implementation state
+
+> Every PASS and FAIL in AUDIT cites `path/to/file.ts:LINE` plus quoted code or exact command output. Absence-shaped
+> checks paste the exact search and mark out-of-reach evidence `NEEDS-REVIEW`.
 
 ### Loop 2 — Independent audit and self-correction
 
-- **RED:** remaining findings.
-- **GREEN:** corrections or explicit absence of required corrections.
-- **AUDIT:** evidence from a different method.
-- **ADVERSARIAL:** strongest remaining counterexample and result.
-- **CHANGE DELTA:** actual measured percentage; never an invented value.
+- **RED:** [Remaining issues]
+- **GREEN:** [Corrections applied]
+- **AUDIT:** [Independent evidence]
+- **ADVERSARIAL:** [Residual challenge]
+- **CHANGE DELTA:** [Percentage]
 
 ### Loop 3 — Final convergence
 
-- **RED:** final risks.
-- **GREEN:** final corrections or unchanged stable plan.
-- **AUDIT:** repeat independent review with actual evidence.
-- **ADVERSARIAL:** unresolved limits and what verification does not prove.
-- **CHANGE DELTA:** actual measured percentage and convergence decision.
+- **RED:** [Final risks]
+- **GREEN:** [Final corrections]
+- **AUDIT:** [Final independent evidence]
+- **ADVERSARIAL:** [Final challenge]
+- **CHANGE DELTA:** [Percentage]
 
 ## Resolution
 
-- **Closed Date:** actual closure date/time; unknown historical time stays unknown.
-- **Fix Description:** resulting behavior and limits.
-- **Tests Added:** actual new/existing test paths and whether they ran.
-- **Verification Evidence:** commands, outputs and dates.
-- **Archived:** actual move date; do not invent a historical timestamp.
+- **Closed Date:** YYYY-MM-DD HH:MM (set when closure is independently verified)
+- **Fix Description:** [What was changed]
+- **Tests Added:** [Yes/No — describe]
+- **Verification Evidence:** [Commands and results]
+- **Archived:** YYYY-MM-DD HH:MM (set when moved to `dev/fids/archive/`)
 
-Move a verified closed FID to `dev/fids/archive/`, add CHANGELOG evidence and
-record closure in the session summary. Never leave a closed FID in the active
-directory. Preserve historical violations; a retrospective audit cannot make
-an earlier scripted edit or implementation-before-plan compliant.
+> When status is set to **closed**, move this file to `dev/fids/archive/` and append an entry to `CHANGELOG.md`.
 
 ## Lessons Learned
 
-Record the failure mechanism and the prevention rule, without attribution.
+What can we learn from this finding and how can we prevent similar issues?

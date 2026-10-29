@@ -31,6 +31,7 @@ export type ModelSummary = {
   supportsTools: boolean;
   supportsVision: boolean;
   health: string | null;
+  status: string;
   syncedAt: string;
 };
 
@@ -72,6 +73,27 @@ export type Overview = {
   keys: KeySummary[];
   usage: UsageSummary[];
   stats: OverviewStats;
+};
+
+export type PublicProviderStatus = Pick<
+  ProviderStatus,
+  | "configured"
+  | "status"
+  | "subscriptionMode"
+  | "subscriptionTokenLimit"
+  | "subscriptionTokensUsed"
+  | "subscriptionTokensRemaining"
+  | "syncedAt"
+>;
+
+export type LandingData = {
+  provider: PublicProviderStatus;
+  freeModels: ModelSummary[];
+  stats: OverviewStats;
+};
+
+export type AdminOverview = Overview & {
+  allModels: ModelSummary[];
 };
 
 export type SyncedModel = {

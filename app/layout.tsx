@@ -6,25 +6,39 @@ import clsx from "clsx";
 
 import { Providers } from "./providers";
 
-import { Navbar } from "@/components/navbar";
 import { fontMono, fontSans } from "@/config/fonts";
 import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteConfig.url),
   title: {
     default: siteConfig.name,
     template: `%s - ${siteConfig.name}`,
   },
   description: siteConfig.description,
+  applicationName: siteConfig.name,
+  manifest: "/site.webmanifest",
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+  openGraph: {
+    title: siteConfig.name,
+    description: siteConfig.description,
+    siteName: siteConfig.name,
+    type: "website",
+    images: [{ url: "/logo.png", width: 2048, height: 2048 }],
   },
 };
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "white" },
-    { media: "(prefers-color-scheme: dark)", color: "black" },
+    { media: "(prefers-color-scheme: light)", color: "#050b12" },
+    { media: "(prefers-color-scheme: dark)", color: "#050b12" },
   ],
 };
 
@@ -49,18 +63,7 @@ export default function RootLayout({
             enableSystem: false,
           }}
         >
-          <div className="relative flex min-h-screen flex-col">
-            <Navbar />
-            <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-20 pt-6 sm:px-6 lg:px-8">
-              {children}
-            </main>
-            <footer className="border-t border-black/10 dark:border-white/10">
-              <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-5 text-xs text-muted sm:px-6 lg:px-8">
-                <span>{siteConfig.name}</span>
-                <span>Local development · Next.js + HeroUI v3</span>
-              </div>
-            </footer>
-          </div>
+          {children}
         </Providers>
       </body>
     </html>

@@ -110,6 +110,7 @@ export function toModelSummary(row: ModelRow): ModelSummary {
     supportsTools: row.supports_tools === 1,
     supportsVision: row.supports_vision === 1,
     health: row.health,
+    status: row.status,
     syncedAt: row.synced_at,
   };
 }

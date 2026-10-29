@@ -18,6 +18,27 @@ export function listModels(): ModelSummary[] {
   return rows.map(toModelSummary);
 }
 
+export function listAllModels(): ModelSummary[] {
+  const rows = db
+    .prepare(
+      `SELECT * FROM models
+       ORDER BY CASE WHEN status = 'active' THEN 0 ELSE 1 END,
+                CASE WHEN allow_free = 1 THEN 0 ELSE 1 END,
+                provider ASC, sort_order ASC, name ASC`,
+    )
+    .all() as ModelRow[];
+
+  return rows.map(toModelSummary);
+}
+
+export function setModelStatus(modelId: string, status: "active" | "disabled") {
+  const result = db
+    .prepare("UPDATE models SET status = ? WHERE id = ?")
+    .run(status, modelId);
+
+  return result.changes > 0;
+}
+
 export function getModelForGateway(modelId: string): GatewayModel | undefined {
   const row = db.prepare("SELECT * FROM models WHERE id = ?").get(modelId) as
     ModelRow | undefined;
@@ -44,10 +65,18 @@ export function replaceModels(rows: SyncedModel[]) {
       (id, upstream_id, name, provider, context_window, token_weight,
        input_price_micros, output_price_micros, allow_free, supports_tools,
        supports_vision, health, status, sort_order, synced_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   db.transaction((models: SyncedModel[]) => {
+    const disabled = new Set(
+      (
+        db
+          .prepare("SELECT id FROM models WHERE status = 'disabled'")
+          .all() as Array<{ id: string }>
+      ).map((row) => row.id),
+    );
+
     db.prepare("DELETE FROM models").run();
 
     for (const model of models) {
@@ -64,6 +93,7 @@ export function replaceModels(rows: SyncedModel[]) {
         model.supportsTools ? 1 : 0,
         model.supportsVision ? 1 : 0,
         model.health,
+        disabled.has(model.id) ? "disabled" : "active",
         model.sortOrder,
         nowIso(),
       );

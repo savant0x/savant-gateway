@@ -2,6 +2,45 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-28 | Session autonomy level: 3 (default; review is read-only)
 
+## Current Session — 2026-10-29 (automation level 3)
+
+Operator request: build a proper landing page and a working admin panel, use the
+supplied logo/favicon assets, and replace the condensed ECHO summary with the
+canonical protocol files from `savant-code`, configured for this repository.
+The `savant-code` checkout is read-only for this work.
+
+- [x] **P1 — Protocol port.** Copy `ECHO.md`, `ECHO-single-agent.md`,
+  `dev/echo-v0.1.2-single-agent.md`, `templates/`, `coding-standards/`, and
+  `docs/echo-protocol.md`; configure `protocol.config.yaml`, `AGENTS.md`, and
+  the docs for npm/Next.js and single-agent governance.
+- [x] **P2 — Brand assets.** Commit `assets/` and publish logo and favicon
+  copies under `public/`; wire metadata and the web manifest.
+- [x] **P3 — Landing page.** Public `/` with live catalog counts, free-model
+  showcase, workflow, feature and code sections, and links to the console.
+- [x] **P4 — Console route.** Move the existing dashboard to `/dashboard` with
+  its own shell so `/` can be public marketing.
+- [x] **P5 — Admin authentication.** Password login with an HMAC-signed,
+  HttpOnly session cookie, rate limiting, and explicit unconfigured state.
+- [x] **P6 — Admin panel.** `/admin` with provider sync, model enable/disable,
+  consumer-key management, and usage visibility.
+- [x] **P7 — Verification.** Unit tests for session signing and password checks;
+  local gates; live HTTP checks of landing, login, model toggle, and logout.
+
+Evidence is recorded in `dev/fids/FID-2026-1029-003-landing-admin-and-protocol-port.md`.
+
+Findings during implementation, all completed in the same pass:
+
+- **F1 — logout did not revoke a token (medium).** Clearing the cookie left the
+  signed token valid until expiry; the first live receipt returned `200` for
+  `/admin` with the old cookie. Fixed with a durable session epoch that logout
+  bumps; the old token now returns `307` to `/admin/login`.
+- **F2 — model ids are path-unsafe (low).** `free/*` ids contain `/`, so the
+  planned `PATCH /api/admin/models/[id]` was replaced by a collection PATCH
+  carrying `{ id, status }`.
+- **F3 — a sync would re-enable disabled models (medium, found in plan audit).**
+  `replaceModels` now captures disabled ids before deleting and re-inserts them
+  as disabled; verified live across a provider sync.
+
 ## Approved Work Items
 
 - [ ] **Review the gateway project** (interpreted scope, presented 2026-10-28):

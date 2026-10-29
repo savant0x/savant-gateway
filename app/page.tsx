@@ -1,8 +1,8 @@
-import { Dashboard } from "@/components/dashboard";
-import { getOverview } from "@/lib/store";
+import { LandingPage } from "@/components/landing/landing-page";
+import { getLandingData } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
 export default function HomePage() {
-  return <Dashboard initial={getOverview()} />;
+  return <LandingPage data={getLandingData()} />;
 }

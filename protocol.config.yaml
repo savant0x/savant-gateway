@@ -1,8 +1,13 @@
 # Protocol Config — project-specific configuration for ECHO Protocol
 #
-# The commands below are the gates the repository actually runs. There is no
-# `fid:verify` binary here; FID closure is checked by review against
-# templates/FID-TEMPLATE.md and the commit recorded in the FID.
+# Governance for this repository is the single-agent contract at
+# `dev/echo-v0.1.2-single-agent.md`, reached through `ECHO-single-agent.md`.
+# `ECHO.md` is the canonical harness reference; it is read-only context here and
+# is NOT the governing contract for a single-agent session.
+#
+# The commands below are the gates this repository actually runs. There is no
+# `fid:verify` binary: FID closure is checked by review against
+# `templates/FID-TEMPLATE.md` and the commit recorded in the FID.
 
 project:
   name: 'savant-gateway'
@@ -11,7 +16,13 @@ project:
 
 protocol:
   version: '0.2.0'
-  strict_mode: true
+  strict_mode: true # true = all 15 laws active (default), false = core 4 laws only
+
+single_agent:
+  protocol:
+    file: 'dev/echo-v0.1.2-single-agent.md'
+    version: '0.1.2-single-agent'
+    strict_mode: true
 
 language: 'typescript'
 
@@ -22,19 +33,23 @@ commands:
   lint: 'npm run lint'
   quality: 'npm run quality'
   verify: 'npm run verify'
+  dev: 'npm run dev'
 
 paths:
   src: null
   tests: 'tests/'
-  docs: null
+  docs: 'docs/'
   dev: 'dev/'
   fids: 'dev/fids/'
   fids_archive: 'dev/fids/archive/'
   session_summaries: 'dev/session-summaries/'
   learnings: 'dev/LEARNINGS.md'
+  scope: 'SCOPE.md'
+  changelog: 'CHANGELOG.md'
+  coding_standards: 'coding-standards/'
 
-# The file-length ceiling is enforced by scripts/quality-report.mjs. The other
-# values are review criteria, not machine gates.
+# The file-length ceiling is enforced by scripts/quality-report.mjs over the
+# directories below. The other values are review criteria, not machine gates.
 quality:
   max_file_lines: 400
   max_function_lines: 50
@@ -43,6 +58,12 @@ quality:
   max_params: 4
   max_comment_density: 0.33
   max_nesting_depth: 3
+  enforced: true
+  scan:
+    - 'app'
+    - 'components'
+    - 'config'
+    - 'lib'
 
 testing:
   fuzz_enabled: false
@@ -74,3 +95,7 @@ session:
 # the attribution-guard CI workflow.
 attribution:
   policy: 'no-agent-credit'
+  enforced_by:
+    - '.githooks/commit-msg'
+    - '.githooks/pre-push'
+    - '.github/workflows/attribution-guard.yml'

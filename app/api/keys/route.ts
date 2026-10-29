@@ -1,11 +1,11 @@
+import { guardLocalOrAdmin } from "@/lib/admin-auth";
 import { createDevApiKey, listApiKeys } from "@/lib/store";
-import { localOnlyError } from "@/lib/http";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  const blocked = localOnlyError(request);
+  const blocked = await guardLocalOrAdmin(request);
 
   if (blocked) return blocked;
 
@@ -13,7 +13,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const blocked = localOnlyError(request);
+  const blocked = await guardLocalOrAdmin(request);
 
   if (blocked) return blocked;
 

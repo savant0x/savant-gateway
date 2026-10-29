@@ -3,6 +3,23 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — Landing page, admin panel, and canonical protocol
+
+- **FID-2026-1029-003 — high — Public landing, authenticated admin panel, and
+  canonical protocol import.** `/` is now a public landing page with the
+  supplied brand assets and live active/free catalog counts; the existing
+  console moved to `/dashboard`. Adds a password-protected `/admin` panel with
+  provider sync, model enable/disable, key creation/revocation, and usage.
+  Model statuses survive a provider sync. Admin sessions are HMAC-signed
+  HttpOnly cookies with a durable epoch: sign-out revokes issued tokens, not
+  just the browser copy. Login is rate-limited and cross-origin mutations are
+  rejected. The existing `/api/*` routes now accept loopback or an admin
+  session and keep their loopback development behavior. Replaces the condensed
+  ECHO summary with the canonical `ECHO.md`, the single-agent protocol and
+  marker, coding standards, templates, and an npm-configured
+  `protocol.config.yaml`. Adds brand favicons, web manifest, and source assets.
+  Tests: 16 (session, limiter, HTTP helpers).
+
 ## 2026-10-29 — Savant Gateway repository bootstrap
 
 - **FID-2026-1029-002 — high — Establish the Savant Gateway identity and

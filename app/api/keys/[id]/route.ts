@@ -1,4 +1,4 @@
-import { localOnlyError } from "@/lib/http";
+import { guardLocalOrAdmin } from "@/lib/admin-auth";
 import { revokeApiKey } from "@/lib/store";
 
 export const runtime = "nodejs";
@@ -8,7 +8,7 @@ export async function DELETE(
   request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
-  const blocked = localOnlyError(request);
+  const blocked = await guardLocalOrAdmin(request);
 
   if (blocked) return blocked;
 

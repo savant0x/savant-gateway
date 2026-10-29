@@ -83,6 +83,11 @@ function createDb() {
     );
     CREATE INDEX IF NOT EXISTS usage_events_created_idx ON usage_events(created_at);
 
+    CREATE TABLE IF NOT EXISTS admin_state (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      session_epoch INTEGER NOT NULL DEFAULT 0
+    );
+
     CREATE TABLE IF NOT EXISTS provider_status (
       id INTEGER PRIMARY KEY CHECK (id = 1),
       status TEXT NOT NULL DEFAULT 'unconfigured',
@@ -107,6 +112,12 @@ function createDb() {
        VALUES ('user_dev', 'dev@local', 'Local Developer', 'active', ?)`,
     )
     .run(new Date().toISOString());
+
+  database
+    .prepare(
+      "INSERT OR IGNORE INTO admin_state (id, session_epoch) VALUES (1, 0)",
+    )
+    .run();
 
   return database;
 }

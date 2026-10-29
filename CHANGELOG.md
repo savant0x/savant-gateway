@@ -19,6 +19,7 @@ distinguish verified behavior from unverified claims.
   combinations plus 17 interaction assertions on disposable data. Launch
   requirements are documented in `docs/launch-readiness.md`; trial conversion,
   wallet funding and real Stripe acceptance are not claimed by this change.
+  Committed as `56a2436`; FID-013 is closed and archived.
 
 ## 2026-10-29 — Route-level HTTP suite
 

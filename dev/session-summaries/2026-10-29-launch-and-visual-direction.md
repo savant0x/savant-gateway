@@ -1,7 +1,7 @@
 # Session Summary: 2026-10-29 — launch planning and visual direction
 
 **Session ID:** 2026-10-29-launch-and-visual-direction
-**Status:** active
+**Status:** complete
 
 ## Initial State
 
@@ -118,6 +118,12 @@ warnings after formatting corrections. Reachability search confirms the root
 CSS/font imports, shared BrandMark callers, Hero → ModelPriceEngine, and
 app/page → getLandingData → full listModels path. Browser screenshots remain
 local under ignored `.superdesign/tmp/`.
+
+Implementation committed as `56a2436`; FID-013 closed against that commit and
+moved to `dev/fids/archive/`. The changelog records its verification evidence.
+Design resume fingerprints describe the pre-implementation source snapshot;
+refresh them before a future design iteration. The implementation is the
+production source of truth; the canvas remains the reviewed version-7 design.
 
 The trial conversion is not enabled; launch requirements remain unchecked
 until implemented and independently verified.

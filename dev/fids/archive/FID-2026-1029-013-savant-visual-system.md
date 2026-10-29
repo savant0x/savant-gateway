@@ -3,8 +3,10 @@
 **Filename:** `FID-2026-1029-013-savant-visual-system.md`
 **ID:** FID-2026-1029-013
 **Severity:** medium
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-10-29
+**Closed Against:** `56a2436`
+**Archived:** 2026-10-29
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
 
@@ -146,7 +148,7 @@ Implementation exists across the shared visual foundations and route shells.
 Production browser checks rendered all 45 catalog rows and exercised public,
 customer, console, and every admin route at 1440, 390 and 320 pixels. The first
 pass found intrinsic-width overflow in account/console cards; shared minimum
-width constraints correct that layout. Final verification remains active.
+width constraints correct that layout. Implementation committed as `56a2436`.
 
 Error-state review also found raw `error.message` rendered to customers in
 `app/error.tsx`. Replaced it with generic retry/support guidance; diagnostic
@@ -154,6 +156,15 @@ logging remains in the existing error boundary. This discovery is handled
 within step 6 rather than leaving an exposed error path.
 The customer top-up empty state also exposed operator setup commands. Replaced
 them with payment availability guidance; setup stays in launch documentation.
+
+Final evidence: lint exited 0 with zero warnings; typecheck passed; all 107
+unit tests passed; quality passed over 191 files; production build compiled
+51 routes; HTTP suite passed 100 checks. Browser assertions passed 17 checks
+and 102 route/theme/viewport combinations (17 routes, light/dark, widths
+1440/390/320), including all 45 models and independent GPT $0.40/$0.60 rates.
+Reachability: app/page → getLandingData → listModels; Hero → ModelPriceEngine;
+public/account/admin/console headers → BrandMark; root layout → global CSS
+and all three font variables. Steps 1–7 implemented and verified.
 
 ## Lessons Learned
 

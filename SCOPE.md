@@ -20,16 +20,18 @@ visual design. Brand clarification: "Savant as a brand is designed w/ cyberpunk/
   cyan cyberpunk/neon-noir design on the Superdesign canvas for review.
   Version 7 incorporates the Savant Code reference, price/quality positioning,
   and all 45 stored models. Operator `resume` authorized implementation.
-- [ ] **V3 — Visual implementation and verification.** Automation level 3.
+- [x] **V3 — Visual implementation and verification.** Automation level 3.
   Resumed by the operator after version-7 review. Implementation contract:
-  `dev/fids/FID-2026-1029-013-savant-visual-system.md`.
+  `dev/fids/archive/FID-2026-1029-013-savant-visual-system.md`.
   After visual direction approval, converge a FID, apply the shared design
   system across all site surfaces, verify responsive/accessibility behavior
   and the declared gates, and commit verified progress with closure records.
   Implementation and browser verification passed: 17 routes across two themes
   and three viewport widths (102 combinations), plus 17 interaction checks.
   Fixed discovered account/console overflow, customer setup-command exposure,
-  and raw error-message rendering. Commit and archival are being completed.
+  and raw error-message rendering. Committed as `56a2436`; FID-013 closed and
+  archived. Lint zero warnings, typecheck, 107 unit tests, quality (191 files),
+  51-route build and 100 HTTP checks passed.
 
 Trial implementation remains paused while its offering is being settled;
 this visual pass must not claim unimplemented trials or payment readiness.

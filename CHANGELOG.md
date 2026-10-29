@@ -3,6 +3,22 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — Rebuild closure and record reconciliation
+
+- **FID-2026-1029-001 — high — Rebuild the gateway on Next.js 16 + HeroUI v3.**
+  Closed against `bf3da9a007ca41d6e66c60ed080c2ef3e6cef7e5`, the first commit
+  containing the rebuilt tree. The production loopback bypass recorded as an
+  open Host-header finding is disabled in production builds, and FID-006's
+  receipt recorded a spoofed `Host: localhost` request returning `403`; the
+  usage-row copy finding was removed with the rebuilt dashboard; cancelled
+  streams now settle provider usage or a streamed-character estimate instead of
+  zero. Closure gates: `npm run verify` exit 0, 48/48 tests, quality PASS over
+  125 files, 33-route build. Archived at
+  `dev/fids/archive/FID-2026-1029-001-nextjs-gateway-rebuild.md`.
+- **FID-2026-1029-006 — record correction, no behavior change.** The archived
+  record's status was corrected from `converged` to `closed`; its 2026-10-29
+  closure receipt and `455ddb5` implementation commit are unchanged.
+
 ## 2026-10-29 — Customer accounts and prepaid credit top-ups
 
 - **FID-2026-1029-006 — high — Sell paid models to outside customers.** Adds

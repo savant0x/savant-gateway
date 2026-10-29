@@ -1,8 +1,24 @@
 # SCOPE.md — Gateway Project Review
 
-Session: ECHO v0.1.2 single-agent | 2026-10-28 | Session autonomy level: 3 (default; review is read-only)
+Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
-## Current Session — 2026-10-29 (FID-2026-1029-006)
+## Current Session — 2026-10-29 (governance reconciliation)
+
+Operator request: reconcile FID-2026-1029-001, FID-2026-1029-006, and SCOPE
+with the current repository. This is a records-only pass; no application code
+changed.
+
+- [x] **R1 — FID-001 closure.** Closed against
+  `bf3da9a007ca41d6e66c60ed080c2ef3e6cef7e5`, the first commit containing the
+  rebuilt tree; archived.
+- [x] **R2 — FID-006 metadata.** Corrected the archived status from `converged`
+  to `closed`.
+- [x] **R3 — Scope truth.** Marked the original read-only review complete;
+  registered B1 (real Stripe test receipt) and B2 (route-level HTTP coverage).
+- [x] **R4 — Verification.** `npm run verify` exit 0: 48/48 tests, quality PASS
+  over 125 files, 33-route build.
+
+## Prior Session — 2026-10-29 (FID-2026-1029-006)
 
 Operator request: customer signup, account ownership, and a real credit
 top-up flow so paid models can be sold to outside users, built as production
@@ -20,8 +36,9 @@ software even though development runs locally.
 - [x] **P5 — Payments.** Stripe Checkout for $5–$500, signature-verified
   webhook, amount/currency match, unique provider ref, one-transaction
   fulfillment, success redirect grants nothing.
-- [x] **P6 — Receipt.** Unit tests, full gates, disposable-DB HTTP and signed
-  webhook receipt, FID closure, changelog, commit, push.
+- [x] **P6 — Receipt.** Unit tests, full gates, disposable-DB HTTP and a locally
+  signed webhook fulfillment receipt, FID closure, changelog, commit, push. This
+  is not a real Stripe Checkout or card payment; that path is B1.
 
 Findings:
 
@@ -152,13 +169,16 @@ Findings during implementation, all completed in the same pass:
 
 ## Approved Work Items
 
-- [ ] **Review the gateway project** (interpreted scope, presented 2026-10-28):
+- [x] **Review the gateway project** (interpreted scope, presented 2026-10-28;
+  completed 2026-10-29):
   - Ground with ECHO protocol — activation confirmed, canonical laws read 0-EOF.
   - Map architecture: `src/`, `server/`, `shared/`, `public/`, `tests/`.
   - Read every production file 0-EOF (Law 1) before any assessment.
   - Run the project's declared gates (scripts in `package.json`; no `protocol.config.yaml` present) and paste tool output as evidence (Law 3).
   - Assess the codebase against Laws 5-15 and the Five Questions.
   - Deliver the review report to the operator.
+  - Completed: D1–D50 are recorded below; the 2026-10-29 operator ruling lifted
+    the read-only constraint and authorized the rebuild.
 
 ## Discoveries (added as found)
 
@@ -237,7 +257,19 @@ Recorded read-only under the approved review item; any fix remains blocked pendi
 
 ## Blocked Items
 
-- None.
+- **B1 — Real Stripe test Checkout and paid completion receipt.** Blocked on
+  missing Stripe **test** credentials (`STRIPE_SECRET_KEY`,
+  `STRIPE_WEBHOOK_SECRET`) and a controlled paid upstream balance. The
+  fulfillment path was exercised on a disposable database with a locally signed
+  event; a real Checkout session, Stripe-delivered webhook, and paid model call
+  are not verified. Re-attempt immediately when test keys and a funded or mock
+  upstream are available. Evidence:
+  `dev/session-summaries/2026-10-29-customer-e2e-verification.md` (H1, H4).
+- **B2 — Route-level HTTP verification.** Blocked pending an operator ruling on
+  adding a route-level suite. The current 48 tests cover helpers and pricing;
+  no test exercises signup cookies, cross-account key ownership, webhook replay,
+  or paid settlement over HTTP, so those paths can regress while `npm test`
+  stays green. Evidence: the handoff's H5 and the current `tests/` listing.
 
 ## Operator Rulings
 
@@ -265,9 +297,15 @@ Recorded read-only under the approved review item; any fix remains blocked pendi
 - 2026-10-29: **Live verification of the rebuild:** `POST /api/provider/sync` → 200, 45 models imported, **11 free-pool models** (not 35); provider status `active`, balance `$0`, RPM 15, free pool remaining ~19.18M. `POST /api/keys` → 201; `GET /v1/models` with that key → 200, 45 models; `POST /v1/chat/completions` with `free/gpt-6-luna` → 200 in 1.5s, real answer; streaming → 200 `text/event-stream`, real answer. Missing key → 401; fake key → 401. Paid `gpt-6-luna` and `claude-fable-5.1` → 402 locally. UI-created key + browser tester → 200; usage rows recorded weighted tokens (990 and 948 for 330/316 raw tokens at weight 3).
 - 2026-10-29: **D49 correction discovered during the rebuild:** APInex public metadata marks 35 models with `allowFree`, including paid models that return `402 Insufficient balance` on a zero-balance account. The new catalog therefore uses the `free/*` pool as the authoritative free signal; paid models are catalogued but blocked locally. Test keys and usage rows were deleted after verification; the synced catalog and provider status remain.
 - 2026-10-29: **Repository published and governance gates wired.** The project is now a Git repository at `https://github.com/savant0x/savant-gateway` (public, `main`). This supersedes the FID-001 note that no Git repository or template gates exist: `quality`, `test`, `check` and `verify` now exist, along with `.githooks` and two CI workflows. FID-2026-1029-002 is closed against `bf3da9a` and archived under `dev/fids/archive/`. The provider adapter was renamed `lib/apinex.ts` → `lib/provider.ts` and residual reseller naming was stripped from source and UI; the vendor hostnames in `.env.example` remain because they are the upstream URLs. Local gates after the rename: `npm run check` 0, `npm test` 6/6, `npm run quality` PASS (40 files), `npm run build` 0. GitHub: `ci` and `attribution-guard` both green.
-- 2026-10-29: **FID structure created** under `dev/fids/` with `archive/`, plus preserved audit baselines in `dev/fids/audit/`. `FID-2026-1029-001-nextjs-gateway-rebuild.md` records the operator ruling and rebuild using the operator-supplied `templates/FID-TEMPLATE.md` structure. Status is `verified`, not `closed`: this workspace has no Git repository, so the template's required local commit cannot exist and the FID is not archived. Fresh gates: `npm run check` exit 0; `npm run build` exit 0; read-only database counts 45 models / 11 free / 0 keys / 0 usage. Documentary audit passes measured 3.101%, 2.168%, 0.610% and 0.435% (two consecutive passes below 2%, converged as a record only). Open findings recorded in the FID: spoofable Host-header local guard, usage-row copy overclaim, cancelled-stream under-recording. The template's  `fid:verify`, `quality:report`, `scope:check`, `validate:repository`,
-  `progression` and `balance` gates do not exist here; actual gates are `lint`,
-  `typecheck`, `check` and `build`.
+- 2026-10-29: **FID structure created** under `dev/fids/` with `archive/`, plus preserved audit baselines in `dev/fids/audit/`. `FID-2026-1029-001-nextjs-gateway-rebuild.md` records the operator ruling and
+rebuild using the operator-supplied `templates/FID-TEMPLATE.md` structure. At
+that time the status was `verified`, not `closed`, because the workspace had no
+Git repository and the template's required local commit could not exist. Fresh gates: `npm run check` exit 0; `npm run build` exit 0; read-only database counts 45 models / 11 free / 0 keys / 0 usage. Documentary audit passes measured 3.101%, 2.168%, 0.610% and 0.435% (two consecutive passes below 2%, converged as a record only). Open findings recorded in the FID: spoofable Host-header local guard, usage-row copy overclaim, cancelled-stream under-recording. The template's  `fid:verify`, `quality:report`, `scope:check`, `validate:repository`,
+  `progression` and `balance` gates do not exist here; actual gates were `lint`,
+  `typecheck`, `check` and `build` at that time. **Superseded 2026-10-29:** the
+  repository was published at `bf3da9a`; FID-001 is closed against that commit
+  and archived, and the current gate set is `lint`, `typecheck`, `test`,
+  `quality`, `build`, and `verify` with 48 tests.
 - 2026-10-29: **Full-catalog product shipped (FID-2026-1029-004).** Final tree
   `2623912`: `npm run verify` exit 0 (lint 0 warnings, typecheck 0, 26/26 tests,
   quality PASS over 91 files, 20-route build). Production server on
@@ -296,4 +334,12 @@ Recorded read-only under the approved review item; any fix remains blocked pendi
   read-only database baseline (45 active models, 1 user, 2 keys, 0 top-ups)
   are recorded in
   `dev/session-summaries/2026-10-29-customer-e2e-verification.md`. No code or
-  runtime data changed; the paid receipt remains open.
+  runtime data changed; the real Checkout and paid completion are registered as
+  B1, not treated as complete.
+- 2026-10-29: **Governance records reconciled.** FID-2026-1029-001 is closed
+  against `bf3da9a` and archived; FID-2026-1029-006's archived metadata now says
+  `closed`, matching its `Closed Date` and `Closed Against: 455ddb5`. The
+  original read-only review is checked complete with D1–D50 as evidence. Real
+  Stripe Checkout and route-level HTTP coverage are registered as B1/B2 rather
+  than left outside the register. Fresh `npm run verify` exit 0: 48/48 tests,
+  quality PASS over 125 files, 33-route build.

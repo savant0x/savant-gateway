@@ -341,8 +341,9 @@ Loop before code. FIDs live in `dev/fids/` and use
 
 Current records:
 
-- [FID-2026-1029-001](dev/fids/FID-2026-1029-001-nextjs-gateway-rebuild.md) —
-  historical rebuild record, superseded by FID-002 for the current tree.
+- [FID-2026-1029-001](dev/fids/archive/FID-2026-1029-001-nextjs-gateway-rebuild.md) —
+  historical rebuild record, closed against `bf3da9a`; the current tree was
+  established by FID-002.
 - [FID-2026-1029-002](dev/fids/archive/FID-2026-1029-002-savant-gateway-bootstrap.md) —
   identity, split, governance scaffold, and initial repository (closed against
   `bf3da9a`).
@@ -376,8 +377,9 @@ rejects coding-agent attribution anywhere in the commit history.
 
 ### Verification
 
-FID-2026-1029-006 records the current receipt: `npm run verify` exit 0 with 48
-tests, quality PASS over 122 files, and a 32-route production build. On a
+FID-2026-1029-006 records its 2026-10-29 closure receipt: `npm run verify` exit
+0 with 48 tests, quality PASS over 122 files, and a 32-route production build at
+that time. The current tree builds 33 routes and scans 125 files. On a
 disposable database: two signups returned `201`, a duplicate returned `409`, a
 wrong password returned `401`, the `sg_session` cookie is `HttpOnly`,
 `SameSite=Lax`, `Secure`, seven days, customer B could not revoke customer A's

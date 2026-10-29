@@ -141,9 +141,9 @@ usage in SQLite.
 
 ## Verification
 
-`npm run verify` is the full local gate. FID-2026-1029-006 records the current
-customer/top-up receipt: 48 tests, quality PASS over 122 files, 32-route
-build, and live HTTP checks on a disposable database (scoped keys and usage,
+`npm run verify` is the full local gate. FID-2026-1029-006 records its
+2026-10-29 closure receipt: 48 tests, quality PASS over 122 files, and a
+32-route build at that time, plus live HTTP checks on a disposable database (scoped keys and usage,
 cross-account revoke denied, unconfigured checkout `503`, signed webhook
 credited once, replay no-op, logout revoked). FID-2026-1029-004 holds the
 pricing and paid-routing receipt; FID-2026-1029-005 holds the
@@ -152,5 +152,6 @@ and are not run in CI. Unit tests cover scrypt hashing, customer validation,
 exact top-up parsing, opaque session shape and cookie flags, admin token
 tampering, expiry, password rotation, epoch revocation, origin checks, the
 login limiter, HTTP key extraction, pricing arithmetic, and family
-normalization. A real Stripe card payment and real paid upstream inference
-remain unverified; the provider account has no paid balance.
+normalization. The current tree builds 33 routes and scans 125 files. A real
+Stripe card payment and real paid upstream inference remain unverified; the
+provider account has no paid balance.

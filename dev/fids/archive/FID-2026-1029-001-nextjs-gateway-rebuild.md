@@ -3,21 +3,21 @@
 **Filename:** `FID-2026-1029-001-nextjs-gateway-rebuild.md`
 **ID:** FID-2026-1029-001
 **Severity:** high
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-29 01:14 EDT
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
 
 Reference structure: `templates/FID-TEMPLATE.md`, read 2026-10-29. That file is a
-project copy of `C:/Users/spenc/dev/savant-code/templates/FID-TEMPLATE.md`. This
-is an npm project with **no** `protocol.config.yaml` and **no** `fid:verify`,
-`quality:report`, `scope:check`, `validate:repository`, `progression` or `balance`
-scripts; those template references are recorded as unavailable below rather than
-invented. `fixed` is an accepted legacy status and is not used here.
-`implemented` is a step status, never a FID status. Status is `verified`, **not**
-`closed`: this working copy has no Git repository, so the local commit the
-template requires for closure does not exist. The record is therefore not moved
-to `dev/fids/archive/`.
+project copy of `C:/Users/spenc/dev/savant-code/templates/FID-TEMPLATE.md`. At
+authoring time this npm project had **no** `protocol.config.yaml` and **no**
+`fid:verify`, `quality:report`, `scope:check`, `validate:repository`,
+`progression` or `balance` scripts; those template references are recorded as
+unavailable below rather than invented. `fixed` is an accepted legacy status and
+is not used here. `implemented` is a step status, never a FID status. The record
+is now `closed` against `bf3da9a007ca41d6e66c60ed080c2ef3e6cef7e5`, the first
+commit containing the rebuilt tree, and is archived at
+`dev/fids/archive/FID-2026-1029-001-nextjs-gateway-rebuild.md`.
 
 ## Summary
 
@@ -40,14 +40,18 @@ original implementation plan-first.
   for the document change-distance measurement described in the Perfection Loop.
 - **Tool Versions:** `next 16.4.3`; `@heroui/react 3.2.7`; `better-sqlite3 13.0.3`;
   `react 19.3.0`; `typescript 5.9.3`; `tailwindcss 4.3.3`; `eslint 9.39.5`.
-- **Commit/State:** **no Git repository.** `git status --short` printed
-  `fatal: not a git repository (or any of the parent directories): .git` and
-  exited `128` at 2026-10-29 01:09 EDT; there is no `.git` directory in the
-  workspace listing. There is consequently no commit SHA for any step.
+- **Commit/State at authoring:** **no Git repository.** `git status --short`
+  printed `fatal: not a git repository (or any of the parent directories): .git`
+  and exited `128` at 2026-10-29 01:09 EDT; there was no `.git` directory in the
+  workspace listing. There was consequently no commit SHA for any step.
   Pre-existing working state: `.env.local` holds the operator's provider key
   (present, deliberately unread); `data/gateway.db` is local runtime state;
   `.next/` is build output; `templates/FID-TEMPLATE.md` is the operator-supplied
   template.
+- **Closure state:** Git `main`; the rebuilt tree was committed as
+  `bf3da9a007ca41d6e66c60ed080c2ef3e6cef7e5`. The provider client named
+  `lib/apinex.ts` at authoring is `lib/provider.ts` in that commit. The closure
+  gate is the current `npm run verify`, not the historical `check`/`build` pair.
 
 ## Detailed Description
 
@@ -222,7 +226,7 @@ Concrete limits, stated rather than claimed away:
   does not reserve provider capacity.
 - SQLite is local development storage, not a multi-instance database.
 - The dashboard-write guard is a Host-header check, not a network control (see
-  Open Findings under Resolution).
+  Findings and Closure Status under Resolution).
 
 ### Steps
 
@@ -269,14 +273,16 @@ rather than backfilled.
     probes recorded above.
 14. `implemented` — Author this FID from the operator-supplied template and place
     it in `dev/fids/`.
-15. `blocked` — Close and archive this FID. Blocked on the absent Git repository:
-    the template requires an actual local commit, and none can exist.
+15. `implemented` — Close and archive this FID against
+    `bf3da9a007ca41d6e66c60ed080c2ef3e6cef7e5`, the first commit containing the
+    rebuilt tree. The FID is archived under `dev/fids/archive/`.
 
 ### Verification
 
-Existing automated tests: **none.** `package.json` declares `dev`, `build`,
-`start`, `lint`, `typecheck`, and `check`; there is no `test` script. This is an
-honest gap, not a skipped gate.
+Existing automated tests at authoring: **none.** `package.json` declared
+`dev`, `build`, `start`, `lint`, `typecheck`, and `check`; there was no `test`
+script. The closure state has nine suites and 48 tests, all passing under
+`npm run verify`; the historical gap is preserved rather than backfilled.
 
 Existing probes: the live HTTP calls listed under Evidence, executed against a
 throwaway database with the operator's provider key and recorded in `SCOPE.md`.
@@ -286,23 +292,26 @@ tester, and usage rows with weighted tokens. **Not** exercised: malformed JSON
 body, empty `messages`, revoked key, upstream 5xx, upstream timeout, concurrent
 requests, and a second consumer key.
 
-Current checks promised for this document: fresh `npm run check` and
-`npm run build`, a fresh read-only database count, and source searches proving
-the production call graph. Their receipts follow.
+Current checks for this record: fresh `npm run verify`, a fresh read-only
+database count, and source searches proving the production call graph. Their
+receipts follow; the historical `check`/`build` receipts are preserved below.
 
 ## Verification Gates
 
 The template names `npm run fid:verify`, `npm run quality:report`,
 `npm run scope:check`, `npm run validate:repository`, `npm run progression`, and
-`npm run balance`. **None exist in this project.** `protocol.config.yaml` is
-absent (probe 2026-10-29 01:09 EDT: `ls -la protocol.config.yaml .git` produced no
-output). There is no `scripts/` directory and no gate registry. The real gates
-are:
+`npm run balance`. At authoring time none existed in this project and
+`protocol.config.yaml` was absent (probe 2026-10-29 01:09 EDT:
+`ls -la protocol.config.yaml .git` produced no output). There was no `scripts/`
+directory and no gate registry. The repository now has `protocol.config.yaml`
+and these gates:
 
 - `npm run lint` → `eslint .`
 - `npm run typecheck` → `tsc --noEmit`
-- `npm run check` → the two above
+- `npm run test` → `node --test "tests/*.test.mjs"`
+- `npm run quality` → the 400-line file ceiling
 - `npm run build` → `next build` (Turbopack)
+- `npm run verify` → all of the above
 
 Feature probes are manual HTTP calls, not registered gates:
 
@@ -325,11 +334,34 @@ sections; `README.md` and `SCOPE.md` for claims that match the code.
 
 ## Verification Receipt
 
+### Closure gates
+
+Execution date: 2026-10-29, before this record was archived. The command ran
+from the project root on `main` with the repository's own npm script. Key
+output:
+
+```text
+$ npm run verify
+ℹ tests 48
+ℹ pass 48
+ℹ fail 0
+ℹ skipped 0
+quality: PASS (400-line ceiling, 125 files scanned)
+...
+verify_exit=0
+```
+
+The build emitted 33 routes, including `/signup`, `/account`, `/admin`,
+`/admin/pricing`, `/admin/analytics`, `/api/webhooks/stripe`, `/v1/models`, and
+`/v1/chat/completions`. Lint and typecheck emitted no warnings or errors.
+
+### Historical authoring gates
+
 Execution date: 2026-10-29, after 01:11:46 EDT (the exact per-command clock time
 was not captured; the environment probe timestamp is the anchor). Commands ran
 from the project root with the project's own npm scripts.
 
-### Fresh gates
+### Authoring `check` and `build`
 
 ```text
 $ npm run check
@@ -376,7 +408,7 @@ is the npm command's status rather than the pipe's. The Next.js output above is
 complete from `▲ Next.js` through `build_exit=0`; the two `npm notice` lines that
 preceded it are omitted. No build warnings were emitted.
 
-### Fresh database probe
+### Authoring database probe
 
 Read-only connection to `data/gateway.db`, 2026-10-29 01:11 EDT:
 
@@ -415,13 +447,14 @@ afterwards. Neither change affects gateway routing, key auth, metering, or
 provider sync. The browser-console check was performed before the dashboard
 change and is therefore **historical**; it does not prove the current bundle.
 
-### Missing or unverified
+### Missing or unverified at authoring
 
-- No Git commit, therefore no commit SHA and no closure.
+- No Git commit at authoring; closure is now recorded against `bf3da9a`.
 - No browser re-check after the final dashboard edit.
-- No automated tests at all.
+- No automated tests at authoring; the closure suite now has 48 tests.
 - No independent second-party verification.
-- No verification of the Host-header guard against a spoofed request.
+- No runtime verification of the Host-header guard at authoring; FID-006 later
+  recorded a production `403` for a spoofed `Host: localhost`.
 
 ## Perfection Loop
 
@@ -484,29 +517,33 @@ counts are retained so the numbers can be re-derived.
   alerting stubs were deleted rather than faked; absence is documented.
 - **Honest UI claims:** one usage-row overclaim found; the key-storage claim is
   accurate; the provider-status card reflects stored sync state. Answer: the
-  overclaim is recorded open below.
-- **Security of the local guard:** Host header trusted; IPv6 branch dead. Answer:
-  recorded open below.
+  overclaim was recorded open below and resolved by the rebuilt dashboard.
+- **Security of the local guard:** Host header trusted; IPv6 branch dead at
+  authoring. Answer: the production path no longer uses the loopback bypass;
+  see the closure status below.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [ ] **Commit SHA:** NEEDS-REVIEW — no Git repository exists; `git status` exit
-  `128`. No SHA can be produced without creating a repository and commit.
-- [x] **File:line ranges:** `lib/api-keys.ts:5-14` (`createHash("sha256")`,
-  `randomBytes(32)`); `lib/store.ts:265-292` (`secret_hash` lookup, active key and
-  user, `last_used_at` update); `lib/gateway.ts:236`
-  (`const isFree = model.allowFree && model.tokenWeight > 0;`);
-  `lib/gateway.ts:125` (SSE `ReadableStream` with usage capture);
+- [x] **Commit SHA:** `bf3da9a007ca41d6e66c60ed080c2ef3e6cef7e5`, the first
+  commit containing the rebuilt tree. The authoring tree was committed there
+  after the no-repository period described above.
+- [x] **File:line ranges:** authoring paths: `lib/api-keys.ts:5-14`
+  (`createHash("sha256")`, `randomBytes(32)`); `lib/store.ts:265-292`
+  (`secret_hash` lookup, active key and user, `last_used_at` update);
+  `lib/gateway.ts:236` (`const isFree = model.allowFree && model.tokenWeight >
+  0;`); `lib/gateway.ts:125` (SSE `ReadableStream` with usage capture);
   `lib/gateway.ts:68-73` (`safeUpstreamMessage` masks 5xx/401/403);
   `lib/apinex.ts:312` (`syncProvider`); `lib/apinex.ts:90` (`getProviderKey`
   throws `ProviderConfigError`); `lib/db.ts:40,70,86` (schema);
   `app/v1/chat/completions/route.ts:7` (production entry);
   `app/page.tsx:1-8` (dashboard entry); `lib/http.ts:39-43` (local guard).
-- [x] **Gate output:** `npm run check` exit `0`; `npm run build` exit `0`, both
-  fresh on 2026-10-29.
+  The provider module is `lib/provider.ts` in the closure commit.
+- [x] **Gate output:** authoring `npm run check` and `npm run build` both exited
+  `0` on 2026-10-29; the closure `npm run verify` exited `0` with 48/48 tests,
+  quality PASS over 125 files, and 33 routes.
 - [x] **Reproducibility:** exact commands and environment in the Verification
   Receipt; historical HTTP steps in `SCOPE.md`.
-- [x] **Step statuses:** 14 `implemented`, 1 `blocked` (closure, no VCS).
+- [x] **Step statuses:** 15 `implemented`.
 
 ### Code Verification Evidence
 
@@ -515,15 +552,16 @@ counts are retained so the numbers can be re-derived.
 - [x] Code matches the final solution, including the free-pool correction:
   `lib/apinex.ts` classifies only `free/*` (or provider `Free`) with
   `allowFree !== false` as free; `lib/gateway.ts:236` requires a positive weight.
-- [x] Declared gates pass with output. Missing gates (no `fid:verify`, no tests)
-  are stated.
+- [x] Declared gates pass with output. The authoring absence of tests is
+  preserved in the historical receipt; the closure suite now has 48 tests, and
+  `fid:verify` remains unavailable.
 - [x] Production wiring has callers: `app/v1/chat/completions/route.ts` imports
   `handleChatCompletions`; `app/v1/models/route.ts` imports `authenticateApiKey`
   and `listModels`; `app/api/keys/route.ts` imports `createDevApiKey` and
   `listApiKeys`; `app/api/provider/sync/route.ts` imports `syncProvider`;
   `app/page.tsx` imports `Dashboard` and `getOverview`.
-- [x] Status reflects code and verification, not the original plan: `verified`
-  with an explicit closure blocker, not `closed`.
+- [x] Status reflects code and verification, not the original plan: `closed`
+  against `bf3da9a`, with the closure findings reconciled below.
 
 ### Loop 2 — Independent audit and self-correction
 
@@ -560,8 +598,9 @@ counts are retained so the numbers can be re-derived.
   that was never performed.
 - **GREEN:** All five document defects were corrected. The plan itself did not
   change: the same verified core, the same free-pool rule, the same explicit
-  non-goals. The closure blocker and the open findings remain open rather than
-  being papered over.
+  non-goals. At that pass the closure blocker and the open findings remained
+  open rather than being papered over; the Closure Reconciliation section
+  records their later resolution.
 - **AUDIT:** Independent re-read of the full document against
   `templates/FID-TEMPLATE.md`, re-derivation of every `file:line` with `grep -n`
   and `sed -n`, `stat -c '%y'` for the Created time, and a fresh read-only SQLite
@@ -579,40 +618,53 @@ counts are retained so the numbers can be re-derived.
 
 ## Resolution
 
-- **Closed Date:** none. Status is `verified`; closure is blocked by the absent
-  Git repository and the missing local commit.
+- **Closed Date:** 2026-10-29.
+- **Closed Against:** `bf3da9a007ca41d6e66c60ed080c2ef3e6cef7e5`, the first
+  commit containing the rebuilt Next.js/HeroUI tree. The provider module is
+  `lib/provider.ts` in that commit.
 - **Fix Description:** a Next.js 16 + HeroUI v3 gateway that syncs the provider
-  catalog, mints hashed consumer keys, routes `free/*` models with streaming and
-  weighted usage metering, and documents its non-goals. Paid models, customer
-  auth, billing, rate limits, multi-key pooling, and admin roles are deliberately
-  absent.
-- **Tests Added:** none. Verification is by `npm run check`, `npm run build`, the
-  read-only database probe, and the historical live HTTP probes.
-- **Verification Evidence:** receipts above, dated 2026-10-29; live probes dated
-  2026-10-29 in `SCOPE.md`.
-- **Archived:** not archived. A `verified` FID stays in `dev/fids/` until a local
-  commit exists; moving it now would misrepresent closure.
+  catalog, mints hashed consumer keys, routes models with streaming and weighted
+  usage metering, and records sell price, upstream cost, and usage. At authoring,
+  paid models, customer auth, billing, rate limits, multi-key pooling, and admin
+  roles were outside this rebuild; FID-2026-1029-004 and FID-2026-1029-006 added
+  catalog pricing, credits, customer accounts, and payments later.
+- **Tests Added:** at authoring none. The closure state has nine suites and 48
+  tests, all passing under `npm run verify`; the historical gap is preserved.
+- **Verification Evidence:** closure receipt above (`npm run verify` exit 0;
+  48/48 tests; quality PASS over 125 files; 33-route build) plus the historical
+  live probes in `SCOPE.md`.
+- **Archived:** `dev/fids/archive/FID-2026-1029-001-nextjs-gateway-rebuild.md`.
 
-### Open Findings (recorded, not fixed)
+### Findings and Closure Status
 
-- **Host-header guard is spoofable (high, security).** `lib/http.ts:39-43` trusts
-  `request.headers.get("host")`. Any client that can reach the server can send
-  `Host: localhost` and pass the guard on `/api/keys`, `/api/provider/sync`,
-  `/api/models`, and `/api/usage`. The `::1` branch is also unreachable because
-  `split(":")[0]` on `[::1]:3000` yields `[`. This is code inspection only; no
-  forged-`Host` request was sent, so runtime exploitability is unproven. Proposed
-  fix: replace the header check with a server-only dev token or a real
-  bind-address/network control, and document that the gateway must not be exposed
-  until then.
-- **Usage-row copy overclaims (low, documentation).** `components/dashboard.tsx:869-870`
-  and `README.md:118` say every gateway request writes a usage row. Requests
-  rejected before the upstream call (`401`, `400`, `404`, `402`) write none.
-  Proposed fix: change the copy to "every completed or attempted upstream call".
-- **Cancelled streams can under-record usage (medium, metering).** The stream
-  `cancel` path records only tokens parsed before disconnection
-  (`lib/gateway.ts:125-187`); provider consumption after that point is not
-  observable and is not recorded. Proposed fix: settle against provider-reported
-  usage or accept and document the under-count.
+- **Host-header guard (high, security) — resolved for production.** The
+  development bypass is compiled out when `NODE_ENV=production`
+  (`lib/admin-auth.ts`, `ALLOW_LOOPBACK_CONSOLE`), so `/api/keys`,
+  `/api/provider/sync`, `/api/models`, and `/api/usage` require an admin session
+  on an internet-facing build. FID-2026-1029-006 recorded a spoofed
+  `Host: localhost` request returning `403`. Development still uses the loopback
+  convenience; `knowledge.md` documents that it must never gate privileged
+  actions on an exposed server.
+- **Usage-row copy (low, documentation) — resolved.** The cited
+  `components/dashboard.tsx` was removed in the rebuild, and the current
+  `README.md` describes settlement for completed, failed, or stream-closed calls
+  rather than claiming a row for every rejected request.
+- **Cancelled-stream metering (medium) — mitigated.** `lib/gateway-stream.ts`
+  now calls the settlement path on `cancel`, using provider-reported usage when
+  a `usage` chunk arrived and an estimate from streamed characters otherwise, so
+  a disconnect records a charge instead of zero. Exact provider consumption
+  after the client disconnects remains unobservable without provider-side
+  reporting; the estimate is the current behavior.
+
+## Closure Reconciliation
+
+Closed on 2026-10-29 after the repository was published. The original
+`verified` status and the missing-commit blocker were correct at authoring time;
+`bf3da9a` superseded them. FID-2026-1029-006 disabled the production loopback
+bypass and added the customer/payment surface and its 48-test closure suite.
+The current tree builds 33 routes and scans 125 files under the quality ceiling.
+The three findings above were reconciled against that code before this record
+was archived.
 
 ## Lessons Learned
 

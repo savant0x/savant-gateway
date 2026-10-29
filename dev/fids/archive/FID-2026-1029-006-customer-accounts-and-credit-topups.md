@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1029-006-customer-accounts-and-credit-topups.md`
 **ID:** FID-2026-1029-006
 **Severity:** high
-**Status:** converged
+**Status:** closed
 **Created:** 2026-10-29 03:05 EDT
 **Automation level:** 3
 **YAGNI-Compliance:** Verified

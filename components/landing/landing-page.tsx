@@ -1,4 +1,5 @@
 import type { LandingData, PlanSummary } from "@/lib/types";
+import type { PriceComparison } from "@/lib/price-comparison";
 
 import { Features } from "./features";
 import { FinalCta } from "./final-cta";
@@ -14,9 +15,13 @@ import { StatsStrip } from "./stats";
 export function LandingPage({
   data,
   plans,
+  comparisons = {},
+  benchmarkFetchedAt = null,
 }: {
   data: LandingData;
   plans: PlanSummary[];
+  comparisons?: Record<string, PriceComparison>;
+  benchmarkFetchedAt?: string | null;
 }) {
   return (
     <div className="site-shell">
@@ -24,7 +29,11 @@ export function LandingPage({
       <main>
         <Hero data={data} />
         <StatsStrip data={data} />
-        <ModelGrid data={data} />
+        <ModelGrid
+          benchmarkFetchedAt={benchmarkFetchedAt}
+          comparisons={comparisons}
+          data={data}
+        />
         <Features />
         <QuickStart />
         <HowItWorks />

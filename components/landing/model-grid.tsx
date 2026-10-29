@@ -1,8 +1,17 @@
 import type { LandingData } from "@/lib/types";
+import type { PriceComparison } from "@/lib/price-comparison";
 
 import { ModelCatalogTable } from "@/components/catalog/model-catalog-table";
 
-export function ModelGrid({ data }: { data: LandingData }) {
+export function ModelGrid({
+  data,
+  comparisons = {},
+  benchmarkFetchedAt = null,
+}: {
+  data: LandingData;
+  comparisons?: Record<string, PriceComparison>;
+  benchmarkFetchedAt?: string | null;
+}) {
   return (
     <section
       className="landing-section mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8"
@@ -23,6 +32,8 @@ export function ModelGrid({ data }: { data: LandingData }) {
         </p>
       </div>
       <ModelCatalogTable
+        benchmarkFetchedAt={benchmarkFetchedAt}
+        comparisons={comparisons}
         models={data.models}
         pageSize={Math.max(1, data.models.length)}
       />

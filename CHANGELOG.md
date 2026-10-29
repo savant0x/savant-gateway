@@ -3,6 +3,21 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — Catalog table clarity
+
+- **FID-2026-1029-025 — medium — Five-column catalog, comparison on the landing
+  page.** The landing `#models` table never received the benchmark, so it printed
+  `not listed` on all 44 rows; it now fetches the same cached OpenRouter list as
+  `/models`. The table is five columns — model (with family, context and id as
+  meta), group (with weight and capability icons), Savant $/1M, OpenRouter $/1M,
+  and a `vs list` pill on input with the output difference in its tooltip — so
+  the inner scrollbar is gone and the height follows the rows. Price cells show
+  one number when input and output are equal and a dash when a rate does not
+  exist; comparison columns are hidden with an explanation when the benchmark is
+  unavailable rather than repeating `not listed`. At ingest, a published zero
+  output rate now falls back to the input rate instead of billing completion
+  tokens at $0. Tests: `tests/provider-catalog.test.mjs` (+2).
+
 ## 2026-10-29 — Per-account free daily cap
 
 - **FID-2026-1029-024 — high — Per-account daily ceiling on the free pool.**

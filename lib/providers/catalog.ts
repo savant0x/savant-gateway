@@ -104,7 +104,14 @@ export function buildSyncedModels(
           : 0;
     const inputUsd = numberOrNull(spec.dollarsPer1M ?? item.dollarsPer1M);
     const outputRaw = spec.outputDollarsPer1M ?? item.outputDollarsPer1M;
-    const outputUsd = outputRaw == null ? inputUsd : numberOrNull(outputRaw);
+    const outputParsed = numberOrNull(outputRaw);
+    // A published output rate of zero is a missing figure, not a free one: no
+    // upstream sells completion tokens for nothing, and accepting it billed
+    // output at $0. Fall back to the input rate and let the operator override.
+    // A malformed figure (negative, non-numeric) still makes the row unknown;
+    // only an absent or zero figure falls back to the input rate.
+    const outputUsd =
+      outputRaw == null || outputParsed === 0 ? inputUsd : outputParsed;
     const priced = inputUsd !== null && outputUsd !== null;
 
     rows.push({

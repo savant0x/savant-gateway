@@ -30,7 +30,11 @@ const COMMANDCODE = {
 };
 
 test("a non-default provider publishes namespaced ids only for its own models", () => {
-  const rows = buildSyncedModels(COMMANDCODE, [{ id: "gpt-6-luna" }], new Map());
+  const rows = buildSyncedModels(
+    COMMANDCODE,
+    [{ id: "gpt-6-luna" }],
+    new Map(),
+  );
   const savantRows = buildSyncedModels(
     SAVANT,
     [{ id: "free/gpt-6-luna", weight: 2 }],
@@ -82,10 +86,7 @@ test("a mixed-protocol provider routes Claude to Messages and excludes unsupport
 test("free-pool rows keep their weight and zero cost while unpaid rows stay unknown", () => {
   const rows = buildSyncedModels(
     COMMANDCODE,
-    [
-      { id: "free/gpt-6-luna", weight: 3 },
-      { id: "claude-sonnet-4-6" },
-    ],
+    [{ id: "free/gpt-6-luna", weight: 3 }, { id: "claude-sonnet-4-6" }],
     new Map(),
   );
   const free = rows.find((row) => row.upstreamId === "free/gpt-6-luna");
@@ -148,16 +149,18 @@ test("subscription-only weights survive without granting free access", () => {
 test("context aliases and partial public metadata preserve authenticated fields", () => {
   const [row] = buildSyncedModels(
     SAVANT,
-    [{
-      id: "gpt-example",
-      context_window: 128000,
-      weight: 3,
-      supportsTools: true,
-      supportsVision: true,
-      health: "healthy",
-      dollarsPer1M: 0.4,
-      outputDollarsPer1M: 0.6,
-    }],
+    [
+      {
+        id: "gpt-example",
+        context_window: 128000,
+        weight: 3,
+        supportsTools: true,
+        supportsVision: true,
+        health: "healthy",
+        dollarsPer1M: 0.4,
+        outputDollarsPer1M: 0.6,
+      },
+    ],
     new Map([["gpt-example", { name: "Example", contextWindow: " 1M " }]]),
   );
 
@@ -183,7 +186,18 @@ test("blank or malformed context metadata falls back to authenticated context", 
 });
 
 test("absent and malformed prices never claim a known zero cost", () => {
-  for (const price of [undefined, null, "", "  ", false, true, -1, "-2", Infinity, NaN]) {
+  for (const price of [
+    undefined,
+    null,
+    "",
+    "  ",
+    false,
+    true,
+    -1,
+    "-2",
+    Infinity,
+    NaN,
+  ]) {
     const [row] = buildSyncedModels(
       SAVANT,
       [{ id: "gpt-example", dollarsPer1M: price }],
@@ -212,6 +226,28 @@ test("an explicitly invalid output price makes the model unpriced", () => {
   const [row] = buildSyncedModels(
     SAVANT,
     [{ id: "gpt-example", dollarsPer1M: 1, outputDollarsPer1M: -2 }],
+    new Map(),
+  );
+
+  assert.equal(row.costSource, "unknown");
+});
+
+test("a published zero output rate falls back to the input rate", () => {
+  const [row] = buildSyncedModels(
+    SAVANT,
+    [{ id: "drex-like", dollarsPer1M: 0.04, outputDollarsPer1M: 0 }],
+    new Map(),
+  );
+
+  assert.equal(row.costInputMicros, 40000);
+  assert.equal(row.costOutputMicros, 40000);
+  assert.equal(row.costSource, "synced");
+});
+
+test("a zero output rate with no input rate stays unknown rather than free", () => {
+  const [row] = buildSyncedModels(
+    SAVANT,
+    [{ id: "unpriced", outputDollarsPer1M: 0 }],
     new Map(),
   );
 

@@ -24,16 +24,45 @@ const SORTS: Array<{ key: SortKey; label: string }> = [
   { key: "price-desc", label: "Input price ↓" },
 ];
 
-function priceLabel(model: ModelSummary, direction: "input" | "output") {
-  if (model.access === "free") return "Free";
+/**
+ * One rate when input and output cost the same, two when they differ. A zero
+ * output rate is reported as a single input rate with a title, never as $0.
+ */
+function RateCell({ input, output }: { input: number; output: number }) {
+  const hasInput = input > 0;
+  const hasOutput = output > 0;
 
-  if (model.inputPricePer1M === 0 && model.outputPricePer1M === 0) {
-    return model.access === "subscription" ? "Subscription" : "Unpriced";
+  if (!hasInput && !hasOutput) return <span className="text-muted">—</span>;
+
+  if (!hasOutput || input === output) {
+    return (
+      <span
+        title={
+          hasOutput
+            ? "The same rate applies to input and output tokens"
+            : "Upstream publishes no output rate for this model"
+        }
+      >
+        {formatPricePer1M(hasInput ? input : output)}
+      </span>
+    );
   }
 
-  return formatPricePer1M(
-    direction === "input" ? model.inputPricePer1M : model.outputPricePer1M,
+  return (
+    <>
+      <div>{formatPricePer1M(input)}</div>
+      <div className="text-[11px] text-muted">{formatPricePer1M(output)}</div>
+    </>
   );
+}
+
+/**
+ * With 44 rows against a 456-entry public list, zero matches means the benchmark
+ * could not be fetched, not that nothing overlaps. In that case the comparison
+ * columns are hidden instead of printing "not listed" on every row.
+ */
+function comparisonAvailable(matched: number, models: number) {
+  return matched > 0 && models > 0;
 }
 
 function formatDelta(bps: number | null) {
@@ -164,6 +193,8 @@ export function ModelCatalogTable({
     [comparisons, models],
   );
 
+  const showComparison = comparisonAvailable(matched, models.length);
+
   function resetPage(action: () => void) {
     action();
     setPage(1);
@@ -243,12 +274,25 @@ export function ModelCatalogTable({
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
           <span>
             <i aria-hidden className="fa-solid fa-layer-group mr-1.5" />
-            {formatNumber(models.length)} catalogued ·{" "}
+            {formatNumber(models.length)} models ·{" "}
             {formatNumber(filtered.length)} shown
           </span>
           <span>
-            USD per 1M tokens · {formatNumber(matched)} matched against
-            OpenRouter · {formatNumber(cheaperOnInput)} cheaper on input
+            {showComparison ? (
+              <>
+                <i
+                  aria-hidden
+                  className="fa-solid fa-arrow-right-arrow-left mr-1.5"
+                />
+                {formatNumber(matched)} compared with OpenRouter ·{" "}
+                {formatNumber(cheaperOnInput)} below its list price
+              </>
+            ) : (
+              <>
+                <i aria-hidden className="fa-solid fa-circle-info mr-1.5" />
+                OpenRouter comparison unavailable right now
+              </>
+            )}
           </span>
         </div>
       </div>
@@ -260,126 +304,114 @@ export function ModelCatalogTable({
       ) : (
         <div
           aria-label="Model catalog"
-          className="scroll-shell max-h-[68rem]"
+          className="overflow-x-auto"
           role="region"
-          tabIndex={rows.length > 0 ? 0 : undefined}
         >
           <table className="data-table catalog-table">
+            <colgroup>
+              <col style={{ width: "40%" }} />
+              <col style={{ width: "13%" }} />
+              <col style={{ width: "15%" }} />
+              {showComparison ? (
+                <>
+                  <col style={{ width: "20%" }} />
+                  <col style={{ width: "12%" }} />
+                </>
+              ) : null}
+            </colgroup>
             <thead>
               <tr>
                 <th>Model</th>
-                <th>Family</th>
-                <th>Context</th>
                 <th>Group</th>
-                <th>Tools</th>
-                <th className="text-right">Weight</th>
-                <th className="text-right">Savant in / out</th>
-                <th className="text-right">OpenRouter in / out</th>
-                <th className="text-right">Δ vs OpenRouter</th>
+                <th className="text-right">Savant $/1M</th>
+                {showComparison ? (
+                  <>
+                    <th className="text-right">OpenRouter $/1M</th>
+                    <th className="text-right">vs list</th>
+                  </>
+                ) : null}
               </tr>
             </thead>
             <tbody>
               {rows.map((model) => {
-                const comparison = comparisons[model.id];
+                const comparison = showComparison
+                  ? comparisons[model.id]
+                  : undefined;
 
                 return (
                   <tr key={model.id}>
-                    <td className="max-w-[20rem]">
+                    <td className="max-w-[32rem]">
                       <div className="truncate font-medium">{model.name}</div>
                       <div className="mono mt-0.5 truncate text-[11px] text-muted">
-                        {model.id}
+                        {model.family} · {model.contextWindow} · {model.id}
                       </div>
                     </td>
-                    <td className="whitespace-nowrap text-muted">
-                      {model.family}
-                    </td>
-                    <td className="whitespace-nowrap text-muted">
-                      {model.contextWindow}
-                    </td>
-                    <td>
-                      <AccessChip model={model} />
-                    </td>
                     <td className="whitespace-nowrap">
-                      <span className="flex gap-2 text-[11px] text-muted">
+                      <div className="flex items-center gap-2">
+                        <AccessChip model={model} />
+                        {model.tokenWeight > 0 ? (
+                          <span
+                            className="mono text-[10px] text-muted"
+                            title="Free-pool token weight"
+                          >
+                            {model.tokenWeight}×
+                          </span>
+                        ) : null}
                         {model.supportsTools ? (
                           <i
-                            aria-label="Supports tools"
-                            className="fa-solid fa-wrench"
+                            aria-hidden
+                            className="fa-solid fa-wrench text-[10px] text-muted"
                             title="Supports tools"
                           />
                         ) : null}
                         {model.supportsVision ? (
                           <i
-                            aria-label="Supports vision"
-                            className="fa-solid fa-eye"
+                            aria-hidden
+                            className="fa-solid fa-eye text-[10px] text-muted"
                             title="Supports vision"
                           />
                         ) : null}
-                        {!model.supportsTools && !model.supportsVision ? (
-                          <span aria-hidden>—</span>
-                        ) : null}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap text-right text-muted">
-                      {model.tokenWeight > 0 ? `${model.tokenWeight}×` : "—"}
+                      </div>
                     </td>
                     <td className="whitespace-nowrap text-right">
-                      {model.inputPricePer1M === 0 &&
-                      model.outputPricePer1M === 0 ? (
-                        <span className="text-muted">
-                          {priceLabel(model, "input")}
-                        </span>
-                      ) : (
-                        <>
-                          <div>{priceLabel(model, "input")}</div>
-                          <div className="text-[11px] text-muted">
-                            {priceLabel(model, "output")}
-                          </div>
-                        </>
-                      )}
+                      <RateCell
+                        input={model.inputPricePer1M}
+                        output={model.outputPricePer1M}
+                      />
                     </td>
-                    <td className="whitespace-nowrap text-right text-muted">
-                      {comparison ? (
-                        <>
-                          <div>{formatPricePer1M(comparison.inputPer1M)}</div>
-                          <div className="text-[11px]">
-                            {formatPricePer1M(comparison.outputPer1M)}
-                          </div>
-                          <div
-                            className="mono mt-0.5 text-[10px]"
-                            title={comparison.openRouterId}
-                          >
-                            {comparison.openRouterId}
-                          </div>
-                        </>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap text-right">
-                      {!comparison ? (
-                        <span className="text-muted">not listed</span>
-                      ) : model.access !== "paid" ? (
-                        <span className="text-muted">
-                          {model.access === "free"
-                            ? "free access"
-                            : "plan only"}
-                        </span>
-                      ) : (
-                        <>
-                          <div className={deltaClass(comparison.inputDeltaBps)}>
-                            {formatDelta(comparison.inputDeltaBps)}
-                          </div>
-                          <div
-                            className={`text-[11px] ${deltaClass(
-                              comparison.outputDeltaBps,
-                            )}`}
-                          >
-                            {formatDelta(comparison.outputDeltaBps)}
-                          </div>
-                        </>
-                      )}
-                    </td>
+                    {showComparison ? (
+                      <>
+                        <td className="whitespace-nowrap text-right text-muted">
+                          {comparison ? (
+                            <span title={comparison.openRouterId}>
+                              <RateCell
+                                input={comparison.inputPer1M}
+                                output={comparison.outputPer1M}
+                              />
+                            </span>
+                          ) : (
+                            <span className="text-muted">—</span>
+                          )}
+                        </td>
+                        <td className="whitespace-nowrap text-right">
+                          {model.access === "paid" &&
+                          comparison?.inputDeltaBps != null ? (
+                            <span
+                              className={`inline-flex rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] ${deltaClass(
+                                comparison.inputDeltaBps,
+                              )}`}
+                              title={`Input ${formatDelta(comparison.inputDeltaBps)} and output ${formatDelta(
+                                comparison.outputDeltaBps,
+                              )} against ${comparison.openRouterId}`}
+                            >
+                              {formatDelta(comparison.inputDeltaBps)}
+                            </span>
+                          ) : (
+                            <span className="text-muted">—</span>
+                          )}
+                        </td>
+                      </>
+                    ) : null}
                   </tr>
                 );
               })}
@@ -400,21 +432,34 @@ export function ModelCatalogTable({
       <div className="space-y-1 border-t border-black/10 px-4 py-3 text-[11px] text-muted dark:border-white/10">
         <p>
           <i aria-hidden className="fa-solid fa-circle-info mr-1.5" />
-          Savant prices are the effective values the gateway enforces at request
-          time. The delta column compares that sell rate with the OpenRouter
-          list rate, not with our upstream cost.
+          Prices are USD per 1M tokens. One number means the same rate applies
+          to input and output; two numbers are input then output. These are the
+          sell rates the gateway enforces at request time, not our upstream
+          cost. Plan rows show a dash because access is sold with a plan, and
+          free rows cost nothing while the shared allowance lasts.
         </p>
         <p>
           <i
             aria-hidden
             className="fa-solid fa-arrow-right-arrow-left mr-1.5"
           />
-          OpenRouter rates come from its public model list
-          {benchmarkFetchedAt
-            ? ` (fetched ${new Date(benchmarkFetchedAt).toISOString().slice(0, 16).replace("T", " ")} UTC)`
-            : ""}
-          , matched by exact upstream id, and use list prompt/completion rates
-          only. A missing row means no exact counterpart was listed.
+          {showComparison ? (
+            <>
+              The “vs list” pill is the input difference against OpenRouter’s
+              public model list
+              {benchmarkFetchedAt
+                ? ` fetched ${new Date(benchmarkFetchedAt).toISOString().slice(0, 16).replace("T", " ")} UTC`
+                : ""}
+              , matched by exact upstream id. A dash means no exact counterpart
+              was listed. Hover a pill for the output difference.
+            </>
+          ) : (
+            <>
+              OpenRouter’s public list could not be fetched, so the comparison
+              columns are hidden rather than showing every row as unlisted. The
+              catalog and its own prices are unaffected.
+            </>
+          )}
         </p>
       </div>
     </div>

@@ -3,8 +3,10 @@
 **Filename:** `FID-2026-1029-015-lifetime-trial-routing.md`
 **ID:** FID-2026-1029-015
 **Severity:** high
-**Status:** converged
+**Status:** closed
 **Created:** 2026-10-29
+**Closed Against:** `d3e4a56`
+**Archived:** 2026-10-29
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
 
@@ -137,7 +139,8 @@ Browser account state/rates/overflow passed at 1440, 390 and 320 pixels.
 Activation remains off. Public catalog trial presentation, verification delivery,
 automatic quota refresh, exact upstream cost_tokens, shared RPM/subscription
 capacity and live payment/funding acceptance remain launch checklist controls;
-this FID does not claim a launch-ready service. Commit and archive pending.
+this FID does not claim a launch-ready service. Implementation committed as
+`d3e4a56`; all five steps implemented and verified, then archived.
 
 ## Lessons Learned
 

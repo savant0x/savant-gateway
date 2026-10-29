@@ -9,14 +9,19 @@ Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
   preserve subscription weights, context aliases, partial-source fallback and
   accurate known-cost status. Verified: 113 unit tests, 100 HTTP checks, clean
   lint/typecheck, quality and build. Committed `ae9c363`; FID-014 archived.
-- [ ] **L2 — Trial conversion.** Operator resumed implementation under
-  `dev/fids/FID-2026-1029-015-lifetime-trial-routing.md`. Configurable amount
+- [x] **L2 — Disabled trial conversion infrastructure.** Operator resumed under
+  `dev/fids/archive/FID-2026-1029-015-lifetime-trial-routing.md`. Configurable amount
   with 100,000 development default; activation off, empty pairs, zero grant budget.
   Wallet funding and Stripe remain governed by the quoted launch timing.
   Concrete review proposal: `docs/trial-conversion-contract.md`, including six
   exact paired candidates and five unpaired models. Grant policy remains
   configurable rather than blocking implementation on amount selection. Final
   activation and offering decisions remain explicit launch requirements.
+  Implemented and committed `d3e4a56`: durable grants/holds, explicit paid
+  transition, account balances/rates, model API metadata and tests. Receipt:
+  118 unit tests, existing 100 HTTP checks plus trial suite PASS, lint zero
+  warnings, typecheck, quality (197 files), build and mobile account receipt.
+  FID-015 closed and archived; launch activation remains disabled.
 
 ## Current Session — 2026-10-29 (launch planning and visual redesign)
 

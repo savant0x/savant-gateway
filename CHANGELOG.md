@@ -19,6 +19,7 @@ distinguish verified behavior from unverified claims.
   HTTP checks plus trial suite PASS; account browser checks at 1440/390/320.
   Activation controls and live payment/funding acceptance remain documented
   launch requirements. This change does not enable the trial offering.
+  Committed `d3e4a56`; FID-015 closed and archived.
 
 ## 2026-10-29 — Provider metadata integrity
 

@@ -1,6 +1,6 @@
 # Lifetime trial routing — 2026-10-29
 
-Status: active. The operator resumed work. Implement FID-015 with configurable
+Status: implementation complete. The operator resumed work. Implement FID-015 with configurable
 100,000-token development default, activation off, empty pair map and zero
 gateway grant budget. No further trial-size question blocks implementation.
 No wallet funding, Stripe credentials or deployment changes.
@@ -29,3 +29,6 @@ Remaining launch requirements are explicit in docs/launch-readiness.md. These
 include verification delivery, quota refresh, exact upstream cost_tokens, shared
 RPM/subscription capacity, public trial presentation and real funding/payments.
 The implementation is disabled, not a claim of launch readiness.
+
+Implementation committed as `d3e4a56`; FID-015 closed against that commit and
+archived. The remaining launch controls are not represented as completed.

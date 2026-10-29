@@ -7,7 +7,7 @@
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — no scheduler, no new table, no second admission
 path; the existing grant row is rebalanced in place.
-**Status:** verified
+**Status:** closed
 
 ---
 
@@ -140,7 +140,7 @@ a third account rebalances 9M/9M to 6M/6M/6M; totals never exceed 18M.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [x] Commit SHA: recorded at closure
+- [x] Commit SHA: `2626a13` — `fix(gateway): rebalance the daily allocation when an account joins (FID-2026-1029-019)`
 - [x] File:line ranges: `lib/allocation-ledger.ts` (`usedAndHeld`,
   `ensureAllocation` rebalance block)
 - [x] Gate output: Verification Receipt
@@ -176,12 +176,12 @@ a third account rebalances 9M/9M to 6M/6M/6M; totals never exceed 18M.
 
 ## Resolution
 
-- **Closed Date:** pending closure commit
+- **Closed Date:** 2026-10-29
 - **Fix Description:** Existing daily grants are rebalanced down to the new fair
   share, floored at recorded usage plus holds, before a joining account's grant.
 - **Tests Added:** Yes — two rebalance cases and revised oversell expectations.
 - **Verification Evidence:** Verification Receipt above.
-- **Archived:** pending closure commit
+- **Archived:** 2026-10-29 — `dev/fids/archive/`
 
 ## Lessons Learned
 

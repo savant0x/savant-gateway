@@ -67,7 +67,8 @@ trial-http-suite: all checks PASS
 ```
 
 Implementation committed as `58d5556`; FID-016/017/018 are closed against that
-commit and archived.
+commit and archived. The join-rebalance correction is committed as `2626a13`;
+FID-019 is closed against that commit and archived.
 
 Pure allocation, banner, and cache behavior is unit-tested. The allocation
 ledger is exercised against an in-memory database. The admin page and PATCH

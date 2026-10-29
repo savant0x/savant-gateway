@@ -30,7 +30,8 @@ distinguish verified behavior from unverified claims.
   existing grants to the new fair share before the insert, floored at each
   account's recorded usage plus in-flight holds, so total grants never exceed
   the allocatable share and unspent capacity reaches newcomers. Tests:
-  `tests/allocation.test.mjs` (11).
+  `tests/allocation.test.mjs` (11). Committed as `2626a13`; FID-019 is closed
+  against that commit and archived.
 - **FID-2026-1029-018 — low — Public catalog read memo.** A five-second,
   per-process TTL memo wraps the `listModels` display projection only; admin
   reads and the billed model lookup stay uncached. Measured avoided cost was

@@ -70,8 +70,9 @@ support behind one backend.
   provider sync, and charge 160 micros on a live call with `group_slug = paid`.
   System group mode changes and deletes were rejected; delete-with-reassign and
   free-group price zeroing were exercised.
-- [x] **S14 — Records.** README, AGENTS, knowledge, CHANGELOG, and FID-007 are
-  updated. FID-007 is `verified`; closure awaits the implementation commit.
+- [x] **S14 — Records and closure.** README, AGENTS, knowledge, CHANGELOG, and
+  FID-007 are updated. Implementation committed as `161ddcc`; FID-007 is
+  `closed` against that SHA and archived.
 
 ## Prior Session — 2026-10-29 (model groups and subscriptions)
 

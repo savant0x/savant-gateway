@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1029-007-model-group-control.md`
 **ID:** FID-2026-1029-007
 **Severity:** high
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-29 10:18 EDT
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -39,8 +39,9 @@ billing rules.
 - **Runtime:** Node `v24.21.0`, npm `12.2.1`.
 - **Tool Versions:** Next.js `16.4.3`, React `19.3.0`, HeroUI `3.2.7`,
   Tailwind CSS `4.3.3`, better-sqlite3 `13.0.3`, TypeScript `5.9.3`.
-- **Commit/State:** `b5ae9fc` on `main`; FID-007 implementation is in the
-  working tree and uncommitted. Design baseline was `48c21e1`.
+- **Commit/State:** implementation commit
+  `161ddcc7095f3cde5105e0e728c35950658bd409` on `main`; this FID is archived
+  by the governance commit that follows it. Design baseline was `48c21e1`.
 
 ## Detailed Description
 
@@ -542,8 +543,8 @@ The HTTP receipt runs on a disposable database and proves:
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [ ] **Commit SHA:** Pending. The implementation is uncommitted at
-  `b5ae9fc`; closure is blocked on the implementation commit.
+- [x] **Commit SHA:** `161ddcc7095f3cde5105e0e728c35950658bd409` —
+  implementation commit `161ddcc`.
 - [x] **File:line ranges:**
   - `lib/schema/groups.ts:1-81` — group table, system seed, model columns, and
     access backfill.
@@ -608,8 +609,8 @@ The HTTP receipt runs on a disposable database and proves:
 - [x] Production call-graph evidence is present: the live gateway call returned
   200, charged 160 micros, and wrote `group_slug = paid`; the provider sync
   preserved the manual group and price.
-- [x] FID status reflects the actual implementation state: `verified`, not
-  `closed`, because the commit is pending.
+- [x] FID status reflects the actual implementation state: `closed` against
+  `161ddcc`, with the record archived.
 
 ### Loop 2 — Independent audit and self-correction
 
@@ -675,8 +676,8 @@ The HTTP receipt runs on a disposable database and proves:
 
 ## Resolution
 
-- **Closed Date:** none. Status is `verified`; the implementation commit is
-  pending.
+- **Closed Date:** 2026-10-29 13:29 EDT — implementation commit `161ddcc`
+  passed the full gate and attribution guard.
 - **Fix Description:** First-class model groups with system defaults, custom
   CRUD, manual assignment, sync-safe membership, group-aware billing, usage
   snapshots, and an admin Groups surface. A zero-cost model can be moved to a
@@ -684,9 +685,9 @@ The HTTP receipt runs on a disposable database and proves:
 - **Tests Added:** Yes — `tests/model-groups.test.mjs` (10 cases).
 - **Verification Evidence:** `npm run verify` exit 0, 89/89 tests, quality PASS
   over 160 files, 41-route build; disposable-DB HTTP receipt and live charge
-  recorded above.
-- **Archived:** not archived. A `verified` FID stays in `dev/fids/` until the
-  implementation commit exists.
+  recorded above. Implementation committed as `161ddcc`; attribution guard
+  passed.
+- **Archived:** 2026-10-29 13:29 EDT — moved to `dev/fids/archive/`.
 
 ## Lessons Learned
 

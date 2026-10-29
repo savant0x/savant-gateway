@@ -409,10 +409,10 @@ Current records:
   closed provider registry: per-provider credentials, scoped sync and model
   identity, OpenAI and Anthropic adapters, manual cost mapping,
   provider-scoped free pool, and admin controls (closed against `957430c`).
-- [FID-2026-1029-007](dev/fids/FID-2026-1029-007-model-group-control.md) —
-  implemented and verified first-class model groups: custom groups, operator
-  assignment, sync-safe membership, group-aware billing and pricing, and a
-  Groups admin surface. Closure awaits the implementation commit.
+- [FID-2026-1029-007](dev/fids/archive/FID-2026-1029-007-model-group-control.md) —
+  closed first-class model groups: custom groups, operator assignment,
+  sync-safe membership, group-aware billing and pricing, and a Groups admin
+  surface (closed against `161ddcc`).
 - [FID-2026-1029-008](dev/fids/FID-2026-1029-008-subscription-plans-and-entitlements.md) —
   active, converged design for customer subscriptions: priced plans, included
   groups and models, entitlement snapshots, weighted-token allowances,

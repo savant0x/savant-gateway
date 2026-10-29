@@ -27,8 +27,8 @@ distinguish verified behavior from unverified claims.
   of `data/gateway.db` migrated with all 45 models preserved; the receipt
   created a custom paid group, moved a zero-cost `free/` model into it, priced
   it, confirmed a provider sync preserved the manual group, and made a live
-  gateway call that charged 160 micros with `group_slug = paid`. The change is
-  verified but uncommitted; FID-007 is `verified`, not closed.
+  gateway call that charged 160 micros with `group_slug = paid`. Closed against
+  `161ddcc`; FID-007 is archived.
 
 ## 2026-10-29 — D6/D50 remediation and provider-registry design
 

@@ -2,7 +2,7 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
-## Current Session — 2026-10-29 (D6/D50 remediation and provider registry)
+## Current Session — 2026-10-29 (D6/D50, provider registry, and model groups)
 
 Operator request: fix the two open audit findings — sanitize client-facing error
 responses and add free-pool admission control with per-user limits,
@@ -48,6 +48,30 @@ support behind one backend.
   models still on `savant`, and `provider_slug` present on usage and
   reservations. Live CommandCode inference was not run: no credential. FID-010
   records the receipt, is committed as `957430c`, and is closed and archived.
+- [x] **S10 — Group schema and migration.** `lib/schema/groups.ts` adds the
+  `model_groups` table, seeds the three system groups, adds
+  `models.group_slug`, `models.group_source`, and `usage_events.group_slug`,
+  and backfills every existing model from its old access. Additive; all 45
+  existing models preserved on a disposable copy.
+- [x] **S11 — Group-aware billing and pricing.** `lib/model-groups.ts` holds
+  pure validation, default-group, access, price-reset, and reassignment rules.
+  `accessFor`, `isFreeCall`, `usagePrices`, and `recordUsage` now read the
+  group billing mode. A free group zeroes prices; a paid group can charge a
+  zero-cost model. Manual group assignments survive sync; auto rows follow the
+  provider.
+- [x] **S12 — Admin and public surfaces.** New `/api/admin/groups` (GET, POST,
+  PATCH, DELETE) and `/admin/groups`; `PATCH /api/admin/models` accepts
+  `groupSlug`; catalog and pricing tables have group selectors; the public
+  catalog filter and labels are dynamic; `/v1/models` adds group fields while
+  keeping `group` compatible.
+- [x] **S13 — Verification.** `npm run verify` exit 0: 89/89 tests, quality PASS
+  over 160 files, 41-route build. On a disposable DB copy: create a paid group,
+  move `free/deepseek-v4-pro-0813` into it, price at $0.50/$1.00, survive a
+  provider sync, and charge 160 micros on a live call with `group_slug = paid`.
+  System group mode changes and deletes were rejected; delete-with-reassign and
+  free-group price zeroing were exercised.
+- [x] **S14 — Records.** README, AGENTS, knowledge, CHANGELOG, and FID-007 are
+  updated. FID-007 is `verified`; closure awaits the implementation commit.
 
 ## Prior Session — 2026-10-29 (model groups and subscriptions)
 

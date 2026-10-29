@@ -52,7 +52,10 @@ export async function PATCH(request: Request) {
   if (!model) return adminError(404, "Model not found.");
 
   if (model.access === "free") {
-    return adminError(400, "Free-pool models are always priced at zero.");
+    return adminError(
+      400,
+      "This model is in a free group. Move it to a paid or subscription group before setting a sell price.",
+    );
   }
 
   if (!setModelPricing(id, inputMicros, outputMicros)) {

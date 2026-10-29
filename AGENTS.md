@@ -38,8 +38,11 @@ the Perfection Loop. The operator is the approval boundary.
   `/v1/models` must publish `owned_by: "savant-gateway"`.
 - **Family:** the model line (GPT, Claude, DeepSeek, …), serialized as
   `family`. The legacy `models.provider` column stores this family label.
-- **Group:** `free`, `paid`, or `subscription`. UI data calls it `access`;
-  `/v1/models` calls it `group`.
+- **Group:** a first-class billing tier with a stable slug, editable label,
+  ordered membership, and a billing mode of `free`, `paid`, or `subscription`.
+  UI data calls the mode `access`; `/v1/models` keeps `group` for compatibility
+  and adds `group_slug`, `group_label`, and `group_billing_mode`. A manual
+  group assignment survives sync; the provider flags only choose the default.
 
 Never store or emit the upstream `"Free"` sentinel as a family.
 
@@ -97,8 +100,8 @@ noted:
 ```text
 app/                    landing (/), public catalog (/models), customer auth,
                         account (/account), console, admin
-app/admin/(panel)/      authenticated overview, customers, catalog, providers,
-                        pricing, analytics
+app/admin/(panel)/      authenticated overview, customers, catalog, groups,
+                        providers, pricing, analytics
 app/api/auth/           signup, login, logout, me
 app/api/account/        scoped keys and Stripe checkout
 app/api/webhooks/       signature-verified Stripe fulfillment
@@ -110,7 +113,8 @@ components/dashboard/   console sections and shared UI primitives
 components/admin/       admin shell, tables, pricing editor, analytics
 lib/providers/          registry, provider-scoped sync, OpenAI/Anthropic adapters
 lib/provider.ts         compatibility re-export over lib/providers/
-lib/schema/             provider schema and shared migration helpers
+lib/model-groups.ts     pure model-group validation, defaults, and price rules
+lib/schema/             provider and group schema plus migration helpers
 lib/pricing.ts          micro-dollar, markup, margin, hold, and estimate math
 lib/gateway.ts          key auth, full-catalog routing, reservation
 lib/gateway-stream.ts   streaming relay and settlement on close

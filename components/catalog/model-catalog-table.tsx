@@ -8,15 +8,13 @@ import { AccessChip } from "@/components/dashboard/chips";
 import { formatNumber, formatPricePer1M } from "@/components/dashboard/format";
 import { Pagination } from "@/components/ui/pagination";
 
-type AccessFilter = "all" | ModelAccess;
-type SortKey = "name" | "family" | "price-asc" | "price-desc";
+type GroupOption = {
+  slug: string;
+  label: string;
+  billingMode: ModelAccess;
+};
 
-const ACCESS_FILTERS: Array<{ key: AccessFilter; label: string }> = [
-  { key: "all", label: "All" },
-  { key: "free", label: "Free" },
-  { key: "paid", label: "Paid" },
-  { key: "subscription", label: "Subscription" },
-];
+type SortKey = "name" | "family" | "price-asc" | "price-desc";
 
 const SORTS: Array<{ key: SortKey; label: string }> = [
   { key: "name", label: "Name" },
@@ -45,7 +43,7 @@ export function ModelCatalogTable({
   pageSize?: number;
 }) {
   const [query, setQuery] = useState("");
-  const [access, setAccess] = useState<AccessFilter>("all");
+  const [group, setGroup] = useState("all");
   const [family, setFamily] = useState("all");
   const [sort, setSort] = useState<SortKey>("name");
   const [page, setPage] = useState(1);
@@ -58,10 +56,26 @@ export function ModelCatalogTable({
     [models],
   );
 
+  const groups = useMemo(() => {
+    const map = new Map<string, GroupOption>();
+
+    for (const model of models) {
+      map.set(model.groupSlug, {
+        slug: model.groupSlug,
+        label: model.groupLabel,
+        billingMode: model.groupBillingMode,
+      });
+    }
+
+    return Array.from(map.values()).sort((left, right) =>
+      left.label.localeCompare(right.label),
+    );
+  }, [models]);
+
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     const rows = models.filter((model) => {
-      if (access !== "all" && model.access !== access) return false;
+      if (group !== "all" && model.groupSlug !== group) return false;
       if (family !== "all" && model.family !== family) return false;
       if (!needle) return true;
 
@@ -96,7 +110,7 @@ export function ModelCatalogTable({
 
       return left.name.localeCompare(right.name);
     });
-  }, [access, family, models, query, sort]);
+  }, [family, group, models, query, sort]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, pageCount);
@@ -135,14 +149,15 @@ export function ModelCatalogTable({
             <select
               aria-label="Filter by group"
               className="h-10 rounded-xl border border-black/10 bg-background px-3 text-xs outline-none focus:border-accent dark:border-white/10"
-              value={access}
+              value={group}
               onChange={(event) =>
-                resetPage(() => setAccess(event.target.value as AccessFilter))
+                resetPage(() => setGroup(event.target.value))
               }
             >
-              {ACCESS_FILTERS.map((item) => (
-                <option key={item.key} value={item.key}>
-                  {item.label}
+              <option value="all">All groups</option>
+              {groups.map((item) => (
+                <option key={item.slug} value={item.slug}>
+                  {item.label} ({item.billingMode})
                 </option>
               ))}
             </select>
@@ -264,7 +279,7 @@ export function ModelCatalogTable({
         />
       </div>
 
-      {filtered.length > 0 && access === "all" && family === "all" ? (
+      {filtered.length > 0 && group === "all" && family === "all" ? (
         <div className="border-t border-black/10 px-4 py-2 text-[11px] text-muted dark:border-white/10">
           <i aria-hidden className="fa-solid fa-circle-info mr-1.5" />
           Effective prices; the gateway enforces the same values at request

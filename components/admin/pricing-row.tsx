@@ -1,11 +1,11 @@
-import type { AdminModelSummary } from "@/lib/types";
+import type { AdminModelSummary, ModelGroupSummary } from "@/lib/types";
 import type { PriceDraft } from "./pricing-draft";
 
 import { Button, Chip, Input, Spinner } from "@heroui/react";
 
 import { parseDraftPrice } from "./pricing-draft";
 
-import { AccessChip } from "@/components/dashboard/chips";
+import { GroupSelect } from "@/components/admin/group-select";
 import {
   formatMarginPercent,
   formatPricePer1M,
@@ -21,6 +21,7 @@ function marginTone(value: number | null) {
 
 export function PricingRow({
   model,
+  groups,
   draft,
   dirty,
   saving,
@@ -28,6 +29,7 @@ export function PricingRow({
   onSave,
 }: {
   model: AdminModelSummary;
+  groups: ModelGroupSummary[];
   draft: PriceDraft;
   dirty: boolean;
   saving: boolean;
@@ -74,7 +76,12 @@ export function PricingRow({
       </td>
       <td className="text-muted">{model.family}</td>
       <td>
-        <AccessChip model={model} />
+        <GroupSelect
+          groupSlug={model.groupSlug}
+          groups={groups}
+          modelId={model.id}
+        />
+        <p className="mt-1 text-[11px] text-muted">{model.access} billing</p>
       </td>
       <td className="whitespace-nowrap text-right text-muted">
         {free
@@ -83,7 +90,15 @@ export function PricingRow({
       </td>
       <td className="text-right">
         {free ? (
-          <span className="text-success">Free</span>
+          <div>
+            <span className="text-success">Free</span>
+            <p className="text-[11px] text-muted">move group to charge</p>
+            {costIn > 0 || costOut > 0 ? (
+              <p className="text-[11px] text-warning">
+                upstream cost still billed
+              </p>
+            ) : null}
+          </div>
         ) : (
           <div className="ml-auto flex w-[11.5rem] gap-1">
             <Input

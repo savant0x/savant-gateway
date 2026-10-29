@@ -10,6 +10,11 @@ import type {
   UsageSummary,
 } from "../types";
 
+import {
+  accessFromGroup,
+  legacyAccessFor,
+  SYSTEM_GROUP_LABELS,
+} from "../model-groups";
 import { blendedProfitMicros, marginBps, microsToPrice } from "../pricing";
 
 export type ModelRow = {
@@ -30,6 +35,10 @@ export type ModelRow = {
   price_source: "auto" | "manual";
   in_catalog: number;
   allow_free: number;
+  group_slug: string | null;
+  group_source: "auto" | "manual";
+  group_label: string | null;
+  group_billing_mode: ModelAccess | null;
   supports_tools: number;
   supports_vision: number;
   health: string | null;
@@ -78,6 +87,10 @@ export type GatewayModel = {
   sellInputMicros: number;
   sellOutputMicros: number;
   allowFree: boolean;
+  groupSlug: string;
+  groupLabel: string;
+  groupSource: "auto" | "manual";
+  billingMode: ModelAccess;
   status: string;
   inCatalog: boolean;
 };
@@ -110,16 +123,57 @@ export type ProviderStatusInput = {
 };
 
 export function accessFor(
-  row: Pick<ModelRow, "allow_free" | "token_weight" | "upstream_id">,
+  row: Pick<
+    ModelRow,
+    | "allow_free"
+    | "token_weight"
+    | "upstream_id"
+    | "group_slug"
+    | "group_billing_mode"
+  >,
 ): ModelAccess {
-  if (row.allow_free === 1 && row.token_weight > 0) return "free";
-
   // The `free/` scope belongs to the upstream id; a non-default provider's
-  // public id is namespaced and must not change the price group.
-  return row.upstream_id.startsWith("free/") ? "subscription" : "paid";
+  // public id is namespaced and must not change the fallback group.
+  return accessFromGroup(
+    row.group_billing_mode,
+    legacyAccessFor({
+      allowFree: row.allow_free === 1,
+      tokenWeight: row.token_weight,
+      upstreamId: row.upstream_id,
+    }),
+  );
+}
+
+export function toGatewayModel(row: ModelRow): GatewayModel {
+  const billingMode = accessFor(row);
+
+  return {
+    id: row.id,
+    upstreamId: row.upstream_id,
+    name: row.name,
+    upstreamSlug: row.upstream_slug,
+    family: row.family ?? row.provider,
+    protocol: row.protocol,
+    costSource: row.cost_source,
+    contextWindow: row.context_window,
+    tokenWeight: row.token_weight,
+    costInputMicros: row.input_price_micros,
+    costOutputMicros: row.output_price_micros,
+    sellInputMicros: row.sell_input_micros,
+    sellOutputMicros: row.sell_output_micros,
+    allowFree: row.allow_free === 1,
+    groupSlug: row.group_slug ?? billingMode,
+    groupLabel: row.group_label ?? SYSTEM_GROUP_LABELS[billingMode],
+    groupSource: row.group_source ?? "auto",
+    billingMode,
+    status: row.status,
+    inCatalog: row.in_catalog === 1,
+  };
 }
 
 export function toModelSummary(row: ModelRow): ModelSummary {
+  const access = accessFor(row);
+
   return {
     id: row.id,
     upstreamId: row.upstream_id,
@@ -128,7 +182,11 @@ export function toModelSummary(row: ModelRow): ModelSummary {
     contextWindow: row.context_window,
     tokenWeight: row.token_weight,
     allowFree: row.allow_free === 1,
-    access: accessFor(row),
+    access,
+    groupSlug: row.group_slug ?? access,
+    groupLabel: row.group_label ?? SYSTEM_GROUP_LABELS[access],
+    groupBillingMode: access,
+    groupSource: row.group_source ?? "auto",
     inputPricePer1M: microsToPrice(row.sell_input_micros),
     outputPricePer1M: microsToPrice(row.sell_output_micros),
     supportsTools: row.supports_tools === 1,

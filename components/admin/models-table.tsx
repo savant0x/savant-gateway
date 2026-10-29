@@ -1,13 +1,14 @@
 "use client";
 
-import type { AdminModelSummary } from "@/lib/types";
+import type { AdminModelSummary, ModelGroupSummary } from "@/lib/types";
 
 import { Button, Card, Chip, Input, Spinner } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { GroupSelect } from "@/components/admin/group-select";
 import { ModelCostEditor } from "@/components/admin/model-cost-editor";
-import { AccessChip, StatusChip } from "@/components/dashboard/chips";
+import { StatusChip } from "@/components/dashboard/chips";
 import { formatPricePer1M } from "@/components/dashboard/format";
 import { Pagination } from "@/components/ui/pagination";
 
@@ -36,9 +37,11 @@ function price(model: AdminModelSummary) {
 
 export function AdminModelsTable({
   models,
+  groups,
   pageSize = 20,
 }: {
   models: AdminModelSummary[];
+  groups: ModelGroupSummary[];
   pageSize?: number;
 }) {
   const router = useRouter();
@@ -250,7 +253,14 @@ export function AdminModelsTable({
                     </td>
                     <td className="text-muted">{model.family}</td>
                     <td>
-                      <AccessChip model={model} />
+                      <GroupSelect
+                        groupSlug={model.groupSlug}
+                        groups={groups}
+                        modelId={model.id}
+                      />
+                      <p className="mt-1 text-[11px] text-muted">
+                        {model.access} billing · {model.groupSource}
+                      </p>
                     </td>
                     <td>
                       <StatusChip status={model.status} />

@@ -3,6 +3,33 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — First-class model groups
+
+- **FID-2026-1029-007 — high — First-class model groups with operator
+  assignment.** Groups are now durable rows in `model_groups` with a stable
+  slug, editable label, description, sort order, billing mode, and a protected
+  system flag. The migration seeds `free`, `paid`, and `subscription` and
+  backfills every existing model from its old provider-derived access, so
+  behavior does not change on boot. Models carry `group_slug` and
+  `group_source`; a manual assignment survives provider sync, while auto rows
+  follow the provider-derived default. The admin panel adds
+  **Groups** (`/admin/groups`) with create, edit, delete-with-reassignment,
+  system-group protection, and model counts, plus group selectors in the
+  catalog and pricing tables and a dynamic group filter in the public catalog.
+  Billing follows the group: a `free` group forces both sell prices to zero and
+  skips credit holds; `paid` and `subscription` groups use the existing credit
+  path. A zero-cost model can now be moved to a paid group and charged. Usage
+  rows snapshot `group_slug`, and `/v1/models` keeps `group` while adding
+  `group_slug`, `group_label`, and `group_billing_mode`.
+  Tests: `tests/model-groups.test.mjs` covers validation, reserved slugs,
+  price reset, access mapping, and reassignment. Gates: `npm run verify` exit
+  0, 89/89 tests, quality PASS over 160 files, 41-route build. A disposable copy
+  of `data/gateway.db` migrated with all 45 models preserved; the receipt
+  created a custom paid group, moved a zero-cost `free/` model into it, priced
+  it, confirmed a provider sync preserved the manual group, and made a live
+  gateway call that charged 160 micros with `group_slug = paid`. The change is
+  verified but uncommitted; FID-007 is `verified`, not closed.
+
 ## 2026-10-29 — D6/D50 remediation and provider-registry design
 
 - **FID-2026-1029-009 — high (D50), low (D6) — Sanitize client errors and

@@ -1,6 +1,6 @@
 "use client";
 
-import type { AdminModelSummary } from "@/lib/types";
+import type { AdminModelSummary, ModelGroupSummary } from "@/lib/types";
 import type { PriceDraft } from "./pricing-draft";
 
 import { Button, Card, Chip, Input } from "@heroui/react";
@@ -24,14 +24,17 @@ const FILTERS: Array<{ key: Filter; label: string }> = [
 
 export function PricingTable({
   models,
+  groups,
   pageSize = 15,
 }: {
   models: AdminModelSummary[];
+  groups: ModelGroupSummary[];
   pageSize?: number;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
+  const [group, setGroup] = useState("all");
   const [page, setPage] = useState(1);
   const [drafts, setDrafts] = useState<Record<string, PriceDraft>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -52,6 +55,7 @@ export function PricingTable({
         model.inputPricePer1M > 0 ||
         model.outputPricePer1M > 0;
 
+      if (group !== "all" && model.groupSlug !== group) return false;
       if (filter === "free" && model.access !== "free") return false;
       if (filter === "priced" && !priced) return false;
       if (filter === "unpriced" && (model.access === "free" || priced)) {
@@ -65,7 +69,7 @@ export function PricingTable({
         model.family.toLowerCase().includes(needle)
       );
     });
-  }, [catalog, filter, query]);
+  }, [catalog, filter, group, query]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, pageCount);
@@ -181,6 +185,22 @@ export function PricingTable({
               setPage(1);
             }}
           />
+          <select
+            aria-label="Filter by group"
+            className="h-10 shrink-0 rounded-xl border border-black/10 bg-background px-3 text-xs outline-none focus:border-accent dark:border-white/10"
+            value={group}
+            onChange={(event) => {
+              setGroup(event.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="all">All groups</option>
+            {groups.map((item) => (
+              <option key={item.slug} value={item.slug}>
+                {item.label}
+              </option>
+            ))}
+          </select>
           <div className="flex shrink-0 flex-wrap gap-1.5">
             {FILTERS.map((item) => (
               <Button
@@ -234,6 +254,7 @@ export function PricingTable({
                     key={model.id}
                     dirty={Boolean(drafts[model.id])}
                     draft={draftFor(model)}
+                    groups={groups}
                     model={model}
                     saving={savingId === model.id}
                     onChange={(patch) => updateDraft(model, patch)}

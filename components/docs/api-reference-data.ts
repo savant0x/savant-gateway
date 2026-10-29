@@ -66,7 +66,26 @@ export const MODEL_FIELDS = [
     name: "group",
     type: "free | paid | subscription",
     description:
-      "Price group and access class. Read this field before routing or budgeting.",
+      "Billing mode of the assigned group. Read this field before routing or budgeting.",
+    example: "paid",
+  },
+  {
+    name: "group_slug",
+    type: "string",
+    description:
+      "Stable slug of the assigned group, including operator-created groups.",
+    example: "resale",
+  },
+  {
+    name: "group_label",
+    type: "string",
+    description: "Operator-facing label for the assigned group.",
+    example: "Resale",
+  },
+  {
+    name: "group_billing_mode",
+    type: "free | paid | subscription",
+    description: "Billing mode, duplicated additively for group-aware clients.",
     example: "paid",
   },
   {
@@ -79,14 +98,14 @@ export const MODEL_FIELDS = [
     name: "token_weight",
     type: "integer",
     description:
-      "Free-pool metering weight. Zero for paid and subscription rows.",
+      "Metering weight in a free-billing group. Zero for paid and subscription groups.",
     example: "0",
   },
   {
     name: "allow_free",
     type: "boolean",
     description:
-      "Upstream free-pool capability. A free call also requires group free and a positive weight.",
+      "Upstream free-pool capability. It selects the default group during sync; the assigned group decides billing.",
     example: "false",
   },
   {
@@ -184,7 +203,7 @@ export const GROUPS = [
   {
     group: "free",
     billing: "Zero charge. Metered in the provider's weighted units.",
-    routing: "Available without credit. Weighted free-pool rows only.",
+    routing: "Available without credit in any free-billing group.",
   },
   {
     group: "paid",
@@ -246,6 +265,9 @@ export const MODELS_RESPONSE = `{
       "name": "Gpt 6.1 Sol",
       "family": "GPT",
       "group": "paid",
+      "group_slug": "paid",
+      "group_label": "Paid",
+      "group_billing_mode": "paid",
       "context_window": "1M",
       "token_weight": 0,
       "allow_free": false,
@@ -263,6 +285,9 @@ export const MODELS_RESPONSE = `{
       "name": "Gpt 6 Luna",
       "family": "GPT",
       "group": "free",
+      "group_slug": "free",
+      "group_label": "Free",
+      "group_billing_mode": "free",
       "context_window": "1M",
       "token_weight": 3,
       "allow_free": true,

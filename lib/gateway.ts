@@ -70,7 +70,7 @@ function safeUpstreamMessage(status: number, message: string) {
 }
 
 function isFreeCall(model: GatewayModel) {
-  return model.allowFree && model.tokenWeight > 0;
+  return model.billingMode === "free";
 }
 
 type PaidReservation =

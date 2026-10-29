@@ -115,13 +115,15 @@ export function usagePrices(
   inputTokens: number,
   outputTokens: number,
 ) {
+  const listPrice =
+    computeTokenCostMicros(inputTokens, model.sellInputMicros) +
+    computeTokenCostMicros(outputTokens, model.sellOutputMicros);
+
   return {
     costMicros:
       computeTokenCostMicros(inputTokens, model.costInputMicros) +
       computeTokenCostMicros(outputTokens, model.costOutputMicros),
-    chargedMicros:
-      computeTokenCostMicros(inputTokens, model.sellInputMicros) +
-      computeTokenCostMicros(outputTokens, model.sellOutputMicros),
+    chargedMicros: model.billingMode === "free" ? 0 : listPrice,
   };
 }
 

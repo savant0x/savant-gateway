@@ -1,28 +1,42 @@
 import "server-only";
 
-import type { AdminModelSummary, ModelSummary, SyncedModel } from "../types";
+import type {
+  AdminModelSummary,
+  ModelAccess,
+  ModelSummary,
+  SyncedModel,
+} from "../types";
 
 import { db, nowIso } from "../db";
+import { defaultGroupSlug, pricesForGroup } from "../model-groups";
 import { defaultSellMicros } from "../pricing";
 
 import { getMarkupBps } from "./settings";
 import {
+  accessFor,
   type GatewayModel,
   type ModelRow,
   toAdminModelSummary,
+  toGatewayModel,
   toModelSummary,
 } from "./shared";
 
 const PUBLIC_SCOPE = "m.in_catalog = 1 AND m.status = 'active'";
+const MODEL_SELECT = `
+  SELECT m.*, g.label AS group_label, g.billing_mode AS group_billing_mode
+  FROM models m
+  LEFT JOIN model_groups g ON g.slug = m.group_slug
+`;
 
 export function listModels(): ModelSummary[] {
   const rows = db
     .prepare(
-      `SELECT m.* FROM models m
+      `${MODEL_SELECT}
        JOIN providers p ON p.slug = m.upstream_slug AND p.enabled = 1
        WHERE ${PUBLIC_SCOPE}
-       ORDER BY CASE WHEN m.allow_free = 1 AND m.token_weight > 0 THEN 0 ELSE 1 END,
-                m.provider ASC, m.sort_order ASC, m.name ASC`,
+       ORDER BY CASE WHEN g.billing_mode = 'free' THEN 0 ELSE 1 END,
+                COALESCE(g.sort_order, 9999) ASC, m.provider ASC,
+                m.sort_order ASC, m.name ASC`,
     )
     .all() as ModelRow[];
 
@@ -32,11 +46,12 @@ export function listModels(): ModelSummary[] {
 export function listAllModels(): AdminModelSummary[] {
   const rows = db
     .prepare(
-      `SELECT * FROM models
-       ORDER BY in_catalog DESC,
-                CASE WHEN status = 'active' THEN 0 ELSE 1 END,
-                CASE WHEN allow_free = 1 AND token_weight > 0 THEN 0 ELSE 1 END,
-                provider ASC, sort_order ASC, name ASC`,
+      `${MODEL_SELECT}
+       ORDER BY m.in_catalog DESC,
+                CASE WHEN m.status = 'active' THEN 0 ELSE 1 END,
+                CASE WHEN g.billing_mode = 'free' THEN 0 ELSE 1 END,
+                COALESCE(g.sort_order, 9999) ASC, m.provider ASC,
+                m.sort_order ASC, m.name ASC`,
     )
     .all() as ModelRow[];
 
@@ -52,17 +67,29 @@ export function setModelStatus(
   if (status === "active") {
     const row = db
       .prepare(
-        "SELECT allow_free, token_weight, cost_source FROM models WHERE id = ?",
+        `SELECT m.allow_free, m.token_weight, m.upstream_id, m.group_slug,
+                m.cost_source, g.billing_mode AS group_billing_mode
+         FROM models m
+         LEFT JOIN model_groups g ON g.slug = m.group_slug
+         WHERE m.id = ?`,
       )
       .get(modelId) as
-      | { allow_free: number; token_weight: number; cost_source: string }
+      | Pick<
+          ModelRow,
+          | "allow_free"
+          | "token_weight"
+          | "upstream_id"
+          | "group_slug"
+          | "group_billing_mode"
+          | "cost_source"
+        >
       | undefined;
 
     if (!row) return "not_found";
 
-    const free = row.allow_free === 1 && row.token_weight > 0;
-
-    if (!free && row.cost_source === "unknown") return "cost_unknown";
+    if (accessFor(row) !== "free" && row.cost_source === "unknown") {
+      return "cost_unknown";
+    }
   }
 
   const result = db
@@ -77,29 +104,45 @@ export function setModelCost(
   costInputMicros: number,
   costOutputMicros: number,
 ) {
-  const row = db.prepare("SELECT * FROM models WHERE id = ?").get(modelId) as
-    ModelRow | undefined;
+  const row = db
+    .prepare(
+      `${MODEL_SELECT}
+       WHERE m.id = ?`,
+    )
+    .get(modelId) as ModelRow | undefined;
 
-  if (!row || (row.allow_free === 1 && row.token_weight > 0)) return false;
+  if (!row) return false;
 
   const input = Math.max(0, Math.round(costInputMicros));
   const output = Math.max(0, Math.round(costOutputMicros));
   const markupBps = getMarkupBps();
-  const sellInput =
+  const sell =
     row.price_source === "manual"
-      ? row.sell_input_micros
-      : defaultSellMicros(input, markupBps);
-  const sellOutput =
-    row.price_source === "manual"
-      ? row.sell_output_micros
-      : defaultSellMicros(output, markupBps);
+      ? {
+          sellInputMicros: row.sell_input_micros,
+          sellOutputMicros: row.sell_output_micros,
+        }
+      : {
+          sellInputMicros: defaultSellMicros(input, markupBps),
+          sellOutputMicros: defaultSellMicros(output, markupBps),
+        };
+  const priced = pricesForGroup({
+    billingMode: accessFor(row),
+    ...sell,
+  });
 
   db.prepare(
     `UPDATE models
      SET input_price_micros = ?, output_price_micros = ?, cost_source = 'manual',
          sell_input_micros = ?, sell_output_micros = ?
      WHERE id = ?`,
-  ).run(input, output, sellInput, sellOutput, modelId);
+  ).run(
+    input,
+    output,
+    priced.sellInputMicros,
+    priced.sellOutputMicros,
+    modelId,
+  );
 
   return true;
 }
@@ -109,6 +152,27 @@ export function setModelPricing(
   sellInputMicros: number,
   sellOutputMicros: number,
 ) {
+  const row = db
+    .prepare(
+      `SELECT m.allow_free, m.token_weight, m.upstream_id, m.group_slug,
+              g.billing_mode AS group_billing_mode
+       FROM models m
+       LEFT JOIN model_groups g ON g.slug = m.group_slug
+       WHERE m.id = ?`,
+    )
+    .get(modelId) as
+    | Pick<
+        ModelRow,
+        | "allow_free"
+        | "token_weight"
+        | "upstream_id"
+        | "group_slug"
+        | "group_billing_mode"
+      >
+    | undefined;
+
+  if (!row || accessFor(row) === "free") return false;
+
   const result = db
     .prepare(
       `UPDATE models
@@ -124,30 +188,13 @@ export function setModelPricing(
   return result.changes > 0;
 }
 
-function toGatewayModel(row: ModelRow): GatewayModel {
-  return {
-    id: row.id,
-    upstreamId: row.upstream_id,
-    name: row.name,
-    upstreamSlug: row.upstream_slug,
-    family: row.family ?? row.provider,
-    protocol: row.protocol,
-    costSource: row.cost_source,
-    contextWindow: row.context_window,
-    tokenWeight: row.token_weight,
-    costInputMicros: row.input_price_micros,
-    costOutputMicros: row.output_price_micros,
-    sellInputMicros: row.sell_input_micros,
-    sellOutputMicros: row.sell_output_micros,
-    allowFree: row.allow_free === 1,
-    status: row.status,
-    inCatalog: row.in_catalog === 1,
-  };
-}
-
 export function getModelForGateway(modelId: string): GatewayModel | undefined {
-  const row = db.prepare("SELECT * FROM models WHERE id = ?").get(modelId) as
-    ModelRow | undefined;
+  const row = db
+    .prepare(
+      `${MODEL_SELECT}
+       WHERE m.id = ?`,
+    )
+    .get(modelId) as ModelRow | undefined;
 
   return row ? toGatewayModel(row) : undefined;
 }
@@ -160,7 +207,10 @@ export function getModelByUpstreamId(
   upstreamId: string,
 ): GatewayModel | undefined {
   const rows = db
-    .prepare("SELECT * FROM models WHERE upstream_id = ?")
+    .prepare(
+      `${MODEL_SELECT}
+       WHERE m.upstream_id = ?`,
+    )
     .all(upstreamId) as ModelRow[];
 
   return rows.length === 1 ? toGatewayModel(rows[0]) : undefined;
@@ -182,14 +232,22 @@ export function replaceModels(
     existing.set(row.id, row);
   }
 
+  const groupModes = new Map<string, ModelAccess>();
+
+  for (const row of db
+    .prepare("SELECT slug, billing_mode FROM model_groups")
+    .all() as Array<{ slug: string; billing_mode: ModelAccess }>) {
+    groupModes.set(row.slug, row.billing_mode);
+  }
+
   const upsert = db.prepare(`
     INSERT INTO models
       (id, upstream_id, upstream_slug, name, provider, family, protocol,
        cost_source, context_window, token_weight, input_price_micros,
        output_price_micros, sell_input_micros, sell_output_micros,
-       price_source, in_catalog, allow_free, supports_tools,
-       supports_vision, health, status, sort_order, synced_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)
+       price_source, in_catalog, allow_free, group_slug, group_source,
+       supports_tools, supports_vision, health, status, sort_order, synced_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       upstream_id = excluded.upstream_id,
       upstream_slug = excluded.upstream_slug,
@@ -207,6 +265,8 @@ export function replaceModels(
       price_source = excluded.price_source,
       in_catalog = 1,
       allow_free = excluded.allow_free,
+      group_slug = excluded.group_slug,
+      group_source = excluded.group_source,
       supports_tools = excluded.supports_tools,
       supports_vision = excluded.supports_vision,
       health = excluded.health,
@@ -223,7 +283,22 @@ export function replaceModels(
 
     for (const model of models) {
       const current = existing.get(model.id);
-      const isFree = model.allowFree && model.tokenWeight > 0;
+      const defaultSlug = defaultGroupSlug({
+        allowFree: model.allowFree,
+        tokenWeight: model.tokenWeight,
+        upstreamId: model.upstreamId,
+      });
+      const manualGroupSlug =
+        current?.group_source === "manual" ? current.group_slug : null;
+      let groupSlug = manualGroupSlug ?? defaultSlug;
+      let groupSource: "auto" | "manual" = manualGroupSlug ? "manual" : "auto";
+
+      if (!groupModes.has(groupSlug)) {
+        groupSlug = defaultSlug;
+        groupSource = "auto";
+      }
+
+      const isFree = groupModes.get(groupSlug) === "free";
       const keepManualSell = current?.price_source === "manual";
       const keepManualCost = current?.cost_source === "manual";
       const costInput = keepManualCost
@@ -261,6 +336,8 @@ export function replaceModels(
         sellOutput,
         keepManualSell ? "manual" : "auto",
         model.allowFree ? 1 : 0,
+        groupSlug,
+        groupSource,
         model.supportsTools ? 1 : 0,
         model.supportsVision ? 1 : 0,
         model.health,
@@ -274,7 +351,10 @@ export function replaceModels(
 
 export function applyCatalogMarkup(markupBps: number, applyToAll: boolean) {
   const rows = db
-    .prepare("SELECT * FROM models WHERE in_catalog = 1")
+    .prepare(
+      `${MODEL_SELECT}
+       WHERE m.in_catalog = 1`,
+    )
     .all() as ModelRow[];
   const update = db.prepare(
     `UPDATE models
@@ -286,7 +366,7 @@ export function applyCatalogMarkup(markupBps: number, applyToAll: boolean) {
 
   db.transaction(() => {
     for (const row of rows) {
-      if (row.allow_free === 1 && row.token_weight > 0) {
+      if (accessFor(row) === "free") {
         update.run(0, 0, row.id);
         changed += 1;
         continue;

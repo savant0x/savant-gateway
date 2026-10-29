@@ -32,6 +32,14 @@ export {
   setModelStatus,
 } from "./store/models";
 export {
+  assignModelGroup,
+  createModelGroup,
+  deleteModelGroup,
+  getModelGroup,
+  listModelGroups,
+  updateModelGroup,
+} from "./store/groups";
+export {
   createProvider,
   deleteProvider,
   getDefaultProvider,

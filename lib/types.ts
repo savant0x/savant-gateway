@@ -1,5 +1,15 @@
 export type ModelAccess = "free" | "subscription" | "paid";
 
+export type ModelGroupSummary = {
+  slug: string;
+  label: string;
+  billingMode: ModelAccess;
+  description: string | null;
+  sortOrder: number;
+  isSystem: boolean;
+  modelCount: number;
+};
+
 export type ProviderStatus = {
   configured: boolean;
   status: "active" | "exhausted" | "error" | "unconfigured";
@@ -30,6 +40,10 @@ export type ModelSummary = {
   tokenWeight: number;
   allowFree: boolean;
   access: ModelAccess;
+  groupSlug: string;
+  groupLabel: string;
+  groupBillingMode: ModelAccess;
+  groupSource: "auto" | "manual";
   inputPricePer1M: number;
   outputPricePer1M: number;
   supportsTools: boolean;

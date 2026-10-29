@@ -3,10 +3,12 @@ import type { ModelSummary } from "@/lib/types";
 import { Card, Chip } from "@heroui/react";
 
 export function AccessChip({ model }: { model: ModelSummary }) {
+  const label = model.groupLabel || model.access;
+
   if (model.access === "free") {
     return (
       <Chip color="success" size="sm" variant="soft">
-        free
+        {label}
       </Chip>
     );
   }
@@ -14,14 +16,14 @@ export function AccessChip({ model }: { model: ModelSummary }) {
   if (model.access === "subscription") {
     return (
       <Chip color="warning" size="sm" variant="soft">
-        subscription
+        {label}
       </Chip>
     );
   }
 
   return (
     <Chip color="default" size="sm" variant="soft">
-      paid
+      {label}
     </Chip>
   );
 }

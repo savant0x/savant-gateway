@@ -38,7 +38,8 @@ The gateway does seven things:
 | `/dashboard` | Operator console | Provider, catalog, local-tenant keys, tester, usage. |
 | `/admin` | Admin session | Revenue, cost, margin, credit, provider status, recent usage. |
 | `/admin/customers` | Admin session | Signup accounts, balances, request volume, and top-ups. |
-| `/admin/catalog` | Admin session | Every row, including disabled and delisted models. |
+| `/admin/catalog` | Admin session | Every row, including disabled and delisted models; move a model between groups. |
+| `/admin/groups` | Admin session | Create, rename, reprice, and delete custom groups; system groups are protected. |
 | `/admin/providers` | Admin session | Upstream registry: credentials variable names, capabilities, enable, test, sync. |
 | `/admin/pricing` | Admin session | Inline sell prices, markup, cost, margin, blended profit. |
 | `/admin/analytics` | Admin session | 7/30/90-day revenue, cost, margin, tokens, latency, top models. |
@@ -114,8 +115,17 @@ These three words mean different things and must not be collapsed:
 - **Family** — the upstream model line: GPT, Claude, DeepSeek, Gemini, GLM,
   Kimi, Grok, and so on. It is the `family` field; the internal
   `models.provider` column stores this family label.
-- **Group** — the price group: `free`, `paid`, or `subscription`. The UI
-  serializes it as `access`; `/v1/models` publishes it as `group`.
+- **Group** — a first-class billing tier with a stable slug, an editable
+  label, a billing mode (`free`, `paid`, or `subscription`), and ordered model
+  membership. The UI and `access` field expose the billing mode;
+  `/v1/models` keeps `group` as that compatible field and adds `group_slug`,
+  `group_label`, and `group_billing_mode`.
+
+Groups are operator data, not a derived label. The three system groups
+(`free`, `paid`, `subscription`) keep their slugs and billing modes; their
+labels and order are editable. Custom groups can use any billing mode and can
+be deleted only after an explicit reassignment. A manual assignment survives a
+provider sync; rows without one follow the provider-derived default.
 
 ### Provider registry
 
@@ -168,18 +178,28 @@ active counts, and sell prices — never keys, upstream cost, or ledger rows.
 
 ### Model access
 
-- **Free** = `allowFree` is true **and** the provider gives the row a positive
-  `tokenWeight`. Only these rows are zero-charge. They are metered in the
-  provider's weighted units; `free/gpt-6-luna` at weight 3 consumes 948 units
-  for 316 raw tokens. `free/` is the price-group scope, not the family. Free
-  calls pass admission first: a per-user daily weighted allowance, the
-  effective provider remaining, and `subscription.allowed`. A refusal is `429`
-  with `Retry-After`; limits are the `FREE_*` variables in `.env.example`.
-- **Subscription** = a `free/*` row the provider does not actually grant on the
-  free pool. It is visible in the catalog but blocked unless the operator sets
-  a sell price and the upstream account is entitled to it.
-- **Paid** = every other catalog row. It is routable once priced and the tenant
-  has available credit.
+The assigned group's **billing mode** decides routing and charging. Provider
+flags only choose the default group for a new or auto-owned row: weighted
+`free/` rows default to `free`, other `free/` rows to `subscription`, and the
+rest to `paid`.
+
+- **Free** = the model is in a group whose billing mode is `free`. Both sell
+  prices are forced to zero, no credit hold is taken, and the call is metered
+  in the provider's weighted units when a weight is present (weight 1 when it
+  is not). Free calls pass admission first: a per-user daily weighted
+  allowance, the effective provider remaining, and `subscription.allowed`. A
+  refusal is `429` with `Retry-After`; limits are the `FREE_*` variables in
+  `.env.example`.
+- **Subscription** = a plan-gated catalog tier. The group stores the label and
+  billing mode; the entitlement itself belongs to the subscription plan work.
+  A row is blocked until it is priced and the upstream account is entitled.
+- **Paid** = a credit-billed group. It is routable once at least one sell price
+  is non-zero and the tenant has available credit.
+
+A zero-cost model can therefore be charged: move it from a free group to a
+paid or subscription group, then set its sell price on Admin → Pricing. Moving
+back to a free group zeroes both prices again; moving out leaves them at zero
+until the operator sets a price.
 
 Disabled models are excluded from the public catalog and the gateway. The
 state survives a provider sync. A model that vanishes upstream is marked
@@ -200,7 +220,8 @@ blended profit    = (sell_in + sell_out) − (cost_in + cost_out)
 The default markup is 30%. A sync prices new rows from cost; existing manual
 rows keep their price. The bulk markup action can reprice auto rows only, or
 every catalog row when overwrite is enabled. Editing one row marks it
-`manual`. Free-pool rows are always zero.
+`manual`. Rows in a free group are always zero, including a zero-cost row moved
+there; move the row to another group to charge for it.
 
 A paid request reserves an estimated hold (prompt estimate plus output budget
 at the sell price) against `users.credit_micros`. On completion, failure, or
@@ -273,7 +294,7 @@ are follow-ups, not claimed capabilities.
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
 | `POST` | `/v1/chat/completions` | Consumer key | OpenAI-compatible chat, streaming or JSON. |
-| `GET` | `/v1/models` | Consumer key | Active catalog with `owned_by`, `family`, `group`, and sell prices. |
+| `GET` | `/v1/models` | Consumer key | Active catalog with `owned_by`, `family`, billing `group`, group slug/label, and sell prices. |
 | `POST` | `/api/auth/signup` | Public, same-origin | Create a customer and session. |
 | `POST` | `/api/auth/login` | Public, same-origin | Sign in; sets `sg_session`. |
 | `POST` | `/api/auth/logout` | Session | Revoke the session and clear the cookie. |
@@ -286,7 +307,11 @@ are follow-ups, not claimed capabilities.
 | `POST` | `/api/admin/session` | Password | Sign in; sets the admin cookie. |
 | `DELETE` | `/api/admin/session` | Same-origin | Sign out and bump the session epoch. |
 | `GET` | `/api/admin/models` | Admin session | Full catalog, including disabled and delisted rows. |
-| `PATCH` | `/api/admin/models` | Admin session | `{ id, status }` where status is `active` or `disabled`. |
+| `PATCH` | `/api/admin/models` | Admin session | `{ id, status?, groupSlug?, costInputPer1M?, costOutputPer1M? }`. |
+| `GET` | `/api/admin/groups` | Admin session | Groups with billing mode, system flag, order, and model count. |
+| `POST` | `/api/admin/groups` | Admin session | `{ slug, label, billingMode, description?, sortOrder? }`. |
+| `PATCH` | `/api/admin/groups` | Admin session | `{ slug, label, billingMode, description?, sortOrder? }`; system billing modes are fixed. |
+| `DELETE` | `/api/admin/groups` | Admin session | `{ slug, reassignTo }`; system groups and the same-group destination are rejected. |
 | `GET` | `/api/admin/pricing` | Admin session | Catalog with cost, sell price, margin, and summary. |
 | `PATCH` | `/api/admin/pricing` | Admin session | `{ id, inputPricePer1M, outputPricePer1M }`. |
 | `POST` | `/api/admin/pricing` | Admin session | `{ markupBps, applyToAll }` bulk repricing. |
@@ -322,13 +347,13 @@ app/
   signup/, login/          customer authentication
   account/                 customer balance, keys, usage, top-ups
   dashboard/               operator console
-  admin/(panel)/           authenticated overview, customers, catalog,
+  admin/(panel)/           authenticated overview, customers, catalog, groups,
                            providers, pricing, analytics
   admin/login/             admin sign-in
   api/auth/                signup, login, logout, me
   api/account/             scoped keys and Stripe checkout
   api/webhooks/stripe/     signature-verified top-up fulfillment
-  api/admin/               session, catalog, providers, pricing, credit
+  api/admin/               session, catalog, groups, providers, pricing, credit
   api/                     console actions (loopback or admin)
   v1/chat/completions/     OpenAI-compatible gateway
   v1/models/               OpenAI-compatible model list
@@ -341,7 +366,8 @@ components/
   ui/                      shared primitives
 lib/
   providers/               registry, scoped sync, OpenAI and Anthropic adapters
-  schema/                  provider schema and shared migration helpers
+  model-groups.ts          pure group validation, defaults, and price rules
+  schema/                  provider and group schema plus migration helpers
   pricing.ts               pure micro-dollar, markup, margin, and estimate math
   gateway.ts               auth, routing, reservation, response handling
   gateway-stream.ts        streaming relay and settlement on close
@@ -357,7 +383,7 @@ lib/
   admin-auth.ts            server-only guards and cookie helpers
   admin-rate-limit.ts      fixed-window limiters
   db.ts                    SQLite bootstrap and additive migrations
-  store/                   persistence split by responsibility
+  store/                   persistence split by responsibility, including groups
   types.ts                 shared serializable types
 assets/                    source logos and favicons
 public/                    served brand assets and web manifest
@@ -384,9 +410,9 @@ Current records:
   identity, OpenAI and Anthropic adapters, manual cost mapping,
   provider-scoped free pool, and admin controls (closed against `957430c`).
 - [FID-2026-1029-007](dev/fids/FID-2026-1029-007-model-group-control.md) —
-  active, converged design for first-class model groups: custom groups,
-  operator assignment, sync-safe membership, group-aware billing, and a
-  Groups admin surface (implementation not started).
+  implemented and verified first-class model groups: custom groups, operator
+  assignment, sync-safe membership, group-aware billing and pricing, and a
+  Groups admin surface. Closure awaits the implementation commit.
 - [FID-2026-1029-008](dev/fids/FID-2026-1029-008-subscription-plans-and-entitlements.md) —
   active, converged design for customer subscriptions: priced plans, included
   groups and models, entitlement snapshots, weighted-token allowances,
@@ -466,7 +492,8 @@ as completed payments or completed paid-provider calls.
   crediting is tested; hosted checkout creation requires operator keys and a
   public HTTPS origin.
 - Subscription-tier rows are catalogued but only routable when the operator
-  prices them and the upstream account is entitled to them.
+  prices them and the upstream account is entitled to them; the plan
+  entitlement itself is FID-008 work, not part of the group.
 - No per-key rate limiting or concurrency control. Signup, login, and top-up
   limits are in-memory fixed windows and reset on restart.
 - No automatic failover or load balancing: each model has one provider, and

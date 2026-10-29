@@ -48,10 +48,6 @@ export function ModelCostEditor({ model }: { model: AdminModelSummary }) {
     }
   }
 
-  if (model.access === "free") {
-    return <span className="text-muted">—</span>;
-  }
-
   return (
     <div className="min-w-[13rem] space-y-1">
       <div className="flex items-center gap-1">
@@ -75,6 +71,7 @@ export function ModelCostEditor({ model }: { model: AdminModelSummary }) {
         {model.costSource === "unknown"
           ? "Cost unknown — set before enabling"
           : model.costSource}
+        {model.access === "free" ? " · sell stays zero in a free group" : ""}
       </p>
       {error ? <p className="text-[11px] text-danger">{error}</p> : null}
     </div>

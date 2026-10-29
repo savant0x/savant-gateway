@@ -15,15 +15,20 @@ upstream cost, and usage in SQLite.
   upstream account in the registry; the public owner is always Savant Gateway
   (`owned_by: "savant-gateway"`). The family is the model line (GPT,
   Claude, DeepSeek, …), serialized as `family`; the legacy `models.provider`
-  column stores that family label. The group is `free`, `paid`, or
-  `subscription`, serialized as `access` in UI data and `group` in
-  `/v1/models`. Never store or emit `"Free"` as a family.
-- **Free means `allowFree && tokenWeight > 0`.** The provider marks some
-  subscription rows with `allowFree`, but only weighted free-pool rows are
-  zero-charge. The upstream `free/` id prefix is the group signal; it is not
-  the family, and a non-default provider's public id is namespaced as
-  `{slug}/{upstream_id}`. `accessFor` in `lib/store/shared.ts` and
-  `isFreeCall` in `lib/gateway.ts` must stay in agreement.
+  column stores that family label. A group is a first-class billing tier with
+  a stable slug, editable label, sort order, and a billing mode of `free`,
+  `paid`, or `subscription`. UI data calls the mode `access`; `/v1/models`
+  keeps `group` for compatibility and adds `group_slug`, `group_label`, and
+  `group_billing_mode`. Never store or emit `"Free"` as a family.
+- **The group billing mode decides free versus paid.** A model is free only
+  when its assigned group's `billing_mode` is `free`; both sell prices are
+  forced to zero and the gateway takes no credit hold. Provider flags
+  (`allowFree`, `tokenWeight`, the `free/` id prefix) only choose the default
+  group during sync. A manual `group_source = 'manual'` assignment survives
+  sync. This is why a zero-cost free model can be moved to a custom paid group
+  and charged. `accessFor` in `lib/store/shared.ts`, `isFreeCall` in
+  `lib/gateway.ts`, and `recordUsage` in `lib/store/usage.ts` must agree on the
+  group's billing mode.
 - **Legacy `provider='Free'` rows are repaired on boot.**
   `normalizeLegacyFamilies` in `lib/db.ts` infers the family from the id and
   rewrites the row. `lib/model-family.ts` is the single source for that
@@ -46,10 +51,12 @@ upstream cost, and usage in SQLite.
 - **Paid calls need a sell price and credit.** An unpriced non-free row returns
   `503 model_unpriced`. A funded tenant is required; the reservation is
   atomic and expired holds are swept before a new reservation.
-- **Usage is weighted only for free-pool calls.** `weighted_tokens` is
-  `total × weight` when the model is free with a positive weight, and zero
-  otherwise. Each provider has its own free-pool remainder; usage rows carry
-  `provider_slug`, and the per-user daily allowance is global.
+- **Usage is weighted only for free-group calls.** `weighted_tokens` is
+  `total × max(1, weight)` when the assigned group bills as free, and zero for
+  paid and subscription groups — including a zero-cost model moved to a paid
+  group. Each provider has its own free-pool remainder; usage rows carry
+  `provider_slug` and a `group_slug` snapshot, and the per-user daily allowance
+  is global.
 - **Free calls pass an admission gate before dispatch.**
   `reserveFreeCall` in `lib/store/free-pool.ts` checks the user’s daily
   weighted allowance, the effective provider remaining (last synced remaining
@@ -106,8 +113,9 @@ upstream cost, and usage in SQLite.
 - **Top-up amounts are exact.** `lib/topup-amount.ts` parses dollars without
   floating point, enforces $5–$500, and returns cents plus micro-dollars.
   Stripe receives cents; the database receives micros.
-- **A zero balance still works on free-pool models.** Paid requests are the
-  only ones that reserve credit.
+- **A zero balance still works on free-group models.** Paid requests are the
+  only ones that reserve credit. A zero-cost model moved to a paid group is a
+  paid request and needs credit.
 - **Provider keys are server-only.** Each provider row names an environment
   variable (`PROVIDER_KEY`, `COMMANDCODE_API_KEY`); `lib/providers/request.ts`
   reads the value at request time. Never place a key in `NEXT_PUBLIC_*`, the

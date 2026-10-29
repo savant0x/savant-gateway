@@ -7,6 +7,7 @@ import Database from "better-sqlite3";
 
 import { normalizeFamilyName } from "./model-family";
 import { ensureColumn, type DatabaseHandle } from "./schema/columns";
+import { modelGroupSchema } from "./schema/groups";
 import { providerSchema } from "./schema/providers";
 
 const configuredDbPath = process.env.DB_PATH?.trim();
@@ -324,6 +325,7 @@ function createDb() {
   customerSchema(database);
   freePoolSchema(database);
   providerSchema(database);
+  modelGroupSchema(database);
   normalizeLegacyFamilies(database);
   seed(database);
 

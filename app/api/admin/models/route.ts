@@ -1,6 +1,11 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
 import { readPriceInput } from "@/lib/pricing";
-import { listAllModels, setModelCost, setModelStatus } from "@/lib/store";
+import {
+  assignModelGroup,
+  listAllModels,
+  setModelCost,
+  setModelStatus,
+} from "@/lib/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +28,7 @@ export async function PATCH(request: Request) {
   let body: {
     id?: unknown;
     status?: unknown;
+    groupSlug?: unknown;
     costInputPer1M?: unknown;
     costOutputPer1M?: unknown;
   };
@@ -35,6 +41,9 @@ export async function PATCH(request: Request) {
 
   const id = typeof body.id === "string" ? body.id : "";
   const status = typeof body.status === "string" ? body.status : "";
+  const groupSlug =
+    typeof body.groupSlug === "string" ? body.groupSlug.trim() : "";
+  const hasGroup = body.groupSlug !== undefined;
   const hasCost =
     body.costInputPer1M !== undefined || body.costOutputPer1M !== undefined;
 
@@ -42,6 +51,19 @@ export async function PATCH(request: Request) {
 
   if (status && !STATUSES.has(status)) {
     return adminError(400, "status must be active or disabled.");
+  }
+
+  if (hasGroup) {
+    if (!groupSlug) return adminError(400, "groupSlug is required.");
+
+    const result = assignModelGroup(id, groupSlug);
+
+    if (result === "model_not_found") {
+      return adminError(404, "Model not found.");
+    }
+    if (result === "group_not_found") {
+      return adminError(400, "The selected group does not exist.");
+    }
   }
 
   if (status) {
@@ -75,8 +97,8 @@ export async function PATCH(request: Request) {
     }
   }
 
-  if (!status && !hasCost) {
-    return adminError(400, "Provide a status or a cost to update.");
+  if (!status && !hasCost && !hasGroup) {
+    return adminError(400, "Provide a status, group, or cost to update.");
   }
 
   const model = listAllModels().find((row) => row.id === id);

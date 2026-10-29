@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { AdminModelsTable } from "@/components/admin/models-table";
-import { listAllModels } from "@/lib/store";
+import { listAllModels, listModelGroups } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 
 export default function AdminCatalogPage() {
   const models = listAllModels();
+  const groups = listModelGroups();
   const disabled = models.filter((model) => model.status === "disabled").length;
   const delisted = models.filter((model) => !model.inCatalog).length;
 
@@ -36,7 +37,7 @@ export default function AdminCatalogPage() {
         </div>
       </div>
 
-      <AdminModelsTable models={models} />
+      <AdminModelsTable groups={groups} models={models} />
     </>
   );
 }

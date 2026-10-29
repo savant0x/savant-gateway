@@ -9,7 +9,7 @@ import {
   formatMarginPercent,
   formatNumber,
 } from "@/components/dashboard/format";
-import { getPricingData } from "@/lib/store";
+import { getPricingData, listModelGroups } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +20,7 @@ export const metadata: Metadata = {
 
 export default function AdminPricingPage() {
   const data = getPricingData();
+  const groups = listModelGroups();
 
   return (
     <>
@@ -33,8 +34,9 @@ export default function AdminPricingPage() {
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
             Prices are USD per 1M tokens. Cost comes from the synced provider
-            catalog; sell price is what this gateway charges. Free-pool rows are
-            always zero.
+            catalog; sell price is what this gateway charges. Free-group rows
+            are always zero — move the model to a paid group to charge for a
+            zero-cost model.
           </p>
         </div>
         <div className="rounded-xl border border-black/10 bg-surface px-3 py-2 text-xs text-muted dark:border-white/10">
@@ -72,7 +74,7 @@ export default function AdminPricingPage() {
 
       <MarkupForm markupBps={data.summary.markupBps} />
 
-      <PricingTable models={data.models} />
+      <PricingTable groups={groups} models={data.models} />
 
       <Card variant="secondary">
         <Card.Header>

@@ -271,6 +271,9 @@ Current records:
 - [FID-2026-1029-004](dev/fids/archive/FID-2026-1029-004-full-catalog-pricing-analytics.md) —
   full catalog, sell-price math, credit settlement, public table, admin
   pricing, and analytics (closed against `2623912`).
+- [FID-2026-1029-005](dev/fids/archive/FID-2026-1029-005-provider-family-group-semantics.md) —
+  provider identity, model family, and price-group normalization (closed
+  against `ecc15ac`).
 
 ## Quality gates
 
@@ -289,14 +292,14 @@ rejects coding-agent attribution anywhere in the commit history.
 
 ### Verification
 
-FID-2026-1029-004 records the current receipt: `npm run verify` exit 0 with 26
-tests, quality PASS over 91 files, and a 20-route production build. Live
-production smoke on that tree: `/models` and the admin pages return `200`,
-unauthenticated `/admin` returns `307` to login, `/api/models` returns 45
-public rows with no cost fields, `/api/admin/pricing` reports the manual
-`gpt-6.1-sol` row at cost `$0.30` / sell `$0.40` / 25% input margin, a
-foreign-origin PATCH returns `403`, and a provider sync preserves a manual
-price and a disabled model.
+FID-2026-1029-005 records the current receipt: `npm run verify` exit 0 with 30
+tests, quality PASS over 92 files, and a 20-route production build. Live
+production smoke on that tree: `/models` and all four admin pages return
+`200`, unauthenticated `/admin` returns `307` to login, `/api/models` returns
+45 public rows with `family` and no upstream cost fields, `/v1/models`
+returns `owned_by: "savant-gateway"`, and `/api/admin/pricing` reports the
+manual `gpt-6.1-sol` row at cost `$0.30` / sell `$0.40` / 25% input margin.
+FID-2026-1029-004 holds the pricing and money-path receipt.
 
 The paid money path was exercised on a disposable database: actual usage
 settled above the hold, streaming settled with no hold left behind, an unpriced

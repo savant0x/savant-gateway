@@ -71,6 +71,21 @@
 - FID-2026-1029-004 closed and archived with this summary.
 - Working tree clean after the records commit.
 
+## Same-Day Follow-Up: Provider, Family, and Group
+
+- Operator correction: `provider: "Free"` was the upstream price-group
+  sentinel, not a provider. Savant Gateway is the provider; free is a group;
+  GPT/Claude/DeepSeek is the family.
+- FID-2026-1029-005 closed against `ecc15ac`. Added `lib/model-family.ts`, a
+  boot repair for legacy `provider='Free'` rows, `family` on model and
+  analytics payloads, and `owned_by: "savant-gateway"` plus `group` on
+  `/v1/models`. Public and admin tables now say Family and Group.
+- Live: boot migration removed all 21 sentinels; sync stayed at zero; `/api/models`
+  returned `provider: "Savant Gateway"`, `family: "DeepSeek"`; `/v1/models`
+  returned `owned_by: "savant-gateway"`, `group: "free"`; `/models` rendered
+  the provider pill and Family/Group columns.
+- Final gates: 30/30 tests, quality PASS over 92 files, 20-route build.
+
 ## Next Session
 
 1. Add customer accounts and a real funding path before exposing paid models.

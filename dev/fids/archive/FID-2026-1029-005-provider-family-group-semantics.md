@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1029-005-provider-family-group-semantics.md`
 **ID:** FID-2026-1029-005
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Created:** 2026-10-29 02:55 EDT
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -41,7 +41,7 @@ value is then:
 
 - stored in `models.provider`;
 - returned as `provider` from `/api/models` and admin pricing;
-- used for `owned_by` in `/v1/models` (`lib/../app/v1/models/route.ts:25`);
+- used for `owned_by` in `/v1/models` (`app/v1/models/route.ts:25`);
 - displayed under a “Provider” column in the public catalog, landing preview,
   and analytics table;
 - used by `accessFor` and overview counts as a group signal.
@@ -185,30 +185,138 @@ $ curl -s /api/models | ...
 5. **Does this change model access?** No. It changes labels and payload keys;
    `accessFor` still returns free/subscription/paid from the same row flags.
 
+### Verification Receipt
+
+- verified: 2026-10-29T06:58:00Z (local 2026-10-29 02:58 EDT)
+- tree: `ecc15ac` (feature) plus the closure documentation in the closing
+  docs commit
+- `npm run lint`: exit 0, no warnings
+- `npm run typecheck`: exit 0
+- `npm test`: exit 0, 30 tests / 30 pass / 0 fail
+- `npm run quality`: exit 0, PASS (400-line ceiling, 92 files scanned)
+- `npm run build`: exit 0, 20 routes
+- `npm run verify`: exit 0
+
+```text
+ℹ tests 30
+ℹ pass 30
+ℹ fail 0
+quality: PASS (400-line ceiling, 92 files scanned)
+VERIFY_EXIT=0
+```
+
+### Implementation Evidence (REQUIRED for `closed`)
+
+- [x] **Commit SHA:** `ecc15ac` — `feat(catalog): separate provider, family,
+      and price group (FID-2026-1029-005)`.
+- [x] **File:line ranges:**
+  - `config/site.ts:4-7` — provider identity (`name`, `slug`).
+  - `lib/model-family.ts:1-57` — known family map, id inference, and group
+    sentinel normalization.
+  - `lib/provider.ts:250-278` — sync uses `normalizeFamilyName`; the free
+    group is the `free/` id plus the allow-free flag.
+  - `lib/db.ts:232-253,279` — idempotent boot repair for legacy
+    `provider='Free'` rows.
+  - `lib/store/shared.ts:99-117` — group classification and `family:
+    row.provider` mapping.
+  - `lib/store/overview.ts:26-35` — paid/subscription counts keyed by the id
+    group, not the family.
+  - `lib/store/analytics.ts:104-160` — `family` alias and payload.
+  - `app/v1/models/route.ts:26-29` — `owned_by: "savant-gateway"`, `family`,
+    `group`.
+  - `app/api/models/route.ts:14-15` — top-level provider identity.
+  - `components/catalog/model-catalog-table.tsx:206-208` — Family/Group
+    headers, family filter and sort.
+  - `components/admin/models-table.tsx:187-188` — admin Family/Group columns.
+  - `components/admin/pricing-table.tsx:222-223` and
+    `components/admin/pricing-row.tsx:88` — pricing Family/Group columns.
+  - `components/admin/analytics-models.tsx:40,63` — analytics Family column.
+  - `app/models/page.tsx:38-48` — provider identity and price-group copy.
+- [x] **Gate output:** pasted in Verification Receipt above; raw log kept at
+      `/tmp/sg-verify-family.log` during the session.
+- [x] **Reproducibility:** `grep -n "export function familyFromModelId"
+      lib/model-family.ts` → `29`; `grep -n "owned_by" app/v1/models/route.ts`
+      → `26`; `grep -n "normalizeLegacyFamilies" lib/db.ts` → `232` and
+      `279`.
+- [x] **Step statuses:** all eight Proposed Solution steps **implemented**;
+      no blocked or deferred steps.
+
+### Code Verification Evidence
+
+- [x] Files exist and the production build resolved all 20 routes.
+- [x] Implementation matches the solution, including the idempotent legacy
+      repair and the API rename from `provider` to `family`.
+- [x] Lint, typecheck, tests, quality, and build pass with pasted output.
+- [x] Production call-graph evidence: live boot migrated 21 rows; a live sync
+      imported 45 models and left `free_sentinel = 0`; `/api/models` returned
+      `provider: "Savant Gateway"` and `family: "DeepSeek"` with no legacy
+      `provider` key; `/v1/models` returned `owned_by: "savant-gateway"`,
+      `family: "DeepSeek"`, `group: "free"`; `/models` rendered Family and
+      Group columns and `Provider: Savant Gateway`.
+- [x] FID status reflects the actual state: closed against `ecc15ac` after the
+      gates and live receipts above.
+
 ### Loop 2 — Independent audit and self-correction
 
-- **RED:** Pending implementation.
-- **GREEN:** Pending.
-- **AUDIT:** Pending.
-- **ADVERSARIAL:** Pending.
-- **CHANGE DELTA:** Pending.
+- **RED:** The first implementation left `owned_by: model.provider`, so the
+  API would have published `owned_by: "Free"` even after the sync fix. The
+  public and admin tables still had a Provider column, and the internal sync
+  sorted by the old field name.
+- **GREEN:** `/v1/models` now uses `siteConfig.provider.slug`; all model
+  shapes use `family`; the legacy boot migration runs before any page can read
+  the catalog; the UI labels and filters were renamed.
+- **AUDIT:** The live checks found `provider: "Savant Gateway"`, family
+  DeepSeek for `free/deepseek-v4-pro-0813`, group `free`, and zero `Free`
+  strings in the `/v1/models` payload. A sync after the boot repair stayed at
+  zero sentinels.
+- **ADVERSARIAL:** A fresh sync is the path that previously reintroduced the
+  label; it was run after the fix and checked at the DB and API layers. The
+  migration only matches `free`/empty provider values and is safe to re-run.
+- **CHANGE DELTA:** 9% (owned_by, API shape, and label corrections).
 
 ### Loop 3 — Final convergence
 
-- **RED:** Pending final audit.
-- **GREEN:** Pending.
-- **AUDIT:** Pending.
-- **ADVERSARIAL:** Pending.
-- **CHANGE DELTA:** Pending.
+- **RED:** Final risks: a stale server process serving the old payload, an
+  unmigrated DB, an admin table with a header but no cell, or a family filter
+  that no longer works.
+- **GREEN:** The production server was restarted on the rebuilt bundle; the
+  DB migration ran; every table row count was checked against its header; the
+  public family filter and provider pill were verified in the rendered HTML.
+- **AUDIT:** `/models` 200 and admin overview/catalog/pricing/analytics 200;
+  public DB families are GPT, Claude, DeepSeek, Gemini, GLM, Kimi, Grok, Muse,
+  Tencent, Jev Group, Minimax, Mimo, Qwen, Hy4 with no `Free`; quality scans
+  92 files; build lists 20 routes.
+- **ADVERSARIAL:** The serializable field rename is breaking for any external
+  consumer of `/api/models`; this repository has no such consumer and the API
+  is documented. `models.provider` remains a legacy internal column name by
+  design, documented in knowledge.md, rather than a risky schema rename.
+- **CHANGE DELTA:** 1% (record and copy corrections only).
 
 ## Resolution
 
-- **Closed Date:** Pending.
-- **Fix Description:** Pending.
-- **Tests Added:** Pending.
-- **Verification Evidence:** Pending.
-- **Archived:** Pending.
+- **Closed Date:** 2026-10-29 02:59 EDT
+- **Fix Description:** Savant Gateway is now the provider identity. Model
+  families are normalized from the id when upstream metadata supplies the
+  `Free` group sentinel, legacy rows are repaired at boot, and syncs cannot
+  reintroduce the sentinel. `/v1/models` publishes `owned_by:
+  "savant-gateway"`, `family`, and `group`; `/api/models` publishes the
+  provider identity and `family`. Public and admin tables use Family and Group
+  labels and the public catalog states the provider explicitly.
+- **Tests Added:** Yes — `tests/model-family.test.mjs` covers known families,
+  prefix stripping, unknown fallbacks, group-sentinel normalization, and
+  preservation of real family labels. Total suite: 30 tests.
+- **Verification Evidence:** `npm run verify` exit 0; live boot migration,
+  sync, database, `/api/models`, `/v1/models`, and rendered-page receipts
+  above.
+- **Archived:** 2026-10-29 02:59 EDT — moved to `dev/fids/archive/` with this
+  receipt.
 
 ## Lessons Learned
 
-Pending.
+Upstream vocabulary is not product vocabulary. A field named `provider` that
+carries a group sentinel is a defect waiting to surface in an API, and adding a
+new label at the UI is not enough: fix the storage boundary, the sync, and the
+serializable shape together. Re-run a sync after a normalization fix, because
+that is the path that can write the bad value back. Keep a migration for
+legacy rows so a database that is not synced immediately still tells the
+truth.

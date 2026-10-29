@@ -289,3 +289,11 @@ Recorded read-only under the approved review item; any fix remains blocked pendi
   key; `/v1/models` returned `owned_by: "savant-gateway"`, `family:
   "DeepSeek"`, `group: "free"`; `/models` and the three admin tables render
   Family/Group with no Provider column.
+- 2026-10-29: **Post-ship customer E2E verification handed off without a runtime
+  receipt.** The production server was not running (`data/prod-server.pid` is
+  stale; port 3100 refused), and `.env.local` has no Stripe test credentials,
+  so Checkout and the webhook cannot be exercised. Static route mapping and a
+  read-only database baseline (45 active models, 1 user, 2 keys, 0 top-ups)
+  are recorded in
+  `dev/session-summaries/2026-10-29-customer-e2e-verification.md`. No code or
+  runtime data changed; the paid receipt remains open.

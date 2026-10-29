@@ -2,6 +2,90 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-29 (free-pool allocation, context banner, launch analysis)
+
+Operator request: repair the stale records; establish how the trial credit system
+is wired; split 90% of the 20M daily upstream allowance evenly across activated
+accounts each day; decide whether to keep or remove subscriptions; add a
+dashboard-editable context string carried by every request; optimize caching;
+and produce a Gemini Deep Research prompt for an early-stage business plan.
+
+- [x] **A1 — Stale records repaired.** `.env.example` no longer opens with the
+  scaffold `[TEMPLATE]` line. The line was noise, not a boot failure: a source
+  check of the dotenv parser bundled in `@next/env` 16.4.3 shows malformed lines
+  are skipped by its regex loop, not thrown on. `dev/agenda.md` now records the actual launch
+  agenda. `dev/audit/issues.md` is a superseded, untracked snapshot of the
+  pre-rebuild review; the 2026-10-29 handoff requires it to be preserved, so it
+  was neither staged nor deleted.
+- [x] **A2 — Trial system audited.** `docs/trial-system-audit.md` records the
+  implemented ledger and its blocker: the grant requires
+  `users.email_verified_at`, and no route, form, or job writes that column. With
+  `TRIAL_ENABLED=false`, a zero grant budget, and an empty pair map, no grant
+  can issue. Activation requirements and the overlap rule with the daily
+  allocation are stated; the trial stays off.
+- [x] **A3 — Daily shared allocation.** FID-2026-1029-016. A per-UTC-day
+  `free_pool_allocations` row grants each activated account
+  `min(floor(0.9 x pool / activeAccounts), unallocated remainder)` inside the
+  existing immediate admission transaction. Activated means an active customer
+  holding at least one active key. Grants never shrink during the day; a late
+  account can only take what remains; 10% is never allocated. Admin → Gateway
+  edits the pool and share, with settings overriding environment defaults.
+  `.env.example` documents `FREE_POOL_DAILY_WEIGHTED_TOKENS`,
+  `FREE_POOL_ALLOCATION_BPS`, and `FREE_POOL_ALLOCATION_ENABLED`.
+- [x] **A4 — Context banner.** FID-2026-1029-017. One operator-authored string
+  in `settings`, edited from Admin → Gateway, prepended as a leading system
+  message on every upstream request while enabled, capped at 2,000 characters,
+  and counted in the prompt-token estimate used by the free allocation and the
+  paid hold. The same payload serves JSON and SSE, and the Anthropic translator
+  folds the system message into `system`.
+- [x] **A5 — Subscription decision.** `docs/subscriptions-decision.md`: keep the
+  implementation, sell nothing at launch. The code is implemented and locally
+  verified but real Stripe delivery is unverified and plan allowances would spend
+  an unfunded paid upstream wallet. Plans stay archived/draft and Stripe stays
+  unconfigured; revisit criteria are recorded.
+- [x] **A6 — Catalog read cache.** FID-2026-1029-018. A generic five-second TTL
+  memo wraps `listModels` only; `listAllModels` and the billing lookup
+  (`getModelForGateway`) stay uncached. Measured avoided cost: 150.2 µs average
+  catalog query over 300 runs against 44 active rows (read-only
+  `data/gateway.db`, 20 warmups). This measures the query, not end-to-end HTTP
+  latency.
+- [x] **A7 — Business-plan research prompt.**
+  `docs/business-plan-research-prompt.md` is a self-contained Gemini Deep
+  Research brief: platform and cost model, the 20M weighted-token daily pool and
+  90/10 split, 15 RPM shared limit, $0 paid wallet, abuse exposure, constraints,
+  seven deliverable sections, three-scenario requirement, output rules, and a
+  data snapshot. It asks for pricing, free policy, unit economics, growth,
+  risk controls, and go/no-go thresholds.
+- [x] **A8 — Verification.** `npm run verify` exit 0: lint zero warnings,
+  typecheck exit 0, 133/133 unit tests, quality PASS over 207 files, production
+  build exit 0 (54 app routes including `/admin/gateway` and
+  `/api/admin/gateway`), `http-suite` 100 checks PASS, and `trial-http-suite`
+  all checks PASS.
+- [x] **A9 — Sequencing disclosed.** Implementation and FID authoring landed in
+  the same pass at the operator's direction. FID-016/017/018 record the converged
+  design and audit the code that exists; they do not claim code was written only
+  after convergence. This deviation from FID-Bound Execution is recorded rather
+  than masked.
+
+Findings recorded during this pass:
+
+- **N1 — the trial could never issue a grant (high for any trial launch).**
+  `users.email_verified_at` is read by `lib/trial-ledger.ts` but written nowhere
+  in the application; no verification delivery exists. Recorded in
+  `docs/trial-system-audit.md`; activation remains off.
+- **N2 — per-customer free allowance had no relationship to the shared pool
+  (high).** `FREE_DAILY_WEIGHTED_TOKENS` was applied per user with no account
+  count, so promises could exceed 20M by an arbitrary factor. Replaced by the
+  FID-2026-1029-016 allocation ledger.
+- **N3 — the public catalog re-queried identical rows on every read (low).**
+  Measured at 150.2 µs per query; now memoized for five seconds on the display
+  path only.
+- **N4 — subscription allowances bypass shared admission (medium).** Included
+  subscription usage reserves against the plan period and spends paid upstream
+  capacity directly, without the free-pool floor or a shared subscription/trial
+  capacity policy. This is a documented launch gate in
+  `docs/launch-readiness.md`, not a repaired behavior.
+
 ## Current Session — Launch continuation
 
 - [x] **L1 — Provider metadata prerequisites.** Automation level 3. Resume

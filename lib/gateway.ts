@@ -8,6 +8,7 @@ import {
   estimateTokensFromText,
   readRequestedOutputBudget,
 } from "./pricing";
+import { withContextBanner } from "./context-banner";
 import {
   completionText,
   type GatewayCallContext,
@@ -35,6 +36,7 @@ import {
   type FreePoolReservation,
   type GatewayModel,
 } from "./store";
+import { getBannerConfig } from "./store/banner";
 import { reserveCreditHold, type CreditHold } from "./store/billing";
 
 function resolveModel(publicId: string) {
@@ -90,6 +92,7 @@ function reservePaidCall(
   model: GatewayModel,
   auth: { keyId: string; userId: string },
   body: Record<string, unknown>,
+  promptOverhead: number,
 ): PaidReservation {
   const requestedBudget = readRequestedOutputBudget(body);
 
@@ -100,7 +103,8 @@ function reservePaidCall(
   }
 
   const outputBudget = requestedBudget ?? DEFAULT_OUTPUT_BUDGET;
-  const promptTokens = estimatePromptTokens(body.messages, body.tools);
+  const promptTokens =
+    estimatePromptTokens(body.messages, body.tools) + promptOverhead;
   const holdMicros = computeHoldMicros({
     inputTokens: promptTokens,
     outputTokens: outputBudget,
@@ -194,6 +198,9 @@ export async function handleChatCompletions(request: Request) {
     );
   }
 
+  const banner = getBannerConfig();
+  const bannerText = banner.enabled ? banner.text : "";
+  const bannerTokens = bannerText ? estimateTokensFromText(bannerText) : 0;
   const free = isFreeCall(model);
   const requestedBudget = readRequestedOutputBudget(body);
   const initialOutputBudget = requestedBudget ?? DEFAULT_OUTPUT_BUDGET;
@@ -204,7 +211,8 @@ export async function handleChatCompletions(request: Request) {
 
   let hold: CreditHold | null = null;
   let freeReservation: FreePoolReservation | null = null;
-  let promptTokens = estimatePromptTokens(body.messages, body.tools);
+  let promptTokens =
+    estimatePromptTokens(body.messages, body.tools) + bannerTokens;
   let outputBudget = initialOutputBudget;
   let subscription: SubscriptionCallContext | null = null;
   let settleModel = model;
@@ -274,7 +282,7 @@ export async function handleChatCompletions(request: Request) {
       );
     }
 
-    const reservation = reservePaidCall(settleModel, auth, body);
+    const reservation = reservePaidCall(settleModel, auth, body, bannerTokens);
 
     if (reservation.blocked) return reservation.blocked;
 
@@ -288,6 +296,13 @@ export async function handleChatCompletions(request: Request) {
     model: settleModel.upstreamId,
   };
   const streaming = body.stream === true;
+
+  if (bannerText) {
+    payload.messages = withContextBanner(
+      Array.isArray(body.messages) ? body.messages : [],
+      bannerText,
+    );
+  }
 
   if (requestedBudget === null && outputBudget > 0) {
     payload.max_tokens = outputBudget;

@@ -7,6 +7,7 @@ import type {
   SyncedModel,
 } from "../types";
 
+import { createTtlCache } from "../cache";
 import { db, nowIso } from "../db";
 import { defaultGroupSlug, pricesForGroup } from "../model-groups";
 import { defaultSellMicros } from "../pricing";
@@ -22,6 +23,8 @@ import {
 } from "./shared";
 
 const PUBLIC_SCOPE = "m.in_catalog = 1 AND m.status = 'active'";
+/** Display projection only; the billing lookup path is never cached. */
+const publicCatalogCache = createTtlCache<ModelSummary[]>(5_000);
 const MODEL_SELECT = `
   SELECT m.*, g.label AS group_label, g.billing_mode AS group_billing_mode
   FROM models m
@@ -29,6 +32,10 @@ const MODEL_SELECT = `
 `;
 
 export function listModels(): ModelSummary[] {
+  const cached = publicCatalogCache.get();
+
+  if (cached) return cached;
+
   const rows = db
     .prepare(
       `${MODEL_SELECT}
@@ -40,7 +47,11 @@ export function listModels(): ModelSummary[] {
     )
     .all() as ModelRow[];
 
-  return rows.map(toModelSummary);
+  const models = rows.map(toModelSummary);
+
+  publicCatalogCache.set(models);
+
+  return models;
 }
 
 export function listAllModels(): AdminModelSummary[] {

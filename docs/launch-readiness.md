@@ -50,9 +50,13 @@ Sources: [reseller guide](https://apinex.bond/developers/resell),
   records and model API transition rates are implemented under FID-015.
   Public catalog labels/paid-rate presentation must be updated for activation;
   today's Free labels describe the currently active legacy mode.
-- [ ] Refresh upstream capacity automatically; enforce a shared safety reserve
-  and concurrent holds across every local billing mode. Handle UTC reset,
-  unlimited plans, unavailable quota reads, and upstream subscription-only rows.
+- [x] Split the upstream daily allowance across activated accounts with a
+  held-back reserve. FID-2026-1029-016 allocates 90% evenly per UTC day,
+  grants it once per account, and caps late accounts by the unallocated
+  remainder. **Still open:** automatic quota refresh, and one shared admission
+  policy across trial, subscription, and credit so no billing mode can exceed
+  upstream capacity. Handle UTC reset, unlimited plans, unavailable quota reads,
+  and upstream subscription-only rows.
 - [x] Preserve upstream weights on subscription-only models and correct metadata
   mapping for public `contextWindow` versus authenticated `context_window`.
   FID-014 fixes the sync builder with six new regression tests. Applies on

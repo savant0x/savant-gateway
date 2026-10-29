@@ -20,6 +20,7 @@ import {
 import { reserveTrial, settleTrial } from "../trial-ledger";
 import { readTrialConfig } from "../trials";
 
+import { ensureDailyAllocation, getAllocationConfig } from "./allocations";
 import { HOLD_TTL_MS } from "./billing";
 import { getProviderStatusBySlug } from "./providers";
 import { getSetting, saveSetting } from "./settings";
@@ -187,10 +188,17 @@ export function reserveFreeCall(input: {
         };
       }
 
+      // The daily allowance is the account's share of the shared pool when
+      // allocation is enabled, and the fixed per-user fallback otherwise.
+      // Trial mode keeps its own durable ledger and ignores both.
+      const allocation = getAllocationConfig();
+      const dailyAllowance = trial.enabled
+        ? Number.MAX_SAFE_INTEGER
+        : allocation.enabled
+          ? ensureDailyAllocation(input.auth.userId, day)
+          : config.dailyWeightedTokens;
       const next = decideFreeAdmission({
-        config: trial.enabled
-          ? { ...config, dailyWeightedTokens: Number.MAX_SAFE_INTEGER }
-          : config,
+        config: { ...config, dailyWeightedTokens: dailyAllowance },
         promptTokens: input.promptTokens,
         outputBudget: input.outputBudget,
         tokenWeight: input.model.tokenWeight,

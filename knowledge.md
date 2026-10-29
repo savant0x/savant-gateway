@@ -87,6 +87,32 @@ upstream cost, and usage in SQLite.
   group. Each provider has its own free-pool remainder; usage rows carry
   `provider_slug` and a `group_slug` snapshot, and the per-user daily allowance
   is global.
+- **Free allowance is a daily share, not a constant.** The upstream free plan
+  grants 20,000,000 weighted tokens per UTC day for the whole account. With
+  shared allocation enabled, each activated account (active user with at least
+  one active key) receives
+  `min(floor(0.9 × pool / activeAccounts), unallocated remainder)` for that
+  day, recorded in `free_pool_allocations`. The 10% reserve is never allocated,
+  grants never shrink within a day, and a late account can only take what is
+  left. `FREE_DAILY_WEIGHTED_TOKENS` is only the fallback when allocation is
+  disabled. Admin → Gateway writes `free_pool.daily_tokens`,
+  `free_pool.allocation_bps`, and `free_pool.allocation_enabled`, which override
+  the environment. The pure math is `lib/allocation.ts`; the SQL is
+  `lib/allocation-ledger.ts`.
+- **The lifetime trial cannot issue a grant today.** It requires
+  `users.email_verified_at`, and no route or job writes that column. Keep
+  `TRIAL_ENABLED=false` until verification delivery exists; the trial ledger
+  and explicit paid pairs are implemented but inert.
+- **The context banner is billable input.** Admin → Gateway stores
+  `gateway.context_banner.text` and `.enabled`; while enabled the gateway
+  prepends one system message to every upstream request and adds its estimated
+  tokens to the prompt estimate before admission. It is never echoed to the
+  customer and is applied to both JSON and SSE calls.
+- **The public catalog read is memoized for five seconds.** `listModels` in
+  `lib/store/models.ts` uses `lib/cache.ts`. Admin reads (`listAllModels`) and
+  the billed lookup (`getModelForGateway`) are never cached, so a price edit can
+  show stale on the public page for at most five seconds but is charged
+  correctly immediately.
 - **Free calls pass an admission gate before dispatch.**
   `reserveFreeCall` in `lib/store/free-pool.ts` checks the user’s daily
   weighted allowance, the effective provider remaining (last synced remaining
@@ -277,3 +303,11 @@ redirects to login. The suite is a post-build gate, not part of `npm test`.
 A real Stripe card payment and real paid upstream inference remain unverified; the
 provider account has no paid balance, and CommandCode has no configured
 credential.
+
+FID-2026-1029-016/017/018 add the daily allocation, context banner, and catalog
+memo. Receipt on 2026-10-29: `npm run verify` exit 0 with 133 unit tests, quality
+PASS over 207 files, a 54-route production build, 100 HTTP checks, and the trial
+HTTP suite. The allocation and banner tests exercise pure math and the ledger
+against an in-memory database; the admin page and API are compiled and gated but
+were not clicked through in a browser during this pass. Subscription plan sales
+remain unoffered (`docs/subscriptions-decision.md`).

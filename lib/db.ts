@@ -6,6 +6,7 @@ import { dirname, join, resolve } from "node:path";
 import Database from "better-sqlite3";
 
 import { normalizeFamilyName } from "./model-family";
+import { allocationSchema } from "./schema/allocations";
 import { ensureColumn, type DatabaseHandle } from "./schema/columns";
 import { modelGroupSchema } from "./schema/groups";
 import { providerSchema } from "./schema/providers";
@@ -326,6 +327,7 @@ function createDb() {
   v2Schema(database);
   customerSchema(database);
   freePoolSchema(database);
+  allocationSchema(database);
   providerSchema(database);
   modelGroupSchema(database);
   subscriptionSchema(database);

@@ -3,6 +3,48 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — Daily free-pool allocation, context banner, and launch analysis
+
+- **FID-2026-1029-016 — high — Daily shared free-pool allocation.** Free-tier
+  admission no longer applies one per-user constant. A per-UTC-day
+  `free_pool_allocations` row grants an activated account (active customer with
+  at least one active key) an even share of 90% of the configured daily pool,
+  capped by the day's unallocated remainder. The 10% reserve is never allocated,
+  grants never shrink within a day, and a late account cannot oversell the pool.
+  Admin → Gateway sets the pool, share, and enablement; settings override
+  environment defaults, and `FREE_DAILY_WEIGHTED_TOKENS` remains the fallback
+  when allocation is disabled. Trial mode keeps its own ledger and ignores the
+  daily allowance. Tests: `tests/allocation.test.mjs` (9).
+- **FID-2026-1029-017 — medium — Operator-editable context banner.** Admin →
+  Gateway stores one string and an enable switch; while enabled it is prepended
+  as a leading system message to every upstream request, for both OpenAI and
+  Anthropic upstreams. Text is capped at 2,000 characters, control characters
+  are stripped, the caller's message array is not mutated, and the banner's
+  estimated tokens are counted before the free admission or credit hold so
+  allowance and cost estimates agree. Tests: `tests/context-banner.test.mjs`
+  (3).
+- **FID-2026-1029-018 — low — Public catalog read memo.** A five-second,
+  per-process TTL memo wraps the `listModels` display projection only; admin
+  reads and the billed model lookup stay uncached. Measured avoided cost was
+  150.2 µs per catalog query over 300 runs against 44 active rows. Tests:
+  `tests/cache.test.mjs` (3).
+- **Launch analysis and stale-record repair, no code.** `docs/trial-system-audit.md`
+  records that the lifetime trial is implemented but cannot issue a grant
+  because nothing writes `users.email_verified_at`; it stays disabled.
+  `docs/subscriptions-decision.md` records the keep-but-do-not-sell decision,
+  the unverified Stripe path, and the revisit criteria.
+  `docs/business-plan-research-prompt.md` is a self-contained Gemini Deep
+  Research brief with the platform, cost, allocation, abuse, and constraint
+  model. `.env.example` lost its scaffold `[TEMPLATE]` header (verified harmless
+  to `@next/env`, removed as noise) and gained the allocation variables;
+  `dev/agenda.md` now records the real launch agenda; the untracked
+  `dev/audit/issues.md` snapshot was preserved, not deleted, per the handoff.
+  Receipt: `npm run verify` exit 0 — lint zero warnings, typecheck, 133/133 unit
+  tests, quality PASS over 207 files, production build exit 0 (54 app routes),
+  `http-suite` 100 checks PASS and `trial-http-suite` all checks PASS. Trial
+  activation, plan sales, real Stripe delivery, and funded paid inference remain
+  unverified and are not claimed.
+
 ## 2026-10-29 — Disabled lifetime trial infrastructure
 
 - **FID-2026-1029-015 — high — One-time trial ledger and paid routing.** Added

@@ -3,6 +3,17 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — Landing stats band
+
+- **FID-2026-1029-027 — low — The catalog counters are a bordered band.** The
+  four figures under the hero were a Tailwind grid whose dividers only existed
+  above 1024px, so on mobile they floated with nothing separating them, and the
+  values were set in the body face at the same weight as page copy. Each figure
+  is now its own bounded cell with a mono ordinal (`// 01`) in the brand red, a
+  display-face numeral, and the icon moved down to label the text instead of
+  competing with the number. Two columns below 800px, four above; the duplicate
+  top hairline is gone. Adds the `--red` token (`#ff2a6d` dark, `#c8102e` light).
+
 ## 2026-10-29 — Comparable price comparison
 
 - **FID-2026-1029-026 — high — The `vs list` pill is a 3:1 blended rate.** The

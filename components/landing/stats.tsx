@@ -2,51 +2,43 @@ import type { LandingData } from "@/lib/types";
 
 import { formatNumber } from "@/components/dashboard/format";
 
+const STATS = [
+  { label: "Active models", icon: "fa-layer-group" },
+  { label: "Free-pool models", icon: "fa-gift" },
+  { label: "Paid & plan models", icon: "fa-tag" },
+  { label: "Model families", icon: "fa-code-branch" },
+] as const;
+
 export function StatsStrip({ data }: { data: LandingData }) {
-  const items = [
-    {
-      label: "Active models",
-      value: formatNumber(data.stats.modelCount),
-      icon: "fa-layer-group",
-    },
-    {
-      label: "Free-pool models",
-      value: formatNumber(data.stats.freeModelCount),
-      icon: "fa-gift",
-    },
-    {
-      label: "Paid & plan models",
-      value: formatNumber(
-        data.stats.paidModelCount + data.stats.subscriptionModelCount,
-      ),
-      icon: "fa-tag",
-    },
-    {
-      label: "Model families",
-      value: formatNumber(
-        new Set(data.models.map((model) => model.family)).size,
-      ),
-      icon: "fa-code-branch",
-    },
+  const values = [
+    data.stats.modelCount,
+    data.stats.freeModelCount,
+    data.stats.paidModelCount + data.stats.subscriptionModelCount,
+    new Set(data.models.map((model) => model.family)).size,
   ];
 
   return (
-    <section className="border-b border-border bg-surface">
-      <div className="mx-auto grid w-full max-w-7xl grid-cols-2 divide-white/10 px-4 sm:px-6 lg:grid-cols-4 lg:divide-x lg:px-8">
-        {items.map((item) => (
-          <div key={item.label} className="px-2 py-7 lg:px-8">
-            <p className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              <i
-                aria-hidden
-                className={`fa-solid ${item.icon} mr-2 text-sm text-cyan-300`}
-              />
-              {item.value}
-            </p>
-            <p className="mt-1 text-xs uppercase tracking-[0.14em] text-muted">
-              {item.label}
-            </p>
-          </div>
-        ))}
+    <section aria-label="Catalog at a glance" className="landing-stats">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="landing-stats-grid">
+          {STATS.map((stat, index) => (
+            <div key={stat.label} className="landing-stat">
+              <p className="landing-stat-index">
+                <span aria-hidden className="landing-stat-slash">
+                  {"//"}
+                </span>
+                {String(index + 1).padStart(2, "0")}
+              </p>
+              <p className="landing-stat-value">
+                {formatNumber(values[index])}
+              </p>
+              <p className="landing-stat-label">
+                <i aria-hidden className={`fa-solid ${stat.icon}`} />
+                {stat.label}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );

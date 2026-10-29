@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1029-010-multi-provider-registry.md`
 **ID:** FID-2026-1029-010
 **Severity:** high
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-29 12:20 EDT
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -13,10 +13,10 @@ provider-scoped), FID-2026-1029-004 (catalog and pricing, shipped)
 subscriptions) both assume one upstream. This FID must not block them, but
 their `models` migrations must leave room for `upstream_slug`.
 
-Reference structure: `templates/FID-TEMPLATE.md`, read 2026-10-29. `verified`
-means the implementation exists and every gate passes; closure waits for a
-commit so the record can name a SHA. The repository gates are `lint`,
-`typecheck`, `test`, `quality`, `build`, and `verify`.
+Reference structure: `templates/FID-TEMPLATE.md`, read 2026-10-29. `closed`
+means the implementation exists, every gate passes, and the record names the
+commit it was verified against. The repository gates are `lint`, `typecheck`,
+`test`, `quality`, `build`, and `verify`.
 
 ## Summary
 
@@ -54,9 +54,8 @@ Non-goal: automatic failover or load balancing across providers in v1.
 - **Runtime:** Node `v24.21.0`, npm `12.2.1`.
 - **Tool Versions:** Next.js `16.4.3`, React `19.3.0`, HeroUI `3.2.7`,
   Tailwind CSS `4.3.3`, better-sqlite3 `13.0.3`, TypeScript `5.9.3`.
-- **Commit/State:** `592bb92` on `main` is the last commit (FID-009 closure).
-  The FID-010 implementation is in the working tree, verified but not yet
-  committed.
+- **Commit/State:** `957430cb4ad3bebe3a63697a3d281cc383308aea` on `main`
+  contains the FID-010 implementation, based on `592bb92` (FID-009 closure).
 
 ## Detailed Description
 
@@ -450,7 +449,7 @@ against Savant ids are unchanged.
 
 ### Implementation Evidence
 
-- [x] **Commit SHA:** uncommitted working tree on `main` after `592bb92`.
+- [x] **Commit SHA:** `957430cb4ad3bebe3a63697a3d281cc383308aea`.
 - [x] **File:line ranges:**
   - schema: `lib/schema/columns.ts:1-26`, `lib/schema/providers.ts:1-150`,
     `lib/db.ts:1-343`
@@ -485,7 +484,8 @@ against Savant ids are unchanged.
 
 ## Resolution
 
-- **Closed Date:** not closed — implementation is verified but uncommitted.
+- **Closed Date:** 2026-10-29, against
+  `957430cb4ad3bebe3a63697a3d281cc383308aea`.
 - **Fix Description:** the gateway now has a first-class provider registry and
   routes each model by its provider's protocol. Sync, model identity, costs,
   free-pool floors, usage attribution, and admin controls are provider-scoped;
@@ -494,10 +494,11 @@ against Savant ids are unchanged.
   `tests/provider-catalog.test.mjs` (scoped identity, cost source, family),
   `tests/anthropic-translate.test.mjs` (request, response, stream, usage,
   errors), plus the existing `tests/free-pool.test.mjs` provider-floor cases.
-- **Verification Evidence:** `npm run verify` exit 0 with 79/79 tests and a
-  39-route build; disposable-database migration preserved 45 existing Savant
-  models and seeded both providers. Live CommandCode inference was not run.
-- **Archived:** not archived (pending commit and closure).
+- **Verification Evidence:** `npm run verify` exit 0 at commit `957430c` with
+  79/79 tests and a 39-route build; disposable-database migration preserved 45
+  existing Savant models and seeded both providers. Live CommandCode inference
+  was not run.
+- **Archived:** `dev/fids/archive/FID-2026-1029-010-multi-provider-registry.md`.
 
 ## Lessons Learned
 

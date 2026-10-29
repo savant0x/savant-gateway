@@ -47,7 +47,7 @@ support behind one backend.
   booted on the additive migration: both providers seeded, all 45 existing
   models still on `savant`, and `provider_slug` present on usage and
   reservations. Live CommandCode inference was not run: no credential. FID-010
-  records the receipt and remains uncommitted pending operator review.
+  records the receipt, is committed as `957430c`, and is closed and archived.
 
 ## Prior Session — 2026-10-29 (model groups and subscriptions)
 

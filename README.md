@@ -379,10 +379,10 @@ Loop before code. FIDs live in `dev/fids/` and use
 
 Current records:
 
-- [FID-2026-1029-010](dev/fids/FID-2026-1029-010-multi-provider-registry.md) —
-  active, implemented provider registry: per-provider credentials, scoped sync
-  and model identity, OpenAI and Anthropic adapters, manual cost mapping,
-  provider-scoped free pool, and admin controls (pending commit).
+- [FID-2026-1029-010](dev/fids/archive/FID-2026-1029-010-multi-provider-registry.md) —
+  closed provider registry: per-provider credentials, scoped sync and model
+  identity, OpenAI and Anthropic adapters, manual cost mapping,
+  provider-scoped free pool, and admin controls (closed against `957430c`).
 - [FID-2026-1029-007](dev/fids/FID-2026-1029-007-model-group-control.md) —
   active, converged design for first-class model groups: custom groups,
   operator assignment, sync-safe membership, group-aware billing, and a

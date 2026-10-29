@@ -38,7 +38,9 @@ distinguish verified behavior from unverified claims.
   tests, quality PASS over 152 files, 39-route build. A disposable-database
   boot kept all 45 existing models on `savant`, seeded both providers, and
   added the `provider_slug` columns. Live CommandCode inference is not run:
-  no credential or second-upstream account is configured.
+  no credential or second-upstream account is configured. Closed against
+  `957430c`; archived at
+  `dev/fids/archive/FID-2026-1029-010-multi-provider-registry.md`.
 
 ## 2026-10-29 — Rebuild closure and record reconciliation
 

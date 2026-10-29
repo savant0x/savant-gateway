@@ -1,11 +1,21 @@
-import { Fira_Code as FontMono, Inter as FontSans } from "next/font/google";
+import {
+  JetBrains_Mono as FontMono,
+  Orbitron,
+  Rajdhani as FontSans,
+} from "next/font/google";
 
 export const fontSans = FontSans({
   subsets: ["latin"],
-  variable: "--font-inter",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-rajdhani",
 });
 
 export const fontMono = FontMono({
   subsets: ["latin"],
-  variable: "--font-fira-code",
+  variable: "--font-jetbrains",
+});
+
+export const fontDisplay = Orbitron({
+  subsets: ["latin"],
+  variable: "--font-orbitron",
 });

@@ -5,12 +5,12 @@ export const siteConfig = {
     name: "Savant Gateway",
     slug: "savant-gateway",
   },
-  tagline: "The full provider catalog, one OpenAI-compatible endpoint.",
+  tagline: "Frontier models. Grounded prices.",
   description:
-    "An OpenAI-compatible gateway for the full provider catalog: prepaid credit, account-owned keys, per-request usage, and Stripe-secured top-ups.",
+    "Compare model prices, choose the intelligence for your workload, and connect through one OpenAI-compatible API. Prepaid usage and account-owned keys.",
   url: process.env.NEXT_PUBLIC_SITE_URL?.trim() || "http://localhost:3000",
   navItems: [
-    { label: "Models", href: "/models" },
+    { label: "Models & pricing", href: "/models" },
     { label: "API reference", href: "/docs" },
     { label: "How it works", href: "/#how-it-works" },
     { label: "Quick start", href: "/#quickstart" },

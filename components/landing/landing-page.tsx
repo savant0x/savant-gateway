@@ -19,16 +19,16 @@ export function LandingPage({
   plans: PlanSummary[];
 }) {
   return (
-    <div className="min-h-screen bg-[#050b12] text-slate-100">
+    <div className="site-shell">
       <SiteHeader />
       <main>
         <Hero data={data} />
         <StatsStrip data={data} />
         <ModelGrid data={data} />
-        <PlansPreview plans={plans} />
-        <HowItWorks />
         <Features />
         <QuickStart />
+        <HowItWorks />
+        <PlansPreview plans={plans} />
         <FinalCta />
       </main>
       <SiteFooter />

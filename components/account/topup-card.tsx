@@ -12,7 +12,6 @@ import {
 
 export function TopupCard({
   configured,
-  reason,
 }: {
   configured: boolean;
   reason: string | null;
@@ -109,21 +108,11 @@ export function TopupCard({
         ) : (
           <div className="space-y-3 text-sm">
             <p className="rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
-              {reason ?? "Payments are not configured on this server."}
+              Credit top-ups are not available yet.
             </p>
             <p className="text-xs leading-5 text-muted">
-              Add both Stripe values to{" "}
-              <code className="mono text-foreground">.env.local</code> and
-              restart. Then forward test events locally:
-            </p>
-            <pre className="scroll-shell rounded-xl bg-black/40 p-3 text-[11px] leading-5 text-slate-300">
-              <code>{`STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-
-stripe listen --forward-to localhost:3000/api/webhooks/stripe`}</code>
-            </pre>
-            <p className="text-xs text-muted">
-              No fake credit path is exposed while payments are unconfigured.
+              You can create project keys and explore the model catalog. Adding
+              prepaid credit will become available when payments open.
             </p>
           </div>
         )}

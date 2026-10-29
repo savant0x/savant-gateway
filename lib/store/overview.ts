@@ -4,7 +4,6 @@ import type {
   AdminOverview,
   CatalogData,
   LandingData,
-  ModelSummary,
   Overview,
   OverviewStats,
   PublicProviderStatus,
@@ -93,19 +92,12 @@ function toPublicProvider(): PublicProviderStatus {
   };
 }
 
-function previewModels(models: ModelSummary[]) {
-  const free = models.filter((model) => model.access === "free").slice(0, 2);
-  const paid = models.filter((model) => model.access === "paid").slice(0, 4);
-
-  return [...paid, ...free];
-}
-
 export function getLandingData(): LandingData {
   const models = listModels();
 
   return {
     provider: toPublicProvider(),
-    models: previewModels(models),
+    models,
     stats: getOverviewStats(),
   };
 }

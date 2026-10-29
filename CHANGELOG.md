@@ -3,6 +3,23 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — Savant visual system
+
+- **FID-2026-1029-013 — medium — Whole-site brand and catalog presentation.**
+  Applied Orbitron/Rajdhani/JetBrains Mono typography, semantic cyan light/dark
+  themes, shared branding, sharper controls, and mobile navigation across
+  public, authentication, account, console and admin surfaces. The homepage
+  leads with model value and configured retail prices, and renders the complete
+  enabled catalog instead of six preview rows. Preserved independent input and
+  output rates, subscription labels, search and filters. Fixed account/console
+  mobile overflow, replaced customer setup commands with payment availability
+  guidance, and removed raw error messages from the error boundary. Gates:
+  107 unit tests, quality PASS over 191 files, 51-route build, 100 HTTP checks,
+  and zero-warning lint. Production browser checks covered 102 route/theme/width
+  combinations plus 17 interaction assertions on disposable data. Launch
+  requirements are documented in `docs/launch-readiness.md`; trial conversion,
+  wallet funding and real Stripe acceptance are not claimed by this change.
+
 ## 2026-10-29 — Route-level HTTP suite
 
 - **FID-2026-1029-012 — high — Route-level HTTP verification.** Added a

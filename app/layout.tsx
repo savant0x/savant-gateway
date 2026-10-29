@@ -7,7 +7,7 @@ import clsx from "clsx";
 
 import { Providers } from "./providers";
 
-import { fontMono, fontSans } from "@/config/fonts";
+import { fontDisplay, fontMono, fontSans } from "@/config/fonts";
 import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
@@ -46,6 +46,7 @@ export default function RootLayout({
           "min-h-screen bg-background font-sans text-foreground antialiased",
           fontSans.variable,
           fontMono.variable,
+          fontDisplay.variable,
         )}
       >
         <Providers
@@ -55,7 +56,12 @@ export default function RootLayout({
             enableSystem: false,
           }}
         >
-          {children}
+          <a className="skip-link" href="#main-content">
+            Skip to content
+          </a>
+          <div id="main-content" tabIndex={-1}>
+            {children}
+          </div>
         </Providers>
       </body>
     </html>

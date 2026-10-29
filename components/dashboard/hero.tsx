@@ -11,7 +11,7 @@ export function Hero({ provider }: { provider: ProviderStatus }) {
     provider.configured && provider.status !== "unconfigured";
 
   return (
-    <section className="hero-glow -mx-4 overflow-hidden rounded-3xl border border-black/10 px-5 py-8 sm:mx-0 sm:px-8 dark:border-white/10">
+    <section className="hero-glow overflow-hidden rounded-md border border-border px-5 py-8 sm:px-8">
       <div className="max-w-3xl">
         <div className="flex flex-wrap gap-2">
           <Chip color="accent" size="sm" variant="soft">
@@ -25,7 +25,7 @@ export function Hero({ provider }: { provider: ProviderStatus }) {
           </Chip>
         </div>
         <h1 className="mt-4 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
-          Every model, one gateway.
+          Your inference workspace.
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
           Sync the provider, price the paid rows, and route the whole catalog

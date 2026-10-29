@@ -10,17 +10,14 @@ const REQUEST = `curl "$GATEWAY_URL/v1/chat/completions" \\
 
 export function QuickStart() {
   return (
-    <section
-      className="border-y border-white/10 bg-white/[0.02]"
-      id="quickstart"
-    >
+    <section className="border-b border-border" id="quickstart">
       <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:px-8">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-cyan-300">
-            Quick start
-          </p>
+          <p className="section-kicker">03 / Connect once</p>
           <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em]">
-            Sync, price, then call it.
+            Your next model.
+            <br />
+            <span className="text-accent">Same workflow.</span>
           </h2>
           <ol className="mt-6 space-y-4 text-sm leading-6 text-muted">
             <li className="flex gap-3">
@@ -33,8 +30,8 @@ export function QuickStart() {
             <li className="flex gap-3">
               <span className="step-number">2</span>
               <span>
-                Mint an API key. Add prepaid credit only when you want paid
-                models; the free pool works with a zero balance.
+                Create a key for your project and choose a model from the
+                catalog. Paid models use prepaid credit.
               </span>
             </li>
             <li className="flex gap-3">

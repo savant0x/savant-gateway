@@ -2,92 +2,53 @@ import type { LandingData } from "@/lib/types";
 
 import Link from "next/link";
 
-import { CodeSample } from "./code-sample";
 import { primaryCta, secondaryCta } from "./cta";
-
-const CURL_SAMPLE = `curl "$GATEWAY_URL/v1/chat/completions" \\
-  -H "Authorization: Bearer sk-..." \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "model": "free/gpt-6-luna",
-    "messages": [{ "role": "user", "content": "Hello" }],
-    "stream": true
-  }'`;
+import { ModelPriceEngine } from "./model-price-engine";
 
 export function Hero({ data }: { data: LandingData }) {
-  const nonFree = data.stats.paidModelCount + data.stats.subscriptionModelCount;
-
   return (
-    <section className="hero-glow relative overflow-hidden border-b border-white/10">
-      <div className="mx-auto grid w-full max-w-7xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-28">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-cyan-200">
-              OpenAI-compatible
-            </span>
-            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-muted">
-              {data.stats.modelCount > 0
-                ? `${data.stats.modelCount} models · ${data.stats.freeModelCount} free`
-                : "Catalog not synced yet"}
-            </span>
-          </div>
-
-          <h1 className="mt-6 max-w-2xl text-4xl font-semibold leading-[1.05] tracking-[-0.04em] sm:text-5xl lg:text-6xl">
-            One key.
-            <br />
-            <span className="bg-gradient-to-r from-cyan-200 via-cyan-300 to-sky-400 bg-clip-text text-transparent">
-              Every model
-            </span>
-            <br />
-            your provider carries.
-          </h1>
-
-          <p className="mt-6 max-w-xl text-base leading-7 text-muted">
-            Create an account, mint one key, and call the full upstream catalog
-            through an OpenAI-compatible endpoint. Free models need no balance;
-            paid rows settle from prepaid credit that you top up only when you
-            need it.
-          </p>
-
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link className={primaryCta} href="/signup">
-              Create an account
-            </Link>
-            <Link className={secondaryCta} href="/models">
-              Browse the catalog
-            </Link>
-          </div>
-
-          <p className="mt-6 text-xs text-muted">
-            Keys are stored as SHA-256 hashes. Payments run on Stripe Checkout;
-            card data never reaches this app.
-          </p>
-        </div>
-
-        <div className="relative">
-          <div
-            aria-hidden
-            className="absolute -inset-6 rounded-[2rem] bg-cyan-400/10 blur-3xl"
-          />
-          <div className="relative">
-            <CodeSample code={CURL_SAMPLE} label="POST /v1/chat/completions" />
-            <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-xl border border-white/10 bg-white/[0.03] px-2 py-3">
-                <p className="text-lg font-semibold">{data.stats.modelCount}</p>
-                <p className="text-[11px] text-muted">catalogued</p>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-white/[0.03] px-2 py-3">
-                <p className="text-lg font-semibold text-cyan-300">{nonFree}</p>
-                <p className="text-[11px] text-muted">non-free rows</p>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-white/[0.03] px-2 py-3">
-                <p className="text-lg font-semibold text-emerald-300">
-                  {data.stats.freeModelCount}
-                </p>
-                <p className="text-[11px] text-muted">free pool</p>
-              </div>
+    <section className="landing-hero">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="landing-hero-grid">
+          <div>
+            <p className="section-kicker">The Savant inference platform</p>
+            <h1>
+              Frontier models.<span>Grounded prices.</span>
+            </h1>
+            <p className="hero-description">
+              The intelligence your work deserves, with costs you can see.
+              Compare models, choose your price point, and build through one
+              API.
+            </p>
+            <div className="hero-actions">
+              <Link className={primaryCta} href="#models">
+                Compare models{" "}
+                <i aria-hidden className="fa-solid fa-arrow-right" />
+              </Link>
+              <Link className={secondaryCta} href="/docs">
+                Explore the API <i aria-hidden className="fa-solid fa-code" />
+              </Link>
             </div>
+            <p className="hero-note">
+              <i
+                aria-hidden
+                className="fa-solid fa-code-branch mr-2 text-accent"
+              />
+              OpenAI-compatible · Your tools. Your workflow.
+            </p>
           </div>
+          <ModelPriceEngine models={data.models} />
+        </div>
+        <div className="landing-strip">
+          <span>
+            Multiple model families <span className="text-accent">/</span> One
+            connection
+          </span>
+          <span>
+            Individual keys <span className="text-accent">/</span> Recorded
+            usage
+          </span>
+          <span>{data.stats.modelCount} models in the current catalog</span>
         </div>
       </div>
     </section>

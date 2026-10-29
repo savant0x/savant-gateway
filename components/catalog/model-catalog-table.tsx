@@ -125,7 +125,7 @@ export function ModelCatalogTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-black/10 bg-surface dark:border-white/10">
+    <div className="overflow-hidden rounded-md border border-border bg-surface">
       <div className="flex flex-col gap-3 border-b border-black/10 p-4 dark:border-white/10">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <label className="relative flex-1">
@@ -201,19 +201,21 @@ export function ModelCatalogTable({
             {formatNumber(models.length)} catalogued ·{" "}
             {formatNumber(filtered.length)} shown
           </span>
-          <span>
-            Provider: Savant Gateway. Prices are USD per 1M tokens and exclude
-            upstream provider terms.
-          </span>
+          <span>USD per 1M tokens · Input and output priced separately</span>
         </div>
       </div>
 
       {rows.length === 0 ? (
         <div className="p-8 text-sm text-muted">
-          No models match this filter. Sync the provider or clear the search.
+          No models match this filter. Try another search or check back later.
         </div>
       ) : (
-        <div className="scroll-shell max-h-[36rem]">
+        <div
+          aria-label="Model catalog"
+          className="scroll-shell max-h-[36rem]"
+          role="region"
+          tabIndex={rows.length > 0 ? 0 : undefined}
+        >
           <table className="data-table">
             <thead>
               <tr>

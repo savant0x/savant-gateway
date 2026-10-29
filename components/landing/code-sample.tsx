@@ -17,7 +17,7 @@ export function CodeSample({ code, label }: { code: string; label: string }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#03080d]">
+    <div className="min-w-0 overflow-hidden rounded-md border border-border bg-surface">
       <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-2.5">
         <span className="mono text-[11px] uppercase tracking-[0.16em] text-muted">
           {label}
@@ -31,7 +31,7 @@ export function CodeSample({ code, label }: { code: string; label: string }) {
           {copyLabel}
         </Button>
       </div>
-      <pre className="mono scroll-shell p-4 text-xs leading-6 text-slate-300">
+      <pre className="mono scroll-shell p-4 text-xs leading-6 text-foreground">
         <code>{code}</code>
       </pre>
     </div>

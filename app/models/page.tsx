@@ -22,7 +22,7 @@ export default function ModelsPage() {
   const data = getCatalogData();
 
   return (
-    <div className="min-h-screen bg-[#050b12] text-slate-100">
+    <div className="site-shell">
       <SiteHeader />
 
       <main>
@@ -32,15 +32,13 @@ export default function ModelsPage() {
               Savant Gateway · provider catalog
             </p>
             <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">
-              One endpoint. Every model Savant Gateway carries.
+              Find your model. Know your cost.
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-muted">
-              Savant Gateway is the provider; free, paid, and subscription are
-              price groups. Free-pool models are included. Paid models debit the
-              tenant&apos;s credit balance at the listed sell price. Plan-only
-              models need an active subscription that includes them. The
-              upstream key stays on the server, and upstream cost is never part
-              of the public catalog.
+              Compare the complete enabled catalog, with input and output rates
+              shown separately. Paid models use prepaid credit. Plan-only models
+              require a subscription that includes them, and free-pool access
+              depends on shared upstream capacity.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-2 text-xs">
@@ -79,8 +77,8 @@ export default function ModelsPage() {
             </div>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link className={primaryCta} href="/dashboard">
-                Open the console
+              <Link className={primaryCta} href="/account">
+                Open your account
               </Link>
               <Link className={secondaryCta} href="/#quickstart">
                 See the request
@@ -90,7 +88,10 @@ export default function ModelsPage() {
         </section>
 
         <section className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <ModelCatalogTable models={data.models} pageSize={20} />
+          <ModelCatalogTable
+            models={data.models}
+            pageSize={Math.max(1, data.models.length)}
+          />
         </section>
       </main>
 

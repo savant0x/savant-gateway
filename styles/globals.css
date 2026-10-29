@@ -1,19 +1,22 @@
 @import "tailwindcss";
 @import "@heroui/styles";
+@import "./savant.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: var(--font-inter);
-  --font-mono: var(--font-fira-code);
+  --font-sans: var(--font-rajdhani);
+  --font-mono: var(--font-jetbrains);
+  --font-display: var(--font-orbitron);
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 8rem;
 }
 
 body {

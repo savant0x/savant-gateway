@@ -2,6 +2,38 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-29 (launch planning and visual redesign)
+
+Operator request: document pre-launch requirements, record wallet funding and
+Stripe configuration for completion near launch, and enhance the entire site's
+visual design. Brand clarification: "Savant as a brand is designed w/ cyberpunk/neon noir visuals. Cyan being the primary clogo color. W/ neon accents".
+
+- [x] **V1 — Launch requirements.** Automation level 2. Added
+  `docs/launch-readiness.md`, distinguishing the proposed one-time trial and
+  paid-model transition from current daily allowances; include funding, Stripe,
+  upstream quota, abuse controls, deployment, and acceptance evidence. Wallet
+  funding and Stripe setup timing follow the explicit operator ruling quoted
+  in that document. `npm run verify` exit 0: 107 unit tests, quality PASS over
+  189 files, 51-route build, and 100 HTTP checks; `git diff --check` exit 0.
+- [x] **V2 — Whole-site visual direction and review.** Automation level 3.
+  Audit public, auth, account, console, and admin surfaces; prepare a concrete
+  cyan cyberpunk/neon-noir design on the Superdesign canvas for review.
+  Version 7 incorporates the Savant Code reference, price/quality positioning,
+  and all 45 stored models. Operator `resume` authorized implementation.
+- [ ] **V3 — Visual implementation and verification.** Automation level 3.
+  Resumed by the operator after version-7 review. Implementation contract:
+  `dev/fids/FID-2026-1029-013-savant-visual-system.md`.
+  After visual direction approval, converge a FID, apply the shared design
+  system across all site surfaces, verify responsive/accessibility behavior
+  and the declared gates, and commit verified progress with closure records.
+  Implementation and browser verification passed: 17 routes across two themes
+  and three viewport widths (102 combinations), plus 17 interaction checks.
+  Fixed discovered account/console overflow, customer setup-command exposure,
+  and raw error-message rendering. Commit and archival are being completed.
+
+Trial implementation remains paused while its offering is being settled;
+this visual pass must not claim unimplemented trials or payment readiness.
+
 ## Current Session — 2026-10-29 (subscription revenue analytics, then HTTP suite)
 
 Operator request: make subscription plan revenue visible in the admin revenue

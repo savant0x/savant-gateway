@@ -17,7 +17,7 @@ export function LoginScreen({
   reason: string | null;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-[#050b12] text-slate-100">
+    <div className="auth-surface flex min-h-screen flex-col text-foreground">
       <header className="border-b border-white/10">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-3 px-4 sm:px-6">
           <Link className="flex items-center gap-3" href="/">
@@ -48,7 +48,9 @@ export function LoginScreen({
             Restricted surface
           </p>
           <h1 className="mt-3 text-4xl font-semibold tracking-[-0.04em]">
-            Provider, pricing, credit, analytics.
+            Your gateway.
+            <br />
+            Under control.
           </h1>
           <p className="mt-4 max-w-md text-sm leading-6 text-muted">
             The admin panel is separate from the console. It syncs the full

@@ -21,13 +21,13 @@ export default function Error({
         <Card.Header>
           <Card.Title>Something went wrong</Card.Title>
           <Card.Description>
-            The page could not load. Check the server logs, then retry.
+            The page could not load. Please try again in a moment.
           </Card.Description>
         </Card.Header>
         <Card.Content>
-          <pre className="mono max-h-40 overflow-auto rounded-xl bg-black/30 p-3 text-xs text-danger">
-            {error.message}
-          </pre>
+          <p className="text-sm text-muted">
+            If the problem continues, contact the gateway operator.
+          </p>
         </Card.Content>
         <Card.Footer>
           <Button variant="primary" onPress={reset}>

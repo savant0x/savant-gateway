@@ -53,7 +53,7 @@ export default async function AccountPage({
   );
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-background">
+    <div className="workspace relative flex min-h-screen flex-col bg-background">
       <AccountHeader customer={customer} />
 
       <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 px-4 pb-20 pt-8 sm:px-6 lg:px-8">

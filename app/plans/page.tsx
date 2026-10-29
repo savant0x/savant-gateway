@@ -30,7 +30,7 @@ export default async function PlansPage() {
       : null;
 
   return (
-    <div className="min-h-screen bg-[#050b12] text-slate-100">
+    <div className="site-shell">
       <SiteHeader />
 
       <main>
@@ -40,7 +40,7 @@ export default async function PlansPage() {
               Customer plans
             </p>
             <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">
-              Included models, metered allowance, no surprise charges.
+              A plan for the work ahead.
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-muted">
               A plan covers the exact model snapshot taken when it activates.
@@ -50,8 +50,8 @@ export default async function PlansPage() {
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3">
-              <Link className={primaryCta} href="/dashboard">
-                Open the console
+              <Link className={primaryCta} href="/account">
+                Open your account
               </Link>
               <Link className={secondaryCta} href="/models">
                 Browse models
@@ -67,8 +67,7 @@ export default async function PlansPage() {
                 Plans are not available yet.
               </p>
               <p className="mt-2 leading-6">
-                The operator has not published an active plan. Prepaid credit,
-                free-pool models, and paid models still work normally.
+                Check the model catalog for available usage-based options.
               </p>
             </div>
           ) : (

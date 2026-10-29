@@ -85,7 +85,7 @@ function SectionHeading({
 
 export function ApiReference() {
   return (
-    <div className="min-h-screen bg-[#050b12] text-slate-100">
+    <div className="site-shell">
       <SiteHeader />
 
       <main>
@@ -95,7 +95,7 @@ export function ApiReference() {
               Integration reference
             </p>
             <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">
-              The API is the catalog.
+              Your models. One connection.
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-muted">
               Savant Gateway exposes an OpenAI-compatible surface. Read the
@@ -128,8 +128,11 @@ export function ApiReference() {
         </section>
 
         <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[13rem_minmax(0,1fr)] lg:px-8">
-          <aside className="hidden lg:block">
-            <nav className="sticky top-24 space-y-1 border-l border-white/10 pl-4 text-sm">
+          <aside>
+            <nav
+              aria-label="Documentation sections"
+              className="space-y-1 border-l border-border pl-4 text-sm lg:sticky lg:top-28"
+            >
               <p className="pb-2 text-[10px] uppercase tracking-[0.18em] text-muted">
                 On this page
               </p>

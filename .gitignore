@@ -48,3 +48,6 @@ dev/scratchpad/
 
 # local audit baselines for FID-2026-1029-001 (kept on disk, not published)
 dev/fids/audit/
+
+# temporary design exports
+.superdesign/tmp/

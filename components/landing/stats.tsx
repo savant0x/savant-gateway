@@ -10,26 +10,28 @@ export function StatsStrip({ data }: { data: LandingData }) {
       icon: "fa-layer-group",
     },
     {
-      label: "Free pool",
+      label: "Free-pool models",
       value: formatNumber(data.stats.freeModelCount),
       icon: "fa-gift",
     },
     {
-      label: "Non-free rows",
+      label: "Paid & plan models",
       value: formatNumber(
         data.stats.paidModelCount + data.stats.subscriptionModelCount,
       ),
       icon: "fa-tag",
     },
     {
-      label: "Requests recorded",
-      value: formatNumber(data.stats.requestCount),
-      icon: "fa-wave-square",
+      label: "Model families",
+      value: formatNumber(
+        new Set(data.models.map((model) => model.family)).size,
+      ),
+      icon: "fa-code-branch",
     },
   ];
 
   return (
-    <section className="border-b border-white/10 bg-white/[0.02]">
+    <section className="border-b border-border bg-surface">
       <div className="mx-auto grid w-full max-w-7xl grid-cols-2 divide-white/10 px-4 sm:px-6 lg:grid-cols-4 lg:divide-x lg:px-8">
         {items.map((item) => (
           <div key={item.label} className="px-2 py-7 lg:px-8">

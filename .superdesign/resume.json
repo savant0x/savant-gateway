@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "targets": {
+    "/": {
+      "targetKind": "existing-ui",
+      "projectId": "dfc3209e-6b4b-4cdb-b220-cead96e04215",
+      "baselineDraftId": "0fb14ec2-d02c-472a-9d94-879cae0f7bfc",
+      "activeDraftId": "0fb14ec2-d02c-472a-9d94-879cae0f7bfc",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": ["assets-logo.png", "b6f66757-c9c4-418b-a381-ce826592180c"],
+      "brandAssets": {
+        "logo": {
+          "assetKey": "assets-logo.png",
+          "url": "https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/projects/dfc3209e-6b4b-4cdb-b220-cead96e04215/brand-assets/assets-logo.png/logo.png",
+          "sourcePath": "assets/logo.png"
+        }
+      },
+      "contextFiles": [
+        "components/landing/landing-page.tsx",
+        "components/landing/site-header.tsx",
+        "components/landing/site-footer.tsx",
+        "components/landing/hero.tsx",
+        "components/landing/stats.tsx",
+        "components/landing/model-grid.tsx",
+        "components/landing/plans-preview.tsx",
+        "components/landing/how-it-works.tsx",
+        "components/landing/features.tsx",
+        "components/landing/quickstart.tsx",
+        "components/landing/final-cta.tsx",
+        "components/landing/cta.ts",
+        "components/landing/code-sample.tsx",
+        "components/dashboard/chips.tsx",
+        "components/dashboard/format.ts",
+        "config/site.ts",
+        "config/fonts.ts",
+        "styles/globals.css",
+        ".superdesign/design-system.md",
+        ".superdesign/brand-reference.md"
+      ],
+      "fingerprints": {
+        "components/landing/landing-page.tsx": "9229859150289dde2c8afc25dad4484135a28efa25bdb57831dc663c8f58eb55",
+        "components/landing/site-header.tsx": "2500827c790b5d4fac7d74a8d48ae5dbe7e934e5a6fde0e393baf83096215771",
+        "components/landing/site-footer.tsx": "ef6ee5c5bf4d67f795ffa24e44d6013d2921d0fa9c3a15781ce9549f01a7c908",
+        "components/landing/hero.tsx": "c86900f848be61351d6be738a03521d60c87eebdc015cd30a488afa018752524",
+        "components/landing/stats.tsx": "e75003cf59eac703e04a212382ecc86dfd17b857072ed1179ceca7ce1ac48ddf",
+        "components/landing/model-grid.tsx": "583b8ec9247c709d832c1d07474d4703286312132690da9d497f2a6785de4d0c",
+        "components/landing/plans-preview.tsx": "eaea7b50dc7befa1540624a78042be8767f5019162a01c4f9741a26bff5aafe9",
+        "components/landing/how-it-works.tsx": "23a7b198f2c37ba253e4f481a26a19719b00843011844e0805d03abd85a442e0",
+        "components/landing/features.tsx": "46906c227ec5ec8ecb3a90684e5eacc3ab2b2d351e1fd89d8409895a56296962",
+        "components/landing/quickstart.tsx": "75e388c9f4c97d2aa52289661e43a4656bd5d57b184690c0ea08c65507b06b30",
+        "components/landing/final-cta.tsx": "c4077c3318581c0b7850f6eb20d1514f891565a01139331ac103261e9330406b",
+        "components/landing/cta.ts": "c2eef157eca2a9cb88c64d43ea7f99ca001192eb14299022ef44fe7e5d33f9f8",
+        "components/landing/code-sample.tsx": "746ee255dbb2c96f267a96d0892f59b4398b99a0b8486a361af9b30bc762c7f0",
+        "components/dashboard/chips.tsx": "5feec72ab7dde1d18f7a96f9e4b59dbd146aaa81149dd8aa2d7cd672519819c0",
+        "components/dashboard/format.ts": "0c844ad7734c41663d104eef7fcb4531b8ac7f7994b77ab026f4209201f51469",
+        "config/site.ts": "9c760524b2fd16f5e15c56e8799cca476118f1fea4bbfe8559358c3edfcee03a",
+        "config/fonts.ts": "b9c21a5ec6f60d6732ad5c85413f7dcb3f18027c4219e5268f05c5b38e217000",
+        "styles/globals.css": "75ce057e23f5db4e84c2ac0707b3e04c79658ff61aa0d1b2273f7294f8dc51c0",
+        ".superdesign/design-system.md": "a4a448354a7fdb72d8722950414e46b882e2bbdde1dbeef60aaac3e4c1faf95d",
+        ".superdesign/brand-reference.md": "492b34959927cd60acc98800dfcdaf8d4e94204185101fa0c5e36c6400160348"
+      },
+      "components": [
+        {
+          "name": "SiteHeader",
+          "id": "6efcad14-a23c-44f4-92f0-d53a53518781",
+          "sourcePath": "components/landing/site-header.tsx",
+          "logoAssetKey": "assets-logo.png"
+        }
+      ],
+      "drafts": {
+        "0fb14ec2-d02c-472a-9d94-879cae0f7bfc": {
+          "title": "Savant Gateway — Frontier models. Grounded prices.",
+          "visualDirection": "Price and model choice first. Savant Code ecosystem typography and cyan/magenta palette. Directly authored composition, interactive pricing panel, full 45-model stored gateway catalog snapshot with search/billing filters and context, accessible responsive layouts. Baseline v1; neon-noir v2–4; ecosystem revision v5; directly authored value direction v6; full catalog correction v7. Awaiting operator review.",
+          "currentVersion": 7
+        }
+      },
+      "updatedAt": "2026-10-29T20:30:00Z"
+    }
+  }
+}

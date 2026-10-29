@@ -3,6 +3,20 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — Completion rate limits
+
+- **FID-2026-1029-023 — high — Boundary rate limiting on completions.** Free
+  traffic now shares one token bucket (`FREE_SHARED_RPM`, default 12) that sits
+  under the upstream account ceiling of 15 RPM, and every paid key has its own
+  bucket (`PAID_KEY_RPM`, default 60), so an anonymous burst can no longer starve
+  a paying caller. The check runs after request validation and before any
+  reservation, so a throttled call holds no credit, no free-pool slot and no
+  plan allowance, and never reaches the provider. A refusal is `429` with
+  `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and
+  `X-RateLimit-Scope`. Buckets are per process, which suits the single-process
+  SQLite deployment and is stated in the module header rather than assumed.
+  Tests: `tests/rate-limit.test.mjs` (10).
+
 ## 2026-10-29 — Business model document, third upstream, dual-format auth
 
 - **FID-2026-1029-022 — medium — Provider economics document.**

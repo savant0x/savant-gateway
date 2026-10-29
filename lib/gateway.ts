@@ -16,6 +16,7 @@ import {
   settleCall,
   type SubscriptionCallContext,
 } from "./gateway-settle";
+import { checkCompletionRate } from "./gateway-rate-limit";
 import { markupSellMicros, subscriptionWeightedTokens } from "./plans";
 import { streamCompletion } from "./gateway-stream";
 import { reserveTrialRoute } from "./gateway-trial";
@@ -207,6 +208,26 @@ export async function handleChatCompletions(request: Request) {
 
   if (requestedBudget !== null && requestedBudget > MAX_OUTPUT_BUDGET) {
     return jsonError(400, `max_tokens cannot exceed ${MAX_OUTPUT_BUDGET}.`);
+  }
+
+  // Rate limiting runs before any reservation: a throttled call must not hold
+  // credit, a free-pool slot, or a subscription allowance.
+  const rate = checkCompletionRate({ keyId: auth.keyId, free });
+
+  if (!rate.allowed) {
+    return jsonError(
+      429,
+      rate.scope === "free"
+        ? `Free traffic is limited to ${rate.limit} requests per minute across all keys. Retry in ${rate.retryAfterSeconds}s, or add credit for a dedicated limit.`
+        : `This key is limited to ${rate.limit} requests per minute. Retry in ${rate.retryAfterSeconds}s.`,
+      "rate_limit_error",
+      {
+        "Retry-After": String(rate.retryAfterSeconds),
+        "X-RateLimit-Limit": String(rate.limit),
+        "X-RateLimit-Remaining": String(rate.remaining),
+        "X-RateLimit-Scope": rate.scope,
+      },
+    );
   }
 
   let hold: CreditHold | null = null;

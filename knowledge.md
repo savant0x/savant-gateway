@@ -43,7 +43,7 @@ upstream cost, and usage in SQLite.
   `block` plans return `402 subscription_limit_reached`; exhausted `credit`
   plans take the normal credit hold with the snapshot markup applied to sell
   prices. A subscription-group model with no covering plan returns `403
-  subscription_required`; a past-due plan returns `402 subscription_past_due`
+subscription_required`; a past-due plan returns `402 subscription_past_due`
   before free or credit routing. Usage rows record `billing_source`,
   `subscription_id`, `subscription_period_id`, and
   `included_weighted_tokens`.
@@ -234,7 +234,12 @@ upstream cost, and usage in SQLite.
   Anthropic adapters. `lib/provider.ts` is a compatibility re-export.
 - `lib/schema/` — provider schema and shared migration helpers.
 - `lib/pricing.ts` — pure pricing and estimation arithmetic.
-- `lib/gateway.ts` — auth, routing, reservation, response handling.
+- `lib/gateway.ts` — auth, rate limiting, routing, reservation, response
+  handling.
+- `lib/gateway-rate-limit.ts` + `lib/token-bucket.ts` — completion rate limits:
+  free traffic shares one bucket below the upstream account ceiling, each paid
+  key has its own. Buckets are per process and consumed before any credit or
+  allowance reservation, so a throttled call holds nothing.
 - `lib/gateway-stream.ts` — SSE relay and settle-on-close.
 - `lib/gateway-settle.ts` — usage parsing and settlement.
 - `lib/store/billing.ts` — credit grants, ledger, holds.

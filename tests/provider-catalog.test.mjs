@@ -132,3 +132,88 @@ test("a group sentinel never becomes the family", () => {
 
   assert.equal(rows[0].family, "GPT");
 });
+
+test("subscription-only weights survive without granting free access", () => {
+  const [row] = buildSyncedModels(
+    SAVANT,
+    [{ id: "free/claude-opus", allowFree: false, weight: 8 }],
+    new Map(),
+  );
+
+  assert.equal(row.tokenWeight, 8);
+  assert.equal(row.allowFree, false);
+  assert.equal(row.costSource, "unknown");
+});
+
+test("context aliases and partial public metadata preserve authenticated fields", () => {
+  const [row] = buildSyncedModels(
+    SAVANT,
+    [{
+      id: "gpt-example",
+      context_window: 128000,
+      weight: 3,
+      supportsTools: true,
+      supportsVision: true,
+      health: "healthy",
+      dollarsPer1M: 0.4,
+      outputDollarsPer1M: 0.6,
+    }],
+    new Map([["gpt-example", { name: "Example", contextWindow: " 1M " }]]),
+  );
+
+  assert.equal(row.contextWindow, "1M");
+  assert.equal(row.tokenWeight, 3);
+  assert.equal(row.supportsTools, true);
+  assert.equal(row.supportsVision, true);
+  assert.equal(row.health, "healthy");
+  assert.equal(row.costInputMicros, 400000);
+  assert.equal(row.costOutputMicros, 600000);
+});
+
+test("blank or malformed context metadata falls back to authenticated context", () => {
+  for (const context of ["", "   ", null, false, {}]) {
+    const [row] = buildSyncedModels(
+      SAVANT,
+      [{ id: "gpt-example", context_window: 128000 }],
+      new Map([["gpt-example", { contextWindow: context }]]),
+    );
+
+    assert.equal(row.contextWindow, "128000");
+  }
+});
+
+test("absent and malformed prices never claim a known zero cost", () => {
+  for (const price of [undefined, null, "", "  ", false, true, -1, "-2", Infinity, NaN]) {
+    const [row] = buildSyncedModels(
+      SAVANT,
+      [{ id: "gpt-example", dollarsPer1M: price }],
+      new Map(),
+    );
+
+    assert.equal(row.costSource, "unknown", String(price));
+  }
+});
+
+test("explicit zero and numeric price strings remain valid costs", () => {
+  for (const price of [0, "0", "0.25"]) {
+    const [row] = buildSyncedModels(
+      SAVANT,
+      [{ id: "gpt-example", dollarsPer1M: price }],
+      new Map(),
+    );
+
+    assert.equal(row.costSource, "synced");
+    assert.equal(row.costInputMicros, Number(price) * 1000000);
+    assert.equal(row.costOutputMicros, row.costInputMicros);
+  }
+});
+
+test("an explicitly invalid output price makes the model unpriced", () => {
+  const [row] = buildSyncedModels(
+    SAVANT,
+    [{ id: "gpt-example", dollarsPer1M: 1, outputDollarsPer1M: -2 }],
+    new Map(),
+  );
+
+  assert.equal(row.costSource, "unknown");
+});

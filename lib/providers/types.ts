@@ -32,6 +32,7 @@ export type UpstreamModel = {
   id?: unknown;
   name?: unknown;
   context_window?: unknown;
+  contextWindow?: unknown;
   supported_endpoints?: unknown;
   provider?: unknown;
   weight?: unknown;

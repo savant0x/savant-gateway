@@ -2,6 +2,16 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — Launch continuation
+
+- [ ] **L1 — Provider metadata prerequisites.** Automation level 3. Resume
+  launch work under `dev/fids/FID-2026-1029-014-provider-metadata-integrity.md`:
+  preserve subscription weights, context aliases, partial-source fallback and
+  accurate known-cost status. Verify, commit and archive.
+- [ ] **L2 — Trial conversion.** Resumed investigation; entitlement amount is
+  pending the operator response to the trial-size question. No amount enabled.
+  Wallet funding and Stripe remain governed by the quoted launch timing.
+
 ## Current Session — 2026-10-29 (launch planning and visual redesign)
 
 Operator request: document pre-launch requirements, record wallet funding and

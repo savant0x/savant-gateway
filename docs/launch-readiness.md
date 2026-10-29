@@ -1,6 +1,6 @@
 # Launch readiness
 
-Status: planning, 2026-10-29. This document distinguishes current behavior from
+Status: pre-launch work active, 2026-10-29. This document distinguishes current behavior from
 the proposed offering. An unchecked item is not implemented or verified.
 
 ## Offering
@@ -44,14 +44,20 @@ Sources: [reseller guide](https://apinex.bond/developers/resell),
 - [ ] Refresh upstream capacity automatically; enforce a shared safety reserve
   and concurrent holds across every local billing mode. Handle UTC reset,
   unlimited plans, unavailable quota reads, and upstream subscription-only rows.
-- [ ] Preserve upstream weights on subscription-only models and correct metadata
+- [x] Preserve upstream weights on subscription-only models and correct metadata
   mapping for public `contextWindow` versus authenticated `context_window`.
+  FID-014 fixes the sync builder with six new regression tests. Applies on
+  subsequent sync; the live catalog was not mutated by verification.
 - [ ] Record exact upstream billed `usage.cost_tokens` when available, separately
   from customer charges; verify JSON and streaming settlement.
 - [ ] Enforce shared upstream RPM capacity and customer abuse controls. Provider
   account limits are shared even when customers have different gateway keys.
 - [ ] Establish signup verification and a gateway-wide trial budget so automated
   account creation cannot consume the acquisition allowance unchecked.
+
+The concrete persistence, admission and model-pair proposal is in
+`trial-conversion-contract.md`. Six of eleven stored free models have exact
+paid-id counterparts; the other five must not receive guessed substitutions.
 
 ## Payment and funding setup
 

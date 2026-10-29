@@ -15,9 +15,32 @@ export type ModelSpec = UpstreamModel & {
 };
 
 function numberOrNull(value: unknown): number | null {
+  if (
+    (typeof value !== "number" && typeof value !== "string") ||
+    (typeof value === "string" && !value.trim())
+  ) {
+    return null;
+  }
+
   const parsed = Number(value);
 
-  return Number.isFinite(parsed) ? parsed : null;
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function contextWindow(spec: ModelSpec, item: UpstreamModel) {
+  for (const value of [
+    spec.contextWindow,
+    spec.context_window,
+    item.contextWindow,
+    item.context_window,
+  ]) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+      return String(value);
+    }
+  }
+
+  return "—";
 }
 
 function displayNameFromId(modelId: string) {
@@ -68,15 +91,21 @@ export function buildSyncedModels(
 
     if (!protocol) continue;
 
+    const allowFree = spec.allowFree ?? item.allowFree;
     const isFreePool =
       upstreamId.startsWith("free/") &&
-      (typeof spec.allowFree === "boolean" ? spec.allowFree : true);
-    const weight = isFreePool
-      ? Math.max(1, Math.round(numberOrNull(spec.weight) ?? 1))
-      : 0;
-    const inputUsd = numberOrNull(spec.dollarsPer1M);
-    const outputUsd = numberOrNull(spec.outputDollarsPer1M) ?? inputUsd;
-    const priced = inputUsd !== null;
+      (typeof allowFree === "boolean" ? allowFree : true);
+    const upstreamWeight = numberOrNull(spec.weight ?? item.weight);
+    const weight =
+      upstreamWeight !== null && upstreamWeight > 0
+        ? Math.max(1, Math.round(upstreamWeight))
+        : isFreePool
+          ? 1
+          : 0;
+    const inputUsd = numberOrNull(spec.dollarsPer1M ?? item.dollarsPer1M);
+    const outputRaw = spec.outputDollarsPer1M ?? item.outputDollarsPer1M;
+    const outputUsd = outputRaw == null ? inputUsd : numberOrNull(outputRaw);
+    const priced = inputUsd !== null && outputUsd !== null;
 
     rows.push({
       id: publicModelId(provider.slug, upstreamId),
@@ -88,8 +117,7 @@ export function buildSyncedModels(
       family,
       protocol,
       costSource: isFreePool || priced ? "synced" : "unknown",
-      contextWindow:
-        String(spec.context_window ?? item.context_window ?? "").trim() || "—",
+      contextWindow: contextWindow(spec, item),
       tokenWeight: weight,
       costInputMicros: isFreePool
         ? 0
@@ -98,9 +126,9 @@ export function buildSyncedModels(
         ? 0
         : Math.max(0, Math.round((outputUsd ?? 0) * 1_000_000)),
       allowFree: isFreePool,
-      supportsTools: Boolean(spec.supportsTools),
-      supportsVision: Boolean(spec.supportsVision),
-      health: String(spec.health ?? "").trim() || null,
+      supportsTools: Boolean(spec.supportsTools ?? item.supportsTools),
+      supportsVision: Boolean(spec.supportsVision ?? item.supportsVision),
+      health: String(spec.health ?? item.health ?? "").trim() || null,
     });
   }
 

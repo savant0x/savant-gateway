@@ -127,9 +127,66 @@ a, button, input, select, textarea, summary { -webkit-tap-highlight-color: trans
 .workspace main > :first-child { padding-bottom: 1.5rem; }
 .workspace h1 { font-size: clamp(1.5rem, 3vw, 2.25rem); line-height: 1.4; }
 .workspace h2 { font-family: var(--font-rajdhani), sans-serif; }
+/* Admin shell: sticky sidebar on desktop, horizontal bar on small screens. */
+.admin-shell { display: grid; grid-template-columns: 16rem minmax(0, 1fr); align-items: start; }
+.admin-main { min-width: 0; }
+.admin-rail {
+  position: sticky; top: 0; z-index: 40; display: flex; flex-direction: column;
+  gap: 1.5rem; height: 100vh; padding: 1.5rem 1rem; overflow-y: auto;
+  border-right: 1px solid var(--border);
+  background: color-mix(in oklab, var(--surface) 72%, transparent);
+  backdrop-filter: blur(14px);
+}
+.admin-rail-brand { display: grid; gap: .5rem; padding: 0 .5rem; }
+.admin-rail-label {
+  font: 500 .5625rem var(--font-jetbrains), monospace; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--accent);
+}
+.admin-rail-footer {
+  margin-top: auto; display: grid; gap: .375rem; padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.admin-rail-brand .brand-word { font-size: .6875rem; letter-spacing: .025em; }
+.admin-rail-footer > * { width: 100%; }
+.admin-rail-footer button { justify-content: flex-start; gap: .625rem; }
+.admin-rail .admin-tabs a:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.admin-rail-link {
+  display: inline-flex; align-items: center; gap: .625rem; padding: .5rem .75rem;
+  font: 500 .75rem var(--font-jetbrains), monospace; color: var(--muted);
+}
+.admin-rail-link:hover { color: var(--accent); }
 .admin-tabs { display: flex; overflow-x: auto; gap: .25rem; padding-block: .5rem; scrollbar-width: thin; }
 .admin-tabs a { border-bottom: 2px solid transparent; border-radius: 0; font-size: .875rem; }
 .admin-tabs a[aria-current="page"] { color: var(--accent); border-bottom-color: var(--accent); background: color-mix(in oklab, var(--accent) 5%, transparent); }
+.admin-rail .admin-tabs { flex-direction: column; gap: .125rem; padding: 0; overflow: visible; }
+.admin-rail .admin-tabs a {
+  display: flex; align-items: center; gap: .75rem; white-space: nowrap;
+  padding: .625rem .75rem; border-bottom: 0; border-left: 2px solid transparent;
+  font: 500 .8125rem var(--font-jetbrains), monospace; color: var(--muted);
+}
+.admin-rail .admin-tabs a:hover { color: var(--foreground); background: color-mix(in oklab, var(--accent) 6%, transparent); }
+.admin-rail .admin-tabs a[aria-current="page"] {
+  color: var(--accent); border-left-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 10%, transparent);
+}
+.admin-rail .admin-tabs a i { width: .875rem; text-align: center; }
+.catalog-shell .catalog-table { min-width: 78rem; }
+.catalog-table td { padding: 1.05rem 1rem; vertical-align: middle; }
+.catalog-table thead th { padding: 1rem; }
+@media (max-width: 1023px) {
+  .admin-shell { grid-template-columns: minmax(0, 1fr); }
+  .admin-rail {
+    flex-direction: row; align-items: center; gap: .75rem; height: auto;
+    padding: .5rem .75rem; border-right: 0; border-bottom: 1px solid var(--border);
+    overflow-x: hidden; overflow-y: hidden;
+  }
+  .admin-rail-brand { display: none; }
+  .admin-rail .admin-tabs { flex: 1 1 auto; min-width: 0; flex-direction: row; overflow-x: auto; }
+  .admin-rail .admin-tabs a { border-left: 0; border-bottom: 2px solid transparent; padding: .5rem .625rem; }
+  .admin-rail .admin-tabs a[aria-current="page"] { border-bottom-color: var(--accent); }
+  .admin-rail-footer { margin-top: 0; margin-left: auto; display: flex; align-items: center; gap: .5rem; padding-top: 0; border-top: 0; }
+  .catalog-shell .catalog-table { min-width: 72rem; }
+}
 .auth-surface { background: radial-gradient(ellipse at 0% 50%, color-mix(in oklab, var(--accent) 8%, transparent), transparent 55%), var(--background); }
 .auth-surface h1 { font-size: clamp(1.75rem, 3.5vw, 3rem); line-height: 1.4; }
 .auth-surface .card { border-top-color: var(--accent); }

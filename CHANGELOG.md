@@ -3,6 +3,27 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — Catalog price comparison and admin navigation rail
+
+- **FID-2026-1029-020 — medium — OpenRouter price comparison on `/models`.**
+  The public catalog widened to `max-w-[96rem]`, gained tools/vision, weight,
+  and OpenRouter columns, and now states its source and fetch time. Matching is
+  by exact upstream id after stripping a `free/` prefix; `:batch` and `~`
+  variants are excluded so a variant never stands in for the model. An outage of
+  the public list drops the column instead of the page. Three positioning cards
+  report the median input delta, the median output delta, and exact-id coverage
+  over matched paid rows. Tests: `tests/price-comparison.test.mjs` (8).
+  **Unverified claim:** the deltas are arithmetic over catalog prices synced
+  from the upstream feed, and that feed prices 40 of 45 rows identically on
+  input and output — confirm it against the provider's rate card before using
+  any savings figure publicly.
+- **FID-2026-1029-021 — medium — Admin navigation rail.** Admin pages share one
+  sticky 16rem rail from `app/admin/(panel)/layout.tsx`, which also owns the
+  `requireAdminPage()` guard; `components/admin/admin-header.tsx` is removed so
+  no route renders the old chrome. Below 1024px the rail becomes a horizontally
+  scrolling strip that never widens the document. All ten admin routes answer
+  200 with a session cookie and 307 without one.
+
 ## 2026-10-29 — Daily free-pool allocation, context banner, and launch analysis
 
 - **FID-2026-1029-016 — high — Daily shared free-pool allocation.** Free-tier

@@ -27,5 +27,6 @@ run_gate "typecheck" npm run typecheck
 run_gate "tests" npm test
 run_gate "quality" npm run quality
 run_gate "build" npm run build
+run_gate "http suite" npm run test:http
 
 echo "pre-push: all gates passed"

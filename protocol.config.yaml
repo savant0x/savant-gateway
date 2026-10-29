@@ -29,6 +29,9 @@ language: 'typescript'
 commands:
   build: 'npm run build'
   test: 'npm test'
+  # Route-level HTTP gate. Requires a completed production build and boots
+  # `next start` against a disposable database; it is not part of `npm test`.
+  test_http: 'npm run test:http'
   type_check: 'npm run typecheck'
   lint: 'npm run lint'
   quality: 'npm run quality'

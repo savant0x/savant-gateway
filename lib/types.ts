@@ -183,6 +183,7 @@ export type AnalyticsPoint = {
   requests: number;
   tokens: number;
   chargedMicros: number;
+  planRevenueMicros: number;
   costMicros: number;
 };
 
@@ -203,11 +204,31 @@ export type AnalyticsTotals = {
   inputTokens: number;
   outputTokens: number;
   chargedMicros: number;
+  planRevenueMicros: number;
+  totalRevenueMicros: number;
+  paidInvoiceCount: number;
   costMicros: number;
   marginMicros: number;
+  totalMarginMicros: number;
+  activeSubscribers: number;
+  pastDueSubscribers: number;
+  cancelingSubscribers: number;
+  manualSubscribers: number;
+  mrrMicros: number;
   averageLatencyMs: number;
   maxLatencyMs: number;
   errorRateBps: number;
+};
+
+export type AnalyticsPlan = {
+  planId: string;
+  planName: string;
+  interval: PlanInterval;
+  activeSubscribers: number;
+  pastDueSubscribers: number;
+  mrrMicros: number;
+  paidInvoiceCount: number;
+  planRevenueMicros: number;
 };
 
 export type AnalyticsData = {
@@ -215,6 +236,7 @@ export type AnalyticsData = {
   totals: AnalyticsTotals;
   series: AnalyticsPoint[];
   models: AnalyticsModel[];
+  byPlan: AnalyticsPlan[];
 };
 
 export type SyncedModel = {

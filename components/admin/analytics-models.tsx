@@ -20,9 +20,10 @@ export function AnalyticsModels({ models }: { models: AnalyticsModel[] }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-black/10 bg-surface dark:border-white/10">
       <div className="border-b border-black/10 p-5 dark:border-white/10">
-        <h2 className="text-sm font-semibold">Top models by revenue</h2>
+        <h2 className="text-sm font-semibold">Top models by credit revenue</h2>
         <p className="mt-1 text-xs text-muted">
-          Twelve highest-charging models in the selected range.
+          Twelve highest-charging models in the selected range. Plan invoice
+          cash is not attributable to a model.
         </p>
       </div>
 
@@ -40,7 +41,7 @@ export function AnalyticsModels({ models }: { models: AnalyticsModel[] }) {
                 <th>Family</th>
                 <th className="text-right">Requests</th>
                 <th className="text-right">Tokens</th>
-                <th className="text-right">Revenue</th>
+                <th className="text-right">Credit revenue</th>
                 <th className="text-right">Cost</th>
                 <th className="text-right">Margin</th>
                 <th className="text-right">Margin %</th>

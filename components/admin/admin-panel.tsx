@@ -9,10 +9,10 @@ import { KeysCard } from "@/components/dashboard/keys-card";
 import { ProviderCard } from "@/components/dashboard/provider-card";
 import { StatCard } from "@/components/dashboard/chips";
 import {
-  formatCompact,
   formatMarginPercent,
   formatMicros,
   formatNumber,
+  formatSignedMicros,
 } from "@/components/dashboard/format";
 import { ProviderSyncButton } from "@/components/provider-sync";
 
@@ -59,9 +59,9 @@ export function AdminPanel({
             Admin overview
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-            Provider state, catalog pricing, tenant credit, and the money the
-            gateway actually recorded. Every number comes from the same rows
-            that settle requests.
+            Provider state, catalog pricing, tenant credit, subscription
+            revenue, and the money the gateway actually recorded. Every number
+            comes from the same rows that settle requests and paid invoices.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -99,10 +99,10 @@ export function AdminPanel({
           )}
         />
         <StatCard
-          detail={`${formatCompact(analytics.totals.requests)} requests in 30 days`}
+          detail={`${formatMicros(analytics.totals.chargedMicros)} credit · ${formatMicros(analytics.totals.planRevenueMicros)} plans`}
           icon="fa-sack-dollar"
           label="30d revenue"
-          value={formatMicros(analytics.totals.chargedMicros)}
+          value={formatMicros(analytics.totals.totalRevenueMicros)}
         />
         <StatCard
           detail={`${formatMarginPercent(data.pricing.averageInputMarginBps)} average input margin`}
@@ -203,7 +203,8 @@ export function AdminPanel({
               <div>
                 <Card.Title>30-day money</Card.Title>
                 <Card.Description>
-                  Charged revenue minus upstream cost from recorded usage.
+                  Credit usage and paid plan invoices minus upstream cost from
+                  recorded usage. Plan revenue is cash at the invoice date.
                 </Card.Description>
               </div>
               <LinkButton
@@ -213,11 +214,17 @@ export function AdminPanel({
               />
             </div>
           </Card.Header>
-          <Card.Content className="grid gap-3 sm:grid-cols-3">
+          <Card.Content className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl bg-surface p-3">
               <p className="text-[11px] text-muted">Revenue</p>
               <p className="mt-1 text-lg font-semibold">
-                {formatMicros(analytics.totals.chargedMicros)}
+                {formatMicros(analytics.totals.totalRevenueMicros)}
+              </p>
+            </div>
+            <div className="rounded-xl bg-surface p-3">
+              <p className="text-[11px] text-muted">Plan revenue</p>
+              <p className="mt-1 text-lg font-semibold">
+                {formatMicros(analytics.totals.planRevenueMicros)}
               </p>
             </div>
             <div className="rounded-xl bg-surface p-3">
@@ -228,8 +235,14 @@ export function AdminPanel({
             </div>
             <div className="rounded-xl bg-surface p-3">
               <p className="text-[11px] text-muted">Gross margin</p>
-              <p className="mt-1 text-lg font-semibold text-success">
-                {formatMicros(analytics.totals.marginMicros)}
+              <p
+                className={`mt-1 text-lg font-semibold ${
+                  analytics.totals.totalMarginMicros >= 0
+                    ? "text-success"
+                    : "text-danger"
+                }`}
+              >
+                {formatSignedMicros(analytics.totals.totalMarginMicros)}
               </p>
             </div>
           </Card.Content>

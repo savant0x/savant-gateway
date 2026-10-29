@@ -1,6 +1,6 @@
-import type { DatabaseHandle } from "./columns";
+import type { DatabaseHandle } from "./columns.ts";
 
-import { ensureColumn } from "./columns";
+import { ensureColumn } from "./columns.ts";
 
 /**
  * Additive subscription schema. Plans are the authoring surface; each
@@ -154,6 +154,8 @@ export function subscriptionSchema(database: DatabaseHandle) {
     );
     CREATE INDEX IF NOT EXISTS subscription_invoices_sub_idx
       ON subscription_invoices(subscription_id, created_at);
+    CREATE INDEX IF NOT EXISTS subscription_invoices_status_idx
+      ON subscription_invoices(status, paid_at);
 
     CREATE TABLE IF NOT EXISTS billing_events (
       id TEXT PRIMARY KEY,

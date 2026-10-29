@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { authHeaders } from "../lib/providers/auth-headers.ts";
 import {
   inferModelProtocol,
   normalizeBaseUrl,
@@ -53,7 +54,10 @@ test("provider input rejects non-string header values", () => {
 });
 
 test("normalizeBaseUrl removes trailing slashes", () => {
-  assert.equal(normalizeBaseUrl("https://example.com/v1///"), "https://example.com/v1");
+  assert.equal(
+    normalizeBaseUrl("https://example.com/v1///"),
+    "https://example.com/v1",
+  );
 });
 
 test("public model ids are scoped for non-default providers", () => {
@@ -107,9 +111,7 @@ test("protocol routing follows provider kind and supported endpoints", () => {
       kind: "both",
       upstreamId: "responses-only",
       family: "Other",
-      supportedEndpoints: [
-        "https://api.commandcode.ai/provider/v1/responses",
-      ],
+      supportedEndpoints: ["https://api.commandcode.ai/provider/v1/responses"],
     }),
     null,
   );
@@ -121,6 +123,26 @@ test("protocol routing follows provider kind and supported endpoints", () => {
     }),
     "messages",
   );
+});
+
+test("a dual-format provider authenticates both wire formats", () => {
+  const headers = authHeaders("both", "sk-test", { src: "gate" });
+
+  assert.equal(headers.Authorization, "Bearer sk-test");
+  assert.equal(headers["x-api-key"], "sk-test");
+  assert.equal(headers["anthropic-version"], "2023-06-01");
+  assert.equal(headers.src, "gate");
+  assert.equal(headers.Accept, "application/json");
+});
+
+test("single-format providers send only their own credential", () => {
+  const openai = authHeaders("openai", "sk-test");
+  const anthropic = authHeaders("anthropic", "sk-test");
+
+  assert.equal(openai.Authorization, "Bearer sk-test");
+  assert.equal(openai["x-api-key"], undefined);
+  assert.equal(anthropic["x-api-key"], "sk-test");
+  assert.equal(anthropic.Authorization, undefined);
 });
 
 test("key configuration reads only the named environment variable", () => {

@@ -16,6 +16,7 @@
 		"test": "node --test \"tests/*.test.mjs\"",
 		"test:http": "node scripts/http-suite.mjs && node scripts/trial-http-suite.mjs",
 		"quality": "node scripts/quality-report.mjs",
+		"business-model": "node scripts/business-model.mjs",
 		"verify": "npm run check && npm run test && npm run quality && npm run build && npm run test:http",
 		"prepare": "git config core.hooksPath .githooks && git config commit.template .gitmessage"
 	},

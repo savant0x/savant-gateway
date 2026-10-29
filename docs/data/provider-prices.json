@@ -1,0 +1,51 @@
+{
+  "capturedAt": "2026-10-29",
+  "note": "Published rates read from each provider's public pricing page on the capture date. Amounts are USD per 1M tokens. They are competitors and candidate upstreams, not our own catalog: our costs and sell rates live in data/gateway.db.",
+  "sources": {
+    "apixo": "https://apixoai.online/pricing",
+    "apixoDocs": "https://apixoai.online/docs",
+    "commandcode": "https://commandcode.ai/pricing",
+    "openrouter": "https://openrouter.ai/api/v1/models"
+  },
+  "providers": {
+    "apixo": {
+      "label": "Apixo",
+      "baseUrlOpenAi": "https://api.apixoai.online/v1",
+      "baseUrlAnthropic": "https://api.apixoai.online",
+      "keyFormat": "sk-apixo-…",
+      "protocols": ["chat", "messages"],
+      "listRateNote": "List rate in parentheses is the struck-through official price shown beside each row.",
+      "models": {
+        "claude-fable-5": { "inputPer1M": 0.9, "outputPer1M": 0.9, "listInputPer1M": 10, "listOutputPer1M": 50 },
+        "gpt-6-astra": { "inputPer1M": 0.9, "outputPer1M": 0.9, "listInputPer1M": 10, "listOutputPer1M": 50 },
+        "glm-5.2": { "inputPer1M": 0.2, "outputPer1M": 0.2, "listInputPer1M": 1.4, "listOutputPer1M": 4.4 },
+        "glm-5.3": { "inputPer1M": 0.2, "outputPer1M": 0.2, "listInputPer1M": 1.4, "listOutputPer1M": 4.4 },
+        "deepseek-v4.1-flash": { "inputPer1M": 0.04, "outputPer1M": 0.04, "listInputPer1M": 0.15, "listOutputPer1M": 0.6 },
+        "grok-4.7": { "inputPer1M": 0.2, "outputPer1M": 0.2, "listInputPer1M": 2, "listOutputPer1M": 6 },
+        "mimo-v2.6-pro": { "inputPer1M": 0.2, "outputPer1M": 0.2 },
+        "kimi-k3": { "inputPer1M": 0.2, "outputPer1M": 0.2 },
+        "gemma-4-31b-abliterated": { "inputPer1M": 0.24, "outputPer1M": 0.72 },
+        "qwen3-uncensored": { "inputPer1M": 0.49, "outputPer1M": 2.37 },
+        "claude-sonnet-5": { "inputPer1M": 0.9, "outputPer1M": 0.9, "listInputPer1M": 2, "listOutputPer1M": 10 },
+        "gpt-6.1-sol": { "inputPer1M": 0.2, "outputPer1M": 0.2, "listInputPer1M": 2, "listOutputPer1M": 10 }
+      }
+    },
+    "commandcode": {
+      "label": "Command Code",
+      "baseUrlOpenAi": "https://api.commandcode.ai/provider/v1",
+      "keyEnvVar": "COMMANDCODE_API_KEY",
+      "model": "Subscription tiers that include credits, plus a pay-as-you-go Provider plan with no markup.",
+      "plans": [
+        { "name": "Go", "monthlyUsd": 1, "creditsUsd": 10, "requests": "~9K" },
+        { "name": "GOAT", "monthlyUsd": 10, "creditsUsd": 100, "requests": "~75K", "apiAccess": true },
+        { "name": "Max", "monthlyUsd": 100, "creditsUsd": 150, "requests": "~219K", "apiAccess": true },
+        { "name": "Team", "monthlyUsd": 40, "requests": "~35K", "apiAccess": true },
+        { "name": "Provider", "monthlyUsd": 15, "settlement": "pay as you go, zero markup", "apiAccess": true }
+      ]
+    },
+    "apinex": {
+      "label": "Apinex",
+      "note": "Our default upstream, synced into data/gateway.db; its costs are read from the database rather than restated here."
+    }
+  }
+}

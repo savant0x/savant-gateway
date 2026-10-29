@@ -2,6 +2,8 @@ import "server-only";
 
 import type { ProviderRecord } from "./types";
 
+import { authHeaders } from "./auth-headers";
+
 export class ProviderConfigError extends Error {}
 
 export type ProviderBalance = {
@@ -40,20 +42,11 @@ export function getProviderKey(provider: ProviderRecord) {
 export function providerHeaders(
   provider: ProviderRecord,
 ): Record<string, string> {
-  const key = getProviderKey(provider);
-  const headers: Record<string, string> = {
-    ...provider.defaultHeaders,
-    Accept: "application/json",
-  };
-
-  if (provider.kind === "anthropic") {
-    headers["x-api-key"] = key;
-    headers["anthropic-version"] = "2023-06-01";
-  } else {
-    headers.Authorization = `Bearer ${key}`;
-  }
-
-  return headers;
+  return authHeaders(
+    provider.kind,
+    getProviderKey(provider),
+    provider.defaultHeaders,
+  );
 }
 
 export function providerFetch(

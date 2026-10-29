@@ -147,4 +147,21 @@ function seedProviders(database: DatabaseHandle) {
                'unconfigured', ?, ?)`,
     )
     .run(now, now);
+
+  // Apixo serves /v1/chat/completions, /v1/messages and /v1/models behind one
+  // base URL, but publishes no balance or subscription endpoint and no machine
+  // readable price list, so only the catalog sync is claimed. It starts
+  // disabled: enabling it before APIXO_API_KEY exists would fail every sync.
+  database
+    .prepare(
+      `INSERT OR IGNORE INTO providers
+        (slug, label, kind, base_url, key_env_var, default_headers,
+         supports_balance, supports_subscription, supports_pricing, enabled,
+         sort_order, status, created_at, updated_at)
+       VALUES ('apixo', 'Apixo', 'both',
+               'https://api.apixoai.online/v1',
+               'APIXO_API_KEY', '{}', 0, 0, 0, 0, 30,
+               'unconfigured', ?, ?)`,
+    )
+    .run(now, now);
 }

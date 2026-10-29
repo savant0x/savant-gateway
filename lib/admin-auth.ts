@@ -17,6 +17,11 @@ import { getAdminSessionEpoch } from "./store/admin";
 
 export const NO_STORE = { "Cache-Control": "no-store" } as const;
 
+// Local development may use the operator console without a session. A
+// production server must not trust a spoofable Host header for privileged
+// actions, so the bypass is compiled out in production.
+const ALLOW_LOOPBACK_CONSOLE = process.env.NODE_ENV !== "production";
+
 export function adminError(
   status: number,
   message: string,
@@ -60,12 +65,12 @@ export async function guardLocalOrAdmin(request: Request) {
     return adminError(403, "Cross-origin request rejected.");
   }
 
-  if (isLocalRequest(request)) return null;
+  if (ALLOW_LOOPBACK_CONSOLE && isLocalRequest(request)) return null;
   if (await getAdminSession()) return null;
 
   return adminError(
     403,
-    "This development endpoint requires localhost or an admin session.",
+    "This operator endpoint requires an admin session in production.",
   );
 }
 

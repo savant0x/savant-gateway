@@ -8,16 +8,20 @@ OpenAI-compatible upstream provider.
 [![HeroUI](https://img.shields.io/badge/HeroUI-v3-%23000000?style=flat-square&logo=github&logoColor=%2300fbff)](https://www.heroui.com/)
 [![License](https://img.shields.io/badge/License-MIT-%23000000?style=flat-square)](LICENSE)
 
-The gateway does six things:
+The gateway does seven things:
 
 - syncs the upstream balance, subscription, model catalog, and public metadata;
 - stores upstream cost, our sell price, and charged revenue as separate fields;
-- mints local consumer keys, stored only as SHA-256 hashes;
+- creates customer accounts with scrypt password hashes and revocable,
+  server-side sessions;
+- mints account-owned consumer keys, stored only as SHA-256 hashes;
 - routes every active catalog model through one OpenAI-compatible
   `POST /v1/chat/completions` endpoint once it is free or priced, streaming or
   JSON;
 - reserves credit for paid calls, settles actual usage, and keeps a ledger;
-- records weighted tokens, revenue, cost, latency, and status in SQLite.
+- sells prepaid credit through Stripe Checkout, credits it only from a
+  signature-verified webhook, and records weighted tokens, revenue, cost,
+  latency, and status in SQLite.
 
 ## Surfaces
 
@@ -25,18 +29,23 @@ The gateway does six things:
 |---|---|---|
 | `/` | Public | Landing page with live catalog counts and a request sample. |
 | `/models` | Public | Searchable, sortable, paginated full catalog with sell prices. |
-| `/dashboard` | Local console | Operator view: provider, catalog, keys, tester, usage. |
+| `/signup` | Public | Create a customer account. |
+| `/login` | Public | Customer sign-in. |
+| `/account` | Customer session | Balance, top-ups, keys, usage, ledger, and quick start. |
+| `/dashboard` | Operator console | Provider, catalog, local-tenant keys, tester, usage. |
 | `/admin` | Admin session | Revenue, cost, margin, credit, provider status, recent usage. |
+| `/admin/customers` | Admin session | Signup accounts, balances, request volume, and top-ups. |
 | `/admin/catalog` | Admin session | Every row, including disabled and delisted models. |
 | `/admin/pricing` | Admin session | Inline sell prices, markup, cost, margin, blended profit. |
 | `/admin/analytics` | Admin session | 7/30/90-day revenue, cost, margin, tokens, latency, top models. |
 | `/v1/*` | Consumer key | The OpenAI-compatible gateway. |
 
-The admin panel is independent of the `Host` header check. The console's
-`/api/*` actions accept a loopback request or a valid admin session; the
-loopback bypass is a development convenience, not a public security boundary.
-Deploying the console publicly requires replacing it. See
-[SECURITY.md](SECURITY.md).
+Customer accounts and the operator console are separate. Customer routes scope
+every key, usage row, and ledger entry by the session user. In development,
+operator `/api/*` actions accept a loopback request or a valid admin session.
+In production the loopback bypass is disabled: `/dashboard` redirects to
+`/admin/login`, and operator APIs require an admin session, so a spoofed `Host`
+header cannot mint keys or read usage. See [SECURITY.md](SECURITY.md).
 
 ## Stack
 
@@ -54,13 +63,15 @@ npm install
 cp .env.example .env.local
 # put the upstream key in PROVIDER_KEY
 # set ADMIN_PASSWORD (12+ chars) and ADMIN_SESSION_SECRET (32+ chars)
+# optional: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, NEXT_PUBLIC_SITE_URL
 npm run dev
 ```
 
 Open `http://localhost:3000` for the landing page, `/models` for the public
-catalog, `/dashboard` for the console, and `/admin` for the password-protected
-panel. Sync the provider from the console or admin overview before using the
-catalog.
+catalog, `/signup` for a customer account, `/dashboard` for the operator
+console in development, and `/admin` for the password-protected panel. In a
+production build, `/dashboard` requires the admin session too. Sync the
+provider from the console or admin overview before using the catalog.
 
 Generate an admin secret without writing it to a shell history file:
 
@@ -78,11 +89,13 @@ secret, so rotating either invalidates existing sessions.
 |---|---|---|
 | `PROVIDER_KEY` | Yes | Upstream key. Sent as `Authorization: Bearer …`. Server-only. |
 | `ADMIN_PASSWORD` | For admin | 12+ characters. Compared in constant time. |
-| `ADMIN_SESSION_SECRET` | For admin | 32+ characters. Signs the eight-hour session cookie. |
+| `ADMIN_SESSION_SECRET` | For admin | 32+ characters. Signs the eight-hour admin cookie. |
+| `STRIPE_SECRET_KEY` | For top-ups | Server-only Stripe key. Absent disables checkout with `503`. |
+| `STRIPE_WEBHOOK_SECRET` | For top-ups | Signing secret for `/api/webhooks/stripe`. Checkout stays disabled without it. |
+| `NEXT_PUBLIC_SITE_URL` | Production | Canonical origin for metadata and Stripe redirects. Defaults to `http://localhost:3000`. |
 | `DB_PATH` | No | SQLite file. Defaults to `./data/gateway.db`. |
 | `PROVIDER_BASE_URL` | No | Defaults to `https://api.apinex.bond/v1`. |
 | `PROVIDER_PUBLIC_MODELS_URL` | No | Defaults to `https://apinex.bond/api/public/models`. |
-| `NEXT_PUBLIC_SITE_URL` | No | Canonical origin for metadata. Defaults to `http://localhost:3000`. |
 
 Do not put any secret in a `NEXT_PUBLIC_*` variable.
 
@@ -179,12 +192,66 @@ granted. Paid requests default to a 4,096-token output budget and accept up to
 - State-changing admin requests with a foreign `Origin` return `403`.
 - Admin pages and APIs send `Cache-Control: no-store` and are `noindex`.
 
+## Customer accounts and top-ups
+
+Signup creates a `users` row with a scrypt password hash (per-password salt,
+`N=16384`, `r=8`, `p=1`, constant-time verification) and a server-side session.
+The browser receives an opaque 32-byte token in the `sg_session` cookie; only
+its SHA-256 hash is stored in `customer_sessions`. The cookie is `HttpOnly`,
+`SameSite=Lax`, `Path=/`, seven days, and `Secure` in production. Sign-out sets
+`revoked_at`, so the same token cannot be replayed.
+
+Every customer action is scoped by the session user: `/api/account/keys` lists,
+creates, and revokes only that customer's keys; `/api/account/topup` creates a
+checkout for that customer; the account page queries only that user's usage,
+ledger, and top-ups. Mutations reject a foreign `Origin`.
+
+The purchase path is deliberately one-way:
+
+```text
+POST /api/account/topup  ($5–$500, server-validated)
+   │  insert pending top-up row
+   ▼
+Stripe Checkout (hosted; card data never reaches this app)
+   │  success_url only navigates back — it grants nothing
+   ▼
+POST /api/webhooks/stripe  (raw body + stripe-signature)
+   │  verify signature, require payment_status=paid
+   │  match amount and currency to the stored top-up
+   ▼
+one transaction: mark paid, credit balance, write ledger row
+```
+
+`topups.provider_ref` is unique. A replay of a signed event finds the row
+already paid and returns `200` without a second ledger entry. If Stripe is not
+configured, checkout returns `503` and no synthetic credit path exists. The
+success redirect is advisory only; the signed webhook is the sole credit path.
+
+Local webhook testing:
+
+```bash
+stripe listen --forward-to localhost:3000/api/webhooks/stripe
+# copy the printed whsec_… into STRIPE_WEBHOOK_SECRET and restart
+```
+
+Email verification, password reset, and invoicing are not implemented. Those
+are follow-ups, not claimed capabilities.
+
 ## API surface
 
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
 | `POST` | `/v1/chat/completions` | Consumer key | OpenAI-compatible chat, streaming or JSON. |
 | `GET` | `/v1/models` | Consumer key | Active catalog with `owned_by`, `family`, `group`, and sell prices. |
+| `POST` | `/api/auth/signup` | Public, same-origin | Create a customer and session. |
+| `POST` | `/api/auth/login` | Public, same-origin | Sign in; sets `sg_session`. |
+| `POST` | `/api/auth/logout` | Session | Revoke the session and clear the cookie. |
+| `GET` | `/api/auth/me` | Session | Current customer and account summary. |
+| `GET` | `/api/account/keys` | Session | The signed-in customer's keys. |
+| `POST` | `/api/account/keys` | Session, same-origin | Create a key; returns the secret once. |
+| `DELETE` | `/api/account/keys/:id` | Session, same-origin | Revoke one key owned by the customer. |
+| `POST` | `/api/account/topup` | Session, same-origin | Create a Stripe Checkout Session for $5–$500. |
+| `POST` | `/api/webhooks/stripe` | Stripe signature | Idempotent paid-checkout fulfillment. |
 | `POST` | `/api/admin/session` | Password | Sign in; sets the admin cookie. |
 | `DELETE` | `/api/admin/session` | Same-origin | Sign out and bump the session epoch. |
 | `GET` | `/api/admin/models` | Admin session | Full catalog, including disabled and delisted rows. |
@@ -194,12 +261,12 @@ granted. Paid requests default to a 4,096-token output budget and accept up to
 | `POST` | `/api/admin/pricing` | Admin session | `{ markupBps, applyToAll }` bulk repricing. |
 | `GET` | `/api/admin/credit` | Admin session | Tenant balance, holds, and recent ledger. |
 | `POST` | `/api/admin/credit` | Admin session | `{ amountUsd, note }` operator credit grant. |
-| `POST` | `/api/provider/sync` | Loopback or admin | Fetch balance, subscription, models, metadata. |
-| `GET` | `/api/keys` | Loopback or admin | List masked keys. |
-| `POST` | `/api/keys` | Loopback or admin | Create a key; returns the secret once. |
-| `DELETE` | `/api/keys/:id` | Loopback or admin | Revoke a key. |
-| `GET` | `/api/models` | Loopback or admin | Active public catalog for the console. |
-| `GET` | `/api/usage` | Loopback or admin | Recent usage rows. |
+| `POST` | `/api/provider/sync` | Admin (loopback in dev) | Fetch balance, subscription, models, metadata. |
+| `GET` | `/api/keys` | Admin (loopback in dev) | List masked local-tenant keys. |
+| `POST` | `/api/keys` | Admin (loopback in dev) | Create a local-tenant key; returns the secret once. |
+| `DELETE` | `/api/keys/:id` | Admin (loopback in dev) | Revoke a local-tenant key. |
+| `GET` | `/api/models` | Admin (loopback in dev) | Active catalog for the operator console. |
+| `GET` | `/api/usage` | Admin (loopback in dev) | Recent local-tenant usage. |
 
 Consumer keys use either header:
 
@@ -214,9 +281,15 @@ x-api-key: sk-...
 app/
   page.tsx                 public landing
   models/                  public full catalog
+  signup/, login/          customer authentication
+  account/                 customer balance, keys, usage, top-ups
   dashboard/               operator console
-  admin/(panel)/           authenticated overview, catalog, pricing, analytics
+  admin/(panel)/           authenticated overview, customers, catalog,
+                           pricing, analytics
   admin/login/             admin sign-in
+  api/auth/                signup, login, logout, me
+  api/account/             scoped keys and Stripe checkout
+  api/webhooks/stripe/     signature-verified top-up fulfillment
   api/admin/               session, catalog, pricing, and credit management
   api/                     console actions (loopback or admin)
   v1/chat/completions/     OpenAI-compatible gateway
@@ -224,6 +297,7 @@ app/
 components/
   landing/                 public landing sections
   catalog/                 public model table
+  account/                 auth forms, customer header, keys, top-up, history
   dashboard/               console sections and shared UI primitives
   admin/                   admin shell, tables, pricing editor, analytics
   ui/                      shared primitives
@@ -234,9 +308,15 @@ lib/
   gateway-stream.ts        streaming relay and settlement on close
   gateway-settle.ts        usage parsing, cost/charge, settlement
   api-keys.ts              key generation and SHA-256 hashing
+  customer.ts              email, name, and password validation
+  password.ts              scrypt hashing and constant-time verification
+  customer-session.ts      opaque session tokens and cookie options
+  customer-auth.ts         customer page/API guards and cookies
+  stripe.ts                Stripe config, client, and redirect origin
+  topup-amount.ts          exact $5–$500 amount parsing
   admin-session.ts         token signing, password and origin checks
   admin-auth.ts            server-only guards and cookie helpers
-  admin-rate-limit.ts      fixed-window login limiter
+  admin-rate-limit.ts      fixed-window limiters
   db.ts                    SQLite schema and additive migrations
   store/                   persistence split by responsibility
   types.ts                 shared serializable types
@@ -274,6 +354,9 @@ Current records:
 - [FID-2026-1029-005](dev/fids/archive/FID-2026-1029-005-provider-family-group-semantics.md) —
   provider identity, model family, and price-group normalization (closed
   against `ecc15ac`).
+- [FID-2026-1029-006](dev/fids/FID-2026-1029-006-customer-accounts-and-credit-topups.md) —
+  customer signup, account ownership, scoped keys and usage, Stripe Checkout
+  top-ups, and webhook-confirmed credit (this slice).
 
 ## Quality gates
 
@@ -292,36 +375,43 @@ rejects coding-agent attribution anywhere in the commit history.
 
 ### Verification
 
-FID-2026-1029-005 records the current receipt: `npm run verify` exit 0 with 30
-tests, quality PASS over 92 files, and a 20-route production build. Live
-production smoke on that tree: `/models` and all four admin pages return
-`200`, unauthenticated `/admin` returns `307` to login, `/api/models` returns
-45 public rows with `family` and no upstream cost fields, `/v1/models`
-returns `owned_by: "savant-gateway"`, and `/api/admin/pricing` reports the
-manual `gpt-6.1-sol` row at cost `$0.30` / sell `$0.40` / 25% input margin.
-FID-2026-1029-004 holds the pricing and money-path receipt.
+FID-2026-1029-006 records the current receipt: `npm run verify` exit 0 with 48
+tests, quality PASS over 122 files, and a 32-route production build. On a
+disposable database: two signups returned `201`, a duplicate returned `409`, a
+wrong password returned `401`, the `sg_session` cookie is `HttpOnly`,
+`SameSite=Lax`, `Secure`, seven days, customer B could not revoke customer A's
+key (`404`), a foreign `Origin` returned `403`, each account saw only its own
+usage, unconfigured top-ups returned `503`, a signed paid webhook credited
+$25.00 exactly once, replay credited nothing, an unpaid session and an invalid
+signature were ignored or rejected, logout made the old session `401`, and
+`/admin/customers` showed both accounts. A production build also returned
+`307` for signed-out `/dashboard` and `403` for a spoofed-Host operator API,
+while an admin session restored both. FID-2026-1029-004 holds the pricing and
+paid-routing receipt; FID-2026-1029-005 holds the provider/family/group
+receipt.
 
-The paid money path was exercised on a disposable database: actual usage
-settled above the hold, streaming settled with no hold left behind, an unpriced
-row returned `503`, an over-limit output budget returned `400`, and an
-underfunded overrun left a negative balance that blocked the next call with
-`402`. Provider inference for free models was verified live earlier; real paid
-upstream inference could not be completed because the provider account itself
-has no paid balance. That limitation is recorded in the FID rather than
-presented as a completed paid-provider call.
+A live Stripe card payment was not completed: no live Stripe keys were
+available. The fulfillment path was exercised with a Stripe-signed test event
+against a pending top-up on a disposable database. Real paid upstream
+inference could not be completed because the provider account itself has no
+paid balance. Those limitations are recorded in the FID rather than presented
+as completed payments or completed paid-provider calls.
 
 ## Current limits
 
-- One local tenant (`user_dev`); no customer signup, account ownership, or
-  checkout.
-- Credits are operator-granted; there is no top-up or payment integration.
+- Email verification and password reset are not implemented; there is no
+  transactional email provider.
+- A real Stripe card payment has not been run with live keys. Signed-webhook
+  crediting is tested; hosted checkout creation requires operator keys and a
+  public HTTPS origin.
 - Subscription-tier rows are catalogued but only routable when the operator
   prices them and the upstream account is entitled to them.
-- No per-key rate limiting or concurrency control.
+- No per-key rate limiting or concurrency control. Signup, login, and top-up
+  limits are in-memory fixed windows and reset on restart.
 - One provider key and one shared provider pool.
-- The console's loopback bypass is not a public security boundary.
-- The admin rate limiter is in-memory and resets on restart; the session epoch
-  is durable.
+- The local console tenant (`user_dev`) remains operator-granted and separate
+  from customer accounts. Its loopback bypass is development-only; production
+  requires an admin session.
 - SQLite is local single-instance storage, not a multi-instance database.
 
 ## License

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { CodeSample } from "./code-sample";
 import { primaryCta, secondaryCta } from "./cta";
 
-const CURL_SAMPLE = `curl http://localhost:3000/v1/chat/completions \\
+const CURL_SAMPLE = `curl "$GATEWAY_URL/v1/chat/completions" \\
   -H "Authorization: Bearer sk-..." \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -43,24 +43,24 @@ export function Hero({ data }: { data: LandingData }) {
           </h1>
 
           <p className="mt-6 max-w-xl text-base leading-7 text-muted">
-            Savant Gateway syncs the full upstream catalog, prices paid rows
-            against their upstream cost, and settles each call from a credit
-            ledger. Free models stay free; paid rows are billed once priced, and
-            every call is visible in analytics.
+            Create an account, mint one key, and call the full upstream catalog
+            through an OpenAI-compatible endpoint. Free models need no balance;
+            paid rows settle from prepaid credit that you top up only when you
+            need it.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link className={primaryCta} href="/models">
-              Browse the catalog
+            <Link className={primaryCta} href="/signup">
+              Create an account
             </Link>
-            <Link className={secondaryCta} href="/dashboard">
-              Open the console
+            <Link className={secondaryCta} href="/models">
+              Browse the catalog
             </Link>
           </div>
 
           <p className="mt-6 text-xs text-muted">
-            Consumer secrets are stored as SHA-256 hashes. The upstream key
-            never leaves the server.
+            Keys are stored as SHA-256 hashes. Payments run on Stripe Checkout;
+            card data never reaches this app.
           </p>
         </div>
 

@@ -2,7 +2,47 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-28 | Session autonomy level: 3 (default; review is read-only)
 
-## Current Session — 2026-10-29 (FID-2026-1029-005)
+## Current Session — 2026-10-29 (FID-2026-1029-006)
+
+Operator request: customer signup, account ownership, and a real credit
+top-up flow so paid models can be sold to outside users, built as production
+software even though development runs locally.
+
+- [x] **P1 — Identity.** Email/password signup, scrypt hashing, duplicate-email
+  `409`, generic login failure, and per-client limits.
+- [x] **P2 — Sessions.** Opaque server-side tokens in `sg_session`; hashed at
+  rest, HttpOnly, SameSite=Lax, seven days, Secure in production; logout
+  revokes the row.
+- [x] **P3 — Ownership.** Account-scoped key CRUD, usage, ledger, and top-up
+  history; same-origin mutations; cross-account revoke denied.
+- [x] **P4 — Surfaces.** `/signup`, `/login`, `/account`, admin Customers page,
+  and customer-oriented landing copy.
+- [x] **P5 — Payments.** Stripe Checkout for $5–$500, signature-verified
+  webhook, amount/currency match, unique provider ref, one-transaction
+  fulfillment, success redirect grants nothing.
+- [x] **P6 — Receipt.** Unit tests, full gates, disposable-DB HTTP and signed
+  webhook receipt, FID closure, changelog, commit, push.
+
+Findings:
+
+- **F9 — a success redirect is not payment evidence (high if mishandled).**
+  Checkout returns through the browser, but `fulfillTopup` runs only in the
+  webhook path and only after signature, `payment_status=paid`, amount, and
+  currency checks. Replay is a no-op.
+- **F10 — checkout without a webhook secret would take money with no credit
+  path (medium).** `readStripeConfig` requires both `STRIPE_SECRET_KEY` and
+  `STRIPE_WEBHOOK_SECRET`; otherwise checkout returns `503`.
+- **F11 — Node's test resolver cannot load extensionless internal imports
+  (low).** `lib/password.ts` now owns its password-length bound instead of
+  importing the customer module, keeping the scrypt helper directly testable.
+- **F12 — the operator loopback bypass was spoofable (high for a public
+  deployment).** A remote client could send `Host: localhost` to reach
+  `/api/keys`, `/api/usage`, `/api/models`, and `/api/provider/sync`. A
+  production build now disables the loopback branch and redirects `/dashboard`
+  to `/admin/login`; development keeps the convenience. This was a pre-existing
+  boundary, tightened because the service now sells to outside customers.
+
+## Prior Session — 2026-10-29 (FID-2026-1029-005)
 
 Operator correction: the catalog was reporting `provider: "Free"`. Savant
 Gateway is the provider; `free` is the price group, and the family is the

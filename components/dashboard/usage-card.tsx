@@ -5,17 +5,22 @@ import { Card, Chip } from "@heroui/react";
 import { StatusChip } from "./chips";
 import { formatDate, formatMicros, formatNumber } from "./format";
 
-export function UsageCard({ usage }: { usage: UsageSummary[] }) {
+export function UsageCard({
+  usage,
+  description = "One row per completed or attempted upstream call, including streamed completions. The charge is the settled debit.",
+  empty = "No requests yet. Create a key and use the tester above.",
+}: {
+  usage: UsageSummary[];
+  description?: string;
+  empty?: string;
+}) {
   return (
     <Card>
       <Card.Header>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <Card.Title>Recent usage</Card.Title>
-            <Card.Description>
-              One row per completed or attempted upstream call, including
-              streamed completions. The charge is the settled debit.
-            </Card.Description>
+            <Card.Description>{description}</Card.Description>
           </div>
           <Chip color="default" size="sm" variant="soft">
             {formatNumber(usage.length)} shown
@@ -24,9 +29,7 @@ export function UsageCard({ usage }: { usage: UsageSummary[] }) {
       </Card.Header>
       <Card.Content className="px-0 pb-0">
         {usage.length === 0 ? (
-          <div className="px-5 pb-5 text-sm text-muted">
-            No requests yet. Create a key and use the tester above.
-          </div>
+          <div className="px-5 pb-5 text-sm text-muted">{empty}</div>
         ) : (
           <div className="scroll-shell">
             <table className="data-table">

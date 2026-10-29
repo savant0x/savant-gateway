@@ -214,3 +214,46 @@ export type SyncedModel = {
   health: string | null;
   sortOrder: number;
 };
+
+export type Customer = {
+  id: string;
+  email: string;
+  name: string;
+  status: string;
+  createdAt: string;
+};
+
+export type CustomerAccount = {
+  customer: Customer;
+  account: AccountSummary;
+  totalPurchasedMicros: number;
+  totalRequests: number;
+  totalTokens: number;
+  keys: KeySummary[];
+  usage: UsageSummary[];
+  ledger: CreditLedgerEntry[];
+  topups: TopupSummary[];
+};
+
+export type CustomerSummary = Customer & {
+  creditMicros: number;
+  heldMicros: number;
+  keyCount: number;
+  requestCount: number;
+  chargedMicros: number;
+  lastTopupAt: string | null;
+};
+
+export type TopupSummary = {
+  id: string;
+  userId: string;
+  customerName: string;
+  customerEmail: string;
+  provider: string;
+  providerRef: string;
+  amountMicros: number;
+  currency: string;
+  status: string;
+  createdAt: string;
+  paidAt: string | null;
+};

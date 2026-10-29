@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 
+import { redirect } from "next/navigation";
+
 import { Dashboard } from "@/components/dashboard";
 import { Navbar } from "@/components/navbar";
 import { siteConfig } from "@/config/site";
+import { getAdminSession } from "@/lib/admin-auth";
 import { getOverview } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +15,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  if (process.env.NODE_ENV === "production" && !(await getAdminSession())) {
+    redirect("/admin/login");
+  }
+
   return (
     <div className="relative flex min-h-screen flex-col">
       <Navbar />

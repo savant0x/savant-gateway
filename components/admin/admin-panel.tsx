@@ -66,6 +66,11 @@ export function AdminPanel({
         </div>
         <div className="flex flex-wrap gap-2">
           <LinkButton
+            href="/admin/customers"
+            icon="fa-users"
+            label="Customers"
+          />
+          <LinkButton
             href="/admin/pricing"
             icon="fa-calculator"
             label="Price the catalog"
@@ -251,8 +256,9 @@ export function AdminPanel({
               returns 401.
             </p>
             <p>
-              Keys belong to the single local tenant in this build. Customer
-              signup and checkout are separate slices.
+              These keys belong to the local development tenant. Customer
+              accounts mint and revoke their own keys from /account; operators
+              can see those customers in the Customers page.
             </p>
           </Card.Content>
         </Card>

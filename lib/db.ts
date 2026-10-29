@@ -249,6 +249,42 @@ function normalizeLegacyFamilies(database: DatabaseHandle) {
   })();
 }
 
+function customerSchema(database: DatabaseHandle) {
+  ensureColumn(database, "users", "password_hash", "TEXT");
+  ensureColumn(database, "users", "email_verified_at", "TEXT");
+  ensureColumn(database, "users", "last_login_at", "TEXT");
+
+  database.exec(`
+    CREATE INDEX IF NOT EXISTS usage_events_user_idx
+      ON usage_events(user_id, created_at);
+
+    CREATE TABLE IF NOT EXISTS customer_sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash TEXT NOT NULL UNIQUE,
+      created_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      revoked_at TEXT
+    );
+    CREATE INDEX IF NOT EXISTS customer_sessions_user_idx
+      ON customer_sessions(user_id, expires_at);
+
+    CREATE TABLE IF NOT EXISTS topups (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      provider TEXT NOT NULL DEFAULT 'stripe',
+      provider_ref TEXT NOT NULL UNIQUE,
+      amount_micros INTEGER NOT NULL,
+      currency TEXT NOT NULL DEFAULT 'usd',
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TEXT NOT NULL,
+      paid_at TEXT
+    );
+    CREATE INDEX IF NOT EXISTS topups_user_idx ON topups(user_id, created_at);
+    CREATE INDEX IF NOT EXISTS topups_status_idx ON topups(status, created_at);
+  `);
+}
+
 function seed(database: DatabaseHandle) {
   const now = new Date().toISOString();
 
@@ -276,6 +312,7 @@ function createDb() {
 
   baseSchema(database);
   v2Schema(database);
+  customerSchema(database);
   normalizeLegacyFamilies(database);
   seed(database);
 

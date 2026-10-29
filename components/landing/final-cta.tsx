@@ -20,16 +20,16 @@ export function FinalCta() {
             Ready to route the whole catalog?
           </h2>
           <p className="mt-3 text-sm leading-6 text-muted">
-            The console creates keys, funds the tenant, runs a real completion,
-            and shows the charged usage row it produced. Admin keeps pricing and
-            analytics behind its own password.
+            Create an account, mint a key, and add prepaid credit only when you
+            need paid models. Free-pool rows work with a zero balance. Payments
+            run through Stripe Checkout and credit after the signed webhook.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <Link className={primaryCta} href="/dashboard">
-              Open the console
+            <Link className={primaryCta} href="/signup">
+              Create an account
             </Link>
-            <Link className={secondaryCta} href="/admin">
-              Admin sign in
+            <Link className={secondaryCta} href="/login">
+              Sign in
             </Link>
           </div>
         </div>

@@ -28,11 +28,11 @@ export function AccessChip({ model }: { model: ModelSummary }) {
 
 export function StatusChip({ status }: { status: string }) {
   const color =
-    status === "active" || status === "ok"
+    status === "active" || status === "ok" || status === "paid"
       ? "success"
-      : status === "exhausted" || status === "cancelled"
+      : status === "exhausted" || status === "cancelled" || status === "pending"
         ? "warning"
-        : status === "error" || status === "revoked"
+        : status === "error" || status === "revoked" || status === "failed"
           ? "danger"
           : "default";
 

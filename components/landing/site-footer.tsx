@@ -25,11 +25,14 @@ export function SiteFooter() {
           </div>
 
           <div className="flex flex-wrap gap-x-10 gap-y-3 text-sm">
-            <Link
-              className="text-muted hover:text-foreground"
-              href="/dashboard"
-            >
-              Console
+            <Link className="text-muted hover:text-foreground" href="/signup">
+              Create account
+            </Link>
+            <Link className="text-muted hover:text-foreground" href="/login">
+              Sign in
+            </Link>
+            <Link className="text-muted hover:text-foreground" href="/account">
+              Account
             </Link>
             <Link
               className="text-muted hover:text-foreground"

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { CodeSample } from "./code-sample";
 import { secondaryCta } from "./cta";
 
-const REQUEST = `curl http://localhost:3000/v1/chat/completions \\
+const REQUEST = `curl "$GATEWAY_URL/v1/chat/completions" \\
   -H "Authorization: Bearer sk-..." \\
   -H "Content-Type: application/json" \\
   -d '{"model":"free/gpt-6-luna","messages":[{"role":"user","content":"Hello"}]}'`;
@@ -26,25 +26,23 @@ export function QuickStart() {
             <li className="flex gap-3">
               <span className="step-number">1</span>
               <span>
-                Put <code className="mono text-foreground">PROVIDER_KEY</code>{" "}
-                in <code className="mono text-foreground">.env.local</code>,
-                then sync from the console or admin.
+                Create an account and open the customer console. No card is
+                required to start.
               </span>
             </li>
             <li className="flex gap-3">
               <span className="step-number">2</span>
               <span>
-                Review sell prices in admin pricing. Paid calls debit the tenant
-                credit; free-pool calls never do.
+                Mint an API key. Add prepaid credit only when you want paid
+                models; the free pool works with a zero balance.
               </span>
             </li>
             <li className="flex gap-3">
               <span className="step-number">3</span>
               <span>
-                Create a consumer key and send the request. Streaming is a
-                boolean in the same body; set it to{" "}
-                <code className="mono text-foreground">false</code> for a single
-                JSON response.
+                Send the request. Streaming is a boolean in the same body; set
+                it to <code className="mono text-foreground">false</code> for a
+                single JSON response.
               </span>
             </li>
           </ol>

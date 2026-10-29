@@ -1,8 +1,9 @@
 # Savant Gateway
 
-A Next.js gateway for the provider's full model catalog: provider sync, hashed
-consumer keys, OpenAI-compatible chat completions with streaming, operator
-sell prices, credit settlement, and revenue/cost analytics.
+A Next.js gateway for the provider's full model catalog: provider sync,
+customer accounts with scoped keys, prepaid credit and Stripe-confirmed
+top-ups, OpenAI-compatible chat completions with streaming, operator sell
+prices, credit settlement, and revenue/cost analytics.
 
 ## Governance Boot Gate
 
@@ -48,9 +49,10 @@ Never store or emit the upstream `"Free"` sentinel as a family.
    session summary, or FID. The rule is enforced by
    `scripts/attribution-guard.mjs` in the commit hook, pre-push hook, and CI.
    There is no authorized exception.
-2. **No secrets in the tree.** `PROVIDER_KEY`, `ADMIN_PASSWORD` and
-   `ADMIN_SESSION_SECRET` belong in `.env.local` only. Never print, log, commit,
-   or expose them to the browser.
+2. **No secrets in the tree.** `PROVIDER_KEY`, `ADMIN_PASSWORD`,
+   `ADMIN_SESSION_SECRET`, `STRIPE_SECRET_KEY`, and `STRIPE_WEBHOOK_SECRET`
+   belong in `.env.local` only. Never print, log, commit, or expose them to the
+   browser.
 3. **Read before edit.** Read every touched file 0-EOF; no skimming. Never edit
    a project file through a scripted transform.
 4. **Verify before claim.** Run the declared gates and paste real output. A
@@ -91,11 +93,17 @@ noted:
 ## Layout
 
 ```text
-app/                    landing (/), public catalog (/models), console, admin
-app/admin/(panel)/      authenticated overview, catalog, pricing, analytics
+app/                    landing (/), public catalog (/models), customer auth,
+                        account (/account), console, admin
+app/admin/(panel)/      authenticated overview, customers, catalog, pricing,
+                        analytics
+app/api/auth/           signup, login, logout, me
+app/api/account/        scoped keys and Stripe checkout
+app/api/webhooks/       signature-verified Stripe fulfillment
 app/api/admin/          session, catalog, pricing, and credit management
 components/landing/     public landing sections
 components/catalog/     public full-catalog table
+components/account/     auth forms, customer header, keys, top-up, history
 components/dashboard/   console sections and shared UI primitives
 components/admin/       admin shell, tables, pricing editor, analytics
 lib/provider.ts         upstream provider client and catalog sync
@@ -103,6 +111,12 @@ lib/pricing.ts          micro-dollar, markup, margin, hold, and estimate math
 lib/gateway.ts          key auth, full-catalog routing, reservation
 lib/gateway-stream.ts   streaming relay and settlement on close
 lib/gateway-settle.ts   usage parsing, cost/charge, settlement
+lib/customer.ts         customer validation
+lib/password.ts         scrypt hashing and constant-time verification
+lib/customer-session.ts opaque session tokens and cookie options
+lib/customer-auth.ts    customer guards and cookie handling
+lib/stripe.ts           Stripe configuration and checkout client
+lib/topup-amount.ts     exact top-up amount parsing
 lib/admin-session.ts    session token signing and password verification
 lib/admin-auth.ts       server-side admin guards and cookie handling
 lib/store/              split persistence modules

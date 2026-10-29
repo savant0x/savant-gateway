@@ -42,11 +42,13 @@ export function SiteHeader() {
 
         <div className="ml-auto flex items-center gap-2 md:ml-3">
           <Link
-            className={`${primaryCta} hidden sm:inline-flex`}
-            href="/dashboard"
+            className="hidden px-3 py-2 text-sm text-muted transition-colors hover:text-foreground sm:block"
+            href="/login"
           >
-            <i aria-hidden className="fa-solid fa-terminal mr-2" />
-            Open console
+            Sign in
+          </Link>
+          <Link className={primaryCta} href="/signup">
+            Get started
           </Link>
         </div>
       </div>

@@ -47,12 +47,13 @@ usage in SQLite.
 - **Usage is weighted only for free-pool calls.** `weighted_tokens` is
   `total × weight` when the model is free with a positive weight, and zero
   otherwise. The provider free pool is shared across the one provider key.
-- **`/api/*` accepts loopback or an admin session.** `guardLocalOrAdmin` first
-  rejects a foreign `Origin`, then allows a loopback request, then verifies the
-  admin cookie. The loopback branch trusts the `Host` header and is spoofable
-  by a non-browser client; it is a development convenience, not a public
-  boundary. The admin panel uses `guardAdminApi` / `requireAdminPage`, which do
-  not depend on loopback.
+- **Operator `/api/*` requires an admin session in production.**
+  `ALLOW_LOOPBACK_CONSOLE` in `lib/admin-auth.ts` enables the loopback branch
+  only outside production, and `/dashboard` redirects to `/admin/login` in a
+  production build. The loopback branch trusts the `Host` header and is
+  spoofable by a non-browser client; it must never gate privileged actions on
+  an internet-facing server. The admin panel uses `guardAdminApi` /
+  `requireAdminPage`, which never depended on loopback.
 - **Admin sessions are signed and revocable.** The cookie is
   `v1.<expiry>.<epoch>.<nonce>.<HMAC>`; the epoch lives in
   `admin_state.session_epoch`. `DELETE /api/admin/session` bumps the epoch, so
@@ -72,6 +73,28 @@ usage in SQLite.
   UTC. A failed upstream call writes a zero-charge error row.
 - **SQLite is local state.** `data/` is ignored and not part of the
   deliverable. Deleting it and syncing again is the reset path.
+- **Customer identity is server-side and revocable.** `POST /api/auth/signup`
+  writes a scrypt hash; login issues a 32-byte opaque token in the
+  `sg_session` cookie, and only its SHA-256 hash is stored in
+  `customer_sessions`. Sign-out sets `revoked_at`. Do not replace this with a
+  signed stateless token: revocation is a requirement.
+- **Customer data is scoped by the session user.** `/api/account/keys`,
+  `listCustomerUsage`, `listCustomerTopups`, and `getAccountSummary(userId)`
+  all take the authenticated id. The old local-tenant wrappers
+  (`listApiKeys`, `listUsage`, `getAccountSummary()` without an id) are for the
+  operator console only; never use them in a customer route.
+- **Only the Stripe webhook may credit a top-up.** The success redirect is
+  advisory. `fulfillTopup` requires a pending row, a matching amount and
+  currency, a unique `provider_ref`, and one transaction that marks the row
+  paid and writes the ledger. Replays return `already_paid` with no second
+  credit. Stripe configuration requires both `STRIPE_SECRET_KEY` and
+  `STRIPE_WEBHOOK_SECRET`; otherwise checkout returns `503` and no fake credit
+  path exists.
+- **Top-up amounts are exact.** `lib/topup-amount.ts` parses dollars without
+  floating point, enforces $5–$500, and returns cents plus micro-dollars.
+  Stripe receives cents; the database receives micros.
+- **A zero balance still works on free-pool models.** Paid requests are the
+  only ones that reserve credit.
 - **The provider key is server-only.** `PROVIDER_KEY` is read through
   `lib/provider.ts`; never place it in `NEXT_PUBLIC_*` or any client component.
 - **Font Awesome Free is imported once.** `app/layout.tsx` imports
@@ -82,9 +105,14 @@ usage in SQLite.
 
 - `app/page.tsx` — public landing at `/`.
 - `app/models` — public full catalog with sell prices.
+- `app/signup`, `app/login`, `app/account` — customer authentication and
+  account console.
 - `app/dashboard` — operator console.
-- `app/admin/(panel)` — authenticated shell; overview, catalog, pricing,
-  analytics. `app/admin/login` is the only unauthenticated admin page.
+- `app/admin/(panel)` — authenticated shell; overview, customers, catalog,
+  pricing, analytics. `app/admin/login` is the only unauthenticated admin page.
+- `app/api/auth/*` — signup, login, logout, and current-customer endpoints.
+- `app/api/account/*` — scoped keys and Stripe checkout creation.
+- `app/api/webhooks/stripe` — signature-verified, idempotent fulfillment.
 - `app/api/admin/*` — session, catalog status, pricing, and credit endpoints.
 - `app/api/*` — console actions (loopback or admin session).
 - `app/v1/chat/completions` — the gateway entry point.
@@ -96,7 +124,14 @@ usage in SQLite.
 - `lib/gateway-stream.ts` — SSE relay and settle-on-close.
 - `lib/gateway-settle.ts` — usage parsing and settlement.
 - `lib/store/billing.ts` — credit grants, ledger, holds.
+- `lib/store/customer.ts` — customer identity, sessions, admin summaries.
+- `lib/store/account.ts` — customer keys, usage, and account composition.
+- `lib/store/topups.ts` — pending top-ups and idempotent fulfillment.
 - `lib/store/analytics.ts` — revenue/cost/margin queries.
+- `lib/customer.ts`, `lib/password.ts`, `lib/customer-session.ts`,
+  `lib/customer-auth.ts` — validation, scrypt, opaque sessions, guards.
+- `lib/stripe.ts`, `lib/topup-amount.ts` — Stripe config/client and exact
+  amount parsing.
 - `lib/admin-session.ts` — pure token, password, cookie, and origin logic.
 - `lib/store/*` — persistence split by responsibility.
 - `components/landing/*`, `components/catalog/*`, `components/dashboard/*`,
@@ -105,12 +140,16 @@ usage in SQLite.
 
 ## Verification
 
-`npm run verify` is the full local gate. FID-2026-1029-004 records the current
-full-catalog receipt, and FID-2026-1029-005 records the provider/family/group
-correction (30 tests, quality PASS over 92 files, 20-route build, live API and
-UI checks). Live provider checks require `PROVIDER_KEY` and are not run in CI.
-Unit tests cover admin token tampering, expiry, password rotation, epoch
-revocation, cookie flags, origin checks, the login limiter, HTTP key
-extraction, pricing arithmetic, and family normalization. The paid money path
-has a disposable-DB receipt; the provider account has no paid balance, so real
-paid upstream inference remains unverified.
+`npm run verify` is the full local gate. FID-2026-1029-006 records the current
+customer/top-up receipt: 48 tests, quality PASS over 122 files, 32-route
+build, and live HTTP checks on a disposable database (scoped keys and usage,
+cross-account revoke denied, unconfigured checkout `503`, signed webhook
+credited once, replay no-op, logout revoked). FID-2026-1029-004 holds the
+pricing and paid-routing receipt; FID-2026-1029-005 holds the
+provider/family/group correction. Live provider checks require `PROVIDER_KEY`
+and are not run in CI. Unit tests cover scrypt hashing, customer validation,
+exact top-up parsing, opaque session shape and cookie flags, admin token
+tampering, expiry, password rotation, epoch revocation, origin checks, the
+login limiter, HTTP key extraction, pricing arithmetic, and family
+normalization. A real Stripe card payment and real paid upstream inference
+remain unverified; the provider account has no paid balance.

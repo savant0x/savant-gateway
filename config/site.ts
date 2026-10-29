@@ -7,7 +7,7 @@ export const siteConfig = {
   },
   tagline: "The full provider catalog, one OpenAI-compatible endpoint.",
   description:
-    "An OpenAI-compatible gateway for the provider's full catalog: cost-aware pricing, hashed consumer keys, credit settlement, and usage analytics.",
+    "An OpenAI-compatible gateway for the full provider catalog: prepaid credit, account-owned keys, per-request usage, and Stripe-secured top-ups.",
   url: process.env.NEXT_PUBLIC_SITE_URL?.trim() || "http://localhost:3000",
   navItems: [
     { label: "Models", href: "/models" },
@@ -15,5 +15,8 @@ export const siteConfig = {
     { label: "Quick start", href: "/#quickstart" },
   ],
   consoleHref: "/dashboard",
+  accountHref: "/account",
+  loginHref: "/login",
+  signupHref: "/signup",
   adminHref: "/admin",
 } as const;

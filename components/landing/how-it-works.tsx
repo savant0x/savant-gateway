@@ -1,15 +1,15 @@
 const STEPS = [
   {
-    title: "Sync the upstream catalog",
-    body: "The server reads the upstream key, records balance and subscription state, and imports every model with its cost, capabilities, and price group.",
+    title: "Create an account",
+    body: "Sign up with email and password. Sessions are opaque, server-side, and revocable — no shared keys and no operator access to your account.",
   },
   {
-    title: "Set sell prices",
-    body: "A default markup prices the catalog. Admin edits individual rows or reapplies a markup, with margin and blended profit computed from the same integers the gateway charges.",
+    title: "Add prepaid credit",
+    body: "Top up $5–$500 through Stripe Checkout. Credit is added only after the signed webhook confirms payment, and every balance change is ledgered.",
   },
   {
     title: "Call any model",
-    body: "Mint a consumer key and fund the tenant credit. Free models stream immediately; paid models reserve a hold, settle actual usage, and write revenue and cost to analytics.",
+    body: "Mint a gateway key and call the full catalog. Free models stream immediately; paid models reserve a hold, settle actual usage, and debit your available credit.",
   },
 ];
 
@@ -24,7 +24,7 @@ export function HowItWorks() {
           The path
         </p>
         <h2 className="mt-2 max-w-2xl text-3xl font-semibold tracking-[-0.03em]">
-          Three steps from provider key to a billed completion.
+          Three steps from signup to a billed completion.
         </h2>
 
         <ol className="mt-10 grid gap-4 md:grid-cols-3">

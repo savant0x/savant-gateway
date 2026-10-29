@@ -38,6 +38,32 @@ export {
   releaseCreditHold,
   reserveCreditHold,
 } from "./store/billing";
+export {
+  createCustomer,
+  createCustomerSession,
+  findCustomerByEmail,
+  findCustomerById,
+  listCustomerSummaries,
+  markCustomerLogin,
+  resolveCustomerSession,
+  revokeCustomerSession,
+} from "./store/customer";
+export {
+  createCustomerApiKey,
+  getCustomerAccount,
+  listCustomerApiKeys,
+  listCustomerUsage,
+  revokeCustomerApiKey,
+} from "./store/account";
+export {
+  createTopup,
+  fulfillTopup,
+  getCustomerPurchasedMicros,
+  listCustomerTopups,
+  listTopups,
+  markTopupFailed,
+  setTopupProviderRef,
+} from "./store/topups";
 export { getMarkupBps, saveMarkupBps } from "./store/settings";
 export { getPricingData } from "./store/pricing";
 export {

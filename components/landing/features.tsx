@@ -11,8 +11,8 @@ const FEATURES = [
   },
   {
     icon: "fa-wallet",
-    title: "Credit settlement",
-    body: "Paid calls reserve a hold against the tenant balance, then settle actual usage. Free calls never touch credit.",
+    title: "Prepaid credit",
+    body: "Top up through Stripe Checkout, then pay only for what you use. Paid calls reserve a hold, settle actual usage, and ledger every debit. Free calls never touch credit.",
   },
   {
     icon: "fa-chart-line",
@@ -21,8 +21,8 @@ const FEATURES = [
   },
   {
     icon: "fa-key",
-    title: "Hashed consumer keys",
-    body: "SHA-256 at rest. The plaintext secret exists only in the creation response and never in a log or database column.",
+    title: "Account-owned keys",
+    body: "Your account mints and revokes its own keys. SHA-256 at rest — the plaintext secret exists only in the creation response.",
   },
   {
     icon: "fa-tower-broadcast",

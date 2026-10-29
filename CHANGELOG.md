@@ -3,6 +3,31 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — Customer accounts and prepaid credit top-ups
+
+- **FID-2026-1029-006 — high — Sell paid models to outside customers.** Adds
+  email/password signup with scrypt hashes, opaque server-side sessions
+  (`sg_session`, HttpOnly, SameSite=Lax, seven days, Secure in production),
+  and sign-out revocation. Customer keys, usage, ledger, and top-up history are
+  scoped by the session user; a second account cannot revoke or read the
+  first's data. Adds `/signup`, `/login`, and `/account`, plus
+  `/api/auth/*`, `/api/account/keys`, `/api/account/topup`, and an admin
+  Customers page. Prepaid credit is sold in $5–$500 increments through Stripe
+  Checkout; credit is granted only by a signature-verified webhook whose
+  amount and currency match a pending top-up. `topups.provider_ref` is unique
+  and fulfillment transitions and ledgers in one transaction, so replay is a
+  no-op. Checkout returns `503` while Stripe is unconfigured — no fake credit
+  path. Also hardens the operator boundary: the loopback console bypass is
+  disabled and `/dashboard` requires the admin session in production builds.
+  Tests: 48 total (18 new password, customer, session, and top-up tests).
+  Live disposable-DB receipt: 201 signup, 409 duplicate, 401 wrong password,
+  cross-account revoke 404, foreign Origin 403, per-account usage isolation,
+  503 unconfigured top-up, signed paid webhook credited $25.00 once, replay
+  credited nothing, unpaid event ignored, logout revoked the session, and
+  `/admin/customers` returned 200. A live Stripe card payment remains
+  unverified because no live keys were available; fulfillment was tested with
+  a Stripe-signed event.
+
 ## 2026-10-29 — Provider, family, and price-group semantics
 
 - **FID-2026-1029-005 — medium — Separate the provider identity from the model

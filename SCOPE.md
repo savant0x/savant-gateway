@@ -60,7 +60,8 @@ and produce a Gemini Deep Research prompt for an early-stage business plan.
   typecheck exit 0, 133/133 unit tests, quality PASS over 207 files, production
   build exit 0 (54 app routes including `/admin/gateway` and
   `/api/admin/gateway`), `http-suite` 100 checks PASS, and `trial-http-suite`
-  all checks PASS.
+  all checks PASS. Implementation committed as `58d5556`; FID-016/017/018 are
+  closed against that commit and archived.
 - [x] **A9 — Sequencing disclosed.** Implementation and FID authoring landed in
   the same pass at the operator's direction. FID-016/017/018 record the converged
   design and audit the code that exists; they do not claim code was written only

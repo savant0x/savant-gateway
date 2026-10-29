@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1029-016-daily-free-pool-allocation.md`
 **ID:** FID-2026-1029-016
 **Severity:** high
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-29 18:10
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — reuses the existing admission transaction and
@@ -173,7 +173,7 @@ and the summary query.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [x] Commit SHA: recorded at closure (see Resolution)
+- [x] Commit SHA: `58d5556` — `feat(gateway): allocate the daily free pool and add a context banner (FID-2026-1029-016)`
 - [x] File:line ranges: `lib/allocation.ts`, `lib/allocation-ledger.ts`,
   `lib/schema/allocations.ts`, `lib/store/allocations.ts`,
   `lib/store/free-pool.ts` (allocation block inside `reserveFreeCall`),
@@ -219,12 +219,12 @@ and the summary query.
 
 ## Resolution
 
-- **Closed Date:** pending closure commit
+- **Closed Date:** 2026-10-29
 - **Fix Description:** Daily allocation ledger, admission integration, admin
   controls, tests, environment documentation.
 - **Tests Added:** Yes — `tests/allocation.test.mjs`.
 - **Verification Evidence:** Verification Receipt above.
-- **Archived:** pending closure commit
+- **Archived:** 2026-10-29 — `dev/fids/archive/`
 
 ## Lessons Learned
 

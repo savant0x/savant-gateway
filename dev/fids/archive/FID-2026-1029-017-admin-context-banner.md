@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1029-017-admin-context-banner.md`
 **ID:** FID-2026-1029-017
 **Severity:** medium
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-29 18:20
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — one settings pair, one injection point, no
@@ -142,7 +142,7 @@ delivery.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [x] Commit SHA: recorded at closure
+- [x] Commit SHA: `58d5556`
 - [x] File:line ranges: `lib/context-banner.ts`, `lib/store/banner.ts`,
   `lib/gateway.ts` (banner block and payload injection)
 - [x] Gate output: Verification Receipt
@@ -183,12 +183,12 @@ delivery.
 
 ## Resolution
 
-- **Closed Date:** pending closure commit
+- **Closed Date:** 2026-10-29
 - **Fix Description:** Settings-backed context banner with admin editing,
   validation, token accounting, and both-protocol injection.
 - **Tests Added:** Yes — `tests/context-banner.test.mjs`.
 - **Verification Evidence:** Verification Receipt above.
-- **Archived:** pending closure commit
+- **Archived:** 2026-10-29 — `dev/fids/archive/`
 
 ## Lessons Learned
 

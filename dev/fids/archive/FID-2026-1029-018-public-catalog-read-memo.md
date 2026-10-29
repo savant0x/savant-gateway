@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1029-018-public-catalog-read-memo.md`
 **ID:** FID-2026-1029-018
 **Severity:** low
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-29 18:30
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — 34 lines of generic memo plus one call site; no
@@ -134,7 +134,7 @@ the query on a miss, and stores the mapped array.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [x] Commit SHA: recorded at closure
+- [x] Commit SHA: `58d5556`
 - [x] File:line ranges: `lib/cache.ts`, `lib/store/models.ts` (`listModels`
   memo read/write)
 - [x] Gate output: Verification Receipt
@@ -171,12 +171,12 @@ the query on a miss, and stores the mapped array.
 
 ## Resolution
 
-- **Closed Date:** pending closure commit
+- **Closed Date:** 2026-10-29
 - **Fix Description:** Generic TTL memo plus a five-second memo for the public
   catalog projection; billing path untouched.
 - **Tests Added:** Yes — `tests/cache.test.mjs`.
 - **Verification Evidence:** Verification Receipt above.
-- **Archived:** pending closure commit
+- **Archived:** 2026-10-29 — `dev/fids/archive/`
 
 ## Lessons Learned
 

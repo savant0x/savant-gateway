@@ -64,6 +64,9 @@ http-suite: 100 checks PASS
 trial-http-suite: all checks PASS
 ```
 
+Implementation committed as `58d5556`; FID-016/017/018 are closed against that
+commit and archived.
+
 Pure allocation, banner, and cache behavior is unit-tested. The allocation
 ledger is exercised against an in-memory database. The admin page and PATCH
 route are compiled and gated but were not clicked through in a browser in this

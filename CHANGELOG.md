@@ -41,9 +41,11 @@ distinguish verified behavior from unverified claims.
   `dev/audit/issues.md` snapshot was preserved, not deleted, per the handoff.
   Receipt: `npm run verify` exit 0 — lint zero warnings, typecheck, 133/133 unit
   tests, quality PASS over 207 files, production build exit 0 (54 app routes),
-  `http-suite` 100 checks PASS and `trial-http-suite` all checks PASS. Trial
-  activation, plan sales, real Stripe delivery, and funded paid inference remain
-  unverified and are not claimed.
+  `http-suite` 100 checks PASS and `trial-http-suite` all checks PASS. Committed
+  as `58d5556`; FID-2026-1029-016, FID-2026-1029-017, and FID-2026-1029-018 are
+  closed against that commit and archived. Trial activation, plan sales, real
+  Stripe delivery, and funded paid inference remain unverified and are not
+  claimed.
 
 ## 2026-10-29 — Disabled lifetime trial infrastructure
 

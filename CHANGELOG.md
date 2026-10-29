@@ -14,4 +14,6 @@ distinguish verified behavior from unverified claims.
   modules under the 400-line ceiling. Adds AGENTS/ECHO/protocol governance,
   FID and session templates, the attribution guard, quality gate, Node test
   suite, git hooks, and CI. No provider behavior, key format, free-pool rule,
-  or metering rule changed.
+  or metering rule changed. Closed against commit
+  `bf3da9a007ca41d6e66c60ed080c2ef3e6cef7e5`; the FID is archived at
+  `dev/fids/archive/FID-2026-1029-002-savant-gateway-bootstrap.md`.

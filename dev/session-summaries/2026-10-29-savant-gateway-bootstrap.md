@@ -27,6 +27,8 @@
 - Added AGENTS, ECHO, protocol.config.yaml, CHANGELOG, CONTRIBUTING, SECURITY,
   knowledge, FID/session templates, dev records, attribution guard, quality
   gate, tests, git hooks, and CI.
+- Closed FID-2026-1029-002 against
+  `bf3da9a007ca41d6e66c60ed080c2ef3e6cef7e5` and archived it.
 
 ## Validation Results
 
@@ -46,6 +48,17 @@
 
 ## Next Session
 
-1. Close and archive FID-2026-1029-002 from the initial commit.
-2. Replace the Host-header guard with a non-spoofable boundary.
-3. Add customer authentication before exposing the gateway.
+1. Replace the Host-header guard with a non-spoofable boundary.
+2. Add customer authentication and per-key rate limiting before exposing the
+   gateway.
+3. Run a live provider call after the rename to replace the historical receipt.
+
+## Same-Day Follow-Up: Provider Naming Removed
+
+- Renamed the internal provider adapter from `lib/apinex.ts` to
+  `lib/provider.ts`; all call sites and error messages now say "provider".
+- Removed the residual "Apinex"/"apinex" references from the README, SCOPE,
+  knowledge, test, and UI copy.
+- Archived the closed bootstrap FID under `dev/fids/archive/`.
+- No behavior change: same endpoint, same env var names, same free-pool rule,
+  same key format, same metering.

@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1029-002-savant-gateway-bootstrap.md`
 **ID:** FID-2026-1029-002
 **Severity:** high
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-29 01:31 EDT
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -11,9 +11,9 @@
 Reference structure: `templates/FID-TEMPLATE.md`, read 2026-10-29. This npm
 project has no `protocol.config.yaml` gate registry, no `fid:verify` binary, and
 no `validate:repository` script; the real gates are the npm commands recorded
-below. `implemented` is used only as a step status. Status is `verified`, not
-`closed`: the initial commit does not exist yet at authoring time. It will close
-against that commit and move to `dev/fids/archive/`.
+below. `implemented` is used only as a step status. Status is `closed`: the initial
+commit `bf3da9a007ca41d6e66c60ed080c2ef3e6cef7e5` exists and this record has
+moved to `dev/fids/archive/`.
 
 ## Summary
 
@@ -175,9 +175,10 @@ Alternatives rejected:
    knowledge, dev records, and the session-summary template.
 7. `implemented` — Add the commit-msg and pre-push hooks and both CI workflows.
 8. `implemented` — Run `npm run verify`.
-9. `blocked` — Create and push the initial commit to
-   `savant0x/savant-gateway`; blocked until the repository is initialized.
-10. `blocked` — Close and archive this FID with the commit SHA; blocked on step 9.
+9. `implemented` — Created the initial commit
+   `bf3da9a007ca41d6e66c60ed080c2ef3e6cef7e5` for
+   `savant0x/savant-gateway`.
+10. `implemented` — Closed and archived this FID against that commit.
 
 ### Verification
 
@@ -256,8 +257,13 @@ Route (app)
 build_exit=0
 ```
 
-Missing: initial commit SHA, remote push receipt, live provider re-check after
-the rename.
+```text
+$ git rev-parse HEAD
+bf3da9a007ca41d6e66c60ed080c2ef3e6cef7e5
+```
+
+Missing: remote push receipt and a live provider re-check after the rename.
+The commit exists; publication is recorded separately from the commit.
 
 ## Perfection Loop
 
@@ -297,7 +303,7 @@ actually happened; no document change-distance is invented.
 
 ### Implementation Evidence
 
-- [ ] **Commit SHA:** pending the initial commit.
+- [x] **Commit SHA:** `bf3da9a007ca41d6e66c60ed080c2ef3e6cef7e5`.
 - [x] **File:line ranges:** `lib/provider.ts:7-8` upstream defaults;
   `lib/gateway.ts:6` provider import; `lib/http.ts:39-55` hostname parsing;
   `lib/store.ts:1-18` barrel; `components/dashboard.tsx:1` barrel;
@@ -305,7 +311,7 @@ actually happened; no document change-distance is invented.
   commit-message scan.
 - [x] **Gate output:** receipts above.
 - [x] **Reproducibility:** npm commands and Node version recorded.
-- [x] **Step statuses:** eight implemented; two blocked.
+- [x] **Step statuses:** ten implemented.
 
 ### Code Verification Evidence
 
@@ -346,12 +352,13 @@ actually happened; no document change-distance is invented.
 
 ## Resolution
 
-- **Closed Date:** pending the initial commit.
+- **Closed Date:** 2026-10-29 01:33 EDT.
 - **Fix Description:** Savant Gateway identity; split store and dashboard;
   governance scaffold; tests, quality, attribution, hooks, and CI.
 - **Tests Added:** `tests/http.test.mjs`, six cases, passing.
-- **Verification Evidence:** receipts above, 2026-10-29.
-- **Archived:** pending commit; will move to `dev/fids/archive/` with the SHA.
+- **Verification Evidence:** receipts above, 2026-10-29; commit
+  `bf3da9a007ca41d6e66c60ed080c2ef3e6cef7e5`.
+- **Archived:** 2026-10-29 01:33 EDT, moved to `dev/fids/archive/`.
 
 ## Lessons Learned
 

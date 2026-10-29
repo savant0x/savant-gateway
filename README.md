@@ -145,8 +145,9 @@ All non-trivial work follows [ECHO Protocol v0.2.0](ECHO.md) and the
 - [FID-2026-1029-001](dev/fids/FID-2026-1029-001-nextjs-gateway-rebuild.md) —
   historical rebuild record, verified but not closed (no commit existed when it
   was authored; it is superseded by FID-002 for the current tree).
-- [FID-2026-1029-002](dev/fids/FID-2026-1029-002-savant-gateway-bootstrap.md) —
-  Savant Gateway identity, split, governance scaffold, and initial repository.
+- [FID-2026-1029-002](dev/fids/archive/FID-2026-1029-002-savant-gateway-bootstrap.md) —
+  Savant Gateway identity, split, governance scaffold, and initial repository
+  (closed against commit `bf3da9a`).
 
 ## Quality gates
 

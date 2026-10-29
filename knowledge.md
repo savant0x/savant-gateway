@@ -222,10 +222,15 @@ exact top-up parsing, opaque session shape and cookie flags, admin token
 tampering, expiry, password rotation, epoch revocation, origin checks, the
 login limiter, HTTP key extraction, pricing arithmetic, and family
 normalization, provider-registry validation, provider-scoped catalog identity,
-and Anthropic request/response/stream translation. The current tree builds 39
-routes, runs 79 tests, and scans 152 files. FID-2026-1029-010 adds the
-multi-provider receipt: the additive migration preserved 45 existing Savant
-models, seeded CommandCode as unconfigured, and added the provider columns. A
-real Stripe card payment and real paid upstream inference remain unverified;
-the provider account has no paid balance, and CommandCode has no configured
-credential.
+and Anthropic request/response/stream translation. The current tree builds 51
+routes, runs 99 tests, and scans 186 files. FID-2026-1029-007 adds the group
+receipt: a zero-cost free model moved to a paid group charged 160 micros after
+a provider sync. FID-2026-1029-008 adds the subscription receipt: a signed
+`invoice.paid` activated exactly one period, an included call charged zero with
+6 weighted tokens, an exhausted `block` plan returned 402, an exhausted
+`credit` plan charged 9 micros at 5000 bps, and a signed top-up credited $5.00
+once. FID-2026-1029-010 adds the multi-provider receipt: the additive
+migration preserved 45 existing Savant models, seeded CommandCode as
+unconfigured, and added the provider columns. A real Stripe card payment and
+real paid upstream inference remain unverified; the provider account has no
+paid balance, and CommandCode has no configured credential.

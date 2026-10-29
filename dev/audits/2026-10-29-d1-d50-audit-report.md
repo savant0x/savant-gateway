@@ -257,11 +257,11 @@ built 33 routes. The tree is uncommitted; `48c21e1` remains the last commit.
   audit baseline; its line 112 states the full D1–D50 list lives in `SCOPE.md`.
 - [dev/fids/audit/v5-audit.md](dev/fids/audit/v5-audit.md) — latest printed
   FID-001 audit iteration; not the canonical finding list.
-- [FID-2026-1029-007](dev/fids/FID-2026-1029-007-model-group-control.md) —
-  active group-control design.
-- [FID-2026-1029-008](dev/fids/FID-2026-1029-008-subscription-plans-and-entitlements.md)
-  — active subscription-service design; relevant to D20 and D36.
-- [FID-2026-1029-009](dev/fids/FID-2026-1029-009-error-sanitization-and-free-pool-admission.md)
+- [FID-2026-1029-007](dev/fids/archive/FID-2026-1029-007-model-group-control.md) —
+  closed group-control design.
+- [FID-2026-1029-008](dev/fids/archive/FID-2026-1029-008-subscription-plans-and-entitlements.md)
+  — closed subscription-service design; relevant to D20 and D36.
+- [FID-2026-1029-009](dev/fids/archive/FID-2026-1029-009-error-sanitization-and-free-pool-admission.md)
   — implementation and gate receipt for D6 and D50.
-- [FID-2026-1029-010](dev/fids/FID-2026-1029-010-multi-provider-registry.md)
+- [FID-2026-1029-010](dev/fids/archive/FID-2026-1029-010-multi-provider-registry.md)
   — converged multi-provider design; no application code changed.

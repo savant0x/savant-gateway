@@ -483,6 +483,11 @@ Loop before code. FIDs live in `dev/fids/` and use
 
 Current records:
 
+- [FID-2026-1029-008](dev/fids/archive/FID-2026-1029-008-subscription-plans-and-entitlements.md) —
+  closed customer subscriptions: priced plans, included groups and models,
+  entitlement snapshots, weighted-token allowances, recurring Stripe
+  lifecycle, overage policy, and admin/customer controls (closed against
+  `a945789`).
 - [FID-2026-1029-010](dev/fids/archive/FID-2026-1029-010-multi-provider-registry.md) —
   closed provider registry: per-provider credentials, scoped sync and model
   identity, OpenAI and Anthropic adapters, manual cost mapping,
@@ -491,11 +496,6 @@ Current records:
   closed first-class model groups: custom groups, operator assignment,
   sync-safe membership, group-aware billing and pricing, and a Groups admin
   surface (closed against `161ddcc`).
-- [FID-2026-1029-008](dev/fids/FID-2026-1029-008-subscription-plans-and-entitlements.md) —
-  implemented and verified customer subscriptions: priced plans, included
-  groups and models, entitlement snapshots, weighted-token allowances,
-  recurring Stripe lifecycle, overage policy, and admin/customer controls.
-  Closure is pending a commit SHA.
 - [FID-2026-1029-001](dev/fids/archive/FID-2026-1029-001-nextjs-gateway-rebuild.md) —
   historical rebuild record, closed against `bf3da9a`; the current tree was
   established by FID-002.

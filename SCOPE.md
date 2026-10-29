@@ -124,8 +124,7 @@ entitlements on top of the FID-007 model groups.
   Real Stripe checkout, recurring invoice delivery, and a funded paid
   subscription remain unverified (B4).
 - [x] **S21 — Records.** README, AGENTS vocabulary, knowledge, API reference,
-  CHANGELOG, SCOPE, and FID-008 are updated. FID-008 is `verified`; closure is
-  pending a commit SHA.
+  CHANGELOG, SCOPE, and FID-008 are updated.
 - [x] **S22 — Replay dedupe consolidated.** The paid-invoice guard is one
   helper, `invoiceStatus` in `lib/store/subscription-rows.ts`, used by both
   `activateSubscription` and `markSubscriptionPastDue`; extracting it also kept
@@ -135,6 +134,9 @@ entitlements on top of the FID-007 model groups.
   extraction with identical results: 23 snapshot entitlements growing to 24 on
   refresh, 402 on the exhausted block plan, 9 micros on the 5000-bps credit
   overage, one period after the signed replay, and one $5.00 top-up credit.
+- [x] **S23 — Closure.** Implementation committed as `a945789`; FID-008 is
+  closed against that SHA and moved to `dev/fids/archive/`. README, knowledge,
+  CHANGELOG, and the blocker register record the closure.
 
 ## Prior Session — 2026-10-29 (model groups and subscriptions)
 
@@ -147,11 +149,13 @@ it costs. This is a records-only pass; no application code changed.
 - [x] **G2 — Group scope recorded.** The FID is registered here; implementation
   has not started and no source file changed.
 - [x] **G3 — Subscription FID authored.**
-  `dev/fids/FID-2026-1029-008-subscription-plans-and-entitlements.md` is
-  converged with plans, entitlement snapshots, recurring Stripe billing,
-  allowance metering, admin and customer surfaces, tests, and gates.
+  `dev/fids/archive/FID-2026-1029-008-subscription-plans-and-entitlements.md`
+  is converged with plans, entitlement snapshots, recurring Stripe billing,
+  allowance metering, admin and customer surfaces, tests, and gates; it was
+  implemented and closed later the same day (S15–S23).
 - [x] **G4 — Dependency recorded.** FID-008 builds on FID-007's
-  `model_groups` and `models.group_slug`; both remain design-only.
+  `model_groups` and `models.group_slug`; both were design-only at authoring
+  time and are now implemented and closed (S10–S23).
 
 ## Prior Session — 2026-10-29 (governance reconciliation)
 
@@ -417,19 +421,19 @@ Recorded read-only under the approved review item; any fix remains blocked pendi
   upstream are available. Evidence:
   `dev/session-summaries/2026-10-29-customer-e2e-verification.md` (H1, H4).
 - **B2 — Route-level HTTP verification.** Blocked pending an operator ruling on
-  adding a route-level suite. The current 89 tests cover helpers, pricing,
-  groups, providers, free-pool policy, and sanitization;
+  adding a route-level suite. The current 99 tests cover helpers, pricing,
+  groups, plans, providers, free-pool policy, and sanitization;
   no test exercises signup cookies, cross-account key ownership, webhook replay,
   or paid settlement over HTTP, so those paths can regress while `npm test`
   stays green. Evidence: the handoff's H5 and the current `tests/` listing.
 - **B3 — FID-2026-1029-007 implementation.** Resolved 2026-10-29:
   implemented and verified in S10–S13, committed as `161ddcc`, and closed and
   archived as FID-007. The group schema, routes, tests, and admin surface exist.
-- **B4 — FID-2026-1029-008 implementation and real Stripe subscription
-  receipt.** Blocked pending the operator's go-ahead and the missing Stripe
-  test credentials already registered in B1. FID-007's group schema now
-  exists; local signed-webhook coverage is possible, but a real recurring
-  Checkout and Stripe-delivered invoice remain unverified.
+- **B4 — Real Stripe subscription receipt.** Partially resolved 2026-10-29:
+  FID-008 is implemented, verified, committed as `a945789`, and closed and
+  archived. Local signed-webhook coverage proved activation, replay, failure,
+  and top-up dispatch. A real recurring Checkout and a Stripe-delivered
+  invoice remain unverified for the missing Stripe test credentials in B1.
 - **B5 — FID-2026-1029-010 implementation.** Resolved 2026-10-29: implemented
   and verified in S8/S9; committed as `957430c` and closed against `b5ae9fc`.
   Live CommandCode inference still needs `COMMANDCODE_API_KEY` in `.env.local`;
@@ -564,3 +568,11 @@ Git repository and the template's required local commit could not exist. Fresh g
   no-silent-zero-cost rule, provider-scoped free-pool admission, and admin
   provider controls. CommandCode is the intended second upstream; registration
   is B5 and no provider code changed.
+- 2026-10-29: **FID-2026-1029-008 implemented and closed.** Plans, entitlement
+  snapshots, allowance periods, holds, invoices, recurring Stripe lifecycle,
+  gateway billing-source routing, customer and admin surfaces are committed as
+  `a945789`. Receipt: `npm run verify` exit 0, 99/99 tests, quality PASS over
+  186 files, 51-route build, plus the disposable HTTP receipt re-run after the
+  replay guard was consolidated into one helper. Real Stripe Checkout and
+  Stripe-delivered recurring invoices remain B4. The FID is closed and
+  archived.

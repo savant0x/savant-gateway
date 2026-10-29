@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1029-008-subscription-plans-and-entitlements.md`
 **ID:** FID-2026-1029-008
 **Severity:** high
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-29 10:42 EDT
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -11,10 +11,10 @@
 **Related record:** FID-2026-1029-006 owns one-time credit top-ups; this FID
 adds recurring plans without replacing the prepaid credit path.
 
-Reference structure: `templates/FID-TEMPLATE.md`, read 2026-10-29. `verified`
-means the implementation, gates, and disposable-database receipt exist; closure
-is pending the commit SHA. The repository gates are `lint`, `typecheck`, `test`,
-`quality`, `build`, and `verify`.
+Reference structure: `templates/FID-TEMPLATE.md`, read 2026-10-29. `closed`
+means the implementation, gates, and disposable-database receipt exist and are
+recorded against the implementation commit. The repository gates are `lint`,
+`typecheck`, `test`, `quality`, `build`, and `verify`.
 
 ## Summary
 
@@ -49,10 +49,10 @@ subscription and can still top up credit for paid or overage usage.
 - **Tool Versions:** Next.js `16.4.3`, React `19.3.0`, HeroUI `3.2.7`,
   Tailwind CSS `4.3.3`, better-sqlite3 `13.0.3`, Stripe SDK `23.0.1`,
   TypeScript `5.9.3`.
-- **Commit/State:** FID-007 is closed at `161ddcc`. The FID-008 implementation
-  is present and verified but uncommitted; no commit SHA exists yet. The
-  working tree adds the plan/subscription schema, stores, Stripe lifecycle,
-  gateway enforcement, customer/admin surfaces, tests, and records.
+- **Commit/State:** FID-008 is committed as `a945789`; FID-007 closed at
+  `161ddcc`. The implementation adds the plan/subscription schema, stores,
+  Stripe lifecycle, gateway enforcement, customer/admin surfaces, tests, and
+  records.
 
 ## Detailed Description
 
@@ -885,7 +885,8 @@ signed `invoice.paid` replay, and one $5.00 top-up credit.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [ ] **Commit SHA:** Pending; no commit exists for this FID yet.
+- [x] **Commit SHA:** `a945789` — `feat(gateway): add subscription plans with
+  metered entitlements (FID-2026-1029-008)`; attribution guard passed.
 - [x] **File:line ranges:**
   `lib/schema/subscriptions.ts:9` (additive tables/indexes);
   `lib/plans.ts` (validation, entitlements, allowance, markup);
@@ -905,8 +906,8 @@ signed `invoice.paid` replay, and one $5.00 top-up credit.
   HTTP receipt used a disposable copy of the local database, a mock
   OpenAI-protocol upstream, and Stripe test-signed events with no real network
   payment.
-- [x] **Step statuses:** All 15 steps are implemented and verified; only the
-  commit SHA is outstanding.
+- [x] **Step statuses:** All 15 steps are implemented, verified, and committed
+  as `a945789`.
 
 ### Code Verification Evidence
 
@@ -915,8 +916,8 @@ signed `invoice.paid` replay, and one $5.00 top-up credit.
 - [x] `lint`, `typecheck`, `test`, `quality`, and `build` pass; `verify` exits 0.
 - [x] Production call-graph evidence is present: route → guard/store →
   gateway → subscription access → period/hold → usage settlement.
-- [x] FID status reflects the actual implementation state: `verified`; closure
-  waits for the commit SHA.
+- [x] FID status reflects the actual implementation state: `closed` against
+  `a945789`.
 
 ### Loop 2 — Independent audit and self-correction
 
@@ -962,7 +963,8 @@ signed `invoice.paid` replay, and one $5.00 top-up credit.
 
 ## Resolution
 
-- **Closed Date:** none. Status is `verified`; closure awaits the commit SHA.
+- **Closed Date:** 2026-10-29 — implementation commit `a945789` passed the full
+  gate and attribution guard.
 - **Fix Description:** Real customer subscription plans with operator-authored
   pricing, included groups/models, weighted-token allowances, entitlement
   snapshots, Stripe recurring billing, overage policy, admin grants and
@@ -971,8 +973,8 @@ signed `invoice.paid` replay, and one $5.00 top-up credit.
 - **Verification Evidence:** `npm run verify` exit 0 (99/99 tests, quality PASS
   over 186 files, 51-route build) plus the disposable HTTP receipt above.
   Real Stripe checkout/recurring delivery and funded live inference are B4.
-- **Archived:** not archived. A verified-but-uncommitted FID stays in
-  `dev/fids/` until the commit exists.
+  Implementation committed as `a945789`; attribution guard passed.
+- **Archived:** 2026-10-29 — moved to `dev/fids/archive/`.
 
 ## Lessons Learned
 

@@ -34,8 +34,8 @@ distinguish verified behavior from unverified claims.
   overage with 5000-bps markup, duplicate checkout 409, foreign-origin 403,
   manual extend/revoke, one signed-invoice activation with a replay no-op, and
   a $5.00 top-up credited once. Real Stripe checkout/recurring delivery and a
-  funded live subscription remain unverified (B4). FID-008 is `verified`;
-  closure awaits a commit SHA.
+  funded live subscription remain unverified (B4). Committed as `a945789`;
+  FID-008 is closed against that commit and archived.
 
 ## 2026-10-29 — First-class model groups
 

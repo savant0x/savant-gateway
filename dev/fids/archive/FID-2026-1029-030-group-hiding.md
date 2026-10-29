@@ -155,7 +155,7 @@ scratch DB            visible 44 | hide free 33 | hide subscription 23 | unhide 
 - **Tests Added:** No — the store path needs a live SQLite handle; verified with a
   scratch-DB query instead.
 - **Verification Evidence:** Gate receipt above.
-- **Archived:** pending
+- **Archived:** `dev/fids/archive/`, committed as `7b8774d`
 
 ## Lessons Learned
 

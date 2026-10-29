@@ -214,7 +214,7 @@ listModels() active plan drafted   34
   assertions were removed with the helper.
 - **Verification Evidence:** Gate receipt above and the live `listModels()`
   check on a scratch database (34 / 44 / 34).
-- **Archived:** pending commit
+- **Archived:** `dev/fids/archive/`, committed as `7b8774d`
 
 ## Lessons Learned
 

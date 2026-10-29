@@ -355,21 +355,21 @@ Recorded read-only under the approved review item; any fix remains blocked pendi
   upstream are available. Evidence:
   `dev/session-summaries/2026-10-29-customer-e2e-verification.md` (H1, H4).
 - **B2 — Route-level HTTP verification.** Blocked pending an operator ruling on
-  adding a route-level suite. The current 48 tests cover helpers and pricing;
+  adding a route-level suite. The current 89 tests cover helpers, pricing,
+  groups, providers, free-pool policy, and sanitization;
   no test exercises signup cookies, cross-account key ownership, webhook replay,
   or paid settlement over HTTP, so those paths can regress while `npm test`
   stays green. Evidence: the handoff's H5 and the current `tests/` listing.
-- **B3 — FID-2026-1029-007 implementation.** Blocked pending the operator's
-  go-ahead. The FID is converged but no code, migration, test, or route exists
-  yet. The work is gated on that approval rather than silently expanding this
-  records-only pass.
+- **B3 — FID-2026-1029-007 implementation.** Resolved 2026-10-29:
+  implemented and verified in S10–S13, committed as `161ddcc`, and closed and
+  archived as FID-007. The group schema, routes, tests, and admin surface exist.
 - **B4 — FID-2026-1029-008 implementation and real Stripe subscription
-  receipt.** Blocked pending the operator's go-ahead and FID-007's group
-  schema. Local signed-webhook coverage is possible, but a real recurring
-  Checkout and Stripe-delivered invoice remain blocked by the missing test
-  credentials already registered in B1.
+  receipt.** Blocked pending the operator's go-ahead and the missing Stripe
+  test credentials already registered in B1. FID-007's group schema now
+  exists; local signed-webhook coverage is possible, but a real recurring
+  Checkout and Stripe-delivered invoice remain unverified.
 - **B5 — FID-2026-1029-010 implementation.** Resolved 2026-10-29: implemented
-  and verified in S8/S9; the remaining gate is operator review and a commit.
+  and verified in S8/S9; committed as `957430c` and closed against `b5ae9fc`.
   Live CommandCode inference still needs `COMMANDCODE_API_KEY` in `.env.local`;
   no secret belongs in the tree.
 

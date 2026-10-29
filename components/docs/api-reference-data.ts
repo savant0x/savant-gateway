@@ -89,6 +89,13 @@ export const MODEL_FIELDS = [
     example: "paid",
   },
   {
+    name: "requires_subscription",
+    type: "boolean",
+    description:
+      "True when the row's billing mode is subscription. A call needs an active plan that includes this model.",
+    example: "false",
+  },
+  {
     name: "context_window",
     type: "string",
     description: "Provider context notation. Treat it as informational.",
@@ -174,7 +181,7 @@ export const REQUEST_FIELDS = [
     name: "max_tokens",
     type: "integer",
     description:
-      "Optional. Paid calls default to 4,096 and reject values above 65,536; free-pool calls forward it upstream.",
+      "Optional. The gateway defaults to 4,096 and rejects values above 65,536.",
     example: "512",
   },
   {
@@ -214,9 +221,9 @@ export const GROUPS = [
   {
     group: "subscription",
     billing:
-      "Visible for discovery. Upstream entitlement may be required before a call can route.",
+      "Included usage is covered by a purchased plan without debiting credit; an exhausted plan follows its block or credit overage policy.",
     routing:
-      "Requires an upstream entitlement and a sell price; unpriced rows return 503.",
+      "Requires an active subscription whose snapshot includes this model; otherwise 403 subscription_required.",
   },
 ] as const;
 
@@ -234,9 +241,15 @@ export const ERRORS = [
   },
   {
     status: "402",
-    type: "insufficient_quota",
+    type: "insufficient_quota | subscription_past_due | subscription_limit_reached",
     meaning:
-      "The account's available credit cannot cover the paid request's hold.",
+      "Credit cannot cover the request, the subscription is past due, or its included allowance is exhausted under a block policy.",
+  },
+  {
+    status: "403",
+    type: "subscription_required",
+    meaning:
+      "The model belongs to a subscription group and no active plan snapshot includes it.",
   },
   {
     status: "404",
@@ -268,6 +281,7 @@ export const MODELS_RESPONSE = `{
       "group_slug": "paid",
       "group_label": "Paid",
       "group_billing_mode": "paid",
+      "requires_subscription": false,
       "context_window": "1M",
       "token_weight": 0,
       "allow_free": false,

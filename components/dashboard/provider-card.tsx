@@ -55,7 +55,7 @@ export function ProviderCard({ provider }: { provider: ProviderStatus }) {
             </p>
           </div>
           <div className="rounded-xl bg-surface p-3">
-            <p className="text-xs text-muted">Subscription</p>
+            <p className="text-xs text-muted">Upstream subscription quota</p>
             <p className="mt-1 text-lg font-semibold">
               {provider.subscriptionMode ?? "—"}
             </p>
@@ -69,7 +69,8 @@ export function ProviderCard({ provider }: { provider: ProviderStatus }) {
           </p>
           {provider.subscriptionExpiresAt ? (
             <p>
-              Subscription expires: {formatDate(provider.subscriptionExpiresAt)}
+              Upstream quota expires:{" "}
+              {formatDate(provider.subscriptionExpiresAt)}
             </p>
           ) : null}
           {provider.error ? (

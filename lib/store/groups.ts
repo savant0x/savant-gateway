@@ -204,7 +204,7 @@ export function assignModelGroup(
 export function deleteModelGroup(
   slug: string,
   reassignTo: string,
-): { ok: true } | { ok: false; status: 400 | 404; error: string } {
+): { ok: true } | { ok: false; status: 400 | 404 | 409; error: string } {
   const current = readGroup(slug);
 
   if (!current) {
@@ -224,6 +224,18 @@ export function deleteModelGroup(
       ok: false,
       status: 400,
       error: "Models cannot be reassigned to the same group.",
+    };
+  }
+
+  if (
+    db
+      .prepare("SELECT 1 FROM plan_groups WHERE group_slug = ? LIMIT 1")
+      .get(slug)
+  ) {
+    return {
+      ok: false,
+      status: 409,
+      error: "This group is included by a plan. Remove it from the plan first.",
     };
   }
 

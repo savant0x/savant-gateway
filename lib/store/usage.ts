@@ -7,6 +7,7 @@ import { randomUUID } from "node:crypto";
 import { db, nowIso } from "../db";
 
 import { settleFreeReservation } from "./free-pool";
+import { settleSubscriptionHoldWithin } from "./subscription-access";
 import {
   type AuthenticatedKey,
   type FreePoolReservation,
@@ -29,6 +30,11 @@ export type UsageSettlement = {
   estimated?: boolean;
   hold?: { id: string; holdMicros: number } | null;
   freeReservation?: FreePoolReservation | null;
+  subscriptionHold?: { holdId: string } | null;
+  subscriptionId?: string | null;
+  subscriptionPeriodId?: string | null;
+  includedWeightedTokens?: number;
+  billingSource?: "free" | "subscription" | "credit";
 };
 
 /**
@@ -46,6 +52,14 @@ export function recordUsage(input: UsageSettlement) {
       ? totalTokens * Math.max(1, input.model.tokenWeight)
       : 0;
   const chargedMicros = Math.max(0, Math.round(input.chargedMicros));
+  const billingSource =
+    input.billingSource ??
+    (input.model.billingMode === "free" ? "free" : "credit");
+  const includedWeightedTokens = Math.max(
+    0,
+    Math.floor(input.includedWeightedTokens ?? 0),
+  );
+  let subscriptionPeriodId = input.subscriptionPeriodId ?? null;
 
   db.transaction(() => {
     if (input.hold) {
@@ -75,6 +89,14 @@ export function recordUsage(input: UsageSettlement) {
       ).run(chargedMicros, input.auth.userId);
     }
 
+    if (input.subscriptionHold) {
+      subscriptionPeriodId =
+        settleSubscriptionHoldWithin(
+          input.subscriptionHold.holdId,
+          includedWeightedTokens,
+        ) || subscriptionPeriodId;
+    }
+
     if (input.freeReservation) {
       settleFreeReservation({
         reservation: input.freeReservation,
@@ -87,8 +109,10 @@ export function recordUsage(input: UsageSettlement) {
       `INSERT INTO usage_events
         (id, user_id, api_key_id, model_id, provider_slug, group_slug,
          input_tokens, output_tokens, weighted_tokens, cost_micros,
-         charged_micros, estimated, status, latency_ms, error, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         charged_micros, estimated, status, latency_ms, error, created_at,
+         billing_source, subscription_id, subscription_period_id,
+         included_weighted_tokens)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       `usage_${randomUUID()}`,
       input.auth.userId,
@@ -106,6 +130,10 @@ export function recordUsage(input: UsageSettlement) {
       Math.max(0, Math.floor(input.latencyMs)),
       input.error?.slice(0, 500) ?? null,
       nowIso(),
+      billingSource,
+      input.subscriptionId ?? null,
+      subscriptionPeriodId,
+      includedWeightedTokens,
     );
   }).immediate();
 

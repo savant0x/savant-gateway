@@ -10,10 +10,10 @@ const COPY = {
   signup: {
     eyebrow: "Pay as you go",
     title: "One key. The full catalog.",
-    body: "Create an account, mint a gateway key, and call paid models with prepaid credit. Free-pool models work with a balance of zero.",
+    body: "Create an account, mint a gateway key, and call paid models with prepaid credit or an optional plan. Free-pool models work with a balance of zero.",
     bullets: [
-      "Full provider catalog, including paid and subscription-only models",
-      "Prepaid credit — top up only what you plan to spend",
+      "Full provider catalog, including paid and plan-only models",
+      "Prepaid credit with optional subscriptions",
       "Usage and charges recorded per request",
       "Keys are hashed; revoke any key instantly",
     ],
@@ -26,7 +26,7 @@ const COPY = {
       "Server-side sessions, revocable on sign-out",
       "Per-account keys and usage — never shared",
       "Stripe-hosted checkout; card data never touches this app",
-      "No subscription or minimum spend",
+      "Pay as you go, or add a plan when one helps",
     ],
   },
 } as const;

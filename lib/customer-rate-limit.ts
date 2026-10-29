@@ -16,6 +16,11 @@ export const topupLimiter = createRateLimiter({
   windowMs: 60 * 60 * 1000,
 });
 
+export const subscriptionLimiter = createRateLimiter({
+  limit: 20,
+  windowMs: 60 * 60 * 1000,
+});
+
 export function clientKey(request: Request) {
   const forwarded = request.headers.get("x-forwarded-for");
   const first = forwarded?.split(",")[0]?.trim();

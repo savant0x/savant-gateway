@@ -1,9 +1,10 @@
 # Savant Gateway
 
 A Next.js gateway for one or more upstream providers' full model catalogs:
-provider-scoped sync, customer accounts with scoped keys, prepaid credit and
-Stripe-confirmed top-ups, OpenAI-compatible chat completions with streaming,
-operator sell prices, credit settlement, and revenue/cost analytics.
+provider-scoped sync, customer accounts with scoped keys, prepaid credit,
+Stripe-confirmed top-ups, subscription plans with metered entitlements,
+OpenAI-compatible chat completions with streaming, operator sell prices, credit
+settlement, and revenue/cost analytics.
 
 ## Governance Boot Gate
 
@@ -43,6 +44,17 @@ the Perfection Loop. The operator is the approval boundary.
   UI data calls the mode `access`; `/v1/models` keeps `group` for compatibility
   and adds `group_slug`, `group_label`, and `group_billing_mode`. A manual
   group assignment survives sync; the provider flags only choose the default.
+- **Plan:** an operator-authored, purchasable subscription product. It owns the
+  price, month/year interval, included weighted-token allowance, overage mode
+  and markup, included groups, and optional individual models. A plan is not a
+  group and a group is not an entitlement.
+- **Subscription:** a purchased snapshot of a plan plus the exact model ids
+  that customer may use. Editing a plan changes future checkouts only; refresh
+  is an explicit admin action. A customer has at most one active or past-due
+  subscription.
+- **Billing source:** every gateway call is exactly one of `free`,
+  `subscription`, or `credit`. Included plan usage does not debit credit; the
+  allowance period and the subscription hold are its admission control.
 
 Never store or emit the upstream `"Free"` sentinel as a family.
 

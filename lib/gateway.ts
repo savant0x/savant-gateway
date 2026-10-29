@@ -13,7 +13,9 @@ import {
   type GatewayCallContext,
   readUsage,
   settleCall,
+  type SubscriptionCallContext,
 } from "./gateway-settle";
+import { markupSellMicros, subscriptionWeightedTokens } from "./plans";
 import { streamCompletion } from "./gateway-stream";
 import {
   CORS_HEADERS,
@@ -29,6 +31,7 @@ import {
   getModelForGateway,
   getProvider,
   reserveFreeCall,
+  resolveSubscriptionAccess,
   type FreePoolReservation,
   type GatewayModel,
 } from "./store";
@@ -192,13 +195,55 @@ export async function handleChatCompletions(request: Request) {
   }
 
   const free = isFreeCall(model);
+  const requestedBudget = readRequestedOutputBudget(body);
+  const initialOutputBudget = requestedBudget ?? DEFAULT_OUTPUT_BUDGET;
+
+  if (requestedBudget !== null && requestedBudget > MAX_OUTPUT_BUDGET) {
+    return jsonError(400, `max_tokens cannot exceed ${MAX_OUTPUT_BUDGET}.`);
+  }
+
   let hold: CreditHold | null = null;
   let freeReservation: FreePoolReservation | null = null;
   let promptTokens = estimatePromptTokens(body.messages, body.tools);
-  let outputBudget = 0;
-  let requestedBudget: number | null = null;
+  let outputBudget = initialOutputBudget;
+  let subscription: SubscriptionCallContext | null = null;
+  let settleModel = model;
+  const access = resolveSubscriptionAccess({
+    userId: auth.userId,
+    keyId: auth.keyId,
+    modelId: model.id,
+    estimateWeightedTokens: subscriptionWeightedTokens(
+      model.tokenWeight,
+      promptTokens,
+      initialOutputBudget,
+    ),
+  });
 
-  if (free) {
+  if (access.kind === "blocked") {
+    return jsonError(access.status, access.message, access.code);
+  }
+
+  if (access.kind === "included") {
+    subscription = access;
+  } else if (access.kind === "overage") {
+    subscription = access;
+    settleModel = {
+      ...model,
+      sellInputMicros: markupSellMicros(
+        model.sellInputMicros,
+        access.markupBps,
+      ),
+      sellOutputMicros: markupSellMicros(
+        model.sellOutputMicros,
+        access.markupBps,
+      ),
+    };
+  }
+
+  if (subscription?.kind === "included") {
+    // Included usage has no credit hold; the subscription hold is the
+    // admission control and settles against the open allowance period.
+  } else if (access.kind === "none" && free) {
     const reservationBudget =
       readRequestedOutputBudget(body) ?? DEFAULT_OUTPUT_BUDGET;
     const admission = reserveFreeCall({
@@ -219,8 +264,14 @@ export async function handleChatCompletions(request: Request) {
 
     freeReservation = admission.reservation;
     outputBudget = reservationBudget;
+  } else if (access.kind === "none" && model.billingMode === "subscription") {
+    return jsonError(
+      403,
+      `Model ${model.id} requires a subscription that includes it.`,
+      "subscription_required",
+    );
   } else {
-    if (model.sellInputMicros <= 0 && model.sellOutputMicros <= 0) {
+    if (settleModel.sellInputMicros <= 0 && settleModel.sellOutputMicros <= 0) {
       return jsonError(
         503,
         `Model ${model.id} is not currently available for purchase.`,
@@ -228,14 +279,13 @@ export async function handleChatCompletions(request: Request) {
       );
     }
 
-    const reservation = reservePaidCall(model, auth, body);
+    const reservation = reservePaidCall(settleModel, auth, body);
 
     if (reservation.blocked) return reservation.blocked;
 
     hold = reservation.hold;
     promptTokens = reservation.promptTokens;
     outputBudget = reservation.outputBudget;
-    requestedBudget = reservation.requestedBudget;
   }
 
   const payload: Record<string, unknown> = {
@@ -259,9 +309,10 @@ export async function handleChatCompletions(request: Request) {
 
   const context: GatewayCallContext = {
     auth,
-    model,
+    model: settleModel,
     hold,
     freeReservation,
+    subscription,
     startedAt: Date.now(),
     promptTokens,
   };

@@ -37,7 +37,8 @@ export default function ModelsPage() {
             <p className="mt-4 max-w-2xl text-sm leading-7 text-muted">
               Savant Gateway is the provider; free, paid, and subscription are
               price groups. Free-pool models are included. Paid models debit the
-              tenant&apos;s credit balance at the listed sell price. The
+              tenant&apos;s credit balance at the listed sell price. Plan-only
+              models need an active subscription that includes them. The
               upstream key stays on the server, and upstream cost is never part
               of the public catalog.
             </p>

@@ -1,8 +1,8 @@
 import { LandingPage } from "@/components/landing/landing-page";
-import { getLandingData } from "@/lib/store";
+import { getLandingData, listActivePlans } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
 export default function HomePage() {
-  return <LandingPage data={getLandingData()} />;
+  return <LandingPage data={getLandingData()} plans={listActivePlans()} />;
 }

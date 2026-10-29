@@ -44,6 +44,7 @@ export type ModelSummary = {
   groupLabel: string;
   groupBillingMode: ModelAccess;
   groupSource: "auto" | "manual";
+  requiresSubscription: boolean;
   inputPricePer1M: number;
   outputPricePer1M: number;
   supportsTools: boolean;
@@ -233,6 +234,89 @@ export type SyncedModel = {
   supportsVision: boolean;
   health: string | null;
   sortOrder: number;
+};
+
+export type PlanInterval = "month" | "year";
+export type PlanStatus = "draft" | "active" | "archived";
+export type PlanOverageMode = "block" | "credit";
+
+export type PlanGroupInclusion = {
+  slug: string;
+  label: string;
+};
+
+export type PlanSummary = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  status: PlanStatus;
+  priceMicros: number;
+  currency: string;
+  interval: PlanInterval;
+  includedWeightedTokens: number;
+  overageMode: PlanOverageMode;
+  overageMarkupBps: number;
+  sortOrder: number;
+  groups: PlanGroupInclusion[];
+  modelIds: string[];
+  modelCount: number;
+  costBearingModelCount: number;
+  subscriberCount: number;
+  activeSubscriberCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SubscriptionPlanSnapshot = {
+  name: string;
+  priceMicros: number;
+  currency: string;
+  interval: PlanInterval;
+  includedWeightedTokens: number;
+  overageMode: PlanOverageMode;
+  overageMarkupBps: number;
+};
+
+export type SubscriptionAllowance = {
+  includedWeightedTokens: number;
+  usedWeightedTokens: number;
+  heldWeightedTokens: number;
+  remainingWeightedTokens: number;
+  usedBps: number;
+};
+
+export type SubscriptionInvoiceSummary = {
+  id: string;
+  amountMicros: number;
+  currency: string;
+  status: "paid" | "failed" | "open" | "void";
+  periodStart: string | null;
+  periodEnd: string | null;
+  paidAt: string | null;
+  createdAt: string;
+};
+
+export type SubscriptionSummary = {
+  id: string;
+  userId: string;
+  customerName: string;
+  customerEmail: string;
+  planId: string;
+  planSlug: string | null;
+  plan: SubscriptionPlanSnapshot;
+  status: "incomplete" | "active" | "past_due" | "canceled" | "expired";
+  source: "stripe" | "manual";
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  cancelAtPeriodEnd: boolean;
+  entitlementCount: number;
+  allowance: SubscriptionAllowance;
+  invoices: SubscriptionInvoiceSummary[];
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type Customer = {

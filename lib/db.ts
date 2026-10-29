@@ -9,6 +9,7 @@ import { normalizeFamilyName } from "./model-family";
 import { ensureColumn, type DatabaseHandle } from "./schema/columns";
 import { modelGroupSchema } from "./schema/groups";
 import { providerSchema } from "./schema/providers";
+import { subscriptionSchema } from "./schema/subscriptions";
 
 const configuredDbPath = process.env.DB_PATH?.trim();
 
@@ -326,6 +327,7 @@ function createDb() {
   freePoolSchema(database);
   providerSchema(database);
   modelGroupSchema(database);
+  subscriptionSchema(database);
   normalizeLegacyFamilies(database);
   seed(database);
 

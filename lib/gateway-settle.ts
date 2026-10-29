@@ -8,6 +8,7 @@ import type {
 } from "./store/shared";
 
 import { computeTokenCostMicros } from "./pricing";
+import { subscriptionWeightedTokens } from "./plans";
 import { recordUsage } from "./store/usage";
 
 export type TokenUsage = {
@@ -15,11 +16,27 @@ export type TokenUsage = {
   outputTokens: number;
 };
 
+export type SubscriptionCallContext =
+  | {
+      kind: "included";
+      subscriptionId: string;
+      periodId: string;
+      holdId: string;
+      markupBps: 0;
+    }
+  | {
+      kind: "overage";
+      subscriptionId: string;
+      periodId: string;
+      markupBps: number;
+    };
+
 export type GatewayCallContext = {
   auth: AuthenticatedKey;
   model: GatewayModel;
   hold: CreditHold | null;
   freeReservation: FreePoolReservation | null;
+  subscription: SubscriptionCallContext | null;
   startedAt: number;
   promptTokens: number;
 };
@@ -138,6 +155,20 @@ export function settleCall(
     usage.inputTokens,
     usage.outputTokens,
   );
+  const includedWeightedTokens =
+    context.subscription?.kind === "included"
+      ? subscriptionWeightedTokens(
+          context.model.tokenWeight,
+          usage.inputTokens,
+          usage.outputTokens,
+        )
+      : 0;
+  const billingSource =
+    context.subscription?.kind === "included"
+      ? ("subscription" as const)
+      : context.model.billingMode === "free"
+        ? ("free" as const)
+        : ("credit" as const);
 
   return recordUsage({
     auth: context.auth,
@@ -147,11 +178,20 @@ export function settleCall(
     status,
     latencyMs: Date.now() - context.startedAt,
     error: options.error ?? null,
-    chargedMicros: prices.chargedMicros,
+    chargedMicros:
+      context.subscription?.kind === "included" ? 0 : prices.chargedMicros,
     costMicros: prices.costMicros,
     estimated: options.estimated ?? false,
     hold: context.hold,
     freeReservation: context.freeReservation,
+    subscriptionHold:
+      context.subscription?.kind === "included"
+        ? { holdId: context.subscription.holdId }
+        : null,
+    subscriptionId: context.subscription?.subscriptionId ?? null,
+    subscriptionPeriodId: context.subscription?.periodId ?? null,
+    includedWeightedTokens,
+    billingSource,
   });
 }
 

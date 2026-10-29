@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { AccountHeader } from "@/components/account/account-header";
 import { BillingHistory } from "@/components/account/billing-history";
 import { CustomerKeysCard } from "@/components/account/keys-card";
+import { SubscriptionCard } from "@/components/account/subscription-card";
 import { TopupCard } from "@/components/account/topup-card";
 import { StatCard } from "@/components/dashboard/chips";
 import {
@@ -17,7 +18,7 @@ import { UsageCard } from "@/components/dashboard/usage-card";
 import { siteConfig } from "@/config/site";
 import { requireCustomerPage } from "@/lib/customer-auth";
 import { readStripeConfig } from "@/lib/stripe";
-import { getCustomerAccount } from "@/lib/store";
+import { customerSubscriptionSummary, getCustomerAccount } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
@@ -38,10 +39,11 @@ function baseUrlFromHeaders(host: string | null, proto: string | null) {
 export default async function AccountPage({
   searchParams,
 }: {
-  searchParams: Promise<{ topup?: string }>;
+  searchParams: Promise<{ topup?: string; subscription?: string }>;
 }) {
   const customer = await requireCustomerPage();
   const data = getCustomerAccount(customer);
+  const subscription = customerSubscriptionSummary(customer.id);
   const stripe = readStripeConfig();
   const requestHeaders = await headers();
   const params = await searchParams;
@@ -84,6 +86,19 @@ export default async function AccountPage({
             Checkout was cancelled. Nothing was charged and no credit was added.
           </p>
         ) : null}
+        {params.subscription === "success" ? (
+          <p className="rounded-xl border border-accent/30 bg-accent/10 px-4 py-3 text-sm">
+            Stripe returned successfully. Included access starts only after the
+            signed invoice webhook confirms payment — refresh in a moment if the
+            plan does not show as active yet.
+          </p>
+        ) : null}
+        {params.subscription === "cancelled" ? (
+          <p className="rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
+            Subscription checkout was cancelled. Nothing was charged and no plan
+            was activated.
+          </p>
+        ) : null}
 
         <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
@@ -117,6 +132,11 @@ export default async function AccountPage({
           <CustomerKeysCard keys={data.keys} />
         </section>
 
+        <SubscriptionCard
+          stripeConfigured={stripe.configured}
+          subscription={subscription}
+        />
+
         <Card variant="secondary">
           <Card.Header>
             <Card.Title>Quick start</Card.Title>
@@ -141,7 +161,8 @@ export default async function AccountPage({
                 API reference
               </a>
               . Free-pool models work with zero balance; paid rows settle
-              against available credit.
+              against available credit. Plan-only rows need a subscription that
+              includes them.
             </p>
           </Card.Content>
         </Card>

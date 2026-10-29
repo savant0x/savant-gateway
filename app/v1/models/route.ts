@@ -30,6 +30,7 @@ export async function GET(request: Request) {
     group_slug: model.groupSlug,
     group_label: model.groupLabel,
     group_billing_mode: model.groupBillingMode,
+    requires_subscription: model.requiresSubscription,
     context_window: model.contextWindow,
     token_weight: model.tokenWeight,
     allow_free: model.allowFree,

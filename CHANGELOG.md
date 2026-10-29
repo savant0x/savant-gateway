@@ -3,6 +3,40 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — Subscription plans and entitlements
+
+- **FID-2026-1029-008 — high — Customer subscription plans, entitlement
+  snapshots, and recurring billing.** Added an operator-authored plan catalog
+  (price, month/year interval, included groups and individual models, included
+  weighted-token allowance, `block` or `credit` overage with markup), plus an
+  additive schema for plans, subscriptions, entitlement snapshots, allowance
+  periods, subscription holds, invoices, and billing-event idempotency. A
+  subscription snapshots the plan values and exact model ids; later plan edits
+  do not change a purchase, and refresh is explicit. The gateway now picks one
+  billing source per call: included plan usage reserves weighted tokens and
+  charges zero, exhausted `block` plans return `402 subscription_limit_reached`,
+  exhausted `credit` plans charge from prepaid credit with markup, past-due
+  plans return `402 subscription_past_due`, and uncovered subscription-group
+  models return `403 subscription_required`. Stripe Checkout in subscription
+  mode, Billing Portal, cancel/resume, signed `invoice.paid` activation,
+  payment failure, subscription reconciliation, and top-up dispatch share the
+  webhook with event-id idempotency. Customer surfaces add `/plans` and an
+  account subscription card with allowance, invoices, cancel, resume, and
+  portal; admin surfaces add **Plans** and **Subscriptions** with create, edit,
+  archive, delete, manual grant/extend/revoke, Stripe sync, and entitlement
+  refresh. `/v1/models` adds `requires_subscription`; provider quota copy now
+  says upstream. Tests: `tests/plans.test.mjs` (10 cases). Gates: `npm run
+  verify` exit 0, 99/99 tests, quality PASS over 186 files, 51-route build. A
+  disposable-database HTTP receipt proved active-plan CRUD and draft exclusion,
+  a zero-charge included call with 6 weighted tokens, snapshot stability
+  through a $5→$6 and group edit, explicit refresh 23→24 models, 403 on an
+  uncovered plan-only model, 402 on an exhausted block plan, 9-micro credit
+  overage with 5000-bps markup, duplicate checkout 409, foreign-origin 403,
+  manual extend/revoke, one signed-invoice activation with a replay no-op, and
+  a $5.00 top-up credited once. Real Stripe checkout/recurring delivery and a
+  funded live subscription remain unverified (B4). FID-008 is `verified`;
+  closure awaits a commit SHA.
+
 ## 2026-10-29 — First-class model groups
 
 - **FID-2026-1029-007 — high — First-class model groups with operator

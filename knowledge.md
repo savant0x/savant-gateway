@@ -29,6 +29,36 @@ upstream cost, and usage in SQLite.
   and charged. `accessFor` in `lib/store/shared.ts`, `isFreeCall` in
   `lib/gateway.ts`, and `recordUsage` in `lib/store/usage.ts` must agree on the
   group's billing mode.
+- **A plan is not a group and a subscription is not a plan.** A plan is the
+  purchasable product: price, month/year interval, included weighted-token
+  allowance, overage mode/markup, groups, and optional models. A subscription
+  snapshots the plan values and the exact `subscription_models` ids at
+  activation. Editing the plan later changes future checkouts only; an admin
+  **Refresh** replaces only the entitlement snapshot. Deleting a plan used by
+  any subscription returns `409 plan_in_use`, and a group included by a plan
+  cannot be deleted.
+- **One billing source per call.** The gateway chooses exactly one of `free`,
+  `subscription`, or `credit`. Included usage has a subscription hold and zero
+  charge, and settles actual weighted tokens into the open period. Exhausted
+  `block` plans return `402 subscription_limit_reached`; exhausted `credit`
+  plans take the normal credit hold with the snapshot markup applied to sell
+  prices. A subscription-group model with no covering plan returns `403
+  subscription_required`; a past-due plan returns `402 subscription_past_due`
+  before free or credit routing. Usage rows record `billing_source`,
+  `subscription_id`, `subscription_period_id`, and
+  `included_weighted_tokens`.
+- **Checkout completion is not payment.** `checkout.session.completed` only
+  attaches Stripe customer/subscription ids and leaves the local row
+  `incomplete`. A signed `invoice.paid` records the invoice, activates, and
+  opens the allowance period. `invoice.payment_failed` sets `past_due`.
+  `billing_events` claims each Stripe event id, and invoice rows upsert on
+  `provider_invoice_id` so a failed-then-paid invoice activates once. A
+  customer may have one active or past-due subscription; the partial unique
+  index enforces it.
+- **Manual plans are comps.** Source `manual`, no Stripe ids, one period, no
+  auto-renew. Admin can extend, refresh entitlements, or revoke immediately.
+  Stripe subscriptions renew by invoice; admin extend rejects them and asks for
+  Sync instead.
 - **Legacy `provider='Free'` rows are repaired on boot.**
   `normalizeLegacyFamilies` in `lib/db.ts` infers the family from the id and
   rewrites the row. `lib/model-family.ts` is the single source for that
@@ -129,17 +159,21 @@ upstream cost, and usage in SQLite.
 - `app/page.tsx` — public landing at `/`.
 - `app/models` — public full catalog with sell prices.
 - `app/docs` — public API reference for external consumers.
+- `app/plans` — public active-plan catalog; `components/plans/*` starts
+  checkout.
 - `app/signup`, `app/login`, `app/account` — customer authentication and
-  account console.
+  account console, including the subscription card.
 - `app/dashboard` — operator console.
 - `app/admin/(panel)` — authenticated shell; overview, customers, catalog,
-  providers, pricing, analytics. `app/admin/login` is the only unauthenticated
-  admin page.
+  groups, plans, subscriptions, providers, pricing, analytics.
+  `app/admin/login` is the only unauthenticated admin page.
 - `app/api/auth/*` — signup, login, logout, and current-customer endpoints.
-- `app/api/account/*` — scoped keys and Stripe checkout creation.
-- `app/api/webhooks/stripe` — signature-verified, idempotent fulfillment.
-- `app/api/admin/*` — session, catalog status, provider registry, pricing, and
-  credit endpoints.
+- `app/api/account/*` — scoped keys, top-ups, and subscription lifecycle.
+- `app/api/plans` — public active plans.
+- `app/api/webhooks/stripe` — signature-verified, idempotent top-up and
+  subscription reconciliation.
+- `app/api/admin/*` — session, catalog, groups, plans, subscriptions, provider
+  registry, pricing, and credit.
 - `app/api/*` — console actions (loopback or admin session).
 - `app/v1/chat/completions` — the gateway entry point.
 - `app/v1/models` — authenticated catalog with provider owner, family,
@@ -154,6 +188,14 @@ upstream cost, and usage in SQLite.
 - `lib/store/billing.ts` — credit grants, ledger, holds.
 - `lib/store/customer.ts` — customer identity, sessions, admin summaries.
 - `lib/store/account.ts` — customer keys, usage, and account composition.
+- `lib/plans.ts`, `lib/plan-lifecycle.ts` — plan validation, entitlements,
+  allowance/overage, calendar periods, and Stripe status mapping.
+- `lib/store/plans.ts`, `lib/store/plan-rows.ts` — plan CRUD and summaries.
+- `lib/store/subscriptions.ts`, `subscription-rows.ts`,
+  `subscription-access.ts`, `subscription-admin.ts` — snapshots, periods,
+  holds, invoices, activation, manual grants, and gateway access.
+- `lib/stripe-subscriptions.ts` — Stripe customer, subscription checkout,
+  portal, cancellation, and period sync.
 - `lib/store/topups.ts` — pending top-ups and idempotent fulfillment.
 - `lib/store/analytics.ts` — revenue/cost/margin queries.
 - `lib/customer.ts`, `lib/password.ts`, `lib/customer-session.ts`,

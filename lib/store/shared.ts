@@ -187,6 +187,7 @@ export function toModelSummary(row: ModelRow): ModelSummary {
     groupLabel: row.group_label ?? SYSTEM_GROUP_LABELS[access],
     groupBillingMode: access,
     groupSource: row.group_source ?? "auto",
+    requiresSubscription: access === "subscription",
     inputPricePer1M: microsToPrice(row.sell_input_micros),
     outputPricePer1M: microsToPrice(row.sell_output_micros),
     supportsTools: row.supports_tools === 1,

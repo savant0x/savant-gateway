@@ -1,7 +1,12 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
 import { sanitizeError } from "@/lib/http";
 import { readPriceInput } from "@/lib/pricing";
-import { getAccountSummary, grantCredit, listCreditLedger } from "@/lib/store";
+import {
+  findCustomerById,
+  getAccountSummary,
+  grantCredit,
+  listCreditLedger,
+} from "@/lib/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,7 +30,7 @@ export async function POST(request: Request) {
 
   if (blocked) return blocked;
 
-  let body: { amountUsd?: unknown; note?: unknown };
+  let body: { amountUsd?: unknown; note?: unknown; userId?: unknown };
 
   try {
     body = (await request.json()) as typeof body;
@@ -41,11 +46,17 @@ export async function POST(request: Request) {
 
   const note =
     typeof body.note === "string" ? body.note.trim().slice(0, 300) : "";
+  const userId = typeof body.userId === "string" ? body.userId.trim() : "";
+
+  if (userId && !findCustomerById(userId)) {
+    return adminError(404, "Customer not found.");
+  }
 
   try {
     const account = grantCredit({
       amountMicros,
       note: note || "Operator credit grant",
+      userId: userId || undefined,
     });
 
     return Response.json(

@@ -8,6 +8,12 @@ const ITEMS = [
   { href: "/admin/customers", icon: "fa-users", label: "Customers" },
   { href: "/admin/catalog", icon: "fa-layer-group", label: "Catalog" },
   { href: "/admin/groups", icon: "fa-object-group", label: "Groups" },
+  { href: "/admin/plans", icon: "fa-rectangle-list", label: "Plans" },
+  {
+    href: "/admin/subscriptions",
+    icon: "fa-arrows-rotate",
+    label: "Subscriptions",
+  },
   { href: "/admin/providers", icon: "fa-plug", label: "Providers" },
   { href: "/admin/pricing", icon: "fa-calculator", label: "Pricing" },
   { href: "/admin/analytics", icon: "fa-chart-line", label: "Analytics" },

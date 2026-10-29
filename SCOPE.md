@@ -74,6 +74,68 @@ support behind one backend.
   FID-007 are updated. Implementation committed as `161ddcc`; FID-007 is
   `closed` against that SHA and archived.
 
+## Current Session — 2026-10-29 (FID-008 subscription plans)
+
+Operator request: implement FID-2026-1029-008 subscription plans and
+entitlements on top of the FID-007 model groups.
+
+- [x] **S15 — Subscription schema.** Additive migration adds `plans`,
+  `plan_groups`, `plan_models`, `subscriptions`, `subscription_models`,
+  `subscription_periods`, `subscription_holds`, `subscription_invoices`, and
+  `billing_events`, plus `users.stripe_customer_id` and the usage billing
+  snapshot columns. One-active-subscription and one-open-period partial unique
+  indexes enforce the invariants.
+- [x] **S16 — Pure plan rules and tests.** `lib/plans.ts` validates slug, name,
+  price, interval, status, allowance, overage, and inclusions; expands group
+  and model entitlements; computes allowance decisions and overage markup.
+  `lib/plan-lifecycle.ts` owns calendar periods and Stripe status mapping.
+  `tests/plans.test.mjs` covers validation, expansion, exhaustion, markup,
+  snapshots, month-end clamping, and status transitions.
+- [x] **S17 — Stores and Stripe.** Plan CRUD and inclusion validation, snapshot
+  activation, open-period metering, subscription holds, invoice upsert,
+  reconcile, cancel/resume, manual grant/extend/revoke, and entitlement refresh
+  are implemented. `lib/stripe-subscriptions.ts` handles customer reuse,
+  checkout, portal, cancellation, and period sync. The webhook dispatches
+  top-ups, checkout linking, subscription events, and paid/failed invoices with
+  `billing_events` idempotency.
+- [x] **S18 — Gateway enforcement.** One billing source per call: past-due
+  blocks first, included plan usage reserves weighted tokens against the open
+  period, exhausted `block` returns 402, exhausted `credit` charges the normal
+  credit path with the snapshot markup, and an uncovered subscription-group row
+  returns 403 `subscription_required`.
+- [x] **S19 — Customer and admin surfaces.** Public `/plans` and
+  `/api/plans`; account subscription card with allowance, invoices, cancel,
+  resume, and portal; Admin → Plans and Admin → Subscriptions with create,
+  edit, archive, delete, grant, extend, revoke, sync, and refresh.
+  `/v1/models` adds additive `requires_subscription`; provider quota copy is
+  labelled upstream; model-access docs distinguish plan-only rows.
+- [x] **S20 — Verification receipt.** `npm run verify` exit 0: 99/99 tests,
+  quality PASS over 186 files, 51-route build. On a disposable database through
+  the real HTTP routes: active-plan CRUD and draft exclusion; a manual plan
+  produced a zero-charge `billing_source=subscription` call with 6 included
+  weighted tokens; a plan edit left the 23-model snapshot and $5 price intact;
+  explicit refresh replaced it with 24 models; an uncovered call returned 403;
+  an exhausted block plan returned 402; an exhausted credit plan charged 9
+  micros with the 5000-bps markup and `billing_source=credit`; duplicate
+  checkout returned 409; foreign-origin customer and admin mutations returned
+  403; extend and revoke worked; a signed `invoice.paid` activated exactly one
+  period and a replay was a no-op; and a signed top-up credited $5.00 once.
+  Admin plans/subscriptions and customer account/plans pages returned 200.
+  Real Stripe checkout, recurring invoice delivery, and a funded paid
+  subscription remain unverified (B4).
+- [x] **S21 — Records.** README, AGENTS vocabulary, knowledge, API reference,
+  CHANGELOG, SCOPE, and FID-008 are updated. FID-008 is `verified`; closure is
+  pending a commit SHA.
+- [x] **S22 — Replay dedupe consolidated.** The paid-invoice guard is one
+  helper, `invoiceStatus` in `lib/store/subscription-rows.ts`, used by both
+  `activateSubscription` and `markSubscriptionPastDue`; extracting it also kept
+  `lib/store/subscriptions.ts` at 393 lines under the 400-line ceiling. Fresh
+  `npm run verify` exit 0: 99/99 tests, quality PASS over 186 files, 51-route
+  build. The disposable HTTP receipt was re-run on a fresh snapshot after the
+  extraction with identical results: 23 snapshot entitlements growing to 24 on
+  refresh, 402 on the exhausted block plan, 9 micros on the 5000-bps credit
+  overage, one period after the signed replay, and one $5.00 top-up credit.
+
 ## Prior Session — 2026-10-29 (model groups and subscriptions)
 
 Operator request: author FIDs that give complete control of model groups and a

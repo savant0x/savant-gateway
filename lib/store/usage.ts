@@ -5,6 +5,7 @@ import type { AdminUsageSummary, UsageSummary } from "../types";
 import { randomUUID } from "node:crypto";
 
 import { db, nowIso } from "../db";
+import { usageLedgerEntry } from "../usage-ledger";
 
 import { settleFreeReservation } from "./free-pool";
 import { settleSubscriptionHoldWithin } from "./subscription-access";
@@ -92,11 +93,41 @@ export function recordUsage(input: UsageSettlement) {
     }
 
     if (chargedMicros > 0) {
+      // The debit and its ledger row commit together, so the ledger's running
+      // balance always equals the balance the customer is shown. Without this
+      // row a charged request changed credit_micros silently.
+      const before = db
+        .prepare("SELECT credit_micros FROM users WHERE id = ?")
+        .get(input.auth.userId) as { credit_micros: number } | undefined;
+      const entry = before
+        ? usageLedgerEntry({
+            balanceBeforeMicros: before.credit_micros,
+            chargedMicros,
+            modelId: input.model.id,
+          })
+        : null;
+
       db.prepare(
         `UPDATE users
          SET credit_micros = credit_micros - ?
          WHERE id = ?`,
       ).run(chargedMicros, input.auth.userId);
+
+      if (entry) {
+        db.prepare(
+          `INSERT INTO credit_ledger
+            (id, user_id, kind, amount_micros, balance_after_micros, note,
+             created_at)
+           VALUES (?, ?, 'usage', ?, ?, ?, ?)`,
+        ).run(
+          `ledger_${randomUUID()}`,
+          input.auth.userId,
+          entry.amountMicros,
+          entry.balanceAfterMicros,
+          entry.note,
+          nowIso(),
+        );
+      }
     }
 
     if (input.subscriptionHold) {

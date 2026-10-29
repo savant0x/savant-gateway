@@ -3,6 +3,21 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — Money integrity audit
+
+- **FID-2026-1029-029 — high — Charges reach the credit ledger; money is exact.**
+  `recordUsage` debited `credit_micros` without a ledger row, so the account's
+  "every balance change" ledger showed grants and top-ups only and its running
+  balance went stale on the first spent credit. Each settled charge now writes a
+  `usage` row inside the same transaction, with `balance_after_micros` equal to
+  the balance the customer sees. `computeTokenCostMicros` and
+  `defaultSellMicros` moved from float to exact integer arithmetic (the float
+  product lands one micro off past 2^53), `formatMicros` renders two to six
+  decimals instead of printing `$0.195` as `$0.20` and `$0.000039` as `$0.0000`,
+  plan prices must be whole cents, and `createPlanCheckout` refuses a price it
+  cannot bill exactly instead of rounding it. Tests: `tests/money.test.mjs`
+  (+14).
+
 ## 2026-10-29 — Fire-red link hover
 
 - **FID-2026-1029-028 — low — Public text links hover into the fire red.**

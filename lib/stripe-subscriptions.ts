@@ -48,7 +48,15 @@ export async function createPlanCheckout(input: {
   localSubscriptionId: string;
   plan: PlanSummary;
 }) {
-  const amount = Math.round(input.plan.priceMicros / 10_000);
+  // Exact whole cents or nothing: rounding here would charge a price the plan
+  // page never showed.
+  const cents = input.plan.priceMicros / 10_000;
+
+  if (!Number.isInteger(cents)) {
+    throw new Error("Plan price must be a whole number of cents.");
+  }
+
+  const amount = cents;
 
   if (amount < 50) {
     throw new Error("Active plans must cost at least $0.50.");

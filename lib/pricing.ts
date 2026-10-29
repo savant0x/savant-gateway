@@ -30,9 +30,14 @@ export function defaultSellMicros(costMicros: number, markupBps: number) {
 
   if (cost === 0) return 0;
 
-  const multiplier = (10_000 + clampMarkupBps(markupBps)) / 10_000;
+  // Exact integer arithmetic, rounded up to the micro. A float multiplier
+  // (cost * 1.3) is one micro above the intended price for some costs, and a
+  // published rate has to be the rate we meant.
+  const numerator = BigInt(cost) * BigInt(10_000 + clampMarkupBps(markupBps));
+  const denominator = BigInt(10_000);
+  const sell = (numerator + denominator - BigInt(1)) / denominator;
 
-  return Math.max(1, Math.ceil(cost * multiplier));
+  return Number(sell < BigInt(1) ? BigInt(1) : sell);
 }
 
 export function marginBps(costMicros: number, sellMicros: number) {
@@ -59,10 +64,24 @@ export function computeTokenCostMicros(
   tokens: number,
   priceMicrosPer1M: number,
 ) {
-  return Math.round(
-    (Math.max(0, tokens) * Math.max(0, priceMicrosPer1M)) /
-      TOKENS_PER_PRICE_UNIT,
-  );
+  const safeTokens = Number.isFinite(tokens)
+    ? Math.max(0, Math.floor(tokens))
+    : 0;
+  const safePrice = Number.isFinite(priceMicrosPer1M)
+    ? Math.max(0, Math.round(priceMicrosPer1M))
+    : 0;
+
+  // tokens × price overflows the float mantissa (2^53 ≈ 9.007e15) once a large
+  // token count meets a large per-million rate, and the rounding then lands one
+  // micro off. Integer arithmetic cannot drift: half-up division matches
+  // Math.round for the non-negative amounts this handles. A result beyond the
+  // safe range is clamped rather than silently rounded.
+  const micros =
+    (BigInt(safeTokens) * BigInt(safePrice) + BigInt(500_000)) /
+    BigInt(TOKENS_PER_PRICE_UNIT);
+  const cap = BigInt(Number.MAX_SAFE_INTEGER);
+
+  return Number(micros > cap ? cap : micros);
 }
 
 export function computeHoldMicros(input: {

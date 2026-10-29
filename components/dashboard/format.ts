@@ -46,17 +46,30 @@ export function formatPricePer1M(value: number | null | undefined) {
   })}`;
 }
 
-export function formatPreciseMoney(value: number | null | undefined) {
-  if (value == null) return "—";
+/**
+ * Exact micro-dollar rendering. A charge is an integer number of micros, so it
+ * has at most six decimals; rounding to two printed $0.20 for a $0.195 charge
+ * and $0.0000 for a real $0.000039 one. Two decimals is the floor, six the
+ * ceiling, and trailing zeros are trimmed so ordinary balances stay readable.
+ */
+export function formatMicros(value: number | null | undefined) {
+  if (value == null || !Number.isFinite(value)) return "—";
 
-  const absolute = Math.abs(value);
-  const digits = absolute > 0 && absolute < 0.01 ? 4 : 2;
+  const micros = Math.round(value);
+  const absolute = Math.abs(micros);
+  const dollars = Math.floor(absolute / 1_000_000);
+  const fraction = String(absolute % 1_000_000)
+    .padStart(6, "0")
+    .replace(/0+$/, "")
+    .padEnd(2, "0");
 
-  return `$${value.toFixed(digits)}`;
+  return `${micros < 0 ? "-" : ""}$${numberFormatter.format(dollars)}.${fraction}`;
 }
 
-export function formatMicros(value: number | null | undefined) {
-  return formatPreciseMoney(value == null ? null : value / 1_000_000);
+export function formatPreciseMoney(value: number | null | undefined) {
+  if (value == null || !Number.isFinite(value)) return "—";
+
+  return formatMicros(value * 1_000_000);
 }
 
 export function formatSignedMicros(value: number | null | undefined) {

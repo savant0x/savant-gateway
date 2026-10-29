@@ -151,6 +151,16 @@ export function readPlanValues(input: unknown): ReadResult<PlanValues> {
     return { ok: false, error: "Plan price cannot exceed $10,000." };
   }
 
+  // Stripe bills in cents. A price with sub-cent precision would be rounded at
+  // checkout and the customer would be charged something other than the price
+  // the plan page shows, so refuse it instead.
+  if (priceMicros % 10_000 !== 0) {
+    return {
+      ok: false,
+      error: "Plan price must be a whole number of cents.",
+    };
+  }
+
   if (status === "active" && priceMicros < MIN_ACTIVE_PLAN_PRICE_MICROS) {
     return {
       ok: false,

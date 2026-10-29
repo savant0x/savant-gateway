@@ -22,6 +22,16 @@ distinguish verified behavior from unverified claims.
   endpoint requires one. Its published rates (12 models) are captured with the
   capture date; three catalog rows are 33.3% cheaper on input there than at the
   current upstream.
+- **Gemini plan assessment, no code.** `docs/research/gem-review-assessment.md`
+  checks the 90-day commercialization plan against the database and the source.
+  Confirmed: one relay at 15 RPM with a $0.00 wallet, no boundary rate limit on
+  `/v1`, no per-account free ceiling, unlimited keys per account, no email
+  verification, and a $5 minimum top-up that costs 8.9% in card fees. Rejected:
+  its wholesale price tables are invented (real catalog is $0.04–$2.00 per 1M,
+  median $0.15), its `free/claude-opus-4.6` 402 diagnosis misreads our own
+  catalog (that row is subscription-only by upstream flag), and the topology
+  names an Express server that does not exist. Recommended order: boundary rate
+  limiter, per-account free ceiling, then the $10 minimum.
 - **FID-2026-1029-022 — low — Dual-format providers authenticate both routes.**
   Upstream auth headers moved to `lib/providers/auth-headers.ts`; a `both`
   provider now sends `Authorization: Bearer`, `x-api-key`, and

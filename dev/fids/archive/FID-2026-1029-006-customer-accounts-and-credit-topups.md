@@ -253,6 +253,8 @@ no checkout/topup/session table
 ## Resolution
 
 - **Closed Date:** 2026-10-29.
+- **Closed Against:** `455ddb5` — `feat(account): add customer signup,
+  scoped keys, and credit top-ups (FID-2026-1029-006)`.
 - **Fix Description:** Added customer identity, opaque server-side sessions,
   account-scoped keys and usage, a customer account surface, Stripe Checkout
   credit purchases, signature-verified idempotent fulfillment, admin customer
@@ -278,7 +280,7 @@ no checkout/topup/session table
   `Host: localhost` on `/api/keys` and `/api/models` 403; admin session gives
   `/dashboard` and `/api/keys` 200; admin logout returns `/api/keys` to 403.
   `npm run verify` exit 0.
-- **Archived:** Pending final commit.
+- **Archived:** `dev/fids/archive/FID-2026-1029-006-customer-accounts-and-credit-topups.md`.
 
 ## Lessons Learned
 

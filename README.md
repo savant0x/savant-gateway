@@ -354,9 +354,9 @@ Current records:
 - [FID-2026-1029-005](dev/fids/archive/FID-2026-1029-005-provider-family-group-semantics.md) —
   provider identity, model family, and price-group normalization (closed
   against `ecc15ac`).
-- [FID-2026-1029-006](dev/fids/FID-2026-1029-006-customer-accounts-and-credit-topups.md) —
+- [FID-2026-1029-006](dev/fids/archive/FID-2026-1029-006-customer-accounts-and-credit-topups.md) —
   customer signup, account ownership, scoped keys and usage, Stripe Checkout
-  top-ups, and webhook-confirmed credit (this slice).
+  top-ups, and webhook-confirmed credit (closed against `455ddb5`).
 
 ## Quality gates
 

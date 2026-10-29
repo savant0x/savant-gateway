@@ -26,7 +26,8 @@ distinguish verified behavior from unverified claims.
   credited nothing, unpaid event ignored, logout revoked the session, and
   `/admin/customers` returned 200. A live Stripe card payment remains
   unverified because no live keys were available; fulfillment was tested with
-  a Stripe-signed event.
+  a Stripe-signed event. Closed against `455ddb5`; archived at
+  `dev/fids/archive/FID-2026-1029-006-customer-accounts-and-credit-topups.md`.
 
 ## 2026-10-29 — Provider, family, and price-group semantics
 

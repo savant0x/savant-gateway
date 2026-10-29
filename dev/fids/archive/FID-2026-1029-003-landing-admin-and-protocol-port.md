@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1029-003-landing-admin-and-protocol-port.md`
 **ID:** FID-2026-1029-003
 **Severity:** high
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-29 01:47 EDT
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -185,7 +185,7 @@ repo does not have.
    implemented
 9. Run gates, exercise landing/login/toggle/logout over HTTP, record evidence,
    update CHANGELOG and session summary, close and archive this FID (P7). —
-   in progress at this revision
+   implemented
 
 ### Verification
 
@@ -264,7 +264,9 @@ repo does not have.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [ ] **Commit SHA:** implementation commit pending; closure commit follows it.
+- [x] **Commit SHA:** `508d4431524b26606e4b94a7b95e0b3ccc22a2c3`
+  (`feat(gateway): add landing, admin panel, and canonical protocol`). The
+  closure commit follows and only edits records plus moves this file.
 - [x] **File:line ranges:** `lib/admin-session.ts:23-161` (config, token,
   password, cookie, origin); `lib/admin-auth.ts:20-100` (guards and cookies);
   `lib/admin-rate-limit.ts:10-60`; `lib/store/admin.ts:7-22`;
@@ -282,7 +284,7 @@ repo does not have.
 - [x] **Reproducibility:** `grep -n guardLocalOrAdmin app/api -R`;
   `grep -n "admin_state" lib/db.ts`;
   `node --test "tests/*.test.mjs"`; `npm run verify`.
-- [x] **Step statuses:** 1-8 implemented; 9 in progress at this revision.
+- [x] **Step statuses:** 1-9 implemented.
 
 ### Code Verification Evidence
 
@@ -334,7 +336,7 @@ repo does not have.
 
 ## Resolution
 
-- **Closed Date:** pending the implementation commit.
+- **Closed Date:** 2026-10-29 02:05 EDT.
 - **Fix Description:** Public landing at `/`; console moved to `/dashboard`;
   password-protected `/admin` with provider sync, model enable/disable, key
   creation/revocation, and usage; admin sessions signed, expiring, revocable,
@@ -356,7 +358,7 @@ repo does not have.
   create 201 and revoke 200 with the admin cookie; logout 200 made the old
   cookie redirect 307 to `/admin/login`; six bad logins returned
   `401,401,401,401,401,429`; a fresh login after revocation returned 200.
-- **Archived:** pending the closure commit.
+- **Archived:** 2026-10-29 02:05 EDT.
 
 ## Lessons Learned
 

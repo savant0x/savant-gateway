@@ -26,7 +26,9 @@ The `savant-code` checkout is read-only for this work.
 - [x] **P7 — Verification.** Unit tests for session signing and password checks;
   local gates; live HTTP checks of landing, login, model toggle, and logout.
 
-Evidence is recorded in `dev/fids/FID-2026-1029-003-landing-admin-and-protocol-port.md`.
+Evidence is recorded in
+`dev/fids/archive/FID-2026-1029-003-landing-admin-and-protocol-port.md` (closed
+against `508d443`).
 
 Findings during implementation, all completed in the same pass:
 

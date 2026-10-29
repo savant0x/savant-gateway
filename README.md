@@ -204,8 +204,9 @@ Current records:
 - [FID-2026-1029-002](dev/fids/archive/FID-2026-1029-002-savant-gateway-bootstrap.md) —
   identity, split, governance scaffold, and initial repository (closed against
   `bf3da9a`).
-- [FID-2026-1029-003](dev/fids/FID-2026-1029-003-landing-admin-and-protocol-port.md) —
-  landing page, admin panel, and canonical protocol import.
+- [FID-2026-1029-003](dev/fids/archive/FID-2026-1029-003-landing-admin-and-protocol-port.md) —
+  landing page, admin panel, and canonical protocol import (closed against
+  `508d443`).
 
 ## Quality gates
 

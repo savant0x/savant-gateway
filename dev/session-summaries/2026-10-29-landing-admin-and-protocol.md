@@ -60,7 +60,7 @@
 ## Final State
 
 - Branch: `main`.
-- Implementation and closure commits recorded in FID-2026-1029-003.
+- Implementation commit `508d443`; closure commit recorded in the FID archive.
 - `.env.local` holds local provider and admin credentials (ignored).
 
 ## Next Session

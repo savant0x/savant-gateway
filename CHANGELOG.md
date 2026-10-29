@@ -18,7 +18,9 @@ distinguish verified behavior from unverified claims.
   ECHO summary with the canonical `ECHO.md`, the single-agent protocol and
   marker, coding standards, templates, and an npm-configured
   `protocol.config.yaml`. Adds brand favicons, web manifest, and source assets.
-  Tests: 16 (session, limiter, HTTP helpers).
+  Tests: 16 (session, limiter, HTTP helpers). Closed against
+  `508d4431524b26606e4b94a7b95e0b3ccc22a2c3`; archived at
+  `dev/fids/archive/FID-2026-1029-003-landing-admin-and-protocol-port.md`.
 
 ## 2026-10-29 — Savant Gateway repository bootstrap
 

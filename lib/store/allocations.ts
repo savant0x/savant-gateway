@@ -17,6 +17,7 @@ export type {
 const DAILY_KEY = "free_pool.daily_tokens";
 const BPS_KEY = "free_pool.allocation_bps";
 const ENABLED_KEY = "free_pool.allocation_enabled";
+const ACCOUNT_CAP_KEY = "free_pool.account_daily_cap";
 
 function settingNumber(key: string, fallback: number): number {
   const raw = getSetting(key);
@@ -42,6 +43,10 @@ export function getAllocationConfig(): AllocationConfig {
     allocationBps: clampAllocationBps(
       settingNumber(BPS_KEY, env.allocationBps),
     ),
+    accountDailyCapTokens: settingNumber(
+      ACCOUNT_CAP_KEY,
+      env.accountDailyCapTokens,
+    ),
   };
 }
 
@@ -49,6 +54,7 @@ export function saveAllocationConfig(input: {
   enabled?: boolean;
   dailyPoolTokens?: number;
   allocationBps?: number;
+  accountDailyCapTokens?: number;
 }): AllocationConfig {
   if (typeof input.enabled === "boolean") {
     saveSetting(ENABLED_KEY, input.enabled ? "true" : "false");
@@ -63,6 +69,13 @@ export function saveAllocationConfig(input: {
 
   if (input.allocationBps !== undefined) {
     saveSetting(BPS_KEY, String(clampAllocationBps(input.allocationBps)));
+  }
+
+  if (input.accountDailyCapTokens !== undefined) {
+    saveSetting(
+      ACCOUNT_CAP_KEY,
+      String(Math.max(0, Math.floor(input.accountDailyCapTokens))),
+    );
   }
 
   return getAllocationConfig();

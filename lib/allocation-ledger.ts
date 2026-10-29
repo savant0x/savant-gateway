@@ -1,7 +1,11 @@
 import type { DatabaseHandle } from "./schema/columns";
 import type { AllocationConfig } from "./allocation";
 
-import { allocationShare, allocatableTokens } from "./allocation.ts";
+import {
+  accountDailyAllowance,
+  allocationShare,
+  allocatableTokens,
+} from "./allocation.ts";
 
 export type AllocationSummaryRow = {
   userId: string;
@@ -22,7 +26,11 @@ export type AllocationSummary = {
   activeAccounts: number;
   allocatedTokens: number;
   usedTokens: number;
+  /** The even share of the allocatable pool. */
   perAccountTokens: number;
+  /** The share after the per-account daily cap, or the share when uncapped. */
+  effectivePerAccountTokens: number;
+  accountDailyCapTokens: number;
   rows: AllocationSummaryRow[];
 };
 
@@ -209,6 +217,11 @@ export function allocationSummary(
     ),
     usedTokens: rows.reduce((total, row) => total + row.used_tokens, 0),
     perAccountTokens: accounts > 0 ? Math.floor(allocatable / accounts) : 0,
+    effectivePerAccountTokens: accountDailyAllowance(
+      input.config,
+      accounts > 0 ? Math.floor(allocatable / accounts) : 0,
+    ),
+    accountDailyCapTokens: input.config.accountDailyCapTokens,
     rows: rows.map((row) => ({
       userId: row.user_id,
       email: row.email,

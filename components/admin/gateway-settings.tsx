@@ -17,6 +17,8 @@ export type AllocationSummaryPayload = {
   allocatedTokens: number;
   usedTokens: number;
   perAccountTokens: number;
+  effectivePerAccountTokens: number;
+  accountDailyCapTokens: number;
 };
 
 function formatTokens(value: number) {
@@ -37,6 +39,9 @@ export function GatewaySettings({
   const [dailyPool, setDailyPool] = useState(String(summary.dailyPoolTokens));
   const [sharePercent, setSharePercent] = useState(
     (summary.allocationBps / 100).toString(),
+  );
+  const [accountCap, setAccountCap] = useState(
+    String(summary.accountDailyCapTokens),
   );
   const [bannerEnabled, setBannerEnabled] = useState(banner.enabled);
   const [bannerText, setBannerText] = useState(banner.text);
@@ -89,6 +94,7 @@ export function GatewaySettings({
   function saveAllocation() {
     const pool = Number(dailyPool);
     const percent = Number(sharePercent);
+    const cap = Number(accountCap);
 
     if (!Number.isSafeInteger(pool) || pool < 0) {
       setError("Daily pool must be a non-negative whole number of tokens.");
@@ -104,6 +110,15 @@ export function GatewaySettings({
       return;
     }
 
+    if (!Number.isSafeInteger(cap) || cap < 0) {
+      setError(
+        "The per-account cap must be a non-negative whole number of tokens, or 0 to disable it.",
+      );
+      setNotice(null);
+
+      return;
+    }
+
     void save(
       "allocation",
       {
@@ -111,9 +126,12 @@ export function GatewaySettings({
           enabled: allocationEnabled,
           dailyPoolTokens: pool,
           allocationBps: Math.round(percent * 100),
+          accountDailyCapTokens: cap,
         },
       },
-      `Allocation updated: ${formatTokens(Math.floor((pool * Math.round(percent * 100)) / 10_000))} tokens pool share.`,
+      cap === 0
+        ? "Allocation updated: the per-account cap is off, so each account draws its full share."
+        : `Allocation updated: every account is capped at ${formatTokens(cap)} weighted tokens a day.`,
     );
   }
 
@@ -137,7 +155,9 @@ export function GatewaySettings({
             This splits a share of it evenly across activated accounts — active
             customers holding at least one active key — and holds the rest back.
             An account keeps its allocation for the day; accounts added later
-            can only take what is still unallocated.
+            can only take what is still unallocated. The per-account cap then
+            limits what one identity may actually spend per day, so a farm of
+            accounts cannot bank the share of a pool that few accounts divide.
           </Card.Description>
         </Card.Header>
         <Card.Content className="space-y-4">
@@ -178,9 +198,22 @@ export function GatewaySettings({
               />
               %
             </span>
+            <span className="flex items-center gap-2 text-sm text-muted">
+              Per-account daily cap
+              <Input
+                aria-label="Per-account daily cap weighted tokens"
+                className="w-40"
+                min={0}
+                step="1"
+                type="number"
+                value={accountCap}
+                onChange={(event) => setAccountCap(event.target.value)}
+              />
+              tokens (0 = off)
+            </span>
           </div>
 
-          <div className="grid gap-3 text-xs text-muted sm:grid-cols-3">
+          <div className="grid gap-3 text-xs text-muted sm:grid-cols-2 lg:grid-cols-4">
             <p>
               Allocatable today:{" "}
               <span className="text-foreground">
@@ -203,6 +236,16 @@ export function GatewaySettings({
               · reserved{" "}
               <span className="text-foreground">
                 {formatTokens(summary.reservedTokens)}
+              </span>
+            </p>
+            <p>
+              Share per account:{" "}
+              <span className="text-foreground">
+                {formatTokens(summary.perAccountTokens)}
+              </span>{" "}
+              · effective{" "}
+              <span className="text-foreground">
+                {formatTokens(summary.effectivePerAccountTokens)}
               </span>
             </p>
           </div>

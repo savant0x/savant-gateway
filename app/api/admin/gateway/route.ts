@@ -112,6 +112,18 @@ export async function PATCH(request: Request) {
       );
     }
 
+    if (
+      allocation.accountDailyCapTokens !== undefined &&
+      (typeof allocation.accountDailyCapTokens !== "number" ||
+        !Number.isSafeInteger(allocation.accountDailyCapTokens) ||
+        allocation.accountDailyCapTokens < 0)
+    ) {
+      return adminError(
+        400,
+        "allocation.accountDailyCapTokens must be a non-negative integer; 0 disables the cap.",
+      );
+    }
+
     saveAllocationConfig({
       enabled:
         allocation.enabled === undefined ? undefined : allocation.enabled,
@@ -123,6 +135,10 @@ export async function PATCH(request: Request) {
         allocation.allocationBps === undefined
           ? undefined
           : allocation.allocationBps,
+      accountDailyCapTokens:
+        allocation.accountDailyCapTokens === undefined
+          ? undefined
+          : allocation.accountDailyCapTokens,
     });
   }
 

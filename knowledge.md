@@ -236,6 +236,10 @@ subscription_required`; a past-due plan returns `402 subscription_past_due`
 - `lib/pricing.ts` — pure pricing and estimation arithmetic.
 - `lib/gateway.ts` — auth, rate limiting, routing, reservation, response
   handling.
+- Free-tier admission is `min(share, per-account cap)`: the even split divides
+  the pool, `free_pool.account_daily_cap` (default 100,000 weighted tokens/day,
+  `0` disables) bounds what one account may spend. Both live in
+  `lib/allocation.ts`; `accountDailyAllowance` is the single clamp.
 - `lib/gateway-rate-limit.ts` + `lib/token-bucket.ts` — completion rate limits:
   free traffic shares one bucket below the upstream account ceiling, each paid
   key has its own. Buckets are per process and consumed before any credit or

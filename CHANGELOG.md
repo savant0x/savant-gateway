@@ -3,6 +3,19 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — Per-account free daily cap
+
+- **FID-2026-1029-024 — high — Per-account daily ceiling on the free pool.**
+  The even split still divides 90% of the pool across activated accounts, but an
+  account may now spend at most `FREE_ACCOUNT_DAILY_CAP` weighted tokens per UTC
+  day (default 100,000; `0` disables). Effective allowance is
+  `min(share, cap)`, so a pool divided between five accounts grants 3.6M each but
+  binds at the cap, and a farm of accounts cannot each bank a share. The refusal
+  names the limit actually hit, Admin → Gateway sets the cap and shows the share
+  beside the effective allowance, and a missing or malformed value falls back to
+  disabled rather than locking accounts out. Tests: `tests/allocation.test.mjs`
+  (+5).
+
 ## 2026-10-29 — Completion rate limits
 
 - **FID-2026-1029-023 — high — Boundary rate limiting on completions.** Free

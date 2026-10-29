@@ -13,10 +13,20 @@ export const DEFAULT_FREE_POOL_ALLOCATION_BPS = 9_000;
 export const DEFAULT_FREE_POOL_ALLOCATION_ENABLED = true;
 export const MAX_ALLOCATION_BPS = 10_000;
 
+/**
+ * A single account may draw at most this many weighted tokens per UTC day. The
+ * even split says how the pool is divided; the cap says how much one identity
+ * can take from it, so a farm of accounts cannot each bank a multi-million
+ * share. Zero disables the cap and leaves the split as the only limit.
+ */
+export const DEFAULT_FREE_ACCOUNT_DAILY_CAP = 100_000;
+export const FREE_ACCOUNT_DAILY_CAP_DISABLED = 0;
+
 export type AllocationConfig = {
   enabled: boolean;
   dailyPoolTokens: number;
   allocationBps: number;
+  accountDailyCapTokens: number;
 };
 
 export type DailyAllocation = {
@@ -37,6 +47,25 @@ function nonNegativeInt(value: unknown, fallback: number) {
     parsed >= 0
     ? parsed
     : fallback;
+}
+
+/**
+ * What one account may actually spend today: its share of the pool, reduced to
+ * the account cap when one is set. A disabled cap returns the share unchanged.
+ */
+export function accountDailyAllowance(
+  config: AllocationConfig,
+  shareTokens: number,
+): number {
+  const share = Math.max(0, Math.floor(shareTokens));
+  const rawCap = Number(config.accountDailyCapTokens);
+  const cap = Number.isFinite(rawCap)
+    ? Math.max(0, Math.floor(rawCap))
+    : FREE_ACCOUNT_DAILY_CAP_DISABLED;
+
+  if (cap === FREE_ACCOUNT_DAILY_CAP_DISABLED) return share;
+
+  return Math.min(share, cap);
 }
 
 export function clampAllocationBps(value: unknown): number {
@@ -65,6 +94,10 @@ export function readAllocationConfig(
         env.FREE_POOL_ALLOCATION_BPS === ""
         ? DEFAULT_FREE_POOL_ALLOCATION_BPS
         : env.FREE_POOL_ALLOCATION_BPS,
+    ),
+    accountDailyCapTokens: nonNegativeInt(
+      env.FREE_ACCOUNT_DAILY_CAP,
+      DEFAULT_FREE_ACCOUNT_DAILY_CAP,
     ),
   };
 }

@@ -5,6 +5,7 @@ import Database from "better-sqlite3";
 
 import {
   allocationShare,
+  accountDailyAllowance,
   allocatableTokens,
   clampAllocationBps,
   DEFAULT_FREE_POOL_ALLOCATION_BPS,
@@ -28,6 +29,7 @@ function config(overrides = {}) {
     enabled: true,
     dailyPoolTokens: DEFAULT_FREE_POOL_DAILY_TOKENS,
     allocationBps: DEFAULT_FREE_POOL_ALLOCATION_BPS,
+    accountDailyCapTokens: 100_000,
     ...overrides,
   };
 }
@@ -360,4 +362,86 @@ test("summary reports pool, allocations, usage and holds", () => {
   const second = summary.rows.find((row) => row.userId === "u2");
 
   assert.equal(second.heldTokens, 500_000);
+});
+
+test("the per-account cap lowers a share and zero disables it", () => {
+  const share = 3_600_000;
+
+  assert.equal(
+    accountDailyAllowance(
+      { ...config(), accountDailyCapTokens: 100_000 },
+      share,
+    ),
+    100_000,
+  );
+  assert.equal(
+    accountDailyAllowance({ ...config(), accountDailyCapTokens: 0 }, share),
+    share,
+  );
+  // A cap above the share cannot raise the allowance above the split.
+  assert.equal(
+    accountDailyAllowance(
+      { ...config(), accountDailyCapTokens: 9_000_000 },
+      share,
+    ),
+    share,
+  );
+  // Below the cap, the share is what binds.
+  assert.equal(
+    accountDailyAllowance(
+      { ...config(), accountDailyCapTokens: 500_000 },
+      90_000,
+    ),
+    90_000,
+  );
+});
+
+test("a missing or malformed cap is treated as disabled, not as zero allowance", () => {
+  for (const value of [undefined, null, Number.NaN, "nonsense", -10]) {
+    assert.equal(
+      accountDailyAllowance(
+        { ...config(), accountDailyCapTokens: value },
+        250_000,
+      ),
+      250_000,
+      String(value),
+    );
+  }
+});
+
+test("the cap applies to the fixed fallback allowance when allocation is off", () => {
+  const disabled = {
+    ...config({ enabled: false }),
+    accountDailyCapTokens: 120_000,
+  };
+
+  assert.equal(accountDailyAllowance(disabled, 500_000), 120_000);
+});
+
+test("the summary reports the even share next to the capped allowance", () => {
+  const db = database([{ id: "a" }, { id: "b" }]);
+  const summary = allocationSummary(db, {
+    day: DAY,
+    config: { ...config(), accountDailyCapTokens: 100_000 },
+    now: NOW,
+  });
+
+  assert.equal(summary.activeAccounts, 2);
+  assert.equal(summary.perAccountTokens, 9_000_000);
+  assert.equal(summary.effectivePerAccountTokens, 100_000);
+  assert.equal(summary.accountDailyCapTokens, 100_000);
+  db.close();
+});
+
+test("the environment default caps every account at 100k weighted tokens", () => {
+  assert.equal(readAllocationConfig({}).accountDailyCapTokens, 100_000);
+  assert.equal(
+    readAllocationConfig({ FREE_ACCOUNT_DAILY_CAP: "0" }).accountDailyCapTokens,
+    0,
+  );
+  assert.equal(
+    readAllocationConfig({ FREE_ACCOUNT_DAILY_CAP: "250000" })
+      .accountDailyCapTokens,
+    250_000,
+  );
 });

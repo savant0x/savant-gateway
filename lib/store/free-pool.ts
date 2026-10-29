@@ -9,6 +9,7 @@ import type {
 
 import { randomUUID } from "node:crypto";
 
+import { accountDailyAllowance } from "../allocation";
 import { db, nowIso } from "../db";
 import {
   decideFreeAdmission,
@@ -189,14 +190,23 @@ export function reserveFreeCall(input: {
       }
 
       // The daily allowance is the account's share of the shared pool when
-      // allocation is enabled, and the fixed per-user fallback otherwise.
-      // Trial mode keeps its own durable ledger and ignores both.
+      // allocation is enabled, and the fixed per-user fallback otherwise. In
+      // both modes the per-account daily cap applies, so one identity cannot
+      // take a multi-million share merely because few accounts exist yet.
+      // Trial mode keeps its own durable ledger and ignores all of this.
       const allocation = getAllocationConfig();
+      const shareTokens = allocation.enabled
+        ? ensureDailyAllocation(input.auth.userId, day)
+        : config.dailyWeightedTokens;
       const dailyAllowance = trial.enabled
         ? Number.MAX_SAFE_INTEGER
-        : allocation.enabled
-          ? ensureDailyAllocation(input.auth.userId, day)
-          : config.dailyWeightedTokens;
+        : accountDailyAllowance(allocation, shareTokens);
+      // True when the cap, not the account's share, is the binding limit, so a
+      // refusal can name the limit the caller actually hit.
+      const capBinds =
+        !trial.enabled &&
+        allocation.accountDailyCapTokens > 0 &&
+        dailyAllowance < shareTokens;
       const next = decideFreeAdmission({
         config: { ...config, dailyWeightedTokens: dailyAllowance },
         promptTokens: input.promptTokens,
@@ -213,7 +223,18 @@ export function reserveFreeCall(input: {
         now: nowMs,
       });
 
-      if (!next.allowed) return { decision: next, alert: null };
+      if (!next.allowed) {
+        return {
+          decision:
+            next.reason === "user_allowance" && capBinds
+              ? {
+                  ...next,
+                  message: `Daily per-account free cap reached (${dailyAllowance.toLocaleString("en-US")} weighted tokens). Resets at ${next.resetAt}.`,
+                }
+              : next,
+          alert: null,
+        };
+      }
 
       if (
         trial.enabled &&

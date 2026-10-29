@@ -61,6 +61,12 @@ least one active key), and hold the rest as a reserve:
 - A 6th account joining mid-day rebalances the unspent remainder to 3,000,000 each.
 - Usage already recorded is never clawed back; a newcomer only receives capacity
   nobody spent.
+- **A per-account daily cap then binds what one identity may spend** (default
+  100,000 weighted tokens/day, `FREE_ACCOUNT_DAILY_CAP`, `0` to disable). The
+  split decides how the pool is divided; the cap decides how much a single
+  account can take from it. Without the cap, one account on day one receives the
+  whole 18M, and a hundred synthetic accounts each bank a share — the split alone
+  cannot tell a customer from a farm.
 
 Because the allowance is free at the upstream, the free tier costs nothing while
 it lasts. The exposure is what happens at exhaustion: either the request is
@@ -81,7 +87,7 @@ marketing cost that averages out.
 
 <!-- generated:start -->
 
-_Generated 2026-10-29 22:40 UTC from `data/gateway.db`._
+_Generated 2026-10-29 23:02 UTC from `data/gateway.db`._
 
 ### Upstream providers
 

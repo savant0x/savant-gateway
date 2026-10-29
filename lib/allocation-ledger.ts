@@ -52,11 +52,40 @@ export function allocatedOn(database: DatabaseHandle, day: string): number {
   return Math.max(0, row.total);
 }
 
+function usedAndHeld(
+  database: DatabaseHandle,
+  userId: string,
+  day: string,
+  now: string,
+) {
+  const used = database
+    .prepare(
+      "SELECT COALESCE(weighted_tokens, 0) AS total FROM free_pool_usage WHERE user_id = ? AND day = ?",
+    )
+    .get(userId, day) as { total: number } | undefined;
+  const held = database
+    .prepare(
+      `SELECT COALESCE(SUM(weighted_tokens), 0) AS total
+       FROM free_pool_reservations
+       WHERE user_id = ? AND expires_at > ?`,
+    )
+    .get(userId, now) as { total: number } | undefined;
+
+  return {
+    used: Math.max(0, used?.total ?? 0),
+    held: Math.max(0, held?.total ?? 0),
+  };
+}
+
 /**
  * Grants one account its share of today's allocatable pool. Call inside the
  * caller's immediate transaction: the active-account count, the day's already
- * allocated total, and the insert must agree. An existing row is returned
- * unchanged, so a customer's allocation never shrinks during the day.
+ * allocated total, and the insert must agree.
+ *
+ * When a new activated account joins mid-day, existing grants above the new
+ * fair share are lowered to it, but never below that account's recorded usage
+ * plus in-flight holds. Without this, the first account of the day would keep
+ * the entire allocatable pool and every later signup would receive zero.
  */
 export function ensureAllocation(
   database: DatabaseHandle,
@@ -67,27 +96,64 @@ export function ensureAllocation(
     now: string;
   },
 ): number {
-  const share = allocationShare({
-    allocatableTokens: allocatableTokens(input.config),
-    activeAccounts: activeAccountCount(database),
-    alreadyAllocated: allocatedOn(database, input.day),
-  });
-
-  database
-    .prepare(
-      `INSERT OR IGNORE INTO free_pool_allocations
-         (day, user_id, allocated_tokens, created_at)
-       VALUES (?, ?, ?, ?)`,
-    )
-    .run(input.day, input.userId, share, input.now);
-
-  const row = database
+  const allocatable = allocatableTokens(input.config);
+  const accounts = activeAccountCount(database);
+  const existing = database
     .prepare(
       "SELECT allocated_tokens FROM free_pool_allocations WHERE day = ? AND user_id = ?",
     )
     .get(input.day, input.userId) as { allocated_tokens: number } | undefined;
 
-  return Math.max(0, row?.allocated_tokens ?? 0);
+  if (existing) return Math.max(0, existing.allocated_tokens);
+
+  const fairShare = accounts > 0 ? Math.floor(allocatable / accounts) : 0;
+  const rows = database
+    .prepare(
+      "SELECT user_id, allocated_tokens FROM free_pool_allocations WHERE day = ?",
+    )
+    .all(input.day) as Array<{
+    user_id: string;
+    allocated_tokens: number;
+  }>;
+  const update = database.prepare(
+    "UPDATE free_pool_allocations SET allocated_tokens = ? WHERE day = ? AND user_id = ?",
+  );
+
+  for (const row of rows) {
+    const committed = usedAndHeld(database, row.user_id, input.day, input.now);
+    const committedFloor = Math.min(
+      row.allocated_tokens,
+      committed.used + committed.held,
+    );
+    const rebalanced = Math.min(
+      row.allocated_tokens,
+      Math.max(fairShare, committedFloor),
+    );
+
+    if (rebalanced !== row.allocated_tokens) {
+      update.run(rebalanced, input.day, row.user_id);
+    }
+  }
+
+  const share = allocationShare({
+    allocatableTokens: allocatable,
+    activeAccounts: accounts,
+    alreadyAllocated: allocatedOn(database, input.day),
+  });
+
+  database
+    .prepare(
+      "INSERT OR IGNORE INTO free_pool_allocations (day, user_id, allocated_tokens, created_at) VALUES (?, ?, ?, ?)",
+    )
+    .run(input.day, input.userId, share, input.now);
+
+  const inserted = database
+    .prepare(
+      "SELECT allocated_tokens FROM free_pool_allocations WHERE day = ? AND user_id = ?",
+    )
+    .get(input.day, input.userId) as { allocated_tokens: number } | undefined;
+
+  return Math.max(0, inserted?.allocated_tokens ?? 0);
 }
 
 export function allocationSummary(

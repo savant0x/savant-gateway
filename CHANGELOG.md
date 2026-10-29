@@ -10,7 +10,8 @@ distinguish verified behavior from unverified claims.
   `free_pool_allocations` row grants an activated account (active customer with
   at least one active key) an even share of 90% of the configured daily pool,
   capped by the day's unallocated remainder. The 10% reserve is never allocated,
-  grants never shrink within a day, and a late account cannot oversell the pool.
+  and a joining account rebalances existing grants down to the new fair share
+  (never below recorded usage plus holds) so it can receive unspent capacity.
   Admin → Gateway sets the pool, share, and enablement; settings override
   environment defaults, and `FREE_DAILY_WEIGHTED_TOKENS` remains the fallback
   when allocation is disabled. Trial mode keeps its own ledger and ignores the
@@ -23,6 +24,13 @@ distinguish verified behavior from unverified claims.
   estimated tokens are counted before the free admission or credit hold so
   allowance and cost estimates agree. Tests: `tests/context-banner.test.mjs`
   (3).
+- **FID-2026-1029-019 — high — Allocation join rebalance.** The first account
+  of the UTC day could bank the entire 90% share, leaving every later signup
+  that day with a zero allowance. A first request for a day now rebalances
+  existing grants to the new fair share before the insert, floored at each
+  account's recorded usage plus in-flight holds, so total grants never exceed
+  the allocatable share and unspent capacity reaches newcomers. Tests:
+  `tests/allocation.test.mjs` (11).
 - **FID-2026-1029-018 — low — Public catalog read memo.** A five-second,
   per-process TTL memo wraps the `listModels` display projection only; admin
   reads and the billed model lookup stay uncached. Measured avoided cost was
@@ -39,7 +47,7 @@ distinguish verified behavior from unverified claims.
   to `@next/env`, removed as noise) and gained the allocation variables;
   `dev/agenda.md` now records the real launch agenda; the untracked
   `dev/audit/issues.md` snapshot was preserved, not deleted, per the handoff.
-  Receipt: `npm run verify` exit 0 — lint zero warnings, typecheck, 133/133 unit
+  Receipt: `npm run verify` exit 0 — lint zero warnings, typecheck, 135/135 unit
   tests, quality PASS over 207 files, production build exit 0 (54 app routes),
   `http-suite` 100 checks PASS and `trial-http-suite` all checks PASS. Committed
   as `58d5556`; FID-2026-1029-016, FID-2026-1029-017, and FID-2026-1029-018 are

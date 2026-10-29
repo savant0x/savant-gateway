@@ -27,8 +27,9 @@ and produce a Gemini Deep Research prompt for an early-stage business plan.
   `free_pool_allocations` row grants each activated account
   `min(floor(0.9 x pool / activeAccounts), unallocated remainder)` inside the
   existing immediate admission transaction. Activated means an active customer
-  holding at least one active key. Grants never shrink during the day; a late
-  account can only take what remains; 10% is never allocated. Admin → Gateway
+  holding at least one active key. A joining account rebalances existing grants
+  down to the new fair share, floored at recorded usage plus holds, so unspent
+  capacity reaches newcomers; 10% is never allocated. Admin → Gateway
   edits the pool and share, with settings overriding environment defaults.
   `.env.example` documents `FREE_POOL_DAILY_WEIGHTED_TOKENS`,
   `FREE_POOL_ALLOCATION_BPS`, and `FREE_POOL_ALLOCATION_ENABLED`.
@@ -57,7 +58,7 @@ and produce a Gemini Deep Research prompt for an early-stage business plan.
   data snapshot. It asks for pricing, free policy, unit economics, growth,
   risk controls, and go/no-go thresholds.
 - [x] **A8 — Verification.** `npm run verify` exit 0: lint zero warnings,
-  typecheck exit 0, 133/133 unit tests, quality PASS over 207 files, production
+  typecheck exit 0, 135/135 unit tests, quality PASS over 207 files, production
   build exit 0 (54 app routes including `/admin/gateway` and
   `/api/admin/gateway`), `http-suite` 100 checks PASS, and `trial-http-suite`
   all checks PASS. Implementation committed as `58d5556`; FID-016/017/018 are
@@ -67,6 +68,13 @@ and produce a Gemini Deep Research prompt for an early-stage business plan.
   design and audit the code that exists; they do not claim code was written only
   after convergence. This deviation from FID-Bound Execution is recorded rather
   than masked.
+- [x] **A10 — Allocation banking corrected.** FID-2026-1029-019. The first
+  pass granted durable shares that never shrank, so the first account of the
+  UTC day took all 90% and a later same-day signup received 0. A joining
+  account now triggers a rebalance of existing grants to the new fair share,
+  floored at each account's usage plus holds. Tests: 11 allocation cases
+  covering an unspent 18M → 9M split, a 12M committed grant that stays 12M while
+  the newcomer receives 6M, and a 9M/9M → 6M/6M/6M three-account split.
 
 Findings recorded during this pass:
 

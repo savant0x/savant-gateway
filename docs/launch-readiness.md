@@ -51,9 +51,10 @@ Sources: [reseller guide](https://apinex.bond/developers/resell),
   Public catalog labels/paid-rate presentation must be updated for activation;
   today's Free labels describe the currently active legacy mode.
 - [x] Split the upstream daily allowance across activated accounts with a
-  held-back reserve. FID-2026-1029-016 allocates 90% evenly per UTC day,
-  grants it once per account, and caps late accounts by the unallocated
-  remainder. **Still open:** automatic quota refresh, and one shared admission
+  held-back reserve. FID-2026-1029-016 allocates 90% evenly per UTC day, and
+  FID-2026-1029-019 rebalances existing grants to the new fair share when an
+  account joins, floored at its recorded usage plus holds, so unspent capacity
+  reaches later signups. **Still open:** automatic quota refresh, and one shared admission
   policy across trial, subscription, and credit so no billing mode can exceed
   upstream capacity. Handle UTC reset, unlimited plans, unavailable quota reads,
   and upstream subscription-only rows.

@@ -21,8 +21,10 @@ removing a working path; leave the trial off.
   table, pure split math (`lib/allocation.ts`), testable SQL
   (`lib/allocation-ledger.ts`), settings-aware store, admission integration, and
   Admin → Gateway controls. Activated account = active user with at least one
-  active key. 90% allocated, 10% reserve, grants durable per UTC day and never
-  reduced, late accounts capped by the remainder.
+  active key. 90% allocated, 10% reserve, grants durable per UTC day. A joining
+  account rebalances existing grants down to the new fair share, floored at each
+  account's recorded usage plus holds (FID-2026-1029-019 corrected the first
+  pass, which let the first account of the day bank the entire share).
 - **FID-2026-1029-017 — context banner.** Settings-backed string and enable
   switch, 2,000-character validation, leading system message on every upstream
   request, token accounting before admission. Works for OpenAI and Anthropic
@@ -56,7 +58,7 @@ removing a working path; leave the trial off.
 npm run verify: exit 0
 lint: zero warnings
 typecheck: exit 0
-tests: 133 passed, 0 failed
+tests: 135 passed, 0 failed
 quality: PASS (400-line ceiling, 207 files scanned)
 production build: exit 0 (54 app routes, including /admin/gateway and
   /api/admin/gateway)

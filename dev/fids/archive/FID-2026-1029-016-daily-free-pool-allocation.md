@@ -9,6 +9,11 @@
 **YAGNI-Compliance:** Verified — reuses the existing admission transaction and
 settings table; no background job, scheduler, or new service.
 
+> **Correction:** FID-2026-1029-019 replaced the "never shrinks" rule with a
+> join-time rebalance (existing grants fall to the new fair share, floored at
+> recorded usage plus holds). The rest of this record stands as the receipt for
+> the original implementation.
+>
 > **Sequencing disclosure.** The operator ordered this work and implementation
 > was written in the same pass as the design. The Perfection Loop below records
 > the converged design and the audit of the code that exists; it does not claim

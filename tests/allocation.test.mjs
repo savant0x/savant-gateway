@@ -14,6 +14,7 @@ import {
 } from "../lib/allocation.ts";
 import {
   activeAccountCount,
+  allocatedOn,
   allocationSummary,
   ensureAllocation,
 } from "../lib/allocation-ledger.ts";
@@ -198,7 +199,7 @@ test("only active accounts holding an active key count", () => {
   assert.equal(activeAccountCount(db), 1);
 });
 
-test("allocation is granted once per day and never shrinks", () => {
+test("allocation is granted once per day and is stable for a returning account", () => {
   const db = database([{ id: "u1" }, { id: "u2" }]);
   const base = config();
 
@@ -210,26 +211,14 @@ test("allocation is granted once per day and never shrinks", () => {
   });
 
   assert.equal(first, 9_000_000);
-
-  const smaller = config({ dailyPoolTokens: 1_000_000 });
-  const repeated = ensureAllocation(db, {
-    userId: "u1",
-    day: DAY,
-    config: smaller,
-    now: NOW,
-  });
-
-  assert.equal(repeated, 9_000_000);
-  // Lowering the pool after a grant cannot claw it back, so a second account
-  // sees nothing left of the smaller allocatable total for the day.
   assert.equal(
     ensureAllocation(db, {
-      userId: "u2",
+      userId: "u1",
       day: DAY,
-      config: smaller,
+      config: config({ dailyPoolTokens: 1_000_000 }),
       now: NOW,
     }),
-    0,
+    9_000_000,
   );
   assert.equal(
     ensureAllocation(db, {
@@ -242,7 +231,75 @@ test("allocation is granted once per day and never shrinks", () => {
   );
 });
 
-test("a new activated account cannot oversell a full day", () => {
+test("a joining account rebalances an unspent allocation", () => {
+  const db = database([{ id: "u1" }]);
+  const base = config();
+
+  assert.equal(
+    ensureAllocation(db, { userId: "u1", day: DAY, config: base, now: NOW }),
+    18_000_000,
+  );
+
+  db.prepare(
+    `INSERT INTO users (id, email, name, status, created_at)
+     VALUES ('u2', 'u2@example.com', 'u2', 'active', ?)`,
+  ).run(NOW);
+  db.prepare(
+    `INSERT INTO api_keys
+       (id, user_id, name, prefix, secret_hash, status, created_at)
+     VALUES ('key_u2', 'u2', 'default', 'sk-test', 'hash_u2', 'active', ?)`,
+  ).run(NOW);
+
+  assert.equal(
+    ensureAllocation(db, { userId: "u2", day: DAY, config: base, now: NOW }),
+    9_000_000,
+  );
+
+  const first = db
+    .prepare(
+      "SELECT allocated_tokens FROM free_pool_allocations WHERE day = ? AND user_id = 'u1'",
+    )
+    .get(DAY);
+
+  assert.equal(first.allocated_tokens, 9_000_000);
+  assert.equal(allocatedOn(db, DAY), 18_000_000);
+});
+
+test("rebalancing never cuts below recorded usage and holds", () => {
+  const db = database([{ id: "u1" }]);
+  const base = config();
+
+  ensureAllocation(db, { userId: "u1", day: DAY, config: base, now: NOW });
+  db.prepare(
+    "INSERT INTO free_pool_usage (user_id, day, weighted_tokens, updated_at) VALUES (?, ?, ?, ?)",
+  ).run("u1", DAY, 12_000_000, NOW);
+
+  db.prepare(
+    `INSERT INTO users (id, email, name, status, created_at)
+     VALUES ('u2', 'u2@example.com', 'u2', 'active', ?)`,
+  ).run(NOW);
+  db.prepare(
+    `INSERT INTO api_keys
+       (id, user_id, name, prefix, secret_hash, status, created_at)
+     VALUES ('key_u2', 'u2', 'default', 'sk-test', 'hash_u2', 'active', ?)`,
+  ).run(NOW);
+
+  assert.equal(
+    ensureAllocation(db, { userId: "u2", day: DAY, config: base, now: NOW }),
+    6_000_000,
+  );
+
+  const first = db
+    .prepare(
+      "SELECT allocated_tokens FROM free_pool_allocations WHERE day = ? AND user_id = 'u1'",
+    )
+    .get(DAY);
+
+  assert.equal(first.allocated_tokens, 12_000_000);
+  assert.equal(allocatedOn(db, DAY), 18_000_000);
+});
+
+test("a third activated account rebalances without overselling the day", () => {
   const db = database([{ id: "u1" }, { id: "u2" }]);
   const base = config();
 
@@ -267,8 +324,9 @@ test("a new activated account cannot oversell a full day", () => {
       config: base,
       now: NOW,
     }),
-    0,
+    6_000_000,
   );
+  assert.equal(allocatedOn(db, DAY), 18_000_000);
 });
 
 test("summary reports pool, allocations, usage and holds", () => {

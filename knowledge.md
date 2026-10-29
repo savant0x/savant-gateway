@@ -92,9 +92,11 @@ upstream cost, and usage in SQLite.
   shared allocation enabled, each activated account (active user with at least
   one active key) receives
   `min(floor(0.9 × pool / activeAccounts), unallocated remainder)` for that
-  day, recorded in `free_pool_allocations`. The 10% reserve is never allocated,
-  grants never shrink within a day, and a late account can only take what is
-  left. `FREE_DAILY_WEIGHTED_TOKENS` is only the fallback when allocation is
+  day, recorded in `free_pool_allocations`. The 10% reserve is never allocated.
+  When a new activated account joins mid-day, existing grants are lowered to the
+  new fair share, floored at recorded usage plus in-flight holds, so unspent
+  capacity reaches the newcomer; total grants never exceed the allocatable
+  share. `FREE_DAILY_WEIGHTED_TOKENS` is only the fallback when allocation is
   disabled. Admin → Gateway writes `free_pool.daily_tokens`,
   `free_pool.allocation_bps`, and `free_pool.allocation_enabled`, which override
   the environment. The pure math is `lib/allocation.ts`; the SQL is
@@ -305,7 +307,7 @@ provider account has no paid balance, and CommandCode has no configured
 credential.
 
 FID-2026-1029-016/017/018 add the daily allocation, context banner, and catalog
-memo. Receipt on 2026-10-29: `npm run verify` exit 0 with 133 unit tests, quality
+memo. Receipt on 2026-10-29: `npm run verify` exit 0 with 135 unit tests, quality
 PASS over 207 files, a 54-route production build, 100 HTTP checks, and the trial
 HTTP suite. The allocation and banner tests exercise pure math and the ledger
 against an in-memory database; the admin page and API are compiled and gated but

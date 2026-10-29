@@ -105,7 +105,7 @@ function reservePaidCall(
     return {
       blocked: jsonError(
         402,
-        "Insufficient credit balance for this request. Add credit in the operator console.",
+        "Insufficient credit balance for this request. Add credit in your account.",
         "insufficient_quota",
       ),
     };
@@ -189,7 +189,7 @@ export async function handleChatCompletions(request: Request) {
     if (model.sellInputMicros <= 0 && model.sellOutputMicros <= 0) {
       return jsonError(
         503,
-        `Model ${model.id} is not priced yet. Set a sell price in the operator console.`,
+        `Model ${model.id} is not currently available for purchase.`,
         "model_unpriced",
       );
     }

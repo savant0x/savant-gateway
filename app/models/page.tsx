@@ -103,25 +103,49 @@ export default async function ModelsPage() {
               </span>
             </div>
 
-            {positioning.rows > 0 && positioning.input.medianBps !== null ? (
-              <div className="mt-8 grid gap-3 sm:grid-cols-3">
+            {positioning.rows > 0 ? (
+              <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-xl border border-cyan-300/20 bg-cyan-300/5 px-4 py-3">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
+                    Median vs list · 3:1 blend
+                  </p>
+                  <p
+                    className={`mt-1 text-2xl font-semibold tracking-[-0.02em] ${
+                      (positioning.blended.medianBps ?? 0) < 0
+                        ? "text-emerald-300"
+                        : "text-amber-300"
+                    }`}
+                  >
+                    {positioning.blended.medianBps === null
+                      ? "—"
+                      : formatSignedPercent(positioning.blended.medianBps)}
+                  </p>
+                  <p className="mt-1 text-xs text-muted">
+                    the headline figure: three prompt tokens to one completion
+                    token, across {formatNumber(positioning.rows)} matched paid
+                    rows, where {formatNumber(positioning.blended.cheaper)} are
+                    below list
+                  </p>
+                </div>
                 <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                   <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
                     Median input vs list
                   </p>
                   <p
                     className={`mt-1 text-2xl font-semibold tracking-[-0.02em] ${
-                      positioning.input.medianBps < 0
+                      (positioning.input.medianBps ?? 0) < 0
                         ? "text-emerald-300"
                         : "text-amber-300"
                     }`}
                   >
-                    {formatSignedPercent(positioning.input.medianBps)}
+                    {positioning.input.medianBps === null
+                      ? "—"
+                      : formatSignedPercent(positioning.input.medianBps)}
                   </p>
                   <p className="mt-1 text-xs text-muted">
-                    the midpoint of {formatNumber(positioning.rows)} matched
-                    paid rows, where {formatNumber(positioning.input.cheaper)}{" "}
-                    are below list
+                    prompt tokens are where the list is hardest to beat;{" "}
+                    {formatNumber(positioning.input.cheaper)} of{" "}
+                    {formatNumber(positioning.rows)} rows are below it
                   </p>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">

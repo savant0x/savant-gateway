@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  blendedPer1M,
   buildCatalogComparison,
   deltaBps,
   parseOpenRouterModels,
@@ -101,7 +102,10 @@ test("only an exact slug matches, never a revision guess", () => {
   assert.equal(result.matched, 3);
   assert.equal(result.total, 4);
   assert.equal(result.comparisons["unlisted-model"], undefined);
-  assert.equal(result.comparisons["gpt-6-luna"].openRouterId, "openai/gpt-6-luna");
+  assert.equal(
+    result.comparisons["gpt-6-luna"].openRouterId,
+    "openai/gpt-6-luna",
+  );
   assert.equal(
     result.comparisons["free/gpt-6-luna"].openRouterId,
     "openai/gpt-6-luna",
@@ -134,16 +138,49 @@ test("a matched comparison carries both deltas", () => {
   );
   const row = result.comparisons["glm-5.3"];
 
-  assert.equal(row.inputDeltaBps, Math.round(((0.195 - 0.0699) / 0.0699) * 10_000));
+  assert.equal(
+    row.inputDeltaBps,
+    Math.round(((0.195 - 0.0699) / 0.0699) * 10_000),
+  );
   assert.equal(row.outputDeltaBps, Math.round(((0.65 - 1.4) / 1.4) * 10_000));
+});
+
+test("the blend weighs three prompt tokens to one completion token", () => {
+  assert.equal(blendedPer1M(1, 5), 2);
+  assert.equal(blendedPer1M(0.0699, 1.4), (0.0699 * 3 + 1.4) / 4);
+  assert.equal(blendedPer1M(0.2, 0.2), 0.2);
+});
+
+test("a flat rate against an asymmetric list reads dearer on input and cheaper on blend", () => {
+  // The upstream relay publishes one rate for both directions, while the public
+  // list prices prompt and completion independently. Comparing the flat rate to
+  // the prompt rate alone reported +179% for GLM 5.3; the blended comparison is
+  // the like-for-like one.
+  const result = buildCatalogComparison(
+    [
+      {
+        id: "glm-5.3",
+        upstreamId: "glm-5.3",
+        inputPricePer1M: 0.195,
+        outputPricePer1M: 0.195,
+      },
+    ],
+    parseOpenRouterModels(OPENROUTER),
+  );
+  const row = result.comparisons["glm-5.3"];
+
+  assert.ok(row.inputDeltaBps > 0, "prompt tokens are dearer than the list");
+  assert.equal(row.inputDeltaBps, 17_897);
+  assert.equal(row.outputDeltaBps, -8_607);
+  assert.equal(row.blendedDeltaBps, -5_154);
 });
 
 test("summary ignores missing deltas and reports the median", () => {
   const summary = summarizeComparison([
-    { inputDeltaBps: -5000, outputDeltaBps: -9000 },
-    { inputDeltaBps: -1000, outputDeltaBps: 2000 },
-    { inputDeltaBps: null, outputDeltaBps: null },
-    { inputDeltaBps: 0, outputDeltaBps: -500 },
+    { inputDeltaBps: -5000, outputDeltaBps: -9000, blendedDeltaBps: -6000 },
+    { inputDeltaBps: -1000, outputDeltaBps: 2000, blendedDeltaBps: -250 },
+    { inputDeltaBps: null, outputDeltaBps: null, blendedDeltaBps: null },
+    { inputDeltaBps: 0, outputDeltaBps: -500, blendedDeltaBps: -100 },
   ]);
 
   assert.equal(summary.rows, 4);
@@ -155,22 +192,29 @@ test("summary ignores missing deltas and reports the median", () => {
   assert.equal(summary.output.medianBps, -500);
   assert.equal(summary.output.cheaper, 2);
   assert.equal(summary.output.pricier, 1);
+  // Blended medians are computed over the same rows, independently.
+  assert.equal(summary.blended.medianBps, -250);
+  assert.equal(summary.blended.cheaper, 3);
+  assert.equal(summary.blended.pricier, 0);
 });
 
 test("summary is empty rather than zero when nothing is comparable", () => {
-  const summary = summarizeComparison([{ inputDeltaBps: null, outputDeltaBps: null }]);
+  const summary = summarizeComparison([
+    { inputDeltaBps: null, outputDeltaBps: null, blendedDeltaBps: null },
+  ]);
 
   assert.equal(summary.rows, 1);
   assert.equal(summary.input.medianBps, null);
   assert.equal(summary.output.medianBps, null);
+  assert.equal(summary.blended.medianBps, null);
 });
 
 test("summary rounds an even-length median instead of picking a side", () => {
   const summary = summarizeComparison([
-    { inputDeltaBps: -3000, outputDeltaBps: -3000 },
-    { inputDeltaBps: -2000, outputDeltaBps: -2000 },
-    { inputDeltaBps: -1000, outputDeltaBps: -1000 },
-    { inputDeltaBps: 0, outputDeltaBps: 0 },
+    { inputDeltaBps: -3000, outputDeltaBps: -3000, blendedDeltaBps: -3000 },
+    { inputDeltaBps: -2000, outputDeltaBps: -2000, blendedDeltaBps: -2000 },
+    { inputDeltaBps: -1000, outputDeltaBps: -1000, blendedDeltaBps: -1000 },
+    { inputDeltaBps: 0, outputDeltaBps: 0, blendedDeltaBps: 0 },
   ]);
 
   assert.equal(summary.input.medianBps, -1500);

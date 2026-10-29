@@ -11,6 +11,22 @@ export type OpenRouterModel = {
   outputPer1M: number;
 };
 
+/**
+ * Production traffic is mostly prompt: agent loops re-send context and emit a
+ * short answer. A 3:1 input-to-output mix is the published convention for a
+ * blended rate, and it is the only honest single number when one direction is
+ * cheaper and the other is dearer.
+ */
+export const BLEND_INPUT_WEIGHT = 3;
+export const BLEND_OUTPUT_WEIGHT = 1;
+
+export function blendedPer1M(inputPer1M: number, outputPer1M: number) {
+  return (
+    (inputPer1M * BLEND_INPUT_WEIGHT + outputPer1M * BLEND_OUTPUT_WEIGHT) /
+    (BLEND_INPUT_WEIGHT + BLEND_OUTPUT_WEIGHT)
+  );
+}
+
 export type PriceComparison = {
   openRouterId: string;
   openRouterName: string;
@@ -19,6 +35,8 @@ export type PriceComparison = {
   /** Negative means Savant is cheaper. Null when the benchmark price is zero. */
   inputDeltaBps: number | null;
   outputDeltaBps: number | null;
+  /** The 3:1 blend of both directions, which is what the public pill shows. */
+  blendedDeltaBps: number | null;
 };
 
 export type CatalogComparison = {
@@ -102,6 +120,7 @@ export type DeltaSummary = {
 export type ComparisonSummary = {
   input: DeltaSummary;
   output: DeltaSummary;
+  blended: DeltaSummary;
   rows: number;
 };
 
@@ -135,11 +154,17 @@ function summarizeDeltas(values: Array<number | null>): DeltaSummary {
  * the whole catalog.
  */
 export function summarizeComparison(
-  rows: Array<Pick<PriceComparison, "inputDeltaBps" | "outputDeltaBps">>,
+  rows: Array<
+    Pick<
+      PriceComparison,
+      "inputDeltaBps" | "outputDeltaBps" | "blendedDeltaBps"
+    >
+  >,
 ): ComparisonSummary {
   return {
     input: summarizeDeltas(rows.map((row) => row.inputDeltaBps)),
     output: summarizeDeltas(rows.map((row) => row.outputDeltaBps)),
+    blended: summarizeDeltas(rows.map((row) => row.blendedDeltaBps)),
     rows: rows.length,
   };
 }
@@ -187,6 +212,10 @@ export function buildCatalogComparison(
       outputPer1M: match.outputPer1M,
       inputDeltaBps: deltaBps(model.inputPricePer1M, match.inputPer1M),
       outputDeltaBps: deltaBps(model.outputPricePer1M, match.outputPer1M),
+      blendedDeltaBps: deltaBps(
+        blendedPer1M(model.inputPricePer1M, model.outputPricePer1M),
+        blendedPer1M(match.inputPer1M, match.outputPer1M),
+      ),
     };
     matched += 1;
   }

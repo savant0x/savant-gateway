@@ -3,6 +3,19 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — Comparable price comparison
+
+- **FID-2026-1029-026 — high — The `vs list` pill is a 3:1 blended rate.** The
+  pill compared our flat per-token rate with OpenRouter's prompt rate only, so
+  GLM 5.3 read `+179%` and Deepseek V4.1 Flash `+73.3%` while the same models are
+  86.1% and 84.4% cheaper on completion — the upstream relay publishes one rate
+  for both directions and the public list does not. Every paid row now carries
+  `blendedDeltaBps` (three prompt tokens to one completion token), the tooltip
+  keeps both direction deltas, and `/models` shows the blended headline beside
+  the prompt, completion and coverage figures. Measured: all 18 matched paid rows
+  are below list on the blend, median −87.0%. Tests:
+  `tests/price-comparison.test.mjs` (+2).
+
 ## 2026-10-29 — Catalog table clarity
 
 - **FID-2026-1029-025 — medium — Five-column catalog, comparison on the landing

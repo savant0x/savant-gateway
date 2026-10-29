@@ -179,16 +179,12 @@ export function ModelCatalogTable({
     () => models.filter((model) => comparisons[model.id] !== undefined).length,
     [comparisons, models],
   );
-  const cheaperOnInput = useMemo(
+  const cheaperOnBlend = useMemo(
     () =>
       models.filter((model) => {
         const row = comparisons[model.id];
 
-        return (
-          model.access === "paid" &&
-          row?.inputDeltaBps !== null &&
-          (row?.inputDeltaBps ?? 0) < 0
-        );
+        return model.access === "paid" && (row?.blendedDeltaBps ?? 0) < 0;
       }).length,
     [comparisons, models],
   );
@@ -285,7 +281,7 @@ export function ModelCatalogTable({
                   className="fa-solid fa-arrow-right-arrow-left mr-1.5"
                 />
                 {formatNumber(matched)} compared with OpenRouter ·{" "}
-                {formatNumber(cheaperOnInput)} below its list price
+                {formatNumber(cheaperOnBlend)} cheaper on a 3:1 blend
               </>
             ) : (
               <>
@@ -395,16 +391,18 @@ export function ModelCatalogTable({
                         </td>
                         <td className="whitespace-nowrap text-right">
                           {model.access === "paid" &&
-                          comparison?.inputDeltaBps != null ? (
+                          comparison?.blendedDeltaBps != null ? (
                             <span
                               className={`inline-flex rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] ${deltaClass(
-                                comparison.inputDeltaBps,
+                                comparison.blendedDeltaBps,
                               )}`}
-                              title={`Input ${formatDelta(comparison.inputDeltaBps)} and output ${formatDelta(
+                              title={`3 input : 1 output blend vs ${comparison.openRouterId}. Prompt tokens ${formatDelta(
+                                comparison.inputDeltaBps,
+                              )}, completion tokens ${formatDelta(
                                 comparison.outputDeltaBps,
-                              )} against ${comparison.openRouterId}`}
+                              )}.`}
                             >
-                              {formatDelta(comparison.inputDeltaBps)}
+                              {formatDelta(comparison.blendedDeltaBps)}
                             </span>
                           ) : (
                             <span className="text-muted">—</span>
@@ -445,13 +443,15 @@ export function ModelCatalogTable({
           />
           {showComparison ? (
             <>
-              The “vs list” pill is the input difference against OpenRouter’s
-              public model list
+              The “vs list” pill weighs three prompt tokens to one completion
+              token, because the two directions are priced independently and we
+              can be dearer on one while far cheaper on the other. Hover it for
+              both. Compared against OpenRouter’s public model list
               {benchmarkFetchedAt
                 ? ` fetched ${new Date(benchmarkFetchedAt).toISOString().slice(0, 16).replace("T", " ")} UTC`
                 : ""}
               , matched by exact upstream id. A dash means no exact counterpart
-              was listed. Hover a pill for the output difference.
+              was listed.
             </>
           ) : (
             <>

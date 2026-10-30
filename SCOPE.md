@@ -1473,3 +1473,18 @@ Git repository and the template's required local commit could not exist. Fresh g
   shared rate limiting (a migration FID with settlement and replay re-proof).
   No code, schema or policy text changed; the retention gate is now partly
   answered and the rest waits on the host decision.
+- 2026-10-30: **Database candidates researched against the settlement
+  requirements.** `docs/database-options.md` compares Turso (libSQL), Neon
+  Postgres, Supabase, Cloudflare D1 and Aurora against what the money path needs,
+  using measured facts rather than feature lists: 265 `prepare()` call sites in
+  38 files, 35 `db.transaction` wrappers, 28 `.immediate()` transactions and 46
+  SQLite-dialect constructs. Every candidate forces the same async port, because
+  `better-sqlite3` is synchronous and no remote client is. The difference on top
+  is dialect and locking: libSQL keeps the SQLite SQL and maps
+  `transaction("write")` to `BEGIN IMMEDIATE` (5-second timeout, single writer),
+  while Postgres requires rewriting the dialect and the conflict targets.
+  Recommendation: Turso libSQL as primary, Neon as second, D1 rejected because
+  its documented model is `batch()` with no app-held transaction. Retention ties
+  the choice to policy: 30-day PITR needs Turso Scaler or Neon Scale, otherwise
+  the privacy sentence changes. Nothing implemented; seven proofs are listed
+  before adoption, led by the concurrent double-spend test.

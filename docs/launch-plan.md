@@ -218,6 +218,11 @@ The database choice must satisfy, independent of host:
 - A connection strategy that matches the host: pooling for serverless, or a
   single long-lived process.
 
+A researched comparison against these requirements, with the measured port cost
+and a recommendation, is in [database options](database-options.md). It is input
+to the decision, not the decision, and nothing in it has been run against a real
+database yet.
+
 Do not assume a connection-string swap. The ledger, settlement recovery and
 replay guards are written around synchronous SQLite transactions, so the port
 includes a migration and cutover plan, re-run settlement and crash-recovery

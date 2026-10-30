@@ -1518,3 +1518,65 @@ Git repository and the template's required local commit could not exist. Fresh g
   manifest changing from a static file to a route was accepted knowingly: it now
   inherits the production configuration gate instead of being served beside a
   failing app. FID-2026-1030-063 carries the receipt.
+- 2026-10-30: **Per-page social cards for the catalog and the API reference.**
+  FID-063 gave the site one card that every page inherited, and the root metadata
+  pinned `openGraph.title` and `openGraph.url`, so a shared catalog link read
+  "Savant Gateway" at the url `/`. Both pages now generate their own card with
+  `next/og` from the data they already load, sharing one layout in
+  `lib/social-card.tsx`; root metadata leaves title and url to the page, and
+  carded pages drop the inherited `twitter:image` so Twitter falls back to their
+  `og:image`. Scope limits: `/compare` was deliberately left on the site card
+  because its content is a user-chosen pair and a card per query is not worth the
+  route; no crawler was used, so crop and cache behaviour on any specific platform
+  remains unverified; and the bundled font is Latin-only, so a non-Latin model
+  name would render in fallback glyphs. The first build marked the catalog card
+  static, which would have frozen the build machine's model count forever — the
+  route is now `force-dynamic`, proven by an empty database rendering `0 models`
+  against the build's `34`. FID-2026-1030-064 carries the receipt.
+- 2026-10-30: **Billing documents moved out of the tree and ignore-listed.** Three
+  untracked IONOS invoices and credit notes had been sitting in `assets/`, which
+  is a published directory: one `git add -A` would have put the operator's name,
+  address and account number on a public repository. They now live in
+  `~/dev/gateway-billing-documents/`, outside the working tree, and `.gitignore`
+  ignores `*.pdf` outright rather than pattern-matching provider filenames.
+  Nothing in this repository needs a PDF, so the broad rule costs nothing today;
+  a PDF that genuinely belongs in the repo needs `git add -f` and a reason in its
+  FID, which is the intended friction. Limits: gitignore stops an accidental
+  `git add`, not a deliberate `git add -f`, and no check yet inspects
+  `git ls-files "*.pdf"` in CI — that gate was not added because it is new
+  machinery for a case ignore already covers.
+- 2026-10-30: **A gate now fails CI when a public page loses its social card.**
+  The missing-metadata gap in FID-063 survived every gate because none of them
+  read the head of a rendered page — the same blind spot would have let FID-064
+  be reverted, or a new public page ship bare. `scripts/http-suite/metadata.mjs`
+  holds the rules as a pure module (first tag wins, `property` or `name`, entity
+  decoding, absolute `og:image` with dimensions, `summary_large_image`), so nine
+  unit tests prove the failure path; `metadata-checks.mjs` applies them to fifteen
+  public pages inside `npm run test:http` and fetches each declared card image
+  back from the running server. The gate earned its place on its first run: it
+  failed on `/models` with `twitter:card is "summary"`, exposing that FID-064's
+  `twitter: { images: [] }` override had downgraded the two carded pages to a
+  small image-less card. Both pages now restate `card: "summary_large_image"`;
+  suite reports 461 checks PASS (was 423) and 321 unit tests pass. Deliberately
+  not covered: `/account` and the admin surfaces (session-gated or noindex), every
+  policy slug individually (two representatives stand in), and anything about how
+  a real crawler crops or caches the card. While adding the entry above I
+  overwrote `CHANGELOG.md` with a partial write; it was restored from `6751513`
+  and both day's entries re-applied before any of it was staged, so the file
+  carries +37 lines and no history was lost.
+- 2026-10-30: **The operator's banner replaces the placeholder hero.** The supplied
+  artwork is a 2752x1536 infographic (inbound surface, repository structure, stack,
+  launch status), not a wordmark, so the placeholder SVG is superseded rather than
+  reworked. A JPEG master cannot simply be renamed to PNG without re-encoding, and
+  PNG is the wrong format for gradients: at identical size it costs ~4x the bytes
+  here (177 KB vs 716 KB at 1700 px). Chosen point is 1700x949 — 2x the 850 px
+  display width — as a 256-colour PNG, 1.93 MB -> 716 KB. Resolution was kept
+  above display size deliberately, because the image is a diagram whose tables
+  become unreadable when shrunk, and that is the whole value of the artwork.
+  Rejected: committing the 1.93 MB master (in git history forever, loaded by every
+  README view) and downscaling to 1400 (488 KB, ~1.65x display) — the latter is a
+  one-command change if 716 KB is still too heavy. The master now lives in
+  `~/dev/gateway-artwork/`, outside the tree, next to the billing-documents folder
+  and for the same reason: the repository should not be the archive. The site-wide
+  `og.png` was NOT regenerated from this artwork; the generated social card is
+  still drawn from `og.svg`, and swapping it is a separate decision.

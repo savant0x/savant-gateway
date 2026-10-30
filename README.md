@@ -2,7 +2,7 @@
 <!-- markdownlint-disable MD033 -->
 <div align="center">
 
-<img src="public/images/banner.svg" alt="Savant Gateway — Frontier models. Grounded prices." width="850" />
+<img src="public/images/banner.png" alt="Savant Gateway — one OpenAI-compatible API, with the repository structure, current stack and launch status" width="850" />
 
 **An independent inference gateway that puts a priced, accountable product layer
 in front of one or more upstream providers.**
@@ -343,7 +343,8 @@ npm run config:check
 npm test           # node --test "tests/*.test.mjs"
 npm run quality    # 400-line file ceiling
 npm run build      # next build
-npm run test:http  # HTTP suites against a disposable database
+npm run test:http  # HTTP suites against a disposable database, including a
+                   # per-page social metadata audit of every public page
 npm run verify     # all of the above
 ```
 
@@ -386,8 +387,8 @@ code change; only a new aspect ratio needs the size beside it updated.
 
 | File | Used for |
 | --- | --- |
-| `banner.svg` | This README's hero. Not served by the app. |
-| `og.png` | Social preview, 1200×630. Rendered from `og.svg` by `npm run images`. |
+| `banner.png` | This README's hero, 1700×949. Not used by the app's UI. |
+| `og.png` | Site-wide social preview, 1200×630. Rendered from `og.svg` by `npm run images`. |
 | `favicon.ico`, `favicon-16x16.png`, `favicon-32x32.png` | Browser icons. |
 | `apple-touch-icon.png`, `icon-192.png`, `icon-512.png` | Home-screen and install icons. |
 | `logo.png`, `logo-32.png` | Brand mark in the header, auth and console screens. |
@@ -395,6 +396,12 @@ code change; only a new aspect ratio needs the size beside it updated.
 
 `npm run images` rasterises the SVG sources in that directory; `sharp` comes
 with Next's image pipeline, so it adds no dependency.
+
+The catalog and API-reference pages override that card with one generated from
+their own data by `next/og` — `/models` counts what the catalog currently holds,
+`/docs` states the documented surface. Both live beside their page as
+`opengraph-image.tsx` and share one layout in [`lib/social-card.tsx`](lib/social-card.tsx).
+A page with no card of its own keeps the site-wide `og.png`.
 
 ---
 

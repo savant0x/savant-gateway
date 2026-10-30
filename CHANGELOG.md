@@ -3,6 +3,58 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-30 — Operator banner replaces the placeholder
+
+- **Asset change — the operator's own banner is now the README hero.** The
+  placeholder `banner.svg` (a two-line wordmark, 3 KB) is replaced by
+  `banner.png`, an infographic carrying the inbound surface, repository
+  structure, stack table and launch status. The supplied master was a 2752×1536
+  JPEG at 1.93 MB; it was resampled to 1700×949 — 2× the 850 px display width —
+  and re-encoded as a 256-colour PNG with maximum compression, giving 716 KB.
+  The master JPEG was moved to `~/dev/gateway-artwork/` rather than committed, so
+  the repository carries one reference image and the full-resolution original
+  survives outside it. Note the format cost honestly: for this gradient-heavy
+  artwork, PNG is roughly 4× the bytes of an equivalent JPEG (177 KB at the same
+  1700 px), so 716 KB is the floor for a PNG at a resolution where the tables
+  stay legible. `config/images.ts` records the new path and dimensions.
+
+## 2026-10-30 — Social metadata coverage gate
+
+- **FID-2026-1030-065 — medium — Nothing checked the head of a rendered page, so
+  the missing social card had shipped with every gate green.** The HTTP suite now
+  audits every public page for `og:title`, `og:description`, an absolute
+  `og:image` with dimensions, and `twitter:card`, then fetches the card image it
+  names and requires an `image/*` response; `/models` and `/docs` are additionally
+  required to use their own card rather than the site-wide one. The rules live in
+  a pure module (`scripts/http-suite/metadata.mjs`) so the failure path is
+  unit-tested, which is the difference between a check and a gate. **Its first
+  live run failed**, catching a regression from FID-064: `twitter: { images: [] }`
+  had downgraded `/models` and `/docs` to Next's small `summary` card with no
+  image — worse than before that change. Both pages now restate
+  `card: "summary_large_image"`. Verified: `node --test tests/metadata.test.mjs`
+  9 passing, `npm run check` exit 0, `npm run build` exit 0, and `npm run
+  test:http` ending `http-suite: 461 checks PASS` (up from 423) with
+  `trial-http-suite: all checks PASS`.
+
+## 2026-10-30 — Per-page social cards from page data
+
+- **FID-2026-1030-064 — low — The catalog and API reference shared one generic
+  card.** Every page inherited the site-wide `og.png`, and the root metadata
+  pinned `openGraph.title` and `openGraph.url`, so all pages claimed the title
+  "Savant Gateway" and the url `/`. `/models` and `/docs` now carry
+  `opengraph-image` routes rendered by `next/og` from their own data: the catalog
+  card counts what `getCatalogData()` actually returns, the docs card states the
+  documented endpoint surface, both share one satori-safe layout in
+  `lib/social-card.tsx`. Root metadata no longer sets title or url, so each page
+  resolves its own; carded pages restate `summary_large_image` and drop the
+  inherited `twitter:image` so Twitter falls back to their `og:image`. Verified:
+  `npm run check` and `npm test` exit 0, `npm run build` exit 0 with
+  `○ /docs/opengraph-image` and `ƒ /models/opengraph-image`, both routes `200
+  image/png` on a disposable production server, `og:title "Model catalog -
+  Savant Gateway"` on `/models`, and the catalog card rendering `0 models`
+  against an empty database after showing `34` at build — the proof that it is
+  per-request and not baked.
+
 ## 2026-10-30 — One brand-image directory and a real social preview
 
 - **FID-2026-1030-063 — low — Artwork had two homes and the site had no social

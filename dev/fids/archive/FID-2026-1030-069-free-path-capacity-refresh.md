@@ -4,7 +4,7 @@
 **ID:** FID-2026-1030-069
 **Parent:** FID-2026-1030-048
 **Severity:** critical
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-30 23:55
 **Automation level:** 2
 **YAGNI-Compliance:** Verified
@@ -192,8 +192,11 @@ check.
 
 ### Implementation Evidence
 
-- [x] **Commit SHA:** none — the working tree is uncommitted (operator has not
-  asked for a commit).
+- [x] **Commit SHA:** `b8a1a50` — fix, FID, SCOPE and CHANGELOG entries in one
+  commit; the earlier FID-067/FID-068 records were left untouched and stay
+  uncommitted on purpose.
+- [x] **Commit-message guard:** `attribution-guard: PASS (no coding-agent credit
+  found)`.
 - [x] **File:line ranges:** `lib/providers/runtime.ts:110-150` (`ensureProviderObservation`),
   `lib/gateway.ts:38` and `:151-155` (ensure + admit), `scripts/http-suite.mjs:53-57`
   (no pinned fallback), `scripts/http-suite/seed.mjs:12-18` (fixture reports its
@@ -216,7 +219,9 @@ check.
 
 ## Resolution
 
-- **Closed Date:** not closed — verified but uncommitted.
+- **Closed Date:** 2026-10-31 00:05 — closed on commit `b8a1a50`, after the
+  gates and the RED→GREEN run recorded above.
+- **Archived:** 2026-10-31 00:05 — moved to `dev/fids/archive/`.
 - **Fix Description:** admission refreshes an expired provider observation once
   before deciding, and the documented fallback ceiling is configured.
 - **Tests Added:** Yes — `scripts/http-suite/quota-checks.mjs:263-273`.

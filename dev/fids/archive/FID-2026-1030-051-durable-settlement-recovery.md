@@ -4,11 +4,12 @@
 **ID:** FID-2026-1030-051
 **Parent:** FID-2026-1030-043
 **Severity:** critical
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-050
 **YAGNI-Compliance:** Verified — one durable call/settlement identity over existing stores.
+**Archived:** 2026-10-30 — implementation `0ce4747`; receipt above from that tree.
 
 ## Summary
 

@@ -3,6 +3,21 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-30 — Durable settlement and quarantine
+
+- **FID-2026-1030-051 — critical — Durable settlement identity.** Every admitted
+  call now writes a `settlements` row before dispatch with its billing source,
+  reservation links and estimate. Settlement claims that row inside the same
+  transaction as usage, the debit, the ledger row and the hold release, so a
+  duplicate, late or post-quarantine callback writes nothing and charges
+  nothing. Expired credit, subscription and free-pool reservations move to
+  `quarantined_holds` with their capacity still reserved: an elapsed TTL no
+  longer refunds a call whose output may have been served. One audited operator
+  release returns the exact amount, and `GET/POST /api/admin/settlements`
+  exposes the state. Closed against `0ce4747`; archived receipt: 264 unit tests,
+  254 HTTP checks, trial HTTP PASS, quality PASS (256 files), clean
+  lint/typecheck/build.
+
 ## 2026-10-30 — Provider usage fidelity
 
 - **FID-2026-1030-050 — critical — Token components and provenance.** One parser

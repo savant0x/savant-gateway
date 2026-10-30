@@ -11,6 +11,7 @@ import {
   countPaidTopups,
   countTopupLedger,
   getTopupStatus,
+  readLatestErrorRow,
   readUsageRows,
   seedPendingTopup,
 } from "./seed.mjs";
@@ -25,6 +26,11 @@ const BETA = {
   email: "beta.http-suite@example.test",
   name: "Beta HTTP Suite",
   password: "beta-http-suite-password",
+};
+const PROBE = {
+  email: "probe.http-suite@example.test",
+  name: "Probe HTTP Suite",
+  password: "probe-http-suite-password",
 };
 
 const CREDIT_TOPUP_ID = "topup_http_suite_credit";
@@ -544,6 +550,188 @@ async function runAdminChecks(context) {
   return adminCookie;
 }
 
+async function runSecurityChecks(context, alpha, beta, adminCookie) {
+  const devModels = await request(context.baseUrl, "/api/models");
+
+  checkEqual(
+    "production console rejects the loopback dev bypass",
+    devModels.status,
+    403,
+  );
+
+  const devKeys = await request(context.baseUrl, "/api/keys");
+
+  checkEqual("production key console requires an admin session", devKeys.status, 403);
+
+  const anonymousAdmin = await request(context.baseUrl, "/api/admin/pricing");
+
+  checkEqual("anonymous admin API returns 401", anonymousAdmin.status, 401);
+
+  const forwardedAdmin = await request(context.baseUrl, "/api/admin/pricing", {
+    headers: {
+      "x-forwarded-host": "evil.example",
+      "x-forwarded-proto": "https",
+      forwarded: "host=evil.example;proto=https",
+    },
+  });
+
+  checkEqual(
+    "spoofed forwarded headers do not authorize the admin API",
+    forwardedAdmin.status,
+    401,
+  );
+
+  const foreignAdmin = await request(context.baseUrl, "/api/admin/pricing", {
+    cookie: `sg_admin=${adminCookie}`,
+    origin: "http://evil.example",
+  });
+
+  checkEqual(
+    "foreign-origin admin read is rejected even with a session",
+    foreignAdmin.status,
+    403,
+  );
+
+  const throwaway = await createKey(context, beta.cookie, "beta-revoke-probe");
+
+  checkEqual("revocation probe key is created", throwaway.status, 201);
+
+  const revokedDelete = await request(
+    context.baseUrl,
+    `/api/account/keys/${throwaway.json?.key?.id}`,
+    { method: "DELETE", cookie: `sg_session=${beta.cookie}` },
+  );
+
+  checkEqual("revocation probe key is revoked", revokedDelete.status, 200);
+
+  const revokedCall = await request(context.baseUrl, "/v1/models", {
+    headers: { authorization: `Bearer ${throwaway.json?.secret}` },
+  });
+
+  checkEqual("a revoked key is rejected", revokedCall.status, 401);
+
+  context.db
+    .prepare("UPDATE users SET status = 'suspended' WHERE id = ?")
+    .run(beta.id);
+
+  try {
+    const suspendedMe = await me(context, beta.cookie);
+    const suspendedCall = await request(context.baseUrl, "/v1/models", {
+      headers: { authorization: `Bearer ${beta.secret}` },
+    });
+
+    checkEqual("a suspended account loses its session", suspendedMe.status, 401);
+    checkEqual("a suspended account cannot use its key", suspendedCall.status, 401);
+  } finally {
+    context.db
+      .prepare("UPDATE users SET status = 'active' WHERE id = ?")
+      .run(beta.id);
+  }
+
+  checkEqual(
+    "the session recovers when the account is active again",
+    (await me(context, beta.cookie)).status,
+    200,
+  );
+
+  const probeSignup = await signup(context, PROBE);
+
+  checkEqual("probe account signs up", probeSignup.status, 201);
+
+  // Rotate the forwarded address so the per-address bucket never fills. The
+  // per-account ceiling must still stop the eleventh guess.
+  for (let attempt = 1; attempt <= 10; attempt += 1) {
+    const guess = await request(context.baseUrl, "/api/auth/login", {
+      method: "POST",
+      headers: { "x-forwarded-for": `203.0.113.${attempt}` },
+      body: { email: PROBE.email, password: "wrong-probe-password" },
+    });
+
+    checkEqual(`rotating-address login guess ${attempt} returns 401`, guess.status, 401);
+  }
+
+  const blockedGuess = await request(context.baseUrl, "/api/auth/login", {
+    method: "POST",
+    headers: { "x-forwarded-for": "198.51.100.250" },
+    body: { email: PROBE.email, password: "wrong-probe-password" },
+  });
+
+  checkEqual(
+    "a rotated address cannot extend the per-account login ceiling",
+    blockedGuess.status,
+    429,
+  );
+  check(
+    "the blocked login reports a retry delay",
+    typeof blockedGuess.headers.get("retry-after") === "string",
+  );
+
+  const correctWhileBlocked = await request(context.baseUrl, "/api/auth/login", {
+    method: "POST",
+    headers: { "x-forwarded-for": "198.51.100.251" },
+    body: { email: PROBE.email, password: PROBE.password },
+  });
+
+  checkEqual(
+    "the blocked account cannot be probed with the correct password",
+    correctWhileBlocked.status,
+    429,
+  );
+
+  context.mock.reset();
+
+  const leak = await request(context.baseUrl, "/v1/chat/completions", {
+    method: "POST",
+    headers: { authorization: `Bearer ${alpha.secret}` },
+    body: {
+      model: "mock-paid",
+      messages: [{ role: "user", content: "leak probe" }],
+      max_tokens: 16,
+    },
+  });
+
+  checkEqual("an upstream failure returns 502", leak.status, 502);
+  check(
+    "the failure body omits the provider key",
+    !leak.text.includes(context.providerKey),
+    leak.text,
+  );
+
+  const failed = readLatestErrorRow(context.db, alpha.id);
+  const failedError = String(failed?.error ?? "");
+
+  checkEqual("the failed call records an error row", failed?.status, "error");
+  check(
+    "the durable usage error omits the provider key",
+    !failedError.includes(context.providerKey),
+    failedError,
+  );
+  check(
+    "the durable usage error is redacted",
+    failedError.includes("[redacted]"),
+    failedError,
+  );
+
+  context.mock.reset();
+
+  const redirected = await request(context.baseUrl, "/v1/chat/completions", {
+    method: "POST",
+    headers: { authorization: `Bearer ${alpha.secret}` },
+    body: {
+      model: "mock-paid",
+      messages: [{ role: "user", content: "redirect probe" }],
+      max_tokens: 16,
+    },
+  });
+
+  checkEqual("a redirecting provider is reported as a failure", redirected.status, 502);
+  checkEqual(
+    "a provider redirect is not followed with the credential",
+    context.mock.state.redirected,
+    false,
+  );
+}
+
 export async function runChecks(context) {
   const alpha = await runAuthChecks(context);
   const beta = await runBetaChecks(context);
@@ -554,4 +742,5 @@ export async function runChecks(context) {
   const adminCookie = await runAdminChecks(context);
 
   await runSystemsChecks(context, alpha, adminCookie);
+  await runSecurityChecks(context, alpha, beta, adminCookie);
 }

@@ -7,6 +7,7 @@ import {
   fetchBenchmarkCatalog,
 } from "./artificial-analysis";
 import { benchmarkSanityProblem, matchBenchmarks } from "./benchmarks";
+import { redactSecrets } from "./redaction";
 import {
   beginSync,
   claimSyncLease,
@@ -140,8 +141,11 @@ export async function syncBenchmarks({
       quotaRemaining,
     };
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Benchmark sync failed.";
+    // A failed attempt is stored and later rendered in the admin panel; the
+    // source can include the credential it was sent in its error text.
+    const message = redactSecrets(
+      error instanceof Error ? error.message : "Benchmark sync failed.",
+    );
 
     failSync(runId, message);
 

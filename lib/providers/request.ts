@@ -3,6 +3,9 @@ import "server-only";
 import type { ProviderRecord } from "./types";
 
 import { authHeaders } from "./auth-headers";
+import { readProviderError } from "./error-text.ts";
+
+export { readProviderError };
 
 export class ProviderConfigError extends Error {}
 
@@ -67,6 +70,10 @@ export function providerFetch(
   return fetch(`${provider.baseUrl}${path}`, {
     ...init,
     headers,
+    // An operator-configured origin must not bounce the request (and the
+    // credential on it) to a different host. A redirect is a configuration
+    // error to report, not a hop to follow.
+    redirect: init.redirect ?? "error",
     signal: init.signal ?? AbortSignal.timeout(20_000),
   });
 }
@@ -75,27 +82,6 @@ function numberOrNull(value: unknown): number | null {
   const parsed = Number(value);
 
   return Number.isFinite(parsed) ? parsed : null;
-}
-
-export async function readProviderError(response: Response) {
-  const text = await response.text().catch(() => "");
-
-  try {
-    const payload = JSON.parse(text) as {
-      error?: { message?: string } | string;
-      message?: string;
-    };
-    const nested =
-      typeof payload.error === "object"
-        ? payload.error?.message
-        : payload.error;
-
-    return String(
-      nested || payload.message || text || `HTTP ${response.status}`,
-    ).slice(0, 400);
-  } catch {
-    return (text || `HTTP ${response.status}`).slice(0, 400);
-  }
 }
 
 export async function fetchProviderBalance(

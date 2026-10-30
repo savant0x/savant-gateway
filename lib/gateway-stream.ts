@@ -58,17 +58,20 @@ export function streamCompletion(
       // Fixed text and reservation identifiers only: upstream exceptions can
       // contain credentials, headers or customer content.
       // eslint-disable-next-line no-console
-      console.error("[gateway.settlement] Usage write failed; reconcile reservation.", {
-        userId: context.auth.userId,
-        keyId: context.auth.keyId,
-        modelId: context.model.id,
-        creditHoldId: context.hold?.id ?? null,
-        freeReservationId: context.freeReservation?.id ?? null,
-        subscriptionHoldId:
-          context.subscription?.kind === "included"
-            ? context.subscription.holdId
-            : null,
-      });
+      console.error(
+        "[gateway.settlement] Usage write failed; reconcile reservation.",
+        {
+          userId: context.auth.userId,
+          keyId: context.auth.keyId,
+          modelId: context.model.id,
+          creditHoldId: context.hold?.id ?? null,
+          freeReservationId: context.freeReservation?.id ?? null,
+          subscriptionHoldId:
+            context.subscription?.kind === "included"
+              ? context.subscription.holdId
+              : null,
+        },
+      );
 
       throw new Error("Usage settlement failed.");
     }

@@ -56,6 +56,16 @@ export function readUsageRows(database, userId) {
     .all(userId);
 }
 
+export function readLatestErrorRow(database, userId) {
+  return database
+    .prepare(
+      `SELECT status, error FROM usage_events
+       WHERE user_id = ? AND status = 'error'
+       ORDER BY rowid DESC LIMIT 1`,
+    )
+    .get(userId);
+}
+
 export function countPaidTopups(database, userId) {
   const row = database
     .prepare(

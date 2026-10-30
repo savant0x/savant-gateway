@@ -52,9 +52,21 @@ export function parseDefaultHeaders(value: unknown) {
   return { ok: true, value: headers } as const;
 }
 
+function parseProviderUrl(value: string): URL | null {
+  try {
+    const url = new URL(value);
+
+    return url.protocol === "http:" || url.protocol === "https:" ? url : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Validates an admin provider record. Credentials are never accepted here:
- * the record names the environment variable that holds the key.
+ * the record names the environment variable that holds the key, and the URL
+ * must not smuggle a second credential that would be sent to the upstream and
+ * could appear in a diagnostics string.
  */
 export function readProviderInput(value: unknown) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -88,8 +100,18 @@ export function readProviderInput(value: unknown) {
     } as const;
   }
 
-  if (!/^https?:\/\/[^/\s]+/.test(baseUrl)) {
+  const parsedBaseUrl = parseProviderUrl(baseUrl);
+
+  if (!parsedBaseUrl) {
     return { ok: false, error: "baseUrl must be an http(s) URL." } as const;
+  }
+
+  if (parsedBaseUrl.username || parsedBaseUrl.password) {
+    return {
+      ok: false,
+      error:
+        "baseUrl must not contain credentials; store the key in keyEnvVar.",
+    } as const;
   }
 
   if (!ENV_VAR.test(keyEnvVar)) {

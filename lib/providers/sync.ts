@@ -7,6 +7,7 @@ import type {
   UpstreamModel,
 } from "./types";
 
+import { redactSecrets } from "../redaction";
 import { replaceModels } from "../store/models";
 import {
   getProvider,
@@ -110,10 +111,10 @@ export async function syncProvider(slug: string): Promise<ProviderSyncSummary> {
   const warnings: string[] = [];
 
   if (balanceResult.status === "rejected") {
-    warnings.push(`Balance: ${String(balanceResult.reason)}`);
+    warnings.push(`Balance: ${redactSecrets(balanceResult.reason)}`);
   }
   if (subscriptionResult.status === "rejected") {
-    warnings.push(`Subscription: ${String(subscriptionResult.reason)}`);
+    warnings.push(`Subscription: ${redactSecrets(subscriptionResult.reason)}`);
   }
 
   let models: UpstreamModel[];
@@ -121,7 +122,11 @@ export async function syncProvider(slug: string): Promise<ProviderSyncSummary> {
   try {
     models = await fetchUpstreamModels(provider);
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    // The provider can echo the key it was sent; the persisted runtime row is
+    // durable, so redact before it is written as well as before it is thrown.
+    const message = redactSecrets(
+      error instanceof Error ? error.message : String(error),
+    );
 
     saveProviderRuntime(slug, {
       status: "error",
@@ -206,7 +211,9 @@ export async function syncAllEnabled(): Promise<SyncAllSummary> {
         paid: 0,
         subscriptionOnly: 0,
         warnings: [
-          error instanceof Error ? error.message : "Provider sync failed",
+          redactSecrets(
+            error instanceof Error ? error.message : "Provider sync failed",
+          ),
         ],
         balance: null,
         subscription: null,

@@ -1,3 +1,5 @@
+import { redactSecrets } from "./redaction.ts";
+
 export const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -23,8 +25,10 @@ export function sanitizeError(
   const detail =
     error instanceof Error ? (error.stack ?? error.message) : String(error);
 
+  // One redaction policy covers logs as well as durable errors: a provider can
+  // echo the credential it received inside exception text.
   // eslint-disable-next-line no-console
-  console.error(`[${scope}] ${detail}`);
+  console.error(`[${scope}] ${redactSecrets(detail)}`);
 
   return clientMessage;
 }

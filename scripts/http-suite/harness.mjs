@@ -75,8 +75,18 @@ export function reservePort() {
 }
 
 export async function startMockUpstream({ expectedKey }) {
-  const state = { calls: 0, lastRequest: null };
+  const state = { calls: 0, lastRequest: null, redirected: false };
   const server = createHttpServer((request, response) => {
+    if (request.url === "/redirect-target") {
+      // Reached only when the gateway follows a provider redirect. The test
+      // asserts this stays false: a redirect must not carry the key onward.
+      state.redirected = true;
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify({ choices: [] }));
+
+      return;
+    }
+
     if (request.method !== "POST" || request.url !== "/chat/completions") {
       response.writeHead(404, { "content-type": "application/json" });
       response.end(JSON.stringify({ error: "not found" }));
@@ -110,6 +120,26 @@ export async function startMockUpstream({ expectedKey }) {
         response.end(
           JSON.stringify({ error: { message: "unexpected provider key" } }),
         );
+
+        return;
+      }
+
+      if (body?.messages?.[0]?.content === "leak probe") {
+        // A real upstream can echo the credential it received. The gateway must
+        // redact this before persisting or returning it.
+        response.writeHead(500, { "content-type": "application/json" });
+        response.end(
+          JSON.stringify({
+            error: { message: `upstream rejected ${authorization}` },
+          }),
+        );
+
+        return;
+      }
+
+      if (body?.messages?.[0]?.content === "redirect probe") {
+        response.writeHead(302, { location: "/redirect-target" });
+        response.end();
 
         return;
       }
@@ -169,6 +199,7 @@ export async function startMockUpstream({ expectedKey }) {
     reset() {
       state.calls = 0;
       state.lastRequest = null;
+      state.redirected = false;
     },
     close() {
       return new Promise((resolve) => {

@@ -3,6 +3,7 @@ import "server-only";
 import type { OpenRouterModel } from "./price-comparison";
 
 import { parseOpenRouterModels } from "./price-comparison";
+import { redactSecrets } from "./redaction";
 
 const DEFAULT_URL = "https://openrouter.ai/api/v1/models";
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
@@ -66,9 +67,9 @@ export async function getOpenRouterModels(): Promise<CacheEntry> {
     .catch((error: unknown) => {
       // eslint-disable-next-line no-console
       console.warn(
-        `[openrouter] price benchmark unavailable: ${
-          error instanceof Error ? error.message : "unknown error"
-        }`,
+        `[openrouter] price benchmark unavailable: ${redactSecrets(
+          error instanceof Error ? error.message : "unknown error",
+        )}`,
       );
 
       // Keep a previous good list, and retry a failed refresh in five

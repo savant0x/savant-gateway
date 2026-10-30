@@ -15,6 +15,7 @@ import {
   reconcileStripeSubscription,
 } from "@/lib/store";
 import { db, nowIso } from "@/lib/db";
+import { redactSecrets } from "@/lib/redaction";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -328,7 +329,7 @@ export async function POST(request: Request) {
     console.error("Stripe webhook failed", {
       eventId: event.id,
       eventType: event.type,
-      error: error instanceof Error ? error.message : "unknown",
+      error: redactSecrets(error instanceof Error ? error.message : "unknown"),
     });
 
     return Response.json(

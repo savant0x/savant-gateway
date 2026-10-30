@@ -7,7 +7,11 @@ import {
   customerError,
   NO_STORE,
 } from "@/lib/customer-auth";
-import { clientKey, loginLimiter } from "@/lib/customer-rate-limit";
+import {
+  clientKey,
+  loginAccountLimiter,
+  loginLimiter,
+} from "@/lib/customer-rate-limit";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import {
   createCustomerSession,
@@ -59,16 +63,31 @@ export async function POST(request: Request) {
     return customerError(401, "Invalid email or password.");
   }
 
+  // A direct client can rotate `x-forwarded-for` and earn a fresh address
+  // bucket. The account bucket is keyed by the email under attack, so the
+  // guessing ceiling holds regardless of which headers the client sends.
+  const accountDecision = loginAccountLimiter.check(email);
+
+  if (!accountDecision.allowed) {
+    return customerError(
+      429,
+      `Too many attempts. Retry in ${accountDecision.retryAfterSeconds}s.`,
+      { "Retry-After": String(accountDecision.retryAfterSeconds) },
+    );
+  }
+
   const customer = findCustomerByEmail(email);
   const valid = verifyPassword(password, customer?.passwordHash ?? dummyHash());
 
   if (!customer || !valid) {
     loginLimiter.fail(key);
+    loginAccountLimiter.fail(email);
 
     return customerError(401, "Invalid email or password.");
   }
 
   loginLimiter.reset(key);
+  loginAccountLimiter.reset(email);
   markCustomerLogin(customer.id);
 
   const session = createCustomerSession(customer.id);

@@ -62,7 +62,10 @@ test("sanitizeError logs the detail and returns only the generic message", () =>
     assert.equal(message, "Could not reach the provider");
     assert.equal(logged.length, 1);
     assert.match(String(logged[0][0]), /test\.scope/);
-    assert.match(String(logged[0][0]), /sk-live-detail/);
+    assert.match(String(logged[0][0]), /\[redacted\]/);
+    // The scope and the failure remain diagnosable; the credential-shaped text
+    // in the exception must not reach the log.
+    assert.equal(String(logged[0][0]).includes("sk-live-detail"), false);
   } finally {
     console.error = original;
   }

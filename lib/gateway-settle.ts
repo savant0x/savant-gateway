@@ -8,6 +8,7 @@ import type {
 } from "./store/shared";
 
 import { computeTokenCostMicros } from "./pricing";
+import { redactSecrets } from "./redaction";
 import { subscriptionWeightedTokens } from "./plans";
 import { recordUsage } from "./store/usage";
 
@@ -177,7 +178,10 @@ export function settleCall(
     outputTokens: usage.outputTokens,
     status,
     latencyMs: Date.now() - context.startedAt,
-    error: options.error ?? null,
+    // Persisted usage errors are shown to the customer and the operator. The
+    // provider boundary redacts its own text, and this shared policy covers
+    // every other caller that supplies an exception message.
+    error: options.error ? redactSecrets(options.error) : null,
     chargedMicros:
       context.subscription?.kind === "included" ? 0 : prices.chargedMicros,
     costMicros: prices.costMicros,

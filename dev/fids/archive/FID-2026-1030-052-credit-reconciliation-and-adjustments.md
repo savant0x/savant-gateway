@@ -4,11 +4,12 @@
 **ID:** FID-2026-1030-052
 **Parent:** FID-2026-1030-043
 **Severity:** critical
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044, FID-2026-1030-050, FID-2026-1030-051
 **YAGNI-Compliance:** Verified — extend existing ledger, no parallel customer balance.
+**Archived:** 2026-10-30 — implementation `c2db992`; receipt above from that tree.
 
 ## Summary
 

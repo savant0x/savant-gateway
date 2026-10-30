@@ -3,6 +3,21 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-30 — Credit reconciliation and audited corrections
+
+- **FID-2026-1030-052 — critical — Ledger equation and append-only corrections.**
+  `credit_ledger` gains a unique reference, so a retried refund is a no-op and
+  the same reference with different terms is a conflict. Refunds are bounded by
+  current credit and no correction can drive an account below zero; rows are
+  appended, never edited or deleted. A dated opening baseline is available only
+  for history that predates ledger coverage, and reconciliation reports
+  `baseline + ledger sum` against every balance, plus usage debits, paid
+  top-ups, active holds, quarantined reserve and net corrections. An admin API
+  and `/admin/reconciliation` surface every difference instead of tuning it
+  away; historic gaps are never backfilled. Closed against `c2db992`; archived
+  receipt: 272 unit tests, 260 HTTP checks, trial HTTP PASS, quality PASS
+  (262 files), clean lint/typecheck/build.
+
 ## 2026-10-30 — Durable settlement and quarantine
 
 - **FID-2026-1030-051 — critical — Durable settlement identity.** Every admitted

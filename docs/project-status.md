@@ -25,7 +25,7 @@ sandbox and commercial production as PAYG; exact terms/rates/funding remain open
 | What can honestly be offered now? | [Offering evidence ledger](offering-evidence.md) |
 | What changed? | [CHANGELOG](../CHANGELOG.md), then the implementation commit |
 | What should implementation preserve? | [Knowledge](../knowledge.md) |
-| Where is the session handoff? | [Launch FID handoff](../dev/session-summaries/2026-10-30-launch-fid-handoff.md) |
+| Where is the session handoff? | [Provider account and daily trial-credit handoff](../dev/session-summaries/2026-10-30-provider-account-handoff.md) |
 
 ## Product state
 

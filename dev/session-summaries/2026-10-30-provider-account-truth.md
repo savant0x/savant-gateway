@@ -1,6 +1,7 @@
 # Session record: provider account truth
 
 **Session ID:** 2026-10-30-provider-account-truth
+**Status:** completed
 **Initial commit:** `b9764fe`
 **Mode:** single-agent ECHO v0.1.2, strict, autonomy 3
 
@@ -86,3 +87,9 @@ FID-063 closed and moved to `dev/fids/archive/` at 16:17 UTC with the real
 implementation hash and gate receipt. Q1–Q5 are complete. The closure commit is
 documentation only; the normal push runs the full mandatory pre-push gates.
 The operator's two untracked research documents remain untouched.
+
+Both implementation and closure commits were pushed to `origin/main`; the
+pre-push gate passed with 242 unit tests, 242 HTTP checks and trial HTTP PASS.
+At the operator's request, the session is now closed. The next-session entry
+point is [the proper handoff](2026-10-30-provider-account-handoff.md), including
+the exact trial decision, source map, evidence limits and active launch contracts.

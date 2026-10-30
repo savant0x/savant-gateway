@@ -42,6 +42,11 @@ const server = startNextServer({
     TRIAL_GATEWAY_GRANT_BUDGET: "10000",
     TRIAL_MODEL_PAIRS: '{"free/mock":"mock-paid"}',
     HTTP_SUITE_PROVIDER_KEY: "trial-test-key",
+    // Disposable production start against a throwaway database: the validator
+    // requires the explicit opt-in plus the admin configuration it still checks.
+    GATEWAY_DISPOSABLE_START: "yes",
+    ADMIN_PASSWORD: "trial-suite-admin-password",
+    ADMIN_SESSION_SECRET: "trial-suite-admin-secret-0123456789abcdef",
     STRIPE_SECRET_KEY: "", STRIPE_WEBHOOK_SECRET: "",
   },
 });

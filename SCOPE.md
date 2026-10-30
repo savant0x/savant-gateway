@@ -2,6 +2,34 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-30 (production deployment readiness: 057)
+
+Operator request: "Implement FID-2026-1030-057 for production deployment readiness,
+keeping deployment itself unexecuted until I approve it."
+
+Session autonomy level 3, strict mode. Deployment, hosting provisioning, DNS,
+secret injection and release remain unexecuted and operator-only. 057 depends on
+044 (open, operator-blocked), 047 (closed `2ef2d74`) and 048 (converged,
+unimplemented); the shared-admission and quota/recovery-job portions stay open
+with those contracts rather than being claimed by this pass.
+
+- [x] **R1 — Deployable production readiness.** Automation level 3. Validated
+  production configuration at startup, canonical HTTPS origin, absolute
+  persistent SQLite path, configured admin session, single-process indicators,
+  truthful liveness/readiness with a real storage write probe, and secure
+  headers. Verified by `tests/production-config.test.mjs` (11 cases) and the
+  HTTP suites; the live in-flight SIGTERM drain receipt stays an open operator/
+  CI item (Windows cannot exercise it) and is documented in the runbook.
+- [x] **R2 — Operational record.** Automation level 3. Deployment runbook at
+  `docs/deployment-runbook.md` with environment inventory, proxy/SSE
+  requirements, storage and secret handling, disposition `0 vulnerabilities`
+  (`npm audit --omit=dev --audit-level=high`), and the operator inputs still
+  missing.
+- [ ] **R3 — Closure inputs.** Blocked pending the operator's hosting/domain/
+  volume decisions, 048's shared-admission contract and 051's recovery services;
+  final deployment approval remains 062. The readiness work is committed and
+  verified before those inputs exist.
+
 ## Current Session — 2026-10-30 (launch implementation: 044 and 047)
 
 Operator request: "Begin implementing the launch FIDs in dependency order,

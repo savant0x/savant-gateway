@@ -550,6 +550,62 @@ async function runAdminChecks(context) {
   return adminCookie;
 }
 
+async function runAvailabilityChecks(context) {
+  const health = await request(context.baseUrl, "/api/health");
+  const ready = await request(context.baseUrl, "/api/ready");
+
+  checkEqual("liveness responds on production", health.status, 200);
+  checkEqual("liveness claims only that the process can answer", health.json?.status, "alive");
+  check(
+    "liveness is not cached",
+    (health.headers.get("cache-control") ?? "").includes("no-store"),
+  );
+
+  checkEqual("readiness responds on production", ready.status, 200);
+  checkEqual("readiness accepts the suite's validated configuration", ready.json?.status, "ready");
+  checkEqual("readiness marks the opted-in runtime as disposable", ready.json?.mode, "disposable");
+  checkEqual("readiness reports its storage probe as passing", ready.json?.checks?.storage, "ok");
+  check(
+    "readiness is not cached",
+    (ready.headers.get("cache-control") ?? "").includes("no-store"),
+  );
+}
+
+async function runDegradeChecks(context) {
+  const page = await request(context.baseUrl, "/models");
+
+  checkEqual("baseline headers reach a customer page", page.status, 200);
+  checkEqual(
+    "responses tell browsers not to sniff content types",
+    page.headers.get("x-content-type-options"),
+    "nosniff",
+  );
+  checkEqual(
+    "responses refuse hostile framing",
+    page.headers.get("x-frame-options"),
+    "DENY",
+  );
+  check(
+    "responses carry a referrer policy",
+    typeof page.headers.get("referrer-policy") === "string" &&
+      page.headers.get("referrer-policy").length > 0,
+  );
+
+  // The truthful-negative readiness probe: when durable storage loses a
+  // required table, readiness must fail closed instead of staying green. The
+  // database is disposable at this point — this check runs last.
+  context.db.exec("DROP TABLE settings");
+
+  const degraded = await request(context.baseUrl, "/api/ready");
+
+  checkEqual("readiness fails closed when storage loses a required table", degraded.status, 503);
+  checkEqual("readiness names storage as the unavailable check", degraded.json?.checks?.storage, "unavailable");
+  check(
+    "degraded readiness still refuses to cache",
+    (degraded.headers.get("cache-control") ?? "").includes("no-store"),
+  );
+}
+
 async function runSecurityChecks(context, alpha, beta, adminCookie) {
   const devModels = await request(context.baseUrl, "/api/models");
 
@@ -733,6 +789,8 @@ async function runSecurityChecks(context, alpha, beta, adminCookie) {
 }
 
 export async function runChecks(context) {
+  await runAvailabilityChecks(context);
+
   const alpha = await runAuthChecks(context);
   const beta = await runBetaChecks(context);
 
@@ -743,4 +801,5 @@ export async function runChecks(context) {
 
   await runSystemsChecks(context, alpha, adminCookie);
   await runSecurityChecks(context, alpha, beta, adminCookie);
+  await runDegradeChecks(context);
 }

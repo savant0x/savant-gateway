@@ -31,6 +31,13 @@ export const subscriptionLimiter = createRateLimiter({
   windowMs: 60 * 60 * 1000,
 });
 
+/** Support requests are durable operator work, so bound how many one account
+ * can queue per hour. */
+export const supportLimiter = createRateLimiter({
+  limit: 5,
+  windowMs: 60 * 60 * 1000,
+});
+
 export function clientKey(request: Request) {
   const forwarded = request.headers.get("x-forwarded-for");
   const first = forwarded?.split(",")[0]?.trim();

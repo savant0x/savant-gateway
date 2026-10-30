@@ -3,6 +3,23 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-30 — Authenticated support queue
+
+- **FID-2026-1030-061 — high — Support is a recorded, account-bound request,
+  not a promise.** A new `support_requests` table stores kind, message, status,
+  timestamps and an operator note. Customers submit from `/account` and see
+  their history; the operator reads the queue at `/admin/support` and resolves
+  with a customer-visible note. No public form, no invented address, no email
+  transport and no response-time guarantee. The public `/support` page explains
+  the channel and is linked from the footer; the HTTP suite verifies it does not
+  invent a `mailto:` or `support@` address and that one account cannot read
+  another's requests. `docs/support-runbook.md` records the manual deletion
+  procedure and its retention truth: deleting an account cascades every
+  account-owned row, while usage events are retained with `user_id` nulled for
+  billing/audit. Verified: `npm run verify` exit 0, 305 unit tests, 376 HTTP
+  checks, quality PASS (276 files). **Still open:** approved terms, privacy,
+  acceptable-use, refund and expiry text, plus a real outbound channel.
+
 ## 2026-10-30 — Truthful customer states
 
 - **FID-2026-1030-056 — high — Disabled and payment states now say what is

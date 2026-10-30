@@ -2,6 +2,32 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-30 (support queue: 061)
+
+Handoff continuation to unblock 056. Automation level 3, strict, single agent.
+Operator-approved legal/commercial policy text and an outbound support channel
+are named inputs and were not invented; the working support path was built.
+
+- [x] **P1 — Re-audit 061 against current source.** Measured: no support or
+  policy route existed, the footer had no support link, no table recorded a
+  customer request, and no deletion writer exists (deletion is manual).
+- [x] **P2 — Implement the authenticated queue.** `support_requests` schema and
+  store, customer GET/POST with validation and a five-per-hour limit, operator
+  queue and resolve action, `/admin/support`, the account card, `/support` and
+  the footer link, plus `docs/support-runbook.md` with the verified retention
+  behavior.
+- [x] **P3 — Verification.** `npm run verify` exit 0: 305 unit tests, 376 HTTP
+  checks, trial HTTP PASS, quality PASS (276 files), clean lint/typecheck/build.
+  HTTP: anonymous `401`, foreign origin `403`, invalid `400`, recorded `201`,
+  cross-account isolation, operator visibility with customer identity, resolve
+  with note, customer sees the note; `/support` renders with one `h1`, a skip
+  link and no invented contact address.
+
+Remaining, not claimed: approved terms/privacy/acceptable-use/refund/expiry
+wording and a jurisdiction/contact identity; no outbound email transport; no
+self-service deletion; no live outside-channel inquiry. 061 stays open in
+`dev/fids`, which keeps 056 open.
+
 ## Current Session — 2026-10-30 (customer states and accessibility: 056)
 
 Handoff continuation in dependency order after 055. Automation level 3, strict,

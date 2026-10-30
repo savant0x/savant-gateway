@@ -136,6 +136,14 @@ export {
   latestSyncAttempt,
   listBenchmarks,
 } from "./store/benchmarks";
+export {
+  countOpenSupportRequests,
+  createSupportRequest,
+  getSupportRequest,
+  listSupportRequests,
+  listSupportRequestsForUser,
+  resolveSupportRequest,
+} from "./store/support";
 export { getPricingData } from "./store/pricing";
 export {
   ANALYTICS_RANGES,

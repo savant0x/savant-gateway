@@ -15,6 +15,7 @@ const ITEMS = [
     label: "Subscriptions",
   },
   { href: "/admin/providers", icon: "fa-plug", label: "Providers" },
+  { href: "/admin/support", icon: "fa-life-ring", label: "Support" },
   { href: "/admin/gateway", icon: "fa-sliders", label: "Gateway" },
   { href: "/admin/pricing", icon: "fa-calculator", label: "Pricing" },
   { href: "/admin/analytics", icon: "fa-chart-line", label: "Analytics" },

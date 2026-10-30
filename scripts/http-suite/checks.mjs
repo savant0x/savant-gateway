@@ -875,12 +875,132 @@ async function runCatalogIntegrityChecks(context, adminCookie) {
   checkEqual("a sync never publishes duplicate rows", duplicate.total, 1);
 }
 
+async function runSupportChecks(context, alpha, beta, adminCookie) {
+  const anonymous = await request(context.baseUrl, "/api/account/support");
+
+  checkEqual("support requires an account", anonymous.status, 401);
+
+  const foreign = await request(context.baseUrl, "/api/account/support", {
+    method: "POST",
+    cookie: `sg_session=${alpha.cookie}`,
+    origin: "http://evil.example",
+    body: {
+      kind: "support",
+      subject: "Should be rejected",
+      message: "A cross-origin request must not create a queue entry.",
+    },
+  });
+
+  checkEqual("a foreign-origin support request is rejected", foreign.status, 403);
+
+  const invalid = await request(context.baseUrl, "/api/account/support", {
+    method: "POST",
+    cookie: `sg_session=${alpha.cookie}`,
+    body: { kind: "support", subject: "hi", message: "too short" },
+  });
+
+  checkEqual("an invalid support request is rejected", invalid.status, 400);
+  check(
+    "the rejection names the field rule",
+    String(invalid.json?.error ?? "").includes("Subject"),
+    invalid.text,
+  );
+
+  const created = await request(context.baseUrl, "/api/account/support", {
+    method: "POST",
+    cookie: `sg_session=${alpha.cookie}`,
+    body: {
+      kind: "privacy",
+      subject: "HTTP suite privacy request",
+      message: "Prove the authenticated queue stores and resolves requests.",
+    },
+  });
+
+  checkEqual("a signed-in support request is recorded", created.status, 201);
+
+  const requestId = created.json?.request?.id;
+
+  check(
+    "the recorded request returns its id",
+    typeof requestId === "string" && requestId.startsWith("support_"),
+    created.text,
+  );
+  checkEqual("a new request starts open", created.json?.request?.status, "open");
+
+  const own = await request(context.baseUrl, "/api/account/support", {
+    cookie: `sg_session=${alpha.cookie}`,
+  });
+
+  check(
+    "the customer sees their own request",
+    Array.isArray(own.json?.requests) &&
+      own.json.requests.some((row) => row.id === requestId),
+  );
+
+  const other = await request(context.baseUrl, "/api/account/support", {
+    cookie: `sg_session=${beta.cookie}`,
+  });
+
+  check(
+    "another account cannot see the request",
+    Array.isArray(other.json?.requests) &&
+      other.json.requests.every((row) => row.id !== requestId),
+  );
+
+  const queue = await request(context.baseUrl, "/api/admin/support", {
+    cookie: `sg_admin=${adminCookie}`,
+  });
+
+  checkEqual("the operator queue answers", queue.status, 200);
+  check(
+    "the operator queue contains the request with its customer",
+    queue.json?.requests?.some(
+      (row) => row.id === requestId && row.customerEmail === alpha.email,
+    ),
+    queue.text,
+  );
+  check(
+    "the operator sees an open count",
+    typeof queue.json?.open === "number" && queue.json.open >= 1,
+  );
+
+  const resolved = await request(context.baseUrl, "/api/admin/support", {
+    method: "PATCH",
+    cookie: `sg_admin=${adminCookie}`,
+    body: { id: requestId, note: "Reviewed and answered in the suite." },
+  });
+
+  checkEqual("the operator can resolve a request", resolved.status, 200);
+  checkEqual(
+    "resolving marks the request resolved",
+    resolved.json?.request?.status,
+    "resolved",
+  );
+  checkEqual(
+    "the resolution note is stored",
+    resolved.json?.request?.resolutionNote,
+    "Reviewed and answered in the suite.",
+  );
+
+  const after = await request(context.baseUrl, "/api/account/support", {
+    cookie: `sg_session=${alpha.cookie}`,
+  });
+  const stored = after.json?.requests?.find((row) => row.id === requestId);
+
+  checkEqual("the customer sees the resolved state", stored?.status, "resolved");
+  checkEqual(
+    "the customer sees the operator note",
+    stored?.resolutionNote,
+    "Reviewed and answered in the suite.",
+  );
+}
+
 function h1Count(html) {
   return (html.match(/<h1\b/gi) ?? []).length;
 }
 
 async function runCustomerExperienceChecks(context, alpha, beta) {
-  const publicPages = ["/", "/models", "/plans", "/docs"];
+  const publicPages = ["/", "/models", "/plans", "/docs", "/support"];
 
   for (const path of publicPages) {
     const page = await request(context.baseUrl, path);
@@ -908,6 +1028,24 @@ async function runCustomerExperienceChecks(context, alpha, beta) {
   check(
     "an unavailable plan catalog says so",
     plans.text.includes("Plans are not available yet"),
+  );
+  check(
+    "the footer links to the support page",
+    plans.text.includes('href="/support"'),
+  );
+
+  const support = await request(context.baseUrl, "/support");
+
+  checkEqual("the support page renders", support.status, 200);
+  check(
+    "the support page explains that requests are account-bound",
+    support.text.includes("signed-in account") &&
+      support.text.includes("no public contact form"),
+    support.text.slice(0, 400),
+  );
+  check(
+    "the support page does not invent a contact address",
+    !/mailto:|\bsupport@/.test(support.text),
   );
 
   const docs = await request(context.baseUrl, "/docs");
@@ -1364,5 +1502,6 @@ export async function runChecks(context) {
   await runCatalogIntegrityChecks(context, adminCookie);
   await runBenchmarkIntegrityChecks(context, adminCookie);
   await runCustomerExperienceChecks(context, alpha, beta);
+  await runSupportChecks(context, alpha, beta, adminCookie);
   await runDegradeChecks(context);
 }

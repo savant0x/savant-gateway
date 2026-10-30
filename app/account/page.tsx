@@ -7,6 +7,7 @@ import { AccountHeader } from "@/components/account/account-header";
 import { BillingHistory } from "@/components/account/billing-history";
 import { CustomerKeysCard } from "@/components/account/keys-card";
 import { SubscriptionCard } from "@/components/account/subscription-card";
+import { SupportCard } from "@/components/account/support-card";
 import { TopupCard } from "@/components/account/topup-card";
 import { TrialCard } from "@/components/account/trial-card";
 import { DailyTrialCard } from "@/components/account/daily-trial-card";
@@ -22,7 +23,11 @@ import { siteConfig } from "@/config/site";
 import { requireCustomerPage } from "@/lib/customer-auth";
 import { readPlanSalesPolicy } from "@/lib/plan-sales";
 import { readStripeConfig } from "@/lib/stripe";
-import { customerSubscriptionSummary, getCustomerAccount } from "@/lib/store";
+import {
+  customerSubscriptionSummary,
+  getCustomerAccount,
+  listSupportRequestsForUser,
+} from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
@@ -144,6 +149,8 @@ export default async function AccountPage({
           stripeConfigured={stripe.configured}
           subscription={subscription}
         />
+
+        <SupportCard initial={listSupportRequestsForUser(customer.id)} />
 
         <Card variant="secondary">
           <Card.Header>

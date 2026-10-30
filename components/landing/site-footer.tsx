@@ -15,6 +15,7 @@ export function SiteFooter() {
             <Link href="/models">Models &amp; pricing</Link>
             <Link href="/plans">Plans</Link>
             <Link href="/docs">Documentation</Link>
+            <Link href="/support">Support</Link>
             <Link href="/account">Account</Link>
             <Link href="/admin">Admin</Link>
           </nav>

@@ -4,7 +4,7 @@
 **ID:** FID-2026-1030-061
 **Parent:** FID-2026-1030-043
 **Severity:** high
-**Status:** converged
+**Status:** implemented (published policy text awaiting operator approval)
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044, FID-2026-1030-047
@@ -76,7 +76,8 @@ requires authorization. No invented address, guaranteed SLA or blanket legal cla
 ## Perfection Loop
 
 RED: missing published policies/working support proof. GREEN: behavior inventory,
-operator approval and real resolution path. AUDIT: pending. ADVERSARIAL: promising
+operator approval and real resolution path. AUDIT: complete for the implemented
+support path; policy text still needs operator approval. ADVERSARIAL: promising
 deletion or refunds without a reachable writer creates a false product feature.
 Five questions: every customer remedy/data class, bounded retention, hostile
 requests, maintainable policy versions and verifiable customer commitments.
@@ -88,8 +89,48 @@ approved financial/security retention per data class. Prove actual removal or
 documented retention; a support acknowledgment alone does not satisfy a request.
 Final convergence checks are in the master planning-audit receipt.
 
-Design only. Operator-approved commercial/legal decisions are named inputs;
-this FID does not select a jurisdiction, publish legal advice or send messages.
+Implemented the working, auditable support path and the verifiable retention
+facts. Operator-approved commercial/legal decisions remain named inputs; this
+FID does not select a jurisdiction, publish legal advice or send messages.
+
+## Implementation Evidence
+
+- `lib/schema/support.ts`, `lib/store/support.ts` — durable `support_requests`
+  with kind, status (`open`/`resolved`), operator note and timestamps. Every row
+  belongs to an account; only the operator can resolve.
+- `app/api/account/support/route.ts` — authenticated, same-origin GET/POST,
+  five requests per account per hour, server-side validation. No public form.
+- `app/api/admin/support/route.ts` + `/admin/support` — operator queue with the
+  customer identity, open count and a resolve action that records the note.
+- `components/account/support-card.tsx` — request form and the customer's own
+  history, including resolution notes.
+- `app/support/page.tsx` + footer link — explains that requests are account-bound
+  and states no address, response-time guarantee or third-party system. The HTTP
+  suite asserts the page invents no `mailto:` or `support@` address.
+- `docs/support-runbook.md` — operator procedure, including the deletion path.
+  A customer deletion removes the account and every cascading row; usage events
+  are retained with `user_id` nulled, which is a deliberate billing/audit
+  retention and must be stated in any privacy text.
+- `tests/customer-policy.test.mjs` — kinds, bounds, trimming, NUL stripping and
+  note limits. HTTP receipt: anonymous `401`, foreign origin `403`, invalid
+  payload `400`, recorded `201`, cross-account isolation, operator visibility,
+  resolution and the customer-visible note.
+
+Verification: `npm run verify` exit 0 — 305 unit tests, 376 HTTP checks, trial
+HTTP PASS, quality PASS (276 files), clean lint/typecheck/build.
+
+## Remaining Gates
+
+- No terms, privacy notice, acceptable-use, refund/dispute or credit-expiry page
+  is published. These need operator-approved wording, jurisdiction and contact
+  identity; writing them unapproved would be a legal claim, not an implementation.
+- No outbound email or messaging transport: a request is a durable queue entry,
+  and the operator replies through their own channel. A resolution note is not a
+  delivery guarantee.
+- Deletion remains a manual operator action; no self-service deletion writer.
+- No controlled live inquiry through an outside channel has been exercised.
+
+061 stays open until approved policy text is published.
 
 ## Lessons Learned
 

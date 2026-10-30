@@ -50,6 +50,7 @@ import {
   safeUpstreamMessage,
 } from "./gateway-resolution";
 import { getBannerConfig } from "./store/banner";
+import { openCallSettlement } from "./store/settlements";
 import { reservePaidCall } from "./gateway-paid";
 
 export async function handleChatCompletions(request: Request) {
@@ -242,6 +243,26 @@ export async function handleChatCompletions(request: Request) {
       outputBudget = reservation.outputBudget;
     }
 
+    // Durable admission before dispatch: reservation links and the estimate
+    // survive a crash, and settlement later claims this exact row once.
+    const settlementId = openCallSettlement({
+      userId: auth.userId,
+      keyId: auth.keyId,
+      modelId: settleModel.id,
+      providerSlug: settleModel.upstreamSlug,
+      billingSource:
+        subscription?.kind === "included"
+          ? "subscription"
+          : freeReservation
+            ? "free"
+            : "credit",
+      creditHoldId: hold?.id ?? null,
+      freeReservationId: freeReservation?.id ?? null,
+      subscriptionHoldId:
+        subscription?.kind === "included" ? subscription.holdId : null,
+      estimatedMicros: hold?.holdMicros ?? 0,
+    });
+
     const payload: Record<string, unknown> = {
       ...body,
       model: settleModel.upstreamId,
@@ -274,6 +295,7 @@ export async function handleChatCompletions(request: Request) {
       hold,
       freeReservation,
       subscription,
+      settlementId,
       startedAt: Date.now(),
       promptTokens,
     };

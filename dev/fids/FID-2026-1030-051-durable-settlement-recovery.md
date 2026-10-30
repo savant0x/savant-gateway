@@ -4,7 +4,7 @@
 **ID:** FID-2026-1030-051
 **Parent:** FID-2026-1030-043
 **Severity:** critical
-**Status:** converged
+**Status:** verified
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-050
@@ -83,6 +83,88 @@ identity, atomic replay and quarantine. AUDIT: pending. ADVERSARIAL: disk failur
 can prevent an outcome write; acknowledge neither success nor a guessed refund.
 Five questions: every interruption, bounded retries, hostile disconnect/replay,
 one financial transition and durable evidence that survives restart.
+
+## Re-audit and convergence (2026-10-30, post-050)
+
+RED (measured in source):
+
+- `recordUsage` is atomic for one process, but no durable row names the admitted
+  call: a crash between dispatch and settlement leaves only a hold ID. There is
+  no uniqueness rule that could reject a second settlement of the same call.
+- `lib/store/billing.ts#releaseExpiredHolds` deletes an expired credit hold and
+  reduces `held_micros` on a timer. Expiry is not evidence that no upstream work
+  happened, so a served call can become free and its usage disappear.
+- `lib/store/subscription-access.ts#releaseExpiredHolds` does the same for
+  allowance holds; `free_pool_reservations` rows are deleted on expiry.
+- There is no inspection or operator resolution surface for uncertain outcomes.
+
+GREEN (documented before code):
+
+1. One `settlements` row per admitted call, created before dispatch with the
+   billing source, reservation links and estimated charge. `recordUsage` claims
+   it with a monotonic `admitted → committed` update inside the same transaction
+   that writes usage, the debit, the ledger row and the hold release. A second
+   settlement of the same id is a no-op that returns zero charged.
+2. Expired reservations are quarantined, not refunded: the credit hold row moves
+   to `quarantined_holds`, `users.held_micros` keeps the amount reserved, the
+   subscription period keeps its held tokens, and free-pool reservations keep
+   counting against the daily allowance. An elapsed TTL never frees capacity.
+3. Quarantine is durable and inspectable; the operator resolution action is a
+   single audited `release` that returns the exact reserved amount, never an
+   automatic refund and never a guessed charge.
+4. If the settlement row cannot be written, the request is refused before
+   dispatch. If the commit fails, existing behavior stands: reservations stay
+   for reconciliation and the failure is observable; no inference is replayed.
+
+AUDIT: the settlement id is written once in `handleChatCompletions` and carried
+in `GatewayCallContext`; every settleCall caller (JSON success, upstream error,
+invalid body, stream ok/error/cancel) reaches the same `recordUsage` transition.
+
+ADVERSARIAL: duplicate settlement, a late callback after quarantine, an expired
+hold whose output was served, and a replay after restart must each leave one
+committed row and one debit at most. Free-pool estimates are not money and are
+not converted into a fabricated charge.
+
+## Implementation
+
+| Responsibility | File |
+| --- | --- |
+| Admission, monotonic commit, quarantine, audited release | `lib/settlement-ledger.ts` |
+| Durable tables | `lib/schema/settlements.ts`, `lib/db.ts` |
+| Server wrapper and operator inspection/resolution | `lib/store/settlements.ts`, `app/api/admin/settlements/route.ts` |
+| Settlement row recorded before dispatch | `lib/gateway.ts` |
+| One atomic claim in the usage transaction | `lib/gateway-settle.ts`, `lib/store/usage.ts` |
+| Expired credit, subscription and free reservations quarantined | `lib/store/billing.ts`, `lib/store/subscription-access.ts`, `lib/store/free-pool.ts` |
+| Independent expectations | `tests/settlement-recovery.test.mjs` |
+| Route reachability | `scripts/http-suite/quota-checks.mjs` |
+
+## Verification
+
+`npm run verify` exit 0 on 2026-10-30:
+
+```text
+lint: zero warnings
+typecheck: exit 0
+tests 264 / pass 264 / fail 0
+quality: PASS (400-line ceiling, 256 files scanned)
+production build: clean
+http-suite: 254 checks PASS
+trial-http-suite: all checks PASS
+```
+
+The five new cases cover: admit-then-commit once, an unknown settlement
+unclaimable, a quarantined credit hold keeping the money reserved until one
+audited release, subscription/free quarantine retaining their own capacity, and
+idempotent quarantine. The production route returns committed settlements and
+refuses to release an unknown quarantine (404). Settlement duplicate and
+quarantined claims are rejected by the same `commitSettlement` transition used
+inside the usage transaction.
+
+Evidence limits: no process-kill/restart receipt was produced in this pass, so
+crash-boundary survival is proven at the durable-state level rather than by a
+killed process; the admin resolution is an API route with no UI surface; HTTP
+quarantine behavior is unit-covered, not route-covered; production
+recovery/backup coordination remains 058/059.
 
 ## Resolution
 

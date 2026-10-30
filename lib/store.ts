@@ -84,6 +84,11 @@ export { getProviderStatus } from "./store/provider";
 export { reserveFreeCall } from "./store/free-pool";
 export { listAdminUsage, listUsage, recordUsage } from "./store/usage";
 export {
+  listSettlementState,
+  openCallSettlement,
+  releaseQuarantined,
+} from "./store/settlements";
+export {
   DEFAULT_TENANT,
   getAccountSummary,
   grantCredit,

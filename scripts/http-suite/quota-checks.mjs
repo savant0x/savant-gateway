@@ -197,6 +197,18 @@ export async function runQuotaChecks(context) {
     checkEqual("daily credits do not bypass customer authentication", account.status, 307);
     check("daily allocation respects the per-account cap", db.prepare("SELECT allocated_tokens FROM free_pool_allocations WHERE user_id = 'quota_user'").get().allocated_tokens > 0);
 
+    // FID-051: durable settlement identity and operator inspection.
+    const settlements = await request(baseUrl, "/api/admin/settlements", { cookie });
+
+    checkEqual("operator can inspect settlement state", settlements.status, 200);
+    check("served calls carry a committed durable settlement", settlements.json.settlements.some(
+      (row) => row.user_id === "quota_user" && row.status === "committed",
+    ));
+    checkEqual("an unknown quarantine is not released", (await request(
+      baseUrl, "/api/admin/settlements",
+      { method: "POST", cookie, body: { id: "missing-quarantine" } },
+    )).status, 404);
+
     // FID-048: one serving-account ceiling for every billing mode.
     mock.state.balance.rpm = 1;
     const limited = await read();

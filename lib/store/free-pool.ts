@@ -20,6 +20,7 @@ import {
 import { reserveTrial, settleTrial } from "../trial-ledger";
 import { readTrialConfig } from "../trials";
 import { quotaIsCurrent } from "../provider-quota";
+import { quarantineHold, quarantinedWeight } from "../settlement-ledger";
 
 import { ensureDailyAllocation, getAllocationConfig } from "./allocations";
 import { HOLD_TTL_MS } from "./billing";
@@ -59,7 +60,9 @@ function reservedWeighted(userId: string, at: string) {
     )
     .get(userId, at) as { total: number };
 
-  return Math.max(0, row.total);
+  // An unresolved admission still owes its estimate; releasing it on a timer
+  // would hand back capacity for a call that may have been served.
+  return Math.max(0, row.total + quarantinedWeight(db, userId, "free"));
 }
 
 function maybeAlert(
@@ -101,9 +104,37 @@ export function reserveFreeCall(input: {
 
   const outcome = db
     .transaction(() => {
-      db.prepare(
-        "DELETE FROM free_pool_reservations WHERE expires_at <= ?",
-      ).run(at);
+      const expired = db
+        .prepare(
+          `SELECT id, user_id, api_key_id, model_id, weighted_tokens,
+                  created_at, expires_at
+           FROM free_pool_reservations WHERE expires_at <= ?`,
+        )
+        .all(at) as Array<{
+        id: string;
+        user_id: string;
+        api_key_id: string | null;
+        model_id: string | null;
+        weighted_tokens: number;
+        created_at: string;
+        expires_at: string;
+      }>;
+
+      for (const reservation of expired) {
+        quarantineHold(db, {
+          id: reservation.id,
+          kind: "free",
+          userId: reservation.user_id,
+          keyId: reservation.api_key_id,
+          modelId: reservation.model_id,
+          reserved: reservation.weighted_tokens,
+          createdAt: reservation.created_at,
+          expiredAt: reservation.expires_at,
+        });
+        db.prepare("DELETE FROM free_pool_reservations WHERE id = ?").run(
+          reservation.id,
+        );
+      }
 
       const status = getProviderStatusBySlug(input.model.upstreamSlug);
       const current = quotaIsCurrent(status, nowMs);

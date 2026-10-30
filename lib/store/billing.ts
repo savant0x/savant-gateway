@@ -5,6 +5,7 @@ import type { AccountSummary, CreditLedgerEntry } from "../types";
 import { randomUUID } from "node:crypto";
 
 import { db, nowIso } from "../db";
+import { quarantineHold } from "../settlement-ledger";
 
 export const DEFAULT_TENANT = "user_dev";
 export const HOLD_TTL_MS = 15 * 60 * 1000;
@@ -26,7 +27,7 @@ function balanceRow(userId: string): BalanceRow | undefined {
 }
 
 export function getAccountSummary(userId = DEFAULT_TENANT): AccountSummary {
-  releaseExpiredHolds(userId);
+  quarantineExpiredHolds(userId);
 
   const row = balanceRow(userId);
   const creditMicros = row?.credit_micros ?? 0;
@@ -113,32 +114,49 @@ export function grantCredit(input: {
   return getAccountSummary(userId);
 }
 
-/** Releases holds whose reservation window elapsed without settlement. */
-export function releaseExpiredHolds(userId = DEFAULT_TENANT, now = Date.now()) {
+/**
+ * Moves credit holds whose reservation window elapsed into durable quarantine.
+ * The reserved money stays reserved: an elapsed TTL is not evidence that no
+ * upstream work happened, so only an audited operator release frees it.
+ */
+export function quarantineExpiredHolds(
+  userId = DEFAULT_TENANT,
+  now = Date.now(),
+) {
   const cutoff = new Date(now).toISOString();
   const expired = db
     .prepare(
-      `SELECT id, hold_micros FROM credit_holds
-       WHERE user_id = ? AND expires_at <= ?`,
+      `SELECT id, api_key_id, model_id, hold_micros, created_at, expires_at
+       FROM credit_holds WHERE user_id = ? AND expires_at <= ?`,
     )
-    .all(userId, cutoff) as Array<{ id: string; hold_micros: number }>;
+    .all(userId, cutoff) as Array<{
+    id: string;
+    api_key_id: string | null;
+    model_id: string | null;
+    hold_micros: number;
+    created_at: string;
+    expires_at: string;
+  }>;
 
   if (expired.length === 0) return 0;
 
-  const total = expired.reduce((sum, row) => sum + row.hold_micros, 0);
-
   db.transaction(() => {
-    db.prepare(
-      "DELETE FROM credit_holds WHERE user_id = ? AND expires_at <= ?",
-    ).run(userId, cutoff);
-    db.prepare(
-      `UPDATE users
-       SET held_micros = MAX(0, held_micros - ?)
-       WHERE id = ?`,
-    ).run(total, userId);
+    for (const hold of expired) {
+      quarantineHold(db, {
+        id: hold.id,
+        kind: "credit",
+        userId,
+        keyId: hold.api_key_id,
+        modelId: hold.model_id,
+        reserved: hold.hold_micros,
+        createdAt: hold.created_at,
+        expiredAt: hold.expires_at,
+      });
+      db.prepare("DELETE FROM credit_holds WHERE id = ?").run(hold.id);
+    }
   }).immediate();
 
-  return total;
+  return expired.reduce((sum, row) => sum + row.hold_micros, 0);
 }
 
 /**
@@ -160,7 +178,7 @@ export function reserveCreditHold(input: {
   const expiresAt = new Date(now + ttlMs).toISOString();
   const id = `hold_${randomUUID()}`;
 
-  releaseExpiredHolds(userId, now);
+  quarantineExpiredHolds(userId, now);
 
   const reserved = db
     .transaction(() => {

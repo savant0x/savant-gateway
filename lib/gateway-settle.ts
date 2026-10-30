@@ -38,6 +38,8 @@ export type GatewayCallContext = {
   subscription: SubscriptionCallContext | null;
   startedAt: number;
   promptTokens: number;
+  /** Durable admitted-call identity written before dispatch. */
+  settlementId: string;
   /** Serving-account concurrency slot; idempotent, called on every exit. */
   releaseAdmission?: (() => void) | null;
 };
@@ -170,6 +172,7 @@ export function settleCall(
     cacheWriteInputTokens: usage.cacheWriteInputTokens,
     reasoningOutputTokens: usage.reasoningOutputTokens,
     usageSource: source,
+    settlementId: context.settlementId,
     hold: context.hold,
     freeReservation: context.freeReservation,
     subscriptionHold:

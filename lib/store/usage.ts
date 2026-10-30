@@ -5,6 +5,7 @@ import type { AdminUsageSummary, UsageSummary } from "../types";
 import { randomUUID } from "node:crypto";
 
 import { db, nowIso } from "../db";
+import { commitSettlement } from "../settlement-ledger";
 import { usageLedgerEntry } from "../usage-ledger";
 
 import { settleFreeReservation } from "./free-pool";
@@ -41,6 +42,8 @@ export type UsageSettlement = {
   cacheWriteInputTokens?: number | null;
   reasoningOutputTokens?: number | null;
   usageSource?: "reported" | "partial" | "estimated" | null;
+  /** Durable admitted-call identity; a replay is a no-op. */
+  settlementId?: string | null;
 };
 
 /**
@@ -71,7 +74,16 @@ export function recordUsage(input: UsageSettlement) {
       : Math.max(0, Math.floor(value));
   let subscriptionPeriodId = input.subscriptionPeriodId ?? null;
 
-  db.transaction(() => {
+  const settle = db.transaction(() => {
+    // One durable claim per admitted call. A duplicate or quarantined outcome
+    // stops here: no second usage row, debit or hold release.
+    if (
+      input.settlementId &&
+      !commitSettlement(db, input.settlementId, nowIso(), input.status)
+    ) {
+      return 0;
+    }
+
     if (input.freeReservation) {
       const settled = db
         .prepare(
@@ -80,7 +92,7 @@ export function recordUsage(input: UsageSettlement) {
         .get(input.freeReservation.id, input.auth.userId) as
         { settled_at: string | null } | undefined;
 
-      if (settled?.settled_at) return;
+      if (settled?.settled_at) return 0;
     }
     if (input.hold) {
       const hold = db
@@ -191,9 +203,11 @@ export function recordUsage(input: UsageSettlement) {
       component(input.reasoningOutputTokens),
       input.usageSource ?? null,
     );
-  }).immediate();
 
-  return chargedMicros;
+    return chargedMicros;
+  });
+
+  return settle.immediate();
 }
 
 const USAGE_COLUMNS = `

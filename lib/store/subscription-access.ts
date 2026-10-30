@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 
 import { db, nowIso } from "../db";
 import { decideAllowance } from "../plans";
+import { quarantineHold } from "../settlement-ledger";
 
 import {
   activeSubscriptionRow,
@@ -37,27 +38,42 @@ export type SubscriptionAccess =
 const HOLD_TTL_MS = 15 * 60 * 1000;
 const INCOMPLETE_TTL_MS = 24 * 60 * 60 * 1000;
 
-function releaseExpiredHolds(now: number) {
+/** Expired allowance holds are quarantined, not silently returned. */
+function quarantineExpiredHolds(now: number) {
   const cutoff = new Date(now).toISOString();
   const expired = db
     .prepare(
-      `SELECT id, period_id, weighted_tokens FROM subscription_holds
-       WHERE expires_at <= ?`,
+      `SELECT id, period_id, user_id, api_key_id, model_id, weighted_tokens,
+              created_at, expires_at
+       FROM subscription_holds WHERE expires_at <= ?`,
     )
     .all(cutoff) as Array<{
     id: string;
     period_id: string;
+    user_id: string;
+    api_key_id: string | null;
+    model_id: string | null;
     weighted_tokens: number;
+    created_at: string;
+    expires_at: string;
   }>;
 
-  for (const hold of expired) {
-    db.prepare("DELETE FROM subscription_holds WHERE id = ?").run(hold.id);
-    db.prepare(
-      `UPDATE subscription_periods
-       SET weighted_tokens_held = MAX(0, weighted_tokens_held - ?)
-       WHERE id = ?`,
-    ).run(hold.weighted_tokens, hold.period_id);
-  }
+  db.transaction(() => {
+    for (const hold of expired) {
+      quarantineHold(db, {
+        id: hold.id,
+        kind: "subscription",
+        userId: hold.user_id,
+        keyId: hold.api_key_id,
+        modelId: hold.model_id,
+        periodId: hold.period_id,
+        reserved: hold.weighted_tokens,
+        createdAt: hold.created_at,
+        expiredAt: hold.expires_at,
+      });
+      db.prepare("DELETE FROM subscription_holds WHERE id = ?").run(hold.id);
+    }
+  }).immediate();
 }
 
 /** Local safety net for missed Stripe events and manual grants. */
@@ -66,7 +82,7 @@ export function sweepSubscriptions(now = Date.now()) {
   const incompleteCutoff = new Date(now - INCOMPLETE_TTL_MS).toISOString();
 
   db.transaction(() => {
-    releaseExpiredHolds(now);
+    quarantineExpiredHolds(now);
 
     db.prepare(
       `UPDATE subscription_periods SET status = 'closed'

@@ -2,6 +2,30 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-30 (durable settlement: 051)
+
+Handoff continuation in dependency order after 050. Automation level 3, strict,
+single agent. Production crash drills and recovery/backup coordination remain
+058/059; this pass implements the durable state, atomic commit and quarantine.
+
+- [x] **S1 — Re-audit 051 against current source.** Automation level 3. Measured:
+  no durable admitted-call identity; rejected or interrupted calls left only an
+  expiring hold; expired credit and subscription holds were silently refunded
+  on a timer, which can make served output free; no inspection path. Convergence
+  recorded in the FID before code.
+- [x] **S2 — Implement durable settlement.** Automation level 3. Settlement row
+  before dispatch, atomic `admitted → committed` claim inside the usage/money
+  transaction with replay no-op, expired reservations quarantined with capacity
+  still reserved, and one audited release path.
+- [x] **S3 — Verification.** Automation level 3. `npm run verify` exit 0:
+  264 unit tests (five settlement cases), 254 HTTP checks (three route checks),
+  trial suite PASS, quality PASS (256 files), clean lint/typecheck/build.
+  FID-051 `verified`; archive and CHANGELOG in the closure commit.
+
+Remaining acceptance, not claimed: a killed-process restart receipt, an admin
+UI for quarantined reservations, route-level quarantine behavior, and the
+058/059 backup/recovery drills. Unknown outcomes stay explicit liabilities.
+
 ## Current Session — 2026-10-30 (usage fidelity: 050)
 
 Handoff continuation in dependency order after 048. Automation level 3, strict,

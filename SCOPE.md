@@ -2,6 +2,25 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-30 (CI fresh-database boot: 064)
+
+Operator reported a GitHub Actions failure on the last push. Automation level 3,
+single agent. Scope is the failing build step only; no billing, admission or
+payment behavior changed.
+
+- [x] **P1 — Diagnose the failing job.** Read the workflow and run log. The
+  `build` job failed during page-data collection with `SqliteError: duplicate
+  column name: family`; three workers imported `lib/db.ts` against a fresh
+  database and raced the additive `hasColumn` → `ALTER TABLE` pair.
+- [x] **P2 — Serialize the migration gate.** `createDb()` now runs every additive
+  schema step plus seed inside one `BEGIN IMMEDIATE` transaction, `busy_timeout`
+  is set before WAL so a concurrent first open waits, and `ensureColumn` treats
+  losing that add race as success while still raising unrelated SQLite errors.
+- [x] **P3 — Verification.** `npm run build` with a fresh `DB_PATH`, twice: exit 0.
+  `npm run verify` exit 0: 283 unit tests (three migration cases), 262 HTTP
+  checks, trial HTTP PASS, quality PASS, clean lint/typecheck/build. FID-064
+  closed and archived; CI re-run is the remaining external confirmation.
+
 ## Current Session — 2026-10-30 (payment delivery: 053)
 
 Handoff continuation in dependency order after 052. Automation level 3, strict,
@@ -303,6 +322,7 @@ credential provisioning, wallet funding or release is performed here.
 | FID-2026-1030-060 | Load, resilience and measured capacity acceptance |
 | FID-2026-1030-061 | Published customer policies, privacy and working support |
 | FID-2026-1030-062 | Real acceptance, release approval, rollout/rollback and observation |
+| FID-2026-1030-064 | Fresh-database migration race on parallel boot (CI build failure) |
 
 - [x] **P3 — Perfection Loop.** Audit every parent/child against source, existing
   tests, dependencies and adversarial cases; apply measured document corrections;

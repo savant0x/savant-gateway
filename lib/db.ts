@@ -323,27 +323,36 @@ function seed(database: DatabaseHandle) {
 function createDb() {
   const database = new Database(dbPath);
 
+  database.pragma("busy_timeout = 5000");
   database.pragma("journal_mode = WAL");
   database.pragma("synchronous = NORMAL");
-  database.pragma("busy_timeout = 5000");
   database.pragma("foreign_keys = ON");
 
-  baseSchema(database);
-  v2Schema(database);
-  customerSchema(database);
-  freePoolSchema(database);
-  allocationSchema(database);
-  providerSchema(database);
-  modelGroupSchema(database);
-  subscriptionSchema(database);
-  trialSchema(database);
-  benchmarkSchema(database);
-  usageFidelitySchema(database);
-  settlementSchema(database);
-  creditAdjustmentSchema(database);
-  paymentEventSchema(database);
-  normalizeLegacyFamilies(database);
-  seed(database);
+  // One write-locked gate for the whole additive migration. Several processes
+  // can boot against the same fresh database at once (Next.js collects page
+  // data in parallel workers; deployments start instances together), and an
+  // interleaved check-then-ALTER would otherwise crash one of them. A second
+  // process waits for this transaction and then reads the committed schema.
+  database
+    .transaction(() => {
+      baseSchema(database);
+      v2Schema(database);
+      customerSchema(database);
+      freePoolSchema(database);
+      allocationSchema(database);
+      providerSchema(database);
+      modelGroupSchema(database);
+      subscriptionSchema(database);
+      trialSchema(database);
+      benchmarkSchema(database);
+      usageFidelitySchema(database);
+      settlementSchema(database);
+      creditAdjustmentSchema(database);
+      paymentEventSchema(database);
+      normalizeLegacyFamilies(database);
+      seed(database);
+    })
+    .immediate();
 
   return database;
 }

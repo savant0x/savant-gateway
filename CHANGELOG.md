@@ -3,6 +3,21 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-30 — Parallel-boot migration safety
+
+- **FID-2026-1030-064 — high — Fresh-database boot no longer races itself.**
+  CI failed during `next build` because three page-data workers imported the
+  database module at once and each ran the additive migrations; `hasColumn` and
+  the following `ALTER TABLE` are not atomic, so a worker that lost the race
+  crashed with `duplicate column name: family`. `createDb()` now performs every
+  schema step and the seed inside one `BEGIN IMMEDIATE` transaction, the busy
+  timeout is set before WAL so a concurrent first open waits instead of failing,
+  and `ensureColumn` accepts a duplicate-column result as the requested end
+  state while still raising unrelated SQLite errors. No schema, billing or
+  payment semantics changed. Verified: fresh-`DB_PATH` builds exit 0 twice,
+  `npm run verify` exit 0 with 283 unit tests, 262 HTTP checks, trial suite PASS,
+  quality PASS (265 files).
+
 ## 2026-10-30 — Recoverable payment delivery
 
 - **FID-2026-1030-053 — critical — Webhook state that survives a crash.**

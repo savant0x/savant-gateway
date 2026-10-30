@@ -14,6 +14,14 @@ export function hasColumn(
   return rows.some((row) => row.name === column);
 }
 
+/** True when SQLite rejected the ALTER because another connection won the
+ * check-then-add window for the same column. */
+function isDuplicateColumn(error: unknown) {
+  return (
+    error instanceof Error && error.message.includes("duplicate column name")
+  );
+}
+
 export function ensureColumn(
   database: DatabaseHandle,
   table: string,
@@ -22,5 +30,14 @@ export function ensureColumn(
 ) {
   if (hasColumn(database, table, column)) return;
 
-  database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  try {
+    database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  } catch (error) {
+    // The schema is additive and the read above is not atomic with the write,
+    // so a second process booting against the same fresh database can add the
+    // column between them. That outcome is exactly the requested end state.
+    if (isDuplicateColumn(error)) return;
+
+    throw error;
+  }
 }

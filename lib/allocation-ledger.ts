@@ -20,6 +20,8 @@ export type AllocationSummary = {
   day: string;
   enabled: boolean;
   dailyPoolTokens: number;
+  configuredDailyPoolTokens: number;
+  capacityAvailable: boolean;
   allocationBps: number;
   allocatableTokens: number;
   reservedTokens: number;
@@ -112,16 +114,18 @@ export function ensureAllocation(
     )
     .get(input.day, input.userId) as { allocated_tokens: number } | undefined;
 
-  if (existing) return Math.max(0, existing.allocated_tokens);
-
   const fairShare = accounts > 0 ? Math.floor(allocatable / accounts) : 0;
   const rows = database
     .prepare(
-      "SELECT user_id, allocated_tokens FROM free_pool_allocations WHERE day = ?",
+      `SELECT a.user_id, a.allocated_tokens,
+         EXISTS (SELECT 1 FROM users u JOIN api_keys k ON k.user_id = u.id
+           WHERE u.id = a.user_id AND u.status = 'active' AND k.status = 'active') AS eligible
+       FROM free_pool_allocations a WHERE a.day = ?`,
     )
     .all(input.day) as Array<{
     user_id: string;
     allocated_tokens: number;
+    eligible: number;
   }>;
   const update = database.prepare(
     "UPDATE free_pool_allocations SET allocated_tokens = ? WHERE day = ? AND user_id = ?",
@@ -135,12 +139,22 @@ export function ensureAllocation(
     );
     const rebalanced = Math.min(
       row.allocated_tokens,
-      Math.max(fairShare, committedFloor),
+      Math.max(row.eligible ? fairShare : 0, committedFloor),
     );
 
     if (rebalanced !== row.allocated_tokens) {
       update.run(rebalanced, input.day, row.user_id);
     }
+  }
+
+  if (existing) {
+    const updated = database
+      .prepare(
+        "SELECT allocated_tokens FROM free_pool_allocations WHERE day = ? AND user_id = ?",
+      )
+      .get(input.day, input.userId) as { allocated_tokens: number };
+
+    return Math.max(0, updated.allocated_tokens);
   }
 
   const share = allocationShare({
@@ -207,6 +221,8 @@ export function allocationSummary(
     day: input.day,
     enabled: input.config.enabled,
     dailyPoolTokens: input.config.dailyPoolTokens,
+    configuredDailyPoolTokens: input.config.dailyPoolTokens,
+    capacityAvailable: true,
     allocationBps: input.config.allocationBps,
     allocatableTokens: allocatable,
     reservedTokens: Math.max(0, input.config.dailyPoolTokens - allocatable),

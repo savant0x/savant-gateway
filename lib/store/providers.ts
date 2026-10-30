@@ -8,6 +8,8 @@ import type {
 import type { ProviderStatus } from "../types";
 
 import { db, nowIso } from "../db";
+import { observationIsRecent, quotaIsCurrent } from "../provider-quota";
+import { effectiveProviderRemaining } from "../quota-ledger";
 import {
   DEFAULT_PROVIDER_SLUG,
   providerKeyConfigured,
@@ -41,6 +43,13 @@ type ProviderRow = {
   error: string | null;
   created_at: string;
   updated_at: string;
+  balance_observed_at: string | null;
+  quota_observed_at: string | null;
+  quota_checked_at: string | null;
+  quota_reset_at: string | null;
+  quota_unlimited: number;
+  quota_error: string | null;
+  runtime_lease_until: string | null;
 };
 
 function parseHeaders(raw: string) {
@@ -84,20 +93,64 @@ function toRecord(row: ProviderRow): ProviderRecord {
 
 function toStatus(row: ProviderRow): ProviderStatus {
   const configured = providerKeyConfigured(row.key_env_var);
+  const now = Date.now();
+  const quota = {
+    observedAt: row.quota_observed_at,
+    checkedAt: row.quota_checked_at,
+    resetsAt: row.quota_reset_at,
+    unlimited: row.quota_unlimited === 1,
+    error: row.quota_error,
+    checking:
+      !!row.runtime_lease_until && Date.parse(row.runtime_lease_until) > now,
+  };
+  const current =
+    configured &&
+    row.enabled === 1 &&
+    quotaIsCurrent(
+      {
+        quota,
+        subscriptionMode: row.subscription_mode,
+        subscriptionExpiresAt: row.subscription_expires_at,
+      },
+      now,
+    );
+  const balanceCurrent =
+    configured &&
+    row.enabled === 1 &&
+    !quota.checking &&
+    observationIsRecent(row.balance_observed_at, now);
 
   return {
+    quota,
+    balanceObservedAt: row.balance_observed_at,
+    admissionRemainingTokens: current
+      ? effectiveProviderRemaining(db, {
+          slug: row.slug,
+          remaining: row.subscription_tokens_remaining,
+          observedAt: row.quota_observed_at,
+          at: new Date(now).toISOString(),
+        })
+      : null,
     configured,
-    status: configured ? row.status : "unconfigured",
-    balanceUsd: row.balance_usd,
-    rpm: row.rpm,
-    rpmPlan: row.rpm_plan,
+    status: !configured
+      ? "unconfigured"
+      : row.supports_subscription === 1 && !current
+        ? "error"
+        : row.status,
+    balanceUsd: balanceCurrent ? row.balance_usd : null,
+    rpm: balanceCurrent ? row.rpm : null,
+    rpmPlan: balanceCurrent ? row.rpm_plan : null,
     subscriptionMode: row.subscription_mode,
-    subscriptionPlan: row.subscription_plan,
-    subscriptionTokenLimit: row.subscription_token_limit,
-    subscriptionTokensUsed: row.subscription_tokens_used,
-    subscriptionTokensRemaining: row.subscription_tokens_remaining,
+    subscriptionPlan: current ? row.subscription_plan : null,
+    subscriptionTokenLimit: current ? row.subscription_token_limit : null,
+    subscriptionTokensUsed: current ? row.subscription_tokens_used : null,
+    subscriptionTokensRemaining: current
+      ? row.subscription_tokens_remaining
+      : null,
     subscriptionAllowed:
-      row.subscription_allowed == null ? null : row.subscription_allowed === 1,
+      !current || row.subscription_allowed == null
+        ? null
+        : row.subscription_allowed === 1,
     subscriptionExpiresAt: row.subscription_expires_at,
     syncedAt: row.synced_at,
     error: row.error,
@@ -164,6 +217,13 @@ function emptyRow(slug: string): ProviderRow {
     error: null,
     created_at: "",
     updated_at: "",
+    balance_observed_at: null,
+    quota_observed_at: null,
+    quota_checked_at: null,
+    quota_reset_at: null,
+    quota_unlimited: 0,
+    quota_error: null,
+    runtime_lease_until: null,
   };
 }
 
@@ -224,7 +284,9 @@ export function updateProvider(slug: string, input: ProviderInput) {
        SET label = ?, kind = ?, base_url = ?, key_env_var = ?,
            default_headers = ?, supports_balance = ?,
            supports_subscription = ?, supports_pricing = ?, enabled = ?,
-           sort_order = ?, updated_at = ?
+           sort_order = ?, updated_at = ?,
+           quota_observed_at = NULL, balance_observed_at = NULL,
+           runtime_lease_id = NULL, runtime_lease_until = NULL
        WHERE slug = ?`,
     )
     .run(
@@ -247,7 +309,11 @@ export function updateProvider(slug: string, input: ProviderInput) {
 
 export function setProviderEnabled(slug: string, enabled: boolean) {
   const result = db
-    .prepare("UPDATE providers SET enabled = ?, updated_at = ? WHERE slug = ?")
+    .prepare(
+      `UPDATE providers SET enabled = ?, updated_at = ?,
+      quota_observed_at = NULL, balance_observed_at = NULL,
+      runtime_lease_id = NULL, runtime_lease_until = NULL WHERE slug = ?`,
+    )
     .run(enabled ? 1 : 0, nowIso(), slug);
 
   return result.changes > 0;
@@ -272,52 +338,8 @@ export function deleteProvider(slug: string) {
     .immediate();
 }
 
-export function saveProviderRuntime(
-  slug: string,
-  input: {
-    status: ProviderStatus["status"];
-    balanceUsd: number | null;
-    rpm: number | null;
-    rpmPlan: string | null;
-    subscriptionMode: string | null;
-    subscriptionPlan: string | null;
-    subscriptionTokenLimit: number | null;
-    subscriptionTokensUsed: number | null;
-    subscriptionTokensRemaining: number | null;
-    subscriptionAllowed: boolean | null;
-    subscriptionExpiresAt: string | null;
-    error: string | null;
-    /** Only a successful catalog read advances the remaining baseline. */
-    syncedAt?: string;
-  },
-) {
-  db.prepare(
-    `UPDATE providers
-     SET status = ?, balance_usd = ?, rpm = ?, rpm_plan = ?,
-         subscription_mode = ?, subscription_plan = ?,
-         subscription_token_limit = ?, subscription_tokens_used = ?,
-         subscription_tokens_remaining = ?, subscription_allowed = ?,
-         subscription_expires_at = ?, synced_at = COALESCE(?, synced_at),
-         error = ?, updated_at = ?
-     WHERE slug = ?`,
-  ).run(
-    input.status,
-    input.balanceUsd,
-    input.rpm,
-    input.rpmPlan,
-    input.subscriptionMode,
-    input.subscriptionPlan,
-    input.subscriptionTokenLimit,
-    input.subscriptionTokensUsed,
-    input.subscriptionTokensRemaining,
-    input.subscriptionAllowed == null
-      ? null
-      : input.subscriptionAllowed
-        ? 1
-        : 0,
-    input.subscriptionExpiresAt,
-    input.syncedAt ?? null,
-    input.error,
+export function saveProviderCatalogSync(slug: string) {
+  db.prepare("UPDATE providers SET synced_at = ? WHERE slug = ?").run(
     nowIso(),
     slug,
   );

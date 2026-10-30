@@ -6,6 +6,7 @@ import {
 } from "@/lib/store/allocations";
 import { getBannerConfig, saveBannerConfig } from "@/lib/store/banner";
 import { utcDay } from "@/lib/store/free-pool";
+import { refreshProviderRuntime } from "@/lib/providers/runtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,6 +23,8 @@ export async function GET(request: Request) {
   const blocked = await guardAdminApi(request);
 
   if (blocked) return blocked;
+
+  await refreshProviderRuntime("savant");
 
   return Response.json(
     {

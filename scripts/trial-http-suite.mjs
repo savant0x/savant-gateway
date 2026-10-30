@@ -12,7 +12,22 @@ const baseUrl = `http://127.0.0.1:${port}`;
 let calls = 0;
 let serving = "";
 let fail = false;
+let quotaFails = false;
+let remaining = 20_000_000;
 const mock = createServer((req, res) => {
+  if (req.url === "/subscription") {
+    res.writeHead(quotaFails ? 502 : 200, { "content-type": "application/json" });
+    const tomorrow = new Date();
+
+    tomorrow.setUTCHours(24, 0, 0, 0);
+    res.end(JSON.stringify(quotaFails ? { error: "quota unavailable" } : {
+      mode: "free", allowed: true, unlimited: false, token_limit: 20_000_000,
+      tokens_used: 20_000_000 - remaining, tokens_remaining: remaining,
+      resets_at_utc: tomorrow.toISOString(),
+    }));
+    return;
+  }
+
   let body = "";
 
   req.on("data", (chunk) => { body += chunk; });
@@ -42,6 +57,7 @@ const server = startNextServer({
     TRIAL_GATEWAY_GRANT_BUDGET: "10000",
     TRIAL_MODEL_PAIRS: '{"free/mock":"mock-paid"}',
     HTTP_SUITE_PROVIDER_KEY: "trial-test-key",
+    PROVIDER_KEY: "", COMMANDCODE_API_KEY: "",
     // Disposable production start against a throwaway database: the validator
     // requires the explicit opt-in plus the admin configuration it still checks.
     GATEWAY_DISPOSABLE_START: "yes",
@@ -63,8 +79,11 @@ try {
     VALUES ('free/mock', 'free/mock-upstream', 'Trial Mock', 'Mock', '128000',
       2, 1, 'active', ?, 'mock', 'Mock', 'chat', 'synced', 1, 'free', 'manual')`)
     .run(new Date().toISOString());
-  const refresh = () => db.prepare(`UPDATE providers SET subscription_tokens_remaining = 20000000,
-    subscription_allowed = 1, synced_at = ? WHERE slug = 'mock'`).run(new Date().toISOString());
+  const refresh = () => {
+    remaining = 20_000_000;
+    quotaFails = false;
+    db.prepare("UPDATE providers SET supports_subscription = 1 WHERE slug = 'mock'").run();
+  };
 
   refresh();
 
@@ -96,6 +115,7 @@ try {
   checkEqual("trial uses free upstream", serving, "free/mock-upstream");
   checkEqual("trial settles actual weighted usage", db.prepare("SELECT used_tokens FROM trial_grants WHERE user_id = ?").get(customerA.userId).used_tokens, 300);
   checkEqual("trial does not charge credit", db.prepare("SELECT credit_micros FROM users WHERE id = ?").get(customerA.userId).credit_micros, 0);
+  checkEqual("lifetime mode does not also grant daily credits", db.prepare("SELECT COUNT(*) AS n FROM free_pool_allocations WHERE user_id = ?").get(customerA.userId).n, 0);
   const before = calls;
 
   checkEqual("exhaustion asks for credit", (await chat(customerA)).status, 402);
@@ -121,8 +141,8 @@ try {
   checkEqual("model API publishes fallback output rate", catalog.json.data.find((m) => m.id === "free/mock").trial_paid_transition.output_price_per_1m, 2);
   const customerB = await customer("trial-b@example.test");
 
-  db.prepare("UPDATE providers SET synced_at = '2020-01-01' WHERE slug = 'mock'").run();
-  checkEqual("stale capacity refuses trial", (await chat(customerB)).status, 429);
+  quotaFails = true;
+  checkEqual("unavailable current capacity refuses trial", (await chat(customerB)).status, 429);
   refresh();
   fail = true;
   checkEqual("upstream error relayed safely", (await chat(customerB)).status, 502);
@@ -146,7 +166,7 @@ try {
   db.prepare("UPDATE models SET status = 'disabled' WHERE id = 'mock-paid'").run();
   checkEqual("disabled paid pair stops conversion", (await chat(customerA)).status, 503);
   db.prepare("UPDATE models SET status = 'active' WHERE id = 'mock-paid'").run();
-  db.prepare("UPDATE providers SET subscription_tokens_remaining = 1 WHERE slug = 'mock'").run();
+  remaining = 1;
   const customerD = await customer("trial-d@example.test");
 
   checkEqual("pool depletion stops trial", (await chat(customerD)).status, 429);

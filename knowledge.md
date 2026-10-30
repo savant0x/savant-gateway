@@ -11,6 +11,22 @@ upstream cost, and usage in SQLite.
 
 ## Facts that are easy to get wrong
 
+- **Account observation is independent of catalog sync (FID-063).**
+  `refreshProviderRuntime` fetches upstream on every explicit check and before
+  free admission; there is no success TTL reuse. `quota_observed_at` is request
+  start, `quota_checked_at` is completion and `quota_reset_at` is upstream's UTC
+  boundary. `synced_at` still means catalog completion. Leases fence late writes;
+  expired, failed or pending observations cannot provide current figures or
+  admission. The 30-second guard is validity only, never permission to skip a
+  requested check. Unknown counters are not zero or unlimited.
+- **Daily trial credits reuse the daily allocation ledger.** They are weighted
+  tokens, separate from prepaid dollars and from the disabled one-time trial
+  flag. The configured pool is a ceiling capped by current upstream capacity,
+  with local usage already covered by the observation added back conservatively.
+  Unspent grants shrink as capacity/accounts change; suspended accounts release
+  unspent shares. Existing default reserve/share and 100k daily account cap stay
+  enforced. The upstream `free` wire/group identifiers remain compatible.
+
 - **Provider, family, and group are different words.** A provider is an
   upstream account in the registry; the public owner is always Savant Gateway
   (`owned_by: "savant-gateway"`). The family is the model line (GPT,

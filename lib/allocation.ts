@@ -109,6 +109,29 @@ export function allocatableTokens(config: AllocationConfig): number {
   );
 }
 
+/** Local defaults are ceilings; only observed upstream capacity backs credits. */
+export function observedDailyPool(input: {
+  configured: number;
+  limit: number | null;
+  remaining: number | null;
+  localUsedBeforeObservation: number;
+  unlimited?: boolean;
+}) {
+  if (input.unlimited) return Math.max(0, Math.floor(input.configured));
+  if (input.limit === null || input.remaining === null) return 0;
+
+  return Math.max(
+    0,
+    Math.floor(
+      Math.min(
+        input.configured,
+        input.limit,
+        input.remaining + input.localUsedBeforeObservation,
+      ),
+    ),
+  );
+}
+
 /**
  * One account's share. `alreadyAllocated` is every token already handed out
  * for the same UTC day, so a late account can only take what is left.

@@ -1,13 +1,21 @@
+"use client";
+
 import type { ProviderStatus } from "@/lib/types";
 
-import { Card } from "@heroui/react";
+import { Button, Card } from "@heroui/react";
 
 import { StatusChip } from "./chips";
-import { formatCompact, formatMoney, formatNumber } from "./format";
+import { formatMoney, formatNumber } from "./format";
+import { useProviderRuntime } from "./use-provider-runtime";
 
 import { LocalTime } from "@/components/local-time";
 
 export function ProviderCard({ provider }: { provider: ProviderStatus }) {
+  const live = useProviderRuntime(provider);
+  const value = live.provider;
+  const quota = live.quotaCurrent ? value : null;
+  const balance = live.balanceCurrent ? value : null;
+
   return (
     <Card>
       <Card.Header>
@@ -15,11 +23,15 @@ export function ProviderCard({ provider }: { provider: ProviderStatus }) {
           <div>
             <Card.Title>Provider</Card.Title>
             <Card.Description>
-              Live state from the upstream provider. Free models share the
-              provider key&apos;s pool.
+              Account values fetched from upstream on each check. The free
+              sandbox pool is shared by the provider account.
             </Card.Description>
           </div>
-          <StatusChip status={provider.status} />
+          <StatusChip
+            status={
+              live.checking ? "checking" : (quota?.status ?? "unavailable")
+            }
+          />
         </div>
       </Card.Header>
       <Card.Content className="space-y-4">
@@ -38,47 +50,84 @@ export function ProviderCard({ provider }: { provider: ProviderStatus }) {
           <div className="rounded-xl bg-surface p-3">
             <p className="text-xs text-muted">Balance</p>
             <p className="mt-1 text-lg font-semibold">
-              {formatMoney(provider.balanceUsd)}
+              {formatMoney(balance?.balanceUsd)}
             </p>
           </div>
           <div className="rounded-xl bg-surface p-3">
             <p className="text-xs text-muted">RPM</p>
             <p className="mt-1 text-lg font-semibold">
-              {formatNumber(provider.rpm)}{" "}
+              {formatNumber(balance?.rpm)}{" "}
               <span className="text-xs font-normal text-muted">
-                {provider.rpmPlan ?? ""}
+                {balance?.rpmPlan ?? ""}
               </span>
             </p>
           </div>
           <div className="rounded-xl bg-surface p-3">
             <p className="text-xs text-muted">Free pool remaining</p>
             <p className="mt-1 text-lg font-semibold">
-              {formatCompact(provider.subscriptionTokensRemaining)}
+              {quota?.quota.unlimited
+                ? "Unlimited"
+                : formatNumber(quota?.subscriptionTokensRemaining)}
             </p>
           </div>
           <div className="rounded-xl bg-surface p-3">
             <p className="text-xs text-muted">Upstream subscription quota</p>
             <p className="mt-1 text-lg font-semibold">
-              {provider.subscriptionMode ?? "—"}
+              {quota?.subscriptionMode ?? "Unavailable"}
             </p>
           </div>
         </div>
 
         <div className="space-y-1 text-xs text-muted">
           <p>
-            Pool used: {formatCompact(provider.subscriptionTokensUsed)} /{" "}
-            {formatCompact(provider.subscriptionTokenLimit)} weighted tokens
+            Pool used: {formatNumber(quota?.subscriptionTokensUsed)} /{" "}
+            {quota?.quota.unlimited
+              ? "Unlimited"
+              : formatNumber(quota?.subscriptionTokenLimit)}{" "}
+            weighted tokens
           </p>
-          {provider.subscriptionExpiresAt ? (
+          <p>
+            Available for admission after local usage and holds:{" "}
+            {quota?.quota.unlimited
+              ? "Unlimited"
+              : formatNumber(quota?.admissionRemainingTokens)}
+          </p>
+          {quota?.quota.checkedAt ? (
             <p>
-              Upstream quota expires:{" "}
-              <LocalTime value={provider.subscriptionExpiresAt} />
+              Account checked: <LocalTime value={quota.quota.checkedAt} />
             </p>
           ) : null}
-          {provider.error ? (
-            <p className="text-warning">{provider.error}</p>
+          {quota?.quota.resetsAt ? (
+            <p>
+              Upstream resets: <LocalTime value={quota.quota.resetsAt} />
+            </p>
           ) : null}
+          {quota?.subscriptionExpiresAt ? (
+            <p>
+              Upstream quota expires:{" "}
+              <LocalTime value={quota.subscriptionExpiresAt} />
+            </p>
+          ) : null}
+          {!live.checking && !quota ? (
+            <p className="text-warning">
+              Current quota unavailable. A new upstream check is required.
+            </p>
+          ) : null}
+          {live.error || value?.error ? (
+            <p className="text-warning">{live.error ?? value?.error}</p>
+          ) : null}
+          <p>
+            Checks every 15 seconds while visible. Figures clear while checking
+            or unavailable.
+          </p>
         </div>
+        <Button
+          isDisabled={live.checking}
+          variant="secondary"
+          onPress={() => void live.refresh()}
+        >
+          {live.checking ? "Checking upstream…" : "Check account now"}
+        </Button>
       </Card.Content>
     </Card>
   );

@@ -3,6 +3,15 @@
 As of 2026-10-30. This is the current index; dated session receipts describe the
 tree they tested, not automatically the current working tree.
 
+Latest repair: FID-2026-1030-063 separates current upstream account observation
+from catalog sync and implements daily allocated trial-credit readouts. A live
+October 30 16:09 UTC local check matches upstream: $0, 0 used / 20M remaining,
+next reset October 31 00:00 UTC. Every explicit check reads upstream; failure
+reports unavailable. Receipt: 242 unit tests and 242 HTTP checks plus trial HTTP,
+clean lint/typecheck/quality/build. The one-time trial switch stays off. The
+supplied APInex email identifies the master-account pool as an integration
+sandbox and commercial production as PAYG; exact terms/rates/funding remain open.
+
 ## Start here
 
 | Question | Authority |

@@ -1,6 +1,5 @@
 import "server-only";
 
-import type { ProviderStatus } from "../types";
 import type {
   AuthenticatedKey,
   FreePoolReservation,
@@ -20,6 +19,7 @@ import {
 } from "../free-pool";
 import { reserveTrial, settleTrial } from "../trial-ledger";
 import { readTrialConfig } from "../trials";
+import { quotaIsCurrent } from "../provider-quota";
 
 import { ensureDailyAllocation, getAllocationConfig } from "./allocations";
 import { HOLD_TTL_MS } from "./billing";
@@ -50,68 +50,16 @@ function usedWeighted(userId: string, day: string) {
   return Math.max(0, row?.weighted_tokens ?? 0);
 }
 
-function reservedWeighted(
-  userId: string | null,
-  day: string | null,
-  at: string,
-  providerSlug?: string,
-) {
-  if (userId && day) {
-    const row = db
-      .prepare(
-        `SELECT COALESCE(SUM(weighted_tokens), 0) AS total
-         FROM free_pool_reservations
-         WHERE user_id = ? AND day = ? AND expires_at > ?`,
-      )
-      .get(userId, day, at) as { total: number };
-
-    return Math.max(0, row.total);
-  }
-
+function reservedWeighted(userId: string, at: string) {
   const row = db
     .prepare(
       `SELECT COALESCE(SUM(weighted_tokens), 0) AS total
        FROM free_pool_reservations
-       WHERE expires_at > ? AND (? IS NULL OR provider_slug = ?)`,
+       WHERE user_id = ? AND expires_at > ?`,
     )
-    .get(at, providerSlug ?? null, providerSlug ?? null) as { total: number };
+    .get(userId, at) as { total: number };
 
   return Math.max(0, row.total);
-}
-
-function consumedSince(status: ProviderStatus, providerSlug: string) {
-  if (!status.syncedAt) return 0;
-
-  const row = db
-    .prepare(
-      `SELECT COALESCE(SUM(weighted_tokens), 0) AS total
-       FROM usage_events
-       WHERE provider_slug = ? AND created_at >= ? AND weighted_tokens > 0`,
-    )
-    .get(providerSlug, status.syncedAt) as { total: number };
-
-  return Math.max(0, row.total);
-}
-
-/**
- * Effective provider remaining: the last synced remaining figure minus every
- * weighted free token recorded since that sync, minus in-flight reservations.
- */
-function providerRemaining(
-  status: ProviderStatus,
-  at: string,
-  providerSlug: string,
-) {
-  if (status.subscriptionTokensRemaining === null) return null;
-
-  return Math.max(
-    0,
-    Math.floor(
-      status.subscriptionTokensRemaining -
-        consumedSince(status, providerSlug) -
-        reservedWeighted(null, null, at, providerSlug),
-    ),
-  );
 }
 
 function maybeAlert(
@@ -158,7 +106,8 @@ export function reserveFreeCall(input: {
       ).run(at);
 
       const status = getProviderStatusBySlug(input.model.upstreamSlug);
-      const remaining = providerRemaining(status, at, input.model.upstreamSlug);
+      const current = quotaIsCurrent(status, nowMs);
+      const remaining = current ? status.admissionRemainingTokens : null;
       const trial = readTrialConfig();
       const estimate = estimateWeightedTokens(
         input.promptTokens,
@@ -168,11 +117,10 @@ export function reserveFreeCall(input: {
 
       if (
         trial.enabled &&
-        (remaining === null ||
-          !status.syncedAt ||
-          !Number.isFinite(Date.parse(status.syncedAt)) ||
-          nowMs - Date.parse(status.syncedAt) > 300_000 ||
-          remaining - estimate < config.providerRemainingFloor)
+        (!current ||
+          (!status.quota.unlimited &&
+            (remaining === null ||
+              remaining - estimate < config.providerRemainingFloor)))
       ) {
         return {
           decision: {
@@ -194,10 +142,30 @@ export function reserveFreeCall(input: {
       // both modes the per-account daily cap applies, so one identity cannot
       // take a multi-million share merely because few accounts exist yet.
       // Trial mode keeps its own durable ledger and ignores all of this.
+      const providerGate = decideFreeAdmission({
+        config: { ...config, dailyWeightedTokens: Number.MAX_SAFE_INTEGER },
+        promptTokens: input.promptTokens,
+        outputBudget: input.outputBudget,
+        tokenWeight: input.model.tokenWeight,
+        usedWeightedTokens: 0,
+        reservedWeightedTokens: 0,
+        providerRemaining: remaining,
+        providerAllowed: current ? status.subscriptionAllowed : null,
+        providerUnlimited: current && status.quota.unlimited,
+        now: nowMs,
+      });
+
+      if (!providerGate.allowed) return { decision: providerGate, alert: null };
+
       const allocation = getAllocationConfig();
-      const shareTokens = allocation.enabled
-        ? ensureDailyAllocation(input.auth.userId, day)
-        : config.dailyWeightedTokens;
+      const shareTokens =
+        !trial.enabled && allocation.enabled
+          ? ensureDailyAllocation(
+              input.auth.userId,
+              day,
+              input.model.upstreamSlug,
+            )
+          : config.dailyWeightedTokens;
       const dailyAllowance = trial.enabled
         ? Number.MAX_SAFE_INTEGER
         : accountDailyAllowance(allocation, shareTokens);
@@ -217,9 +185,10 @@ export function reserveFreeCall(input: {
           : usedWeighted(input.auth.userId, day),
         reservedWeightedTokens: trial.enabled
           ? 0
-          : reservedWeighted(input.auth.userId, day, at),
+          : reservedWeighted(input.auth.userId, at),
         providerRemaining: remaining,
-        providerAllowed: status.subscriptionAllowed,
+        providerAllowed: current ? status.subscriptionAllowed : null,
+        providerUnlimited: current && status.quota.unlimited,
         now: nowMs,
       });
 
@@ -229,7 +198,7 @@ export function reserveFreeCall(input: {
             next.reason === "user_allowance" && capBinds
               ? {
                   ...next,
-                  message: `Daily per-account free cap reached (${dailyAllowance.toLocaleString("en-US")} weighted tokens). Resets at ${next.resetAt}.`,
+                  message: `Daily trial-credit cap reached (${dailyAllowance.toLocaleString("en-US")} weighted tokens). Resets at ${next.resetAt}.`,
                 }
               : next,
           alert: null,

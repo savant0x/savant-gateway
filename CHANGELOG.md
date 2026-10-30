@@ -3,6 +3,23 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-30 — Current upstream account values and daily trial credits
+
+- **FID-2026-1030-063 — critical — Provider account truth.** Separates quota
+  observation from catalog sync, fetches upstream on every explicit account
+  check and before daily-trial admission, fences concurrent/late writes, and
+  hides unavailable or expired values. Exact upstream counters/reset times are
+  separate from the conservative admission balance after local usage and holds.
+  Fixes the observed previous-day 19,631,919-used snapshot when upstream reports
+  0 used / 20,000,000 remaining. Verification and commit receipt follow in the FID.
+- **FID-2026-1030-063 — high — Daily allocated trial credits.** Reuses the
+  weighted-token allocation/usage/reservation ledger, caps configured allocation
+  against observed daily upstream capacity, rebalances unspent grants, and
+  exposes scoped customer credits with the upstream UTC reset. Token credits
+  remain separate from prepaid dollars. The one-time trial switch stays off;
+  no subscription sale, funding or deployment is activated. The supplied APInex
+  email is recorded as sandbox/PAYG context, not an invented rate card.
+
 ## 2026-10-30 — Launch implementation: offering evidence and security boundaries
 
 - **FID-2026-1030-047 — critical — Secret-safe diagnostics and account

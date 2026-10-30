@@ -11,8 +11,9 @@ import { reserveFreeCall } from "./store/free-pool";
 import { getModelForGateway } from "./store/models";
 import { trialBalance } from "./trial-ledger";
 import { readTrialConfig } from "./trials";
+import { refreshProviderRuntime } from "./providers/runtime";
 
-export function reserveTrialRoute(input: {
+export async function reserveTrialRoute(input: {
   auth: AuthenticatedKey;
   model: GatewayModel;
   promptTokens: number;
@@ -49,6 +50,9 @@ export function reserveTrialRoute(input: {
   );
   const exhausted =
     config.enabled && balance.granted > 0 && balance.remaining < estimate;
+
+  if (!exhausted) await refreshProviderRuntime(input.model.upstreamSlug);
+
   const admission = exhausted ? null : reserveFreeCall(input);
 
   if (admission?.ok) {

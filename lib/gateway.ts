@@ -236,7 +236,7 @@ export async function handleChatCompletions(request: Request) {
   } else if (access.kind === "none" && free) {
     const reservationBudget =
       readRequestedOutputBudget(body) ?? DEFAULT_OUTPUT_BUDGET;
-    const admission = reserveTrialRoute({
+    const admission = await reserveTrialRoute({
       auth,
       model,
       promptTokens,

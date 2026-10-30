@@ -9,6 +9,7 @@ import { CustomerKeysCard } from "@/components/account/keys-card";
 import { SubscriptionCard } from "@/components/account/subscription-card";
 import { TopupCard } from "@/components/account/topup-card";
 import { TrialCard } from "@/components/account/trial-card";
+import { DailyTrialCard } from "@/components/account/daily-trial-card";
 import { StatCard } from "@/components/dashboard/chips";
 import {
   formatCalendarDay,
@@ -129,6 +130,7 @@ export default async function AccountPage({
         </section>
 
         <TrialCard userId={customer.id} />
+        <DailyTrialCard userId={customer.id} />
 
         <section className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
           <TopupCard configured={stripe.configured} reason={stripe.reason} />

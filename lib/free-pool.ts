@@ -24,8 +24,12 @@ export type FreeAdmissionAllowed = {
 export type FreeAdmissionBlocked = {
   allowed: false;
   reason:
-    "provider_blocked" | "provider_pool" | "user_allowance" | "trial_exhausted";
-  status: 402 | 429;
+    | "provider_blocked"
+    | "provider_pool"
+    | "provider_unavailable"
+    | "user_allowance"
+    | "trial_exhausted";
+  status: 402 | 429 | 503;
   type: "insufficient_quota" | "rate_limit_error";
   message: string;
   retryAfterSeconds: number;
@@ -93,6 +97,7 @@ export function decideFreeAdmission(input: {
   reservedWeightedTokens: number;
   providerRemaining: number | null;
   providerAllowed: boolean | null;
+  providerUnlimited?: boolean;
   now?: number;
 }): FreeAdmission {
   const now = input.now ?? Date.now();
@@ -117,8 +122,26 @@ export function decideFreeAdmission(input: {
   }
 
   if (
+    input.providerAllowed === null ||
+    (input.providerRemaining === null && !input.providerUnlimited)
+  ) {
+    return {
+      allowed: false,
+      reason: "provider_unavailable",
+      status: 503,
+      type: "insufficient_quota",
+      message:
+        "Current upstream free capacity is unavailable. Try again shortly.",
+      retryAfterSeconds: 5,
+      resetAt: null,
+    };
+  }
+
+  if (
+    !input.providerUnlimited &&
     input.providerRemaining !== null &&
-    input.providerRemaining < input.config.providerRemainingFloor
+    input.providerRemaining - estimatedWeightedTokens <
+      input.config.providerRemainingFloor
   ) {
     return {
       allowed: false,
@@ -145,7 +168,7 @@ export function decideFreeAdmission(input: {
       reason: "user_allowance",
       status: 429,
       type: "rate_limit_error",
-      message: `Daily free-tier allowance reached (${input.config.dailyWeightedTokens.toLocaleString("en-US")} weighted tokens). Resets at ${resetAt}.`,
+      message: `Daily trial-credit allocation reached (${input.config.dailyWeightedTokens.toLocaleString("en-US")} weighted tokens). Resets at ${resetAt}.`,
       retryAfterSeconds,
       resetAt,
     };

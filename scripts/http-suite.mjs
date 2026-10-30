@@ -14,6 +14,7 @@ import {
   waitForServer,
 } from "./http-suite/harness.mjs";
 import { seedCatalog } from "./http-suite/seed.mjs";
+import { runQuotaChecks } from "./http-suite/quota-checks.mjs";
 
 const ADMIN_PASSWORD = "http-suite-admin-password";
 const ADMIN_SECRET = "http-suite-admin-secret-0123456789abcdef";
@@ -49,6 +50,8 @@ try {
       STRIPE_SECRET_KEY: "sk_test_http_suite_placeholder",
       STRIPE_WEBHOOK_SECRET: WEBHOOK_SECRET,
       ARTIFICIAL_ANALYSIS_API_KEY: "",
+      PROVIDER_KEY: "",
+      COMMANDCODE_API_KEY: "",
       // The suite proves disposable production startup: loopback origin,
       // throwaway database file. The validator requires this to be spelled
       // out rather than silently allowing a temp-database production start.
@@ -63,6 +66,8 @@ try {
 
   database = await waitForSchema(workspace.dbPath);
   seedCatalog(database, { mockBaseUrl: mock.baseUrl });
+
+  await runQuotaChecks({ baseUrl, db: database, mock, adminPassword: ADMIN_PASSWORD });
 
   await runChecks({
     baseUrl,

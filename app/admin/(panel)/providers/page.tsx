@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { AdminProvidersPanel } from "@/components/admin/providers-panel";
 import { listProviders } from "@/lib/store";
+import { refreshEnabledProviderAccounts } from "@/lib/providers/runtime";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,9 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function AdminProvidersPage() {
+export default async function AdminProvidersPage() {
+  await refreshEnabledProviderAccounts();
+
   const providers = listProviders();
 
   return (

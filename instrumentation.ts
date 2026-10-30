@@ -1,5 +1,3 @@
-import { validateProductionConfig } from "./lib/production-config.ts";
-
 /**
  * Runs once when a Next.js server starts. A production process that cannot
  * honour the storage/capacity contract must not begin serving: returning a
@@ -8,10 +6,12 @@ import { validateProductionConfig } from "./lib/production-config.ts";
  * serve traffic and does not receive the deployment's runtime environment.
  */
 export async function register() {
-  if (process.env.NEXT_RUNTIME === "edge") return;
+  if (process.env.NEXT_RUNTIME !== "nodejs") return;
   if (process.env.NODE_ENV !== "production") return;
   if (process.env.NEXT_PHASE === "phase-production-build") return;
 
+  const { validateProductionConfig } =
+    await import("./lib/production-config.ts");
   const config = validateProductionConfig(process.env);
 
   if (config.ok) return;

@@ -12,18 +12,14 @@ import { replaceModels } from "../store/models";
 import {
   getProvider,
   listProviderRecords,
-  saveProviderRuntime,
+  saveProviderCatalogSync,
 } from "../store/providers";
 import { getMarkupBps } from "../store/settings";
 
 import { buildSyncedModels, type ModelSpec } from "./catalog";
 import { providerKeyConfigured } from "./registry";
-import {
-  fetchProviderBalance,
-  fetchProviderSubscription,
-  providerFetch,
-  readProviderError,
-} from "./request";
+import { providerFetch, readProviderError } from "./request";
+import { refreshProviderRuntime } from "./runtime";
 
 const DEFAULT_PUBLIC_MODELS_URL = "https://apinex.bond/api/public/models";
 
@@ -78,73 +74,12 @@ export async function syncProvider(slug: string): Promise<ProviderSyncSummary> {
   if (!provider) throw new Error(`Unknown provider: ${slug}`);
 
   if (!providerKeyConfigured(provider.keyEnvVar)) {
-    saveProviderRuntime(slug, {
-      status: "unconfigured",
-      balanceUsd: null,
-      rpm: null,
-      rpmPlan: null,
-      subscriptionMode: null,
-      subscriptionPlan: null,
-      subscriptionTokenLimit: null,
-      subscriptionTokensUsed: null,
-      subscriptionTokensRemaining: null,
-      subscriptionAllowed: null,
-      subscriptionExpiresAt: null,
-      error: null,
-    });
-
     return unconfiguredSummary(provider);
   }
 
-  const [balanceResult, subscriptionResult] = await Promise.allSettled([
-    provider.capabilities.balance
-      ? fetchProviderBalance(provider)
-      : Promise.resolve(null),
-    provider.capabilities.subscription
-      ? fetchProviderSubscription(provider)
-      : Promise.resolve(null),
-  ]);
-  const balance =
-    balanceResult.status === "fulfilled" ? balanceResult.value : null;
-  const subscription =
-    subscriptionResult.status === "fulfilled" ? subscriptionResult.value : null;
-  const warnings: string[] = [];
-
-  if (balanceResult.status === "rejected") {
-    warnings.push(`Balance: ${redactSecrets(balanceResult.reason)}`);
-  }
-  if (subscriptionResult.status === "rejected") {
-    warnings.push(`Subscription: ${redactSecrets(subscriptionResult.reason)}`);
-  }
-
-  let models: UpstreamModel[];
-
-  try {
-    models = await fetchUpstreamModels(provider);
-  } catch (error) {
-    // The provider can echo the key it was sent; the persisted runtime row is
-    // durable, so redact before it is written as well as before it is thrown.
-    const message = redactSecrets(
-      error instanceof Error ? error.message : String(error),
-    );
-
-    saveProviderRuntime(slug, {
-      status: "error",
-      balanceUsd: balance?.balanceUsd ?? null,
-      rpm: balance?.rpm ?? null,
-      rpmPlan: balance?.rpmPlan ?? null,
-      subscriptionMode: subscription?.mode ?? null,
-      subscriptionPlan: subscription?.plan ?? null,
-      subscriptionTokenLimit: subscription?.tokenLimit ?? null,
-      subscriptionTokensUsed: subscription?.tokensUsed ?? null,
-      subscriptionTokensRemaining: subscription?.tokensRemaining ?? null,
-      subscriptionAllowed: subscription?.allowed ?? null,
-      subscriptionExpiresAt: subscription?.expiresAt ?? null,
-      error: message,
-    });
-
-    throw error;
-  }
+  const { balance, subscription, warnings } =
+    await refreshProviderRuntime(slug);
+  const models = await fetchUpstreamModels(provider);
 
   const metadata =
     provider.slug === "savant"
@@ -161,26 +96,8 @@ export async function syncProvider(slug: string): Promise<ProviderSyncSummary> {
     (model) =>
       !(model.allowFree && model.tokenWeight > 0) && model.costInputMicros > 0,
   ).length;
-  const status =
-    subscription?.allowed === false || balance?.limitReached
-      ? "exhausted"
-      : "active";
 
-  saveProviderRuntime(slug, {
-    status,
-    balanceUsd: balance?.balanceUsd ?? null,
-    rpm: balance?.rpm ?? null,
-    rpmPlan: balance?.rpmPlan ?? null,
-    subscriptionMode: subscription?.mode ?? null,
-    subscriptionPlan: subscription?.plan ?? null,
-    subscriptionTokenLimit: subscription?.tokenLimit ?? null,
-    subscriptionTokensUsed: subscription?.tokensUsed ?? null,
-    subscriptionTokensRemaining: subscription?.tokensRemaining ?? null,
-    subscriptionAllowed: subscription?.allowed ?? null,
-    subscriptionExpiresAt: subscription?.expiresAt ?? null,
-    error: warnings.length > 0 ? warnings.join("; ") : null,
-    syncedAt: new Date().toISOString(),
-  });
+  saveProviderCatalogSync(slug);
 
   return {
     slug,

@@ -12,6 +12,7 @@ import {
   DEFAULT_FREE_POOL_DAILY_TOKENS,
   readAllocationConfig,
   remainingAllocation,
+  observedDailyPool,
 } from "../lib/allocation.ts";
 import {
   activeAccountCount,
@@ -201,7 +202,7 @@ test("only active accounts holding an active key count", () => {
   assert.equal(activeAccountCount(db), 1);
 });
 
-test("allocation is granted once per day and is stable for a returning account", () => {
+test("a returning allocation respects a lowered observed pool and resets by day", () => {
   const db = database([{ id: "u1" }, { id: "u2" }]);
   const base = config();
 
@@ -220,7 +221,7 @@ test("allocation is granted once per day and is stable for a returning account",
       config: config({ dailyPoolTokens: 1_000_000 }),
       now: NOW,
     }),
-    9_000_000,
+    450_000,
   );
   assert.equal(
     ensureAllocation(db, {
@@ -231,6 +232,36 @@ test("allocation is granted once per day and is stable for a returning account",
     }),
     9_000_000,
   );
+});
+
+test("daily trial capacity excludes externally consumed upstream tokens", () => {
+  assert.equal(observedDailyPool({ configured: 20_000_000, limit: 20_000_000,
+    remaining: 5_000_000, localUsedBeforeObservation: 1_000_000 }), 6_000_000);
+  assert.equal(observedDailyPool({ configured: 20_000_000, limit: null,
+    remaining: 20_000_000, localUsedBeforeObservation: 0 }), 0);
+  assert.equal(observedDailyPool({ configured: 20_000_000, limit: 20_000_000,
+    remaining: null, localUsedBeforeObservation: 0 }), 0);
+  assert.equal(observedDailyPool({ configured: 10_000, limit: 20_000_000,
+    remaining: 20_000_000, localUsedBeforeObservation: 1_000_000 }), 10_000);
+  assert.equal(observedDailyPool({ configured: 10_000, unlimited: true,
+    limit: null, remaining: null, localUsedBeforeObservation: 0 }), 10_000);
+});
+
+test("suspended accounts release unspent allocation for the active user base", () => {
+  const db = database([{ id: "u1" }, { id: "u2" }, { id: "u3", key: false }]);
+  const base = config();
+
+  for (const id of ["u1", "u2"]) {
+    ensureAllocation(db, { userId: id, day: DAY, config: base, now: NOW });
+  }
+  db.prepare("UPDATE users SET status = 'suspended' WHERE id = 'u2'").run();
+  db.prepare(`INSERT INTO api_keys (id, user_id, name, prefix, secret_hash, created_at)
+    VALUES ('key_u3', 'u3', 'default', 'sk-test', 'hash_u3', ?)`)
+    .run(NOW);
+  assert.equal(ensureAllocation(db, { userId: "u3", day: DAY, config: base, now: NOW }), 9_000_000);
+  assert.equal(db.prepare("SELECT allocated_tokens FROM free_pool_allocations WHERE user_id='u2'").get().allocated_tokens, 0);
+  assert.equal(allocatedOn(db, DAY), 18_000_000);
+  db.close();
 });
 
 test("a joining account rebalances an unspent allocation", () => {

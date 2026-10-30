@@ -9,6 +9,7 @@ import { CONTEXT_BANNER_MAX_CHARS } from "@/lib/context-banner";
 import { getAllocationSummary } from "@/lib/store/allocations";
 import { getBannerConfig } from "@/lib/store/banner";
 import { utcDay } from "@/lib/store/free-pool";
+import { refreshProviderRuntime } from "@/lib/providers/runtime";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,9 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function AdminGatewayPage() {
+export default async function AdminGatewayPage() {
+  await refreshProviderRuntime("savant");
+
   const summary = getAllocationSummary(utcDay());
   const banner = getBannerConfig();
 
@@ -29,7 +32,7 @@ export default function AdminGatewayPage() {
             Gateway
           </p>
           <h1 className="mt-1 text-3xl font-semibold tracking-[-0.03em]">
-            Free pool and context
+            Daily trial credits and context
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
             The upstream free plan resets once per UTC day. Here you set how
@@ -47,7 +50,11 @@ export default function AdminGatewayPage() {
           detail={`${summary.allocationBps / 100}% of the daily pool`}
           icon="fa-arrows-split-up-and-left"
           label="Allocatable"
-          value={formatNumber(summary.allocatableTokens)}
+          value={
+            summary.capacityAvailable
+              ? formatNumber(summary.allocatableTokens)
+              : "Unavailable"
+          }
         />
         <StatCard
           detail={`reserved ${formatNumber(summary.reservedTokens)}`}
@@ -59,7 +66,11 @@ export default function AdminGatewayPage() {
           detail={`${summary.activeAccounts} activated ${summary.activeAccounts === 1 ? "account" : "accounts"}`}
           icon="fa-equals"
           label="Per account"
-          value={formatNumber(summary.perAccountTokens)}
+          value={
+            summary.capacityAvailable
+              ? formatNumber(summary.perAccountTokens)
+              : "Unavailable"
+          }
         />
         <StatCard
           detail="settled weighted tokens today"
@@ -79,8 +90,9 @@ export default function AdminGatewayPage() {
         <Card.Header>
           <Card.Title>Activated accounts today</Card.Title>
           <Card.Description>
-            Allocation rows appear when an account first calls a free model.
-            Accounts without a row have not used the shared pool yet.
+            Allocation rows appear when an account checks its daily trial
+            credits or first calls a trial model. Usage and in-flight holds are
+            tracked separately from the allocation.
           </Card.Description>
         </Card.Header>
         <Card.Content className="px-0 pb-0">

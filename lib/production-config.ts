@@ -71,12 +71,18 @@ function issue(code: ProductionIssueCode, message: string): ProductionIssue {
   return { code, message };
 }
 
-function readOrigin(raw: string | undefined, issues: ProductionIssue[]): string | null {
+function readOrigin(
+  raw: string | undefined,
+  issues: ProductionIssue[],
+): string | null {
   const value = raw?.trim() ?? "";
 
   if (!value) {
     issues.push(
-      issue("origin_missing", "NEXT_PUBLIC_SITE_URL is required in production."),
+      issue(
+        "origin_missing",
+        "NEXT_PUBLIC_SITE_URL is required in production.",
+      ),
     );
 
     return null;
@@ -88,14 +94,19 @@ function readOrigin(raw: string | undefined, issues: ProductionIssue[]): string 
     url = new URL(value);
   } catch {
     issues.push(
-      issue("origin_invalid", "NEXT_PUBLIC_SITE_URL must be a valid URL origin."),
+      issue(
+        "origin_invalid",
+        "NEXT_PUBLIC_SITE_URL must be a valid URL origin.",
+      ),
     );
 
     return null;
   }
 
   if (url.protocol !== "https:") {
-    issues.push(issue("origin_insecure", "NEXT_PUBLIC_SITE_URL must use https."));
+    issues.push(
+      issue("origin_insecure", "NEXT_PUBLIC_SITE_URL must use https."),
+    );
   }
 
   const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, "");
@@ -109,7 +120,13 @@ function readOrigin(raw: string | undefined, issues: ProductionIssue[]): string 
     );
   }
 
-  if (url.username || url.password || url.pathname !== "/" || url.search || url.hash) {
+  if (
+    url.username ||
+    url.password ||
+    url.pathname !== "/" ||
+    url.search ||
+    url.hash
+  ) {
     issues.push(
       issue(
         "origin_invalid",
@@ -153,7 +170,7 @@ function readDatabasePath(
     return null;
   }
 
-  const resolved = resolve(value);
+  const resolved = resolve(/* turbopackIgnore: true */ value);
 
   if (options.allowEphemeral) return resolved;
 
@@ -207,7 +224,9 @@ function readWorkerIssue(env: Env, issues: ProductionIssue[]) {
  * Non-production environments may use a localhost origin and a relative or
  * in-memory database; only a production start is held to the durable contract.
  */
-export function validateProductionConfig(env: Env = process.env): ProductionConfig {
+export function validateProductionConfig(
+  env: Env = process.env,
+): ProductionConfig {
   const disposable = readDisposable(env);
 
   if (env.NODE_ENV !== "production") {

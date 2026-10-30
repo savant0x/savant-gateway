@@ -12,6 +12,12 @@
 
 ## Summary
 
+Related implementation FID-2026-1030-063 repairs the demonstrated previous-day
+quota, independent account refresh, strict parsing, UTC reset admission and
+daily trial-credit allocation/readouts. Its receipt does not close this broader
+launch contract: lifetime-trial prerequisites, cross-mode admission dependencies
+and real launch/reset acceptance retain their original obligations.
+
 Keep provider quota fresh and enforce reset, unknown/unlimited and allocation
 semantics without inventing capacity. Prove both daily-free operation and the
 disabled lifetime-trial safety branch; activation requires a separate offering decision.

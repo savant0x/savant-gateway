@@ -75,8 +75,32 @@ export function reservePort() {
 }
 
 export async function startMockUpstream({ expectedKey }) {
-  const state = { calls: 0, lastRequest: null, redirected: false };
+  const state = {
+    calls: 0, lastRequest: null, redirected: false, accountChecks: 0,
+    quotaFailure: false, balanceFailure: false, quotaDelay: 0,
+    quota: { mode: "free", plan_label: "FREE", unlimited: false,
+      token_limit: 20_000_000, tokens_used: 0, tokens_remaining: 20_000_000,
+      allowed: true, resets_at_utc: null },
+  };
   const server = createHttpServer((request, response) => {
+    if (request.method === "GET" && ["/balance", "/subscription"].includes(request.url)) {
+      if (request.headers.authorization !== `Bearer ${expectedKey}`) {
+        response.writeHead(401);
+        response.end();
+        return;
+      }
+      const quota = request.url === "/subscription";
+      const failed = quota ? state.quotaFailure : state.balanceFailure;
+      const data = quota ? { ...state.quota } : { balance_usd: 0, rpm: 15, rpm_plan: "free" };
+
+      if (quota) state.accountChecks++;
+      setTimeout(() => {
+        response.writeHead(failed ? 502 : 200, { "content-type": "application/json" });
+        response.end(JSON.stringify(failed ? { error: { message: `Bearer ${expectedKey}` } } : data));
+      }, quota ? state.quotaDelay : 0);
+      return;
+    }
+
     if (request.url === "/redirect-target") {
       // Reached only when the gateway follows a provider redirect. The test
       // asserts this stays false: a redirect must not carry the key onward.

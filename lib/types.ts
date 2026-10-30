@@ -1,3 +1,5 @@
+import type { QuotaObservation } from "./provider-quota";
+
 export type ModelAccess = "free" | "subscription" | "paid";
 
 export type ModelGroupSummary = {
@@ -12,6 +14,9 @@ export type ModelGroupSummary = {
 };
 
 export type ProviderStatus = {
+  quota: QuotaObservation;
+  balanceObservedAt: string | null;
+  admissionRemainingTokens: number | null;
   configured: boolean;
   status: "active" | "exhausted" | "error" | "unconfigured";
   balanceUsd: number | null;

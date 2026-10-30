@@ -38,7 +38,7 @@ model. It does not approve an offering, a price, a limit or a spend budget.
 | Plans in local database | 0 rows | Observed | local `plans` table, read 2026-10-30 |
 | Paid upstream wallet | $0.00, plan `free`, account RPM 15 | Observed, dated; not live | local providers row, synced 2026-10-29T21:15:21Z |
 | Outstanding customer credit (local) | $5.00, held $0.00, one ledger row, zero paid top-ups | Observed | local `users`, `credit_ledger`, `topups`, read 2026-10-30 |
-| Resale permission from Apinex | — | Unknown | No dated written permission is recorded |
+| APInex partner response | Provider offers support for Savant Code as a foundation customer; exact commercial/resale terms are unconfirmed | Provider-supplied evidence | Email supplied by operator 2026-10-30; see below |
 | Confirmed per-model upstream rates | — | Unknown | Synced values exist, but no dated provider rate-card confirmation is recorded |
 | Payment processing fee | — | Unknown | `docs/research/` suggests card fees; research is not a contract |
 | Refund/dispute reserve | — | Unknown | No operator policy recorded |
@@ -75,7 +75,29 @@ The outstanding customer credit of $5.00 is a service liability, not revenue:
 it must remain deliverable from the funded upstream or refundable under the
 approved policy. It cannot be counted as operating margin.
 
-## Conservative traffic position
+## Provider clarification supplied 2026-10-30
+
+The operator supplied an email response from Team APInex, dated October 30,
+describing the complimentary 20M allowance as an introductory integration
+sandbox pool attached to the master provider account. It is not 20M per user.
+The response describes commercial production as PAYG wholesale per million
+tokens with selectable RPM tiers and commercial routes. Those statements do
+not establish this account's funded balance, a contracted RPM ceiling, exact
+per-model rates, or specific resale terms. Claims about fixes in APInexGate
+are not evidence about this independently built gateway's implementation.
+
+Operator steering after supplying the email: daily trial credits with allocation
+from the shared resetting pool, aligned with actual API values. Token credits
+are weighted-token usage allowances, separate from prepaid dollar credit. The
+pool and safety reserve are shared across activated users; paid inference still
+requires a funded wallet. This does not assert commercial permission to sell
+the sandbox pool or activate the separate lifetime-trial system.
+
+Read-only live account observation 2026-10-30 15:42:13 UTC: balance $0.00,
+RPM 15, plan FREE, 0 / 20,000,000 used, resets_at_utc October 31 00:00 UTC.
+These are dated observations, not permanent configured capacity.
+
+## Conservative traffic position (account constraints)
 
 Paid upstream inference can only be served from a funded provider wallet. The
 last recorded local wallet reading is **$0.00**, and no newer funding evidence

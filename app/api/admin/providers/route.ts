@@ -1,6 +1,7 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
 import { createProvider, getProvider, listProviders } from "@/lib/store";
 import { readProviderInput } from "@/lib/providers/registry";
+import { refreshEnabledProviderAccounts } from "@/lib/providers/runtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,6 +10,8 @@ export async function GET(request: Request) {
   const blocked = await guardAdminApi(request);
 
   if (blocked) return blocked;
+
+  await refreshEnabledProviderAccounts();
 
   return Response.json({ providers: listProviders() }, { headers: NO_STORE });
 }

@@ -7,6 +7,7 @@ import { Navbar } from "@/components/navbar";
 import { siteConfig } from "@/config/site";
 import { getAdminSession } from "@/lib/admin-auth";
 import { getOverview } from "@/lib/store";
+import { refreshProviderRuntime } from "@/lib/providers/runtime";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,8 @@ export default async function DashboardPage() {
   if (process.env.NODE_ENV === "production" && !(await getAdminSession())) {
     redirect("/admin/login");
   }
+
+  await refreshProviderRuntime("savant");
 
   return (
     <div className="workspace relative flex min-h-screen flex-col">

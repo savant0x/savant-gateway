@@ -10,6 +10,8 @@ export type AllocationSummaryPayload = {
   day: string;
   enabled: boolean;
   dailyPoolTokens: number;
+  configuredDailyPoolTokens: number;
+  capacityAvailable: boolean;
   allocationBps: number;
   allocatableTokens: number;
   reservedTokens: number;
@@ -36,7 +38,9 @@ export function GatewaySettings({
 }) {
   const router = useRouter();
   const [allocationEnabled, setAllocationEnabled] = useState(summary.enabled);
-  const [dailyPool, setDailyPool] = useState(String(summary.dailyPoolTokens));
+  const [dailyPool, setDailyPool] = useState(
+    String(summary.configuredDailyPoolTokens),
+  );
   const [sharePercent, setSharePercent] = useState(
     (summary.allocationBps / 100).toString(),
   );
@@ -149,15 +153,15 @@ export function GatewaySettings({
     <div className="space-y-4">
       <Card variant="secondary">
         <Card.Header>
-          <Card.Title>Daily free-pool allocation</Card.Title>
+          <Card.Title>Daily trial-credit allocation</Card.Title>
           <Card.Description>
             The upstream free plan grants one weighted-token pool per UTC day.
             This splits a share of it evenly across activated accounts — active
             customers holding at least one active key — and holds the rest back.
-            An account keeps its allocation for the day; accounts added later
-            can only take what is still unallocated. The per-account cap then
-            limits what one identity may actually spend per day, so a farm of
-            accounts cannot bank the share of a pool that few accounts divide.
+            The configured ceiling is capped by fresh upstream capacity. Unspent
+            allocations rebalance as accounts join or capacity shrinks,
+            preserving recorded usage and live holds. The per-account daily cap
+            limits what one identity may spend; credits do not carry over.
           </Card.Description>
         </Card.Header>
         <Card.Content className="space-y-4">
@@ -172,7 +176,7 @@ export function GatewaySettings({
               Shared allocation enabled
             </label>
             <span className="flex items-center gap-2 text-sm text-muted">
-              Daily pool
+              Daily pool ceiling
               <Input
                 aria-label="Daily pool weighted tokens"
                 className="w-40"
@@ -217,7 +221,9 @@ export function GatewaySettings({
             <p>
               Allocatable today:{" "}
               <span className="text-foreground">
-                {formatTokens(summary.allocatableTokens)}
+                {summary.capacityAvailable
+                  ? formatTokens(summary.allocatableTokens)
+                  : "Unavailable"}
               </span>
             </p>
             <p>
@@ -241,11 +247,15 @@ export function GatewaySettings({
             <p>
               Share per account:{" "}
               <span className="text-foreground">
-                {formatTokens(summary.perAccountTokens)}
+                {summary.capacityAvailable
+                  ? formatTokens(summary.perAccountTokens)
+                  : "Unavailable"}
               </span>{" "}
               · effective{" "}
               <span className="text-foreground">
-                {formatTokens(summary.effectivePerAccountTokens)}
+                {summary.capacityAvailable
+                  ? formatTokens(summary.effectivePerAccountTokens)
+                  : "Unavailable"}
               </span>
             </p>
           </div>

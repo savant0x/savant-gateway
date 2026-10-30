@@ -97,7 +97,7 @@ test("in-flight reservations count toward the daily allowance", () => {
   assert.equal(decision.reason, "user_allowance");
   assert.equal(decision.status, 429);
   assert.equal(decision.type, "rate_limit_error");
-  assert.match(decision.message, /Daily free-tier allowance reached/);
+  assert.match(decision.message, /Daily trial-credit allocation reached/);
   assert.equal(decision.resetAt, "2026-10-30T00:00:00.000Z");
   assert.equal(decision.retryAfterSeconds, 64_800);
 });
@@ -137,19 +137,23 @@ test("a provider that disallows free calls blocks admission", () => {
   assert.equal(decision.status, 429);
 });
 
-test("an unknown provider remaining still enforces the user allowance", () => {
-  const allowed = admission({ providerRemaining: null });
-
-  assert.equal(allowed.allowed, true);
-  assert.equal(allowed.alert, false);
-
-  const blocked = admission({
-    providerRemaining: null,
-    usedWeightedTokens: 500_000,
-  });
-
+test("unknown upstream quota fails closed before allowance reservation", () => {
+  const blocked = admission({ providerRemaining: null });
   assert.equal(blocked.allowed, false);
-  assert.equal(blocked.reason, "user_allowance");
+  assert.equal(blocked.reason, "provider_unavailable");
+  assert.equal(blocked.status, 503);
+  assert.equal(admission({ providerAllowed: null }).allowed, false);
+});
+
+test("explicit unlimited quota still requires provider permission", () => {
+  assert.equal(admission({ providerRemaining: null, providerUnlimited: true }).allowed, true);
+  assert.equal(admission({ providerRemaining: null, providerUnlimited: true,
+    providerAllowed: null }).allowed, false);
+});
+
+test("a reservation cannot cross the provider safety floor", () => {
+  assert.equal(admission({ providerRemaining: CONFIG.providerRemainingFloor + 15_000 }).allowed, true);
+  assert.equal(admission({ providerRemaining: CONFIG.providerRemainingFloor + 14_999 }).allowed, false);
 });
 
 test("a low provider pool raises the alert flag but still admits", () => {

@@ -1,6 +1,6 @@
 import type { DatabaseHandle } from "./columns";
 
-import { ensureColumn, hasColumn } from "./columns";
+import { ensureColumn, hasColumn } from "./columns.ts";
 
 /**
  * Provider registry plus the model and usage columns that carry upstream
@@ -38,6 +38,19 @@ export function providerSchema(database: DatabaseHandle) {
       updated_at TEXT NOT NULL
     );
   `);
+
+  for (const [column, definition] of [
+    ["balance_observed_at", "TEXT"],
+    ["quota_observed_at", "TEXT"],
+    ["quota_checked_at", "TEXT"],
+    ["quota_reset_at", "TEXT"],
+    ["quota_unlimited", "INTEGER NOT NULL DEFAULT 0"],
+    ["quota_error", "TEXT"],
+    ["runtime_lease_id", "TEXT"],
+    ["runtime_lease_until", "TEXT"],
+  ]) {
+    ensureColumn(database, "providers", column, definition);
+  }
 
   ensureColumn(
     database,

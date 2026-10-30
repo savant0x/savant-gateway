@@ -2,6 +2,49 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-30 (provider account truth: 063)
+
+Operator requests a complete trace, FID and Perfection Loop for the provider
+quota mismatch, and states: "it's paramount that the downstream correctly shows
+the real account value at the moment of checking and never a stale value
+otherwise it breaks everything downstream for the entire platform".
+
+Automation level 3, strict, single agent. FID-2026-1030-063 owns the demonstrated
+defect and the quota-refresh portion of 049; 049's other allocation/trial launch
+obligations remain active. No offering, funding or deployment is activated.
+
+- [x] **Q1 — Complete trace and converged design.** Trace upstream → parser →
+  persisted observation → operator/public readouts → free admission/settlement.
+  Evidence at 15:42 UTC: stored observation October 29 21:15 UTC has 19,631,919
+  used / 368,081 remaining; direct authenticated October 30 read returns 0 used /
+  20,000,000 remaining and resets_at_utc October 31 00:00 UTC.
+- [x] **Q2 — Repair account truth.** Fresh upstream reads on every explicit
+  account check and free admission, independently of catalog sync. Bound and
+  fence concurrent refreshes; never substitute cached success on failure.
+  Preserve unknown, zero, unlimited and UTC reset semantics. Retain local usage
+  and holds conservatively during refresh; mask stale/unavailable current values.
+- [ ] **Q3 — Verification and closure.** Regress the real mismatch, failures,
+  reset and races; verify production HTTP callers and truthful rendered values;
+  run declared gates, commit, archive with evidence and normally push. Preserve
+  the two untracked operator research documents.
+- [x] **Q4 — Daily trial credits.** Operator clarified "since it resets 20m
+  provider wide daily" and "align the reset w/ the real values and sync our
+  backend to the api". Extend the existing daily allocation, not the lifetime
+  trial switch: cap the configured pool by observed upstream capacity, reserve
+  before dispatch, expose the customer's daily weighted-token credits and reset,
+  and keep credit-wallet money separate. Record the supplied APInex email as
+  sandbox/PAYG evidence without inventing commercial rates or permission terms.
+- [x] **Q5 — Clean startup build.** Automation level 3. The first production
+  build exposed four warnings inherited from 057: static Node-only imports in
+  Edge instrumentation and an unbounded path tracing hint. Use the documented
+  Node-runtime conditional import and existing turbopackIgnore convention, then
+  rerun build. Evidence: October 30 build output, four warnings, exit 0.
+
+Q2/Q4/Q5 evidence: 242 unit tests, 242 production HTTP checks, trial HTTP all
+PASS; clean lint/typecheck/quality/build. Live local HTTP 200 at 16:09:18 UTC:
+$0, 0 used / 20M remaining, reset October 31 00:00 UTC. Customer and operator
+figures clear while checking/unavailable. Q3's commit/archive is the final step.
+
 ## Current Session — 2026-10-30 (production deployment readiness: 057)
 
 Operator request: "Implement FID-2026-1030-057 for production deployment readiness,

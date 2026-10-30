@@ -216,6 +216,14 @@ preserved), trial HTTP PASS, quality PASS.
 
 ## Remaining Gates
 
+Every deferred item is now an executable launch gate in
+`docs/launch-plan.md` → Phase 1 → "Pre-launch policy gates", with the evidence
+that closes it. The list covers registration and address, host retention facts,
+the role contact address, the tax position staying matched to the checkout
+payload, the Stripe business profile and a rehearsed refund, a real deletion,
+the counsel decision, third-party script and header drift, plan-sale terms and
+the authoritative language.
+
 - No counsel reviewed the text. The operator accepted that on 2026-10-30; the
   published documents describe themselves as versioned text, not legal advice.
 - Registering the entity and publishing a real address is the next substantive

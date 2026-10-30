@@ -73,7 +73,7 @@ payment service. Keep research labelled as decision input rather than code truth
 | Prepaid access | Implemented, real acceptance missing | Select launch models and prices, fund upstream and pass phase 5 |
 | Upstream allowance/RPM | Historical account observations only | Refresh real account limits and terms; verify resale permission and actual per-model rates before publishing savings claims |
 | Billing treatment | Prompt/output micro-dollar math implemented | Decide treatment of cached/reasoning/tool usage and map actual provider billing fields; disclose estimation where necessary |
-| Customer policies | Not certified by this plan | Approve terms, privacy, refund/dispute, promotional credit, expiry, acceptable use, retention and support commitments |
+| Customer policies | v1.1 published and effective 2026-10-30; acceptance recorded per version | Close the pre-launch policy gates below; any text change is a new version with re-acceptance |
 
 Use [business model](business-model.md), [research brief](business-plan-research-prompt.md)
 and `docs/research/` as inputs. Reconcile every quantitative claim with measured
@@ -82,6 +82,62 @@ provider costs and operating limits; research is not an acceptance receipt.
 Public launch cannot proceed while the offering is ambiguous. Disabled features
 must stay absent from promises and purchase paths. If lifetime trials remain
 disabled, do not describe ordinary daily free access as a lifetime trial.
+
+### Pre-launch policy gates
+
+These are the items policy v1.1 could not settle, deferred deliberately because
+they depend on hosting, registration or payment setup that does not exist yet.
+They are launch gates, not launch blockers for development work. Each closes with
+written evidence, not intent, and each text change ships as a new policy version
+(see `docs/policies/README.md`) with the acceptance prompt already built.
+
+- [ ] **Registered identity and postal address.** v1.1 states that the operator
+  is not registered as a separate legal entity and that a postal address is
+  available on request. Close by registering, then publishing the entity form and
+  address in terms §8 and privacy §1. Evidence: the new version live, the
+  placeholder sentence removed, no address invented earlier.
+- [ ] **Retention facts against the chosen host.** Terms claim 30-day log
+  retention and 30-day backups with deletions not propagated. Both are statements
+  about the host, not the application. Close during Phase 3 by checking what the
+  chosen provider actually retains and either matching the configuration or
+  changing the numbers in a new version. Evidence: host retention setting plus
+  the matching published sentence.
+- [ ] **Role contact address on an owned domain.** The contract contact is
+  currently a personal mailbox. Close with a domain and a monitored role address
+  in `lib/legal-meta.ts` and the body text. Evidence: a delivered test message to
+  that address, and `rg` showing no personal address in policy text.
+- [ ] **Tax position matched to code.** v1.1 says no tax is calculated or
+  collected, which is what checkout does. If Stripe Tax is enabled before launch,
+  checkout must send `automatic_tax: { enabled: true }` (and tax-id collection)
+  **and** the tax paragraph must change in the same version. Doing one without
+  the other makes the documents false. Evidence: the checkout payload and the
+  published paragraph agree, plus Stripe's tax registration state recorded.
+- [ ] **Stripe business profile and refunds.** A missing address stops being
+  cosmetic when Stripe reviews the account or a chargeback arrives. Close by
+  completing the business profile and rehearsing one refund in test mode, since
+  card refunds are manual dashboard actions with no code path. Evidence: the
+  rehearsal and the outlined steps in the support runbook.
+- [ ] **Deletion can actually be performed at launch.** Deletion is manual and
+  audited today. Close by executing one end-to-end deletion on a disposable
+  account and confirming the cascade plus the retained, de-identified usage rows
+  match the privacy notice. Evidence: before/after row counts and the resolution
+  note left on the request.
+- [ ] **Counsel review decision.** No lawyer has read the text. Close by either
+  obtaining a review or recording a dated operator decision to launch without
+  one. Evidence: the decision, or the reviewer's comments and the resulting
+  version.
+- [ ] **No silent claim drift.** The privacy notice says no advertising or
+  analytics scripts are loaded and no CSP header is sent. Adding analytics,
+  marketing tags, a CDN that logs differently, or a CSP before launch requires a
+  matching version. Evidence: a pre-launch inventory of third-party scripts and
+  headers, reconciled with the notice.
+- [ ] **Plans stay unsold, or the terms grow the sale terms.** If any plan becomes
+  purchasable, terms must state price, interval, included allowance, overage and
+  renewal before the first sale. Evidence: no purchasable plan at launch, or the
+  published sale terms plus recurring-payment acceptance.
+- [ ] **Language.** English is the only published language. If launch copy is
+  translated, state which language is authoritative in a new version. Evidence:
+  the stated authority and a translation that matches the served English text.
 
 ## Phase 2 — Deeper systems verification
 

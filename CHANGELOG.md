@@ -16,7 +16,8 @@ distinguish verified behavior from unverified claims.
   portal and a signed invoice for a checkout already in flight keep working.
   Verified: `npm run verify` exit 0, 290 unit tests, 284 HTTP checks (the suite
   holds an active plan in storage and still gets an empty catalog, then proves a
-  comped subscription serves included usage with no credit change).
+  comped subscription serves included usage with no credit change). Closed
+  against `cbc31df`; CI run 41098426834 green.
 
 ## 2026-10-30 — Parallel-boot migration safety
 

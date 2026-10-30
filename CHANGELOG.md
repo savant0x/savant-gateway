@@ -3,6 +3,21 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-30 — Recoverable payment delivery
+
+- **FID-2026-1030-053 — critical — Webhook state that survives a crash.**
+  `billing_events` now records `claimed`, `processed`, `failed` or
+  `quarantined` with attempts, claim time, livemode and last error, so a process
+  death after the claim no longer suppresses the payment forever: a stale claim
+  is reclaimable and a failed handler keeps its evidence. Mode is bound through
+  `STRIPE_EXPECTED_LIVEMODE` (quarantined when the declared environment
+  disagrees), `fulfillTopup` requires the checkout metadata user to own the
+  pending top-up, and a mismatched amount, currency, owner or missing row is
+  quarantined without credit. An authenticated payments view lists event state
+  and top-ups; replay still requires a signed Stripe delivery. Closed against
+  `8531f9b`; archived receipt: 280 unit tests, 262 HTTP checks, trial HTTP PASS,
+  quality PASS (265 files), clean lint/typecheck/build.
+
 ## 2026-10-30 — Credit reconciliation and audited corrections
 
 - **FID-2026-1030-052 — critical — Ledger equation and append-only corrections.**

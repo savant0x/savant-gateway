@@ -4,11 +4,12 @@
 **ID:** FID-2026-1030-053
 **Parent:** FID-2026-1030-043
 **Severity:** critical
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044, FID-2026-1030-047, FID-2026-1030-052
 **YAGNI-Compliance:** Verified — harden real checkout/fulfillment, retain signed-event tests.
+**Archived:** 2026-10-30 — implementation `8531f9b`; receipt above from that tree.
 
 ## Summary
 

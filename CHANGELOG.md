@@ -21,9 +21,11 @@ distinguish verified behavior from unverified claims.
   server returned 200 `application/manifest+json` for the manifest and 200 for
   every image, while the prerendered head carries `og:image` (1200×630 with alt),
   `twitter:card=summary_large_image`, three `rel="icon"` links and
-  `apple-touch-icon`. **Still open:** `assets/bg_pattern.jpg` remains as the only
-  source for the CSS texture, and no crawler has been used to confirm how a
-  platform crops the card.
+  `apple-touch-icon`. Committed as `4ad9a21`; CI run 41125090006 and
+  attribution-guard run 41125090105 are green on that commit, and the pre-push
+  gate re-ran the full verify before the refs were accepted. **Still open:**
+  `assets/bg_pattern.jpg` remains as the only source for the CSS texture, and no
+  crawler has been used to confirm how a platform crops the card.
 
 ## 2026-10-30 — Repository presentation and Apache 2.0 license
 

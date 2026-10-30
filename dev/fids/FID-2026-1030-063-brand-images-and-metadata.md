@@ -25,7 +25,7 @@ list, and add a real social card that new artwork can replace in place.
 - OS: Windows (Git Bash), Node 22.18.0
 - Next.js 16.4.3 App Router, React 19.3.0
 - `sharp` resolved from Next's image pipeline (no new dependency declared)
-- Commit/State: working tree on `main`, uncommitted at implementation time
+- Commit/State: implemented and pushed on `main` as `4ad9a21`
 
 ## Detailed Description
 
@@ -126,6 +126,9 @@ Implemented and verified. `public/` now contains exactly `images/`.
   `apple-touch-icon` at 180×180 and `rel="manifest"`.
 - `sharp` was already resolvable through Next; `package.json` gained only the
   `images` script.
+- Committed as `4ad9a21` (39 files): the pre-push gate re-ran the full verify and
+  accepted the refs. CI run 41125090006 is green (lint, typecheck, test, quality,
+  build, `test:http`) and attribution-guard run 41125090105 is green.
 
 ## Remaining Gates
 

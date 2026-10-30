@@ -3,6 +3,24 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-30 — Launch implementation: offering evidence and security boundaries
+
+- **FID-2026-1030-047 — critical — Secret-safe diagnostics and account
+  isolation.** One redaction policy now covers server logs, `usage_events.error`,
+  provider runtime rows and benchmark attempts, with the provider error reader
+  redacting at the boundary. Provider base URLs reject embedded credentials and
+  provider redirects are not followed. Login guessing is bounded per account
+  independently of `x-forwarded-for`. The production HTTP matrix adds
+  cross-account, revoked-key, suspended-account, spoofed-header, credential-echo
+  and redirect probes; `SECURITY.md` describes actual behavior. Closed against
+  `2ef2d74`; 217 unit tests, 170 HTTP checks and the trial suite pass.
+- **FID-2026-1030-044 — high — Offering evidence ledger, closure pending.**
+  Records dated observed, configured, unknown and pending inputs and reconciles
+  the measured economics without inventing a fee or budget. Activation paths are
+  verified closed; the recorded $0.00 wallet yields a conservative zero paid
+  upstream spend. The record remains `converged`; closure needs the six dated
+  operator rulings. No offering, funding, payment or deployment occurred.
+
 ## 2026-10-30 — Complete launch FID outline
 
 - **FID-2026-1030-043 — critical — Master launch contract authored and audited.**

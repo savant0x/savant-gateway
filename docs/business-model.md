@@ -11,6 +11,11 @@ snapshot in [`docs/data/provider-prices.json`](data/provider-prices.json). Edit
 prose freely; edit numbers only in code, so the document cannot drift from the
 database.
 
+The evidence ledger for the launch offering — real permission, confirmed rates,
+unknown inputs and pending operator decisions — is
+[`docs/offering-evidence.md`](offering-evidence.md). This document remains the
+dated economics report; that ledger records what is not yet known.
+
 ## What we sell
 
 Three billing groups, one catalog:

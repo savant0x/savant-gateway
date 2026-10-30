@@ -12,6 +12,7 @@ tree they tested, not automatically the current working tree.
 | What must happen before launch? | [Launch plan](launch-plan.md) |
 | What organizes all launch work? | [Master FID 043](../dev/fids/FID-2026-1030-043-launch-master.md), children 044–062 |
 | What has actually been examined? | [Systems review](../dev/audits/2026-10-30-systems-review.md) |
+| What can honestly be offered now? | [Offering evidence ledger](offering-evidence.md) |
 | What changed? | [CHANGELOG](../CHANGELOG.md), then the implementation commit |
 | What should implementation preserve? | [Knowledge](../knowledge.md) |
 | Where is the session handoff? | [Launch FID handoff](../dev/session-summaries/2026-10-30-launch-fid-handoff.md) |
@@ -50,6 +51,16 @@ All twenty remain active `converged` plans. Authoring/audit is complete;
 implementation and live acceptance are not. The
 [audit receipt](../dev/audits/2026-10-30-launch-fid-perfection-loop.md) records
 source/dependency/test checks, measured revisions, two stable passes and hashes.
+
+Launch implementation began 2026-10-30 with the two independent starters. FID-047
+is closed against `2ef2d74`: one redaction policy now covers logs, usage errors,
+provider runtime rows and benchmark attempts; provider URLs reject embedded
+credentials; provider redirects are not followed; login guessing is bounded per
+account; and `SECURITY.md` describes the real guards. FID-044 remains converged
+with its [offering evidence ledger](offering-evidence.md): the economics and
+unknown inputs are recorded, activation stays closed, and closure waits on dated
+operator rulings. Neither implementation activates an offering, funds a wallet,
+sells a plan or deploys.
 
 The following initial-state narrative belongs to the preceding housekeeping pass:
 

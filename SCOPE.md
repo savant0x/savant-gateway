@@ -2,6 +2,47 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-30 (launch implementation: 044 and 047)
+
+Operator request: "Begin implementing the launch FIDs in dependency order,
+starting with 044 and 047. All twenty FIDs are document-converged; their
+implementation remains open. Verify current source and inputs before proceeding,
+and repeat the document audit if conditions changed. Follow single-agent ECHO,
+preserve existing work, run the declared gates, and close each implementation
+only with real commit and verification evidence. Keep trials disabled and
+subscription sales off. Funding, external financial transactions, offering
+activation, and deployment require explicit operator approval."
+
+Session autonomy level 3, strict mode. Condition check before edits: runtime
+source was last committed at `ca7710e`; the planning baseline `b0b65ac` and both
+later commits are documentation only, and `git log -- lib app tests config`
+shows no intervening code commit. Source, configuration and provider contracts
+are therefore unchanged from the audited condition, so the document Perfection
+Loop was not re-run.
+
+- [x] **I1 — 044 evidence and reconciliation.** Automation level 3. Add the dated
+  offering evidence ledger, distinguish unknown from zero, reconcile the tested
+  economics without inventing fees or budget, and verify the activation paths
+  that must stay closed. Evidence: `docs/offering-evidence.md`; 32 declared-gate
+  tests pass; local `plans` has no purchasable row; trial defaults remain off.
+- [ ] **I2 — 044 closure.** Blocked pending the six dated operator rulings named
+  in the ledger: free-versus-trial offering, approved paid models and prices,
+  resale permission and a confirmed rate card, fee/refund/expiry policy, funded
+  budget and reserve, and permission to publish savings claims. The item stays
+  active and is re-attempted when the rulings are recorded. No offering,
+  activation or spend is claimed.
+- [x] **I3 — 047 security boundaries and isolation.** Automation level 3. One
+  redaction policy at log and durable-error boundaries; provider URLs reject
+  embedded credentials and redirects are not followed; login guessing is bounded
+  per account independently of forwarded headers; isolation/revocation/suspension
+  and credential-echo probes added to the production HTTP matrix; `SECURITY.md`
+  describes actual behavior. Implementation `2ef2d74`; `npm run verify` exit 0
+  with 217 unit tests, 170 HTTP checks and the trial suite passing. FID archived.
+
+The remaining eighteen active launch records are unchanged, unclosed converged
+plans; this pass implemented the two requested starters. Trials remain disabled
+and no plan is offered for sale.
+
 ## Current Session — 2026-10-30 (launch FID outline and session handoff)
 
 Operator request: "We need to create a launch plan fid outline, You mentioned

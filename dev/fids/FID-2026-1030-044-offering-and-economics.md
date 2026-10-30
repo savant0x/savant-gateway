@@ -74,6 +74,38 @@ Planning: source/decision/dependency audit under master 043. Implementation:
 `npm run verify`; `npm test` runs the three existing named test files. Required
 external receipt: dated permission, rate/limit observations and operator decision.
 
+## Implementation Progress
+
+2026-10-30. Implemented up to the operator decision boundary; this record stays
+active and `converged`, not closed. No rate, fee, budget, permission or offering
+was invented.
+
+- `docs/offering-evidence.md` records the dated evidence ledger with separate
+  observed, configured, unknown and decision-pending states, so an unknown value
+  is never read as zero. Local readings recorded there: 45 catalog rows (11
+  free-pool, 24 priced paid, 10 subscription-only), zero plan rows, a recorded
+  $0.00 upstream wallet at 15 account RPM, $5.00 outstanding local credit, zero
+  paid top-ups and no active price-claim approval.
+- The existing economics are reconciled in that ledger as a sensitivity: required
+  paid revenue `(F + E) / (m − f)` with the measured 23.2% margin and measured
+  free exposure, leaving fee and fixed cost explicitly unknown. The conservative
+  paid-traffic cap that follows from the recorded wallet is zero paid upstream
+  spend until funding is observed.
+- Activation paths remain closed and were verified: `tests/trials.test.mjs`
+  proves trials default off with a zero grant budget and no paired models; the
+  local `plans` table has no purchasable row; no subscription is offered.
+- Declared gates pass on 2026-10-30: `node --test
+  tests/business-model.test.mjs tests/pricing.test.mjs
+  tests/price-comparison.test.mjs tests/trials.test.mjs` — 32 tests, 0 failures.
+  The wider `npm run verify` receipt is recorded in the session summary.
+
+**Blocked closure input (operator-only):** the six dated rulings listed in the
+ledger: the free-versus-trial offering; approved paid models and prices; dated
+resale permission and a confirmed per-model rate card; processing fee, refund,
+reserve and credit-expiry policy; funded budget, operating reserve and low-balance
+threshold; permission to publish savings claims. The item stays active and is
+re-attempted when those rulings exist. No launch approval is claimed.
+
 ## Perfection Loop
 
 RED: unverified rate/funding assumptions. GREEN: source-backed offering contract
@@ -89,9 +121,9 @@ the release candidate. A changed rate requires new evidence and explicit price
 application; never silently overwrite purchased subscription snapshots. Final
 convergence checks are recorded in the master planning-audit receipt.
 
-Design only. No new offering, provider funding or commercial claim approved by
-this record. Closure requires committed contract changes and decision evidence;
-real paid acceptance remains 062.
+The evidence ledger is implemented and committed; no offering, provider funding
+or commercial claim is approved by this record. Closure still requires the dated
+decisions above, and real paid acceptance remains 062.
 
 ## Lessons Learned
 

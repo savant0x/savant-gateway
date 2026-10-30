@@ -4,11 +4,12 @@
 **ID:** FID-2026-1030-048
 **Parent:** FID-2026-1030-043
 **Severity:** critical
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044
 **YAGNI-Compliance:** Verified — one provider-wide gate around existing admission.
+**Archived:** 2026-10-30 — implementation `e346b0a`; receipt above from that tree.
 
 ## Summary
 

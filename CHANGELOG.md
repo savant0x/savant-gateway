@@ -3,6 +3,23 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-30 — Aggregate provider admission
+
+- **FID-2026-1030-048 — critical — One serving-account ceiling for every billing
+  mode.** Every dispatch now takes an RPM and concurrency slot for the serving
+  upstream account before any subscription, free-pool or credit hold exists, so
+  customer fairness limits cannot multiply real capacity and a refusal never
+  strands a reservation. Identity is the provider origin plus the credential
+  variable name, so registry aliases share one ceiling without persisting a
+  secret. A current upstream rpm wins; `PROVIDER_SHARED_RPM` is the explicit
+  fallback for accounts that publish none, and an unknown ceiling refuses with
+  503 before dispatch instead of assuming headroom. Refusals carry the real
+  ceiling, remaining count and retry guidance; the streaming relay releases the
+  slot exactly once on completion, error and cancellation. Paid reservation moved
+  to `lib/gateway-paid.ts` to keep the request file under the 400-line ceiling.
+  Closed against `e346b0a`; archived receipt: 251 unit tests, 251 HTTP checks,
+  trial HTTP PASS, quality PASS (250 files), clean lint/typecheck/build.
+
 ## 2026-10-30 — Current upstream account values and daily trial credits
 
 - **FID-2026-1030-063 — critical — Provider account truth.** Separates quota

@@ -1289,6 +1289,13 @@ Recorded read-only under the approved review item; any fix remains blocked pendi
   Anthropic Messages upstreams from one backend, configured by the operator;
   CommandCode is the intended second provider. FID-2026-1029-009 covers the
   remediation; FID-2026-1029-010 is the provider-registry contract.
+- 2026-10-30: **SQLite is a local-development placeholder.** A production
+  database will be selected before launch regardless of host, so the database
+  migration is planned work rather than a consequence of choosing Vercel. Host
+  selection is judged on what it adds after that move: a persistent Node host
+  needs no shared-limiter work, while Vercel adds per-invocation connections and
+  a shared rate limiter. Requirements and the compatibility table are in
+  `docs/launch-plan.md` Phase 3.
 
 ## Progress Log
 

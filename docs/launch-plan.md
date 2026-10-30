@@ -173,8 +173,13 @@ may block acceptance; it does not turn an unverified system into a passing one.
 
 ### Hosting candidate: Vercel
 
-Leading candidate as of 2026-10-30, and **not compatible with this application
-as built**. Checked against Vercel's documentation, not memory:
+**Operator ruling, 2026-10-30: SQLite is a local-development placeholder, not the
+production design. A production database will be selected before launch whichever
+host is used.** So the migration below is planned work, not a Vercel penalty, and
+the host decision should be judged on what it adds *after* the database move.
+
+Vercel is the leading candidate and is **not compatible with this application as
+built**. Checked against Vercel's documentation, not memory:
 
 | Requirement in this repository | Vercel |
 | --- | --- |
@@ -186,28 +191,37 @@ as built**. Checked against Vercel's documentation, not memory:
 | Commercial operation | Hobby is restricted to non-commercial, personal use; a paid gateway needs Pro |
 | Streaming SSE with settlement in the same request | Streaming is supported; the settlement write still needs the external database |
 
-Two honest paths, and they are not equivalent in cost:
+Two paths, sharing one prerequisite (the database move):
 
-**A. A persistent Node host.** A VPS, container host or PaaS with a durable
-volume keeps SQLite, WAL and the single-process limiters. It changes no
-application code and preserves the exact behavior every FID was verified
-against. It must prove a durable disk, a backup method and that exactly one
-process serves writes.
+**A. A persistent Node host + the production database.** A VPS, container host or
+PaaS with a durable volume adds no serverless constraints: a long-lived process
+can hold a normal pooled client, the limiters stay in-process and correct, and the
+backup method is whatever the database engine offers. Cheapest path that
+preserves the verified behavior.
 
-**B. Vercel Pro plus an external transactional database plus shared rate
-limiting.** This is a migration FID, not a hosting preference: replace the
-synchronous `better-sqlite3` calls and `PRAGMA` setup with a network database
-client, move the limiters to shared storage, and re-verify settlement, replay,
-hold expiry, crash recovery and isolation on the new engine. Backups and log
-retention become the provider's, so the privacy notice must change in a new
-version. Do not assume a connection-string swap: the ledger and settlement
-recovery are written around synchronous SQLite transactions.
+**B. Vercel Pro + the production database + shared rate limiting.** The database
+is required either way; what Vercel adds is a per-invocation connection model and
+the need for a shared limiter, because there is no single process to hold state.
+Backups and log retention become the provider's, so the privacy notice changes in
+a new version.
 
-Choosing B while the offering is still unsold is reasonable; choosing it while
-believing it is a deploy button is how settlement bugs reach customers.
+The database choice must satisfy, independent of host:
 
-Select a persistent Node deployment compatible with the actual SQLite and
-process-local rate-limit design, or schedule the migration above as its own FID. Do not scale process/replica count until shared
+- ACID transactions spanning the hold, the ledger entry and the usage row, since
+  settlement currently writes them together and `IMMEDIATE` transactions prevent
+  two callers from double-spending the same balance.
+- Unique constraints and idempotent upserts for every replay guard: webhook
+  events, top-up fulfilment, policy acceptance, key creation.
+- Read-your-writes on the balance path, or the hold math becomes racy.
+- Backups or point-in-time recovery with a documented retention window, so the
+  privacy notice can state a number that is true.
+- A connection strategy that matches the host: pooling for serverless, or a
+  single long-lived process.
+
+Do not assume a connection-string swap. The ledger, settlement recovery and
+replay guards are written around synchronous SQLite transactions, so the port
+includes a migration and cutover plan, re-run settlement and crash-recovery
+proofs on the new engine, and a data move for any existing accounts. Do not scale process/replica count until shared
 limit enforcement is proven. Record CPU/memory/storage sizing from a controlled
 load test and choose traffic caps within measured upstream capacity.
 

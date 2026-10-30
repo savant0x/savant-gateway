@@ -3,6 +3,20 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-29 — File-ceiling split
+
+- **FID-2026-1029-032 — low — `quality` is green again.** Two files were over the
+  400-line ceiling before this session's work and kept the gate red:
+  `lib/gateway.ts` (412) and `components/catalog/model-catalog-table.tsx` (467).
+  The gateway's model resolution, free verdict and upstream error/retry mapping
+  moved verbatim to `lib/gateway-resolution.ts` (366 lines left); the table's
+  rate cell and delta helpers, filter bar and price footnote moved to
+  `components/catalog/catalog-cells.tsx`, `catalog-filters.tsx` and
+  `catalog-footnote.tsx` (293 lines left). No behavior, copy, class or ordering
+  changed. Verified: lint clean, typecheck, 186 unit tests, `quality` PASS over
+  219 files, build, both HTTP suites (100 checks + trial suite), and `/models`
+  rendering "34 models · 34 shown" on the production build.
+
 ## 2026-10-29 — Subscription production truth
 
 - **FID-2026-1029-031 — high — No invented billing periods, no unpurchasable tier.**

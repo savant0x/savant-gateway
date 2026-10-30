@@ -30,54 +30,20 @@ import { callProvider } from "./providers";
 import { readProviderError } from "./providers/request";
 import {
   authenticateApiKey,
-  getModelByUpstreamId,
-  getModelForGateway,
   getProvider,
   resolveSubscriptionAccess,
   type FreePoolReservation,
   type GatewayModel,
 } from "./store";
+import {
+  failureStatus,
+  isFreeCall,
+  resolveModel,
+  retryHeaders,
+  safeUpstreamMessage,
+} from "./gateway-resolution";
 import { getBannerConfig } from "./store/banner";
 import { reserveCreditHold, type CreditHold } from "./store/billing";
-
-function resolveModel(publicId: string) {
-  const exact = getModelForGateway(publicId);
-
-  if (exact) return exact;
-
-  const candidates: string[] = [];
-
-  if (publicId.startsWith("free-"))
-    candidates.push(`free/${publicId.slice(5)}`);
-  if (publicId.endsWith("-free"))
-    candidates.push(`free/${publicId.slice(0, -5)}`);
-
-  if (!publicId.includes("/")) {
-    const dash = publicId.indexOf("-");
-
-    if (dash > 0)
-      candidates.push(`${publicId.slice(0, dash)}/${publicId.slice(dash + 1)}`);
-  }
-
-  for (const candidate of candidates) {
-    const model = getModelForGateway(candidate);
-
-    if (model) return model;
-  }
-
-  return getModelByUpstreamId(publicId);
-}
-
-function safeUpstreamMessage(status: number, message: string) {
-  if (status >= 500 || status === 401 || status === 403)
-    return "Provider request failed";
-
-  return message || "Provider request failed";
-}
-
-function isFreeCall(model: GatewayModel) {
-  return model.billingMode === "free";
-}
 
 type PaidReservation =
   | { blocked: Response }
@@ -136,18 +102,6 @@ function reservePaidCall(
     outputBudget,
     requestedBudget,
   };
-}
-
-function failureStatus(status: number) {
-  return status === 400 || status === 402 || status === 429 ? status : 502;
-}
-
-function retryHeaders(upstream: Response): Record<string, string> {
-  const retryAfter = upstream.headers.get("retry-after");
-
-  if (!retryAfter) return {};
-
-  return { "Retry-After": retryAfter };
 }
 
 export async function handleChatCompletions(request: Request) {

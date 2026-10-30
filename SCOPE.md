@@ -11,38 +11,37 @@ needs to be fully addressed." Interpreted scope recorded before the code change
 (Law 2, Level 3 recorded presentation).
 
 - [x] **T1 — Invented billing periods removed.** `readStripeSubscriptionSnapshot`
-  fabricated `period_start = now` and `period_end = now + 30 days` when Stripe
-  omitted the fields, and `invoice.paid` fabricated a 30-day window for an
-  unknown invoice period. Both wrote a period no payment covers. Now the pure
-  reader returns null periods (`lib/plan-lifecycle.ts:111`).
+      fabricated `period_start = now` and `period_end = now + 30 days` when Stripe
+      omitted the fields, and `invoice.paid` fabricated a 30-day window for an
+      unknown invoice period. Both wrote a period no payment covers. Now the pure
+      reader returns null periods (`lib/plan-lifecycle.ts:111`).
 - [x] **T2 — Reconcile preserves stored periods.** `reconcileStripeSubscription`
-  accepts nullable periods and keeps the stored value with `COALESCE`
-  (`lib/store/subscriptions.ts:342`); an invoice with no datable period is
-  ignored so Stripe retries (`app/api/webhooks/stripe/route.ts:242`).
+      accepts nullable periods and keeps the stored value with `COALESCE`
+      (`lib/store/subscriptions.ts:342`); an invoice with no datable period is
+      ignored so Stripe retries (`app/api/webhooks/stripe/route.ts:242`).
 - [x] **T3 — Nothing unpurchasable is advertised.** `PUBLIC_MODEL_SCOPE`
-  (`lib/store/model-sql.ts:19`) drops plan-gated rows no active plan covers; the
-  catalog read (`lib/store/public-catalog.ts:19`) and the public counts share it.
-  Measured before: 0 plans, 10 plan-gated rows published with a "sold with a
-  plan" footnote. Measured after: 34 rows with no plan, 44 with an active plan
-  covering the group, 34 once drafted.
+      (`lib/store/model-sql.ts:19`) drops plan-gated rows no active plan covers; the
+      catalog read (`lib/store/public-catalog.ts:19`) and the public counts share it.
+      Measured before: 0 plans, 10 plan-gated rows published with a "sold with a
+      plan" footnote. Measured after: 34 rows with no plan, 44 with an active plan
+      covering the group, 34 once drafted.
 - [x] **T4 — Dead access rule removed.** `subscriptionGrantsAccess` had no
-  production caller; admission is `sweepSubscriptions` plus the stored status.
-  Removed with its two test assertions.
+      production caller; admission is `sweepSubscriptions` plus the stored status.
+      Removed with its two test assertions.
 - [x] **T5 — Verification.** eslint clean, typecheck pass, 186/186 tests, build
-  pass. Quality FAIL on two files already over the ceiling at HEAD (N5, N6).
-  Live `listModels()` on a scratch database: 34 / 44 / 34.
+      pass. Quality FAIL on two files already over the ceiling at HEAD (N5, N6).
+      Live `listModels()` on a scratch database: 34 / 44 / 34.
 
 Findings recorded during this pass:
 
-- **N5 — `lib/gateway.ts` is 413 lines against the 400-line ceiling (low).**
-  Pre-existing: 412 lines at HEAD. The file mixes key auth, billing-source
-  routing and dispatch; a split needs an operator ruling on the seam because the
-  money path is involved.
-- **N6 — `components/catalog/model-catalog-table.tsx` is 468 lines (low).**
-  Pre-existing: 467 at HEAD. Filters, sorting and row markup want separating;
-  the same ruling applies.
-- N5 and N6 are why `npm run quality` still exits non-zero; every other gate is
-  green and no file touched in this pass is over the ceiling.
+- [x] **N5 — `lib/gateway.ts` was over the 400-line ceiling (low).** Resolved by
+      FID-2026-1029-032: 412 → 366 lines, with model resolution, the free verdict and
+      the upstream error/retry mapping moved verbatim to `lib/gateway-resolution.ts`.
+- [x] **N6 — `components/catalog/model-catalog-table.tsx` was over the ceiling
+      (low).** Resolved by FID-2026-1029-032: 467 → 293 lines, with cells, filter bar
+      and footnote split into `components/catalog/`. Rendered `/models` verified on
+      the production build (200, "34 models · 34 shown").
+- With both split, `npm run quality` PASSES over 219 files; every gate is green.
 
 Blocked items (specific blockers, re-attempted the moment they clear):
 
@@ -66,70 +65,70 @@ dashboard-editable context string carried by every request; optimize caching;
 and produce a Gemini Deep Research prompt for an early-stage business plan.
 
 - [x] **A1 — Stale records repaired.** `.env.example` no longer opens with the
-  scaffold `[TEMPLATE]` line. The line was noise, not a boot failure: a source
-  check of the dotenv parser bundled in `@next/env` 16.4.3 shows malformed lines
-  are skipped by its regex loop, not thrown on. `dev/agenda.md` now records the actual launch
-  agenda. `dev/audit/issues.md` is a superseded, untracked snapshot of the
-  pre-rebuild review; the 2026-10-29 handoff requires it to be preserved, so it
-  was neither staged nor deleted.
+      scaffold `[TEMPLATE]` line. The line was noise, not a boot failure: a source
+      check of the dotenv parser bundled in `@next/env` 16.4.3 shows malformed lines
+      are skipped by its regex loop, not thrown on. `dev/agenda.md` now records the actual launch
+      agenda. `dev/audit/issues.md` is a superseded, untracked snapshot of the
+      pre-rebuild review; the 2026-10-29 handoff requires it to be preserved, so it
+      was neither staged nor deleted.
 - [x] **A2 — Trial system audited.** `docs/trial-system-audit.md` records the
-  implemented ledger and its blocker: the grant requires
-  `users.email_verified_at`, and no route, form, or job writes that column. With
-  `TRIAL_ENABLED=false`, a zero grant budget, and an empty pair map, no grant
-  can issue. Activation requirements and the overlap rule with the daily
-  allocation are stated; the trial stays off.
+      implemented ledger and its blocker: the grant requires
+      `users.email_verified_at`, and no route, form, or job writes that column. With
+      `TRIAL_ENABLED=false`, a zero grant budget, and an empty pair map, no grant
+      can issue. Activation requirements and the overlap rule with the daily
+      allocation are stated; the trial stays off.
 - [x] **A3 — Daily shared allocation.** FID-2026-1029-016. A per-UTC-day
-  `free_pool_allocations` row grants each activated account
-  `min(floor(0.9 x pool / activeAccounts), unallocated remainder)` inside the
-  existing immediate admission transaction. Activated means an active customer
-  holding at least one active key. A joining account rebalances existing grants
-  down to the new fair share, floored at recorded usage plus holds, so unspent
-  capacity reaches newcomers; 10% is never allocated. Admin → Gateway
-  edits the pool and share, with settings overriding environment defaults.
-  `.env.example` documents `FREE_POOL_DAILY_WEIGHTED_TOKENS`,
-  `FREE_POOL_ALLOCATION_BPS`, and `FREE_POOL_ALLOCATION_ENABLED`.
+      `free_pool_allocations` row grants each activated account
+      `min(floor(0.9 x pool / activeAccounts), unallocated remainder)` inside the
+      existing immediate admission transaction. Activated means an active customer
+      holding at least one active key. A joining account rebalances existing grants
+      down to the new fair share, floored at recorded usage plus holds, so unspent
+      capacity reaches newcomers; 10% is never allocated. Admin → Gateway
+      edits the pool and share, with settings overriding environment defaults.
+      `.env.example` documents `FREE_POOL_DAILY_WEIGHTED_TOKENS`,
+      `FREE_POOL_ALLOCATION_BPS`, and `FREE_POOL_ALLOCATION_ENABLED`.
 - [x] **A4 — Context banner.** FID-2026-1029-017. One operator-authored string
-  in `settings`, edited from Admin → Gateway, prepended as a leading system
-  message on every upstream request while enabled, capped at 2,000 characters,
-  and counted in the prompt-token estimate used by the free allocation and the
-  paid hold. The same payload serves JSON and SSE, and the Anthropic translator
-  folds the system message into `system`.
+      in `settings`, edited from Admin → Gateway, prepended as a leading system
+      message on every upstream request while enabled, capped at 2,000 characters,
+      and counted in the prompt-token estimate used by the free allocation and the
+      paid hold. The same payload serves JSON and SSE, and the Anthropic translator
+      folds the system message into `system`.
 - [x] **A5 — Subscription decision.** `docs/subscriptions-decision.md`: keep the
-  implementation, sell nothing at launch. The code is implemented and locally
-  verified but real Stripe delivery is unverified and plan allowances would spend
-  an unfunded paid upstream wallet. Plans stay archived/draft and Stripe stays
-  unconfigured; revisit criteria are recorded.
+      implementation, sell nothing at launch. The code is implemented and locally
+      verified but real Stripe delivery is unverified and plan allowances would spend
+      an unfunded paid upstream wallet. Plans stay archived/draft and Stripe stays
+      unconfigured; revisit criteria are recorded.
 - [x] **A6 — Catalog read cache.** FID-2026-1029-018. A generic five-second TTL
-  memo wraps `listModels` only; `listAllModels` and the billing lookup
-  (`getModelForGateway`) stay uncached. Measured avoided cost: 150.2 µs average
-  catalog query over 300 runs against 44 active rows (read-only
-  `data/gateway.db`, 20 warmups). This measures the query, not end-to-end HTTP
-  latency.
+      memo wraps `listModels` only; `listAllModels` and the billing lookup
+      (`getModelForGateway`) stay uncached. Measured avoided cost: 150.2 µs average
+      catalog query over 300 runs against 44 active rows (read-only
+      `data/gateway.db`, 20 warmups). This measures the query, not end-to-end HTTP
+      latency.
 - [x] **A7 — Business-plan research prompt.**
-  `docs/business-plan-research-prompt.md` is a self-contained Gemini Deep
-  Research brief: platform and cost model, the 20M weighted-token daily pool and
-  90/10 split, 15 RPM shared limit, $0 paid wallet, abuse exposure, constraints,
-  seven deliverable sections, three-scenario requirement, output rules, and a
-  data snapshot. It asks for pricing, free policy, unit economics, growth,
-  risk controls, and go/no-go thresholds.
+      `docs/business-plan-research-prompt.md` is a self-contained Gemini Deep
+      Research brief: platform and cost model, the 20M weighted-token daily pool and
+      90/10 split, 15 RPM shared limit, $0 paid wallet, abuse exposure, constraints,
+      seven deliverable sections, three-scenario requirement, output rules, and a
+      data snapshot. It asks for pricing, free policy, unit economics, growth,
+      risk controls, and go/no-go thresholds.
 - [x] **A8 — Verification.** `npm run verify` exit 0: lint zero warnings,
-  typecheck exit 0, 135/135 unit tests, quality PASS over 207 files, production
-  build exit 0 (54 app routes including `/admin/gateway` and
-  `/api/admin/gateway`), `http-suite` 100 checks PASS, and `trial-http-suite`
-  all checks PASS. Implementation committed as `58d5556`; FID-016/017/018 are
-  closed against that commit and archived.
+      typecheck exit 0, 135/135 unit tests, quality PASS over 207 files, production
+      build exit 0 (54 app routes including `/admin/gateway` and
+      `/api/admin/gateway`), `http-suite` 100 checks PASS, and `trial-http-suite`
+      all checks PASS. Implementation committed as `58d5556`; FID-016/017/018 are
+      closed against that commit and archived.
 - [x] **A9 — Sequencing disclosed.** Implementation and FID authoring landed in
-  the same pass at the operator's direction. FID-016/017/018 record the converged
-  design and audit the code that exists; they do not claim code was written only
-  after convergence. This deviation from FID-Bound Execution is recorded rather
-  than masked.
+      the same pass at the operator's direction. FID-016/017/018 record the converged
+      design and audit the code that exists; they do not claim code was written only
+      after convergence. This deviation from FID-Bound Execution is recorded rather
+      than masked.
 - [x] **A10 — Allocation banking corrected.** FID-2026-1029-019. The first
-  pass granted durable shares that never shrank, so the first account of the
-  UTC day took all 90% and a later same-day signup received 0. A joining
-  account now triggers a rebalance of existing grants to the new fair share,
-  floored at each account's usage plus holds. Tests: 11 allocation cases
-  covering an unspent 18M → 9M split, a 12M committed grant that stays 12M while
-  the newcomer receives 6M, and a 9M/9M → 6M/6M/6M three-account split.
+      pass granted durable shares that never shrank, so the first account of the
+      UTC day took all 90% and a later same-day signup received 0. A joining
+      account now triggers a rebalance of existing grants to the new fair share,
+      floored at each account's usage plus holds. Tests: 11 allocation cases
+      covering an unspent 18M → 9M split, a 12M committed grant that stays 12M while
+      the newcomer receives 6M, and a 9M/9M → 6M/6M/6M three-account split.
 
 Findings recorded during this pass:
 
@@ -153,23 +152,23 @@ Findings recorded during this pass:
 ## Current Session — Launch continuation
 
 - [x] **L1 — Provider metadata prerequisites.** Automation level 3. Resume
-  launch work under `dev/fids/archive/FID-2026-1029-014-provider-metadata-integrity.md`:
-  preserve subscription weights, context aliases, partial-source fallback and
-  accurate known-cost status. Verified: 113 unit tests, 100 HTTP checks, clean
-  lint/typecheck, quality and build. Committed `ae9c363`; FID-014 archived.
+      launch work under `dev/fids/archive/FID-2026-1029-014-provider-metadata-integrity.md`:
+      preserve subscription weights, context aliases, partial-source fallback and
+      accurate known-cost status. Verified: 113 unit tests, 100 HTTP checks, clean
+      lint/typecheck, quality and build. Committed `ae9c363`; FID-014 archived.
 - [x] **L2 — Disabled trial conversion infrastructure.** Operator resumed under
-  `dev/fids/archive/FID-2026-1029-015-lifetime-trial-routing.md`. Configurable amount
-  with 100,000 development default; activation off, empty pairs, zero grant budget.
-  Wallet funding and Stripe remain governed by the quoted launch timing.
-  Concrete review proposal: `docs/trial-conversion-contract.md`, including six
-  exact paired candidates and five unpaired models. Grant policy remains
-  configurable rather than blocking implementation on amount selection. Final
-  activation and offering decisions remain explicit launch requirements.
-  Implemented and committed `d3e4a56`: durable grants/holds, explicit paid
-  transition, account balances/rates, model API metadata and tests. Receipt:
-  118 unit tests, existing 100 HTTP checks plus trial suite PASS, lint zero
-  warnings, typecheck, quality (197 files), build and mobile account receipt.
-  FID-015 closed and archived; launch activation remains disabled.
+      `dev/fids/archive/FID-2026-1029-015-lifetime-trial-routing.md`. Configurable amount
+      with 100,000 development default; activation off, empty pairs, zero grant budget.
+      Wallet funding and Stripe remain governed by the quoted launch timing.
+      Concrete review proposal: `docs/trial-conversion-contract.md`, including six
+      exact paired candidates and five unpaired models. Grant policy remains
+      configurable rather than blocking implementation on amount selection. Final
+      activation and offering decisions remain explicit launch requirements.
+      Implemented and committed `d3e4a56`: durable grants/holds, explicit paid
+      transition, account balances/rates, model API metadata and tests. Receipt:
+      118 unit tests, existing 100 HTTP checks plus trial suite PASS, lint zero
+      warnings, typecheck, quality (197 files), build and mobile account receipt.
+      FID-015 closed and archived; launch activation remains disabled.
 
 ## Current Session — 2026-10-29 (launch planning and visual redesign)
 
@@ -178,29 +177,29 @@ Stripe configuration for completion near launch, and enhance the entire site's
 visual design. Brand clarification: "Savant as a brand is designed w/ cyberpunk/neon noir visuals. Cyan being the primary clogo color. W/ neon accents".
 
 - [x] **V1 — Launch requirements.** Automation level 2. Added
-  `docs/launch-readiness.md`, distinguishing the proposed one-time trial and
-  paid-model transition from current daily allowances; include funding, Stripe,
-  upstream quota, abuse controls, deployment, and acceptance evidence. Wallet
-  funding and Stripe setup timing follow the explicit operator ruling quoted
-  in that document. `npm run verify` exit 0: 107 unit tests, quality PASS over
-  189 files, 51-route build, and 100 HTTP checks; `git diff --check` exit 0.
+      `docs/launch-readiness.md`, distinguishing the proposed one-time trial and
+      paid-model transition from current daily allowances; include funding, Stripe,
+      upstream quota, abuse controls, deployment, and acceptance evidence. Wallet
+      funding and Stripe setup timing follow the explicit operator ruling quoted
+      in that document. `npm run verify` exit 0: 107 unit tests, quality PASS over
+      189 files, 51-route build, and 100 HTTP checks; `git diff --check` exit 0.
 - [x] **V2 — Whole-site visual direction and review.** Automation level 3.
-  Audit public, auth, account, console, and admin surfaces; prepare a concrete
-  cyan cyberpunk/neon-noir design on the Superdesign canvas for review.
-  Version 7 incorporates the Savant Code reference, price/quality positioning,
-  and all 45 stored models. Operator `resume` authorized implementation.
+      Audit public, auth, account, console, and admin surfaces; prepare a concrete
+      cyan cyberpunk/neon-noir design on the Superdesign canvas for review.
+      Version 7 incorporates the Savant Code reference, price/quality positioning,
+      and all 45 stored models. Operator `resume` authorized implementation.
 - [x] **V3 — Visual implementation and verification.** Automation level 3.
-  Resumed by the operator after version-7 review. Implementation contract:
-  `dev/fids/archive/FID-2026-1029-013-savant-visual-system.md`.
-  After visual direction approval, converge a FID, apply the shared design
-  system across all site surfaces, verify responsive/accessibility behavior
-  and the declared gates, and commit verified progress with closure records.
-  Implementation and browser verification passed: 17 routes across two themes
-  and three viewport widths (102 combinations), plus 17 interaction checks.
-  Fixed discovered account/console overflow, customer setup-command exposure,
-  and raw error-message rendering. Committed as `56a2436`; FID-013 closed and
-  archived. Lint zero warnings, typecheck, 107 unit tests, quality (191 files),
-  51-route build and 100 HTTP checks passed.
+      Resumed by the operator after version-7 review. Implementation contract:
+      `dev/fids/archive/FID-2026-1029-013-savant-visual-system.md`.
+      After visual direction approval, converge a FID, apply the shared design
+      system across all site surfaces, verify responsive/accessibility behavior
+      and the declared gates, and commit verified progress with closure records.
+      Implementation and browser verification passed: 17 routes across two themes
+      and three viewport widths (102 combinations), plus 17 interaction checks.
+      Fixed discovered account/console overflow, customer setup-command exposure,
+      and raw error-message rendering. Committed as `56a2436`; FID-013 closed and
+      archived. Lint zero warnings, typecheck, 107 unit tests, quality (191 files),
+      51-route build and 100 HTTP checks passed.
 
 The earlier visual pass left trial implementation paused. L2 now resumes its
 disabled infrastructure; activation and payment readiness remain unclaimed.
@@ -212,30 +211,30 @@ surfaces, then add route-level HTTP coverage. The operator selected
 "Both, analytics first."
 
 - [x] **S24 — Analytics FID authored.**
-  `dev/fids/FID-2026-1029-011-subscription-revenue-analytics.md` is converged.
-  It separates credit revenue from paid-invoice plan revenue, adds total
-  revenue and total margin, subscriber counts, MRR, and a per-plan table, and
-  leaves billing, routing, invoice recording, and Stripe handling unchanged.
+      `dev/fids/FID-2026-1029-011-subscription-revenue-analytics.md` is converged.
+      It separates credit revenue from paid-invoice plan revenue, adds total
+      revenue and total margin, subscriber counts, MRR, and a per-plan table, and
+      leaves billing, routing, invoice recording, and Stripe handling unchanged.
 - [x] **S25 — Analytics implemented and verified.** `lib/revenue.ts` and
-  `lib/analytics.ts` hold the pure math and testable SQL; the admin analytics,
-  overview, chart, and per-plan table consume credit and plan revenue
-  separately. Committed as `ba233c6`; FID-011 closed and archived after
-  `npm run verify` exit 0 (107/107 tests, quality PASS over 189 files, 51-route
-  build) and a 21-check disposable-database render receipt.
+      `lib/analytics.ts` hold the pure math and testable SQL; the admin analytics,
+      overview, chart, and per-plan table consume credit and plan revenue
+      separately. Committed as `ba233c6`; FID-011 closed and archived after
+      `npm run verify` exit 0 (107/107 tests, quality PASS over 189 files, 51-route
+      build) and a 21-check disposable-database render receipt.
 - [x] **S26 — B2 route-level HTTP suite implemented and verified.**
-  `scripts/http-suite.mjs` plus `harness.mjs`, `seed.mjs`, and `checks.mjs` boot
-  the production build against a disposable database, seed a mock provider and
-  paid model through a second SQLite connection, and run 100 HTTP checks across
-  signup/session/logout/login, cross-account key ownership, signed webhook
-  credit/replay/invalid/mismatch, exact paid-call settlement, unfunded
-  rejection, and admin session behavior. `npm run test:http` is wired after
-  build in `verify`, CI, and the pre-push hook. Committed as `4374c00`; FID-012
-  closed and archived after `npm run verify` exit 0 (107/107 unit tests,
-  quality PASS over 189 files, 51-route build, 100 HTTP checks).
+      `scripts/http-suite.mjs` plus `harness.mjs`, `seed.mjs`, and `checks.mjs` boot
+      the production build against a disposable database, seed a mock provider and
+      paid model through a second SQLite connection, and run 100 HTTP checks across
+      signup/session/logout/login, cross-account key ownership, signed webhook
+      credit/replay/invalid/mismatch, exact paid-call settlement, unfunded
+      rejection, and admin session behavior. `npm run test:http` is wired after
+      build in `verify`, CI, and the pre-push hook. Committed as `4374c00`; FID-012
+      closed and archived after `npm run verify` exit 0 (107/107 unit tests,
+      quality PASS over 189 files, 51-route build, 100 HTTP checks).
 - [x] **S27 — Session closed with a handoff.** Both FIDs are archived;
-  `dev/session-summaries/2026-10-29-analytics-and-http-suite.md` records the
-  session receipt, the final gate output, the unpushed-commit state, and the
-  remaining B1/B4/B5 blockers.
+      `dev/session-summaries/2026-10-29-analytics-and-http-suite.md` records the
+      session receipt, the final gate output, the unpushed-commit state, and the
+      remaining B1/B4/B5 blockers.
 
 ## Current Session — 2026-10-29 (D6/D50, provider registry, and model groups)
 
@@ -246,68 +245,68 @@ for CommandCode as a second provider, with OpenAI- and Anthropic-protocol
 support behind one backend.
 
 - [x] **S1 — D6 fixed.** `sanitizeError` in `lib/http.ts` logs details
-  server-side and returns generic text for the provider fetch, the admin credit
-  grant (now `500`), and provider sync (config errors keep their `400`).
+      server-side and returns generic text for the provider fetch, the admin credit
+      grant (now `500`), and provider sync (config errors keep their `400`).
 - [x] **S2 — D50 fixed.** Free calls now reserve weighted tokens before
-  dispatch against a per-user daily allowance and the effective provider
-  remaining, with `429`/`Retry-After`/`X-RateLimit-Reset` on refusal and
-  actual weighted usage settled in the usage transaction.
+      dispatch against a per-user daily allowance and the effective provider
+      remaining, with `429`/`Retry-After`/`X-RateLimit-Reset` on refusal and
+      actual weighted usage settled in the usage transaction.
 - [x] **S3 — Tests added.** `tests/free-pool.test.mjs` covers config, weighting,
-  boundaries, reservations, the provider floor, provider block, alerts, and
-  reset times; `tests/http.test.mjs` covers the sanitizer.
+      boundaries, reservations, the provider floor, provider block, alerts, and
+      reset times; `tests/http.test.mjs` covers the sanitizer.
 - [x] **S4 — FID-009 authored.**
-  `dev/fids/FID-2026-1029-009-error-sanitization-and-free-pool-admission.md`
-  records the implementation and the remaining gate receipt.
+      `dev/fids/FID-2026-1029-009-error-sanitization-and-free-pool-admission.md`
+      records the implementation and the remaining gate receipt.
 - [x] **S5 — FID-010 authored.**
-  `dev/fids/FID-2026-1029-010-multi-provider-registry.md` is converged:
-  provider entity, per-provider credentials, provider-scoped sync, OpenAI and
-  Anthropic adapters, manual cost mapping, provider-scoped free pool, and
-  admin controls. No provider code changed; implementation is B5.
+      `dev/fids/FID-2026-1029-010-multi-provider-registry.md` is converged:
+      provider entity, per-provider credentials, provider-scoped sync, OpenAI and
+      Anthropic adapters, manual cost mapping, provider-scoped free pool, and
+      admin controls. No provider code changed; implementation is B5.
 - [x] **S6 — Records updated.** Audit report D6/D50 marked fixed, CHANGELOG,
-  `.env.example`, and `knowledge.md` updated, and this scope records the new
-  work.
+      `.env.example`, and `knowledge.md` updated, and this scope records the new
+      work.
 - [x] **S7 — Verification and closure.** `npm run verify` exit 0: 62/62 tests,
-  quality PASS over 127 files, 33-route build. Committed as `4782ce1`; FID-009
-  is closed against that commit and archived.
+      quality PASS over 127 files, 33-route build. Committed as `4782ce1`; FID-009
+      is closed against that commit and archived.
 - [x] **S8 — FID-010 implemented.** `providers` registry with per-provider
-  protocol, base URL, credential variable name, headers, capabilities,
-  enabled state, and runtime status; `models` scoped by `(upstream_slug,
-  upstream_id)` with `family`, `protocol`, and `cost_source`; scoped sync that
-  only delists the syncing provider's rows; OpenAI Chat Completions and
-  Anthropic Messages adapters; manual cost entry that gates activation and
-  survives sync; provider-scoped free-pool floors; and Admin → Providers with
-  register, edit, enable/disable, delete, test, and per-provider sync.
+      protocol, base URL, credential variable name, headers, capabilities,
+      enabled state, and runtime status; `models` scoped by `(upstream_slug,
+upstream_id)` with `family`, `protocol`, and `cost_source`; scoped sync that
+      only delists the syncing provider's rows; OpenAI Chat Completions and
+      Anthropic Messages adapters; manual cost entry that gates activation and
+      survives sync; provider-scoped free-pool floors; and Admin → Providers with
+      register, edit, enable/disable, delete, test, and per-provider sync.
 - [x] **S9 — FID-010 verified.** `npm run verify` exit 0: 79/79 tests, quality
-  PASS over 152 files, 39-route build. A disposable copy of `data/gateway.db`
-  booted on the additive migration: both providers seeded, all 45 existing
-  models still on `savant`, and `provider_slug` present on usage and
-  reservations. Live CommandCode inference was not run: no credential. FID-010
-  records the receipt, is committed as `957430c`, and is closed and archived.
+      PASS over 152 files, 39-route build. A disposable copy of `data/gateway.db`
+      booted on the additive migration: both providers seeded, all 45 existing
+      models still on `savant`, and `provider_slug` present on usage and
+      reservations. Live CommandCode inference was not run: no credential. FID-010
+      records the receipt, is committed as `957430c`, and is closed and archived.
 - [x] **S10 — Group schema and migration.** `lib/schema/groups.ts` adds the
-  `model_groups` table, seeds the three system groups, adds
-  `models.group_slug`, `models.group_source`, and `usage_events.group_slug`,
-  and backfills every existing model from its old access. Additive; all 45
-  existing models preserved on a disposable copy.
+      `model_groups` table, seeds the three system groups, adds
+      `models.group_slug`, `models.group_source`, and `usage_events.group_slug`,
+      and backfills every existing model from its old access. Additive; all 45
+      existing models preserved on a disposable copy.
 - [x] **S11 — Group-aware billing and pricing.** `lib/model-groups.ts` holds
-  pure validation, default-group, access, price-reset, and reassignment rules.
-  `accessFor`, `isFreeCall`, `usagePrices`, and `recordUsage` now read the
-  group billing mode. A free group zeroes prices; a paid group can charge a
-  zero-cost model. Manual group assignments survive sync; auto rows follow the
-  provider.
+      pure validation, default-group, access, price-reset, and reassignment rules.
+      `accessFor`, `isFreeCall`, `usagePrices`, and `recordUsage` now read the
+      group billing mode. A free group zeroes prices; a paid group can charge a
+      zero-cost model. Manual group assignments survive sync; auto rows follow the
+      provider.
 - [x] **S12 — Admin and public surfaces.** New `/api/admin/groups` (GET, POST,
-  PATCH, DELETE) and `/admin/groups`; `PATCH /api/admin/models` accepts
-  `groupSlug`; catalog and pricing tables have group selectors; the public
-  catalog filter and labels are dynamic; `/v1/models` adds group fields while
-  keeping `group` compatible.
+      PATCH, DELETE) and `/admin/groups`; `PATCH /api/admin/models` accepts
+      `groupSlug`; catalog and pricing tables have group selectors; the public
+      catalog filter and labels are dynamic; `/v1/models` adds group fields while
+      keeping `group` compatible.
 - [x] **S13 — Verification.** `npm run verify` exit 0: 89/89 tests, quality PASS
-  over 160 files, 41-route build. On a disposable DB copy: create a paid group,
-  move `free/deepseek-v4-pro-0813` into it, price at $0.50/$1.00, survive a
-  provider sync, and charge 160 micros on a live call with `group_slug = paid`.
-  System group mode changes and deletes were rejected; delete-with-reassign and
-  free-group price zeroing were exercised.
+      over 160 files, 41-route build. On a disposable DB copy: create a paid group,
+      move `free/deepseek-v4-pro-0813` into it, price at $0.50/$1.00, survive a
+      provider sync, and charge 160 micros on a live call with `group_slug = paid`.
+      System group mode changes and deletes were rejected; delete-with-reassign and
+      free-group price zeroing were exercised.
 - [x] **S14 — Records and closure.** README, AGENTS, knowledge, CHANGELOG, and
-  FID-007 are updated. Implementation committed as `161ddcc`; FID-007 is
-  `closed` against that SHA and archived.
+      FID-007 are updated. Implementation committed as `161ddcc`; FID-007 is
+      `closed` against that SHA and archived.
 
 ## Current Session — 2026-10-29 (FID-008 subscription plans)
 
@@ -315,63 +314,63 @@ Operator request: implement FID-2026-1029-008 subscription plans and
 entitlements on top of the FID-007 model groups.
 
 - [x] **S15 — Subscription schema.** Additive migration adds `plans`,
-  `plan_groups`, `plan_models`, `subscriptions`, `subscription_models`,
-  `subscription_periods`, `subscription_holds`, `subscription_invoices`, and
-  `billing_events`, plus `users.stripe_customer_id` and the usage billing
-  snapshot columns. One-active-subscription and one-open-period partial unique
-  indexes enforce the invariants.
+      `plan_groups`, `plan_models`, `subscriptions`, `subscription_models`,
+      `subscription_periods`, `subscription_holds`, `subscription_invoices`, and
+      `billing_events`, plus `users.stripe_customer_id` and the usage billing
+      snapshot columns. One-active-subscription and one-open-period partial unique
+      indexes enforce the invariants.
 - [x] **S16 — Pure plan rules and tests.** `lib/plans.ts` validates slug, name,
-  price, interval, status, allowance, overage, and inclusions; expands group
-  and model entitlements; computes allowance decisions and overage markup.
-  `lib/plan-lifecycle.ts` owns calendar periods and Stripe status mapping.
-  `tests/plans.test.mjs` covers validation, expansion, exhaustion, markup,
-  snapshots, month-end clamping, and status transitions.
+      price, interval, status, allowance, overage, and inclusions; expands group
+      and model entitlements; computes allowance decisions and overage markup.
+      `lib/plan-lifecycle.ts` owns calendar periods and Stripe status mapping.
+      `tests/plans.test.mjs` covers validation, expansion, exhaustion, markup,
+      snapshots, month-end clamping, and status transitions.
 - [x] **S17 — Stores and Stripe.** Plan CRUD and inclusion validation, snapshot
-  activation, open-period metering, subscription holds, invoice upsert,
-  reconcile, cancel/resume, manual grant/extend/revoke, and entitlement refresh
-  are implemented. `lib/stripe-subscriptions.ts` handles customer reuse,
-  checkout, portal, cancellation, and period sync. The webhook dispatches
-  top-ups, checkout linking, subscription events, and paid/failed invoices with
-  `billing_events` idempotency.
+      activation, open-period metering, subscription holds, invoice upsert,
+      reconcile, cancel/resume, manual grant/extend/revoke, and entitlement refresh
+      are implemented. `lib/stripe-subscriptions.ts` handles customer reuse,
+      checkout, portal, cancellation, and period sync. The webhook dispatches
+      top-ups, checkout linking, subscription events, and paid/failed invoices with
+      `billing_events` idempotency.
 - [x] **S18 — Gateway enforcement.** One billing source per call: past-due
-  blocks first, included plan usage reserves weighted tokens against the open
-  period, exhausted `block` returns 402, exhausted `credit` charges the normal
-  credit path with the snapshot markup, and an uncovered subscription-group row
-  returns 403 `subscription_required`.
+      blocks first, included plan usage reserves weighted tokens against the open
+      period, exhausted `block` returns 402, exhausted `credit` charges the normal
+      credit path with the snapshot markup, and an uncovered subscription-group row
+      returns 403 `subscription_required`.
 - [x] **S19 — Customer and admin surfaces.** Public `/plans` and
-  `/api/plans`; account subscription card with allowance, invoices, cancel,
-  resume, and portal; Admin → Plans and Admin → Subscriptions with create,
-  edit, archive, delete, grant, extend, revoke, sync, and refresh.
-  `/v1/models` adds additive `requires_subscription`; provider quota copy is
-  labelled upstream; model-access docs distinguish plan-only rows.
+      `/api/plans`; account subscription card with allowance, invoices, cancel,
+      resume, and portal; Admin → Plans and Admin → Subscriptions with create,
+      edit, archive, delete, grant, extend, revoke, sync, and refresh.
+      `/v1/models` adds additive `requires_subscription`; provider quota copy is
+      labelled upstream; model-access docs distinguish plan-only rows.
 - [x] **S20 — Verification receipt.** `npm run verify` exit 0: 99/99 tests,
-  quality PASS over 186 files, 51-route build. On a disposable database through
-  the real HTTP routes: active-plan CRUD and draft exclusion; a manual plan
-  produced a zero-charge `billing_source=subscription` call with 6 included
-  weighted tokens; a plan edit left the 23-model snapshot and $5 price intact;
-  explicit refresh replaced it with 24 models; an uncovered call returned 403;
-  an exhausted block plan returned 402; an exhausted credit plan charged 9
-  micros with the 5000-bps markup and `billing_source=credit`; duplicate
-  checkout returned 409; foreign-origin customer and admin mutations returned
-  403; extend and revoke worked; a signed `invoice.paid` activated exactly one
-  period and a replay was a no-op; and a signed top-up credited $5.00 once.
-  Admin plans/subscriptions and customer account/plans pages returned 200.
-  Real Stripe checkout, recurring invoice delivery, and a funded paid
-  subscription remain unverified (B4).
+      quality PASS over 186 files, 51-route build. On a disposable database through
+      the real HTTP routes: active-plan CRUD and draft exclusion; a manual plan
+      produced a zero-charge `billing_source=subscription` call with 6 included
+      weighted tokens; a plan edit left the 23-model snapshot and $5 price intact;
+      explicit refresh replaced it with 24 models; an uncovered call returned 403;
+      an exhausted block plan returned 402; an exhausted credit plan charged 9
+      micros with the 5000-bps markup and `billing_source=credit`; duplicate
+      checkout returned 409; foreign-origin customer and admin mutations returned
+      403; extend and revoke worked; a signed `invoice.paid` activated exactly one
+      period and a replay was a no-op; and a signed top-up credited $5.00 once.
+      Admin plans/subscriptions and customer account/plans pages returned 200.
+      Real Stripe checkout, recurring invoice delivery, and a funded paid
+      subscription remain unverified (B4).
 - [x] **S21 — Records.** README, AGENTS vocabulary, knowledge, API reference,
-  CHANGELOG, SCOPE, and FID-008 are updated.
+      CHANGELOG, SCOPE, and FID-008 are updated.
 - [x] **S22 — Replay dedupe consolidated.** The paid-invoice guard is one
-  helper, `invoiceStatus` in `lib/store/subscription-rows.ts`, used by both
-  `activateSubscription` and `markSubscriptionPastDue`; extracting it also kept
-  `lib/store/subscriptions.ts` at 393 lines under the 400-line ceiling. Fresh
-  `npm run verify` exit 0: 99/99 tests, quality PASS over 186 files, 51-route
-  build. The disposable HTTP receipt was re-run on a fresh snapshot after the
-  extraction with identical results: 23 snapshot entitlements growing to 24 on
-  refresh, 402 on the exhausted block plan, 9 micros on the 5000-bps credit
-  overage, one period after the signed replay, and one $5.00 top-up credit.
+      helper, `invoiceStatus` in `lib/store/subscription-rows.ts`, used by both
+      `activateSubscription` and `markSubscriptionPastDue`; extracting it also kept
+      `lib/store/subscriptions.ts` at 393 lines under the 400-line ceiling. Fresh
+      `npm run verify` exit 0: 99/99 tests, quality PASS over 186 files, 51-route
+      build. The disposable HTTP receipt was re-run on a fresh snapshot after the
+      extraction with identical results: 23 snapshot entitlements growing to 24 on
+      refresh, 402 on the exhausted block plan, 9 micros on the 5000-bps credit
+      overage, one period after the signed replay, and one $5.00 top-up credit.
 - [x] **S23 — Closure.** Implementation committed as `a945789`; FID-008 is
-  closed against that SHA and moved to `dev/fids/archive/`. README, knowledge,
-  CHANGELOG, and the blocker register record the closure.
+      closed against that SHA and moved to `dev/fids/archive/`. README, knowledge,
+      CHANGELOG, and the blocker register record the closure.
 
 ## Prior Session — 2026-10-29 (model groups and subscriptions)
 
@@ -380,17 +379,17 @@ real customer subscription service, including what each plan includes and what
 it costs. This is a records-only pass; no application code changed.
 
 - [x] **G1 — Group FID authored.** `dev/fids/FID-2026-1029-007-model-group-control.md`
-  is converged with a schema, API, UI, migration, test, and verification plan.
+      is converged with a schema, API, UI, migration, test, and verification plan.
 - [x] **G2 — Group scope recorded.** The FID is registered here; implementation
-  has not started and no source file changed.
+      has not started and no source file changed.
 - [x] **G3 — Subscription FID authored.**
-  `dev/fids/archive/FID-2026-1029-008-subscription-plans-and-entitlements.md`
-  is converged with plans, entitlement snapshots, recurring Stripe billing,
-  allowance metering, admin and customer surfaces, tests, and gates; it was
-  implemented and closed later the same day (S15–S23).
+      `dev/fids/archive/FID-2026-1029-008-subscription-plans-and-entitlements.md`
+      is converged with plans, entitlement snapshots, recurring Stripe billing,
+      allowance metering, admin and customer surfaces, tests, and gates; it was
+      implemented and closed later the same day (S15–S23).
 - [x] **G4 — Dependency recorded.** FID-008 builds on FID-007's
-  `model_groups` and `models.group_slug`; both were design-only at authoring
-  time and are now implemented and closed (S10–S23).
+      `model_groups` and `models.group_slug`; both were design-only at authoring
+      time and are now implemented and closed (S10–S23).
 
 ## Prior Session — 2026-10-29 (governance reconciliation)
 
@@ -399,14 +398,14 @@ with the current repository. This is a records-only pass; no application code
 changed.
 
 - [x] **R1 — FID-001 closure.** Closed against
-  `bf3da9a007ca41d6e66c60ed080c2ef3e6cef7e5`, the first commit containing the
-  rebuilt tree; archived.
+      `bf3da9a007ca41d6e66c60ed080c2ef3e6cef7e5`, the first commit containing the
+      rebuilt tree; archived.
 - [x] **R2 — FID-006 metadata.** Corrected the archived status from `converged`
-  to `closed`.
+      to `closed`.
 - [x] **R3 — Scope truth.** Marked the original read-only review complete;
-  registered B1 (real Stripe test receipt) and B2 (route-level HTTP coverage).
+      registered B1 (real Stripe test receipt) and B2 (route-level HTTP coverage).
 - [x] **R4 — Verification.** `npm run verify` exit 0: 48/48 tests, quality PASS
-  over 125 files, 33-route build.
+      over 125 files, 33-route build.
 
 ## Prior Session — 2026-10-29 (FID-2026-1029-006)
 
@@ -415,20 +414,20 @@ top-up flow so paid models can be sold to outside users, built as production
 software even though development runs locally.
 
 - [x] **P1 — Identity.** Email/password signup, scrypt hashing, duplicate-email
-  `409`, generic login failure, and per-client limits.
+      `409`, generic login failure, and per-client limits.
 - [x] **P2 — Sessions.** Opaque server-side tokens in `sg_session`; hashed at
-  rest, HttpOnly, SameSite=Lax, seven days, Secure in production; logout
-  revokes the row.
+      rest, HttpOnly, SameSite=Lax, seven days, Secure in production; logout
+      revokes the row.
 - [x] **P3 — Ownership.** Account-scoped key CRUD, usage, ledger, and top-up
-  history; same-origin mutations; cross-account revoke denied.
+      history; same-origin mutations; cross-account revoke denied.
 - [x] **P4 — Surfaces.** `/signup`, `/login`, `/account`, admin Customers page,
-  and customer-oriented landing copy.
+      and customer-oriented landing copy.
 - [x] **P5 — Payments.** Stripe Checkout for $5–$500, signature-verified
-  webhook, amount/currency match, unique provider ref, one-transaction
-  fulfillment, success redirect grants nothing.
+      webhook, amount/currency match, unique provider ref, one-transaction
+      fulfillment, success redirect grants nothing.
 - [x] **P6 — Receipt.** Unit tests, full gates, disposable-DB HTTP and a locally
-  signed webhook fulfillment receipt, FID closure, changelog, commit, push. This
-  is not a real Stripe Checkout or card payment; that path is B1.
+      signed webhook fulfillment receipt, FID closure, changelog, commit, push. This
+      is not a real Stripe Checkout or card payment; that path is B1.
 
 Findings:
 
@@ -456,14 +455,14 @@ Gateway is the provider; `free` is the price group, and the family is the
 model line.
 
 - [x] **P1 — Vocabulary.** Provider = Savant Gateway; family = GPT/Claude/…;
-  group = free/paid/subscription.
+      group = free/paid/subscription.
 - [x] **P2 — Data boundary.** Normalize `"Free"` out of the family during
-  sync; repair legacy rows on boot.
+      sync; repair legacy rows on boot.
 - [x] **P3 — API.** `/v1/models` publishes `owned_by: "savant-gateway"`,
-  `family`, and `group`; `/api/models` publishes the provider identity and
-  `family`.
+      `family`, and `group`; `/api/models` publishes the provider identity and
+      `family`.
 - [x] **P4 — UI.** Public catalog, landing preview, admin catalog, pricing,
-  and analytics use Family and Group; `/models` states the provider identity.
+      and analytics use Family and Group; `/models` states the provider identity.
 - [x] **P5 — Verification.** Unit tests, gates, live sync, and API/UI receipts.
 
 Findings:
@@ -483,24 +482,24 @@ margins, add analytics, use all models in tables, add Font Awesome Free, and
 build it as production software even though it runs on localhost.
 
 - [x] **P1 — Schema.** Additive sell-price, price-source, catalog-presence,
-  credit, hold, ledger, charged-revenue, and settings storage.
+      credit, hold, ledger, charged-revenue, and settings storage.
 - [x] **P2 — Math.** Pure micro-dollar pricing, markup, margin, blended profit,
-  token cost, hold, estimate, and validation helpers with unit tests.
+      token cost, hold, estimate, and validation helpers with unit tests.
 - [x] **P3 — Catalog.** Additive sync that preserves manual prices, disables,
-  and delisted rows; public and admin model shapes.
+      and delisted rows; public and admin model shapes.
 - [x] **P4 — Credits.** Atomic reservation, expiry sweep, actual-usage
-  settlement, ledger, and operator grants.
+      settlement, ledger, and operator grants.
 - [x] **P5 — Routing.** Every active model routable once priced; unpriced
-  non-free rows rejected; paid holds settled on JSON, stream, cancel, and
-  error.
+      non-free rows rejected; paid holds settled on JSON, stream, cancel, and
+      error.
 - [x] **P6 — Public surface.** `/models` table with search, sort, access
-  filters, and pagination; landing copy and preview updated.
+      filters, and pagination; landing copy and preview updated.
 - [x] **P7 — Admin surface.** Authenticated shell with overview, catalog,
-  pricing, and analytics; inline price edits and bulk markup.
+      pricing, and analytics; inline price edits and bulk markup.
 - [x] **P8 — Icons.** Font Awesome Free installed and applied across public,
-  console, and admin shells.
+      console, and admin shells.
 - [x] **P9 — Verification and records.** Gates, production-server smoke,
-  disposable-DB money receipt, FID closure, changelog, commit, push.
+      disposable-DB money receipt, FID closure, changelog, commit, push.
 
 Findings during implementation, all completed in the same pass:
 
@@ -524,21 +523,21 @@ canonical protocol files from `savant-code`, configured for this repository.
 The `savant-code` checkout is read-only for this work.
 
 - [x] **P1 — Protocol port.** Copy `ECHO.md`, `ECHO-single-agent.md`,
-  `dev/echo-v0.1.2-single-agent.md`, `templates/`, `coding-standards/`, and
-  `docs/echo-protocol.md`; configure `protocol.config.yaml`, `AGENTS.md`, and
-  the docs for npm/Next.js and single-agent governance.
+      `dev/echo-v0.1.2-single-agent.md`, `templates/`, `coding-standards/`, and
+      `docs/echo-protocol.md`; configure `protocol.config.yaml`, `AGENTS.md`, and
+      the docs for npm/Next.js and single-agent governance.
 - [x] **P2 — Brand assets.** Commit `assets/` and publish logo and favicon
-  copies under `public/`; wire metadata and the web manifest.
+      copies under `public/`; wire metadata and the web manifest.
 - [x] **P3 — Landing page.** Public `/` with live catalog counts, free-model
-  showcase, workflow, feature and code sections, and links to the console.
+      showcase, workflow, feature and code sections, and links to the console.
 - [x] **P4 — Console route.** Move the existing dashboard to `/dashboard` with
-  its own shell so `/` can be public marketing.
+      its own shell so `/` can be public marketing.
 - [x] **P5 — Admin authentication.** Password login with an HMAC-signed,
-  HttpOnly session cookie, rate limiting, and explicit unconfigured state.
+      HttpOnly session cookie, rate limiting, and explicit unconfigured state.
 - [x] **P6 — Admin panel.** `/admin` with provider sync, model enable/disable,
-  consumer-key management, and usage visibility.
+      consumer-key management, and usage visibility.
 - [x] **P7 — Verification.** Unit tests for session signing and password checks;
-  local gates; live HTTP checks of landing, login, model toggle, and logout.
+      local gates; live HTTP checks of landing, login, model toggle, and logout.
 
 Evidence is recorded in
 `dev/fids/archive/FID-2026-1029-003-landing-admin-and-protocol-port.md` (closed
@@ -560,7 +559,7 @@ Findings during implementation, all completed in the same pass:
 ## Approved Work Items
 
 - [x] **Review the gateway project** (interpreted scope, presented 2026-10-28;
-  completed 2026-10-29):
+      completed 2026-10-29):
   - Ground with ECHO protocol — activation confirmed, canonical laws read 0-EOF.
   - Map architecture: `src/`, `server/`, `shared/`, `public/`, `tests/`.
   - Read every production file 0-EOF (Law 1) before any assessment.
@@ -610,7 +609,7 @@ Recorded read-only under the approved review item; any fix remains blocked pendi
   - `server/revenueReports.ts:135-178` builds `lines` and `totals`, then only calls `setSetting(reportKey, ...)`; no transport is invoked. `startRevenueReportJob` (`:310-319`) calls this function, so daily/night reports are marked sent and never delivered. `generateAndSendRevenueReport` (`:180+`) has the same missing transport and no production caller.
   - `server/subscriptions.ts:397-410` starts a job whose only action is `expireDueSubscriptions()`; `runSubscriptionExpiryNotifications` (`:640`) has no production caller. Subscription expiry reminders therefore never run despite the job name and tests.
   - `server/adminLoginApproval.ts:44-49` immediately creates a session and returns `pending: false`; the Telegram approval table is never populated. `src/admin/AdminAuth.tsx` still renders and polls a “Waiting for Telegram approval…” flow that cannot occur.
-  Severity: high (silent loss of operational alerts, revenue reports, expiry notices, and model-health controls).
+    Severity: high (silent loss of operational alerts, revenue reports, expiry notices, and model-health controls).
 - **D30 — Model usage analytics classify priced models as free and report zero cost (Law 5/9/12).** `server/modelUsageStats.ts:174` treats any catalog row with `token_weight === 0` as `free`. Paid catalog defaults all use `token_weight: 0` (`server/providerKeys.ts:640-664`), and the schema migration explicitly sets weight 0 for priced models (`server/db.ts:965-977`). `costUsd` is then forced to 0 for `kind === 'free'` (`server/modelUsageStats.ts:215`), and the daily series uses the same classifier (`:288-290`). Admin totals therefore under-report paid requests and revenue; the comment at `:50-54` documents the opposite intent. Severity: high (misleading ops/finance data).
 - **D31 — Public uptime/status reports operational when there is no data (Law 5/9).** `classifyHour` returns `'up'` for `total <= 0` (`server/modelUptime.ts:13-18`), and `buildModelUptime` passes `total: 0` for every empty hour (`:84-110`). The `latest` loop skips only `'none'`, so a model that never served traffic is reported `operational` with 100% uptime; a single failed sample also becomes `'none'` and can be skipped. `src/pages/Status.tsx:30-35` reinforces this by mapping the `none` hour state to the label `operational`. Severity: medium-high (status page is green by default).
 - **D32 — Kimi installer emits literal `${SLUG()}` model aliases and a stale model id (Law 4/9/11).** `server/installScripts.ts:876-891` defines `KIMI_MODELS` with single-quoted aliases such as `'${SLUG()}/free/kimi-k3'`. The generated TOML writes those placeholders literally under `[models."..."]`, while `default_model` is interpolated to the real slug, so the default model has no matching table entry. The same block references `gpt-6-sol`, which is absent from `APINEX_CATALOG_DEFAULTS` (the current id is `gpt-6.1-sol`); `src/developers/pages.tsx:1508,1539-1541` repeats the stale id. No test covers installer output. Severity: medium.
@@ -719,9 +718,9 @@ Recorded read-only under the approved review item; any fix remains blocked pendi
 - 2026-10-29: **D49 correction discovered during the rebuild:** APInex public metadata marks 35 models with `allowFree`, including paid models that return `402 Insufficient balance` on a zero-balance account. The new catalog therefore uses the `free/*` pool as the authoritative free signal; paid models are catalogued but blocked locally. Test keys and usage rows were deleted after verification; the synced catalog and provider status remain.
 - 2026-10-29: **Repository published and governance gates wired.** The project is now a Git repository at `https://github.com/savant0x/savant-gateway` (public, `main`). This supersedes the FID-001 note that no Git repository or template gates exist: `quality`, `test`, `check` and `verify` now exist, along with `.githooks` and two CI workflows. FID-2026-1029-002 is closed against `bf3da9a` and archived under `dev/fids/archive/`. The provider adapter was renamed `lib/apinex.ts` → `lib/provider.ts` and residual reseller naming was stripped from source and UI; the vendor hostnames in `.env.example` remain because they are the upstream URLs. Local gates after the rename: `npm run check` 0, `npm test` 6/6, `npm run quality` PASS (40 files), `npm run build` 0. GitHub: `ci` and `attribution-guard` both green.
 - 2026-10-29: **FID structure created** under `dev/fids/` with `archive/`, plus preserved audit baselines in `dev/fids/audit/`. `FID-2026-1029-001-nextjs-gateway-rebuild.md` records the operator ruling and
-rebuild using the operator-supplied `templates/FID-TEMPLATE.md` structure. At
-that time the status was `verified`, not `closed`, because the workspace had no
-Git repository and the template's required local commit could not exist. Fresh gates: `npm run check` exit 0; `npm run build` exit 0; read-only database counts 45 models / 11 free / 0 keys / 0 usage. Documentary audit passes measured 3.101%, 2.168%, 0.610% and 0.435% (two consecutive passes below 2%, converged as a record only). Open findings recorded in the FID: spoofable Host-header local guard, usage-row copy overclaim, cancelled-stream under-recording. The template's  `fid:verify`, `quality:report`, `scope:check`, `validate:repository`,
+  rebuild using the operator-supplied `templates/FID-TEMPLATE.md` structure. At
+  that time the status was `verified`, not `closed`, because the workspace had no
+  Git repository and the template's required local commit could not exist. Fresh gates: `npm run check` exit 0; `npm run build` exit 0; read-only database counts 45 models / 11 free / 0 keys / 0 usage. Documentary audit passes measured 3.101%, 2.168%, 0.610% and 0.435% (two consecutive passes below 2%, converged as a record only). Open findings recorded in the FID: spoofable Host-header local guard, usage-row copy overclaim, cancelled-stream under-recording. The template's `fid:verify`, `quality:report`, `scope:check`, `validate:repository`,
   `progression` and `balance` gates do not exist here; actual gates were `lint`,
   `typecheck`, `check` and `build` at that time. **Superseded 2026-10-29:** the
   repository was published at `bf3da9a`; FID-001 is closed against that commit
@@ -746,7 +745,7 @@ Git repository and the template's required local commit could not exist. Fresh g
   models and zero free sentinels; `/api/models` returned
   `provider: "Savant Gateway"`, `family: "DeepSeek"`, no legacy `provider`
   key; `/v1/models` returned `owned_by: "savant-gateway"`, `family:
-  "DeepSeek"`, `group: "free"`; `/models` and the three admin tables render
+"DeepSeek"`, `group: "free"`; `/models` and the three admin tables render
   Family/Group with no Provider column.
 - 2026-10-29: **Post-ship customer E2E verification handed off without a runtime
   receipt.** The production server was not running (`data/prod-server.pid` is

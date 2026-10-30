@@ -9,6 +9,8 @@
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044, FID-2026-1030-048, FID-2026-1030-049, FID-2026-1030-050, FID-2026-1030-051, FID-2026-1030-053
 **YAGNI-Compliance:** Verified — retain snapshots and invoice-driven lifecycle.
+**Archived:** 2026-10-30 — implementation `cbc31df`; CI run 41098426834 succeeded
+(`gates`) and so did the attribution guard 41098426816.
 
 ## Summary
 

@@ -78,3 +78,11 @@ One-time trials remain disabled; no active plan is offered. No eligible active
 key-holding account exists in the local database at the final read. No source
 change can guarantee upstream availability or replace commercial rate/funding,
 provider-wide admission (048), durable recovery (051), or launch acceptance (062).
+
+## Closure
+
+Implementation committed as `d31d9e0d6980245e2732b9f03ec9e69983acbcd5`.
+FID-063 closed and moved to `dev/fids/archive/` at 16:17 UTC with the real
+implementation hash and gate receipt. Q1–Q5 are complete. The closure commit is
+documentation only; the normal push runs the full mandatory pre-push gates.
+The operator's two untracked research documents remain untouched.

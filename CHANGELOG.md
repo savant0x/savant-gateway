@@ -11,7 +11,8 @@ distinguish verified behavior from unverified claims.
   hides unavailable or expired values. Exact upstream counters/reset times are
   separate from the conservative admission balance after local usage and holds.
   Fixes the observed previous-day 19,631,919-used snapshot when upstream reports
-  0 used / 20,000,000 remaining. Verification and commit receipt follow in the FID.
+  0 used / 20,000,000 remaining. Closed against `d31d9e0`; archived receipt:
+  242 unit tests, 242 HTTP checks, trial HTTP PASS, warning-free full gates.
 - **FID-2026-1030-063 — high — Daily allocated trial credits.** Reuses the
   weighted-token allocation/usage/reservation ledger, caps configured allocation
   against observed daily upstream capacity, rebalances unspent grants, and

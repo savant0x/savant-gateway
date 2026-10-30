@@ -3,7 +3,8 @@
 As of 2026-10-30. This is the current index; dated session receipts describe the
 tree they tested, not automatically the current working tree.
 
-Latest repair: FID-2026-1030-063 separates current upstream account observation
+Latest repair: [FID-2026-1030-063](../dev/fids/archive/FID-2026-1030-063-provider-account-truth.md),
+closed against `d31d9e0`, separates current upstream account observation
 from catalog sync and implements daily allocated trial-credit readouts. A live
 October 30 16:09 UTC local check matches upstream: $0, 0 used / 20M remaining,
 next reset October 31 00:00 UTC. Every explicit check reads upstream; failure

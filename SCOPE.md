@@ -23,7 +23,7 @@ obligations remain active. No offering, funding or deployment is activated.
   fence concurrent refreshes; never substitute cached success on failure.
   Preserve unknown, zero, unlimited and UTC reset semantics. Retain local usage
   and holds conservatively during refresh; mask stale/unavailable current values.
-- [ ] **Q3 — Verification and closure.** Regress the real mismatch, failures,
+- [x] **Q3 — Verification and closure.** Regress the real mismatch, failures,
   reset and races; verify production HTTP callers and truthful rendered values;
   run declared gates, commit, archive with evidence and normally push. Preserve
   the two untracked operator research documents.
@@ -43,7 +43,8 @@ obligations remain active. No offering, funding or deployment is activated.
 Q2/Q4/Q5 evidence: 242 unit tests, 242 production HTTP checks, trial HTTP all
 PASS; clean lint/typecheck/quality/build. Live local HTTP 200 at 16:09:18 UTC:
 $0, 0 used / 20M remaining, reset October 31 00:00 UTC. Customer and operator
-figures clear while checking/unavailable. Q3's commit/archive is the final step.
+figures clear while checking/unavailable. Implementation `d31d9e0`; FID-063
+closed and archived with its receipt. Normal push follows the closure record.
 
 ## Current Session — 2026-10-30 (production deployment readiness: 057)
 

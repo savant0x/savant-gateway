@@ -4,7 +4,7 @@
 **ID:** FID-2026-1030-063
 **Parent:** FID-2026-1030-043
 **Severity:** critical
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-30 15:42 UTC
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — repair the existing provider observation path.
@@ -186,7 +186,8 @@ CHANGE DELTA: initial document, no implementation written.
 
 ### Implementation Evidence
 
-Steps 1–3 implemented; step 4 gates and live comparison pass, commit/archive next.
+Steps 1–4 implemented and verified. Implementation commit:
+`d31d9e0d6980245e2732b9f03ec9e69983acbcd5`.
 Callers: `lib/gateway-trial.ts:54`, `app/api/provider/runtime/route.ts:25`,
 `app/api/account/trial/route.ts:14`; observation math `lib/quota-ledger.ts:96`.
 
@@ -203,7 +204,9 @@ trial-http-suite: all checks PASS
 ## Resolution
 
 Implemented and verified; the live local check at 16:09:18 UTC returns HTTP 200,
-$0 balance, 0 used / 20M remaining, reset October 31 00:00 UTC. Commit follows.
+$0 balance, 0 used / 20M remaining, reset October 31 00:00 UTC.
+- **Closed Date:** 2026-10-30 16:17 UTC
+- **Archived:** 2026-10-30 16:17 UTC
 Two stable document passes and measured correction are recorded in
 `dev/audits/2026-10-30-provider-account-truth.md` before source edits.
 

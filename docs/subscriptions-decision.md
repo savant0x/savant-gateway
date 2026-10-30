@@ -68,13 +68,22 @@ Checkout requests return `409`.
 
 ## How the launch gate is operated
 
-- No plan is left `active` at launch. Archiving a plan removes it from the
+- `PLAN_SALES_ENABLED` is the gate, and it defaults to off. While it is off the
+  public catalog (`/plans`, `/api/plans`, the landing page) publishes no plan,
+  `POST /api/account/subscription` returns `403 plan_sales_disabled` before it
+  reads Stripe configuration, and the admin API refuses to publish a draft or
+  archived plan as `active`. The decision therefore does not depend on Stripe
+  credentials, which must be present for prepaid credit.
+- Turning the flag on does not require reactivating anything by itself, but a
+  plan must still be `active` to be sold. Archiving a plan removes it from the
   public catalog and from new checkouts. The catalog enforces this itself: a
   plan-gated model is published only while an active plan covers it, so a tier
   with nothing to buy it disappears from `/models`, `/v1/models` and the public
   counts without further action (FID-2026-1029-031).
-- `STRIPE_SECRET_KEY` stays unset in production until the acceptance run in
-  `docs/launch-readiness.md` passes; checkout already returns `503` without it.
+- Sales being off closes only new purchases. Existing subscriptions keep their
+  purchased snapshot and included usage, manual comps and extensions still work,
+  and a checkout created before the switch can still be completed by its signed
+  invoice webhook.
 - The free path does not depend on subscriptions: free-group models route
   through `free_pool_allocations`, and paid models require prepaid credit.
 

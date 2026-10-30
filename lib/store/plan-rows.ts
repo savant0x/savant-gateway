@@ -3,6 +3,7 @@ import "server-only";
 import type { PlanGroupInclusion, PlanStatus, PlanSummary } from "../types";
 
 import { db } from "../db";
+import { readPlanSalesPolicy } from "../plan-sales";
 import { expandEntitlementIds } from "../plans";
 
 export type PlanRow = {
@@ -148,6 +149,12 @@ export function listActivePlans() {
   return summarizePlanRows(
     allPlanRows().filter((row) => row.status === "active"),
   ).filter((plan) => plan.modelCount > 0);
+}
+
+/** Public, purchasable plans. Empty while the launch sales policy is off, so
+ * no surface publishes a plan that checkout will refuse. */
+export function listSellablePlans() {
+  return readPlanSalesPolicy().selling ? listActivePlans() : [];
 }
 
 export function listPlansByStatus(status: PlanStatus) {

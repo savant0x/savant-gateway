@@ -2,6 +2,33 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-30 (subscription launch safety: 054)
+
+Handoff continuation in dependency order after 053 and the CI repair. Automation
+level 3, strict, single agent. Real recurring lifecycle acceptance, credentials
+and an offering change remain operator/062 boundaries; this pass only makes the
+no-sales decision enforceable and proves existing accounting still works.
+
+- [x] **P1 — Re-audit 054 against current source.** Measured: the catalog gate is
+  plan `status` and the checkout gate was Stripe configuration, so prepaid
+  credentials would make a leftover active plan purchasable; no explicit policy
+  existed anywhere. Convergence recorded in the FID before code.
+- [x] **P2 — Implement the sales policy.** `PLAN_SALES_ENABLED` (unset = off)
+  gates the public catalog, checkout (before Stripe readiness) and publishing a
+  plan, while active-plan edits, comps, portal access and in-flight invoice
+  activation stay open.
+- [x] **P3 — Verification.** `npm run verify` exit 0: 290 unit tests, 284 HTTP
+  checks, trial HTTP PASS, quality PASS (266 files), clean lint/typecheck/build.
+  The suite stores an active plan and still gets an empty public catalog, crafts
+  a checkout and gets `403 plan_sales_disabled`, activates a pre-existing
+  in-flight invoice, then comps a subscription and proves included usage serves
+  without charging credit. FID-054 closed; archive and CHANGELOG in the closure
+  commit.
+
+Remaining acceptance, not claimed: a real Stripe recurring journey (Checkout,
+renewal, failure, cancellation, portal), a funded upstream wallet sized to any
+allowance sold, and the offering decision that would set the flag true.
+
 ## Current Session — 2026-10-30 (CI fresh-database boot: 064)
 
 Operator reported a GitHub Actions failure on the last push. Automation level 3,

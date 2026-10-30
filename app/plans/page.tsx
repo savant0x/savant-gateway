@@ -7,7 +7,7 @@ import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
 import { PlanGrid } from "@/components/plans/plan-grid";
 import { getCustomerSession } from "@/lib/customer-auth";
-import { customerSubscriptionSummary, listActivePlans } from "@/lib/store";
+import { customerSubscriptionSummary, listSellablePlans } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 };
 
 export default async function PlansPage() {
-  const plans = listActivePlans();
+  const plans = listSellablePlans();
   const customer = await getCustomerSession();
   const subscription = customer
     ? customerSubscriptionSummary(customer.id)

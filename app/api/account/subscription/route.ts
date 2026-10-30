@@ -4,6 +4,7 @@ import {
   requireCustomerApi,
 } from "@/lib/customer-auth";
 import { subscriptionLimiter } from "@/lib/customer-rate-limit";
+import { readPlanSalesPolicy } from "@/lib/plan-sales";
 import { resolveAppOrigin, readStripeConfig } from "@/lib/stripe";
 import {
   createPlanCheckout,
@@ -42,6 +43,16 @@ export async function POST(request: Request) {
       `Too many subscription attempts. Retry in ${decision.retryAfterSeconds}s.`,
       { "Retry-After": String(decision.retryAfterSeconds) },
     );
+  }
+
+  // The launch decision outranks payment readiness: configured prepaid Stripe
+  // credentials must never make a plan purchasable on their own.
+  const sales = readPlanSalesPolicy();
+
+  if (!sales.selling) {
+    return customerError(403, sales.reason, {
+      "X-Reason": "plan_sales_disabled",
+    });
   }
 
   const config = readStripeConfig();

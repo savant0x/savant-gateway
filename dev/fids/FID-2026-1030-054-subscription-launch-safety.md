@@ -4,7 +4,7 @@
 **ID:** FID-2026-1030-054
 **Parent:** FID-2026-1030-043
 **Severity:** high
-**Status:** converged
+**Status:** closed
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044, FID-2026-1030-048, FID-2026-1030-049, FID-2026-1030-050, FID-2026-1030-051, FID-2026-1030-053
@@ -77,10 +77,11 @@ is additionally mandatory only after an explicit offering change; it remains a t
 ## Perfection Loop
 
 RED: prepaid configuration can remove a supposed no-sales safeguard. GREEN:
-independent sales policy plus lifecycle proof. AUDIT: pending. ADVERSARIAL: an
-admin activates a plan or a caller crafts checkout directly; the gate must hold.
-Five questions: every entitlement state, aggregate capacity, hostile purchase
-requests, immutable snapshots and honest invoice provenance.
+independent sales policy plus lifecycle proof. AUDIT: complete (below).
+ADVERSARIAL: an admin activates a plan or a caller crafts checkout directly;
+the gate holds in both cases. Five questions: every entitlement state,
+aggregate capacity, hostile purchase requests, immutable snapshots and honest
+invoice provenance.
 
 ## Resolution
 
@@ -89,8 +90,34 @@ valid prior checkout/invoice obligations or revoke purchased snapshots. Test
 the sales-off transition with a payment already in flight and existing access.
 Final convergence checks are in the master planning-audit receipt.
 
-Design only. Current completion path proves safe no-sales operation and existing
-accounting; it does not authorize enabling recurring purchases.
+Implemented. `PLAN_SALES_ENABLED` is the single explicit policy and defaults to
+off. While off, `listSellablePlans()` publishes nothing on `/plans`,
+`/api/plans` or the landing page, `POST /api/account/subscription` returns `403`
+with `X-Reason: plan_sales_disabled` before it reads Stripe configuration, and
+`createPlan`/`updatePlan` refuse a transition into `active` (`409`). Editing an
+already-active plan, archiving, comps, extensions, the customer portal and
+webhook-driven invoice activation are not gated, so existing obligations and
+in-flight checkouts survive the switch. This proves safe no-sales operation and
+existing accounting; it does not authorize enabling recurring purchases.
+
+## Implementation Evidence
+
+- `lib/plan-sales.ts` — policy parsing (unset means off) and the pure
+  `decidePlanActivation` decision used by plan authoring.
+- `lib/store/plan-rows.ts` — `listSellablePlans()` gates every public plan
+  surface; `lib/store/plans.ts` refuses publishing while off.
+- `app/api/account/subscription/route.ts` — policy checked before Stripe
+  readiness; `.env.example` and `docs/subscriptions-decision.md` document it.
+- `tests/subscription-sales-policy.test.mjs` — unset/truthy/other values and the
+  activation matrix (draft/archived/create refused, active edits allowed).
+- `scripts/http-suite/checks.mjs` — draft authoring succeeds, publish is `409`,
+  a stored active plan stays unpublished, `/plans` renders the unavailable
+  state, a crafted checkout is `403 plan_sales_disabled` (not a Stripe error),
+  a signed invoice activates a pre-existing in-flight checkout, a manual comp is
+  active, included usage serves and bills `subscription` with no credit change.
+
+Verification: `npm run verify` exit 0 — 290 unit tests, 284 HTTP checks, trial
+HTTP PASS, quality PASS (266 files), clean lint/typecheck/build.
 
 ## Lessons Learned
 

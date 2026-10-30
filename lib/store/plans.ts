@@ -1,10 +1,11 @@
 import "server-only";
 
-import type { PlanSummary } from "../types";
+import type { PlanStatus, PlanSummary } from "../types";
 
 import { randomUUID } from "node:crypto";
 
 import { db, nowIso } from "../db";
+import { decidePlanActivation, readPlanSalesPolicy } from "../plan-sales";
 import {
   expandEntitlementIds,
   type PlanValues,
@@ -24,6 +25,7 @@ export {
   getPlanBySlug,
   listActivePlans,
   listPlans,
+  listSellablePlans,
 } from "./plan-rows";
 
 export type PlanMutation =
@@ -160,6 +162,16 @@ export function createPlan(input: unknown): PlanMutation {
     return { ok: false, status: 400, error: inclusions.error };
   }
 
+  const activation = decidePlanActivation({
+    selling: readPlanSalesPolicy().selling,
+    current: null,
+    next: values.status,
+  });
+
+  if (!activation.allowed) {
+    return { ok: false, status: 409, error: activation.error };
+  }
+
   const id = `plan_${randomUUID()}`;
   const now = nowIso();
 
@@ -194,8 +206,9 @@ export function createPlan(input: unknown): PlanMutation {
 }
 
 export function updatePlan(id: string, input: unknown): PlanMutation {
-  const current = db.prepare("SELECT slug FROM plans WHERE id = ?").get(id) as
-    { slug: string } | undefined;
+  const current = db
+    .prepare("SELECT slug, status FROM plans WHERE id = ?")
+    .get(id) as { slug: string; status: PlanStatus } | undefined;
 
   if (!current) return { ok: false, status: 404, error: "Plan not found." };
 
@@ -219,6 +232,16 @@ export function updatePlan(id: string, input: unknown): PlanMutation {
 
   if (!inclusions.ok) {
     return { ok: false, status: 400, error: inclusions.error };
+  }
+
+  const activation = decidePlanActivation({
+    selling: readPlanSalesPolicy().selling,
+    current: current.status,
+    next: values.status,
+  });
+
+  if (!activation.allowed) {
+    return { ok: false, status: 409, error: activation.error };
   }
 
   db.transaction(() => {

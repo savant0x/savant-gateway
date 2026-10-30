@@ -38,6 +38,7 @@ export {
   getPlanBySlug,
   listActivePlans,
   listPlans,
+  listSellablePlans,
   updatePlan,
 } from "./store/plans";
 export {

@@ -1,7 +1,7 @@
 import { LandingPage } from "@/components/landing/landing-page";
 import { getOpenRouterModels } from "@/lib/openrouter-prices";
 import { buildCatalogComparison } from "@/lib/price-comparison";
-import { getLandingData, listActivePlans } from "@/lib/store";
+import { getLandingData, listSellablePlans } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +21,7 @@ export default async function HomePage() {
       }
       comparisons={comparison.comparisons}
       data={data}
-      plans={listActivePlans()}
+      plans={listSellablePlans()}
     />
   );
 }

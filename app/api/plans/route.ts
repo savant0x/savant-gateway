@@ -1,6 +1,6 @@
 import type { PlanSummary } from "@/lib/types";
 
-import { listActivePlans } from "@/lib/store";
+import { listSellablePlans } from "@/lib/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,7 +24,7 @@ function publicPlan(plan: PlanSummary) {
 
 export async function GET() {
   return Response.json(
-    { plans: listActivePlans().map(publicPlan) },
+    { plans: listSellablePlans().map(publicPlan) },
     { headers: { "Cache-Control": "no-store" } },
   );
 }

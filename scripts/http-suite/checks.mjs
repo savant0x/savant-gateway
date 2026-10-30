@@ -788,6 +788,256 @@ async function runSecurityChecks(context, alpha, beta, adminCookie) {
   );
 }
 
+async function runPlanSalesChecks(context, alpha, adminCookie) {
+  const adminHeaders = { cookie: `sg_admin=${adminCookie}` };
+  const planBody = {
+    slug: "http-suite-plan",
+    name: "HTTP Suite Plan",
+    description: "Launch sales policy probe",
+    status: "draft",
+    priceUsd: 5,
+    interval: "month",
+    includedWeightedTokens: 100_000,
+    overageMode: "block",
+    overageMarkupBps: 0,
+    groups: [],
+    modelIds: ["mock-paid"],
+  };
+
+  const created = await request(context.baseUrl, "/api/admin/plans", {
+    method: "POST",
+    ...adminHeaders,
+    body: planBody,
+  });
+
+  checkEqual("draft plans stay authorable while sales are off", created.status, 200);
+
+  const planId = created.json?.plan?.id;
+
+  check(
+    "draft plan creation returns an id",
+    typeof planId === "string" && planId.startsWith("plan_"),
+    created.text,
+  );
+
+  const publish = await request(context.baseUrl, "/api/admin/plans", {
+    method: "PATCH",
+    ...adminHeaders,
+    body: { ...planBody, id: planId, status: "active" },
+  });
+
+  checkEqual("publishing a plan is refused while sales are off", publish.status, 409);
+  check(
+    "publishing refusal names the launch policy",
+    String(publish.json?.error ?? "").includes("sales are disabled"),
+    publish.text,
+  );
+
+  // A plan published before the policy existed must not become purchasable by
+  // its stored status alone.
+  context.db
+    .prepare("UPDATE plans SET status = 'active' WHERE id = ?")
+    .run(planId);
+
+  const catalog = await request(context.baseUrl, "/api/plans");
+
+  checkEqual("public plan catalog answers while sales are off", catalog.status, 200);
+  checkEqual(
+    "public plan catalog publishes no active plan while sales are off",
+    catalog.json?.plans?.length,
+    0,
+  );
+
+  const plansPage = await request(context.baseUrl, "/plans");
+
+  checkEqual("plans page renders while sales are off", plansPage.status, 200);
+  check(
+    "plans page states that plans are unavailable",
+    plansPage.text.includes("Plans are not available yet"),
+  );
+  check(
+    "plans page does not render the unpublished plan",
+    !plansPage.text.includes("HTTP Suite Plan"),
+  );
+
+  const crafted = await request(context.baseUrl, "/api/account/subscription", {
+    method: "POST",
+    cookie: `sg_session=${alpha.cookie}`,
+    body: { planSlug: planBody.slug },
+  });
+
+  checkEqual("crafted subscription checkout is refused while sales are off", crafted.status, 403);
+  checkEqual(
+    "checkout refusal names the sales policy, not Stripe",
+    crafted.headers.get("x-reason"),
+    "plan_sales_disabled",
+  );
+  check(
+    "checkout refusal happens before payment readiness",
+    !crafted.text.toLowerCase().includes("stripe"),
+    crafted.text,
+  );
+
+  // A checkout that was already in flight when sales were switched off must
+  // still be completable: its signed invoice is an existing obligation, not a
+  // new sale. It is activated through the webhook, never the public route.
+  const inflightUser = "user_http_suite_inflight";
+  const inflightSub = "sub_http_suite_inflight";
+  const inflightPlan = context.db
+    .prepare("SELECT * FROM plans WHERE id = ?")
+    .get(planId);
+  const inflightNow = new Date();
+  const inflightStart = inflightNow.toISOString();
+  const inflightEnd = new Date(
+    inflightNow.getTime() + 30 * 24 * 60 * 60 * 1000,
+  ).toISOString();
+
+  context.db
+    .prepare(
+      `INSERT INTO users (id, email, name, status, created_at)
+       VALUES (?, ?, 'Inflight HTTP Suite', 'active', ?)`,
+    )
+    .run(inflightUser, `${inflightUser}@example.test`, inflightStart);
+  context.db
+    .prepare(
+      `INSERT INTO subscriptions
+        (id, user_id, plan_id, status, source, stripe_customer_id,
+         stripe_subscription_id, plan_name_snapshot, price_micros_snapshot,
+         currency_snapshot, interval_snapshot, included_weighted_tokens_snapshot,
+         overage_mode_snapshot, overage_markup_bps_snapshot,
+         current_period_start, current_period_end, cancel_at_period_end,
+         created_at, updated_at)
+       VALUES (?, ?, ?, 'incomplete', 'stripe', 'cus_http_inflight',
+         'sub_http_inflight', ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+    )
+    .run(
+      inflightSub,
+      inflightUser,
+      planId,
+      inflightPlan.name,
+      inflightPlan.price_micros,
+      inflightPlan.currency,
+      inflightPlan.interval,
+      inflightPlan.included_weighted_tokens,
+      inflightPlan.overage_mode,
+      inflightPlan.overage_markup_bps,
+      inflightStart,
+      inflightEnd,
+      inflightStart,
+      inflightStart,
+    );
+  context.db
+    .prepare(
+      `INSERT INTO subscription_models (subscription_id, model_id)
+       VALUES (?, 'mock-paid')`,
+    )
+    .run(inflightSub);
+
+  const inflightPaidAt = Math.floor(inflightNow.getTime() / 1000);
+  const inflightEvent = JSON.stringify({
+    id: "evt_http_suite_inflight_paid",
+    object: "event",
+    api_version: "2024-06-20",
+    created: inflightPaidAt,
+    type: "invoice.paid",
+    data: {
+      object: {
+        id: "in_http_suite_inflight",
+        object: "invoice",
+        amount_paid: 500,
+        currency: "usd",
+        status: "paid",
+        status_transitions: { paid_at: inflightPaidAt },
+        subscription: "sub_http_inflight",
+        customer: "cus_http_inflight",
+        lines: {
+          data: [
+            {
+              period: {
+                start: inflightPaidAt,
+                end: inflightPaidAt + 30 * 24 * 60 * 60,
+              },
+            },
+          ],
+        },
+      },
+    },
+  });
+  const inflight = await sendWebhook(context, inflightEvent, inflightPaidAt);
+
+  checkEqual("a pre-existing checkout invoice is still accepted", inflight.status, 200);
+  checkEqual(
+    "the in-flight payment activates while sales are off",
+    inflight.json?.activated,
+    true,
+  );
+  checkEqual(
+    "the activated subscription is active while sales are off",
+    context.db
+      .prepare("SELECT status FROM subscriptions WHERE id = ?")
+      .get(inflightSub)?.status,
+    "active",
+  );
+
+  const grant = await request(context.baseUrl, "/api/admin/subscriptions", {
+    method: "POST",
+    ...adminHeaders,
+    body: { action: "grant", userId: alpha.id, planId },
+  });
+
+  checkEqual("manual comps still work while sales are off", grant.status, 200);
+  checkEqual(
+    "a comped subscription is active while sales are off",
+    grant.json?.subscription?.status,
+    "active",
+  );
+
+  const summary = await request(context.baseUrl, "/api/account/subscription", {
+    cookie: `sg_session=${alpha.cookie}`,
+  });
+
+  checkEqual("existing entitlement stays visible while sales are off", summary.status, 200);
+  checkEqual(
+    "existing entitlement stays active while sales are off",
+    summary.json?.subscription?.status,
+    "active",
+  );
+
+  const creditBefore = (await me(context, alpha.cookie)).json?.account?.creditMicros;
+
+  context.mock.reset();
+
+  const includedCall = await request(context.baseUrl, "/v1/chat/completions", {
+    method: "POST",
+    headers: { authorization: `Bearer ${alpha.secret}` },
+    body: {
+      model: "mock-paid",
+      messages: [{ role: "user", content: "included while sales off" }],
+      max_tokens: 32,
+    },
+  });
+
+  checkEqual("included usage still serves while sales are off", includedCall.status, 200);
+
+  const settleRow = context.db
+    .prepare(
+      `SELECT billing_source FROM usage_events
+       WHERE user_id = ? ORDER BY rowid DESC LIMIT 1`,
+    )
+    .get(alpha.id);
+
+  checkEqual(
+    "existing entitlement bills the subscription, not credit",
+    settleRow?.billing_source,
+    "subscription",
+  );
+  checkEqual(
+    "included usage charges no credit while sales are off",
+    (await me(context, alpha.cookie)).json?.account?.creditMicros,
+    creditBefore,
+  );
+}
+
 export async function runChecks(context) {
   await runAvailabilityChecks(context);
 
@@ -801,5 +1051,8 @@ export async function runChecks(context) {
 
   await runSystemsChecks(context, alpha, adminCookie);
   await runSecurityChecks(context, alpha, beta, adminCookie);
+  // Must run before the degradation probe: it drops a required table on
+  // purpose. The comped subscription also changes how later calls are billed.
+  await runPlanSalesChecks(context, alpha, adminCookie);
   await runDegradeChecks(context);
 }

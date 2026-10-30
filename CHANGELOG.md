@@ -3,6 +3,21 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-30 — Enforced no-sales launch policy
+
+- **FID-2026-1030-054 — high — Plan sales are a policy, not a side effect of
+  missing credentials.** Prepaid credit requires Stripe to be configured, so
+  unset keys could not remain the reason plans were unsellable. `PLAN_SALES_ENABLED`
+  is now the single gate and defaults to off: the public catalog (landing page,
+  `/plans`, `/api/plans`) publishes no plan, `POST /api/account/subscription`
+  returns `403 plan_sales_disabled` before reading Stripe configuration, and
+  authoring refuses to publish a draft or archived plan as `active`. Sales being
+  off closes only new purchases: existing snapshots, comps, extensions, the
+  portal and a signed invoice for a checkout already in flight keep working.
+  Verified: `npm run verify` exit 0, 290 unit tests, 284 HTTP checks (the suite
+  holds an active plan in storage and still gets an empty catalog, then proves a
+  comped subscription serves included usage with no credit change).
+
 ## 2026-10-30 — Parallel-boot migration safety
 
 - **FID-2026-1030-064 — high — Fresh-database boot no longer races itself.**

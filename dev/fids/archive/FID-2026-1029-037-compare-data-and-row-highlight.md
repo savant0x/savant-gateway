@@ -3,7 +3,12 @@
 **Filename:** `FID-2026-1029-037-compare-data-and-row-highlight.md`
 **ID:** FID-2026-1029-037
 **Severity:** low
-**Status:** verified
+**Status:** closed
+**Closed Against:** `50758c1`
+**Archived:** 2026-10-30
+**Final closure:** additive benchmark columns, parser/store fields and comparison
+rows/winner styling verified in source and Git; full `npm run verify` exit 0
+this session. The correction below describes the pre-commit state.
 **Created:** 2026-10-30 07:10
 **Closed:** 2026-10-30 07:55
 **Closure correction:** 2026-10-30 — implementation is present and fresh full

@@ -3,7 +3,12 @@
 **Filename:** `FID-2026-1029-039-price-engine-hydration.md`
 **ID:** FID-2026-1029-039
 **Severity:** medium
-**Status:** verified
+**Status:** closed
+**Closed Against:** `50758c1`
+**Archived:** 2026-10-30
+**Final closure:** the hero renders the equal/differential-rate branch in
+`ModelPriceEngine`; source/Git verified, full `npm run verify` exit 0 this
+session. This does not validate the historical collision diagnosis corrected below.
 **Created:** 2026-10-30 09:05
 **Closed:** 2026-10-30 09:35
 **Closure correction:** 2026-10-30 — fresh full `npm run verify` exited 0;

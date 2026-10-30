@@ -1,5 +1,11 @@
 # Launch readiness
 
+Current execution order and acceptance gates:
+[full launch plan](launch-plan.md), prepared 2026-10-30. This document preserves
+the earlier prerequisite inventory and dated evidence. The lifetime-trial
+offering below remains conditional; current decisions keep trials disabled
+and subscription sales off until their launch gates are satisfied.
+
 Status: pre-launch work active, 2026-10-29. This document distinguishes current behavior from
 the proposed offering. An unchecked item is not implemented or verified.
 

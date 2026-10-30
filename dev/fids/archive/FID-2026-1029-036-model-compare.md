@@ -3,7 +3,12 @@
 **Filename:** `FID-2026-1029-036-model-compare.md`
 **ID:** FID-2026-1029-036
 **Severity:** low
-**Status:** verified
+**Status:** closed
+**Closed Against:** `50758c1`
+**Archived:** 2026-10-30
+**Final closure:** `/compare` invokes pair resolution and renders picker/table;
+source/Git verified, full `npm run verify` exit 0 this session. The correction
+below describes the pre-commit state; earlier browser observations remain dated.
 **Created:** 2026-10-30 04:40
 **Closed:** 2026-10-30 06:05
 **Closure correction:** 2026-10-30 — implementation is present and fresh full

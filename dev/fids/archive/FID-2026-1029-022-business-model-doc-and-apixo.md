@@ -3,6 +3,14 @@
 **Filename:** `FID-2026-1029-022-business-model-doc-and-apixo.md`
 **ID:** FID-2026-1029-022
 **Severity:** medium
+**Status:** closed
+**Closed Against:** `6f0f4b5`
+**Archived:** 2026-10-30
+
+Closure reconciliation: economics modules, generator, dated price snapshot and
+disabled provider seed exist; `lib/providers/request.ts` calls the shared auth
+header builder. Full `npm run verify` exited 0 on 2026-10-30 before subsequent
+systems repairs. Dated economics below are not current provider-price promises.
 **Created:** 2026-10-29 23:05
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — one pure economics module, one generator, one

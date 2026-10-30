@@ -3,6 +3,15 @@
 **Filename:** `FID-2026-1029-024-free-account-daily-cap.md`
 **ID:** FID-2026-1029-024
 **Severity:** high
+**Status:** closed
+**Closed Against:** `3395fc5`
+**Archived:** 2026-10-30
+
+Closure reconciliation: `lib/store/free-pool.ts` and
+`lib/allocation-ledger.ts` call `accountDailyAllowance`. Full
+`npm run verify` exited 0 on 2026-10-30 before subsequent systems repairs,
+including `tests/allocation.test.mjs`. Historical policy estimates below are
+not measured capacity guarantees.
 **Created:** 2026-10-30 00:10
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — one pure clamp, one setting, one field. No new

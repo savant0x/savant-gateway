@@ -3,7 +3,12 @@
 **Filename:** `FID-2026-1029-035-brand-canvas.md`
 **ID:** FID-2026-1029-035
 **Severity:** low
-**Status:** verified
+**Status:** closed
+**Closed Against:** `50758c1`
+**Archived:** 2026-10-30
+**Final closure:** source image, runtime WebP, canvas CSS and production class
+use verified against source and Git; full `npm run verify` exit 0 this session.
+The correction below describes the pre-commit state; visual evidence is historical.
 **Created:** 2026-10-30 03:10
 **Closed:** 2026-10-30 04:20
 **Closure correction:** 2026-10-30 — implementation is present and fresh full

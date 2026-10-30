@@ -43,6 +43,11 @@ bun.lockb
 
 # local agent/runtime state
 .freebuff/
+/.commandcode/
+/.opencode/
+/.savant/
+/debug/
+/dev/audit/
 dev/exports/
 dev/scratchpad/
 

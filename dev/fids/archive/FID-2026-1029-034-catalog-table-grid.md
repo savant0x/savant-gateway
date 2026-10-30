@@ -3,7 +3,12 @@
 **Filename:** `FID-2026-1029-034-catalog-table-grid.md`
 **ID:** FID-2026-1029-034
 **Severity:** low
-**Status:** verified
+**Status:** closed
+**Closed Against:** `50758c1`
+**Archived:** 2026-10-30
+**Final closure:** shared catalog table/cell implementation verified against
+source and Git; full `npm run verify` exit 0 this session. The correction below
+describes the pre-commit state; historical visual observations were not repeated.
 **Created:** 2026-10-30 02:05
 **Closed:** 2026-10-30 02:40
 **Closure correction:** 2026-10-30 — implementation is present and fresh full

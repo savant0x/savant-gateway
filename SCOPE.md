@@ -2,6 +2,48 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-30 (housekeeping, launch plan, systems review)
+
+Operator request: "lets do some house keeping and organizational. then we need
+to create a full launch plan, then begin checking through the deeper systems."
+Session autonomy level 3. This section is the current register; earlier session
+sections below retain their historical evidence and do not certify today's tree.
+
+- [x] **H1 — Housekeeping.** Automation level 3. Reconcile active FID metadata
+  and committed implementation, preserve local runtime/research artifacts,
+  establish a current project index, and verify the inherited working tree.
+  Contract: FID-2026-1030-041. Closure requires real implementation commits.
+- [x] **H2 — Full launch plan.** Automation level 3. Write one dependency-ordered
+  plan with acceptance evidence, responsibilities, decision gates, launch-day
+  operations, rollback, and post-launch checks; connect existing reference docs.
+  Preserve the recorded trial-off and no-plan-sales decisions.
+- [x] **H3 — Begin deeper systems verification.** Automation level 3. Map the
+  review order and complete an initial request/admission/settlement investigation,
+  with executable regression checks and a FID for demonstrated defects. New
+  findings remain part of this session's work; an audit map is not a repair claim.
+- [x] **H4 — Request-root validation and stream settlement failures.** Automation
+  level 3. FID-2026-1030-042: reject non-object JSON before field access in the
+  completion and benchmark-refresh routes; make stream settlement failures
+  observable with safe diagnostics and a failed stream, retaining transactional
+  rollback. Add real route regressions on a disposable database. Evidence:
+  `body.model`/`body.force` after unchecked casts and an empty settlement catch.
+
+Completion evidence: `50758c1` commits the inherited feature work; `ca7710e`
+commits the gateway repair and systems HTTP checks. Eighteen older FIDs have
+commit-backed archive records. Current index, launch plan, audit and operator
+decision index exist. `npm run verify` exit 0 on 2026-10-30: 209 unit tests,
+quality PASS (233 files), build, HTTP 138 checks and trial HTTP all checks PASS;
+lint/typecheck clean. H3 is an initial investigation, not an all-systems audit.
+
+Current navigation: `docs/project-status.md`, `docs/launch-plan.md`, and
+`dev/audits/2026-10-30-systems-review.md`. Recorded blockers B1/B4/B6/B7/B8
+remain active; credentials, funding, offering changes, and deployment approval
+are operator boundaries. No credential values are read into the records.
+
+Record correction: the U1–U7 and local-time closure claims below are historical
+claims made before a commit. They do not establish lawful closure. FID-033–040
+must carry a verification receipt and an implementation SHA before archival.
+
 ## Current Session — 2026-10-29 (production truth for the subscription surface)
 
 Operator ruling: **production only; test mode and dummy data are not a
@@ -42,6 +84,92 @@ Findings recorded during this pass:
   `components/catalog/`: 467 → 293 lines. Rendered `/models` verified on the
   production build (200, "34 models · 34 shown").
 - With both split, `npm run quality` PASSES over 219 files; every gate is green.
+- **N7 — The catalog carries no measured quality signal (low). Resolved.**
+  FID-2026-1029-033 stores Artificial Analysis measurements in
+  `model_benchmarks` and syncs them out of band, because three paginated calls
+  against a shared 100/day free quota do not belong on a render path. The
+  catalog reads the table, may start a refresh, and never awaits one.
+
+- [x] **U1 — Benchmark column and sync (FID-2026-1029-033).** Implemented and
+  closed. Schema, pure parser/matcher with eight tests, paginated source client,
+  leased single-writer sync with a sanity gate, stored read model, Quality
+  column and attribution footnote, admin status and refresh. Gates: eslint
+  clean, typecheck, 194/194 tests, `quality` PASS over 226 files, build. End to
+  end on the production build against a fixture source: 15/15 checks (sync,
+  interval floor, rendered score and footnote, refusal of a collapsed payload
+  with stored rows intact). No-key path: 4/4, column absent and explained. Live
+  source call blocked on the key value, which is present and empty in
+  `.env.local` as requested.
+
+- [x] **U2 — Catalog table grid (FID-2026-1029-034).** Closed. Weight and the
+  tool/vision glyphs left the Group cell for their own columns; prices are one
+  line (`input / output`); numerals are right-aligned to shared edges at 13 px
+  mono; rows use zebra bands instead of rules. The OpenRouter column was removed
+  and its rate now rides in the Savant rate's tooltip; `Quality` became
+  `AA Benchmark` and `vs list` became `vs OpenRouter`. Verified on the live dev
+  server at 1440 and 1024 (no overflow, header and cell content edges measured
+  equal) and by lint/typecheck/195 tests/quality/build.
+
+- [x] **U3 — Brand canvas and band rhythm (FID-2026-1029-035).** Closed. The
+  supplied 2048 px pattern ships as a 29 KB blurred WebP and paints under one
+  86 % theme-aware veil; the landing page alternates canvas and perspective
+  wireframe bands from DOM parity (so a missing plans band cannot leave two light
+  bands touching), the footer closes with the same canvas, copy sits on a wash in
+  the hero and the closing band, and chips and stat panels take an opaque
+  `.canvas-surface` fill. Verified on the live dev server (band tones per section,
+  computed veil and tile tokens, no horizontal overflow) and by
+  lint/typecheck/195 tests/build.
+
+- [x] **U4 — Model comparison (FID-2026-1029-036).** Closed. `/compare` takes
+  `?a=&b=`, resolves both from the catalog with a fallback for unknown ids, and
+  renders identity, Savant rates, OpenRouter list rates (matched id and blended
+  delta), capabilities and the AA benchmark one attribute per line; the better
+  side of each numeric row is marked. Picker keeps the pair in the URL and swaps;
+  nav and `/models` both link to it. Ten pure tests cover resolution and the
+  winner rule. Verified by lint/typecheck/205 tests/quality/build and on a fresh
+  production server (swap, select, deep link, free-model pair, 390 px without
+  sideways scroll). The shared dev server's client runtime was not hydrating, so
+  interaction was verified on a clean `next start` rather than there.
+
+- [x] **U5 — Comparison data and the winning row (FID-2026-1029-037).** Closed.
+  A zero rate now names which zero it is (`Free pool` / `In plan` / `Not
+  priced`), so a free-pool model no longer contradicts its own −100 % delta.
+  Coding index, agentic index, median end-to-end response, release date and the
+  matched AA slug are parsed, stored and rendered — all five were arriving on
+  the wire and being discarded. Rows nobody measured are dropped, and `Measured`
+  (dashes on every row, because the free tier publishes no per-model date)
+  became `Source`. A win now highlights the row: a 5 % band on the value cells
+  and a 12 % accent wash on the winning cell, replacing the caret-only mark from
+  FID-036/A4. Schema growth is additive via `ensureColumn`; a forced sync through
+  the admin route stored release dates on 31/31 matched models. Verified by
+  lint/typecheck/205 tests/quality PASS (232 files)/build and on a fresh
+  production server (served HTML: ten winner rows, `Free pool`, the new AA rows;
+  1440 px without overflow). Files split to hold the 400-line ceiling:
+  `components/compare/compare-rows.tsx`, `lib/benchmarks-parse.ts`.
+
+- [x] **U6 — Catalog coverage (FID-2026-1029-038).** Closed. An audit found
+  21 of 44 rows printing `—` for Savant price (free-pool and plan models have a
+  zero per-token rate) and 11 of those blank in `vs OpenRouter` although their
+  comparison existed; both now name included billing, and the comparison cell
+  carries the real −100 %. Benchmark matching gained one fallback — a trailing
+  build date on our id is stripped against an unambiguous source slug — which
+  filled two rows (matched 31 → 33, `free/deepseek-v4-pro-0813` now shows its
+  23.1 index). The 7 remaining dash rows are models Artificial Analysis does not
+  publish. Verified by lint/typecheck/208 tests/quality PASS (232 files)/build
+  and the rendered `/models` DOM on a production server.
+
+- [x] **U7 — Hero price engine (FID-2026-1029-039).** Closed. The reported
+  stale form was a dead client runtime, not a component bug: the native select
+  displayed the new option while the body kept the old model, which only happens
+  when nothing hydrates. The dev server on 3000 had been killed by a production
+  build overwriting the shared `.next`; restarted and verified (select → id,
+  rate, unit and details all update; a real pointer click on a family button
+  selects that family with `aria-pressed` set). One real defect was found beside
+  it and fixed: equal input/output rates printed the same figure twice, now a
+  single "per 1M tokens, in and out" line, with the two-line form kept for
+  differential models. Verified by lint/typecheck/208 tests/quality PASS (232
+  files)/build and DOM reads on both servers; the `.next` hazard and the
+  HeroUI-`onPress` harness artefact are recorded in `dev/LEARNINGS.md`.
 
 Blocked items (specific blockers, re-attempted the moment they clear):
 
@@ -811,3 +939,16 @@ Git repository and the template's required local commit could not exist. Fresh g
   replay guard was consolidated into one helper. Real Stripe Checkout and
   Stripe-delivered recurring invoices remain B4. The FID is closed and
   archived.
+- 2026-10-30: **FID-2026-1030-040 implemented and closed.** Display-only: a UTC
+  formatter shared by server and browser put every timestamp in UTC for every
+  reader. `components/local-time.tsx` now renders the UTC value on the server
+  and the visitor's zone after mount, the 14 timestamp call sites on `/account`,
+  `/admin`, the dashboard cards, `/models` and `/compare` use it, and
+  `formatDate` was replaced by `formatCalendarDay` for date-only values that must
+  not be shifted. No stored value, query, billing boundary or dependency
+  changed. Receipt: `npx tsc --noEmit` exit 0, lint clean on the changed files,
+  dev server 200 on `/`, `/models`, `/compare` and 307 (auth gate) on `/admin`
+  and `/account`, and a `/compare` DOM read showing "1:58 AM EDT" where the
+  stored instant is 05:58 UTC, on a 12-hour clock both before and after the
+  swap. Uncommitted with the compare feature it touches;
+  the auth-gated tables are typechecked and linted, not re-rendered.

@@ -3,7 +3,12 @@
 **Filename:** `FID-2026-1029-033-benchmark-store-and-sync.md`
 **ID:** FID-2026-1029-033
 **Severity:** low
-**Status:** verified
+**Status:** closed
+**Closed Against:** `50758c1`
+**Archived:** 2026-10-30
+**Final closure:** source/Git verified; full `npm run verify` exit 0 this
+session. Schema, sync, public read and admin refresh production callers exist.
+The correction below describes the state before this implementation commit.
 **Created:** 2026-10-30 08:10
 **Closed:** 2026-10-30 01:40
 **Closure correction:** 2026-10-30 — historical closure was premature; no

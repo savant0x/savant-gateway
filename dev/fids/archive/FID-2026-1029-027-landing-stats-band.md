@@ -3,6 +3,14 @@
 **Filename:** `FID-2026-1029-027-landing-stats-band.md`
 **ID:** FID-2026-1029-027
 **Severity:** low
+**Status:** closed
+**Closed Against:** `8f1d079`
+**Archived:** 2026-10-30
+
+Closure reconciliation: `components/landing/stats.tsx` renders
+`landing-stats-grid`, styled in `styles/savant.css` and mounted by the landing
+page. Full `npm run verify` exited 0 on 2026-10-30 before subsequent systems
+repairs. Historical viewport observations were not repeated by that command.
 **Created:** 2026-10-30 05:05
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — one component and one CSS block, no new data, no

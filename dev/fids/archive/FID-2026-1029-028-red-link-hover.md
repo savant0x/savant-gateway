@@ -3,6 +3,13 @@
 **Filename:** `FID-2026-1029-028-red-link-hover.md`
 **ID:** FID-2026-1029-028
 **Severity:** low
+**Status:** closed
+**Closed Against:** `f094348`
+**Archived:** 2026-10-30
+
+Closure reconciliation: `styles/savant.css` defines the red token and applies
+it to public link hover. Full `npm run verify` exited 0 on 2026-10-30 before
+subsequent systems repairs. Historical visual probes below remain historical.
 **Created:** 2026-10-30 05:40
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — one token, three selectors, no new component.

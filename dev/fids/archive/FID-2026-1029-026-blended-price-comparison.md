@@ -3,6 +3,18 @@
 **Filename:** `FID-2026-1029-026-blended-price-comparison.md`
 **ID:** FID-2026-1029-026
 **Severity:** high
+**Status:** closed
+**Closed Against:** `c9d747c`
+**Archived:** 2026-10-30
+
+Closure reconciliation: `lib/price-comparison.ts` calls `blendedPer1M` when
+building comparison rows; `/models` displays the labelled blend. Full
+`npm run verify` exited 0 on 2026-10-30 before subsequent systems repairs.
+The historical assertion below that a 3:1 blend understates savings for more
+prompt-heavy traffic is incorrect: when prompt pricing is less competitive,
+more prompt-heavy traffic reduces savings. The blend is illustrative and
+must not be represented as measured customer savings; raw direction rates
+remain the actual comparison inputs.
 **Created:** 2026-10-30 04:10
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — one derived field, one column, no new page, no new

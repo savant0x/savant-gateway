@@ -1,17 +1,19 @@
 # Agenda
 
-1. Keep the lifetime trial disabled (`TRIAL_ENABLED=false`, empty pair map,
-   zero grant budget) until signup verification exists. The ledger requires
-   `users.email_verified_at`, which no route currently writes, so no grant can
-   be issued today. See `docs/trial-system-audit.md`.
-2. Operate the daily shared free-pool allocation (90% of the upstream daily
-   weighted pool split across activated accounts) and extend it to shared
-   upstream RPM control before public traffic.
-3. Decide whether subscription plans stay purchasable at launch. Code is
-   implemented and verified locally; real Stripe delivery is unverified and
-   plan allowances would consume funded upstream capacity. See
-   `docs/subscriptions-decision.md`.
-4. Configure real Stripe test credentials and fund the upstream wallet near
-   launch, then run the acceptance journey in `docs/launch-readiness.md`.
-5. Use `docs/business-plan-research-prompt.md` to obtain an independent
-   early-stage pricing and profitability plan before enabling paid tiers.
+Current navigation: [project status](../docs/project-status.md),
+[launch plan](../docs/launch-plan.md), [approved scope](../SCOPE.md).
+
+1. Finish repository consolidation and preserve historical evidence. FID
+   closure requires verified implementation and its real commit.
+2. Follow the deeper systems review in dependency order; the initial request
+   and stream-write-failure checks are recorded in
+   [the review receipt](audits/2026-10-30-systems-review.md). Next review boundary:
+   aggregate upstream capacity across billing modes and restart/hold recovery.
+3. Freeze the public offering and commercial policies before setting a date.
+   The recorded subscription decision is **keep implementation, sell no plans**.
+   Lifetime trial activation stays off until verification and grant controls pass.
+4. Complete operational deployment, backup/restore, monitoring and controlled
+   load evidence before real customer acceptance.
+5. Supply funding and Stripe configuration near launch per the recorded operator
+   instruction, then perform real payment and paid-inference acceptance. Fixtures
+   prove local application behavior only. Release/deployment needs explicit approval.

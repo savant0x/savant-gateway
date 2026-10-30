@@ -3,6 +3,14 @@
 **Filename:** `FID-2026-1029-025-catalog-table-clarity.md`
 **ID:** FID-2026-1029-025
 **Severity:** medium
+**Status:** closed
+**Closed Against:** `ab73f5a`
+**Archived:** 2026-10-30
+
+Closure reconciliation: `app/page.tsx` builds catalog comparisons and the
+landing model grid passes them to the shared table; provider catalog tests
+exist. Full `npm run verify` exited 0 on 2026-10-30 before subsequent systems
+repairs. Later catalog FIDs supersede the historical five-column layout.
 **Created:** 2026-10-30 00:55
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — same component, five columns instead of nine, no

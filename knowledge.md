@@ -222,6 +222,17 @@ subscription_required`; a past-due plan returns `402 subscription_past_due`
 - **Font Awesome Free is imported once.** `app/layout.tsx` imports
   `@fortawesome/fontawesome-free/css/all.min.css`; components use
   `<i className="fa-solid fa-…" />`.
+- **Benchmark data is stored, never fetched for a render.** Artificial Analysis
+  allows 100 requests per 24h window and the live catalogue is two pages of 200
+  records, so
+  `lib/benchmark-sync.ts` is the only writer and it fills `model_benchmarks`,
+  guarded by a single-writer lease and a six-hour floor. `/models` reads the
+  table and may *start* a sync, but never awaits one. `benchmarkSanityProblem`
+  refuses a payload that collapsed (an HTML error page parses as zero models),
+  so a bad response cannot mark every stored row stale. Unmeasured is `null` and
+  renders as a dash, never `0`; an ambiguous match is refused rather than
+  guessed. Attributing the source is a licence condition, so the catalog
+  footnote links to artificialanalysis.ai.
 
 ## Current layout
 
@@ -283,6 +294,9 @@ subscription_required`; a past-due plan returns `402 subscription_past_due`
   `lib/customer-auth.ts` — validation, scrypt, opaque sessions, guards.
 - `lib/stripe.ts`, `lib/topup-amount.ts` — Stripe config/client and exact
   amount parsing.
+- `lib/benchmarks.ts`, `lib/artificial-analysis.ts`, `lib/benchmark-sync.ts`,
+  `lib/store/benchmarks.ts` — benchmark parsing and matching, the paginated
+  source client, the leased sync, and the stored read model.
 - `lib/admin-session.ts` — pure token, password, cookie, and origin logic.
 - `lib/store/*` — persistence split by responsibility.
 - `components/landing/*`, `components/catalog/*`, `components/docs/*`,

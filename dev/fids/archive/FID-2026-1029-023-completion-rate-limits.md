@@ -3,6 +3,15 @@
 **Filename:** `FID-2026-1029-023-completion-rate-limits.md`
 **ID:** FID-2026-1029-023
 **Severity:** high
+**Status:** closed
+**Closed Against:** `2cac572`
+**Archived:** 2026-10-30
+
+Closure reconciliation: `lib/gateway.ts` calls `checkCompletionRate` before
+subscription/free/credit reservation. Full `npm run verify` exited 0 on
+2026-10-30 before subsequent systems repairs. This proves the implemented
+free-shared/per-paid-key limiter, not aggregate cross-mode upstream admission;
+that remaining launch requirement is explicit in `docs/launch-plan.md`.
 **Created:** 2026-10-29 23:40
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — one pure bucket, one gate module, two

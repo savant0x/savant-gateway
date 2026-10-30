@@ -3,6 +3,173 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-30 — Repository organization and first systems review
+
+- **FID-2026-1030-041 — medium — Current project index and full launch plan.**
+  Added `docs/project-status.md`, `docs/launch-plan.md`, a dated systems review
+  and session receipt. The plan orders offering decisions, deeper systems
+  verification, deployment/restore/monitoring, external funding and payment
+  setup, real acceptance, controlled rollout, rollback and first-week review.
+  Trial-off and no-subscription-sales decisions remain in force. Local runtime
+  directories and the superseded audit snapshot are ignored and preserved.
+- **FID-2026-1030-041 — medium — FID lifecycle reconciliation.** FID-020–029
+  are archived against their existing implementation commits and fresh gates.
+  Premature closure labels on FID-033–040 were corrected before committing
+  their catalog/benchmark/compare/presentation work as `50758c1`; their closure
+  now records that real SHA. Historical receipts remain dated observations.
+  Corrected the unsupported shared-dev/build-output claim: Next.js 16 isolates
+  dev output under `.next/dev`. Also clarified the historical blend claim:
+  prompt-heavy traffic reduces savings where prompt rates are less competitive.
+- **FID-2026-1030-042 — high — Request and stream failure boundaries.**
+  Non-object JSON now returns 400 before completion/benchmark field access.
+  Streaming accounting writes are attempted once before response closure;
+  failures emit a fixed diagnostic with reservation identifiers and fail the
+  stream without exposing exception text. The terminal `[DONE]` line is held
+  until settlement commits, so clients cannot accept completion before the
+  accounting result. Transaction rollback leaves the failed hold visible for
+  reconciliation. Regression HTTP checks cover malformed roots, paid SSE with
+  split UTF-8/CRLF/terminal chunks, injected SQLite failure and rollback,
+  recovery on a later request, and once-only disconnect settlement. This does
+  not claim a durable retry service, alert delivery or live payment acceptance.
+
+## 2026-10-30 — Local time
+
+- **FID-2026-1030-040 — low — Timestamps read in the visitor's own zone.** Every
+  timestamp came from one UTC-pinned formatter that appended " UTC", so a
+  reader in Salem saw `05:58 UTC` for a measurement their own clock placed at
+  1:58 AM — including on the compare footnote, which stamped the Artificial
+  Analysis measurement and the OpenRouter fetch the same way. New
+  `components/local-time.tsx` renders `<time>` in UTC on the server and swaps to
+  the browser's zone once after mount, keeping the instant in `datetime`/`title`
+  and the hydrated tree identical; the 14 timestamp call sites on `/account`,
+  `/admin`, the dashboard cards, `/models` and `/compare` now use it. The old
+  `formatDate` is gone and date-only values (release dates, grant end days) go
+  through `formatCalendarDay`, which stays unlocalised on purpose because a
+  calendar day shifted west of Greenwich becomes the previous day. The two
+  "resets per UTC day" lines still say UTC: that is the enforced billing
+  boundary, not a clock reading. Verified by typecheck, lint, a dev server
+  serving `/`, `/models` and `/compare` (200) with `/admin` and `/account`
+  correctly 307 to sign-in, and a DOM read of the footnote returning "1:58 AM
+  EDT" and "3:01 AM EDT" (12-hour clock with an AM/PM marker, before and after
+  the swap). The auth-gated tables were typechecked and linted, not re-rendered.
+
+## 2026-10-29 — Price engine
+
+- **FID-2026-1029-039 — medium — The hero price card updates, and prints one
+  rate.** The report was a stale form after selecting a model; the diagnosis was
+  in the symptom — the native `<select>` showed the new option while the body
+  kept `deepseek-v4-flash` / `$0.065`, which only happens with no client runtime
+  at all. The dev server on port 3000 was dead because a production build had
+  overwritten the `.next` it serves; restarted and verified. Beside that, a real
+  defect: every priced model bills input and output equally, and the card
+  printed the same figure twice (display rate plus output line). It now reads
+  "per 1M tokens, in and out", with the two-line form kept for models whose
+  rates differ (`gpt-6.1-sol` $0.40 / $0.60). Verified by lint, typecheck, 208
+  tests, quality PASS over 232 files, build, and DOM reads on both the restarted
+  dev server and a production server.
+
+## 2026-10-29 — Catalog coverage
+
+- **FID-2026-1029-038 — low — Dashes where the data already existed.** The
+  catalog printed `—` in the Savant price column for all 21 free-pool and plan
+  models, because a zero per-token rate was formatted as "no price"; those rows
+  now read `Free pool` / `In plan` with the billing basis in the title. The
+  `vs OpenRouter` cell was blank for the same 11 public rows although their
+  comparison existed — included models now show their real `−100 %` as muted
+  text. On the benchmark side, `matchBenchmarks` gained one conservative
+  fallback: a trailing four-digit build stamp on _our_ id (`deepseek-v4-pro-0813`)
+  is stripped against an unambiguous source slug, which filled two rows and gave
+  the free V4 Pro row its real 23.1 index. Matched rows 31 → 33. The 7 rows that
+  still show a dash are models Artificial Analysis does not publish, and the
+  ambiguity rule was deliberately left intact. Verified by lint, typecheck, 208
+  tests (3 new), quality PASS over 232 files, build, and the rendered `/models`
+  DOM on a fresh production server.
+
+## 2026-10-29 — Comparison data and row highlight
+
+- **FID-2026-1029-037 — low — Every measurement the source sends, and a win that
+  lights its row.** A zero rate now says which zero it is — `Free pool` for a
+  free-access model, `In plan` for a subscription model, `Not priced` only for a
+  paid model with no rate — instead of printing "Not priced" underneath an
+  Access row that read Free and above a −100 % delta. The Artificial Analysis
+  coding index, agentic index, median end-to-end response, release date and the
+  matched slug are parsed, stored and rendered; all five were being read off the
+  wire and dropped. Rows where neither side was measured are dropped, and the
+  `Measured` row (a dash on all 31 rows, because the free tier publishes no
+  per-model date) became `Source` with the slug and index revision. A winning
+  value now highlights its row: a 5 % accent band on the value cells and a 12 %
+  wash on the winning cell, replacing the caret-only mark. Schema growth is
+  additive (`ensureColumn`), so an existing database migrates in place; a forced
+  sync through the admin route stored release dates on 31/31 matched models.
+  Note for later: the free tier publishes no coding or agentic index (0 of 200
+  records), so those rows stay hidden until it does. Verified by lint, typecheck,
+  205 tests, quality PASS over 232 files, build, and served HTML from a fresh
+  production server (ten winner rows, `Free pool`, the new AA rows, no overflow
+  at 1440 px). Files split to hold the 400-line ceiling:
+  `components/compare/compare-rows.tsx`, `lib/benchmarks-parse.ts`.
+
+## 2026-10-29 — Model comparison
+
+- **FID-2026-1029-036 — low — Two models, one attribute per line.** `/compare`
+  takes `?a=<model>&b=<model>` and renders both from stored data: identity,
+  Savant rates, OpenRouter list rates with the matched id and the blended delta,
+  capabilities, and the AA benchmark with its measured date. A picker keeps the
+  pair in the URL (replace, not push), `Swap` flips them, and an unknown id falls
+  back to the first priced row instead of erroring. The better side of each
+  numeric row carries a caret and full-strength text; equal or unmeasured values
+  mark neither. Reachable from the public nav and from `/models`. Presentation
+  and pure helpers only — no new dependency, no new table. Verified on a fresh
+  production server (swap, select, deep link, free-model pair, 390 px without
+  sideways scroll) plus lint, typecheck, 205 tests, quality and build.
+
+## 2026-10-29 — Brand canvas
+
+- **FID-2026-1029-035 — low — Canvas bands and wireframe bands.** The
+  operator's 2048 px pattern ships as `public/bg-pattern.webp` (1440 px, blurred,
+  29 KB) and tiles at 420 px under one 86 % veil that is black in dark mode and
+  white in light. On the landing page `.landing-bands` assigns the canvas to odd
+  bands and the perspective wireframe to even bands from DOM order, so the rhythm
+  holds when the optional plans band is missing and the page always opens and
+  closes dark. Odd bands carry the canvas; even bands carry the drawing at 7 %
+  accent on a surface one step above the page. The footer closes with the same canvas, washed
+  from its bottom edge. Copy sits on a wash in the hero and the closing band, and
+  chips and stat panels inside a canvas band take `.canvas-surface` — an opaque
+  accent-tinted fill — because translucent tints were what made the texture read
+  as noise. Presentation only; no data, no dependency, no page. Verified on the
+  live server (band tones, no overflow) and by lint, typecheck, 195 tests and
+  build.
+
+## 2026-10-29 — Catalog table grid
+
+- **FID-2026-1029-034 — low — One fact per column.** Token weight and the
+  tool/vision glyphs moved out of the Group cell into their own `Weight` and
+  `Features` columns; prices render on one line as `input / output`; numerals
+  are right-aligned to shared column edges at 13 px mono; rows are tighter and
+  use zebra bands instead of a rule per row; the delta chip matches the group
+  chip's radius. The OpenRouter rate is no longer a column: it is the title of
+  the Savant rate, alongside the matched id and the blended delta. `Quality`
+  became `AA Benchmark` and `vs list` became `vs OpenRouter`, because neither old
+  label named the source a reader could see. Layout only — no data, pricing or
+  query change. Verified on the live server at 1440 and 1024 (no overflow,
+  header and cell content edges measured equal), plus lint, typecheck, 195 tests,
+  quality and build.
+
+## 2026-10-29 — Stored benchmarks
+
+- **FID-2026-1029-033 — low — Quality column served from the database.** The
+  catalog had no measured quality signal, and Artificial Analysis' free tier
+  (100 requests per 24h; the live catalogue is two pages of 200) cannot sit on a
+  render path. Measurements now live in `model_benchmarks` and are written by one
+  leased sync (`lib/benchmark-sync.ts`); `/models` reads the table, may start a
+  refresh, and never waits on one. A sync log records candidates, matched rows,
+  index version and remaining quota, and a sanity gate refuses a collapsed
+  payload so a truncated response cannot mark every row stale. Matching is
+  normalised-exact (slug, then name, then creator+name) and an ambiguous key is
+  refused rather than guessed; `null` renders as a dash, never zero. Admin →
+  Catalog gains the sync status and a refresh button; the catalog footnote
+  carries the required attribution link. The column and footnote disappear when
+  no key is configured, and the rest of the catalog is unaffected.
+
 ## 2026-10-29 — File-ceiling split
 
 - **FID-2026-1029-032 — low — `quality` is green again.** Two files were over the

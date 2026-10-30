@@ -3,6 +3,15 @@
 **Filename:** `FID-2026-1029-020-catalog-price-comparison.md`
 **ID:** FID-2026-1029-020
 **Severity:** medium
+**Status:** closed
+**Closed Against:** `6947f9e`
+**Archived:** 2026-10-30
+
+Closure reconciliation: implementation exists in `lib/price-comparison.ts` and
+`lib/openrouter-prices.ts`, called by `app/models/page.tsx`. Full
+`npm run verify` exited 0 on 2026-10-30 before subsequent systems repairs.
+Historical checkboxes and browser observations below are retained as history;
+this commit/source/gate record supplies the missing closure evidence.
 **Created:** 2026-10-29 19:40
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — one pure matcher, one cached public fetch, no

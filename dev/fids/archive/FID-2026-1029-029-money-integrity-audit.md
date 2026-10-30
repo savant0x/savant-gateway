@@ -3,6 +3,15 @@
 **Filename:** `FID-2026-1029-029-money-integrity-audit.md`
 **ID:** FID-2026-1029-029
 **Severity:** high
+**Status:** closed
+**Closed Against:** `e56abf1`
+**Archived:** 2026-10-30
+
+Closure reconciliation: `lib/store/usage.ts` invokes `usageLedgerEntry` within
+the settlement transaction; exact pricing and money tests exist. Full
+`npm run verify` exited 0 on 2026-10-30 before subsequent systems repairs.
+This closes the described ledger/math implementation, not the broader
+stream-failure and recovery review now recorded under SCOPE H3.
 **Created:** 2026-10-30 06:20
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — four arithmetic/format fixes and one ledger row, no

@@ -3,7 +3,12 @@
 **Filename:** `FID-2026-1029-038-catalog-coverage.md`
 **ID:** FID-2026-1029-038
 **Severity:** low
-**Status:** verified
+**Status:** closed
+**Closed Against:** `50758c1`
+**Archived:** 2026-10-30
+**Final closure:** matcher build-date fallback and included-price labels invoked
+by production catalog paths; source/Git verified, full `npm run verify` exit 0
+this session. The correction below describes the pre-commit state.
 **Created:** 2026-10-30 08:05
 **Closed:** 2026-10-30 08:35
 **Closure correction:** 2026-10-30 — implementation is present and fresh full

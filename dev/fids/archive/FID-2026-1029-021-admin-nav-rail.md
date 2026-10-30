@@ -3,6 +3,14 @@
 **Filename:** `FID-2026-1029-021-admin-nav-rail.md`
 **ID:** FID-2026-1029-021
 **Severity:** medium
+**Status:** closed
+**Closed Against:** `6947f9e`
+**Archived:** 2026-10-30
+
+Closure reconciliation: `app/admin/(panel)/layout.tsx` calls
+`requireAdminPage()` and renders `AdminNav` in `admin-rail`. Full
+`npm run verify` exited 0 on 2026-10-30 before subsequent systems repairs.
+Earlier browser observations remain historical.
 **Created:** 2026-10-29 22:10
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — one layout file, one CSS block, no new

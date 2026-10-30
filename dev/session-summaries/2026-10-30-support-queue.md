@@ -48,11 +48,18 @@ Deletion facts checked in source: every account-owned table uses
 `ON DELETE CASCADE` except `usage_events.user_id`, which is `ON DELETE SET
 NULL`. Deletion is therefore manual and retains settlement history deliberately.
 
+## Policy drafts (not published)
+
+Four v1 drafts are indexed at `docs/policies/README.md`: terms, privacy, refunds
+and acceptable use. Each is marked "DRAFT — not published, not effective", uses
+`[PLACEHOLDERS]` for the legal entity, jurisdiction, contact identity, retention
+periods and liability, and marks every undecided position `OPERATOR DECISION
+REQUIRED`. No route serves them and the footer does not link them.
+
 ## Open
 
-- Approved terms, privacy notice (including the retained usage rows and a
-  retention period), acceptable use, refund/dispute and credit-expiry positions,
-  plus jurisdiction and contact identity.
+- Operator review of the four drafts: fill the placeholders, decide the marked
+  positions, then publish versioned routes and link them.
 - An outbound email/messaging channel. The queue is durable and operator-visible,
   but a resolution note is not a delivery guarantee.
 - Self-service deletion and a live outside-channel inquiry.

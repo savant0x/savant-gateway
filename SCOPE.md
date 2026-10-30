@@ -23,10 +23,21 @@ are named inputs and were not invented; the working support path was built.
   with note, customer sees the note; `/support` renders with one `h1`, a skip
   link and no invented contact address.
 
-Remaining, not claimed: approved terms/privacy/acceptable-use/refund/expiry
-wording and a jurisdiction/contact identity; no outbound email transport; no
-self-service deletion; no live outside-channel inquiry. 061 stays open in
-`dev/fids`, which keeps 056 open.
+- [x] **P4 — Policy drafts for review.** Four versioned v1 drafts under
+  `docs/policies/v1/` (terms, privacy, refunds, acceptable use), an index with the
+  versioning rule, and a runbook link. Every document is marked
+  "not published, not effective" and uses explicit placeholders plus
+  "operator decision required" markers for positions engineering must not
+  choose. Facts were re-verified in source: scrypt hashes, seven-day customer /
+  eight-hour admin cookies, no analytics scripts, zero charge before usage,
+  served usage charged on a later stream error, no credit expiry, ledger-only
+  refunds, cascade deletion with usage retained and nulled.
+
+Remaining, not claimed: operator approval and placeholders (legal entity,
+jurisdiction, contact, retention periods, liability, refund positions);
+publication as versioned routes; no outbound email transport; no self-service
+deletion; no live outside-channel inquiry. 061 stays open in `dev/fids`, which
+keeps 056 open.
 
 ## Current Session — 2026-10-30 (customer states and accessibility: 056)
 

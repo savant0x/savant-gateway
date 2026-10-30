@@ -18,7 +18,10 @@ distinguish verified behavior from unverified claims.
   account-owned row, while usage events are retained with `user_id` nulled for
   billing/audit. Verified: `npm run verify` exit 0, 305 unit tests, 376 HTTP
   checks, quality PASS (276 files). **Still open:** approved terms, privacy,
-  acceptable-use, refund and expiry text, plus a real outbound channel.
+  acceptable-use, refund and expiry text, plus a real outbound channel. Four v1
+  drafts now exist for review under `docs/policies/`, written from implemented
+  behavior with explicit placeholders and "operator decision required" markers;
+  nothing is published or linked.
 
 ## 2026-10-30 — Truthful customer states
 

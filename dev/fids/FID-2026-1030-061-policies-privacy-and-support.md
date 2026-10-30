@@ -119,11 +119,29 @@ FID does not select a jurisdiction, publish legal advice or send messages.
 Verification: `npm run verify` exit 0 — 305 unit tests, 376 HTTP checks, trial
 HTTP PASS, quality PASS (276 files), clean lint/typecheck/build.
 
+## Policy Drafts (not published)
+
+`docs/policies/README.md` indexes four v1 drafts written strictly from the
+implemented behavior: `terms.md`, `privacy.md`, `refunds.md` and
+`acceptable-use.md`. They are explicitly marked draft, not effective, and carry
+`[PLACEHOLDERS]` for the legal entity, jurisdiction, contact identity, retention
+periods and liability position, plus `OPERATOR DECISION REQUIRED` markers for the
+positions engineering must not choose. Nothing serves them, nothing links them,
+and no route or footer change was made.
+
+Facts the drafts rely on, each checked in source: passwords use scrypt and
+tokens/keys are stored as hashes; the customer cookie lasts seven days and the
+admin cookie eight hours, HttpOnly and Secure in production; no analytics or
+advertising script is loaded; failed-before-usage calls settle at zero while
+served usage is charged even if a stream later errors; credit has no expiry code;
+refunds are bounded ledger appends with no Stripe Refund call; account deletion
+cascades every account-owned row and retains usage events with `user_id` null.
+
 ## Remaining Gates
 
-- No terms, privacy notice, acceptable-use, refund/dispute or credit-expiry page
-  is published. These need operator-approved wording, jurisdiction and contact
-  identity; writing them unapproved would be a legal claim, not an implementation.
+- The four drafts need operator review: fill every placeholder, decide every
+  `OPERATOR DECISION REQUIRED`, then publish versioned routes and link them.
+  Writing them unapproved would be a legal claim, not an implementation.
 - No outbound email or messaging transport: a request is a durable queue entry,
   and the operator replies through their own channel. A resolution note is not a
   delivery guarantee.

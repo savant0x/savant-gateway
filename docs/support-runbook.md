@@ -1,8 +1,9 @@
 # Support and data-request runbook
 
-Status: the authenticated support queue is implemented. Published customer
-policy text (terms, privacy notice, refund position, acceptable use) is **not**
-written or approved yet; see "Open operator decisions".
+Status: the authenticated support queue is implemented. Draft customer policies
+(terms, privacy, refunds, acceptable use) exist under `docs/policies/v1/` for
+operator review; **none is published or effective**. See "Open operator
+decisions".
 
 ## What exists
 
@@ -63,15 +64,18 @@ deliberately for billing and audit integrity. Any policy text must say this.
 
 ## Open operator decisions (FID-2026-1030-061)
 
-These cannot be written by engineering without approval:
+Drafts are in `docs/policies/v1/`. Filling these is the operator's decision, not
+engineering's:
 
-- Terms of service and acceptable-use positions.
-- Privacy notice: jurisdiction, lawful basis, retention period for the retained
-  usage rows, and the operator's identity/contact details.
-- Refund, dispute, promotional-credit and credit-expiry positions. Current
-  implementation has no credit expiry and no automated refund writer.
-- A response-time commitment. The current page states none.
+- Legal entity, registered address, jurisdiction and contact identity.
+- Terms: liability position and the governing-law wording.
+- Privacy: retention period for hosted logs and backups, exact data-subject
+  rights and deadlines, and the minimum age.
+- Refunds: unused-credit window and fees, service-failure remedy, promotional
+  credit treatment, and whether to introduce expiry.
+- Acceptable use: excluded data categories and high-impact uses.
+- Any availability or response-time commitment. None is implemented today.
 
-Until these are approved and published, `/support` is reachable and the queue
-works, but there are no policy pages and the footer links no policy route. That
-is why FID-056 cannot close yet.
+Until the drafts are approved, versioned and published, `/support` is reachable
+and the queue works, but there are no policy pages and the footer links no
+policy route. That is why FID-056 cannot close yet.

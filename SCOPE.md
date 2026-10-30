@@ -1437,3 +1437,16 @@ Git repository and the template's required local commit could not exist. Fresh g
   PASS, quality PASS (290 files), 12 static/SSG pages including the four
   policies. **Open:** no registered address is published, Stripe Tax is assumed,
   and no counsel reviewed the text; the operator accepted the last one.
+- 2026-10-30: **Policy v1.1 published (FID-2026-1030-061).** Two statements in
+  the same-day v1 publication were wrong and are corrected rather than left in
+  place. The tax paragraph promised Stripe tax calculation that the checkout
+  session never requests (`automatic_tax`, `tax_id_collection` and invoice
+  creation are all absent), so v1.1 states that no tax is calculated or
+  collected, no separate invoice is issued, and the buyer is responsible for
+  applicable tax. v1 also printed no registered address; the operator confirmed
+  the entity is not registered, so v1.1 says that plainly, names Kentucky, and
+  offers a postal address on request instead of inventing one. `v1` remains
+  reachable at `/legal/v1/<slug>` marked superseded; acceptance is version-keyed,
+  so v1 acceptors are asked again and their earlier row is preserved. Receipt:
+  `npm run verify` exit 0 — 312 unit tests, 423 HTTP checks, trial HTTP PASS,
+  quality PASS.

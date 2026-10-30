@@ -62,11 +62,15 @@ export async function runPolicyChecks({ baseUrl, db }) {
 
   const permanent = await request(baseUrl, "/legal/v1/terms");
 
-  checkEqual("permanent versioned route serves", permanent.status, 200);
+  checkEqual("the superseded version stays reachable", permanent.status, 200);
   check(
-    "permanent versioned route links back to the current text",
-    permanent.text.includes("/legal/v1/terms"),
+    "the superseded version is marked as superseded",
+    permanent.text.includes("superseded"),
   );
+
+  const currentVersionRoute = await request(baseUrl, "/legal/v1.1/terms");
+
+  checkEqual("the current version has a permanent route too", currentVersionRoute.status, 200);
 
   const unknownVersion = await request(baseUrl, "/legal/v2/terms");
 
@@ -126,19 +130,23 @@ export async function runPolicyChecks({ baseUrl, db }) {
     .prepare("SELECT version, source FROM policy_acceptances WHERE user_id = ?")
     .get(userId);
 
-  checkEqual("signup records the accepted version", stored?.version, "v1");
+  checkEqual("signup records the accepted version", stored?.version, "v1.1");
   checkEqual("signup records the acceptance source", stored?.source, "signup");
 
-  // An account created before the policies existed has no row. The account page
-  // must then ask for acceptance, and the endpoint must record it once.
+  // Replacing the current row with a v1 acceptance models a customer who agreed
+  // to the earlier version: v1.1 is a new version, so they must be asked again.
   db.prepare("DELETE FROM policy_acceptances WHERE user_id = ?").run(userId);
+  db.prepare(
+    `INSERT INTO policy_acceptances (id, user_id, version, source, accepted_at)
+     VALUES ('policy_legacy_v1', ?, 'v1', 'signup', ?)`,
+  ).run(userId, new Date().toISOString());
 
   const cookie = `sg_session=${session}`;
   const account = await request(baseUrl, "/account", { cookie });
 
   checkEqual("account page serves for a signed-in customer", account.status, 200);
   check(
-    "account page asks for acceptance when none is recorded",
+    "account page asks for the new version after an older acceptance",
     account.text.includes("I accept these policies"),
   );
 
@@ -146,14 +154,14 @@ export async function runPolicyChecks({ baseUrl, db }) {
     method: "POST",
     cookie,
     origin: "https://cross-origin.example.test",
-    body: { version: "v1" },
+    body: { version: "v1.1" },
   });
 
   checkEqual("cross-origin acceptance is rejected", crossOrigin.status, 403);
 
   const signedOut = await request(baseUrl, "/api/account/policies", {
     method: "POST",
-    body: { version: "v1" },
+    body: { version: "v1.1" },
   });
 
   checkEqual("signed-out acceptance is rejected", signedOut.status, 401);
@@ -169,7 +177,7 @@ export async function runPolicyChecks({ baseUrl, db }) {
   const accepted = await request(baseUrl, "/api/account/policies", {
     method: "POST",
     cookie,
-    body: { version: "v1" },
+    body: { version: "v1.1" },
   });
 
   checkEqual("account acceptance is recorded", accepted.status, 201);
@@ -178,18 +186,26 @@ export async function runPolicyChecks({ baseUrl, db }) {
   const repeated = await request(baseUrl, "/api/account/policies", {
     method: "POST",
     cookie,
-    body: { version: "v1" },
+    body: { version: "v1.1" },
   });
 
   checkEqual("repeating acceptance is accepted", repeated.status, 201);
 
   const rows = db
     .prepare(
-      "SELECT COUNT(*) AS total FROM policy_acceptances WHERE user_id = ? AND version = 'v1'",
+      "SELECT COUNT(*) AS total FROM policy_acceptances WHERE user_id = ? AND version = 'v1.1'",
     )
     .get(userId);
 
   checkEqual("acceptance is idempotent per version", rows?.total, 1);
+
+  const legacy = db
+    .prepare(
+      "SELECT COUNT(*) AS total FROM policy_acceptances WHERE user_id = ? AND version = 'v1'",
+    )
+    .get(userId);
+
+  checkEqual("the earlier acceptance is kept as history", legacy?.total, 1);
 
   const after = await request(baseUrl, "/account", { cookie });
 

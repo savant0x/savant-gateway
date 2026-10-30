@@ -9,6 +9,7 @@ import {
   POLICY_CONTACT,
   POLICY_EFFECTIVE_DATE,
   POLICY_EFFECTIVE_LABEL,
+  POLICY_JURISDICTION,
   POLICY_OPERATOR,
   POLICY_SLUGS,
   POLICY_VERSION,
@@ -139,7 +140,7 @@ export function PolicyDocument({
           <time dateTime={POLICY_EFFECTIVE_DATE}>{POLICY_EFFECTIVE_LABEL}</time>
         </p>
         <p className="mt-1 text-xs text-muted">
-          {POLICY_OPERATOR} ·{" "}
+          {POLICY_OPERATOR} · {POLICY_JURISDICTION} ·{" "}
           <a
             className="text-accent hover:underline"
             href={`mailto:${POLICY_CONTACT}`}

@@ -1,12 +1,13 @@
 export type PolicySlug = "terms" | "privacy" | "refunds" | "acceptable-use";
 
 /** Directory name, URL segment and the value stored on an acceptance row. */
-export const POLICY_VERSION = "v1";
+export const POLICY_VERSION = "v1.1";
 /** Human version shown alongside the effective date. */
-export const POLICY_VERSION_LABEL = "1.0";
+export const POLICY_VERSION_LABEL = "1.1";
 export const POLICY_EFFECTIVE_DATE = "2026-10-30";
 export const POLICY_EFFECTIVE_LABEL = "30 October 2026";
 export const POLICY_OPERATOR = "Savant AI";
+export const POLICY_JURISDICTION = "Kentucky, United States";
 export const POLICY_CONTACT = "spencerhowell84@gmail.com";
 
 export type PolicyMeta = {
@@ -48,7 +49,9 @@ export const POLICIES: Record<PolicySlug, PolicyMeta> = {
 };
 
 export const POLICY_SLUGS = Object.keys(POLICIES) as PolicySlug[];
-export const POLICY_VERSIONS = [POLICY_VERSION];
+/** Every published version, newest last. Older versions stay readable at
+ * `/legal/<version>/<slug>` and are never edited. */
+export const POLICY_VERSIONS = ["v1", POLICY_VERSION];
 
 export function isPolicySlug(value: string): value is PolicySlug {
   return Object.hasOwn(POLICIES, value);

@@ -102,3 +102,37 @@ use a distinct forwarded address rather than spending the main bucket.
 - The contact is a personal mailbox, not a role address on an owned domain.
 - English only; localisation is a separate future FID with a stated
   authoritative language.
+
+## Follow-up: v1.1 the same day
+
+Two published statements in v1 were wrong, and the operator chose the honest
+correction over a convenient one.
+
+**Tax.** v1 said tax is calculated and collected by Stripe where configured. The
+Checkout Session in `app/api/account/topup/route.ts` sends only `mode`,
+`line_items`, `metadata` and the two return URLs — no `automatic_tax`, no
+`tax_id_collection`, no invoice — so Checkout adds no tax. v1.1 states that no tax
+is calculated or collected, that no separate invoice or VAT document is issued,
+that the Stripe receipt is the payment record, and that the buyer is responsible
+for any applicable tax. Enabling Stripe Tax later requires the code change and a
+new version together; doing one without the other would make the documents false
+in the other direction.
+
+**Registered address.** Asked whether to paste an address, use a registered
+agent's, or publish entity and state only, the operator chose the last: the
+entity is not registered yet. v1.1 says that plainly, names Kentucky, United
+States, and states that a postal address is available on request and will be
+printed once one exists. No address was invented.
+
+**Mechanics.** `content/legal/v1.1/` is v1 with terms §3 and §8 and privacy §1
+edited; refunds and acceptable use are carried forward unchanged. `v1` remains at
+`/legal/v1/<slug>`, marked superseded. `POLICY_VERSIONS` now holds both, the
+current version is `v1.1`, and acceptance rows are version-keyed — so a customer
+who accepted v1 is asked again, and their v1 row is preserved as history.
+
+**Evidence.** `npm run verify` exit 0: 312 unit tests (7 in
+`tests/policies.test.mjs`, one of which asserts v1 still contains the old tax
+sentence while v1.1 does not, so an "immutable version" claim is actually
+tested), 423 HTTP checks including superseded-version reachability and labelling,
+the current version's permanent route, and a legacy v1 acceptance being asked for
+v1.1 before both rows are shown to exist.

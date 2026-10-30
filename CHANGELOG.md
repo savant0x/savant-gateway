@@ -3,6 +3,24 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-30 — Policy v1.1: tax and entity disclosure corrected
+
+- **FID-2026-1030-061 — high — Two false statements in the freshly published
+  policies are corrected the same day.** v1 claimed tax is calculated and
+  collected by Stripe; the Checkout Session in `app/api/account/topup/route.ts`
+  sends no `automatic_tax`, no tax-id collection and no invoice, so no tax is
+  added at checkout. v1.1 states that no tax is calculated or collected, that no
+  separate invoice or VAT document is issued, and that the buyer is responsible
+  for any tax that applies. Separately, v1 printed no registered address because
+  none exists: v1.1 states that the operator is not registered as a separate
+  legal entity, names Kentucky, United States, and says a postal address is
+  available on request and will be printed once one exists — no address was
+  invented. `content/legal/v1.1/` carries the two edits; refunds and acceptable
+  use are unchanged; `/legal/v1/...` still serves the superseded text marked as
+  superseded. Because acceptance is version-keyed, accounts that accepted v1 are
+  asked again and their v1 row is kept as history. Verified: `npm run verify`
+  exit 0, 312 unit tests, 423 HTTP checks, trial HTTP PASS, quality PASS.
+
 ## 2026-10-30 — Customer policies published
 
 - **FID-2026-1030-061 — high — The gate now has published terms, privacy,

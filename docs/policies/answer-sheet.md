@@ -24,9 +24,10 @@ Status legend I will apply when reading it back: `ANSWERED`, `BLANK`.
 61 questions: 41 answered directly, 18 answered by delegating the position
 ("need suggestion", "whatever is legally permitted"), 1 left blank (A-7,
 optional), and 1 sub-item missing inside an answered question (the registered
-address inside A-1). Version `v1` is published; the served text is in
-`content/legal/v1/` and the positions chosen for the delegated items are listed
-in `README.md`.
+address inside A-1). Version `v1` was published from these answers the same day
+and superseded by `v1.1` after two corrections; the served text is in
+`content/legal/v1.1/` and the positions chosen for the delegated items are
+listed in `README.md`.
 
 Three answers were not publishable as written, and were resolved as follows:
 
@@ -48,14 +49,17 @@ Three answers were not publishable as written, and were resolved as follows:
 Flags recorded against the published text:
 
 - **A-1 registered address is missing.** Kentucky is named, but no address is
-  printed anywhere. This is the highest-priority addition for the next version.
+  printed anywhere. v1.1 handles this by stating that the operator is not
+  registered as a separate legal entity and that a postal address is available
+  on request; register and publish the address when one exists.
 - **A-4** is a personal mailbox. It works and is monitored, but a role address on
   an owned domain would be better for both deliverability and credibility.
 - **A-5** points vulnerability reports at the public issue tracker. That is fine
   for the software, and the privacy notice routes account-data incidents to the
   support queue instead.
-- **B-3** says Stripe handles tax. That is only true if Stripe Tax is enabled in
-  the Stripe account; the text assumes it is.
+- **B-3** said Stripe handles tax. The checkout code never enables automatic
+  tax, so v1.1 states that no tax is collected and the buyer is responsible for
+  any that applies. Enable Stripe Tax in code as well if that changes.
 - **F-4** records that no lawyer reviewed the text. The operator signed off
   knowing that.
 - **A-6** "oct 30, 2026" was normalised to `2026-10-30` / "30 October 2026".

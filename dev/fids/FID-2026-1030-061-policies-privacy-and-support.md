@@ -4,7 +4,7 @@
 **ID:** FID-2026-1030-061
 **Parent:** FID-2026-1030-043
 **Severity:** high
-**Status:** implemented — policies v1 published, acceptance recorded (registered address and Stripe Tax verification open)
+**Status:** implemented — policies v1.1 published (v1 superseded), acceptance recorded
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044, FID-2026-1030-047
@@ -181,16 +181,49 @@ served usage is charged even if a stream later errors; credit has no expiry code
 refunds are bounded ledger appends with no Stripe Refund call; account deletion
 cascades every account-owned row and retains usage events with `user_id` null.
 
+## Policy v1.1 — corrections, effective 2026-10-30
+
+Two claims in v1 were wrong, and both were corrected the same day rather than
+left to age:
+
+- **Tax.** v1 said tax is calculated and collected by Stripe where configured.
+  `app/api/account/topup/route.ts` creates the Checkout Session with `mode`,
+  `line_items`, `metadata` and the return URLs only — no `automatic_tax`, no
+  `tax_id_collection`, no invoice. Checkout therefore adds no tax line. v1.1
+  states that no tax is calculated or collected, that no separate invoice or VAT
+  document is issued, that the Stripe receipt is the payment record, and that
+  any applicable tax is the buyer's responsibility.
+- **Registered address.** None exists to print; the operator is not registered
+  as a separate legal entity. v1.1 says exactly that, names Kentucky, United
+  States, and states that a postal address is available on request and will be
+  printed once one exists. No address was invented.
+
+The convenience of printing an address was rejected deliberately: a fake one on
+a contract page is worse than an honest "not yet".
+
+`content/legal/v1.1/` is a copy of v1 with those two edits (terms §3 and §8,
+privacy §1); refunds and acceptable use are carried forward unchanged. `v1`
+stays reachable at `/legal/v1/<slug>` and is marked superseded, so a customer can
+see what v1 said. Acceptance is version-keyed, so every account that accepted v1
+is asked again; the v1 row is retained as history.
+
+Receipt: `npm run verify` exit 0 — 312 unit tests (7 in
+`tests/policies.test.mjs`, including one that asserts v1 still contains the old
+tax sentence while v1.1 does not), 423 HTTP checks (the superseded version
+reachable and labelled, the current version's permanent route, and an account
+holding a v1 acceptance being asked for v1.1 before its earlier row is
+preserved), trial HTTP PASS, quality PASS.
+
 ## Remaining Gates
 
-- **Registered address is not published.** The operator supplied the entity name
-  and jurisdiction only. Add it in `v2`; it is the most important missing item.
-- **Stripe Tax is assumed.** The published tax sentence says Stripe calculates
-  and collects tax where configured. Confirm Stripe Tax is enabled, or correct it
-  in `v2`.
 - No counsel reviewed the text. The operator accepted that on 2026-10-30; the
-  published documents therefore describe themselves as versioned text, not as
-  legal advice.
+  published documents describe themselves as versioned text, not legal advice.
+- Registering the entity and publishing a real address is the next substantive
+  improvement; until then the terms say the address is available on request.
+- If Stripe Tax is ever enabled in the Stripe account, checkout must send
+  `automatic_tax: { enabled: true }` and the tax text must change in a new
+  version. Neither exists today, and doing only one of them would make the
+documents false.
 - No outbound email or messaging transport: a request is a durable queue entry,
   and the operator replies through their own channel. A resolution note is not a
   delivery guarantee.

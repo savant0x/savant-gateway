@@ -40,12 +40,14 @@ sync controls, side-by-side model comparison, catalog/brand refinements, and
 browser-local timestamp display. A committed implementation is not real service
 or launch acceptance. The verification receipt records what was exercised.
 
-Customer policies `v1` are published and effective 2026-10-30 at `/terms`,
-`/privacy`, `/refunds` and `/acceptable-use`, with `/legal/v1/<slug>` permanent.
-Acceptance is enforced at signup and prompted once for existing accounts, and
-stored per version in `policy_acceptances`. FID-061 stays open only for the
-missing registered address and for confirming Stripe Tax is actually enabled;
-no lawyer reviewed the text and the operator accepted that.
+Customer policies `v1.1` are published and effective 2026-10-30 at `/terms`,
+`/privacy`, `/refunds` and `/acceptable-use`, with `/legal/v1.1/<slug>` and the
+superseded `/legal/v1/<slug>` both permanent. Acceptance is enforced at signup,
+prompted per version for existing accounts, and stored in `policy_acceptances`.
+v1.1 corrects two v1 statements: tax is not calculated or collected, because the
+checkout session never enables it, and the operator is not a registered entity,
+so no address is printed and a postal address is offered on request. The only
+open item is that no lawyer reviewed the text; the operator accepted that.
 
 ## Offering decisions
 

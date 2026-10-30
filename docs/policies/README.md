@@ -1,18 +1,26 @@
 # Customer policies
 
-**Status: version `v1` is published and effective 2026-10-30.** Not reviewed by
-counsel; the operator approved the text and signed off on publication. This
-directory records the review trail and the publishing procedure. The text that
-is actually served lives in `content/legal/`.
+**Status: version `v1.1` is published and effective 2026-10-30; `v1` is
+superseded and stays readable.** Not reviewed by counsel; the operator approved
+the text and signed off on publication. This directory records the review trail
+and the publishing procedure. The text that is actually served lives in
+`content/legal/`.
+
+v1.1 exists for two corrections, both found after v1 shipped: the tax sentence
+claimed Stripe calculated and collected tax, which the checkout code never
+requests, and no registered address was printed. v1.1 states the tax truth and
+says plainly that the operator is not registered as a separate legal entity and
+has no registered office, with a postal address available on request.
 
 ## Where the text lives
 
 | Version | Published text (source of truth) | Readable at |
 | --- | --- | --- |
-| v1 | `content/legal/v1/terms.md` | `/terms`, `/legal/v1/terms` |
-| v1 | `content/legal/v1/privacy.md` | `/privacy`, `/legal/v1/privacy` |
-| v1 | `content/legal/v1/refunds.md` | `/refunds`, `/legal/v1/refunds` |
-| v1 | `content/legal/v1/acceptable-use.md` | `/acceptable-use`, `/legal/v1/acceptable-use` |
+| v1.1 | `content/legal/v1.1/terms.md` | `/terms`, `/legal/v1.1/terms` |
+| v1.1 | `content/legal/v1.1/privacy.md` | `/privacy`, `/legal/v1.1/privacy` |
+| v1.1 | `content/legal/v1.1/refunds.md` | `/refunds`, `/legal/v1.1/refunds` |
+| v1.1 | `content/legal/v1.1/acceptable-use.md` | `/acceptable-use`, `/legal/v1.1/acceptable-use` |
+| v1 | `content/legal/v1/*.md` | `/legal/v1/<slug>` only |
 
 `lib/legal-meta.ts` holds the slug, title, version label, effective date,
 operator identity and contact. `lib/legal.ts` reads the Markdown at build time;
@@ -26,13 +34,14 @@ kept in `drafts/` unchanged as the review history. They are not served.
 
 Published text is immutable. A change is a **new version**:
 
-1. Copy `content/legal/v1/` to `content/legal/v2/` and edit only there.
-2. Add `v2` to `POLICY_VERSIONS` and move `POLICY_VERSION` / `_LABEL` /
+1. Copy `content/legal/v1.1/` to the new version directory and edit only there.
+2. Add the version to `POLICY_VERSIONS` and move `POLICY_VERSION` / `_LABEL` /
    `_EFFECTIVE_*` in `lib/legal-meta.ts` to the new version.
 3. Every account is asked to accept the new version, because acceptance rows are
-   keyed by version; old rows stay as the record of what applied before.
-4. `/legal/v1/...` stays reachable forever. Never edit a published version in
-   place.
+   keyed by version; old rows stay as the record of what applied before. v1
+   acceptances are preserved when a customer accepts v1.1.
+4. `/legal/v1/...` and `/legal/v1.1/...` stay reachable forever. Never edit a
+   published version in place.
 
 ## How acceptance is recorded
 
@@ -71,14 +80,16 @@ follows and can be changed in `v2`:
 
 ## Known gaps
 
-- **No registered address is published.** The operator supplied the entity name
-  and jurisdiction only. Add it in the next version; it is the most important
-  missing item in `terms.md` and `privacy.md`.
 - No counsel review. The operator accepted that position on 2026-10-30.
 - The contact address is a personal mailbox, not a role address on an owned
   domain.
-- The tax sentence assumes Stripe is configured to calculate and collect tax. If
-  Stripe Tax is not enabled in the Stripe account, that sentence overpromises.
+- The operator is not a registered entity. v1.1 says so instead of printing an
+  address that does not exist; registering and publishing the address is the
+  next substantive improvement.
+- Tax is disclosed as not collected. If Stripe Tax is ever enabled, checkout
+  must send `automatic_tax: { enabled: true }` **and** the text must be updated
+  in a new version — the code does not do this today, and enabling it without
+  the text change would make the documents false in the other direction.
 - Plan pricing is undecided; the text states that no plan is sold, which matches
   the application.
 - English only. Site-wide localisation is a separate future FID, and any

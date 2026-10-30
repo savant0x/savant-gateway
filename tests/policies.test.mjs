@@ -86,8 +86,8 @@ test("the published text carries the decided positions", () => {
 });
 
 test("the version, dates and operator identity agree", () => {
-  assert.equal(POLICY_VERSION, "v1");
-  assert.equal(POLICY_VERSION_LABEL, "1.0");
+  assert.equal(POLICY_VERSION, "v1.1");
+  assert.equal(POLICY_VERSION_LABEL, "1.1");
   assert.match(POLICY_EFFECTIVE_DATE, /^\d{4}-\d{2}-\d{2}$/);
   assert.equal(POLICY_EFFECTIVE_LABEL, "30 October 2026");
   assert.equal(
@@ -109,13 +109,41 @@ test("the version, dates and operator identity agree", () => {
 test("routes are stable for the current version and permanent for older ones", () => {
   assert.equal(policyHref("terms"), "/terms");
   assert.equal(policyHref("acceptable-use"), "/acceptable-use");
-  assert.equal(policyHref("terms", "v1"), "/terms");
+  assert.equal(policyHref("terms", "v1.1"), "/terms");
+  assert.equal(policyHref("terms", "v1"), "/legal/v1/terms");
   assert.equal(policyHref("terms", "v0"), "/legal/v0/terms");
 
   assert.ok(isPolicyVersion("v1"));
+  assert.ok(isPolicyVersion("v1.1"));
   assert.ok(!isPolicyVersion("v2"));
   assert.ok(isPolicySlug("privacy"));
   assert.ok(!isPolicySlug("cookies"));
+});
+
+test("v1.1 corrects tax and entity disclosure without rewriting v1", () => {
+  const old = body("terms", "v1");
+  const next = body("terms", "v1.1");
+  const nextPrivacy = body("privacy", "v1.1");
+
+  // Published text is immutable: the superseded claim is still visible in v1.
+  assert.match(old, /Tax is calculated and collected by Stripe/);
+  assert.ok(!/registered as a separate legal entity/.test(old));
+
+  assert.match(next, /No tax is calculated or collected by this\s+service/);
+  assert.ok(!/Tax is calculated and collected by Stripe/.test(next));
+  assert.match(next, /not currently registered as a\s+separate\s+legal entity/);
+  assert.match(next, /postal address is available on request/);
+  assert.match(nextPrivacy, /not currently registered as a\s+separate\s+legal entity/);
+  assert.match(nextPrivacy, /postal address\s+is available on request/);
+
+  // Everything else is carried forward unchanged.
+  for (const slug of POLICY_SLUGS) {
+    assert.equal(
+      body(slug, "v1.1").replace(/\s+/g, " ").includes("## 1."),
+      true,
+      `${slug} keeps its first section`,
+    );
+  }
 });
 
 test("only the documented markdown is interpreted", () => {

@@ -70,10 +70,12 @@ positions taken and the ones engineering selected on the operator's behalf.
 Changing any of them requires a new policy version, not an edit in place. The
 items that remain genuinely open:
 
-- **Registered address.** The entity name and jurisdiction are published; no
-  address is. Add it in the next version.
-- **Stripe Tax.** The tax sentence assumes Stripe Tax is enabled in the Stripe
-  account. Verify it, or the text overpromises.
+- **Entity registration.** The operator is not registered as a separate legal
+  entity, and v1.1 says so. Registering and publishing a real postal address is
+  the next substantive improvement.
+- **Stripe Tax.** Disclosed as not collected, which matches the checkout session
+  (no `automatic_tax`, no tax-id collection, no invoice). If it is ever enabled,
+  the code and the policy text must change together in a new version.
 - **Plan pricing.** Undecided. The text states that no plan is sold, which is
   true of the application.
 - **Legal review.** None. The operator accepted that on 2026-10-30.

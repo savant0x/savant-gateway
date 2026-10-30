@@ -1616,3 +1616,65 @@ Git repository and the template's required local commit could not exist. Fresh g
   same missing `DB_PATH`, and the upstream key and webhook secret remain
   outstanding. The admin console has therefore not been exercised against a live
   deployment; that waits on the libSQL port.
+
+## Current Session — 2026-10-30 (production database port: 066)
+
+Operator request: "Port the gateway's storage to libSQL so it can run on Vercel,
+proving settlement under concurrent writes first." Then, before any edit: "this
+is a task that needs proper research, review, fid+perfection loop."
+
+Session autonomy level 3, strict mode. The second instruction bounds this pass
+to research, review and the converged FID; implementation starts only after the
+operator has read that FID. No application code changed — `better-sqlite3`
+remains the only data layer, and the Vercel deployment still fails closed on
+`DB_PATH` exactly as recorded above.
+
+- [x] **D0 — Converged FID-066.** Automation level 3. Measured the real SQLite
+  surface rather than reusing the research estimate (265 `prepare` in `lib`,
+  35 transactions, 28 `.immediate()`, 23 `exec`, 301 statement calls, 0
+  `lastInsertRowid` uses), read the six modules on the money path 0-EOF,
+  confirmed the settlement transaction is flat instead of nested, and checked
+  three external questions against primary documentation (the libSQL client's
+  documented 5-second interactive-transaction window, the Turso engine split,
+  and Vercel's per-instance execution model). Findings, design decisions and
+  the adversarial audit are in
+  `dev/fids/FID-2026-1030-066-libsql-storage-port.md`, status `converged`.
+- [x] **D1a — Capability spike.** Automation level 3. Operator approved FID-066
+  and asked to begin with step 0. `scripts/libsql-capability-spike.mjs` proves
+  the seven capabilities the port depends on, plus result shapes, rollback and
+  `:memory:` isolation: 14/14 checks, exit 0, output recorded in the FID. Two
+  results are load-bearing rather than confirmatory — a nested write transaction
+  fails `SQLITE_BUSY: database is locked` instead of queueing, so savepoint
+  reentrancy is required rather than merely prudent, and `executeMultiple`
+  inside a transaction is atomic, so the migration runner can be bounded per
+  schema module. `@libsql/client` 0.18.0 is installed with `--no-save`, so
+  `package.json` is unchanged until the port itself lands. Gates after the
+  change: lint, typecheck and quality all exit 0; the spike script is
+  lint-ignored like the other `scripts/*.mjs` tools.
+- [ ] **D1 — Async data-layer adapter and port.** Blocked pending the operator's
+  go-ahead after the step-0 report, which the operator's own instruction
+  requires before any call site is touched. Steps, rejected alternatives and
+  acceptance tests are specified in FID-066.
+- [ ] **D2 — Money-path port with a concurrency proof.** Blocked on D1's
+  approval. Must produce the double-spend receipt the whole choice exists for:
+  two concurrent settlements against one balance, exactly one commit, run
+  against two independent clients on shared storage.
+- [ ] **D3 — Startup, migration and production-config contract.** Blocked on D1's
+  approval. The four `PRAGMA` statements and the import-time migration in
+  `lib/db.ts:325-372` cannot survive a remote client; `lib/production-config.ts`
+  still encodes file-path assumptions (`db_missing`, `db_relative`,
+  `db_ephemeral`).
+- [ ] **D4 — Cloud acceptance and restore drill.** Blocked pending operator
+  purchase and credentials: a funded Turso plan that includes the 30-day PITR
+  window the privacy notice claims, plus `TURSO_DATABASE_URL` and
+  `TURSO_AUTH_TOKEN` supplied outside this repository. Restoration creates a new
+  database, so the drill also needs approval to repoint production at it.
+- [ ] **D5 — Shared admission across instances.** Blocked pending an operator
+  ruling on one of: database-backed admission, an external counter store (new
+  dependency and cost), a documented lower constant with degradation accepted,
+  or staying on a single-process host. Process-local buckets in
+  `lib/token-bucket.ts`, `lib/gateway-rate-limit.ts` and `lib/provider-quota.ts`
+  multiply by instance count, which `docs/launch-plan.md` Phase 3 already
+  forbids until shared enforcement is proven. This is a correctness blocker for
+  the launch, not a storage-port defect, and it is the reason the FID refuses to
+  declare Vercel ready on the strength of the port alone.

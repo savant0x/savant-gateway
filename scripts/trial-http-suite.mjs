@@ -90,7 +90,13 @@ try {
 
   async function customer(email) {
     const signup = await request(baseUrl, "/api/auth/signup", {
-      method: "POST", body: { name: "Trial Test", email, password: "trial-test-password" },
+      method: "POST",
+      body: {
+        name: "Trial Test",
+        email,
+        password: "trial-test-password",
+        acceptedPolicies: true,
+      },
     });
 
     checkEqual("trial signup", signup.status, 201);

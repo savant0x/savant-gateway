@@ -45,6 +45,7 @@ function signup(context, account, origin) {
       email: account.email,
       name: account.name,
       password: account.password,
+      acceptedPolicies: true,
     },
     ...(origin ? { origin } : {}),
   });

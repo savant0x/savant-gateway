@@ -4,7 +4,7 @@
 **ID:** FID-2026-1030-061
 **Parent:** FID-2026-1030-043
 **Severity:** high
-**Status:** implemented (published policy text awaiting operator approval)
+**Status:** implemented — policies v1 published, acceptance recorded (registered address and Stripe Tax verification open)
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044, FID-2026-1030-047
@@ -119,15 +119,52 @@ FID does not select a jurisdiction, publish legal advice or send messages.
 Verification: `npm run verify` exit 0 — 305 unit tests, 376 HTTP checks, trial
 HTTP PASS, quality PASS (276 files), clean lint/typecheck/build.
 
-## Policy Drafts (not published)
+## Policy Publication — v1, effective 2026-10-30
 
-`docs/policies/README.md` indexes four v1 drafts written strictly from the
-implemented behavior: `terms.md`, `privacy.md`, `refunds.md` and
-`acceptable-use.md`. They are explicitly marked draft, not effective, and carry
-`[PLACEHOLDERS]` for the legal entity, jurisdiction, contact identity, retention
-periods and liability position, plus `OPERATOR DECISION REQUIRED` markers for the
-positions engineering must not choose. Nothing serves them, nothing links them,
-and no route or footer change was made.
+The operator answered the 61-question sheet in `docs/policies/answer-sheet.md`
+and signed off (H-2 `CONFIRMED`) on publishing version 1.0. The published text is
+`content/legal/v1/{terms,privacy,refunds,acceptable-use}.md`; the pre-publication
+drafts are preserved unchanged in `docs/policies/drafts/` as review history.
+
+- `lib/legal-meta.ts` — slug, title, version `v1` / label `1.0`, effective
+  `2026-10-30`, operator `Savant AI`, contact, and route helpers. Metadata is
+  separated from filesystem access so the dates and slugs are unit tested.
+- `lib/legal-markdown.ts` — a parser for exactly the Markdown the documents use
+  (headings, paragraphs, bullet and ordered lists, bold, inline code, links).
+  Unsupported constructs fall through as paragraph text rather than disappearing
+  from a legal page.
+- `app/terms`, `/privacy`, `/refunds`, `/acceptable-use` — statically prerendered
+  current text; `/legal/v1/<slug>` is the permanent route (SSG,
+  `dynamicParams = false`, so an unpublished version is a 404); `/legal` indexes
+  the versions.
+- `components/landing/site-footer.tsx` — a legal row linking all four pages on
+every page that renders the footer.
+- `app/signup` + `components/account/auth-form.tsx` + `app/api/auth/signup` —
+  signup requires the acceptance checkbox and the API refuses a body without
+  `acceptedPolicies: true`; the acceptance row is written in the same request as
+  the account, so no account exists without a record.
+- `lib/schema/policies.ts`, `lib/store/policies.ts`,
+  `app/api/account/policies` — `policy_acceptances(user_id, version)` with a
+  unique constraint, source `signup`/`account`, cascade on account deletion, and
+  idempotent recording so the first timestamp stands.
+- `components/account/policy-acceptance-card.tsx` — existing accounts are asked
+  once; the card disappears when the server confirms acceptance.
+
+Verification: `npm run verify` exit 0 — 311 unit tests (6 new in
+`tests/policies.test.mjs`: no unreplaced placeholder, decided positions present,
+version/date/identity agreement, route stability, parser blocks, inline
+segments), 421 HTTP checks (45 new: four pages served, version and date present,
+no placeholder, permanent route, unpublished version 404, legal index, footer
+links, signup refusal without acceptance, signup acceptance row, account banner
+when no row exists, cross-origin 403, signed-out 401, unknown version 400,
+account acceptance, idempotency), trial HTTP PASS, quality PASS (290 files).
+
+Published positions the operator delegated, chosen by the publisher and listed in
+`docs/policies/README.md`: three-month liability cap where exclusion is not
+allowed, 30-day log and backup retention with deletion not propagated to
+backups, 30-day request deadline, US-only transfer disclosure, no voluntary
+refunds beyond duplicate/unauthorized charges and statutory rights, no credit
+expiry, and concrete excluded data and high-impact-use limits.
 
 Facts the drafts rely on, each checked in source: passwords use scrypt and
 tokens/keys are stored as hashes; the customer cookie lasts seven days and the
@@ -139,9 +176,14 @@ cascades every account-owned row and retains usage events with `user_id` null.
 
 ## Remaining Gates
 
-- The four drafts need operator review: fill every placeholder, decide every
-  `OPERATOR DECISION REQUIRED`, then publish versioned routes and link them.
-  Writing them unapproved would be a legal claim, not an implementation.
+- **Registered address is not published.** The operator supplied the entity name
+  and jurisdiction only. Add it in `v2`; it is the most important missing item.
+- **Stripe Tax is assumed.** The published tax sentence says Stripe calculates
+  and collects tax where configured. Confirm Stripe Tax is enabled, or correct it
+  in `v2`.
+- No counsel reviewed the text. The operator accepted that on 2026-10-30; the
+  published documents therefore describe themselves as versioned text, not as
+  legal advice.
 - No outbound email or messaging transport: a request is a durable queue entry,
   and the operator replies through their own channel. A resolution note is not a
   delivery guarantee.

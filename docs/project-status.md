@@ -25,7 +25,7 @@ sandbox and commercial production as PAYG; exact terms/rates/funding remain open
 | What can honestly be offered now? | [Offering evidence ledger](offering-evidence.md) |
 | What changed? | [CHANGELOG](../CHANGELOG.md), then the implementation commit |
 | What should implementation preserve? | [Knowledge](../knowledge.md) |
-| Where is the session handoff? | [Provider account and daily trial-credit handoff](../dev/session-summaries/2026-10-30-provider-account-handoff.md) |
+| Where is the session handoff? | [Published customer policies handoff](../dev/session-summaries/2026-10-30-policies-published.md) |
 
 ## Product state
 
@@ -39,6 +39,13 @@ Recent additions, committed as `50758c1`: stored Artificial Analysis benchmarks 
 sync controls, side-by-side model comparison, catalog/brand refinements, and
 browser-local timestamp display. A committed implementation is not real service
 or launch acceptance. The verification receipt records what was exercised.
+
+Customer policies `v1` are published and effective 2026-10-30 at `/terms`,
+`/privacy`, `/refunds` and `/acceptable-use`, with `/legal/v1/<slug>` permanent.
+Acceptance is enforced at signup and prompted once for existing accounts, and
+stored per version in `policy_acceptances`. FID-061 stays open only for the
+missing registered address and for confirming Stripe Tax is actually enabled;
+no lawyer reviewed the text and the operator accepted that.
 
 ## Offering decisions
 

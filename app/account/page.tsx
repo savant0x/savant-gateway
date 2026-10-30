@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { AccountHeader } from "@/components/account/account-header";
 import { BillingHistory } from "@/components/account/billing-history";
 import { CustomerKeysCard } from "@/components/account/keys-card";
+import { PolicyAcceptanceCard } from "@/components/account/policy-acceptance-card";
 import { SubscriptionCard } from "@/components/account/subscription-card";
 import { SupportCard } from "@/components/account/support-card";
 import { TopupCard } from "@/components/account/topup-card";
@@ -21,11 +22,17 @@ import {
 import { UsageCard } from "@/components/dashboard/usage-card";
 import { siteConfig } from "@/config/site";
 import { requireCustomerPage } from "@/lib/customer-auth";
+import {
+  POLICY_EFFECTIVE_LABEL,
+  POLICY_VERSION,
+  POLICY_VERSION_LABEL,
+} from "@/lib/legal";
 import { readPlanSalesPolicy } from "@/lib/plan-sales";
 import { readStripeConfig } from "@/lib/stripe";
 import {
   customerSubscriptionSummary,
   getCustomerAccount,
+  hasAcceptedPolicy,
   listSupportRequestsForUser,
 } from "@/lib/store";
 
@@ -135,6 +142,13 @@ export default async function AccountPage({
             value={formatNumber(data.totalRequests)}
           />
         </section>
+
+        <PolicyAcceptanceCard
+          accepted={hasAcceptedPolicy(customer.id, POLICY_VERSION)}
+          effectiveLabel={POLICY_EFFECTIVE_LABEL}
+          version={POLICY_VERSION}
+          versionLabel={POLICY_VERSION_LABEL}
+        />
 
         <TrialCard userId={customer.id} />
         <DailyTrialCard userId={customer.id} />

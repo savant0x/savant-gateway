@@ -1416,3 +1416,24 @@ Git repository and the template's required local commit could not exist. Fresh g
   stored instant is 05:58 UTC, on a 12-hour clock both before and after the
   swap. Uncommitted with the compare feature it touches;
   the auth-gated tables are typechecked and linted, not re-rendered.
+- 2026-10-30: **Customer policies v1 published (FID-2026-1030-061).** The
+  operator returned the 61-question sheet in `docs/policies/answer-sheet.md`
+  and signed off on publishing version 1.0. Served text now lives in
+  `content/legal/v1/{terms,privacy,refunds,acceptable-use}.md`, with metadata in
+  `lib/legal-meta.ts`, a narrow Markdown parser in `lib/legal-markdown.ts`, and
+  static pages at `/terms`, `/privacy`, `/refunds`, `/acceptable-use`, plus the
+  permanent `/legal/v1/<slug>` routes and a `/legal` index. The footer links all
+  four, which is the notice path. Acceptance is enforced rather than declared:
+  signup requires the checkbox and the API refuses an account without
+  `acceptedPolicies: true`, storing a `policy_acceptances` row in the same
+  request; existing accounts are asked once on `/account`; the row is keyed by
+  version, is idempotent and cascades with the account. Positions the answer
+  sheet delegated were chosen and are listed in `docs/policies/README.md`
+  (three-month liability cap, 30-day log/backup retention, 30-day request
+  deadline, no voluntary refunds beyond duplicate/unauthorized charges and
+  statutory rights, no expiry, concrete excluded data and high-impact-use
+  limits). Drafts moved unchanged to `docs/policies/drafts/` as review history.
+  Receipt: `npm run verify` exit 0 — 311 unit tests, 421 HTTP checks, trial HTTP
+  PASS, quality PASS (290 files), 12 static/SSG pages including the four
+  policies. **Open:** no registered address is published, Stripe Tax is assumed,
+  and no counsel reviewed the text; the operator accepted the last one.

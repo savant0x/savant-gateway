@@ -13,6 +13,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [accepted, setAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,6 +21,15 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (isSignup && !accepted) {
+      setError(
+        "Accept the terms of service and the privacy notice to create an account.",
+      );
+
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
@@ -28,7 +38,9 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
-          isSignup ? { name, email, password } : { email, password },
+          isSignup
+            ? { name, email, password, acceptedPolicies: accepted }
+            : { email, password },
         ),
       });
 
@@ -107,6 +119,43 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
           </span>
         ) : null}
       </div>
+
+      {isSignup ? (
+        <div className="text-xs leading-5 text-muted">
+          <label className="flex items-start gap-2" htmlFor="auth-policies">
+            <input
+              required
+              checked={accepted}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--accent)]"
+              id="auth-policies"
+              type="checkbox"
+              onChange={(event) => setAccepted(event.target.checked)}
+            />
+            <span>
+              I am 18 or older and accept the{" "}
+              <Link className="text-accent hover:underline" href="/terms">
+                terms of service
+              </Link>
+              , the{" "}
+              <Link className="text-accent hover:underline" href="/privacy">
+                privacy notice
+              </Link>
+              , the{" "}
+              <Link className="text-accent hover:underline" href="/refunds">
+                refund policy
+              </Link>{" "}
+              and the{" "}
+              <Link
+                className="text-accent hover:underline"
+                href="/acceptable-use"
+              >
+                acceptable use policy
+              </Link>
+              .
+            </span>
+          </label>
+        </div>
+      ) : null}
 
       {error ? (
         <p

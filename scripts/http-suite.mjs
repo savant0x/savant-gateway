@@ -14,6 +14,7 @@ import {
   waitForServer,
 } from "./http-suite/harness.mjs";
 import { seedCatalog } from "./http-suite/seed.mjs";
+import { runPolicyChecks } from "./http-suite/policy-checks.mjs";
 import { runQuotaChecks } from "./http-suite/quota-checks.mjs";
 
 const ADMIN_PASSWORD = "http-suite-admin-password";
@@ -72,6 +73,11 @@ try {
 
   database = await waitForSchema(workspace.dbPath);
   seedCatalog(database, { mockBaseUrl: mock.baseUrl });
+
+  // Runs before the main checks: one of those deliberately drops a required
+  // table to prove readiness fails closed, which makes the database unusable
+  // for any later page request.
+  await runPolicyChecks({ baseUrl, db: database });
 
   await runQuotaChecks({ baseUrl, db: database, mock, adminPassword: ADMIN_PASSWORD });
 

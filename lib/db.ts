@@ -14,6 +14,7 @@ import { providerSchema } from "./schema/providers";
 import { subscriptionSchema } from "./schema/subscriptions";
 import { creditAdjustmentSchema } from "./schema/credits";
 import { paymentEventSchema } from "./schema/payments";
+import { policySchema } from "./schema/policies";
 import { settlementSchema } from "./schema/settlements";
 import { supportSchema } from "./schema/support";
 import { trialSchema } from "./schema/trials";
@@ -351,6 +352,7 @@ function createDb() {
       creditAdjustmentSchema(database);
       paymentEventSchema(database);
       supportSchema(database);
+      policySchema(database);
       normalizeLegacyFamilies(database);
       seed(database);
     })

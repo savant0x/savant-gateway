@@ -1,9 +1,10 @@
 # Support and data-request runbook
 
-Status: the authenticated support queue is implemented. Draft customer policies
-(terms, privacy, refunds, acceptable use) exist under `docs/policies/v1/` for
-operator review; **none is published or effective**. See "Open operator
-decisions".
+Status: the authenticated support queue is implemented, and customer policies
+`v1` (terms, privacy, refunds, acceptable use) are **published and effective
+2026-10-30** at `/terms`, `/privacy`, `/refunds` and `/acceptable-use`. The draft
+text and the review trail are in `docs/policies/`; the served text is in
+`content/legal/v1/`. See "Open operator decisions".
 
 ## What exists
 
@@ -64,18 +65,23 @@ deliberately for billing and audit integrity. Any policy text must say this.
 
 ## Open operator decisions (FID-2026-1030-061)
 
-Drafts are in `docs/policies/v1/`. Filling these is the operator's decision, not
-engineering's:
+Published v1 resolved the questions below; `docs/policies/README.md` lists the
+positions taken and the ones engineering selected on the operator's behalf.
+Changing any of them requires a new policy version, not an edit in place. The
+items that remain genuinely open:
 
-- Legal entity, registered address, jurisdiction and contact identity.
-- Terms: liability position and the governing-law wording.
-- Privacy: retention period for hosted logs and backups, exact data-subject
-  rights and deadlines, and the minimum age.
-- Refunds: unused-credit window and fees, service-failure remedy, promotional
-  credit treatment, and whether to introduce expiry.
-- Acceptable use: excluded data categories and high-impact uses.
-- Any availability or response-time commitment. None is implemented today.
+- **Registered address.** The entity name and jurisdiction are published; no
+  address is. Add it in the next version.
+- **Stripe Tax.** The tax sentence assumes Stripe Tax is enabled in the Stripe
+  account. Verify it, or the text overpromises.
+- **Plan pricing.** Undecided. The text states that no plan is sold, which is
+  true of the application.
+- **Legal review.** None. The operator accepted that on 2026-10-30.
+- **Role contact address.** `spencerhowell84@gmail.com` is monitored but is a
+  personal mailbox.
+- **Localisation.** English only; a translation needs a stated authoritative
+  language.
 
-Until the drafts are approved, versioned and published, `/support` is reachable
-and the queue works, but there are no policy pages and the footer links no
-policy route. That is why FID-056 cannot close yet.
+Policy pages, footer links and a recorded acceptance now exist, so the support
+and policy half of FID-056 is done. FID-061 stays open only for the address and
+the tax verification above.

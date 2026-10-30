@@ -14,11 +14,13 @@ import {
 } from "@/lib/customer-auth";
 import { clientKey, signupLimiter } from "@/lib/customer-rate-limit";
 import { isSameOriginRequest } from "@/lib/admin-session";
+import { POLICY_VERSION } from "@/lib/legal";
 import { hashPassword } from "@/lib/password";
 import {
   createCustomer,
   createCustomerSession,
   findCustomerByEmail,
+  recordPolicyAcceptance,
 } from "@/lib/store";
 
 export const runtime = "nodejs";
@@ -46,12 +48,26 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { email?: unknown; name?: unknown; password?: unknown };
+  let body: {
+    email?: unknown;
+    name?: unknown;
+    password?: unknown;
+    acceptedPolicies?: unknown;
+  };
 
   try {
     body = (await request.json()) as typeof body;
   } catch {
     return customerError(400, "Invalid JSON body.");
+  }
+
+  // The policies are accepted at the point the account is created; an account
+  // is never created without a recorded acceptance of the current version.
+  if (body.acceptedPolicies !== true) {
+    return customerError(
+      400,
+      "Accept the terms of service and the privacy notice to create an account.",
+    );
   }
 
   const email = normalizeEmail(body.email);
@@ -73,6 +89,12 @@ export async function POST(request: Request) {
 
   try {
     const customer = createCustomer({ email, name, passwordHash });
+
+    recordPolicyAcceptance({
+      userId: customer.id,
+      version: POLICY_VERSION,
+      source: "signup",
+    });
 
     signupLimiter.fail(key);
 

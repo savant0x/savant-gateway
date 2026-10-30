@@ -3,6 +3,28 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-30 — Customer policies published
+
+- **FID-2026-1030-061 — high — The gate now has published terms, privacy,
+  refunds and acceptable-use pages, and a recorded acceptance behind them.**
+  Version `1.0` is effective 2026-10-30 at `/terms`, `/privacy`, `/refunds` and
+  `/acceptable-use`, with `/legal/v1/<slug>` kept permanently reachable and an
+  unpublished version answering 404. The text is written from implemented
+  behavior and from the operator's 61-question answer sheet: 18 and over, no
+  uptime guarantee, no committed support response time, plans not for sale and
+  not priced, no credit expiry, refunds only for duplicate or unauthorized
+  charges and where the law requires one, and Stripe as the tax and invoice
+  layer. A liability exclusion with a three-month cap and a non-waivable-rights
+  carve-out replaces the empty clause. Signup now requires the acceptance
+  checkbox and the API refuses an account without it, writing the acceptance row
+  in the same request; existing accounts are asked once on `/account`; the row is
+  keyed by version and repeated acceptance keeps the first timestamp. The footer
+  links every policy, which is the notice path for customers who never open the
+  checkbox. Verified: `npm run verify` exit 0, 311 unit tests, 421 HTTP checks,
+  trial HTTP PASS, quality PASS (290 files). **Still open:** no registered
+  address is published, Stripe Tax is assumed rather than verified, and no lawyer
+  reviewed the text — the operator accepted that position.
+
 ## 2026-10-30 — Authenticated support queue
 
 - **FID-2026-1030-061 — high — Support is a recorded, account-bound request,

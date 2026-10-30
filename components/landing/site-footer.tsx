@@ -24,6 +24,12 @@ export function SiteFooter() {
           <span>
             SAVANT ECOSYSTEM <span className="text-accent">{"// GATEWAY"}</span>
           </span>
+          <nav aria-label="Legal" className="flex flex-wrap gap-4">
+            <Link href="/terms">Terms</Link>
+            <Link href="/privacy">Privacy</Link>
+            <Link href="/refunds">Refunds</Link>
+            <Link href="/acceptable-use">Acceptable use</Link>
+          </nav>
           <span>
             Independent gateway · not affiliated with upstream providers.
           </span>

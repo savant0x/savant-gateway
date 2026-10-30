@@ -144,6 +144,11 @@ export {
   listSupportRequestsForUser,
   resolveSupportRequest,
 } from "./store/support";
+export {
+  getPolicyAcceptance,
+  hasAcceptedPolicy,
+  recordPolicyAcceptance,
+} from "./store/policies";
 export { getPricingData } from "./store/pricing";
 export {
   ANALYTICS_RANGES,

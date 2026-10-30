@@ -19,7 +19,7 @@ distinguish verified behavior from unverified claims.
   refusal that keeps rows fresh, stale provenance (a dropped model keeps its own
   index version and measurement date) and a spent daily window that makes no
   request. Verified: `npm run verify` exit 0, 297 unit tests, 320 HTTP checks,
-  quality PASS (267 files).
+  quality PASS (267 files). Closed against `36c6581`; CI run 41100450463 green.
 
 ## 2026-10-30 — Enforced no-sales launch policy
 

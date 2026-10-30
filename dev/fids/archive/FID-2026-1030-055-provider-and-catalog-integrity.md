@@ -9,6 +9,8 @@
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044, FID-2026-1030-047
 **YAGNI-Compliance:** Verified — extend scoped sync and stored benchmark design.
+**Archived:** 2026-10-30 — implementation `36c6581`; CI run 41100450463 succeeded
+(`gates`) and so did the attribution guard 41100450453.
 
 ## Summary
 

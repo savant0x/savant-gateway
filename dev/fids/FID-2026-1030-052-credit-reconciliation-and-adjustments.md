@@ -66,6 +66,10 @@ reconciliation read model → admin financial views and monitoring.
 
 ## Verification Gates
 
+- gate: test tests/money.test.mjs
+- gate: test tests/revenue.test.mjs
+- gate: test tests/analytics.test.mjs
+
 Planning audit under 043. Implementation: `npm run verify`; `npm test` includes
 the named existing files and planned `tests/credit-reconciliation.test.mjs`.
 Disposable DB receipts must reconcile independently calculated totals and prove

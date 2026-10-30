@@ -80,7 +80,7 @@ follow-up status-narrative correction; even its combined delta is below 10%.
 All child corrections and the master's individual passes stayed below the cap.
 Two final zero-change passes satisfy the less-than-2% convergence rule.
 
-| FID suffix | Draft chars | Final chars | Exact edits | Change | Loop 4 | Loop 5 |
+| FID suffix | Draft chars | Loop 2/3 chars | Exact edits | Change | Loop 4 | Loop 5 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | 043 | 9090 | 9473 | 437 | 4.807% | 0% | 0% |
 | 044 | 3868 | 4176 | 313 | 8.092% | 0% | 0% |
@@ -105,33 +105,68 @@ Two final zero-change passes satisfy the less-than-2% convergence rule.
 
 ## Final document SHA-256 inventory
 
-These fingerprints describe the converged plan bytes. Implementation changes
+These fingerprints include the loop-6 gate correction and describe the final
+converged plan bytes. Implementation changes
 require renewed review; this is not a perpetual verification claim.
 
 | Suffix | SHA-256 |
 | --- | --- |
 | 043 | `01fc258278f7012c5bf419aaa8f7567493082ef290507370800fc928a9d161c9` |
-| 044 | `76835f40f2197074eaf84748dd18637860464451dea17df42fa420834339fa8b` |
+| 044 | `5e9026d194e1ea4c9c2d7372670e9539fb9d985f5f40345e798acd4e86a926b9` |
 | 045 | `87d0a552b8a72a15400268cfb81cabf1985787b151774f3c8a5642b957d7fed4` |
-| 046 | `9c02a4108314c53a9dccec0a28caa93a7e88f752836ab9dea88db6f9d87d5317` |
-| 047 | `567159173dc6856640574be63287b1be96c3d538fc51044d0694fd0daedd8cc2` |
-| 048 | `c3093a3fc21a6f0487298063f63bc8cd3c58be5e544fede59e53f35c8e36fb08` |
-| 049 | `15511682cdd21916dc0ce1ea8f955df5e435b9600e3760b931c32edb2e6f5ba3` |
-| 050 | `93ea0a337f2ee54b1f50c25dfe55248b67c3d191dc0d923289a2c15783559144` |
-| 051 | `e1a3fbd3e028dd5ce8e02f4a1d2de551f63485426cf4cb228d25c8add24b140c` |
-| 052 | `504ccba9d736f2c52e49330d1ed13737bff17537f7fa6b7004deee239dbb1f5a` |
+| 046 | `1f331ac250c84d1edf669014d8ba41fd582aa2b29840dc13613e5c2f4f4fd3e4` |
+| 047 | `d0ca590215710da08051385714f683d3e6a66dfde3167cecd936cc73e7f873ec` |
+| 048 | `ac8de32241062bff6bdaa56989b979c809b21239a5b5fc3e3e46590b942d6970` |
+| 049 | `068e0a0e4015e95616042cdf5a484723f5d90ad4ded035f7ce3a041f7486badd` |
+| 050 | `61658b3e8831c3847c6103a0ca30004a86d633b7dc86a6f40a3a0774f2ff556c` |
+| 051 | `44b1f71186582eaed8c8eea19e205a8ced6730beb3d991b0b1f7a2d30677f20f` |
+| 052 | `61aad7a0f7b5e234a8d6e87d835e4f540f3784adc3e2191aa1e1c2b9686cc9dd` |
 | 053 | `ffe7606aed01f5260d8ccd518606f561c9ec42bac995ea67c8570bbb34f813ee` |
-| 054 | `e371ab8955bb674a9b7805e0155d2d824073394f8ef46ec2ec38905e2aa41c01` |
-| 055 | `e4348a88f8211dccf1c4a3697e0f86b8d956402f06c827bfccebf0496a1129ac` |
-| 056 | `16d34cd34a85e6e18fd49ec0b83ffbace19665d82d0f40db92b4e1490d1d384b` |
+| 054 | `917c2dc58e6b4e11288983e91c6d8ac6f1b4004472d43b0ded06217ec4de0826` |
+| 055 | `ba20d5df7e9b87bbdc0a2c9e50bb85c8999f8dfffe6774a1d21686943b964636` |
+| 056 | `06914c13b82be86219fa959915d02158cf9e847e4a5a5e4df59496e13e4f1e1e` |
 | 057 | `0adfe81b5ce73e82417e589efab276dd319fe5d12a1fa5e3e56fd1adfe627308` |
 | 058 | `ef84ebf9c92c5854ac6012c47cfeb164c7171fb190bd4c45cd20989e965d2c0d` |
-| 059 | `45c52c9eb17eb3c8fabbec5e706755a6d6529edc648f3a67bdf1f7342113e977` |
+| 059 | `b9463a2f048c4d2ac0b850066d68fec694d1009d1a8d119b210e0d2d48769df0` |
 | 060 | `c81a072f6664a8f9a2f0ab4bac825edb98a77e7ec70c8c6c7ea35222c6f9fba9` |
-| 061 | `15a40e07deb4680607b0a47a9d83d6dee93c290a75918e89b4fcbfb64c6c8a0b` |
+| 061 | `f0ed48b362939b12886d7377bb5a4b8b42a7805f71017822f0888d91ab049323` |
 | 062 | `4e7816f01000538b17f4140dc119d141733678bfd96e59a9c3a363551bd6960a` |
 
 ## Repository gates and claim limits
+
+### Loop 6 — Test-artifact contract correction
+
+A stricter FID-template check found thirty existing test-file references across
+thirteen children were named in verification plans but not explicitly repeated
+under Verification Gates. The earlier inventory checked planned test paths;
+this final audit extends the check to every existing and planned test reference.
+Added explicit `gate: test tests/...` declarations without changing promised
+behavior or any production/test source. `npm test` already executes these files.
+
+| Child | Exact inserted characters | Loop-6 change |
+| --- | ---: | ---: |
+| 044 | 125 | 2.993% |
+| 046 | 73 | 1.831% |
+| 047 | 121 | 2.891% |
+| 048 | 40 | 0.966% |
+| 049 | 113 | 2.676% |
+| 050 | 119 | 2.796% |
+| 051 | 70 | 1.606% |
+| 052 | 109 | 2.585% |
+| 054 | 71 | 1.646% |
+| 055 | 164 | 3.832% |
+| 056 | 70 | 1.579% |
+| 059 | 39 | 0.939% |
+| 061 | 34 | 0.791% |
+
+The seven other documents changed 0%. Insert-only deltas have exact Levenshtein
+distance equal to inserted characters. Every pass is below 10%; these edits
+supersede the earlier convergence fingerprint for the thirteen changed children.
+
+Final convergence checks 7 and 8 recheck every test path against its gate and
+compare the complete corrected documents with the preceding snapshot. Both
+record 20/20 unchanged, 0%/0%, errors [], within the ten-iteration hard stop.
+The final SHA inventory above is checked against actual files after correction.
 
 `npm run verify` exited 0 on 2026-10-30: lint/typecheck clean, 209 tests pass,
 0 failed/skipped, quality PASS (233 source files), build pass, HTTP 138 checks

@@ -63,6 +63,8 @@ explicit operator authorization and is recorded separately from mock transport t
 
 ## Verification Gates
 
+- gate: test tests/analytics.test.mjs
+
 Planning audit under 043. Implementation: `npm run verify`; `npm test` includes
 planned `tests/operations-alerts.test.mjs` and existing analytics tests. Mandatory
 external receipt: authorized alert received, delivery failure visible, recovery/

@@ -67,6 +67,10 @@ usage parser/pricing → settlement → stored snapshots → financial reconcili
 
 ## Verification Gates
 
+- gate: test tests/money.test.mjs
+- gate: test tests/pricing.test.mjs
+- gate: test tests/anthropic-translate.test.mjs
+
 Planning audit under 043. Implementation: `npm run verify`; `npm test` includes
 the named existing files and planned `tests/usage-fidelity.test.mjs`; HTTP JSON/
 SSE checks must reconcile exact amounts. Real provider field observations are

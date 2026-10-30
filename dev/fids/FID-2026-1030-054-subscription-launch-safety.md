@@ -66,6 +66,9 @@ public/checkout guards share sales policy; webhook/store owns real period transi
 
 ## Verification Gates
 
+- gate: test tests/plans.test.mjs
+- gate: test tests/revenue.test.mjs
+
 Planning audit under 043. Implementation: `npm run verify`; `npm test` includes
 named existing files and planned `tests/subscription-sales-policy.test.mjs`.
 No-sales acceptance is mandatory for current launch. Real recurring acceptance

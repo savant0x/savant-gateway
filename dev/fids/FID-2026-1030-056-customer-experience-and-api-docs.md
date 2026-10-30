@@ -66,6 +66,9 @@ policy/support links → 061's delivered pages/contact.
 
 ## Verification Gates
 
+- gate: test tests/compare.test.mjs
+- gate: test tests/http.test.mjs
+
 Planning audit under 043. Implementation: `npm run verify`; `npm test` runs the
 existing named files. Add interaction checks to the existing HTTP workflow when
 possible; any introduced browser runner must be wired into the declared gates.

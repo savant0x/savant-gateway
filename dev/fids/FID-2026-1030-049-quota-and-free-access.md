@@ -66,6 +66,10 @@ admin/account readouts describe that same state. Production scheduler proof is 0
 
 ## Verification Gates
 
+- gate: test tests/free-pool.test.mjs
+- gate: test tests/allocation.test.mjs
+- gate: test tests/trials.test.mjs
+
 Planning audit under 043. Implementation: `npm run verify`; `npm test` includes
 the existing named files and planned `tests/quota-refresh.test.mjs`; both HTTP
 suites run. Real quota/reset observations require provider access and belong in 062.

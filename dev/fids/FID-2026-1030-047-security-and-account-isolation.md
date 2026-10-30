@@ -67,6 +67,10 @@ one redaction policy. Real network/ingress settings are finally verified by 057.
 
 ## Verification Gates
 
+- gate: test tests/admin-session.test.mjs
+- gate: test tests/customer-session.test.mjs
+- gate: test tests/http.test.mjs
+
 Planning audit under 043. Implementation: `npm run verify`; `npm test` includes
 the existing files and planned `tests/security-boundaries.test.mjs`. Require
 redacted negative HTTP, serialization, outbound-network and rotation receipts.

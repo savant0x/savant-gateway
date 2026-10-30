@@ -3,6 +3,7 @@
 **Session ID:** 2026-10-30-launch-fid-outline
 **Status:** completed
 **Initial commit:** `b0b65ac`
+**Planning set commit:** `6964e63` (final gate-declaration/receipt correction follows)
 
 ## Intent before edits
 
@@ -111,6 +112,12 @@ all statuses converged; no implementation or launch approval claimed
 
 One preliminary range-comparison probe used unpadded IDs; it was corrected and
 rerun. Final graph checks pass; no FID was changed to satisfy the probe defect.
+
+A final template-contract audit also caught thirty existing test references in
+thirteen children not repeated explicitly under Verification Gates. Added those
+gate lines (largest revision 3.832%), then reran two stable passes and refreshed
+all affected fingerprints. Final convergence is loops 7/8, 0%/0%; all test paths,
+existing or planned, now have explicit coverage under their child's gate section.
 
 ## Repository verification — 2026-10-30
 

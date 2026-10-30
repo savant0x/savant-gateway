@@ -66,6 +66,8 @@ support/data requests → authenticated audited workflow, never an unmonitored f
 
 ## Verification Gates
 
+- gate: test tests/http.test.mjs
+
 Planning audit under 043. Implementation: `npm run verify`; `npm test` includes
 planned `tests/customer-policy.test.mjs` when behavior is added. Required operator
 receipt: approved text/policies and working contact ownership; real inquiry delivery

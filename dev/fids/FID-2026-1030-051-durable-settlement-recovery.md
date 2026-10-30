@@ -68,6 +68,9 @@ durable settlement store; startup/maintenance → same idempotent accounting pat
 
 ## Verification Gates
 
+- gate: test tests/trials.test.mjs
+- gate: test tests/money.test.mjs
+
 Planning audit under 043. Implementation: `npm run verify`; `npm test` includes
 planned `tests/settlement-recovery.test.mjs` and named existing tests. HTTP plus
 disposable-process crash receipts must prove every interruption boundary, not

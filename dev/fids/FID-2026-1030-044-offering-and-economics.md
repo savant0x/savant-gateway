@@ -66,6 +66,10 @@ must never run the document generator as an unreviewed file-edit transform.
 
 ## Verification Gates
 
+- gate: test tests/business-model.test.mjs
+- gate: test tests/pricing.test.mjs
+- gate: test tests/price-comparison.test.mjs
+
 Planning: source/decision/dependency audit under master 043. Implementation:
 `npm run verify`; `npm test` runs the three existing named test files. Required
 external receipt: dated permission, rate/limit observations and operator decision.

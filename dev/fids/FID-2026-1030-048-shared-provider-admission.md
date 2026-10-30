@@ -66,6 +66,8 @@ Trial paid fallback must acquire the serving route's correct ceiling.
 
 ## Verification Gates
 
+- gate: test tests/rate-limit.test.mjs
+
 Planning audit under 043. Implementation: `npm run verify`, `npm test` including
 planned `tests/provider-admission.test.mjs`. HTTP proof requires aggregate peak
 within approved limits and zero leaked/negative slot counts; load proof is 060.

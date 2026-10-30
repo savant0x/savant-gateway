@@ -66,6 +66,9 @@ route parsers/account key writes → shared guards; gateway → bounded admissio
 
 ## Verification Gates
 
+- gate: test tests/rate-limit.test.mjs
+- gate: test tests/http.test.mjs
+
 Planning audit under 043. Implementation: `npm run verify`; `npm test` includes
 existing named tests and planned `tests/request-limits.test.mjs`. HTTP and ingress
 receipts must agree on status/size boundaries and restart behavior.

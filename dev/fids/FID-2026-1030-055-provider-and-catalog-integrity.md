@@ -67,6 +67,11 @@ admin sync → scoped validated store; public pages → stored projection/measur
 
 ## Verification Gates
 
+- gate: test tests/providers.test.mjs
+- gate: test tests/provider-catalog.test.mjs
+- gate: test tests/model-groups.test.mjs
+- gate: test tests/benchmarks.test.mjs
+
 Planning audit under 043. Implementation: `npm run verify`; `npm test` includes
 the four existing named files and planned `tests/catalog-integrity.test.mjs`.
 Require disposable migration/sync/failure receipts; real enabled-provider catalog

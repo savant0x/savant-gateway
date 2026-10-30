@@ -1580,3 +1580,39 @@ Git repository and the template's required local commit could not exist. Fresh g
   and for the same reason: the repository should not be the archive. The site-wide
   `og.png` was NOT regenerated from this artwork; the generated social card is
   still drawn from `og.svg`, and swapping it is a separate decision.
+- 2026-10-30: **A Vercel deployment exists and fails closed, as designed.** The
+  operator deployed `savantai/savant-gateway` (production
+  `https://savant-gateway.vercel.app`, Node 26.x, build 59s, status Ready) and
+  connected Stripe keys. Every route returns 500; the runtime log names the
+  reason: `[startup] production configuration rejected: origin_missing,
+  db_missing, admin_unconfigured`. Reproduced locally with
+  `NODE_ENV=production npm run config:check`: no env gives those three codes, a
+  relative `DB_PATH` gives `db_relative`, `/tmp` gives `db_ephemeral`, and an
+  absolute non-temporary path such as `/var/task/data/gateway.db` **passes the
+  validator** even though Vercel's runtime filesystem is read-only — passing the
+  gate on this host would not mean the application works. `NEXT_PUBLIC_SITE_URL`
+  was set to the production origin; admin credentials, the upstream key, the
+  Stripe webhook secret and the database port remain. No offering is activated:
+  `PLAN_SALES_ENABLED` is unset, so plans stay unsold. Vercel's Hobby tier is
+  non-commercial, so a paid gateway requires Pro. This does not change the Phase
+  3 conclusion in `docs/launch-plan.md`: SQLite cannot serve from Vercel, so the
+  database port is the prerequisite either way.
+- 2026-10-30: **Admin credentials provisioned on Vercel; the gate still refuses on
+  the database.** `ADMIN_PASSWORD` (24 chars) and `ADMIN_SESSION_SECRET` (43
+  chars) were generated with `node:crypto` and stored as Vercel Secrets in both
+  Production and Preview, alongside the existing `NEXT_PUBLIC_SITE_URL`. Values
+  never entered the repository, the chat transcript or any command line: each was
+  written to a `mode 0600` file outside the tree and fed to `vercel env add` on
+  stdin, then the staging copies were deleted. Vercel stores these as Secrets, so
+  the dashboard hides them and `vercel env pull` cannot read them back; the only
+  copy is `~/dev/gateway-credentials/savant-gateway-admin-credentials.txt`, next
+  to the artwork and billing-document folders and for the same reason. Rotation
+  invalidates every live admin session because the signing key is derived from
+  the password and secret together (`lib/admin-session.ts`). Re-running
+  `config:check` with the provisioned values now reports exactly one code —
+  `db_missing` — so `origin_missing` and `admin_unconfigured` are cleared and the
+  remaining refusal is the database, not the operator console. No redeploy was
+  triggered: a deployment carrying these values would still fail closed on the
+  same missing `DB_PATH`, and the upstream key and webhook secret remain
+  outstanding. The admin console has therefore not been exercised against a live
+  deployment; that waits on the libSQL port.

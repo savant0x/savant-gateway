@@ -56,3 +56,9 @@ dev/fids/audit/
 
 # temporary design exports
 .superdesign/tmp/
+
+# Billing documents — invoices, credit notes and receipts — are kept outside this
+# working tree. Nothing in this repository needs a PDF, so the whole extension is
+# ignored rather than trusting a filename pattern to catch every provider's
+# format. A deliberately published PDF needs `git add -f` and a reason in the FID.
+*.pdf

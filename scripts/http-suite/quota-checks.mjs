@@ -209,6 +209,28 @@ export async function runQuotaChecks(context) {
       { method: "POST", cookie, body: { id: "missing-quarantine" } },
     )).status, 404);
 
+    // FID-052: audited, idempotent corrections and reconciliation read model.
+    const reconciliation = await request(baseUrl, "/api/admin/reconciliation", { cookie });
+
+    checkEqual("operator can read reconciliation", reconciliation.status, 200);
+    checkEqual("reconciliation exposes the ledger equation", typeof reconciliation.json.totals.differenceMicros, "number");
+    const correctionBody = {
+      userId: "quota_user", amountUsd: 0.01, kind: "adjustment",
+      reference: "http-suite-adjust-1", note: "suite correction",
+    };
+    const correction = await request(baseUrl, "/api/admin/adjustments", {
+      method: "POST", cookie, body: correctionBody,
+    });
+
+    checkEqual("an audited correction appends credit", correction.status, 200);
+    checkEqual("the first correction creates one row", correction.json.created, true);
+    const replayCorrection = await request(baseUrl, "/api/admin/adjustments", {
+      method: "POST", cookie, body: correctionBody,
+    });
+
+    checkEqual("a replayed reference does not create funds", replayCorrection.json.created, false);
+    checkEqual("a replay leaves the balance unchanged", replayCorrection.json.totals.balanceMicros, correction.json.totals.balanceMicros);
+
     // FID-048: one serving-account ceiling for every billing mode.
     mock.state.balance.rpm = 1;
     const limited = await read();

@@ -12,6 +12,7 @@ import { ensureColumn, type DatabaseHandle } from "./schema/columns";
 import { modelGroupSchema } from "./schema/groups";
 import { providerSchema } from "./schema/providers";
 import { subscriptionSchema } from "./schema/subscriptions";
+import { creditAdjustmentSchema } from "./schema/credits";
 import { settlementSchema } from "./schema/settlements";
 import { trialSchema } from "./schema/trials";
 import { usageFidelitySchema } from "./schema/usage";
@@ -338,6 +339,7 @@ function createDb() {
   benchmarkSchema(database);
   usageFidelitySchema(database);
   settlementSchema(database);
+  creditAdjustmentSchema(database);
   normalizeLegacyFamilies(database);
   seed(database);
 

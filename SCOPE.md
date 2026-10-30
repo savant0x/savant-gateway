@@ -2,6 +2,32 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-30 (credit reconciliation: 052)
+
+Handoff continuation in dependency order after 051. Automation level 3, strict,
+single agent. Real payment reversals, analytics netting and customer-facing
+policy remain 053/056/062; this pass implements credit corrections and the
+reconciliation equation.
+
+- [x] **C1 — Re-audit 052 against current source.** Automation level 3.
+  Measured: no reference identity, so a retried refund would credit twice; no
+  refund or adjustment path; no balance-vs-ledger comparison; no opening
+  baseline for legacy gaps; no admin view of the reserve or difference.
+  Convergence recorded in the FID before code.
+- [x] **C2 — Implement corrections and reconciliation.** Automation level 3.
+  Append-only refund/adjustment rows keyed by a unique reference (replay is a
+  no-op, conflicting terms are 409), refunds bounded by current credit,
+  overdraw protection, dated baselines, one reconciliation equation per account
+  and in total, admin API and view.
+- [x] **C3 — Verification.** Automation level 3. `npm run verify` exit 0:
+  272 unit tests (eight reconciliation cases), 260 HTTP checks (six route
+  checks), trial suite PASS, quality PASS (262 files), clean lint/typecheck/
+  build. FID-052 `verified`; archive and CHANGELOG in the closure commit.
+
+Remaining acceptance, not claimed: real Stripe refund/dispute execution (053),
+analytics revenue netting and customer history presentation (056), and the
+baseline form (API only). Historic gaps stay visible; nothing is backfilled.
+
 ## Current Session — 2026-10-30 (durable settlement: 051)
 
 Handoff continuation in dependency order after 050. Automation level 3, strict,

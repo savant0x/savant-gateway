@@ -89,6 +89,12 @@ export {
   releaseQuarantined,
 } from "./store/settlements";
 export {
+  adjustCredit,
+  getReconciliation,
+  listBalanceBaselines,
+  saveBaseline,
+} from "./store/reconciliation";
+export {
   DEFAULT_TENANT,
   getAccountSummary,
   grantCredit,

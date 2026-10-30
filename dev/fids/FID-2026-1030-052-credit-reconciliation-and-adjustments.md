@@ -4,7 +4,7 @@
 **ID:** FID-2026-1030-052
 **Parent:** FID-2026-1030-043
 **Severity:** critical
-**Status:** converged
+**Status:** verified
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044, FID-2026-1030-050, FID-2026-1030-051
@@ -82,6 +82,87 @@ append-only adjustments and explicit accounting clocks. AUDIT: pending.
 ADVERSARIAL: payment retry or an operator double-click must not create funds.
 Five questions: all balance states, bounded reconciliation, fraud-resistant
 permissions, durable history and shared arithmetic rather than report-specific truth.
+
+## Re-audit and convergence (2026-10-30, post-051)
+
+RED (measured in source):
+
+- `credit_ledger` has no reference column, so an operator refund sent twice by a
+  retry or a double click would credit twice; there is no refund or credit-note
+  path at all, only positive grants and usage debits.
+- No code compares `users.credit_micros` with the ledger sum, and legacy gaps
+  have no recorded opening baseline, so a report could only "agree" by
+  fabricating rows.
+- Admin surfaces show grants and usage but not the reconciliation difference,
+  quarantined reserve or top-up totals.
+
+GREEN (documented before code):
+
+1. `credit_ledger.reference` with a unique partial index is the adjustment
+   identity: the same reference with the same user and amount is an idempotent
+   no-op; the same reference with different terms is a conflict.
+2. Refunds are positive ledger entries bounded by current credit, so a refund
+   can never create a negative balance. Adjustments may be signed for
+   corrections, with the same non-negative floor. Rows are appended, never
+   updated or deleted.
+3. Reconciliation is one equation per account and in total:
+   `baseline + SUM(ledger.amount_micros) == users.credit_micros`. A baseline is
+   an explicit, dated operator record used only for legacy gaps; it is never a
+   fabricated transaction. The read model also reports usage debits, paid
+   top-ups, active holds and quarantined reserve.
+4. An admin view and API expose totals and per-account differences, so a
+   discrepancy is visible rather than tuned away.
+
+AUDIT: `applyAdjustment` is the only writer of refund/adjustment rows and is
+called from one authenticated route; the reconciliation read is used by the
+admin page. Reconciliation arithmetic is shared between the totals and rows.
+
+ADVERSARIAL: duplicate reference, conflicting reference, refund larger than the
+balance, zero/negative refund, overdrawn account, legacy gap and baseline
+replacement must each leave one honest row set.
+
+## Implementation
+
+| Responsibility | File |
+| --- | --- |
+| Adjustment identity, idempotent append, bounds, baseline, equation | `lib/reconciliation.ts` |
+| Ledger reference index and baseline table | `lib/schema/credits.ts`, `lib/db.ts` |
+| Server read/write wrappers | `lib/store/reconciliation.ts` |
+| Admin API | `app/api/admin/reconciliation/route.ts`, `app/api/admin/adjustments/route.ts` |
+| Admin view of totals, differences and refunds | `app/admin/(panel)/reconciliation/page.tsx` |
+| Independent expectations | `tests/credit-reconciliation.test.mjs` |
+| Route reachability | `scripts/http-suite/quota-checks.mjs` |
+
+## Verification
+
+`npm run verify` exit 0 on 2026-10-30:
+
+```text
+lint: zero warnings
+typecheck: exit 0
+tests 272 / pass 272 / fail 0
+quality: PASS (400-line ceiling, 262 files scanned)
+production build: clean
+http-suite: 260 checks PASS
+trial-http-suite: all checks PASS
+```
+
+The eight new cases cover: a balanced account, a legacy gap left visible
+until an explicit baseline (with zero fabricated ledger rows), one append per
+reference with an unchanged balance on replay, reference conflicts across
+amount and user, refunds bounded by current credit with partial refunds
+allowed, an overdrawn account that stays balanced and cannot be debited further
+below zero, invalid input refused before any write, and the read-model totals
+for usage, top-ups, holds, quarantine and adjustments. The production route
+appends one correction, refuses the replay as a duplicate, and leaves the
+balance unchanged.
+
+Evidence limits: no real Stripe refund or dispute is executed; external
+financial authority remains the operator's and 053/062 acceptance. Analytics
+revenue totals do not yet net refunds — that presentation and the
+consumed-credit treatment remain open with 053/056. Baselines are recorded
+through the authenticated API, not a form. Historic ledger gaps are surfaced,
+never backfilled.
 
 ## Resolution
 

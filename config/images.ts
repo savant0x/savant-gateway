@@ -11,8 +11,8 @@
  * metadata uses it for the social card.
  */
 export const brandImages = {
-  /** Repository hero, referenced by README.md. Not served by the app. */
-  banner: { src: "/images/banner.svg", width: 1200, height: 320 },
+  /** Repository hero, referenced by README.md. Not used by the app's UI. */
+  banner: { src: "/images/banner.png", width: 1700, height: 949 },
   /** Social preview. Raster source of truth: `npm run images` rebuilds it. */
   social: {
     src: "/images/og.png",

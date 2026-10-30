@@ -98,10 +98,12 @@ written evidence, not intent, and each text change ships as a new policy version
   placeholder sentence removed, no address invented earlier.
 - [ ] **Retention facts against the chosen host.** Terms claim 30-day log
   retention and 30-day backups with deletions not propagated. Both are statements
-  about the host, not the application. Close during Phase 3 by checking what the
-  chosen provider actually retains and either matching the configuration or
-  changing the numbers in a new version. Evidence: host retention setting plus
-  the matching published sentence.
+  about the host, not the application. Checked against the leading candidate on
+  2026-10-30: Vercel keeps runtime logs for **1 hour on Hobby, 1 day on Pro and
+  3 days on Enterprise**, with Observability Plus extending retention to about 30
+  days. Close during Phase 3 by selecting the plan and either matching the
+  configuration or changing the numbers in a new version. Evidence: the plan and
+  setting actually in use, plus the published sentence that matches it.
 - [ ] **Role contact address on an owned domain.** The contract contact is
   currently a personal mailbox. Close with a domain and a monitored role address
   in `lib/legal-meta.ts` and the body text. Evidence: a delivered test message to
@@ -169,8 +171,43 @@ may block acceptance; it does not turn an unverified system into a passing one.
 
 ## Phase 3 — Deployment and operations
 
+### Hosting candidate: Vercel
+
+Leading candidate as of 2026-10-30, and **not compatible with this application
+as built**. Checked against Vercel's documentation, not memory:
+
+| Requirement in this repository | Vercel |
+| --- | --- |
+| SQLite at `DB_PATH`, `better-sqlite3`, WAL, one writer | Not supported. Functions have a read-only filesystem with an ephemeral `/tmp`; Vercel's knowledge base states storage is ephemeral per instance, so SQLite cannot be used |
+| Balances, holds, ledger and settlement across requests | Each instance would get its own throwaway database; financial state would diverge |
+| Per-process rate limiters (`lib/customer-rate-limit.ts` says "SQLite deployments run one app process") | Limits reset per instance, so signup, login, support and top-up bounds degrade to per-instance best effort |
+| Backups of `data/gateway.db` | No persistent file exists to back up |
+| Runtime log retention | 1 hour on Hobby, 1 day on Pro, 3 days on Enterprise; Observability Plus extends to about 30 days |
+| Commercial operation | Hobby is restricted to non-commercial, personal use; a paid gateway needs Pro |
+| Streaming SSE with settlement in the same request | Streaming is supported; the settlement write still needs the external database |
+
+Two honest paths, and they are not equivalent in cost:
+
+**A. A persistent Node host.** A VPS, container host or PaaS with a durable
+volume keeps SQLite, WAL and the single-process limiters. It changes no
+application code and preserves the exact behavior every FID was verified
+against. It must prove a durable disk, a backup method and that exactly one
+process serves writes.
+
+**B. Vercel Pro plus an external transactional database plus shared rate
+limiting.** This is a migration FID, not a hosting preference: replace the
+synchronous `better-sqlite3` calls and `PRAGMA` setup with a network database
+client, move the limiters to shared storage, and re-verify settlement, replay,
+hold expiry, crash recovery and isolation on the new engine. Backups and log
+retention become the provider's, so the privacy notice must change in a new
+version. Do not assume a connection-string swap: the ledger and settlement
+recovery are written around synchronous SQLite transactions.
+
+Choosing B while the offering is still unsold is reasonable; choosing it while
+believing it is a deploy button is how settlement bugs reach customers.
+
 Select a persistent Node deployment compatible with the actual SQLite and
-process-local rate-limit design. Do not scale process/replica count until shared
+process-local rate-limit design, or schedule the migration above as its own FID. Do not scale process/replica count until shared
 limit enforcement is proven. Record CPU/memory/storage sizing from a controlled
 load test and choose traffic caps within measured upstream capacity.
 

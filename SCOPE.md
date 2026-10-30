@@ -1450,3 +1450,19 @@ Git repository and the template's required local commit could not exist. Fresh g
   so v1 acceptors are asked again and their earlier row is preserved. Receipt:
   `npm run verify` exit 0 — 312 unit tests, 423 HTTP checks, trial HTTP PASS,
   quality PASS.
+- 2026-10-30: **Hosting candidate checked: Vercel is not compatible as built.**
+  The operator named Vercel as the most likely host. Checked against Vercel's
+  documentation: runtime logs are retained 1 hour on Hobby, 1 day on Pro and 3
+  days on Enterprise, with Observability Plus extending to about 30 days, so the
+  published "up to 30 days" depends on that add-on; Hobby is non-commercial only,
+  so a paid gateway needs Pro; and SQLite cannot be used at all because functions
+  have a read-only filesystem and ephemeral per-instance `/tmp`. This repository
+  opens `better-sqlite3` at `DB_PATH` with WAL and one writer, keeps rate limiters
+  in process, and settles inside the streaming request, so on Vercel balances,
+  holds and the ledger would diverge per instance and the signup/login bounds
+  would become per-instance best effort. Two paths recorded in
+  `docs/launch-plan.md` Phase 3: a persistent Node host with a durable volume
+  (no code change), or Vercel Pro plus an external transactional database and
+  shared rate limiting (a migration FID with settlement and replay re-proof).
+  No code, schema or policy text changed; the retention gate is now partly
+  answered and the rest waits on the host decision.

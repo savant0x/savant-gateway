@@ -224,6 +224,14 @@ payload, the Stripe business profile and a rehearsed refund, a real deletion,
 the counsel decision, third-party script and header drift, plan-sale terms and
 the authoritative language.
 
+The retention gate is now partially answered for the leading host. Vercel keeps
+runtime logs for 1 hour on Hobby, 1 day on Pro and 3 days on Enterprise, with
+Observability Plus extending to about 30 days, so the published "up to 30 days"
+would only be true with that add-on. Vercel also cannot run the current SQLite
+and per-process rate-limit design at all, which makes host selection a
+correctness decision rather than a preference; `docs/launch-plan.md` Phase 3
+records both paths.
+
 - No counsel reviewed the text. The operator accepted that on 2026-10-30; the
   published documents describe themselves as versioned text, not legal advice.
 - Registering the entity and publishing a real address is the next substantive

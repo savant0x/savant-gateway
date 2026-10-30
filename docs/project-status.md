@@ -8,12 +8,13 @@ tree they tested, not automatically the current working tree.
 | Question | Authority |
 | --- | --- |
 | How is work governed? | [Single-agent ECHO](../dev/echo-v0.1.2-single-agent.md), [configuration](../protocol.config.yaml) |
-| What is approved now? | [SCOPE](../SCOPE.md), current 2026-10-30 section H1–H3 |
+| What is approved now? | [SCOPE](../SCOPE.md), current launch-FID planning section P1–P4 |
 | What must happen before launch? | [Launch plan](launch-plan.md) |
+| What organizes all launch work? | [Master FID 043](../dev/fids/FID-2026-1030-043-launch-master.md), children 044–062 |
 | What has actually been examined? | [Systems review](../dev/audits/2026-10-30-systems-review.md) |
 | What changed? | [CHANGELOG](../CHANGELOG.md), then the implementation commit |
 | What should implementation preserve? | [Knowledge](../knowledge.md) |
-| Where is the session handoff? | [Current session](../dev/session-summaries/2026-10-30-housekeeping-and-launch-plan.md) |
+| Where is the session handoff? | [Launch FID handoff](../dev/session-summaries/2026-10-30-launch-fid-handoff.md) |
 
 ## Product state
 
@@ -42,6 +43,15 @@ or launch acceptance. The verification receipt records what was exercised.
   inference acceptance remain launch gates, not completed customer journeys.
 
 ## Evidence boundaries
+
+Launch planning session baseline: `b0b65ac`. Master 043 and nineteen children
+044–062 cover A–Z requirements and passed individual document Perfection Loops.
+All twenty remain active `converged` plans. Authoring/audit is complete;
+implementation and live acceptance are not. The
+[audit receipt](../dev/audits/2026-10-30-launch-fid-perfection-loop.md) records
+source/dependency/test checks, measured revisions, two stable passes and hashes.
+
+The following initial-state narrative belongs to the preceding housekeeping pass:
 
 Initial session HEAD: `443cde5`. The local `origin/main` reference is not proof
 of current remote state. At intake there were 18 local commits beyond that

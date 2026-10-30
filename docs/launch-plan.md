@@ -1,5 +1,9 @@
 # Savant Gateway launch plan
 
+Executable planning outline: [master FID-2026-1030-043](../dev/fids/FID-2026-1030-043-launch-master.md)
+and its nineteen child FIDs. Each is document-converged; implementation and real
+acceptance remain open. [Per-file Perfection Loop evidence](../dev/audits/2026-10-30-launch-fid-perfection-loop.md).
+
 Prepared 2026-10-30 under SCOPE H2. Status: launch is blocked pending the
 operator inputs and acceptance evidence below. This document is an execution
 plan, not deployment authorization or a claim of production acceptance.

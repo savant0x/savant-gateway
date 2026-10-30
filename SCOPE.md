@@ -2,6 +2,68 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-30 (launch FID outline and session handoff)
+
+Operator request: "We need to create a launch plan fid outline, You mentioned
+multiple things that were 'dummy' or missing and are blockers. make all the fids
+needed to safely launch. Make a 'master fid' to organize the children fids
+covering a-z. Then run the full perfection loop on each one. Once completed,
+write a handoff and close the session."
+
+This is an explicitly authorized planning/documentation session, autonomy 3:
+author and audit the entire launch FID set, commit verified planning records,
+write the handoff and end the session. It does not instruct implementation of
+the planned launch work in this session. Design convergence is not implementation
+closure, launch acceptance, or permission to deploy. No trial/plan activation,
+credential provisioning, wallet funding or release is performed here.
+
+- [x] **P1 — Master launch contract.** FID-2026-1030-043; dependencies, A–Z
+  coverage, evidence classes, launch gates and operator decision boundaries.
+- [x] **P2 — Child authoring.** The following are registered planning deliverables,
+  automation level 3; implementation remains represented by active converged
+  FIDs after this planning session. None is silently removed by a disabled feature.
+
+| Child FID | Planning coverage |
+| --- | --- |
+| FID-2026-1030-044 | Offering, real rates, unit economics and upstream permission |
+| FID-2026-1030-045 | Email ownership and password/account recovery |
+| FID-2026-1030-046 | Signup, keys, abuse limits and request resource bounds |
+| FID-2026-1030-047 | Authentication, isolation, trust boundaries and secret redaction |
+| FID-2026-1030-048 | Aggregate provider RPM/concurrency across billing modes |
+| FID-2026-1030-049 | Quota freshness/reset, daily allocation and trial activation safety |
+| FID-2026-1030-050 | Provider usage fidelity, cost and customer charge semantics |
+| FID-2026-1030-051 | Durable settlement, replay and crash/expired-hold recovery |
+| FID-2026-1030-052 | Credit reconciliation, refunds/disputes and financial corrections |
+| FID-2026-1030-053 | Top-up/payment webhook reliability and fraud controls |
+| FID-2026-1030-054 | Subscription lifecycle and enforced no-sales launch state |
+| FID-2026-1030-055 | Provider/catalog sync and benchmark integrity |
+| FID-2026-1030-056 | Customer UI, public claims, accessibility and client documentation |
+| FID-2026-1030-057 | Secure deployment, canonical origin and configuration readiness |
+| FID-2026-1030-058 | Database migration, backup and restore/recovery drills |
+| FID-2026-1030-059 | Monitoring, alert delivery, operational controls and incidents |
+| FID-2026-1030-060 | Load, resilience and measured capacity acceptance |
+| FID-2026-1030-061 | Published customer policies, privacy and working support |
+| FID-2026-1030-062 | Real acceptance, release approval, rollout/rollback and observation |
+
+- [x] **P3 — Perfection Loop.** Audit every parent/child against source, existing
+  tests, dependencies and adversarial cases; apply measured document corrections;
+  verify two consecutive convergence passes and retain per-file evidence.
+- [x] **P4 — Verification and handoff.** Run repository gates, verify all FIDs
+  are registered and within the 20-active limit, commit and normally push the
+  records, write a complete handoff and close this planning session. Future
+  implementation/real service acceptance stays open in the master and children.
+
+Existing B1/B4/B6/B7/B8 requirements are carried into 044/048/053/054/062;
+historical account balances and external availability are not fresh observations.
+
+Planning completion evidence: all twenty FIDs are `converged` and registered;
+graph 74 edges, no cycles, 19 child links valid, 67 existing references and 16
+explicitly planned tests. Audit receipt records individual corrections below
+10% and final passes 0%/0% for every FID. `npm run verify` exit 0: 209 unit
+tests, quality 233 files, HTTP 138 and trial HTTP PASS, lint/typecheck/build
+clean. Handoff: `dev/session-summaries/2026-10-30-launch-fid-handoff.md`.
+This completes P1–P4's authoring/audit obligation, not child implementation.
+
 ## Current Session — 2026-10-30 (housekeeping, launch plan, systems review)
 
 Operator request: "lets do some house keeping and organizational. then we need

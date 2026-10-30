@@ -16,7 +16,7 @@ distinguish verified behavior from unverified claims.
   state while still raising unrelated SQLite errors. No schema, billing or
   payment semantics changed. Verified: fresh-`DB_PATH` builds exit 0 twice,
   `npm run verify` exit 0 with 283 unit tests, 262 HTTP checks, trial suite PASS,
-  quality PASS (265 files).
+  quality PASS (265 files). Closed against `0eb775d`; CI run 41096399599 green.
 
 ## 2026-10-30 — Recoverable payment delivery
 

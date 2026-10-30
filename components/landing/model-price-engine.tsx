@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { formatPricePer1M } from "@/components/dashboard/format";
+import { brandImages } from "@/config/images";
 
 export function ModelPriceEngine({ models }: { models: ModelSummary[] }) {
   const priced = models.filter(
@@ -36,7 +37,7 @@ export function ModelPriceEngine({ models }: { models: ModelSummary[] }) {
       <div className="price-engine">
         <div className="engine-heading">
           <span>CHOOSE YOUR ENGINE</span>
-          <Image alt="" height={32} src="/logo.png" width={32} />
+          <Image alt="" height={32} src={brandImages.logo} width={32} />
         </div>
         <div className="engine-body">
           {selected ? (

@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { LoginForm } from "./login-form";
 
+import { brandImages } from "@/config/images";
 import { siteConfig } from "@/config/site";
 
 const GENERATE_SECRET =
@@ -25,7 +26,7 @@ export function LoginScreen({
               alt=""
               className="h-9 w-9 rounded-xl ring-1 ring-cyan-300/30"
               height={36}
-              src="/logo-32.png"
+              src={brandImages.logoSmall}
               width={36}
             />
             <span className="text-sm font-semibold">{siteConfig.name}</span>

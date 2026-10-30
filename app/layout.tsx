@@ -8,22 +8,45 @@ import clsx from "clsx";
 import { Providers } from "./providers";
 
 import { fontDisplay, fontMono, fontSans } from "@/config/fonts";
+import { brandImages } from "@/config/images";
 import { siteConfig } from "@/config/site";
 
+const socialImage = {
+  url: brandImages.social.src,
+  width: brandImages.social.width,
+  height: brandImages.social.height,
+  alt: brandImages.social.alt,
+};
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteConfig.url),
   title: {
     default: siteConfig.name,
     template: `%s - ${siteConfig.name}`,
   },
+  applicationName: siteConfig.name,
   description: siteConfig.description,
-  manifest: "/site.webmanifest",
   icons: {
     icon: [
-      { url: "/favicon.ico" },
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: brandImages.icons.ico, sizes: "any" },
+      { url: brandImages.icons.png32, sizes: "32x32", type: "image/png" },
+      { url: brandImages.icons.png16, sizes: "16x16", type: "image/png" },
     ],
-    apple: "/apple-touch-icon.png",
+    apple: { url: brandImages.icons.apple, sizes: "180x180" },
+  },
+  openGraph: {
+    type: "website",
+    siteName: siteConfig.name,
+    title: siteConfig.name,
+    description: siteConfig.description,
+    url: "/",
+    images: [socialImage],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteConfig.name,
+    description: siteConfig.description,
+    images: [socialImage],
   },
 };
 

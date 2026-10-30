@@ -215,7 +215,7 @@ summary {
       transparent
     ),
     linear-gradient(var(--brand-veil), var(--brand-veil)),
-    url("/bg-pattern.webp");
+    url("/images/bg-pattern.webp");
   background-repeat: no-repeat, no-repeat, repeat;
   background-size: auto, auto, var(--brand-tile);
   background-position: bottom, center, center;
@@ -355,7 +355,7 @@ summary {
       transparent 72%
     ),
     linear-gradient(var(--brand-veil), var(--brand-veil)),
-    url("/bg-pattern.webp");
+    url("/images/bg-pattern.webp");
   background-repeat: no-repeat, no-repeat, no-repeat, repeat;
   background-size: auto, auto, auto, var(--brand-tile);
 }
@@ -660,7 +660,7 @@ summary {
   background-color: var(--background);
   background-image:
     linear-gradient(var(--brand-veil), var(--brand-veil)),
-    url("/bg-pattern.webp");
+    url("/images/bg-pattern.webp");
   background-repeat: no-repeat, repeat;
   background-size: auto, var(--brand-tile);
 }
@@ -713,7 +713,7 @@ summary {
       transparent 74%
     ),
     linear-gradient(var(--brand-veil), var(--brand-veil)),
-    url("/bg-pattern.webp");
+    url("/images/bg-pattern.webp");
   background-repeat: no-repeat, no-repeat, repeat;
   background-size: auto, auto, var(--brand-tile);
 }

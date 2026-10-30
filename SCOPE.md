@@ -1488,3 +1488,33 @@ Git repository and the template's required local commit could not exist. Fresh g
   the choice to policy: 30-day PITR needs Turso Scaler or Neon Scale, otherwise
   the privacy sentence changes. Nothing implemented; seven proofs are listed
   before adoption, led by the concurrent double-spend test.
+- 2026-10-30: **README rebuilt on the Savant brand; license moved to Apache 2.0.**
+  Presentation only: the README now opens with a centered banner
+  (`public/images/banner.svg`, added for this), one cyan-on-black badge row, a
+  pre-launch status callout and `---`-separated sections, matching
+  `savant0x/savant-code`. Content was rewritten from the tree rather than the
+  old prose (43 route handlers, 29 pages verified by `find`), and the limits
+  section now leads with "not deployable as built". `LICENSE` is the Apache
+  2.0 text from `savant0x/savant-code` (Copyright 2026 Spencer Howell (Savant
+  AI)); `NOTICE` now carries the Apache statement plus the full MIT text for
+  the HeroUI template portions, and `package.json` declares `Apache-2.0` and a
+  description. MIT was the only stale claim left in the repo after the
+  policies moved to v1.1. No application code, schema, policy text or runtime
+  behavior changed, so no FID was opened; the receipt is the same `npm run
+  verify` set as FID-061.
+- 2026-10-30: **Brand images consolidated to one directory; page metadata
+  completed.** `public/` and `assets/` held the same logo and favicon bytes, and
+  `public/site.webmanifest` restated the icons `app/layout.tsx` declared, so a
+  new mark meant edits in four components, two stylesheets, the root metadata
+  and a JSON file. Everything referenced now lives in `public/images/` and
+  `config/images.ts` is the single list; the manifest moved to a generated
+  `app/manifest.ts` route, which is one fewer place to forget. Added the missing
+  social preview: `og.svg` (1200x630, brand palette) rasterised to `og.png` by
+  `npm run images`, plus `metadataBase`, `openGraph` and
+  `twitter:summary_large_image` — the build previously emitted no card metadata
+  at all. Scope limits: `assets/bg_pattern.jpg` was kept because it is the only
+  source for `bg-pattern.webp`; nothing else about `assets/` was changed, and the
+  three untracked IONOS PDFs in it are the operator's to move or delete. The
+  manifest changing from a static file to a route was accepted knowingly: it now
+  inherits the production configuration gate instead of being served beside a
+  failing app. FID-2026-1030-063 carries the receipt.

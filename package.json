@@ -1,8 +1,10 @@
 {
 	"name": "savant-gateway",
 	"version": "0.1.0",
+	"description": "An independent inference gateway: one OpenAI-compatible endpoint over multiple upstream providers, with prepaid credit, account-owned keys and an operator console.",
 	"type": "module",
 	"private": true,
+	"license": "Apache-2.0",
 	"engines": {
 		"node": ">=22.18.0"
 	},
@@ -16,6 +18,7 @@
 		"config:check": "node scripts/production-config-check.mjs",
 		"test": "node --test \"tests/*.test.mjs\"",
 		"test:http": "node scripts/http-suite.mjs && node scripts/trial-http-suite.mjs",
+		"images": "node scripts/render-images.mjs",
 		"quality": "node scripts/quality-report.mjs",
 		"business-model": "node scripts/business-model.mjs",
 		"verify": "npm run check && npm run config:check && npm run test && npm run quality && npm run build && npm run test:http",

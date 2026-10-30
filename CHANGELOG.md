@@ -3,6 +3,46 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-30 — One brand-image directory and a real social preview
+
+- **FID-2026-1030-063 — low — Artwork had two homes and the site had no social
+  card.** `assets/` and `public/` held byte-identical copies of the logo and the
+  favicon set, `public/site.webmanifest` duplicated the icon list that
+  `app/layout.tsx` already declared, paths were hardcoded in four components and
+  two stylesheets, and there was no `openGraph`/`twitter` metadata at all, so a
+  shared link rendered as a bare URL. Now every referenced image lives in
+  `public/images/` and `config/images.ts` is the one list that metadata, the web
+  manifest and the components read. `/site.webmanifest` is replaced by a
+  generated `app/manifest.ts`, which cannot drift from the icon links. The social
+  card is drawn as `og.svg` and rasterised to `og.png` (1200×630) by
+  `npm run images`; `sharp` already ships with Next, so nothing new is
+  installed. Verified: `npm run check` and `npm test` (312) exit 0, `npm run
+  build` exit 0 with `/manifest.webmanifest` static, and a disposable production
+  server returned 200 `application/manifest+json` for the manifest and 200 for
+  every image, while the prerendered head carries `og:image` (1200×630 with alt),
+  `twitter:card=summary_large_image`, three `rel="icon"` links and
+  `apple-touch-icon`. **Still open:** `assets/bg_pattern.jpg` remains as the only
+  source for the CSS texture, and no crawler has been used to confirm how a
+  platform crops the card.
+
+## 2026-10-30 — Repository presentation and Apache 2.0 license
+
+- **Documentation and licensing only — no code, schema, policy text or runtime
+  behavior changed, so no FID was opened.** The README is rebuilt on the Savant
+  brand: a centered banner (`public/images/banner.svg`, added here), one cyan-on-black
+  badge row, a pre-launch status callout, `---`-separated sections and the
+  `Get Started` / `Overview` / `Key Technologies` / `Features` layout used by
+  `savant0x/savant-code`. Every claim was re-read from the tree: 43 route
+  handlers and 29 pages counted by `find`, the API surface table enumerated
+  from `app/api`, and the limits section rewritten to lead with "not deployable
+  as built" rather than burying it. `LICENSE` is now the Apache 2.0 text from
+  `savant0x/savant-code` (Copyright 2026 Spencer Howell (Savant AI)); `NOTICE`
+  adds the Apache statement and reproduces the full MIT text for the HeroUI
+  template portions it already attributed; `package.json` declares
+  `Apache-2.0` and a description. Verified: `npm test` 312 passing, and the
+  full `npm run verify` set last recorded against FID-061 still stands — no
+  source file it covers was touched.
+
 ## 2026-10-30 — Policy v1.1: tax and entity disclosure corrected
 
 - **FID-2026-1030-061 — high — Two false statements in the freshly published

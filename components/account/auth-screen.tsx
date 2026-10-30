@@ -4,6 +4,7 @@ import Image from "next/image";
 import { AuthForm } from "./auth-form";
 
 import { SiteHeader } from "@/components/landing/site-header";
+import { brandImages } from "@/config/images";
 
 const COPY = {
   signup: {
@@ -60,7 +61,7 @@ export function AuthScreen({ mode }: { mode: "login" | "signup" }) {
               alt=""
               className="h-16 w-16 object-contain"
               height={64}
-              src="/logo.png"
+              src={brandImages.logo}
               width={64}
             />
             <span className="font-mono text-[10px] tracking-widest text-muted">

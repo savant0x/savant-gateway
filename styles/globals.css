@@ -56,7 +56,7 @@ body {
       transparent 76%
     ),
     linear-gradient(var(--brand-veil), var(--brand-veil)),
-    url("/bg-pattern.webp");
+    url("/images/bg-pattern.webp");
   background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat;
   background-size: auto, auto, auto, auto, var(--brand-tile);
 }
@@ -67,7 +67,7 @@ body {
   background-color: var(--background);
   background-image:
     linear-gradient(var(--brand-veil), var(--brand-veil)),
-    url("/bg-pattern.webp");
+    url("/images/bg-pattern.webp");
   background-repeat: no-repeat, repeat;
   background-size: auto, var(--brand-tile);
 }

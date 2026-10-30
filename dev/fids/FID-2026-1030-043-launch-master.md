@@ -64,16 +64,17 @@ operator authority. This planning change edits documentation only.
 
 ### Approach and child register
 
-Each link below names a converged implementation/acceptance plan after document
-audit, not implemented work. All rows require completion evidence; a
-disabled offering requires a tested safety branch rather than disappearing work.
+Each link below names a plan after the document audit. A `closed` link records
+committed implementation; the rest remain converged and unimplemented. All rows
+require completion evidence; a disabled offering requires a tested safety branch
+rather than disappearing work.
 
 | Child | Responsibility | Depends on |
 | --- | --- | --- |
 | [044](FID-2026-1030-044-offering-and-economics.md) | Offering, verified rates and upstream permission | none |
 | [045](FID-2026-1030-045-email-and-account-recovery.md) | Email ownership and account recovery | 044 |
 | [046](FID-2026-1030-046-abuse-and-request-limits.md) | Abuse, key and resource bounds | 044 |
-| [047](FID-2026-1030-047-security-and-account-isolation.md) | Auth, isolation, boundaries and redaction | none |
+| [047](archive/FID-2026-1030-047-security-and-account-isolation.md) | Auth, isolation, boundaries and redaction — closed `2ef2d74`; ingress pinning in 057 | none |
 | [048](FID-2026-1030-048-shared-provider-admission.md) | Provider-wide RPM/concurrency | 044 |
 | [049](FID-2026-1030-049-quota-and-free-access.md) | Quota refresh, reset, allocation/trial safety | 044,045,048 |
 | [050](FID-2026-1030-050-usage-and-billing-fidelity.md) | Actual usage/cost and charge rules | 044 |

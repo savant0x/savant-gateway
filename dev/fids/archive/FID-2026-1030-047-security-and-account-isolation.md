@@ -4,7 +4,9 @@
 **ID:** FID-2026-1030-047
 **Parent:** FID-2026-1030-043
 **Severity:** critical
-**Status:** converged
+**Status:** closed
+**Closed Against:** `2ef2d74`
+**Archived:** 2026-10-30
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** none
@@ -75,6 +77,39 @@ Planning audit under 043. Implementation: `npm run verify`; `npm test` includes
 the existing files and planned `tests/security-boundaries.test.mjs`. Require
 redacted negative HTTP, serialization, outbound-network and rotation receipts.
 
+## Implementation and Verification
+
+Closed against `2ef2d74` on 2026-10-30.
+
+- `lib/redaction.ts` defines one policy for configured secret values and
+  token-shaped text, applied to server logs (`sanitizeError`), durable settlement
+  errors (`settleCall`), provider error bodies, provider runtime rows and sync
+  warnings, benchmark attempts, OpenRouter diagnostics and Stripe webhook
+  failures.
+- `lib/providers/error-text.ts` holds the pure provider error reader so the
+  redaction boundary is directly tested; `request.ts` re-exports it.
+- Provider base URLs with embedded credentials are refused, and provider requests
+  do not follow redirects, so the credential cannot be bounced to another host.
+- Login guessing is bounded per account independently of `x-forwarded-for`, which
+  a direct client can rotate.
+- `tests/security-boundaries.test.mjs` covers redaction, provider-error bounds,
+  base-URL policy and spoofed forwarded headers. The production HTTP matrix adds
+  cross-account key list/delete, revoked-key 401, suspended session and key 401
+  with recovery, production console 403, forwarded-header non-authorization,
+  foreign-origin admin read 403, credential-echo absence from both the response
+  and `usage_events.error`, and redirect non-follow.
+- `SECURITY.md` was rewritten to the actual guards and their operational
+  preconditions; the timing-equalizing login hash and existing key/session
+  storage were preserved.
+
+Gates: `npm run verify` exit 0; 217 unit tests, 170 HTTP checks and the trial
+suite pass; quality 235 files; lint, typecheck and build clean; attribution
+and whitespace checks clean.
+
+The ingress and proxy behavior remains verified by FID-2026-1030-057, as this
+record's contract states; `SECURITY.md` records that per-address limits are
+best-effort unless the proxy overwrites forwarded headers.
+
 ## Perfection Loop
 
 RED: incomplete boundary coverage and stale security narrative. GREEN: real
@@ -90,8 +125,9 @@ status and logging destinations independently; a generic HTTP error alone is
 not redaction proof. Canary comparisons must never print the canary value.
 Final convergence checks are in the master planning-audit receipt.
 
-Design only. Findings must be proven before being labelled repaired; the
-existing production session layer must not be replaced by a weaker host check.
+Implemented and closed with the evidence above. The existing production session
+layer was retained; the fixes extend it rather than replacing it with a weaker
+host check.
 
 ## Lessons Learned
 

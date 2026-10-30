@@ -84,6 +84,18 @@ export async function startMockUpstream({ expectedKey }) {
     // The mock account declares a generous ceiling so unrelated checks are not
     // throttled; the aggregate gate has its own tight-ceiling check.
     balance: { balance_usd: 0, rpm: 9000, rpm_plan: "free" },
+    // Catalog sync responses. Default is unavailable, matching a provider whose
+    // /models endpoint is absent; "malformed" and "html" are the dangerous 200s
+    // a provider can return without meaning to delist its own models.
+    catalog: { mode: "unavailable", requests: 0 },
+    // Benchmark source. Default unavailable so no background page render can
+    // consume the fixture before the checks opt in.
+    benchmarks: {
+      mode: "unavailable",
+      requests: 0,
+      pages: [],
+      quotaRemaining: 90,
+    },
   };
   const server = createHttpServer((request, response) => {
     if (request.method === "GET" && ["/balance", "/subscription"].includes(request.url)) {
@@ -101,6 +113,139 @@ export async function startMockUpstream({ expectedKey }) {
         response.writeHead(failed ? 502 : 200, { "content-type": "application/json" });
         response.end(JSON.stringify(failed ? { error: { message: `Bearer ${expectedKey}` } } : data));
       }, quota ? state.quotaDelay : 0);
+      return;
+    }
+
+    if (
+      request.method === "GET" &&
+      request.url.startsWith("/language/models/free")
+    ) {
+      state.benchmarks.requests += 1;
+
+      if (!request.headers["x-api-key"]) {
+        response.writeHead(401, { "content-type": "application/json" });
+        response.end(JSON.stringify({ error: "unauthorized" }));
+
+        return;
+      }
+
+      if (state.benchmarks.mode === "unavailable") {
+        response.writeHead(503, { "content-type": "application/json" });
+        response.end(JSON.stringify({ error: "benchmark source unavailable" }));
+
+        return;
+      }
+
+      const url = new URL(request.url, "http://127.0.0.1");
+      const page = Number(url.searchParams.get("page") ?? "1");
+
+      state.benchmarks.pages.push(page);
+
+      const filler = Array.from({ length: 199 }, (_, index) => ({
+        id: `aa-filler-${index}`,
+        slug: `aa-filler-${index}`,
+        name: `Filler ${index}`,
+        model_creator: { name: "Filler Labs" },
+        evaluations: { artificial_analysis_intelligence_index: 40 },
+        evaluated_at: "2026-10-20T00:00:00.000Z",
+      }));
+      const matched = {
+        id: "aa-sync-catalog-model",
+        slug: "sync-catalog-model",
+        name: "Sync Catalog Model",
+        model_creator: { name: "HTTP Suite" },
+        evaluations: {
+          artificial_analysis_intelligence_index: 55.5,
+          artificial_analysis_coding_index: 44.25,
+          artificial_analysis_agentic_index: 33.125,
+        },
+        performance: {
+          median_output_tokens_per_second: 120.5,
+          median_time_to_first_token_seconds: 0.4,
+        },
+        release_date: "2026-01-15",
+        evaluated_at: "2026-10-21T00:00:00.000Z",
+      };
+
+      let data;
+      let hasMore = false;
+
+      if (state.benchmarks.mode === "collapse") {
+        data = [matched];
+      } else if (page === 1) {
+        data = state.benchmarks.mode === "renamed" ? filler : [matched, ...filler];
+        hasMore = state.benchmarks.mode === "paginated";
+      } else {
+        data = [
+          {
+            ...filler[0],
+            id: "aa-second-page",
+            slug: "aa-second-page",
+            name: "Second Page Model",
+          },
+        ];
+      }
+
+      response.writeHead(200, {
+        "content-type": "application/json",
+        "x-ratelimit-remaining": String(state.benchmarks.quotaRemaining ?? 90),
+      });
+      response.end(
+        JSON.stringify({
+          intelligence_index_version: 5,
+          data,
+          pagination: { page, has_more: hasMore },
+        }),
+      );
+
+      return;
+    }
+
+    if (request.method === "GET" && request.url === "/models") {
+      state.catalog.requests += 1;
+
+      if (request.headers.authorization !== `Bearer ${expectedKey}`) {
+        response.writeHead(401, { "content-type": "application/json" });
+        response.end(JSON.stringify({ error: { message: "unauthorized" } }));
+
+        return;
+      }
+
+      if (state.catalog.mode === "unavailable") {
+        response.writeHead(404, { "content-type": "application/json" });
+        response.end(JSON.stringify({ error: "not found" }));
+
+        return;
+      }
+
+      if (state.catalog.mode === "html") {
+        response.writeHead(200, { "content-type": "text/html" });
+        response.end("<!doctype html><title>upstream</title>");
+
+        return;
+      }
+
+      if (state.catalog.mode === "malformed") {
+        response.writeHead(200, { "content-type": "application/json" });
+        response.end(JSON.stringify({ error: "catalog temporarily unavailable" }));
+
+        return;
+      }
+
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(
+        JSON.stringify({
+          object: "list",
+          data: [
+            {
+              id: "sync-catalog-model",
+              name: "Sync Catalog Model",
+              context_window: 128000,
+            },
+          ],
+        }),
+      );
+
       return;
     }
 

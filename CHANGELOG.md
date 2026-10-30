@@ -3,6 +3,24 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-30 — Provider and benchmark integrity
+
+- **FID-2026-1030-055 — high — A 200 response can no longer erase a catalog.**
+  `fetchUpstreamModels` treated any body without a `data` array as an empty
+  catalog, and the following scoped replace soft-delisted every model for that
+  provider. `/models` is now read through one validated boundary that rejects
+  non-JSON, error objects, HTML and shape changes; an explicit `data: []` stays
+  a verified empty catalog, and a non-empty page with no usable ids is refused.
+  Pagination is followed through `has_more`/`last_id` (ten-page cap), and a page
+  that claims more without a cursor refuses the whole import. The write happens
+  only after the complete catalog is read, so failures leave rows, manual prices,
+  groups and sync timestamps untouched. Benchmark integrity is now exercised
+  end to end against a fixture source: two-page import, collapsed-payload
+  refusal that keeps rows fresh, stale provenance (a dropped model keeps its own
+  index version and measurement date) and a spent daily window that makes no
+  request. Verified: `npm run verify` exit 0, 297 unit tests, 320 HTTP checks,
+  quality PASS (267 files).
+
 ## 2026-10-30 — Enforced no-sales launch policy
 
 - **FID-2026-1030-054 — high — Plan sales are a policy, not a side effect of

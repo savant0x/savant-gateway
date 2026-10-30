@@ -20,6 +20,7 @@ const ADMIN_PASSWORD = "http-suite-admin-password";
 const ADMIN_SECRET = "http-suite-admin-secret-0123456789abcdef";
 const WEBHOOK_SECRET = "whsec_http_suite_0123456789abcdef";
 const PROVIDER_KEY = "http-suite-provider-key";
+const BENCHMARK_KEY = "http-suite-benchmark-key";
 const PROVIDER_KEY_ENV = "HTTP_SUITE_PROVIDER_KEY";
 
 const repo = process.cwd();
@@ -52,7 +53,9 @@ try {
       ADMIN_SESSION_SECRET: ADMIN_SECRET,
       STRIPE_SECRET_KEY: "sk_test_http_suite_placeholder",
       STRIPE_WEBHOOK_SECRET: WEBHOOK_SECRET,
-      ARTIFICIAL_ANALYSIS_API_KEY: "",
+      ARTIFICIAL_ANALYSIS_API_KEY: BENCHMARK_KEY,
+      // The fixture source is local; no third-party quota is spent by the gate.
+      ARTIFICIAL_ANALYSIS_BASE_URL: mock.baseUrl,
       PROVIDER_KEY: "",
       COMMANDCODE_API_KEY: "",
       // The suite proves disposable production startup: loopback origin,

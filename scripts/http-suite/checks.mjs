@@ -788,6 +788,208 @@ async function runSecurityChecks(context, alpha, beta, adminCookie) {
   );
 }
 
+async function runCatalogIntegrityChecks(context, adminCookie) {
+  const cookie = `sg_admin=${adminCookie}`;
+  const rows = () =>
+    context.db
+      .prepare(
+        `SELECT id, upstream_id, in_catalog, synced_at FROM models
+         WHERE upstream_slug = 'mock' ORDER BY id`,
+      )
+      .all();
+  const sync = () =>
+    request(context.baseUrl, "/api/admin/providers/mock/sync", {
+      method: "POST",
+      cookie,
+    });
+
+  const before = rows();
+
+  checkEqual("the seeded provider catalog has one row", before.length, 1);
+  checkEqual("the seeded row is published", before[0].in_catalog, 1);
+
+  // A 200 that is not a model list must fail the sync without touching rows.
+  context.mock.state.catalog.mode = "malformed";
+  const malformed = await sync();
+
+  checkEqual("a 200 error object is a sync failure", malformed.status, 502);
+  checkEqual("a 200 error object does not delist the catalog", rows().length, 1);
+  checkEqual(
+    "a 200 error object leaves the row published",
+    rows()[0].in_catalog,
+    1,
+  );
+  checkEqual(
+    "a 200 error object does not advance the sync timestamp",
+    rows()[0].synced_at,
+    before[0].synced_at,
+  );
+
+  context.mock.state.catalog.mode = "html";
+  const html = await sync();
+
+  checkEqual("an HTML catalog page is a sync failure", html.status, 502);
+  checkEqual("an HTML catalog page does not delist the catalog", rows().length, 1);
+  checkEqual(
+    "an HTML catalog page leaves the row published",
+    rows()[0].in_catalog,
+    1,
+  );
+
+  // The healthy path still imports: the guard must reject bad shapes, not sync.
+  context.mock.state.catalog.mode = "ok";
+  const ok = await sync();
+
+  checkEqual("a valid catalog sync succeeds", ok.status, 200);
+  checkEqual("a valid catalog sync imports the model", ok.json?.imported, 1);
+  check(
+    "the catalog sync sent the provider credential",
+    context.mock.state.catalog.requests >= 3,
+    String(context.mock.state.catalog.requests),
+  );
+
+  const published = rows().filter((row) => row.in_catalog === 1);
+
+  checkEqual("the sync publishes exactly the source model", published.length, 1);
+  checkEqual(
+    "the synced row carries the upstream identity",
+    published[0]?.upstream_id,
+    "sync-catalog-model",
+  );
+
+  const absent = rows().find((row) => row.id === "mock-paid");
+
+  check(
+    "a model absent from the source is delisted, not deleted",
+    absent && absent.in_catalog === 0,
+    JSON.stringify(absent),
+  );
+
+  const duplicate = context.db
+    .prepare(
+      `SELECT COUNT(*) AS total FROM models
+       WHERE upstream_slug = 'mock' AND in_catalog = 1`,
+    )
+    .get();
+
+  checkEqual("a sync never publishes duplicate rows", duplicate.total, 1);
+}
+
+async function runBenchmarkIntegrityChecks(context, adminCookie) {
+  const cookie = `sg_admin=${adminCookie}`;
+  const sync = () =>
+    request(context.baseUrl, "/api/admin/benchmarks", {
+      method: "POST",
+      cookie,
+      body: { force: true },
+    });
+  const status = () =>
+    request(context.baseUrl, "/api/admin/benchmarks", { cookie });
+  const row = () =>
+    context.db
+      .prepare(
+        `SELECT model_id, source_slug, index_version, measured_at, stale,
+                intelligence_index
+         FROM model_benchmarks
+         WHERE source = 'artificial_analysis'
+           AND source_slug = 'sync-catalog-model'`,
+      )
+      .get();
+
+  // Page renders may have started a background refresh against the default
+  // unavailable fixture; wait briefly so it does not hold the writer lease.
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const current = await status();
+
+    if (!current.json?.running) break;
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+
+  // Two pages: the second page is only read when pagination is honoured.
+  context.mock.state.benchmarks.mode = "paginated";
+  const first = await sync();
+
+  checkEqual("a paginated benchmark sync answers", first.status, 200);
+  checkEqual("a paginated benchmark sync succeeds", first.json?.status, "ok");
+  check(
+    "the sync follows the second page",
+    context.mock.state.benchmarks.pages.includes(2),
+    JSON.stringify(context.mock.state.benchmarks.pages),
+  );
+  check(
+    "pagination does not truncate the candidate count",
+    (first.json?.candidates ?? 0) > 200,
+    String(first.json?.candidates),
+  );
+  checkEqual("the catalog model is matched", first.json?.matched, 1);
+  check("the matched measurement is stored", Boolean(row()));
+  checkEqual(
+    "the stored measurement keeps its source index version",
+    row()?.index_version,
+    "5.0",
+  );
+  checkEqual(
+    "the stored measurement keeps its own observation date",
+    row()?.measured_at,
+    "2026-10-21T00:00:00.000Z",
+  );
+  checkEqual("a measured row starts fresh", row()?.stale, 0);
+
+  // A collapsed payload would mark every row stale; it must be refused instead.
+  context.mock.state.benchmarks.mode = "collapse";
+  const collapse = await sync();
+
+  checkEqual("a collapsed benchmark payload fails", collapse.json?.status, "failed");
+  check(
+    "the refusal names the shrink",
+    String(collapse.json?.error ?? "").includes("shrank"),
+    collapse.text,
+  );
+  checkEqual("a refused payload leaves the measurement fresh", row()?.stale, 0);
+
+  const attempt = await status();
+
+  check(
+    "the failed attempt is visible to the operator",
+    String(attempt.json?.lastError ?? "").includes("shrank"),
+    attempt.text,
+  );
+
+  // A later good sync without the model must not erase or re-date its numbers.
+  context.mock.state.benchmarks.mode = "renamed";
+  const renamed = await sync();
+
+  checkEqual("a sync without the model still succeeds", renamed.json?.status, "ok");
+  checkEqual(
+    "a dropped model keeps its own index version",
+    row()?.index_version,
+    "5.0",
+  );
+  checkEqual(
+    "a dropped model keeps its own observation date",
+    row()?.measured_at,
+    "2026-10-21T00:00:00.000Z",
+  );
+  checkEqual("a dropped model is marked stale, not deleted", row()?.stale, 1);
+
+  // A spent daily window is refused without another upstream request.
+  context.mock.state.benchmarks.quotaRemaining = 0;
+  const spent = await sync();
+
+  checkEqual("the empty quota window is recorded", spent.json?.quotaRemaining, 0);
+
+  const requestsBefore = context.mock.state.benchmarks.requests;
+  const refused = await sync();
+
+  checkEqual("a spent daily window refuses another sync", refused.json?.status, "quota_exhausted");
+  checkEqual(
+    "a refused window makes no upstream request",
+    context.mock.state.benchmarks.requests,
+    requestsBefore,
+  );
+}
+
 async function runPlanSalesChecks(context, alpha, adminCookie) {
   const adminHeaders = { cookie: `sg_admin=${adminCookie}` };
   const planBody = {
@@ -1054,5 +1256,7 @@ export async function runChecks(context) {
   // Must run before the degradation probe: it drops a required table on
   // purpose. The comped subscription also changes how later calls are billed.
   await runPlanSalesChecks(context, alpha, adminCookie);
+  await runCatalogIntegrityChecks(context, adminCookie);
+  await runBenchmarkIntegrityChecks(context, adminCookie);
   await runDegradeChecks(context);
 }

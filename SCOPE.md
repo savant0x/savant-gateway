@@ -2,6 +2,37 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-30 (provider and catalog integrity: 055)
+
+Handoff continuation in dependency order after 054. Automation level 3, strict,
+single agent. A live provider catalog and a live Artificial Analysis window stay
+operator/062 boundaries; this pass proves the source boundary and preserves
+stored truth.
+
+- [x] **P1 — Re-audit 055 against current source.** Measured: any non-list
+  `/models` body became an empty array, and `replaceModels([], …)` soft-delisted
+  every model for that provider; a capped or error-shaped 200 could therefore
+  erase the catalog. Benchmark storage already kept stale rows, but pagination,
+  collapse, provenance and quota had no end-to-end receipt.
+- [x] **P2 — Validate the source boundary.** One parser for `/models` envelopes
+  (reject error object, HTML, `null`, shape change, all-unusable pages; accept an
+  explicit empty list), cursor pagination with a bounded page count and refusal
+  of a partial import, and no write until the whole catalog is read.
+- [x] **P3 — Verification.** `npm run verify` exit 0: 297 unit tests, 320 HTTP
+  checks, trial HTTP PASS, quality PASS (267 files), clean
+  lint/typecheck/build. The suite proves a malformed 200 and an HTML 200 are
+  `502` sync failures that leave the published row and its timestamp intact, a
+  valid sync imports and soft-delists only absent rows, a two-page benchmark
+  import follows page two, a collapsed payload is refused while measurements
+  stay fresh, a dropped model keeps its own index version and date with
+  `stale = 1`, and a spent quota window refuses without an upstream request.
+  FID-055 closed; archive and CHANGELOG in the closure commit.
+
+Remaining acceptance, not claimed: a live enabled-provider `/models` read and a
+live benchmark window (local fixture only), a provider whose pagination cursor
+is not `after_id`, and reconciliation when a public model id changes (the
+`(upstream_slug, upstream_id)` unique constraint would abort that sync).
+
 ## Current Session — 2026-10-30 (subscription launch safety: 054)
 
 Handoff continuation in dependency order after 053 and the CI repair. Automation

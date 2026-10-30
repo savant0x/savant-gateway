@@ -4,7 +4,7 @@
 **ID:** FID-2026-1030-055
 **Parent:** FID-2026-1030-043
 **Severity:** high
-**Status:** converged
+**Status:** closed
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044, FID-2026-1030-047
@@ -80,10 +80,11 @@ and permission/rate observations link to 044/062 without exposing keys.
 ## Perfection Loop
 
 RED: insufficient whole-sync failure/identity proof. GREEN: validated source
-boundaries and preserved good state. AUDIT: pending. ADVERSARIAL: a 200 HTML/error
-page or capped pagination must not erase a good catalog or overwrite provenance.
-Five questions: all payload states, bounded quota/work, hostile redirects,
-one stored truth and reproducible identity matching.
+boundaries and preserved good state. AUDIT: complete (below). ADVERSARIAL: a 200
+HTML/error page or capped pagination no longer erases a good catalog, and
+provenance is not overwritten. Five questions: all payload states, bounded
+quota/work, hostile redirects, one stored truth and reproducible identity
+matching.
 
 ## Resolution
 
@@ -92,8 +93,39 @@ own index version and observation date. A new global sync timestamp cannot
 label an older row as newly measured or mix incomparable revisions silently.
 Final convergence checks are in the master planning-audit receipt.
 
-Design only. Optional benchmark-source absence need not stop inference, but its
-unavailable/stale display must be honest and cannot imply measured zero quality.
+Implemented. Upstream `/models` is now read through one validated boundary:
+
+- `lib/providers/model-list.ts` requires a JSON object with a `data` array.
+  A 200 that is an error object, HTML, `null` or a differently shaped body
+  throws, so it can never be mistaken for an empty catalog. An explicit
+  `data: []` remains a verified empty catalog; a non-empty page with no usable
+  ids also throws instead of delisting everything.
+- `lib/providers/sync.ts` follows `has_more`/`last_id` up to ten pages and
+  refuses a partial import when a page claims more but supplies no cursor. It
+  also refuses an unparseable body. The write (`replaceModels`) is reached only
+  after the complete catalog is in memory, so a failure leaves every row and its
+  sync timestamp untouched.
+- Soft delisting is unchanged: a model absent from a complete source is marked
+  out of catalog, never deleted, and manual price/group/disable choices survive.
+
+Benchmark integrity was verified rather than rebuilt: the existing lease,
+interval, quota, pagination and sanity gates live behind `lib/benchmark-sync.ts`,
+and the HTTP receipt now exercises them against a local fixture source
+(pagination, collapsed payload refusal, stale-row provenance for an unmeasured
+dropped model, and a spent daily window that makes no request). A stale row keeps
+its own `index_version` and `measured_at`; only its `stale` flag changes.
+
+Verification: `npm run verify` exit 0 — 297 unit tests, 320 HTTP checks, trial
+HTTP PASS, quality PASS (267 files), clean lint/typecheck/build. New coverage:
+`tests/catalog-integrity.test.mjs` plus provider/benchmark HTTP cases.
+
+Remaining limits, not claimed: no live provider catalog or live Artificial
+Analysis window was observed (the fixture is local; a real key/quota run belongs
+to 044/062). A provider that paginates with a cursor parameter other than
+`after_id` would surface as a refused partial import rather than a truncation.
+A changed public model id would still collide with the
+`(upstream_slug, upstream_id)` uniqueness constraint during sync; the fixture
+surfaced that path, and reconciling an id-scheme change is not implemented.
 
 ## Lessons Learned
 

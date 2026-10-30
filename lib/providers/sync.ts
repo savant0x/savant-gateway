@@ -17,11 +17,15 @@ import {
 import { getMarkupBps } from "../store/settings";
 
 import { buildSyncedModels, type ModelSpec } from "./catalog";
+import { readUpstreamModelPage } from "./model-list";
 import { providerKeyConfigured } from "./registry";
 import { providerFetch, readProviderError } from "./request";
 import { refreshProviderRuntime } from "./runtime";
 
 const DEFAULT_PUBLIC_MODELS_URL = "https://apinex.bond/api/public/models";
+// A provider that paginates its catalog must be read completely; a cap keeps a
+// broken cursor from spending the request budget forever.
+const MAX_CATALOG_PAGES = 10;
 
 async function fetchPublicMetadata() {
   const url =
@@ -45,14 +49,53 @@ async function fetchPublicMetadata() {
   return map;
 }
 
-export async function fetchUpstreamModels(provider: ProviderRecord) {
-  const response = await providerFetch(provider, "/models");
+async function readPageBody(response: Response): Promise<unknown> {
+  try {
+    return await response.json();
+  } catch {
+    throw new Error(
+      "Upstream catalog response was not valid JSON; refusing to replace the catalog.",
+    );
+  }
+}
 
-  if (!response.ok) throw new Error(await readProviderError(response));
+/**
+ * Reads the provider's whole catalog. Envelope validation and pagination are
+ * part of the read: a malformed body or an abandoned cursor throws before any
+ * write, so a bad response can never delist a working catalog.
+ */
+export async function fetchUpstreamModels(
+  provider: ProviderRecord,
+): Promise<UpstreamModel[]> {
+  const collected: UpstreamModel[] = [];
+  let cursor: string | null = null;
 
-  const payload = (await response.json()) as { data?: UpstreamModel[] };
+  for (let page = 0; page < MAX_CATALOG_PAGES; page += 1) {
+    const path = cursor
+      ? `/models?after_id=${encodeURIComponent(cursor)}`
+      : "/models";
+    const response = await providerFetch(provider, path);
 
-  return Array.isArray(payload.data) ? payload.data : [];
+    if (!response.ok) throw new Error(await readProviderError(response));
+
+    const parsed = readUpstreamModelPage(await readPageBody(response));
+
+    collected.push(...parsed.models);
+
+    if (!parsed.hasMore) return collected;
+
+    if (!parsed.lastId) {
+      throw new Error(
+        "Upstream catalog reported another page without a cursor; refusing a partial import.",
+      );
+    }
+
+    cursor = parsed.lastId;
+  }
+
+  throw new Error(
+    `Upstream catalog exceeded ${MAX_CATALOG_PAGES} pages; refusing a partial import.`,
+  );
 }
 
 function unconfiguredSummary(provider: ProviderRecord): ProviderSyncSummary {

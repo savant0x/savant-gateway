@@ -34,17 +34,17 @@ export const metadata: Metadata = {
     ],
     apple: { url: brandImages.icons.apple, sizes: "180x180" },
   },
+  // Title and url are deliberately left unset here: specifying them at the root
+  // would repeat one title and one canonical url on every page and override the
+  // per-page values that the `opengraph-image` routes are built from.
   openGraph: {
     type: "website",
     siteName: siteConfig.name,
-    title: siteConfig.name,
     description: siteConfig.description,
-    url: "/",
     images: [socialImage],
   },
   twitter: {
     card: "summary_large_image",
-    title: siteConfig.name,
     description: siteConfig.description,
     images: [socialImage],
   },

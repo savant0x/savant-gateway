@@ -13,6 +13,7 @@ import {
   waitForSchema,
   waitForServer,
 } from "./http-suite/harness.mjs";
+import { runMetadataChecks } from "./http-suite/metadata-checks.mjs";
 import { seedCatalog } from "./http-suite/seed.mjs";
 import { runPolicyChecks } from "./http-suite/policy-checks.mjs";
 import { runQuotaChecks } from "./http-suite/quota-checks.mjs";
@@ -73,6 +74,10 @@ try {
 
   database = await waitForSchema(workspace.dbPath);
   seedCatalog(database, { mockBaseUrl: mock.baseUrl });
+
+  // Needs a populated catalog, so it runs before anything that leaves the
+  // database unusable for a page request.
+  await runMetadataChecks({ baseUrl });
 
   // Runs before the main checks: one of those deliberately drops a required
   // table to prove readiness fails closed, which makes the database unusable

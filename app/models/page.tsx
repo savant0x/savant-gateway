@@ -37,6 +37,11 @@ export const metadata: Metadata = {
   title: "Model catalog",
   description:
     "Every model on Savant Gateway with its family, price group, and per-million-token price.",
+  // `opengraph-image.tsx` supplies this page's card. Dropping the inherited
+  // Twitter image lets the crawler fall back to that card, and the card type is
+  // restated because a partial `twitter` object otherwise downgrades it to the
+  // small summary card.
+  twitter: { card: "summary_large_image", images: [] },
 };
 
 export default async function ModelsPage() {

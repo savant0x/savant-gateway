@@ -3,6 +3,22 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-30 — Provider usage fidelity
+
+- **FID-2026-1030-050 — critical — Token components and provenance.** One parser
+  (`lib/usage.ts`) now owns provider usage: totals, cached-input and
+  reasoning-output subsets, cache-write counts, and whether both totals were
+  actually reported. A missing side is estimated and labelled, never stored as
+  an authoritative zero; booleans, blanks, negatives, fractions and
+  out-of-domain subsets are absent. Anthropic normalization stopped fabricating
+  zero counters, counts cache input once, and the stream merges split usage
+  frames instead of last-wins. Settlement stores cached, cache-write and
+  reasoning counts plus `usage_source`, applies the existing rate once to each
+  total, and exposes provenance in usage summaries. Cached-rate discounts are
+  not invented; 044 still owns rates. Closed against `945c729`; archived receipt:
+  259 unit tests, 251 HTTP checks, trial HTTP PASS, quality PASS (252 files),
+  clean lint/typecheck/build.
+
 ## 2026-10-30 — Aggregate provider admission
 
 - **FID-2026-1030-048 — critical — One serving-account ceiling for every billing

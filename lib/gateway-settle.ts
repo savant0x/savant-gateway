@@ -40,6 +40,8 @@ export type GatewayCallContext = {
   subscription: SubscriptionCallContext | null;
   startedAt: number;
   promptTokens: number;
+  /** Serving-account concurrency slot; idempotent, called on every exit. */
+  releaseAdmission?: (() => void) | null;
 };
 
 function toTokenCount(value: unknown) {

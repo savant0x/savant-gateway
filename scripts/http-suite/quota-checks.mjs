@@ -196,7 +196,25 @@ export async function runQuotaChecks(context) {
 
     checkEqual("daily credits do not bypass customer authentication", account.status, 307);
     check("daily allocation respects the per-account cap", db.prepare("SELECT allocated_tokens FROM free_pool_allocations WHERE user_id = 'quota_user'").get().allocated_tokens > 0);
+
+    // FID-048: one serving-account ceiling for every billing mode.
+    mock.state.balance.rpm = 1;
+    const limited = await read();
+
+    checkEqual("a current account ceiling is observed before admission", limited.status, 200);
+    checkEqual("one call fits the observed provider ceiling", (await chat()).status, 200);
+    const throttled = await chat();
+
+    checkEqual("the next call exceeds the shared provider ceiling", throttled.status, 429);
+    checkEqual("provider refusal names the serving scope", throttled.headers.get("x-ratelimit-scope"), "provider");
+    checkEqual("provider refusal reports the real ceiling", throttled.headers.get("x-ratelimit-limit"), "1");
+    check("provider refusal gives retry guidance", Number(throttled.headers.get("retry-after")) >= 1);
+    checkEqual("provider refusal is a rate limit, not an auth error", throttled.json?.error?.type, "rate_limit_error");
+    mock.state.balance.rpm = 9000;
+    checkEqual("the restored ceiling is observed again", (await read()).status, 200);
+    checkEqual("capacity recovers from the refreshed ceiling", (await chat()).status, 200);
   } finally {
+    mock.state.balance.rpm = 9000;
     mock.state.quotaFailure = false;
     mock.state.balanceFailure = false;
     mock.state.quotaDelay = 0;

@@ -81,6 +81,9 @@ export async function startMockUpstream({ expectedKey }) {
     quota: { mode: "free", plan_label: "FREE", unlimited: false,
       token_limit: 20_000_000, tokens_used: 0, tokens_remaining: 20_000_000,
       allowed: true, resets_at_utc: null },
+    // The mock account declares a generous ceiling so unrelated checks are not
+    // throttled; the aggregate gate has its own tight-ceiling check.
+    balance: { balance_usd: 0, rpm: 9000, rpm_plan: "free" },
   };
   const server = createHttpServer((request, response) => {
     if (request.method === "GET" && ["/balance", "/subscription"].includes(request.url)) {
@@ -91,7 +94,7 @@ export async function startMockUpstream({ expectedKey }) {
       }
       const quota = request.url === "/subscription";
       const failed = quota ? state.quotaFailure : state.balanceFailure;
-      const data = quota ? { ...state.quota } : { balance_usd: 0, rpm: 15, rpm_plan: "free" };
+      const data = quota ? { ...state.quota } : { ...state.balance };
 
       if (quota) state.accountChecks++;
       setTimeout(() => {

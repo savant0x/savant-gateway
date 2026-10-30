@@ -53,6 +53,7 @@ const upstreamUrl = `http://127.0.0.1:${mock.address().port}`;
 const server = startNextServer({
   repo: process.cwd(), port, dbPath: workspace.dbPath,
   env: {
+    PROVIDER_SHARED_RPM: "9000",
     TRIAL_ENABLED: "true", TRIAL_WEIGHTED_TOKENS: "300",
     TRIAL_GATEWAY_GRANT_BUDGET: "10000",
     TRIAL_MODEL_PAIRS: '{"free/mock":"mock-paid"}',

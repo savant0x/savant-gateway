@@ -20,6 +20,7 @@ export function streamCompletion(
     settleCall(context, { inputTokens: 0, outputTokens: 0 }, "error", {
       error: "Provider returned an empty stream",
     });
+    context.releaseAdmission?.();
 
     return jsonError(
       502,
@@ -46,6 +47,8 @@ export function streamCompletion(
     // One attempt per response. A failed transaction retains its reservation
     // for reconciliation; retrying here could hide a failed accounting write.
     settled = true;
+
+    const releaseAdmission = context.releaseAdmission;
 
     try {
       settleCall(
@@ -74,6 +77,10 @@ export function streamCompletion(
       );
 
       throw new Error("Usage settlement failed.");
+    } finally {
+      // The stream owns the serving slot once the response is handed back; it
+      // must not outlive the response on completion, error or cancellation.
+      releaseAdmission?.();
     }
   };
 

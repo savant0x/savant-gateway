@@ -45,6 +45,9 @@ try {
     dbPath: workspace.dbPath,
     env: {
       ADMIN_PASSWORD,
+      // Serving-account ceiling fallback for a mock that may not have a fresh
+      // balance observation; a current upstream rpm still wins.
+      PROVIDER_SHARED_RPM: "9000",
       TRIAL_ENABLED: "false",
       ADMIN_SESSION_SECRET: ADMIN_SECRET,
       STRIPE_SECRET_KEY: "sk_test_http_suite_placeholder",

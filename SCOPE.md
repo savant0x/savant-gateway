@@ -2,6 +2,41 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-30 (aggregate provider admission: 048)
+
+Handoff continuation from `2026-10-30-provider-account-handoff.md`, which named
+048 as the next engineering priority. Automation level 3, strict, single agent.
+Provider ceilings, commercial rates and funding remain 044's operator boundary;
+this pass implements the admission mechanics, not a commercial ruling.
+
+- [x] **A1 — Re-audit 048 against 063.** Automation level 3. Confirmed the gap:
+  free traffic shares one bucket and paid keys are isolated, with no
+  serving-account gate; `tests/provider-admission.test.mjs` was absent. Found
+  that 063's refresh made current rpm available on the free path but not on paid
+  paths, so unknown capacity needed an explicit fallback rather than an outage;
+  converged the trust order (current observation, then configured ceiling, else
+  503 before any hold) and recorded it in the FID before coding.
+- [x] **A2 — Implement the shared gate.** Automation level 3. One identity per
+  upstream account (`origin|credential variable name`), RPM and concurrency
+  slots acquired before subscription/free/credit holds, idempotent release on
+  JSON, upstream error, invalid body and stream ok/error/cancel, truthful 429/
+  503 guidance. `lib/provider-admission.ts`, `lib/gateway-provider-admission.ts`,
+  `lib/gateway.ts`, `lib/gateway-stream.ts`, `lib/gateway-settle.ts`,
+  `lib/gateway-paid.ts`.
+- [x] **A3 — Verification.** Automation level 3. `npm run verify` exit 0:
+  251 unit tests, quality PASS (250 files), clean lint/typecheck/build,
+  251 production HTTP checks and the trial suite PASS. Route proof refuses the
+  second call at a 1 RPM account ceiling with scope/limit/retry headers and
+  recovers after re-observation. FID-048 `verified`; archive and CHANGELOG in
+  the closure commit.
+
+Findings owned in this pass: `lib/gateway.ts` exceeded the enforced 400-line
+ceiling after the first wiring attempt (441) and was split into the gate
+boundary and the existing paid reservation rather than having the ceiling
+raised. Remaining acceptance, not implemented here and not claimed: multi-process
+ceiling multiplication and measured peak capacity (057/060), and route-level
+concurrent/cancelled-stream refusal observation.
+
 ## Session closure — 2026-10-30 (provider account handoff)
 
 Operator request: "close the session and write a proper handoff, return a prompt

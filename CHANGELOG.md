@@ -21,7 +21,10 @@ distinguish verified behavior from unverified claims.
   keyed by version and repeated acceptance keeps the first timestamp. The footer
   links every policy, which is the notice path for customers who never open the
   checkbox. Verified: `npm run verify` exit 0, 311 unit tests, 421 HTTP checks,
-  trial HTTP PASS, quality PASS (290 files). **Still open:** no registered
+  trial HTTP PASS, quality PASS (290 files). Committed as `69e050d`; CI run
+  41114926726 and attribution-guard run 41114926691 are green on that commit,
+  and the pre-push gate re-ran the full verify before the refs were accepted.
+  **Still open:** no registered
   address is published, Stripe Tax is assumed rather than verified, and no lawyer
   reviewed the text — the operator accepted that position.
 

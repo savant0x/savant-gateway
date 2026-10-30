@@ -159,6 +159,13 @@ links, signup refusal without acceptance, signup acceptance row, account banner
 when no row exists, cross-origin 403, signed-out 401, unknown version 400,
 account acceptance, idempotency), trial HTTP PASS, quality PASS (290 files).
 
+Receipt on `origin/main`: commit `69e050d`, CI run 41114926726 green and
+attribution-guard run 41114926691 green. The CI job log shows quality PASS over
+290 files, a successful production build, `http-suite: 421 checks PASS` and
+`trial-http-suite: all checks PASS`; lint, typecheck and the unit tests run
+before those steps in the same fail-fast job and the job completed. The pre-push
+hook ran the same `npm run verify` gate before the push was accepted.
+
 Published positions the operator delegated, chosen by the publisher and listed in
 `docs/policies/README.md`: three-month liability cap where exclusion is not
 allowed, 30-day log and backup retention with deletion not propagated to

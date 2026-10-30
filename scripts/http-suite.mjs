@@ -48,6 +48,7 @@ try {
       ADMIN_SESSION_SECRET: ADMIN_SECRET,
       STRIPE_SECRET_KEY: "sk_test_http_suite_placeholder",
       STRIPE_WEBHOOK_SECRET: WEBHOOK_SECRET,
+      ARTIFICIAL_ANALYSIS_API_KEY: "",
       [PROVIDER_KEY_ENV]: PROVIDER_KEY,
     },
   });
@@ -66,6 +67,7 @@ try {
     webhookSecret: WEBHOOK_SECRET,
     adminPassword: ADMIN_PASSWORD,
     providerKey: PROVIDER_KEY,
+    logs: server.logs,
   });
 
   console.log(`http-suite: ${summary()} checks PASS`);

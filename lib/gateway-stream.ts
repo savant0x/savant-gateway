@@ -29,10 +29,12 @@ export function streamCompletion(
   }
 
   const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
   let buffer = "";
   let usage: TokenUsage | null = null;
   let outputChars = 0;
   let settled = false;
+  let terminalLine: string | null = null;
 
   const finish = (status: "ok" | "error" | "cancelled", error?: string) => {
     if (settled) return;
@@ -40,6 +42,10 @@ export function streamCompletion(
     const inputTokens = usage?.inputTokens ?? context.promptTokens;
     const outputTokens =
       usage?.outputTokens ?? estimateTokensFromChars(outputChars);
+
+    // One attempt per response. A failed transaction retains its reservation
+    // for reconciliation; retrying here could hide a failed accounting write.
+    settled = true;
 
     try {
       settleCall(
@@ -49,10 +55,23 @@ export function streamCompletion(
         error ? { error, estimated: !usage } : { estimated: !usage },
       );
     } catch {
-      // Settlement must never break a response that is already streaming.
-    }
+      // Fixed text and reservation identifiers only: upstream exceptions can
+      // contain credentials, headers or customer content.
+      // eslint-disable-next-line no-console
+      console.error("[gateway.settlement] Usage write failed; reconcile reservation.", {
+        userId: context.auth.userId,
+        keyId: context.auth.keyId,
+        modelId: context.model.id,
+        creditHoldId: context.hold?.id ?? null,
+        freeReservationId: context.freeReservation?.id ?? null,
+        subscriptionHoldId:
+          context.subscription?.kind === "included"
+            ? context.subscription.holdId
+            : null,
+      });
 
-    settled = true;
+      throw new Error("Usage settlement failed.");
+    }
   };
 
   const processLine = (raw: string) => {
@@ -78,41 +97,68 @@ export function streamCompletion(
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
+      const forwardLine = (line: string) => {
+        if (line.startsWith("data:") && line.slice(5).trim() === "[DONE]") {
+          terminalLine = line;
+
+          return;
+        }
+
+        processLine(line);
+        controller.enqueue(encoder.encode(`${line}\n`));
+      };
+
       try {
         while (true) {
           const { done, value } = await reader.read();
 
+          if (settled) return;
           if (done) break;
 
-          controller.enqueue(value);
           buffer += decoder.decode(value, { stream: true });
 
           let newline = buffer.indexOf("\n");
 
           while (newline >= 0) {
-            processLine(buffer.slice(0, newline));
+            forwardLine(buffer.slice(0, newline));
             buffer = buffer.slice(newline + 1);
             newline = buffer.indexOf("\n");
           }
         }
 
-        if (buffer.trim()) processLine(buffer);
+        buffer += decoder.decode();
+
+        if (buffer.trim()) forwardLine(buffer);
+
+        finish("ok");
+
+        // Completion is acknowledged only after the accounting transaction.
+        if (terminalLine !== null) {
+          controller.enqueue(encoder.encode(`${terminalLine}\n\n`));
+        }
 
         controller.close();
-        finish("ok");
-      } catch (error) {
-        if (!settled) {
+      } catch {
+        try {
+          finish("error", "Provider stream interrupted.");
+        } catch (error) {
           controller.error(error);
-          finish(
-            "error",
-            error instanceof Error ? error.message : String(error),
-          );
+
+          return;
         }
+
+        controller.error(new Error("Provider stream interrupted."));
       }
     },
     cancel(reason) {
-      reader.cancel(reason).catch(() => {});
+      const cancellation = reader.cancel(reason).catch(() => {
+        // eslint-disable-next-line no-console
+        console.error("[gateway.stream] Upstream cancellation failed.");
+      });
+
       finish("cancelled", "Client disconnected");
+
+      return cancellation;
     },
   });
 

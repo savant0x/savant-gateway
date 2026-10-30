@@ -23,6 +23,7 @@ import { reserveTrialRoute } from "./gateway-trial";
 import {
   CORS_HEADERS,
   extractApiKey,
+  isJsonObject,
   jsonError,
   upstreamUnavailable,
 } from "./http";
@@ -124,7 +125,13 @@ export async function handleChatCompletions(request: Request) {
   let body: Record<string, unknown>;
 
   try {
-    body = (await request.json()) as Record<string, unknown>;
+    const parsed: unknown = await request.json();
+
+    if (!isJsonObject(parsed)) {
+      return jsonError(400, "Request body must be a JSON object.");
+    }
+
+    body = parsed;
   } catch {
     return jsonError(400, "Invalid JSON body");
   }

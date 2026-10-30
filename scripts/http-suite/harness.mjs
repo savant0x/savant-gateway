@@ -114,6 +114,23 @@ export async function startMockUpstream({ expectedKey }) {
         return;
       }
 
+      if (body?.stream === true) {
+        const cancelling = body.messages?.[0]?.content === "cancel probe";
+        response.writeHead(200, { "content-type": "text/event-stream" });
+        const event = Buffer.from(`data: ${JSON.stringify({
+          choices: [{ delta: { content: "http-suite-stream 💠" } }],
+          usage: { prompt_tokens: 100, completion_tokens: 50 },
+        })}\r\n\r\n`);
+        const split = event.indexOf(Buffer.from("💠")) + 1;
+
+        response.write(event.subarray(0, split));
+        setTimeout(() => response.write(event.subarray(split)), 5);
+        setTimeout(() => response.write("data: [DO"), cancelling ? 1_000 : 15);
+        setTimeout(() => response.end("NE]\r\n\r\n"), cancelling ? 1_020 : 20);
+
+        return;
+      }
+
       response.writeHead(200, { "content-type": "application/json" });
       response.end(
         JSON.stringify({

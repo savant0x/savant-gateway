@@ -14,6 +14,7 @@ import {
   readUsageRows,
   seedPendingTopup,
 } from "./seed.mjs";
+import { runSystemsChecks } from "./systems-checks.mjs";
 
 const ALPHA = {
   email: "alpha.http-suite@example.test",
@@ -539,6 +540,8 @@ async function runAdminChecks(context) {
     "admin customer page renders its heading",
     customers.text.includes("Who holds credit"),
   );
+
+  return adminCookie;
 }
 
 export async function runChecks(context) {
@@ -548,5 +551,7 @@ export async function runChecks(context) {
   await runKeyIsolationChecks(context, alpha, beta);
   await runWebhookChecks(context, alpha);
   await runSettlementChecks(context, alpha, beta);
-  await runAdminChecks(context);
+  const adminCookie = await runAdminChecks(context);
+
+  await runSystemsChecks(context, alpha, adminCookie);
 }

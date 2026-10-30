@@ -12,11 +12,11 @@ import { useState } from "react";
 
 import {
   formatCompact,
-  formatDate,
   formatMicros,
   formatRatePercent,
   responseError,
 } from "@/components/dashboard/format";
+import { LocalTime } from "@/components/local-time";
 
 function statusColor(status: SubscriptionSummary["status"]) {
   if (status === "active") return "success" as const;
@@ -217,8 +217,8 @@ export function SubscriptionsPanel({
                         {subscription.plan.interval}
                       </p>
                       <p className="mt-1 text-muted">
-                        {formatDate(subscription.currentPeriodStart)} →{" "}
-                        {formatDate(subscription.currentPeriodEnd)} ·{" "}
+                        <LocalTime value={subscription.currentPeriodStart} /> →{" "}
+                        <LocalTime value={subscription.currentPeriodEnd} /> ·{" "}
                         {formatCompact(
                           subscription.allowance.usedWeightedTokens,
                         )}{" "}

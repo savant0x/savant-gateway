@@ -26,7 +26,7 @@ export function LandingPage({
   return (
     <div className="site-shell">
       <SiteHeader />
-      <main>
+      <main className="landing-bands">
         <Hero data={data} />
         <StatsStrip data={data} />
         <ModelGrid

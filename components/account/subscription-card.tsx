@@ -7,9 +7,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { LocalTime } from "@/components/local-time";
 import {
   formatCompact,
-  formatDate,
   formatMicros,
   formatRatePercent,
   responseError,
@@ -122,7 +122,7 @@ export function SubscriptionCard({
         {subscription.cancelAtPeriodEnd && !ended ? (
           <p className="rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
             Cancels at period end. Access remains until{" "}
-            {formatDate(subscription.currentPeriodEnd)}.
+            <LocalTime value={subscription.currentPeriodEnd} />.
           </p>
         ) : null}
 
@@ -130,8 +130,8 @@ export function SubscriptionCard({
           <div>
             <dt className="text-muted">Current period</dt>
             <dd>
-              {formatDate(subscription.currentPeriodStart)} →{" "}
-              {formatDate(subscription.currentPeriodEnd)}
+              <LocalTime value={subscription.currentPeriodStart} /> →{" "}
+              <LocalTime value={subscription.currentPeriodEnd} />
             </dd>
           </div>
           <div>
@@ -185,7 +185,9 @@ export function SubscriptionCard({
                 key={invoice.id}
                 className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-black/10 px-3 py-2 text-xs dark:border-white/10"
               >
-                <span>{formatDate(invoice.createdAt)}</span>
+                <span>
+                  <LocalTime value={invoice.createdAt} />
+                </span>
                 <span>{formatMicros(invoice.amountMicros)}</span>
                 <span className="text-muted">{invoice.status}</span>
               </div>

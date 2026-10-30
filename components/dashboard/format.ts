@@ -3,14 +3,6 @@ const compactFormatter = new Intl.NumberFormat("en-US", {
   notation: "compact",
   maximumFractionDigits: 1,
 });
-const dateFormatter = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-  timeZone: "UTC",
-});
 
 export function formatNumber(value: number | null | undefined) {
   return value == null ? "—" : numberFormatter.format(value);
@@ -26,14 +18,26 @@ export function formatMoney(value: number | null | undefined) {
   return `$${value.toFixed(value > 0 && value < 0.01 ? 4 : 2)}`;
 }
 
-export function formatDate(value: string | null | undefined) {
+const calendarDayFormatter = new Intl.DateTimeFormat("en-US", {
+  day: "numeric",
+  month: "short",
+  timeZone: "UTC",
+  year: "numeric",
+});
+
+/**
+ * A calendar date with its year, not an instant: "2026-09-22" is September 22
+ * everywhere. Running it through a timezone would move it a day for half the
+ * planet, so it is formatted in UTC and never localised.
+ */
+export function formatCalendarDay(value: string | null | undefined) {
   if (!value) return "—";
 
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) return value;
 
-  return `${dateFormatter.format(date)} UTC`;
+  return calendarDayFormatter.format(date);
 }
 
 export function formatPricePer1M(value: number | null | undefined) {

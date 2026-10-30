@@ -7,7 +7,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { StatusChip } from "./chips";
-import { formatDate, responseError } from "./format";
+import { responseError } from "./format";
+
+import { LocalTime } from "@/components/local-time";
 
 export function KeysCard({ keys }: { keys: KeySummary[] }) {
   const router = useRouter();
@@ -177,8 +179,8 @@ export function KeysCard({ keys }: { keys: KeySummary[] }) {
                     {key.prefix}
                   </div>
                   <div className="mt-1 text-[11px] text-muted">
-                    Created {formatDate(key.createdAt)} · Last used{" "}
-                    {formatDate(key.lastUsedAt)}
+                    Created <LocalTime value={key.createdAt} /> · Last used{" "}
+                    <LocalTime value={key.lastUsedAt} />
                   </div>
                 </div>
                 {key.status === "active" ? (

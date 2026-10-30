@@ -2,9 +2,9 @@ import type { CreditLedgerEntry, TopupSummary } from "@/lib/types";
 
 import { Card } from "@heroui/react";
 
+import { LocalTime } from "@/components/local-time";
 import { StatusChip } from "@/components/dashboard/chips";
 import {
-  formatDate,
   formatMicros,
   formatSignedMicros,
 } from "@/components/dashboard/format";
@@ -47,7 +47,7 @@ export function BillingHistory({
                   {ledger.map((entry) => (
                     <tr key={entry.id}>
                       <td className="whitespace-nowrap text-muted">
-                        {formatDate(entry.createdAt)}
+                        <LocalTime value={entry.createdAt} />
                       </td>
                       <td className="text-muted">{entry.kind}</td>
                       <td
@@ -102,7 +102,7 @@ export function BillingHistory({
                   {topups.map((topup) => (
                     <tr key={topup.id}>
                       <td className="whitespace-nowrap text-muted">
-                        {formatDate(topup.createdAt)}
+                        <LocalTime value={topup.createdAt} />
                       </td>
                       <td className="text-right">
                         {formatMicros(topup.amountMicros)}
@@ -111,7 +111,7 @@ export function BillingHistory({
                         <StatusChip status={topup.status} />
                       </td>
                       <td className="whitespace-nowrap text-muted">
-                        {formatDate(topup.paidAt)}
+                        <LocalTime value={topup.paidAt} />
                       </td>
                     </tr>
                   ))}

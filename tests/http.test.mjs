@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   extractApiKey,
+  isJsonObject,
   isLocalRequest,
   sanitizeError,
   upstreamUnavailable,
@@ -11,6 +12,15 @@ import {
 function requestWith(headers = {}) {
   return new Request("http://localhost/v1/chat/completions", { headers });
 }
+
+test("JSON roots distinguish objects from null, arrays and primitives", () => {
+  for (const value of [null, [], "value", 42, true, undefined]) {
+    assert.equal(isJsonObject(value), false);
+  }
+
+  assert.equal(isJsonObject({}), true);
+  assert.equal(isJsonObject({ model: "mock-paid" }), true);
+});
 
 test("extractApiKey accepts a bearer token", () => {
   assert.equal(

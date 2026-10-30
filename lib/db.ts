@@ -7,6 +7,7 @@ import Database from "better-sqlite3";
 
 import { normalizeFamilyName } from "./model-family";
 import { allocationSchema } from "./schema/allocations";
+import { benchmarkSchema } from "./schema/benchmarks";
 import { ensureColumn, type DatabaseHandle } from "./schema/columns";
 import { modelGroupSchema } from "./schema/groups";
 import { providerSchema } from "./schema/providers";
@@ -332,6 +333,7 @@ function createDb() {
   modelGroupSchema(database);
   subscriptionSchema(database);
   trialSchema(database);
+  benchmarkSchema(database);
   normalizeLegacyFamilies(database);
   seed(database);
 

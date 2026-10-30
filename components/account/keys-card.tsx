@@ -6,8 +6,9 @@ import { Button, Card, Input, Spinner } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { LocalTime } from "@/components/local-time";
 import { StatusChip } from "@/components/dashboard/chips";
-import { formatDate, responseError } from "@/components/dashboard/format";
+import { responseError } from "@/components/dashboard/format";
 
 export function CustomerKeysCard({ keys }: { keys: KeySummary[] }) {
   const router = useRouter();
@@ -188,8 +189,8 @@ export function CustomerKeysCard({ keys }: { keys: KeySummary[] }) {
                     {key.prefix}
                   </div>
                   <div className="mt-1 text-[11px] text-muted">
-                    Created {formatDate(key.createdAt)} · Last used{" "}
-                    {formatDate(key.lastUsedAt)}
+                    Created <LocalTime value={key.createdAt} /> · Last used{" "}
+                    <LocalTime value={key.lastUsedAt} />
                   </div>
                 </div>
                 {key.status === "active" ? (

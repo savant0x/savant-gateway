@@ -12,6 +12,15 @@
 
 :root {
   color-scheme: light;
+  /* The brand canvas is near-black artwork; the veil is the page surface at
+     80%, so the texture sits under the copy in both themes instead of turning
+     a light page into a dark panel. */
+  --brand-veil: rgba(255, 255, 255, 0.86);
+  --brand-tile: 420px;
+}
+
+.dark {
+  --brand-veil: rgba(0, 0, 0, 0.86);
 }
 
 html {
@@ -33,10 +42,41 @@ body {
   font-family: var(--font-mono);
 }
 
+/* Two layers of depth for an otherwise flat band: the vignette glow on top,
+   the tiled brand canvas beneath it. */
 .hero-glow {
-  background:
+  background-color: var(--background);
+  background-image:
     radial-gradient(circle at 12% 0%, color-mix(in oklab, var(--accent) 16%, transparent), transparent 34rem),
-    radial-gradient(circle at 92% 8%, color-mix(in oklab, var(--accent) 9%, transparent), transparent 28rem);
+    radial-gradient(circle at 92% 8%, color-mix(in oklab, var(--accent) 9%, transparent), transparent 28rem),
+    linear-gradient(
+      100deg,
+      var(--background) 6%,
+      color-mix(in oklab, var(--background) 62%, transparent) 42%,
+      transparent 76%
+    ),
+    linear-gradient(var(--brand-veil), var(--brand-veil)),
+    url("/bg-pattern.webp");
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+  background-size: auto, auto, auto, auto, var(--brand-tile);
+}
+
+/* Any region that would otherwise be a flat void can borrow the same canvas:
+   the empty table body, a section that has no content yet. */
+.brand-canvas {
+  background-color: var(--background);
+  background-image:
+    linear-gradient(var(--brand-veil), var(--brand-veil)),
+    url("/bg-pattern.webp");
+  background-repeat: no-repeat, repeat;
+  background-size: auto, var(--brand-tile);
+}
+
+/* Anything sitting on the canvas needs an opaque fill. A translucent chip or
+   stat panel lets the texture show through the very type it frames, and that
+   is what makes the canvas read as noise instead of depth. */
+.canvas-surface {
+  background-color: color-mix(in oklab, var(--accent) 6%, var(--surface));
 }
 
 .data-table {

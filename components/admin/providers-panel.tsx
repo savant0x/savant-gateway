@@ -14,11 +14,8 @@ import {
   type ProviderDraft,
 } from "@/components/admin/provider-form";
 import { StatusChip } from "@/components/dashboard/chips";
-import {
-  formatDate,
-  formatNumber,
-  responseError,
-} from "@/components/dashboard/format";
+import { formatNumber, responseError } from "@/components/dashboard/format";
+import { LocalTime } from "@/components/local-time";
 
 export function AdminProvidersPanel({
   providers,
@@ -207,7 +204,7 @@ export function AdminProvidersPanel({
                     </td>
                     <td className="text-right">{provider.modelCount}</td>
                     <td className="whitespace-nowrap text-muted">
-                      {formatDate(provider.syncedAt)}
+                      <LocalTime value={provider.syncedAt} />
                     </td>
                     <td>
                       <div className="flex flex-wrap gap-1.5">

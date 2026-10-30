@@ -2,8 +2,7 @@ import type { ProviderStatus } from "@/lib/types";
 
 import { Chip } from "@heroui/react";
 
-import { formatDate } from "./format";
-
+import { LocalTime } from "@/components/local-time";
 import { ProviderSyncButton } from "@/components/provider-sync";
 
 export function Hero({ provider }: { provider: ProviderStatus }) {
@@ -44,9 +43,13 @@ export function Hero({ provider }: { provider: ProviderStatus }) {
           Create a consumer key
         </a>
         <span className="text-xs text-muted">
-          {providerReady
-            ? `Synced ${formatDate(provider.syncedAt)}`
-            : "Add PROVIDER_KEY to .env.local, then sync."}
+          {providerReady ? (
+            <>
+              Synced <LocalTime value={provider.syncedAt} />
+            </>
+          ) : (
+            "Add PROVIDER_KEY to .env.local, then sync."
+          )}
         </span>
       </div>
     </section>

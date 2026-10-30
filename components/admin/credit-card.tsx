@@ -6,7 +6,8 @@ import { Button, Card, Input, Spinner } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { formatDate, formatMicros } from "@/components/dashboard/format";
+import { formatMicros } from "@/components/dashboard/format";
+import { LocalTime } from "@/components/local-time";
 
 export function CreditCard({
   account,
@@ -179,7 +180,7 @@ export function CreditCard({
                     +{formatMicros(entry.amountMicros)}
                   </span>
                   <span className="text-muted">
-                    {formatDate(entry.createdAt)}
+                    <LocalTime value={entry.createdAt} />
                   </span>
                 </span>
               </div>

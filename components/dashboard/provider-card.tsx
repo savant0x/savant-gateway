@@ -3,7 +3,9 @@ import type { ProviderStatus } from "@/lib/types";
 import { Card } from "@heroui/react";
 
 import { StatusChip } from "./chips";
-import { formatCompact, formatDate, formatMoney, formatNumber } from "./format";
+import { formatCompact, formatMoney, formatNumber } from "./format";
+
+import { LocalTime } from "@/components/local-time";
 
 export function ProviderCard({ provider }: { provider: ProviderStatus }) {
   return (
@@ -70,7 +72,7 @@ export function ProviderCard({ provider }: { provider: ProviderStatus }) {
           {provider.subscriptionExpiresAt ? (
             <p>
               Upstream quota expires:{" "}
-              {formatDate(provider.subscriptionExpiresAt)}
+              <LocalTime value={provider.subscriptionExpiresAt} />
             </p>
           ) : null}
           {provider.error ? (

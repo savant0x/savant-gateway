@@ -15,7 +15,7 @@ const STEPS = [
 
 export function HowItWorks() {
   return (
-    <section className="border-y border-border bg-surface" id="how-it-works">
+    <section className="border-y border-border" id="how-it-works">
       <div className="mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         <p className="text-xs font-medium uppercase tracking-[0.18em] text-cyan-300">
           The path

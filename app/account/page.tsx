@@ -11,6 +11,7 @@ import { TopupCard } from "@/components/account/topup-card";
 import { TrialCard } from "@/components/account/trial-card";
 import { StatCard } from "@/components/dashboard/chips";
 import {
+  formatCalendarDay,
   formatCompact,
   formatMicros,
   formatNumber,
@@ -71,8 +72,7 @@ export default async function AccountPage({
             </p>
           </div>
           <div className="rounded-xl border border-black/10 bg-surface px-3 py-2 text-xs text-muted dark:border-white/10">
-            {customer.status} · joined{" "}
-            {new Date(customer.createdAt).toISOString().slice(0, 10)}
+            {customer.status} · joined {formatCalendarDay(customer.createdAt)}
           </div>
         </div>
 

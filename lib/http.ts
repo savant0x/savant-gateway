@@ -5,6 +5,11 @@ export const CORS_HEADERS = {
   "Access-Control-Max-Age": "86400",
 } as const;
 
+/** JSON request roots must be objects before route handlers read their fields. */
+export function isJsonObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 /**
  * Logs the operator-facing detail and returns a generic client message. Local
  * exception text must never reach a public caller; only validated 4xx input

@@ -1,6 +1,10 @@
 "use client";
 
-import type { ModelSummary } from "@/lib/types";
+import type {
+  BenchmarkStatus,
+  BenchmarkSummary,
+  ModelSummary,
+} from "@/lib/types";
 import type { PriceComparison } from "@/lib/price-comparison";
 
 import { useMemo, useState } from "react";
@@ -9,6 +13,8 @@ import {
   comparisonAvailable,
   deltaClass,
   formatDelta,
+  priceProvenance,
+  QualityCell,
   RateCell,
   type SortKey,
 } from "./catalog-cells";
@@ -16,16 +22,21 @@ import { CatalogFilters, type GroupOption } from "./catalog-filters";
 import { CatalogFootnote } from "./catalog-footnote";
 
 import { AccessChip } from "@/components/dashboard/chips";
+import { formatPricePer1M } from "@/components/dashboard/format";
 import { Pagination } from "@/components/ui/pagination";
 
 export function ModelCatalogTable({
   models,
   comparisons = {},
+  benchmarks = {},
+  benchmarkStatus = null,
   benchmarkFetchedAt = null,
   pageSize = 15,
 }: {
   models: ModelSummary[];
   comparisons?: Record<string, PriceComparison>;
+  benchmarks?: Record<string, BenchmarkSummary>;
+  benchmarkStatus?: BenchmarkStatus | null;
   benchmarkFetchedAt?: string | null;
   pageSize?: number;
 }) {
@@ -124,6 +135,19 @@ export function ModelCatalogTable({
   );
 
   const showComparison = comparisonAvailable(matched, models.length);
+  const measured = useMemo(
+    () => models.filter((model) => benchmarks[model.id] !== undefined).length,
+    [benchmarks, models],
+  );
+  const showBenchmarks = measured > 0;
+  // Identity, then one fact per column, then the money, then the verdict.
+  const columns = showComparison
+    ? showBenchmarks
+      ? ["36%", "9%", "6%", "8%", "10%", "16%", "15%"]
+      : ["44%", "10%", "7%", "9%", "17%", "13%"]
+    : showBenchmarks
+      ? ["48%", "11%", "8%", "10%", "8%", "15%"]
+      : ["54%", "13%", "9%", "11%", "13%"];
 
   function resetPage(action: () => void) {
     action();
@@ -151,7 +175,7 @@ export function ModelCatalogTable({
       />
 
       {rows.length === 0 ? (
-        <div className="p-8 text-sm text-muted">
+        <div className="brand-canvas px-6 py-16 text-center text-sm text-muted">
           No models match this filter. Try another search or check back later.
         </div>
       ) : (
@@ -162,26 +186,24 @@ export function ModelCatalogTable({
         >
           <table className="data-table catalog-table">
             <colgroup>
-              <col style={{ width: "40%" }} />
-              <col style={{ width: "13%" }} />
-              <col style={{ width: "15%" }} />
-              {showComparison ? (
-                <>
-                  <col style={{ width: "20%" }} />
-                  <col style={{ width: "12%" }} />
-                </>
-              ) : null}
+              {columns.map((width) => (
+                <col key={width} style={{ width }} />
+              ))}
             </colgroup>
             <thead>
               <tr>
                 <th>Model</th>
                 <th>Group</th>
+                <th className="text-right">Weight</th>
+                <th className="catalog-col-features text-center">Features</th>
+                {showBenchmarks ? (
+                  <th className="catalog-col-benchmark text-right">
+                    AA Benchmark
+                  </th>
+                ) : null}
                 <th className="text-right">Savant $/1M</th>
                 {showComparison ? (
-                  <>
-                    <th className="text-right">OpenRouter $/1M</th>
-                    <th className="text-right">vs list</th>
-                  </>
+                  <th className="text-right">vs OpenRouter</th>
                 ) : null}
               </tr>
             </thead>
@@ -193,64 +215,77 @@ export function ModelCatalogTable({
 
                 return (
                   <tr key={model.id}>
-                    <td className="max-w-[32rem]">
+                    <td className="catalog-model">
                       <div className="truncate font-medium">{model.name}</div>
-                      <div className="mono mt-0.5 truncate text-[11px] text-muted">
+                      <div className="catalog-sub mono" title={model.id}>
                         {model.family} · {model.contextWindow} · {model.id}
                       </div>
                     </td>
                     <td className="whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <AccessChip model={model} />
-                        {model.tokenWeight > 0 ? (
-                          <span
-                            className="mono text-[10px] text-muted"
-                            title="Free-pool token weight"
-                          >
-                            {model.tokenWeight}×
-                          </span>
-                        ) : null}
-                        {model.supportsTools ? (
-                          <i
-                            aria-hidden
-                            className="fa-solid fa-wrench text-[10px] text-muted"
-                            title="Supports tools"
-                          />
-                        ) : null}
-                        {model.supportsVision ? (
-                          <i
-                            aria-hidden
-                            className="fa-solid fa-eye text-[10px] text-muted"
-                            title="Supports vision"
-                          />
-                        ) : null}
-                      </div>
+                      <AccessChip model={model} />
                     </td>
-                    <td className="whitespace-nowrap text-right">
-                      <RateCell
-                        input={model.inputPricePer1M}
-                        output={model.outputPricePer1M}
-                      />
+                    <td className="catalog-rate text-right">
+                      {model.tokenWeight > 0 ? (
+                        <span title="Free-pool token weight">
+                          {model.tokenWeight}×
+                        </span>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </td>
+                    <td className="catalog-col-features whitespace-nowrap text-center">
+                      {model.supportsTools || model.supportsVision ? (
+                        <span className="inline-flex items-center gap-2">
+                          {model.supportsTools ? (
+                            <i
+                              aria-hidden
+                              className="fa-solid fa-wrench text-[10px] text-muted"
+                              title="Supports tools"
+                            />
+                          ) : null}
+                          {model.supportsVision ? (
+                            <i
+                              aria-hidden
+                              className="fa-solid fa-eye text-[10px] text-muted"
+                              title="Supports vision"
+                            />
+                          ) : null}
+                        </span>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </td>
+                    {showBenchmarks ? (
+                      <td className="catalog-rate text-right">
+                        <QualityCell benchmark={benchmarks[model.id]} />
+                      </td>
+                    ) : null}
+                    <td className="catalog-rate text-right">
+                      <span
+                        className="cursor-help"
+                        title={priceProvenance(
+                          {
+                            input: model.inputPricePer1M,
+                            output: model.outputPricePer1M,
+                          },
+                          model.access,
+                          comparison,
+                        )}
+                      >
+                        <RateCell
+                          access={model.access}
+                          input={model.inputPricePer1M}
+                          output={model.outputPricePer1M}
+                        />
+                      </span>
                     </td>
                     {showComparison ? (
                       <>
-                        <td className="whitespace-nowrap text-right text-muted">
-                          {comparison ? (
-                            <span title={comparison.openRouterId}>
-                              <RateCell
-                                input={comparison.inputPer1M}
-                                output={comparison.outputPer1M}
-                              />
-                            </span>
-                          ) : (
-                            <span className="text-muted">—</span>
-                          )}
-                        </td>
-                        <td className="whitespace-nowrap text-right">
+                        <td className="catalog-rate text-right">
                           {model.access === "paid" &&
                           comparison?.blendedDeltaBps != null ? (
                             <span
-                              className={`inline-flex rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] ${deltaClass(
+                              className={`inline-flex items-center rounded-[0.2rem] border border-border bg-surface-secondary px-2 py-0.5 text-[11px] ${deltaClass(
                                 comparison.blendedDeltaBps,
                               )}`}
                               title={`3 input : 1 output blend vs ${comparison.openRouterId}. Prompt tokens ${formatDelta(
@@ -258,6 +293,20 @@ export function ModelCatalogTable({
                               )}, completion tokens ${formatDelta(
                                 comparison.outputDeltaBps,
                               )}.`}
+                            >
+                              {formatDelta(comparison.blendedDeltaBps)}
+                            </span>
+                          ) : comparison?.blendedDeltaBps != null ? (
+                            // Included models are 100 % cheaper than the public
+                            // list by definition. Muted text, not a badge: eleven
+                            // identical green badges would shout.
+                            <span
+                              className="text-muted"
+                              title={`Included in ${model.access === "free" ? "the free pool" : "a plan"}; ${comparison.openRouterId} lists ${formatPricePer1M(
+                                comparison.inputPer1M,
+                              )} in / ${formatPricePer1M(
+                                comparison.outputPer1M,
+                              )} out per 1M.`}
                             >
                               {formatDelta(comparison.blendedDeltaBps)}
                             </span>
@@ -286,6 +335,8 @@ export function ModelCatalogTable({
 
       <CatalogFootnote
         benchmarkFetchedAt={benchmarkFetchedAt}
+        benchmarkStatus={benchmarkStatus}
+        showBenchmarks={showBenchmarks}
         showComparison={showComparison}
       />
     </div>

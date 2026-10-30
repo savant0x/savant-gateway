@@ -22,6 +22,10 @@ export function ModelPriceEngine({ models }: { models: ModelSummary[] }) {
   const families = ["DeepSeek", "GPT", "Claude"].filter((family) =>
     priced.some((model) => model.family === family),
   );
+  const sameRate =
+    selected !== undefined &&
+    selected.inputPricePer1M > 0 &&
+    selected.inputPricePer1M === selected.outputPricePer1M;
 
   return (
     <div>
@@ -84,12 +88,20 @@ export function ModelPriceEngine({ models }: { models: ModelSummary[] }) {
                   <strong className="engine-price">
                     {formatPricePer1M(selected.inputPricePer1M)}
                   </strong>
-                  <span className="engine-unit">per 1M input tokens</span>
+                  <span className="engine-unit">
+                    {sameRate
+                      ? "per 1M tokens, in and out"
+                      : "per 1M input tokens"}
+                  </span>
                 </div>
-                <p className="mt-2 font-mono text-[11px] text-accent">
-                  {formatPricePer1M(selected.outputPricePer1M)} / 1M output
-                  tokens
-                </p>
+                {/* Equal rates printed the same figure twice, one line above the
+                    other. It is one price when input and output cost the same. */}
+                {sameRate ? null : (
+                  <p className="mt-2 font-mono text-[11px] text-accent">
+                    {formatPricePer1M(selected.outputPricePer1M)} / 1M output
+                    tokens
+                  </p>
+                )}
                 <dl className="engine-details">
                   <div>
                     <dt>Context</dt>

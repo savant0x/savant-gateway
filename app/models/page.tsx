@@ -8,12 +8,17 @@ import { primaryCta, secondaryCta } from "@/components/landing/cta";
 import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
 import { siteConfig } from "@/config/site";
+import { ensureBenchmarksFresh } from "@/lib/benchmark-sync";
 import { getOpenRouterModels } from "@/lib/openrouter-prices";
 import {
   buildCatalogComparison,
   summarizeComparison,
 } from "@/lib/price-comparison";
-import { getCatalogData } from "@/lib/store";
+import {
+  getBenchmarkStatus,
+  getCatalogData,
+  listBenchmarks,
+} from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +41,13 @@ export const metadata: Metadata = {
 
 export default async function ModelsPage() {
   const data = getCatalogData();
+  // Stored rows only; the freshness check may start a sync but never waits on
+  // one, so a slow benchmark source cannot delay this response.
+  const benchmarks = listBenchmarks();
+  const benchmarkStatus = getBenchmarkStatus(data.models.length);
+
+  ensureBenchmarksFresh();
+
   const benchmark = await getOpenRouterModels();
   const comparison = buildCatalogComparison(data.models, benchmark.models);
   const paidComparisons = data.models
@@ -69,32 +81,32 @@ export default async function ModelsPage() {
             </p>
 
             <div className="mt-7 flex flex-wrap gap-2 text-xs">
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+              <span className="rounded-full border border-white/10 canvas-surface px-3 py-1.5">
                 <i
                   aria-hidden
                   className="fa-solid fa-server mr-2 text-cyan-300"
                 />
                 Provider: {siteConfig.provider.name}
               </span>
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+              <span className="rounded-full border border-white/10 canvas-surface px-3 py-1.5">
                 <i
                   aria-hidden
                   className="fa-solid fa-layer-group mr-2 text-cyan-300"
                 />
                 {formatNumber(data.stats.modelCount)} models
               </span>
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+              <span className="rounded-full border border-white/10 canvas-surface px-3 py-1.5">
                 <i
                   aria-hidden
                   className="fa-solid fa-gift mr-2 text-emerald-300"
                 />
                 {formatNumber(data.stats.freeModelCount)} free
               </span>
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+              <span className="rounded-full border border-white/10 canvas-surface px-3 py-1.5">
                 <i aria-hidden className="fa-solid fa-tag mr-2 text-cyan-300" />
                 {formatNumber(data.stats.paidModelCount)} priced
               </span>
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+              <span className="rounded-full border border-white/10 canvas-surface px-3 py-1.5">
                 <i
                   aria-hidden
                   className="fa-solid fa-key mr-2 text-amber-300"
@@ -105,7 +117,7 @@ export default async function ModelsPage() {
 
             {positioning.rows > 0 ? (
               <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="rounded-xl border border-cyan-300/20 bg-cyan-300/5 px-4 py-3">
+                <div className="rounded-xl border border-cyan-300/20 canvas-surface px-4 py-3">
                   <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
                     Median vs list · 3:1 blend
                   </p>
@@ -127,7 +139,7 @@ export default async function ModelsPage() {
                     below list
                   </p>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="rounded-xl border border-white/10 canvas-surface px-4 py-3">
                   <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
                     Median input vs list
                   </p>
@@ -148,7 +160,7 @@ export default async function ModelsPage() {
                     {formatNumber(positioning.rows)} rows are below it
                   </p>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="rounded-xl border border-white/10 canvas-surface px-4 py-3">
                   <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
                     Median output vs list
                   </p>
@@ -168,7 +180,7 @@ export default async function ModelsPage() {
                     gap is widest here
                   </p>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                <div className="rounded-xl border border-white/10 canvas-surface px-4 py-3">
                   <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
                     Exact-id coverage
                   </p>
@@ -190,6 +202,9 @@ export default async function ModelsPage() {
               </Link>
               <Link className={secondaryCta} href="/#quickstart">
                 See the request
+              </Link>
+              <Link className={secondaryCta} href="/compare">
+                Compare two models
               </Link>
             </div>
           </div>
@@ -214,6 +229,8 @@ export default async function ModelsPage() {
           </div>
           <ModelCatalogTable
             benchmarkFetchedAt={benchmarkFetchedAt}
+            benchmarkStatus={benchmarkStatus}
+            benchmarks={benchmarks}
             comparisons={comparison.comparisons}
             models={data.models}
             pageSize={Math.max(1, data.models.length)}

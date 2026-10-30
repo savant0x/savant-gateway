@@ -3,11 +3,8 @@ import type { CustomerSummary, TopupSummary } from "@/lib/types";
 import { Card } from "@heroui/react";
 
 import { StatusChip } from "@/components/dashboard/chips";
-import {
-  formatDate,
-  formatMicros,
-  formatNumber,
-} from "@/components/dashboard/format";
+import { formatMicros, formatNumber } from "@/components/dashboard/format";
+import { LocalTime } from "@/components/local-time";
 
 export function CustomersTable({
   customers,
@@ -75,10 +72,10 @@ export function CustomersTable({
                       {formatMicros(customer.chargedMicros)}
                     </td>
                     <td className="whitespace-nowrap text-muted">
-                      {formatDate(customer.lastTopupAt)}
+                      <LocalTime value={customer.lastTopupAt} />
                     </td>
                     <td className="whitespace-nowrap text-muted">
-                      {formatDate(customer.createdAt)}
+                      <LocalTime value={customer.createdAt} />
                     </td>
                   </tr>
                 ))}
@@ -123,7 +120,7 @@ export function AdminTopupsTable({ topups }: { topups: TopupSummary[] }) {
                 {topups.map((topup) => (
                   <tr key={topup.id}>
                     <td className="whitespace-nowrap text-muted">
-                      {formatDate(topup.createdAt)}
+                      <LocalTime value={topup.createdAt} />
                     </td>
                     <td>
                       <div className="font-medium">{topup.customerName}</div>
@@ -138,7 +135,7 @@ export function AdminTopupsTable({ topups }: { topups: TopupSummary[] }) {
                       <StatusChip status={topup.status} />
                     </td>
                     <td className="whitespace-nowrap text-muted">
-                      {formatDate(topup.paidAt)}
+                      <LocalTime value={topup.paidAt} />
                     </td>
                     <td
                       className="mono max-w-[14rem] truncate text-[10px] text-muted"

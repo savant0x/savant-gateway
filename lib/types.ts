@@ -179,6 +179,10 @@ export type CatalogData = {
   provider: PublicProviderStatus;
 };
 
+// The benchmark row and status shapes live with their domain module so this
+// shared file stays inside the 400-line ceiling.
+export type { BenchmarkStatus, BenchmarkSummary } from "./benchmarks";
+
 export type AnalyticsPoint = {
   date: string;
   requests: number;

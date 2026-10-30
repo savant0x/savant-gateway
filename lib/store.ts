@@ -118,6 +118,12 @@ export {
   setTopupProviderRef,
 } from "./store/topups";
 export { getMarkupBps, saveMarkupBps } from "./store/settings";
+export {
+  getBenchmarkStatus,
+  latestSuccessfulSync,
+  latestSyncAttempt,
+  listBenchmarks,
+} from "./store/benchmarks";
 export { getPricingData } from "./store/pricing";
 export {
   ANALYTICS_RANGES,

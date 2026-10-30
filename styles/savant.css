@@ -203,6 +203,23 @@ summary {
   background: color-mix(in oklab, var(--background) 94%, transparent);
   backdrop-filter: blur(16px);
 }
+/* The closing band answers the opening one: same canvas, washed from the
+   bottom edge so the small print never has to fight it. */
+.site-footer {
+  background-color: var(--background);
+  background-image:
+    linear-gradient(
+      0deg,
+      var(--background) 1.5rem,
+      color-mix(in oklab, var(--background) 55%, transparent) 55%,
+      transparent
+    ),
+    linear-gradient(var(--brand-veil), var(--brand-veil)),
+    url("/bg-pattern.webp");
+  background-repeat: no-repeat, no-repeat, repeat;
+  background-size: auto, auto, var(--brand-tile);
+  background-position: bottom, center, center;
+}
 .public-nav {
   height: 5rem;
   display: flex;
@@ -312,15 +329,35 @@ summary {
   width: 1.4rem;
   background: currentColor;
 }
+/* A centred kicker with one rule reads as an accidental crop, so the closing
+   band mirrors it: same rule, same gap, on both sides of the wordmark. */
+.closing-cta .section-kicker::after {
+  content: "";
+  height: 1px;
+  width: 1.4rem;
+  background: currentColor;
+}
 .landing-hero {
   isolation: isolate;
   position: relative;
   border-bottom: 1px solid var(--border);
-  background: radial-gradient(
-    ellipse at 85% 35%,
-    color-mix(in oklab, var(--accent) 9%, transparent),
-    transparent 45%
-  );
+  background-color: var(--background);
+  background-image:
+    radial-gradient(
+      ellipse at 85% 35%,
+      color-mix(in oklab, var(--accent) 9%, transparent),
+      transparent 45%
+    ),
+    linear-gradient(
+      100deg,
+      var(--background) 4%,
+      color-mix(in oklab, var(--background) 62%, transparent) 38%,
+      transparent 72%
+    ),
+    linear-gradient(var(--brand-veil), var(--brand-veil)),
+    url("/bg-pattern.webp");
+  background-repeat: no-repeat, no-repeat, no-repeat, repeat;
+  background-size: auto, auto, auto, var(--brand-tile);
 }
 .landing-hero::before {
   content: "";
@@ -465,10 +502,8 @@ summary {
   gap: 1rem;
   color: var(--muted);
 }
-/* Landing stats: a bordered data band rather than four loose numbers. */
-.landing-stats {
-  background: var(--surface);
-}
+/* Landing stats: a bordered data band rather than four loose numbers. Its
+   surface comes from the band parity rule, not from here. */
 .landing-stats-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -572,7 +607,6 @@ summary {
 }
 .value-surface {
   border-block: 1px solid var(--border);
-  background: var(--surface);
 }
 .value-row {
   display: grid;
@@ -602,28 +636,7 @@ summary {
   isolation: isolate;
   overflow: hidden;
   padding: 6rem 1.5rem;
-  background: var(--surface);
   border-top: 1px solid var(--border);
-}
-.closing-cta::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background-image:
-    linear-gradient(
-      color-mix(in oklab, var(--accent) 9%, transparent) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      color-mix(in oklab, var(--accent) 9%, transparent) 1px,
-      transparent 1px
-    );
-  background-size: 65px 65px;
-  transform: perspective(450px) rotateX(55deg) scale(1.7);
-  transform-origin: 50% 100%;
-  mask-image: linear-gradient(transparent 10%, black);
 }
 .closing-cta h2 {
   font-size: clamp(1.5rem, 3.5vw, 3rem);
@@ -638,6 +651,71 @@ summary {
   max-width: 34rem;
   color: var(--muted);
   font-size: 1.2rem;
+}
+/* The band rhythm is read from the DOM, not from a list of section names, so
+   an optional section (plans) cannot leave two light bands touching. Odd bands
+   are the brand canvas, even bands are the plan drawing. The hero keeps its own
+   composition and is excluded; declared after the band styles it overrides. */
+.landing-bands > section:not(.landing-hero):nth-of-type(odd) {
+  background-color: var(--background);
+  background-image:
+    linear-gradient(var(--brand-veil), var(--brand-veil)),
+    url("/bg-pattern.webp");
+  background-repeat: no-repeat, repeat;
+  background-size: auto, var(--brand-tile);
+}
+.landing-bands > section:not(.landing-hero):nth-of-type(even) {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  /* Only one step above the canvas, so the drawing is texture rather than a
+     bright panel competing with the content. */
+  background-color: color-mix(in oklab, var(--background) 55%, var(--surface));
+}
+/* The plan drawing sits in perspective rather than flat on the page: the floor
+   recedes from the bottom edge and fades out before it reaches the copy. Lines
+   are accent at 7%, so the grid is felt before it is read. */
+.landing-bands > section:not(.landing-hero):nth-of-type(even)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(
+      color-mix(in oklab, var(--accent) 7%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--accent) 7%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 68px 68px;
+  transform-origin: 50% 100%;
+  transform: perspective(460px) rotateX(56deg) scale(1.8);
+  mask-image: linear-gradient(transparent 6%, black 62%);
+}
+/* The closing band's centred copy needs the middle of the canvas clear, and it
+   drops the drawing on the dark parity where a grid would fight the pattern. */
+.landing-bands > section.closing-cta:nth-of-type(odd)::before {
+  display: none;
+}
+/* Centred copy needs the middle of the canvas clear, the way the hero needs
+   its left edge clear. The wash fades the pattern out under the headline and
+   lets it return at the edges of the band. */
+.landing-bands > section.closing-cta:nth-of-type(odd) {
+  background-image:
+    radial-gradient(
+      ellipse at 50% 48%,
+      var(--background) 10%,
+      color-mix(in oklab, var(--background) 70%, transparent) 46%,
+      transparent 74%
+    ),
+    linear-gradient(var(--brand-veil), var(--brand-veil)),
+    url("/bg-pattern.webp");
+  background-repeat: no-repeat, no-repeat, repeat;
+  background-size: auto, auto, var(--brand-tile);
 }
 .workspace {
   background-image: radial-gradient(
@@ -785,14 +863,131 @@ summary {
   text-align: center;
 }
 .catalog-shell .catalog-table {
-  min-width: 46rem;
+  min-width: 48rem;
+  table-layout: fixed;
 }
 .catalog-table td {
-  padding: 1.15rem 1.25rem;
+  padding: 0.55rem 0.85rem;
+  border-top: 0;
   vertical-align: middle;
 }
 .catalog-table thead th {
-  padding: 1rem 1.25rem;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-tertiary);
+}
+/* Zebra instead of rules: 34 rows of hairlines read as noise, alternate bands
+   read as a grid. */
+.catalog-table tbody tr:nth-child(even) {
+  background: color-mix(in oklab, var(--surface-secondary) 75%, transparent);
+}
+.catalog-table tbody tr:hover {
+  background: color-mix(in oklab, var(--accent) 8%, transparent);
+}
+.catalog-table .catalog-model {
+  padding-right: 1.5rem;
+}
+.catalog-table .catalog-sub {
+  margin-top: 0.05rem;
+  overflow: hidden;
+  font-size: 0.6875rem;
+  line-height: 1.3;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.catalog-table .catalog-rate {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* The features column carries glyphs, not words: narrow padding keeps it from
+   stealing width from the prices, and the header drops a size to fit. */
+.catalog-table th.catalog-col-features,
+.catalog-table td.catalog-col-features {
+  padding-left: 0.4rem;
+  padding-right: 0.4rem;
+  text-align: center;
+}
+.catalog-table th.catalog-col-features,
+.catalog-table th.catalog-col-benchmark {
+  font-size: 0.5625rem;
+  letter-spacing: 0.04em;
+}
+/* The compare table is the catalog transposed: one attribute per line, both
+   models on it, and one mark on the winning cell instead of a colour per row. */
+.compare-table {
+  min-width: 40rem;
+  table-layout: fixed;
+}
+.compare-table thead th {
+  vertical-align: bottom;
+}
+.compare-table thead th:not(:first-child),
+.compare-table .compare-value {
+  text-align: right;
+}
+.compare-table tbody th[scope="row"] {
+  border-top: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.compare-table tbody th[scope="rowgroup"] {
+  border-top: 1px solid var(--border);
+  background: var(--surface-tertiary);
+  padding-bottom: 0.45rem;
+  padding-top: 0.45rem;
+  color: var(--accent);
+  font-size: 0.5625rem;
+  letter-spacing: 0.16em;
+}
+.compare-table .compare-value {
+  border-top: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
+  padding-bottom: 0.6rem;
+  padding-top: 0.6rem;
+  color: color-mix(in oklab, var(--foreground) 80%, transparent);
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* A row with a winner is the row that decides something: it lifts off the page
+   as a whole, and the winning value carries the accent wash, so the eye lands
+   on the answer instead of hunting for a caret. Both washes stay faint — six
+   decided rows in a row must not turn into zebra striping. */
+.compare-table tbody tr[data-winner] .compare-value {
+  background: color-mix(in oklab, var(--accent) 5%, transparent);
+}
+/* The row rule above outranks a bare `.compare-value[data-better]` on
+   specificity, which would paint the winner at the band's 5%. This selector
+   has to carry the same ancestors to stay ahead of it. */
+.compare-table tbody tr[data-winner] .compare-value[data-better="true"] {
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+  color: var(--foreground);
+}
+/* On a phone the two columns still fit: the values wrap and the table drops the
+   minimum width it needs on a desktop, so the page never scrolls sideways. */
+@media (max-width: 640px) {
+  .data-table.compare-table {
+    min-width: 0;
+  }
+  .compare-table .compare-value {
+    font-size: 0.75rem;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+  /* The attribute column is 102 px wide here, and a nowrap label runs 164 px
+     straight through the value beside it. Let the label wrap instead. */
+  .compare-table tbody th[scope="row"] {
+    font-size: 0.6875rem;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
 }
 @media (max-width: 1023px) {
   .admin-shell {

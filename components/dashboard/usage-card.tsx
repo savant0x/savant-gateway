@@ -3,7 +3,9 @@ import type { UsageSummary } from "@/lib/types";
 import { Card, Chip } from "@heroui/react";
 
 import { StatusChip } from "./chips";
-import { formatDate, formatMicros, formatNumber } from "./format";
+import { formatMicros, formatNumber } from "./format";
+
+import { LocalTime } from "@/components/local-time";
 
 export function UsageCard({
   usage,
@@ -49,7 +51,7 @@ export function UsageCard({
                 {usage.map((row) => (
                   <tr key={row.id}>
                     <td className="whitespace-nowrap text-muted">
-                      {formatDate(row.createdAt)}
+                      <LocalTime value={row.createdAt} />
                     </td>
                     <td>
                       <div className="font-medium">

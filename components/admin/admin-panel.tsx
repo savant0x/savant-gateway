@@ -14,6 +14,7 @@ import {
   formatNumber,
   formatSignedMicros,
 } from "@/components/dashboard/format";
+import { LocalTime } from "@/components/local-time";
 import { ProviderSyncButton } from "@/components/provider-sync";
 
 function LinkButton({
@@ -309,13 +310,7 @@ export function AdminPanel({
                     {data.usage.slice(0, 12).map((row) => (
                       <tr key={row.id}>
                         <td className="whitespace-nowrap text-muted">
-                          {new Date(row.createdAt).toLocaleString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            timeZone: "UTC",
-                          })}
+                          <LocalTime value={row.createdAt} />
                         </td>
                         <td>
                           <div className="font-medium">

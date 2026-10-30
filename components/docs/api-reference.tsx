@@ -109,7 +109,7 @@ export function ApiReference() {
               {["OpenAI-compatible", "Bearer key", "JSON + SSE"].map((item) => (
                 <span
                   key={item}
-                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5"
+                  className="rounded-full border border-white/10 canvas-surface px-3 py-1.5"
                 >
                   {item}
                 </span>

@@ -26,9 +26,12 @@ function statusColor(status: SubscriptionSummary["status"]) {
 export function SubscriptionCard({
   subscription,
   stripeConfigured,
+  salesEnabled,
 }: {
   subscription: SubscriptionSummary | null;
   stripeConfigured: boolean;
+  /** False while the launch policy keeps new plan sales closed. */
+  salesEnabled: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -79,12 +82,19 @@ export function SubscriptionCard({
             No plan is attached to this account. Prepaid credit and free-pool
             models continue to work as before.
           </p>
-          <Link
-            className="inline-flex rounded-xl border border-accent/30 bg-accent/10 px-3 py-2 text-xs text-accent transition-colors hover:bg-accent/20"
-            href="/plans"
-          >
-            Compare plans
-          </Link>
+          {salesEnabled ? (
+            <Link
+              className="inline-flex rounded-xl border border-accent/30 bg-accent/10 px-3 py-2 text-xs text-accent transition-colors hover:bg-accent/20"
+              href="/plans"
+            >
+              Compare plans
+            </Link>
+          ) : (
+            <p className="text-xs leading-5 text-muted">
+              Plans are not on sale during this launch. Nothing is charged and
+              no plan can be started from here.
+            </p>
+          )}
         </Card.Content>
       </Card>
     );

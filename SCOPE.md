@@ -2,6 +2,34 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-30 (customer states and accessibility: 056)
+
+Handoff continuation in dependency order after 055. Automation level 3, strict,
+single agent. 056 depends on 061 (published policy/support), which is not
+implemented; this pass fixes the reachable claim/state defects and records the
+verified browser/accessibility receipt, leaving 056 open.
+
+- [x] **P1 — Re-audit 056 against current source.** Measured: after the 054
+  sales gate, `/plans` still promised Stripe payment under an unavailable
+  catalog, and the account subscription card still linked to a catalog that
+  cannot sell. Public docs already match the implemented Chat Completions API;
+  payment return banners already defer to the signed webhook.
+- [x] **P2 — Fix truthful states and add the matrix.** Conditional payment copy,
+  a "not on sale" account state with no dead CTA, and HTTP assertions for
+  language, skip link, single `h1`, plans state, documented endpoints, and both
+  payment return banners.
+- [x] **P3 — Browser and gate receipt.** Production build on a disposable
+  database: `/plans`, `/models`, `/docs` at 390×844 and `/plans` at 1440×900 with
+  zero horizontal overflow and one `h1`; dark-theme contrast 17.14:1 body and
+  8.97:1 muted; signed-in account at 390 and 1440 with live client hydration and
+  the no-plan state. `npm run verify` exit 0: 297 unit tests, 351 HTTP checks,
+  trial HTTP PASS, quality PASS (267 files), clean lint/typecheck/build.
+
+Remaining, not claimed: policy/privacy/terms/support routes (FID-061 dependency,
+footer links unchanged), 320/1024 widths, both themes on every page, admin
+screens, and a keyboard focus-ring receipt (panel focus loss made the computed
+outline inconclusive). 056 stays open in `dev/fids`.
+
 ## Current Session — 2026-10-30 (provider and catalog integrity: 055)
 
 Handoff continuation in dependency order after 054. Automation level 3, strict,

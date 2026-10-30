@@ -875,6 +875,111 @@ async function runCatalogIntegrityChecks(context, adminCookie) {
   checkEqual("a sync never publishes duplicate rows", duplicate.total, 1);
 }
 
+function h1Count(html) {
+  return (html.match(/<h1\b/gi) ?? []).length;
+}
+
+async function runCustomerExperienceChecks(context, alpha, beta) {
+  const publicPages = ["/", "/models", "/plans", "/docs"];
+
+  for (const path of publicPages) {
+    const page = await request(context.baseUrl, path);
+
+    checkEqual(`${path} renders for an anonymous visitor`, page.status, 200);
+    check(
+      `${path} declares its language`,
+      page.text.includes('<html lang="en"'),
+      page.text.slice(0, 200),
+    );
+    check(
+      `${path} offers a skip link`,
+      page.text.includes("Skip to content"),
+    );
+    checkEqual(`${path} has exactly one top-level heading`, h1Count(page.text), 1);
+  }
+
+  const plans = await request(context.baseUrl, "/plans");
+
+  check(
+    "an unavailable plan catalog does not promise a payment flow",
+    !plans.text.includes("Payment is completed on Stripe"),
+    plans.text,
+  );
+  check(
+    "an unavailable plan catalog says so",
+    plans.text.includes("Plans are not available yet"),
+  );
+
+  const docs = await request(context.baseUrl, "/docs");
+
+  check(
+    "the API reference documents the implemented chat endpoint",
+    docs.text.includes("/v1/chat/completions"),
+  );
+  check(
+    "the API reference does not advertise an unimplemented Messages API",
+    !docs.text.includes("/v1/messages"),
+  );
+  check(
+    "the API reference does not advertise an unimplemented Responses API",
+    !docs.text.includes("/v1/responses"),
+  );
+
+  // Beta never received a comp, so this is the no-plan state.
+  const account = await request(context.baseUrl, "/account", {
+    cookie: `sg_session=${beta.cookie}`,
+  });
+
+  checkEqual("a signed-in account page renders", account.status, 200);
+  check(
+    "the account page shows the credit balance",
+    account.text.includes("Available credit"),
+  );
+  check(
+    "the account page states that no plan is attached",
+    account.text.includes("No plan is attached to this account"),
+  );
+  check(
+    "the account page does not link to a plan catalog that cannot sell",
+    !account.text.includes("Compare plans"),
+  );
+  check(
+    "the account page explains that plans are not on sale",
+    account.text.includes("Plans are not on sale during this launch"),
+  );
+
+  const paid = await request(context.baseUrl, "/account?topup=success", {
+    cookie: `sg_session=${alpha.cookie}`,
+  });
+
+  checkEqual("a payment return renders the account", paid.status, 200);
+  check(
+    "a payment return attributes credit to the signed webhook",
+    paid.text.includes("signed") && paid.text.includes("webhook"),
+  );
+  check(
+    "a payment return does not claim the balance already moved",
+    !paid.text.includes("Credit has been added"),
+  );
+
+  const subscribed = await request(
+    context.baseUrl,
+    "/account?subscription=success",
+    { cookie: `sg_session=${alpha.cookie}` },
+  );
+
+  check(
+    "a subscription return attributes access to the invoice webhook",
+    subscribed.text.includes("signed invoice webhook"),
+  );
+  check(
+    "a cancelled subscription return says nothing was charged",
+    (await request(context.baseUrl, "/account?subscription=cancelled", {
+      cookie: `sg_session=${alpha.cookie}`,
+    })).text.includes("Nothing was charged"),
+  );
+}
+
 async function runBenchmarkIntegrityChecks(context, adminCookie) {
   const cookie = `sg_admin=${adminCookie}`;
   const sync = () =>
@@ -1258,5 +1363,6 @@ export async function runChecks(context) {
   await runPlanSalesChecks(context, alpha, adminCookie);
   await runCatalogIntegrityChecks(context, adminCookie);
   await runBenchmarkIntegrityChecks(context, adminCookie);
+  await runCustomerExperienceChecks(context, alpha, beta);
   await runDegradeChecks(context);
 }

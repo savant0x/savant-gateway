@@ -4,7 +4,8 @@
 **ID:** FID-2026-1030-056
 **Parent:** FID-2026-1030-043
 **Severity:** high
-**Status:** converged
+**Status:** implemented (policy/support pages and the remaining manual matrix
+pending 061)
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044, FID-2026-1030-045, FID-2026-1030-046, FID-2026-1030-047, FID-2026-1030-049, FID-2026-1030-050, FID-2026-1030-052, FID-2026-1030-053, FID-2026-1030-054, FID-2026-1030-055, FID-2026-1030-061
@@ -89,8 +90,55 @@ claim to its source and reachable behavior; interaction checks must assert the
 resulting state/data/URL, including signed-in and failed actions, not screenshots.
 Final convergence checks are in the master planning-audit receipt.
 
-Design only. Passing earlier screenshots or typecheck does not certify a changed
-candidate; disabled features still require accurate public and crafted-request states.
+Implemented the reachable defects and added a server-rendered state matrix plus a
+real browser receipt. Passing earlier screenshots or typecheck does not certify a
+changed candidate; disabled features still require accurate public and
+crafted-request states.
+
+## Implementation Evidence
+
+- `app/plans/page.tsx` renders the Stripe payment paragraph only when a plan is
+  actually purchasable. While sales are off the page states that plans are
+  unavailable and promises no payment flow.
+- `components/account/subscription-card.tsx` + `app/account/page.tsx` — with no
+  subscription and sales off, the card no longer sends the customer to a catalog
+  that cannot sell anything; it states that plans are not on sale. A customer
+  with a comped subscription still sees the real plan and allowance.
+- `scripts/http-suite/checks.mjs` — `runCustomerExperienceChecks` asserts, for
+  every public page (`/`, `/models`, `/plans`, `/docs`): `200`, `lang="en"`, a
+  skip link and exactly one `h1`. It also asserts the plans page no longer
+  promises Stripe payment, the API reference documents `/v1/chat/completions`
+  and does not advertise unimplemented `/v1/messages` or `/v1/responses`, the
+  signed-in no-plan account explains the launch state without a dead plan CTA,
+  and `?topup=success` / `?subscription=success` attribute credit and access to
+  the signed webhook rather than claiming the balance already moved.
+
+Browser receipt (production build, disposable database, 2026-10-30):
+
+- `/plans`, `/models`, `/docs` at 390×844 and `/plans` at 1440×900: no horizontal
+  overflow (`scrollWidth − clientWidth = 0`), one `h1` each.
+- Dark theme on `/plans`: body contrast 17.14:1, muted text 8.97:1; light theme
+  used for the signed-in pass.
+- Signed-in account at 390 and 1440 (fresh customer): no overflow, one `h1`,
+  no-plan copy and "not on sale" copy present, no "Compare plans" link, and a
+  typed value in the key-name field confirmed client hydration was live.
+- The global `:focus-visible` outline rule and `prefers-reduced-motion` block
+  exist in `styles/savant.css`; a computed outline reading was inconclusive
+  because the automation panel removes window focus between steps.
+
+Verification: `npm run verify` exit 0 — 297 unit tests, 351 HTTP checks, trial
+HTTP PASS, quality PASS (267 files), clean lint/typecheck/build.
+
+## Remaining Gates
+
+- Policy, privacy, terms and support routes do not exist; they belong to
+  FID-2026-1030-061, which this FID depends on. Footer links are unchanged.
+- 320 and 1024 widths, both themes on every page, admin screens, and a keyboard
+  focus-ring screenshot were not exercised.
+- Real payment success still cannot be proven without Stripe credentials; the
+  account copy is verified as truthful, not as a completed purchase.
+
+056 stays open until 061 lands and the remaining matrix is recorded.
 
 ## Lessons Learned
 

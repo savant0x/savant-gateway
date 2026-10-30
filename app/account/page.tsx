@@ -20,6 +20,7 @@ import {
 import { UsageCard } from "@/components/dashboard/usage-card";
 import { siteConfig } from "@/config/site";
 import { requireCustomerPage } from "@/lib/customer-auth";
+import { readPlanSalesPolicy } from "@/lib/plan-sales";
 import { readStripeConfig } from "@/lib/stripe";
 import { customerSubscriptionSummary, getCustomerAccount } from "@/lib/store";
 
@@ -48,6 +49,7 @@ export default async function AccountPage({
   const data = getCustomerAccount(customer);
   const subscription = customerSubscriptionSummary(customer.id);
   const stripe = readStripeConfig();
+  const sales = readPlanSalesPolicy();
   const requestHeaders = await headers();
   const params = await searchParams;
   const baseUrl = baseUrlFromHeaders(
@@ -138,6 +140,7 @@ export default async function AccountPage({
         </section>
 
         <SubscriptionCard
+          salesEnabled={sales.selling}
           stripeConfigured={stripe.configured}
           subscription={subscription}
         />

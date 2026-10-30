@@ -78,12 +78,14 @@ export default async function PlansPage() {
             />
           )}
 
-          <p className="mt-8 max-w-3xl text-xs leading-6 text-muted">
-            Payment is completed on Stripe&apos;s hosted page. Access starts
-            only after Stripe&apos;s signed invoice webhook confirms payment.
-            Cancel from your account at any time; access remains until the paid
-            period ends.
-          </p>
+          {plans.length > 0 ? (
+            <p className="mt-8 max-w-3xl text-xs leading-6 text-muted">
+              Payment is completed on Stripe&apos;s hosted page. Access starts
+              only after Stripe&apos;s signed invoice webhook confirms payment.
+              Cancel from your account at any time; access remains until the
+              paid period ends.
+            </p>
+          ) : null}
         </section>
       </main>
 

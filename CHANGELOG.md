@@ -3,6 +3,24 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-30 — Truthful customer states
+
+- **FID-2026-1030-056 — high — Disabled and payment states now say what is
+  true.** After 054 closed plan sales, `/plans` still promised a Stripe payment
+  flow under "Plans are not available yet", and the account subscription card
+  still offered "Compare plans" to a catalog that cannot sell. The payment
+  paragraph now renders only when a plan is purchasable, and a customer with no
+  plan is told that plans are not on sale; comped subscribers still see their
+  real plan. The HTTP gate adds a state/accessibility matrix for `/`, `/models`,
+  `/plans` and `/docs`: 200 with `lang="en"`, one `h1`, a skip link; the API
+  reference documents only the implemented Chat Completions endpoint; both
+  payment return banners attribute credit and access to the signed webhook and
+  never claim the balance moved. A production-build browser receipt covered
+  390/1440 widths, both themes, contrast (8.97:1 muted on dark) and live client
+  hydration on the signed-in account. Verified: `npm run verify` exit 0, 297
+  unit tests, 351 HTTP checks. **Still open:** policy/support pages (061), 320 and
+  1024 widths, admin screens and a keyboard focus-ring receipt.
+
 ## 2026-10-30 — Provider and benchmark integrity
 
 - **FID-2026-1030-055 — high — A 200 response can no longer erase a catalog.**

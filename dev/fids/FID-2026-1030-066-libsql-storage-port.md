@@ -453,7 +453,7 @@ Exit code 0. What the run changed in this plan:
 | Step | Status | Evidence |
 | --- | --- | --- |
 | 0 — capability spike | `implemented` | 14/14 checks, exit 0, output above |
-| 1–9 — adapter, ledger, store, callers, startup, harness, concurrency, cloud | `blocked` | The operator's instruction sequences a report before any call site is touched; the go-ahead is theirs to give |
+| 1–9 — adapter, ledger, store, callers, startup, harness, concurrency, cloud | `blocked` | The 2026-10-30 hosting decision (below) records that this work is not required for launch; it resumes only if a revisit criterion in `docs/hosting-decision.md` is met |
 
 ## Verification Gates
 
@@ -571,6 +571,14 @@ Exit code 0. What the run changed in this plan:
 
 ## Resolution
 
+- **Status note (2026-10-30):** the port is **not proceeding for launch**. The
+  operator delegated the hosting decision; `docs/hosting-decision.md` records the
+  outcome — one persistent Node process on Fly.io with a local volume — because
+  the port measures 103 files and 301 call sites and leaves shared admission
+  unsolved, while this code's WAL requirement (`lib/db.ts:329`) matches
+  same-host local storage that a PaaS volume actually offers. Nothing in this
+  plan is deleted: it stays `converged`, step 0 is its only executed work, and
+  the revisit criteria name the conditions that would revive it.
 - **Closed Date:** —
 - **Fix Description:** Not implemented. Plan only.
 - **Tests Added:** None yet; every promised artifact is named in Verification.

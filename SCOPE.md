@@ -1651,30 +1651,40 @@ remains the only data layer, and the Vercel deployment still fails closed on
   `package.json` is unchanged until the port itself lands. Gates after the
   change: lint, typecheck and quality all exit 0; the spike script is
   lint-ignored like the other `scripts/*.mjs` tools.
-- [ ] **D1 — Async data-layer adapter and port.** Blocked pending the operator's
-  go-ahead after the step-0 report, which the operator's own instruction
-  requires before any call site is touched. Steps, rejected alternatives and
-  acceptance tests are specified in FID-066.
-- [ ] **D2 — Money-path port with a concurrency proof.** Blocked on D1's
-  approval. Must produce the double-spend receipt the whole choice exists for:
-  two concurrent settlements against one balance, exactly one commit, run
-  against two independent clients on shared storage.
-- [ ] **D3 — Startup, migration and production-config contract.** Blocked on D1's
-  approval. The four `PRAGMA` statements and the import-time migration in
-  `lib/db.ts:325-372` cannot survive a remote client; `lib/production-config.ts`
-  still encodes file-path assumptions (`db_missing`, `db_relative`,
-  `db_ephemeral`).
-- [ ] **D4 — Cloud acceptance and restore drill.** Blocked pending operator
-  purchase and credentials: a funded Turso plan that includes the 30-day PITR
-  window the privacy notice claims, plus `TURSO_DATABASE_URL` and
-  `TURSO_AUTH_TOKEN` supplied outside this repository. Restoration creates a new
-  database, so the drill also needs approval to repoint production at it.
-- [ ] **D5 — Shared admission across instances.** Blocked pending an operator
-  ruling on one of: database-backed admission, an external counter store (new
-  dependency and cost), a documented lower constant with degradation accepted,
-  or staying on a single-process host. Process-local buckets in
+- [ ] **D1 — Async data-layer adapter and port.** Not required under D6
+  (2026-10-30); retained rather than deleted, because FID-066 stays `converged`
+  and is the path back if the revisit criteria are met. No call site was ever
+  touched: step 0 is the only port work that ran.
+- [ ] **D2 — Money-path port with a concurrency proof.** Not required under D6;
+  retained with D1. It remains the receipt that would be owed before any remote
+  engine could carry settlement: two concurrent settlements against one balance,
+  exactly one commit, two independent clients on shared storage.
+- [ ] **D3 — Startup, migration and production-config contract.** Not required
+  under D6; the existing contract stays correct on a persistent local volume,
+  which is what the startup gate was written to check. The four `PRAGMA`
+  statements and the import-time migration in `lib/db.ts:325-372` only fail
+  against a remote client.
+- [ ] **D4 — Cloud acceptance and restore drill.** Not required under D6, which
+  replaces a vendor PITR tier with our own SQLite-aware backups. The restore
+  drill itself stays mandatory and moves to the hosting work below: it is launch
+  evidence, not port evidence.
+- [ ] **D5 — Shared admission across instances.** Resolved by D6's choice of a
+  single process, not by redesign: process-local buckets in
   `lib/token-bucket.ts`, `lib/gateway-rate-limit.ts` and `lib/provider-quota.ts`
-  multiply by instance count, which `docs/launch-plan.md` Phase 3 already
-  forbids until shared enforcement is proven. This is a correctness blocker for
-  the launch, not a storage-port defect, and it is the reason the FID refuses to
-  declare Vercel ready on the strength of the port alone.
+  multiply by instance count, so one instance keeps them correct by
+  construction. It re-opens the moment anything scales out, which is the first
+  revisit criterion in `docs/hosting-decision.md`.
+- [x] **D6 — Hosting decision.** Automation level 3, operator-delegated: "Decide
+  whether to port to libSQL at all, given the cost comparison: what would
+  shipping on a single persistent Node host instead actually cost us?" Decision:
+  do not port; deploy one persistent Node process on Fly.io with one Machine and
+  one local volume. Evidence and the full cost accounting are in
+  `docs/hosting-decision.md`; measured at decision time, the port touches 103
+  files and 301 call sites and leaves the admission limiter unsolved, while the
+  selected host costs about 3.84/month against 44.92 for Vercel Pro plus the
+  Turso tier whose PITR window matches the published retention claim. The
+  decisive technical fact is that this code runs WAL (`lib/db.ts:329`), which
+  SQLite documents as requiring same-host storage; Fly's volume is local NVMe,
+  whereas Railway and Render publish no locking guarantees and Hetzner advises
+  against databases on its network volumes. Nothing was deployed and no account
+  was created: provisioning the machine needs the operator's own credentials.

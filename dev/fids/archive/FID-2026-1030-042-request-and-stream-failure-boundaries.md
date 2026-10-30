@@ -3,7 +3,9 @@
 **Filename:** `FID-2026-1030-042-request-and-stream-failure-boundaries.md`
 **ID:** FID-2026-1030-042
 **Severity:** high
-**Status:** verified
+**Status:** closed
+**Closed Against:** `ca7710e` (shared root guard and benchmark route: `50758c1`)
+**Archived:** 2026-10-30
 **Created:** 2026-10-30
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — reuse HTTP helpers, existing transactional store
@@ -124,7 +126,8 @@ and secret-free diagnostics against the regression assertions.
 
 ## Resolution
 
-Implemented and verified; awaiting its implementation SHA for closure. No
+All five steps implemented, verified and committed as `ca7710e` with shared
+guard/benchmark validation in `50758c1`; closed and archived 2026-10-30. No
 durable-recovery service or live-service acceptance is claimed.
 
 ## Lessons Learned

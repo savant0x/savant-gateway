@@ -81,8 +81,9 @@ regression/production changes. RED HTTP run failed with null roots 500 and
 acknowledgement, which was corrected and regression-tested before final gates.
 Static gates plus manual source/FID/test-contract review provide the double audit.
 
-FID-041/042 close only after their actual implementation commits; closure and
-archive metadata land in the subsequent records commit. Earlier 020–029 and
+FID-041 closes against records implementation `7be3d86`; FID-042 closes against
+`ca7710e` with shared guard/benchmark validation in `50758c1`. Both are archived
+in the subsequent closure commit. Earlier 020–029 and
 033–040 archival is logged here; no closed FID belongs in the active directory.
 
 Next review boundary in the launch plan: aggregate provider admission across
@@ -91,3 +92,7 @@ that deeper review; it does not certify the entire review map. Standing
 funding/Stripe/offer decisions and production approval boundaries are unchanged.
 Two inherited research documents remain unstaged and preserved; they were not
 silently published with code. No database or secret file was staged.
+
+Final documentation navigation check: 19 local Markdown link targets PASS.
+Normal main push follows under the governing contract's standing authority;
+the pre-push hook reruns all mandatory gates. Release/deployment remains unperformed.

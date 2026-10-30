@@ -1688,3 +1688,39 @@ remains the only data layer, and the Vercel deployment still fails closed on
   whereas Railway and Render publish no locking guarantees and Hetzner advises
   against databases on its network volumes. Nothing was deployed and no account
   was created: provisioning the machine needs the operator's own credentials.
+
+## Current Session — 2026-10-30 (free-path capacity refresh: 069)
+
+Operator request: fix the free-path outage — refresh provider capacity before
+admission when the observation is stale, add the fallback ceiling, and prove it
+with a test that a request after 60 s of idleness still succeeds.
+
+This was found by the first real call through our own gateway, not by the gate:
+that call answered in 3.8 s warm and then `503` in 8 ms after any quiet period.
+
+- [x] **E1 — The outage (FID-069).** `rpm` reads as `null` once the provider
+  observation is older than 30 s, admission passed that `null` straight through,
+  and the fallback ceiling was unconfigured, so the guard refused a call it could
+  have checked. Admission now calls `ensureProviderObservation`, which refreshes
+  exactly once when the stored reading has expired and returns the re-read
+  status; a failed refresh is still a refusal, so "unknown is never unlimited"
+  keeps its meaning. Concurrent refreshes coalesce on the existing 25 s runtime
+  lease, and the refresh stays behind rate limiting.
+- [x] **E2 — The fallback.** `PROVIDER_SHARED_RPM=15` is now set in `.env.local`
+  (untracked) as the documented conservative ceiling for the case where nothing
+  was observed; a current upstream reading always wins.
+- [x] **E3 — Why the gate missed it for two FIDs.** `scripts/http-suite.mjs`
+  pinned `PROVIDER_SHARED_RPM: "9000"`, so the suite carried the fallback that
+  production did not — it tested the harness. The pin is gone, and the fixture
+  provider now declares `supports_balance = 1` because the mock upstream answers
+  `/balance` with its own rpm; without that, removing the pin broke the paid call
+  instead, which is how the fixture's false claim surfaced.
+- [x] **E4 — Verification.** RED with the pre-fix behaviour restored: exit 1,
+  `a request after 60s of idleness still succeeds — expected 200, got 503`.
+  GREEN: exit 0, 463 checks, and the check also asserts that the request itself
+  caused an account check. Gates: lint, typecheck, quality (295 files), test
+  (321 pass), build, config:check and the http suite all exit 0.
+- [ ] **E5 — Unverified.** Nothing here was exercised against the live upstream
+  account: the suite uses the mock, so the real 15 rpm fallback and the real
+  provider's `/balance` cadence under load remain unmeasured until the next live
+  call pass.

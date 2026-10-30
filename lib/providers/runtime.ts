@@ -3,12 +3,18 @@ import "server-only";
 import type { ProviderRecord } from "./types";
 import type { ProviderBalance, ProviderSubscription } from "../provider-quota";
 
+import { quotaIsCurrent } from "../provider-quota";
+
 import { randomUUID } from "node:crypto";
 
 import { db } from "../db";
 import { claimRuntimeLease, completeRuntimeCheck } from "../quota-ledger";
 import { redactSecrets } from "../redaction";
-import { getProvider, listProviderRecords } from "../store/providers";
+import {
+  getProvider,
+  getProviderStatusBySlug,
+  listProviderRecords,
+} from "../store/providers";
 
 import { providerKeyConfigured } from "./registry";
 import { fetchProviderBalance, fetchProviderSubscription } from "./request";
@@ -102,6 +108,41 @@ export async function refreshProviderRuntime(
   } finally {
     if (pending.get(slug) === task) pending.delete(slug);
   }
+}
+
+/**
+ * A current observation, refreshing once when the stored one has expired.
+ *
+ * The stored reading is reported as current for only `QUOTA_MAX_AGE_MS`, and
+ * past that every counter reads as null because an expired observation is not
+ * evidence. Callers that must trust a counter therefore cannot just read the
+ * row: a request path that only reads it refuses for as long as nobody happens
+ * to open an operator page. Refreshing here makes idleness cost one upstream
+ * check instead of an outage.
+ *
+ * A failed check is deliberately not an error: the caller re-reads the status
+ * and still sees null, which stays a refusal rather than a guess.
+ */
+export async function ensureProviderObservation(slug: string) {
+  const status = getProviderStatusBySlug(slug);
+
+  if (
+    quotaIsCurrent({
+      quota: status.quota,
+      subscriptionMode: status.subscriptionMode,
+      subscriptionExpiresAt: status.subscriptionExpiresAt,
+    })
+  ) {
+    return status;
+  }
+
+  try {
+    await refreshProviderRuntime(slug);
+  } catch {
+    // Left stale on purpose; the returned status reports the truth.
+  }
+
+  return getProviderStatusBySlug(slug);
 }
 
 export async function refreshEnabledProviderAccounts() {

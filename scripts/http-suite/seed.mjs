@@ -1,5 +1,10 @@
 const PROVIDER_KEY_ENV = "HTTP_SUITE_PROVIDER_KEY";
 
+// `supports_balance` is on because the mock upstream answers `/balance` with its
+// own rpm, exactly as a real provider account does. The suite therefore runs
+// without a configured fallback ceiling, so a call can only be admitted on a
+// current observation — which is what makes a stale-observation regression
+// visible instead of being covered by PROVIDER_SHARED_RPM.
 export function seedCatalog(database, { mockBaseUrl }) {
   const now = new Date().toISOString();
 
@@ -10,7 +15,7 @@ export function seedCatalog(database, { mockBaseUrl }) {
          supports_balance, supports_subscription, supports_pricing,
          enabled, sort_order, status, created_at, updated_at)
        VALUES ('mock', 'HTTP Suite Mock', 'openai', ?, ?, '{}',
-         0, 0, 0, 1, 0, 'active', ?, ?)`,
+         1, 0, 0, 1, 0, 'active', ?, ?)`,
     )
     .run(mockBaseUrl, PROVIDER_KEY_ENV, now, now);
 

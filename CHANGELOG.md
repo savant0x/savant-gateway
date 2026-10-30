@@ -3,6 +3,34 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-30 — The free path no longer dies on idleness
+
+- **FID-2026-1030-069 — critical — every free request after thirty seconds of
+  silence was answered `503`, and the path never recovered without a human.**
+  Found by the first real call through the gateway: 200 in 3.8 s warm, then `503`
+  in 8 ms after 40 s and 70 s idle. The mechanism is a chain of three correct
+  pieces: a provider observation expires after 30 s, an expired counter reads as
+  `null` rather than as evidence, and `null` fell back to a `PROVIDER_SHARED_RPM`
+  that was not configured — so admission refused a call it could have checked.
+  Nothing on the request path refreshed the observation; only operator pages did.
+  Admission now calls `ensureProviderObservation`, which refreshes once when the
+  stored reading has expired and returns the re-read status; a *failed* refresh
+  still refuses, so "unknown capacity is never unlimited" keeps its meaning, and
+  concurrent refreshes coalesce on the existing 25 s runtime lease. The
+  documented fallback is now set (`PROVIDER_SHARED_RPM=15`, untracked
+  `.env.local`). **The gate had been green on this since FID-048 for an
+  instructive reason:** `scripts/http-suite.mjs` pinned `PROVIDER_SHARED_RPM`,
+  so the suite carried the fallback production lacked, and the fixture provider
+  declared `supports_balance = 0` while the mock upstream answered `/balance`
+  all along. Both were corrected, which is why the new check is able to fail.
+  Verified RED→GREEN: with the pre-fix behaviour restored the suite exits 1 on
+  `a request after 60s of idleness still succeeds — expected 200, got 503`; with
+  the fix it exits 0 with **463 checks passing**, including that the request
+  itself triggered the account check (the row is backdated 60 s rather than slept
+  through). Gates: `lint`, `typecheck`, `test` (321), `quality` (295 files),
+  `build`, `config:check` and the http suite all exit 0. Not exercised against
+  the live provider account — the suite uses the mock.
+
 ## 2026-10-30 — Operator banner replaces the placeholder
 
 - **Asset change — the operator's own banner is now the README hero.** The

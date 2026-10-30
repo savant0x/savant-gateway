@@ -255,6 +255,22 @@ export async function runQuotaChecks(context) {
     mock.state.balance.rpm = 9000;
     checkEqual("the restored ceiling is observed again", (await read()).status, 200);
     checkEqual("capacity recovers from the refreshed ceiling", (await chat()).status, 200);
+
+    // FID-069: idleness must not disable admission. The stored observation is
+    // only current for thirty seconds, and nothing refreshed it on the request
+    // path, so a quiet period answered the next call with "capacity unknown"
+    // until an operator page happened to refresh it. Backdating the row gives
+    // the same condition as sixty seconds of silence without sleeping.
+    const stale = new Date(Date.now() - 60_000).toISOString();
+
+    db.prepare(`UPDATE providers SET quota_observed_at = ?, balance_observed_at = ?
+      WHERE slug = 'savant'`).run(stale, stale);
+    const checksBeforeIdle = mock.state.accountChecks;
+    const revived = await chat();
+
+    checkEqual("a request after 60s of idleness still succeeds", revived.status, 200);
+    check("the request refreshed the stale observation itself",
+      mock.state.accountChecks > checksBeforeIdle);
   } finally {
     mock.state.balance.rpm = 9000;
     mock.state.quotaFailure = false;

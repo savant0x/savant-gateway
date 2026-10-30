@@ -35,10 +35,10 @@ import {
 } from "./http";
 import { callProvider } from "./providers";
 import { readProviderError } from "./providers/request";
+import { ensureProviderObservation } from "./providers/runtime";
 import {
   authenticateApiKey,
   getProvider,
-  getProviderStatusBySlug,
   resolveSubscriptionAccess,
   type FreePoolReservation,
 } from "./store";
@@ -143,9 +143,15 @@ export async function handleChatCompletions(request: Request) {
   // before the subscription, free-pool or credit reservation below, so a
   // provider refusal never strands a financial or allowance hold. The release
   // is idempotent and the streaming path takes ownership of it.
+  //
+  // The ceiling comes from the stored observation, which expires after thirty
+  // seconds. Reading it without refreshing meant any quiet period answered the
+  // next request with "capacity unknown" until an operator page refreshed it,
+  // so ask upstream once when it has expired (FID-069).
+  const status = await ensureProviderObservation(model.upstreamSlug);
   const admission = beginProviderAdmission({
     provider,
-    observedRpm: getProviderStatusBySlug(model.upstreamSlug).rpm,
+    observedRpm: status.rpm,
   });
 
   if (admission.refused) return providerAdmissionError(admission.refused);

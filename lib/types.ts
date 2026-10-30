@@ -92,6 +92,10 @@ export type UsageSummary = {
   outputTokens: number;
   weightedTokens: number;
   chargedMicros: number;
+  cachedInputTokens: number | null;
+  cacheWriteInputTokens: number | null;
+  reasoningOutputTokens: number | null;
+  usageSource: string | null;
   status: string;
   latencyMs: number;
   error: string | null;

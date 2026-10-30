@@ -11,11 +11,9 @@ import { computeTokenCostMicros } from "./pricing";
 import { redactSecrets } from "./redaction";
 import { subscriptionWeightedTokens } from "./plans";
 import { recordUsage } from "./store/usage";
+import { estimatedUsage, usageSource, type ResolvedUsage } from "./usage";
 
-export type TokenUsage = {
-  inputTokens: number;
-  outputTokens: number;
-};
+export { estimatedUsage };
 
 export type SubscriptionCallContext =
   | {
@@ -43,31 +41,6 @@ export type GatewayCallContext = {
   /** Serving-account concurrency slot; idempotent, called on every exit. */
   releaseAdmission?: (() => void) | null;
 };
-
-function toTokenCount(value: unknown) {
-  const parsed = Number(value);
-
-  return Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : 0;
-}
-
-export function readUsage(value: unknown): TokenUsage | null {
-  if (!value || typeof value !== "object") return null;
-
-  const usage = (value as Record<string, unknown>).usage;
-
-  if (!usage || typeof usage !== "object") return null;
-
-  const record = usage as Record<string, unknown>;
-  const promptRaw = record.prompt_tokens ?? record.input_tokens;
-  const completionRaw = record.completion_tokens ?? record.output_tokens;
-
-  if (promptRaw == null && completionRaw == null) return null;
-
-  return {
-    inputTokens: toTokenCount(promptRaw),
-    outputTokens: toTokenCount(completionRaw),
-  };
-}
 
 function contentText(content: unknown) {
   if (typeof content === "string") return content;
@@ -149,7 +122,7 @@ export function usagePrices(
 
 export function settleCall(
   context: GatewayCallContext,
-  usage: TokenUsage,
+  usage: ResolvedUsage,
   status: "ok" | "error" | "cancelled",
   options: { error?: string | null; estimated?: boolean } = {},
 ) {
@@ -172,6 +145,11 @@ export function settleCall(
       : context.model.billingMode === "free"
         ? ("free" as const)
         : ("credit" as const);
+  // A failed call with no provider counts has no usage to label. A successful
+  // call without them is an estimate, and says so.
+  const source = status === "ok" || usage.reported ? usageSource(usage) : null;
+  const estimated =
+    options.estimated ?? (source === "partial" || source === "estimated");
 
   return recordUsage({
     auth: context.auth,
@@ -187,7 +165,11 @@ export function settleCall(
     chargedMicros:
       context.subscription?.kind === "included" ? 0 : prices.chargedMicros,
     costMicros: prices.costMicros,
-    estimated: options.estimated ?? false,
+    estimated,
+    cachedInputTokens: usage.cachedInputTokens,
+    cacheWriteInputTokens: usage.cacheWriteInputTokens,
+    reasoningOutputTokens: usage.reasoningOutputTokens,
+    usageSource: source,
     hold: context.hold,
     freeReservation: context.freeReservation,
     subscriptionHold:
@@ -201,6 +183,6 @@ export function settleCall(
   });
 }
 
-export function hasUsage(value: TokenUsage | null): value is TokenUsage {
+export function hasUsage(value: ResolvedUsage | null): value is ResolvedUsage {
   return value !== null;
 }

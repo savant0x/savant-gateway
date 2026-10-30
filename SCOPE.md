@@ -2,6 +2,32 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-30 (usage fidelity: 050)
+
+Handoff continuation in dependency order after 048. Automation level 3, strict,
+single agent. Rates, cached-token pricing and wallet equivalence remain 044/062
+obligations; this pass fixes measured parsing, provenance and settlement truth.
+
+- [x] **U1 — Re-audit 050 against current source.** Automation level 3. Measured:
+  the Anthropic translator fabricated zero counters and dropped cache tokens;
+  the gateway zeroed a missing half of usage; the stream kept only the last
+  usage frame; `usage_events` stored no components or provenance. Convergence
+  recorded in the FID before code.
+- [x] **U2 — Implement the usage contract.** Automation level 3. One parser
+  (`lib/usage.ts`) owns totals/subsets/completeness; settlement stores cached,
+  cache-write and reasoning counts plus `usage_source`; Anthropic totals include
+  cache input once; streams merge frames; JSON and SSE share the resolver.
+- [x] **U3 — Verification.** Automation level 3. `npm run verify` exit 0:
+  259 unit tests (nine new fidelity cases), quality PASS (252 files), clean
+  lint/typecheck/build, 251 HTTP checks and the trial suite PASS. FID-050
+  `verified`; archive and CHANGELOG in the closure commit.
+
+Findings owned in this pass: `lib/types.ts` reached 402 lines under the 400-line
+ceiling after the provenance fields were added; the redundant comments were
+removed rather than raising the limit. Remaining acceptance, not claimed: cached
+rate discounts (044), provider-wallet equivalence (062), and HTTP-level assertion
+of stored provenance per request.
+
 ## Current Session — 2026-10-30 (aggregate provider admission: 048)
 
 Handoff continuation from `2026-10-30-provider-account-handoff.md`, which named

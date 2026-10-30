@@ -13,6 +13,7 @@ import { modelGroupSchema } from "./schema/groups";
 import { providerSchema } from "./schema/providers";
 import { subscriptionSchema } from "./schema/subscriptions";
 import { trialSchema } from "./schema/trials";
+import { usageFidelitySchema } from "./schema/usage";
 
 const configuredDbPath = process.env.DB_PATH?.trim();
 
@@ -334,6 +335,7 @@ function createDb() {
   subscriptionSchema(database);
   trialSchema(database);
   benchmarkSchema(database);
+  usageFidelitySchema(database);
   normalizeLegacyFamilies(database);
   seed(database);
 

@@ -3,12 +3,17 @@ import "server-only";
 import { CORS_HEADERS, jsonError } from "./http";
 import { estimateTokensFromChars } from "./pricing";
 import {
+  estimatedUsage,
   type GatewayCallContext,
-  readUsage,
   settleCall,
   streamDeltaChars,
-  type TokenUsage,
 } from "./gateway-settle";
+import {
+  mergeProviderUsage,
+  readProviderUsage,
+  resolveUsage,
+  type ProviderUsage,
+} from "./usage";
 
 export function streamCompletion(
   upstream: Response,
@@ -17,7 +22,7 @@ export function streamCompletion(
   const reader = upstream.body?.getReader();
 
   if (!reader) {
-    settleCall(context, { inputTokens: 0, outputTokens: 0 }, "error", {
+    settleCall(context, estimatedUsage(0, 0), "error", {
       error: "Provider returned an empty stream",
     });
     context.releaseAdmission?.();
@@ -32,7 +37,7 @@ export function streamCompletion(
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
   let buffer = "";
-  let usage: TokenUsage | null = null;
+  let usage: ProviderUsage | null = null;
   let outputChars = 0;
   let settled = false;
   let terminalLine: string | null = null;
@@ -40,9 +45,11 @@ export function streamCompletion(
   const finish = (status: "ok" | "error" | "cancelled", error?: string) => {
     if (settled) return;
 
-    const inputTokens = usage?.inputTokens ?? context.promptTokens;
-    const outputTokens =
-      usage?.outputTokens ?? estimateTokensFromChars(outputChars);
+    const resolved = resolveUsage({
+      usage,
+      fallbackInputTokens: context.promptTokens,
+      fallbackOutputTokens: estimateTokensFromChars(outputChars),
+    });
 
     // One attempt per response. A failed transaction retains its reservation
     // for reconciliation; retrying here could hide a failed accounting write.
@@ -51,12 +58,7 @@ export function streamCompletion(
     const releaseAdmission = context.releaseAdmission;
 
     try {
-      settleCall(
-        context,
-        { inputTokens, outputTokens },
-        status,
-        error ? { error, estimated: !usage } : { estimated: !usage },
-      );
+      settleCall(context, resolved, status, error ? { error } : {});
     } catch {
       // Fixed text and reservation identifiers only: upstream exceptions can
       // contain credentials, headers or customer content.
@@ -95,10 +97,10 @@ export function streamCompletion(
 
     try {
       const parsed = JSON.parse(payload) as unknown;
-      const next = readUsage(parsed);
 
-      if (next) usage = next;
-
+      // Usage can arrive split across frames; merging keeps a later frame that
+      // carries one component from erasing the other.
+      usage = mergeProviderUsage(usage, readProviderUsage(parsed));
       outputChars += streamDeltaChars(parsed);
     } catch {
       // Keep forwarding malformed provider chunks; only accounting is best-effort.

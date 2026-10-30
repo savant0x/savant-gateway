@@ -36,6 +36,11 @@ export type UsageSettlement = {
   subscriptionPeriodId?: string | null;
   includedWeightedTokens?: number;
   billingSource?: "free" | "subscription" | "credit";
+  /** Provider-reported subsets; null means the provider did not report it. */
+  cachedInputTokens?: number | null;
+  cacheWriteInputTokens?: number | null;
+  reasoningOutputTokens?: number | null;
+  usageSource?: "reported" | "partial" | "estimated" | null;
 };
 
 /**
@@ -60,6 +65,10 @@ export function recordUsage(input: UsageSettlement) {
     0,
     Math.floor(input.includedWeightedTokens ?? 0),
   );
+  const component = (value: number | null | undefined) =>
+    value === null || value === undefined
+      ? null
+      : Math.max(0, Math.floor(value));
   let subscriptionPeriodId = input.subscriptionPeriodId ?? null;
 
   db.transaction(() => {
@@ -152,8 +161,9 @@ export function recordUsage(input: UsageSettlement) {
          input_tokens, output_tokens, weighted_tokens, cost_micros,
          charged_micros, estimated, status, latency_ms, error, created_at,
          billing_source, subscription_id, subscription_period_id,
-         included_weighted_tokens)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         included_weighted_tokens, cached_input_tokens,
+         cache_write_input_tokens, reasoning_output_tokens, usage_source)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       `usage_${randomUUID()}`,
       input.auth.userId,
@@ -176,6 +186,10 @@ export function recordUsage(input: UsageSettlement) {
       input.subscriptionId ?? null,
       subscriptionPeriodId,
       includedWeightedTokens,
+      component(input.cachedInputTokens),
+      component(input.cacheWriteInputTokens),
+      component(input.reasoningOutputTokens),
+      input.usageSource ?? null,
     );
   }).immediate();
 
@@ -185,6 +199,8 @@ export function recordUsage(input: UsageSettlement) {
 const USAGE_COLUMNS = `
   u.id, u.model_id, m.name AS model_name, k.prefix AS key_prefix,
   u.input_tokens, u.output_tokens, u.weighted_tokens, u.charged_micros,
+  u.cached_input_tokens, u.cache_write_input_tokens,
+  u.reasoning_output_tokens, u.usage_source,
   u.cost_micros, u.status, u.latency_ms, u.error, u.created_at
 `;
 

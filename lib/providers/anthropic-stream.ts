@@ -1,10 +1,17 @@
-import { finishReason, record, type JsonRecord } from "./anthropic-shared.ts";
+import {
+  finishReason,
+  record,
+  tokenCount,
+  type JsonRecord,
+} from "./anthropic-shared.ts";
 
 type StreamState = {
   id: string;
   model: string;
-  inputTokens: number;
-  outputTokens: number;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  cacheReadInputTokens: number | null;
+  cacheWriteInputTokens: number | null;
   finish: string;
   started: boolean;
   finished: boolean;
@@ -25,14 +32,39 @@ export function anthropicStream(body: ReadableStream<Uint8Array>) {
   const state: StreamState = {
     id: `chatcmpl_${Date.now()}`,
     model: "",
-    inputTokens: 0,
-    outputTokens: 0,
+    inputTokens: null,
+    outputTokens: null,
+    cacheReadInputTokens: null,
+    cacheWriteInputTokens: null,
     finish: "stop",
     started: false,
     finished: false,
     tools: new Map(),
     nextTool: 0,
   };
+
+  /** Only components the provider actually reported survive normalization. */
+  function usageFrame() {
+    const usage: Record<string, unknown> = {};
+
+    if (state.inputTokens !== null) usage.prompt_tokens = state.inputTokens;
+    if (state.outputTokens !== null) {
+      usage.completion_tokens = state.outputTokens;
+    }
+    if (state.inputTokens !== null && state.outputTokens !== null) {
+      usage.total_tokens = state.inputTokens + state.outputTokens;
+    }
+    if (state.cacheReadInputTokens !== null) {
+      usage.prompt_tokens_details = {
+        cached_tokens: state.cacheReadInputTokens,
+      };
+    }
+    if (state.cacheWriteInputTokens !== null) {
+      usage.cache_creation_input_tokens = state.cacheWriteInputTokens;
+    }
+
+    return usage;
+  }
 
   function chunk(choices: unknown[], usage?: unknown) {
     return {
@@ -77,13 +109,7 @@ export function anthropicStream(body: ReadableStream<Uint8Array>) {
             undefined,
           ),
         );
-        send(
-          chunk([], {
-            prompt_tokens: state.inputTokens,
-            completion_tokens: state.outputTokens,
-            total_tokens: state.inputTokens + state.outputTokens,
-          }),
-        );
+        send(chunk([], usageFrame()));
         controller.enqueue(new TextEncoder().encode("data: [DONE]\n\n"));
       };
 
@@ -113,8 +139,16 @@ export function anthropicStream(body: ReadableStream<Uint8Array>) {
           state.model =
             typeof message.model === "string" ? message.model : state.model;
           const usage = record(message.usage);
+          const direct = tokenCount(usage?.input_tokens);
+          const cacheRead = tokenCount(usage?.cache_read_input_tokens);
+          const cacheWrite = tokenCount(usage?.cache_creation_input_tokens);
 
-          state.inputTokens = Number(usage?.input_tokens ?? 0);
+          state.cacheReadInputTokens = cacheRead;
+          state.cacheWriteInputTokens = cacheWrite;
+          state.inputTokens =
+            direct === null && cacheRead === null && cacheWrite === null
+              ? null
+              : (direct ?? 0) + (cacheRead ?? 0) + (cacheWrite ?? 0);
           start();
 
           return;
@@ -203,7 +237,8 @@ export function anthropicStream(body: ReadableStream<Uint8Array>) {
           const usage = record(event.usage);
 
           state.finish = finishReason(delta?.stop_reason);
-          state.outputTokens = Number(usage?.output_tokens ?? 0);
+          state.outputTokens =
+            tokenCount(usage?.output_tokens) ?? state.outputTokens;
 
           return;
         }

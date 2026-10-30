@@ -12,11 +12,12 @@ import {
 import { withContextBanner } from "./context-banner";
 import {
   completionText,
+  estimatedUsage,
   type GatewayCallContext,
-  readUsage,
   settleCall,
   type SubscriptionCallContext,
 } from "./gateway-settle";
+import { readProviderUsage, resolveUsage } from "./usage";
 import { checkCompletionRate } from "./gateway-rate-limit";
 import {
   beginProviderAdmission,
@@ -286,7 +287,7 @@ export async function handleChatCompletions(request: Request) {
         AbortSignal.timeout(streaming ? 300_000 : 120_000),
       );
     } catch (error) {
-      settleCall(context, { inputTokens: 0, outputTokens: 0 }, "error", {
+      settleCall(context, estimatedUsage(0, 0), "error", {
         error: error instanceof Error ? error.message : "Provider unreachable",
       });
 
@@ -296,7 +297,7 @@ export async function handleChatCompletions(request: Request) {
     if (!upstream.ok) {
       const message = await readProviderError(upstream);
 
-      settleCall(context, { inputTokens: 0, outputTokens: 0 }, "error", {
+      settleCall(context, estimatedUsage(0, 0), "error", {
         error: message,
       });
 
@@ -319,7 +320,7 @@ export async function handleChatCompletions(request: Request) {
     const data = await upstream.json().catch(() => null);
 
     if (!data) {
-      settleCall(context, { inputTokens: 0, outputTokens: 0 }, "error", {
+      settleCall(context, estimatedUsage(0, 0), "error", {
         error: "Provider returned invalid JSON",
       });
 
@@ -330,18 +331,13 @@ export async function handleChatCompletions(request: Request) {
       );
     }
 
-    const usage = readUsage(data);
-    const estimated = usage === null;
-    const inputTokens = usage?.inputTokens ?? promptTokens;
-    const outputTokens =
-      usage?.outputTokens ?? estimateTokensFromText(completionText(data));
+    const usage = resolveUsage({
+      usage: readProviderUsage(data),
+      fallbackInputTokens: promptTokens,
+      fallbackOutputTokens: estimateTokensFromText(completionText(data)),
+    });
 
-    settleCall(
-      context,
-      { inputTokens, outputTokens },
-      "ok",
-      estimated ? { estimated: true } : {},
-    );
+    settleCall(context, usage, "ok");
 
     return Response.json(data, { headers: CORS_HEADERS });
   } finally {

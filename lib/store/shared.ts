@@ -65,6 +65,10 @@ export type UsageRow = {
   output_tokens: number;
   weighted_tokens: number;
   charged_micros: number;
+  cached_input_tokens: number | null;
+  cache_write_input_tokens: number | null;
+  reasoning_output_tokens: number | null;
+  usage_source: string | null;
   cost_micros: number;
   status: string;
   latency_ms: number;
@@ -243,6 +247,10 @@ export function toUsageSummary(row: UsageRow): UsageSummary {
     outputTokens: row.output_tokens,
     weightedTokens: row.weighted_tokens,
     chargedMicros: row.charged_micros,
+    cachedInputTokens: row.cached_input_tokens,
+    cacheWriteInputTokens: row.cache_write_input_tokens,
+    reasoningOutputTokens: row.reasoning_output_tokens,
+    usageSource: row.usage_source,
     status: row.status,
     latencyMs: row.latency_ms,
     error: row.error,

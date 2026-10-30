@@ -4,7 +4,17 @@ import {
   intervalEndIso,
   readStripeSubscriptionSnapshot,
 } from "@/lib/plan-lifecycle";
-import { readStripeConfig, stripeClient } from "@/lib/stripe";
+import {
+  readStripeConfig,
+  readStripeExpectedLivemode,
+  stripeClient,
+} from "@/lib/stripe";
+import {
+  claimPaymentEvent,
+  completePaymentEvent,
+  failPaymentEvent,
+  quarantinePaymentEvent,
+} from "@/lib/payment-events";
 import {
   activateSubscription,
   attachStripeCheckout,
@@ -92,20 +102,6 @@ function invoicePeriod(
   return start && end ? { start, end } : null;
 }
 
-function claimEvent(id: string, type: string) {
-  const result = db
-    .prepare(
-      "INSERT OR IGNORE INTO billing_events (id, type, processed_at) VALUES (?, ?, ?)",
-    )
-    .run(id, type, nowIso());
-
-  return result.changes > 0;
-}
-
-function releaseEvent(id: string) {
-  db.prepare("DELETE FROM billing_events WHERE id = ?").run(id);
-}
-
 function topupFromSession(
   session: Stripe.Checkout.Session,
   event: Stripe.Event,
@@ -119,18 +115,17 @@ function topupFromSession(
     session.payment_status !== "paid" ||
     session.amount_total == null
   ) {
-    return false;
+    return "mismatch" as const;
   }
 
-  const result = fulfillTopup({
+  return fulfillTopup({
     topupId,
     providerRef: session.id,
     paidAt: new Date(event.created * 1000).toISOString(),
     expectedAmountMicros: session.amount_total * 10_000,
     expectedCurrency: session.currency ?? "usd",
+    expectedUserId: userId,
   });
-
-  return result === "paid";
 }
 
 async function handleEvent(event: Stripe.Event) {
@@ -141,7 +136,7 @@ async function handleEvent(event: Stripe.Event) {
     const session = event.data.object as Stripe.Checkout.Session;
 
     if (session.mode !== "subscription") {
-      return { credited: topupFromSession(session, event) };
+      return { topup: topupFromSession(session, event) };
     }
 
     const subscriptionId = session.metadata?.subscriptionId;
@@ -315,16 +310,58 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid signature." }, { status: 400 });
   }
 
-  if (!claimEvent(event.id, event.type)) {
-    return Response.json({ received: true, replay: true });
+  const claim = claimPaymentEvent(db, {
+    id: event.id,
+    type: event.type,
+    livemode: typeof event.livemode === "boolean" ? event.livemode : null,
+    expectedLivemode: readStripeExpectedLivemode(),
+    now: Date.now(),
+  });
+
+  if (!claim.ok) {
+    // A recent claim is in flight, a decided event is terminal, and a mode
+    // mismatch is quarantined: none of them may reach the financial writer.
+    return Response.json({
+      received: true,
+      replay: claim.reason !== "environment_mismatch",
+      state: claim.reason,
+    });
   }
 
   try {
     const result = await handleEvent(event);
+    const topup = "topup" in result ? result.topup : null;
 
-    return Response.json({ received: true, ...result });
+    if (topup === "mismatch" || topup === "missing") {
+      quarantinePaymentEvent(
+        db,
+        event.id,
+        `Checkout top-up ${topup}; no credit was issued.`,
+      );
+
+      return Response.json({
+        received: true,
+        credited: false,
+        quarantined: true,
+        topup,
+      });
+    }
+
+    completePaymentEvent(db, event.id, nowIso());
+
+    return Response.json({
+      received: true,
+      ...(topup === null ? {} : { credited: topup === "paid" }),
+      ...result,
+    });
   } catch (error) {
-    releaseEvent(event.id);
+    // Keep the claim with a failed state so an operator can see it and a
+    // Stripe retry can reclaim it; never delete the evidence.
+    failPaymentEvent(
+      db,
+      event.id,
+      error instanceof Error ? error.message : "unknown",
+    );
     // eslint-disable-next-line no-console
     console.error("Stripe webhook failed", {
       eventId: event.id,

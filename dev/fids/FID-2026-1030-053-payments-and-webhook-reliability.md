@@ -4,7 +4,7 @@
 **ID:** FID-2026-1030-053
 **Parent:** FID-2026-1030-043
 **Severity:** critical
-**Status:** converged
+**Status:** verified
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044, FID-2026-1030-047, FID-2026-1030-052
@@ -77,6 +77,86 @@ recoverable payment effects, approved risk controls and real delivery evidence.
 AUDIT: pending. ADVERSARIAL: an acknowledged event cannot be lost between dedupe
 and credit. Five questions: all event orders, bounded replay, hostile signatures,
 one fulfillment authority and auditable payment-to-ledger mapping.
+
+## Re-audit and convergence (2026-10-30, post-052)
+
+RED (measured in source):
+
+- `claimEvent` inserts a `billing_events` row and the handler deletes it only in
+  a caught exception. A process death after the claim and before the financial
+  effect leaves a `processed_at` row that suppresses the event forever, while
+  the payment is uncredited.
+- The claim records no state, attempt count or failure reason, and events carry
+  no mode binding, so a fixture/test-mode delivery could reach a live account.
+- `fulfillTopup` verifies amount and currency but not that the session's
+  metadata user owns the pending top-up.
+- No operator view of failed, stale or quarantined payment events exists.
+
+GREEN (documented before code):
+
+1. `billing_events` becomes a state machine: `claimed → processed | failed |
+   quarantined`, with attempts, claim time, livemode and last error. A stale
+   claim (older than the grace window) or a failed row is reclaimable; a recent
+   claim is in-flight; processed and quarantined rows are terminal.
+2. The financial effect stays atomic in `fulfillTopup`; the event state is
+   updated around it. A duplicate delivery is answered as a replay and never
+   reaches the writer twice.
+3. Environment binding is explicit: `STRIPE_EXPECTED_LIVEMODE` (when set)
+   quarantines a mismatched delivery without crediting. Unset means the mode is
+   recorded but not enforced, and that limitation is stated.
+4. `fulfillTopup` requires the metadata user to own the pending top-up and
+   distinguishes a mismatch (quarantine) from a missing row.
+5. An authenticated admin view lists event state, failed/stale claims and
+   pending top-ups. Replay still requires a signed Stripe delivery.
+
+AUDIT: the route is the only caller of the event transitions; `fulfillTopup`
+remains the single financial writer and runs inside one transaction.
+
+ADVERSARIAL: crash after claim, duplicate delivery, reordered retry, forged
+metadata ownership, mode mismatch and a failed handler must each leave at most
+one credit and a visible state.
+
+## Implementation
+
+| Responsibility | File |
+| --- | --- |
+| Event state machine with attempts, mode and failure reason | `lib/payment-events.ts` |
+| Durable event columns | `lib/schema/payments.ts`, `lib/db.ts` |
+| Declared payment environment | `lib/stripe.ts` (`STRIPE_EXPECTED_LIVEMODE`) |
+| Claim/complete/fail/quarantine around the atomic writer | `app/api/webhooks/stripe/route.ts` |
+| Ownership check and mismatch result | `lib/store/topups.ts` |
+| Operator visibility | `app/api/admin/payments/route.ts` |
+| Independent expectations | `tests/payment-events.test.mjs` |
+| Route reachability | `scripts/http-suite/quota-checks.mjs` |
+
+## Verification
+
+`npm run verify` exit 0 on 2026-10-30:
+
+```text
+lint: zero warnings
+typecheck: exit 0
+tests 280 / pass 280 / fail 0
+quality: PASS (400-line ceiling, 265 files scanned)
+production build: clean
+http-suite: 262 checks PASS
+trial-http-suite: all checks PASS
+```
+
+The eight new cases cover: one claim with in-flight duplicates, stale-claim
+retry after a crash, terminal processed, failed-then-immediate-retry with the
+reason cleared, terminal quarantine, mode mismatch quarantined before any
+claim, an undeclared mode recorded but not enforced, and the operator listing
+showing state and attempts. Existing signed-event HTTP checks still pass with
+their credited/replay shapes, and the admin payments view returns durable state.
+
+Evidence limits: no real Stripe Checkout, delivery, duplicate delivery or
+refund was observed — that needs operator credentials, a public HTTPS endpoint
+and 062 acceptance. Mode enforcement applies only when `STRIPE_EXPECTED_LIVEMODE`
+is set and is unset in the test suites. Pending top-ups are visible but not
+automatically expired, and re-delivery remains a signed Stripe action rather
+than an in-app replay. Fixture events remain distinguishable from live ones only
+through the declared environment.
 
 ## Resolution
 

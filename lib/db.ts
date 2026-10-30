@@ -13,6 +13,7 @@ import { modelGroupSchema } from "./schema/groups";
 import { providerSchema } from "./schema/providers";
 import { subscriptionSchema } from "./schema/subscriptions";
 import { creditAdjustmentSchema } from "./schema/credits";
+import { paymentEventSchema } from "./schema/payments";
 import { settlementSchema } from "./schema/settlements";
 import { trialSchema } from "./schema/trials";
 import { usageFidelitySchema } from "./schema/usage";
@@ -340,6 +341,7 @@ function createDb() {
   usageFidelitySchema(database);
   settlementSchema(database);
   creditAdjustmentSchema(database);
+  paymentEventSchema(database);
   normalizeLegacyFamilies(database);
   seed(database);
 

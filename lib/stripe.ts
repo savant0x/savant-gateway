@@ -43,6 +43,21 @@ export function readStripeConfig(env: Env = process.env): StripeConfig {
   return { configured: true, secretKey, webhookSecret, reason: null };
 }
 
+/**
+ * Declared payment environment. `null` means not configured: the event mode is
+ * recorded but not enforced, which is a stated limitation rather than consent.
+ */
+export function readStripeExpectedLivemode(
+  env: Env = process.env,
+): boolean | null {
+  const raw = env.STRIPE_EXPECTED_LIVEMODE?.trim().toLowerCase();
+
+  if (raw === "true" || raw === "1" || raw === "live") return true;
+  if (raw === "false" || raw === "0" || raw === "test") return false;
+
+  return null;
+}
+
 let cached: { secretKey: string; client: Stripe } | null = null;
 
 export function stripeClient(secretKey: string) {

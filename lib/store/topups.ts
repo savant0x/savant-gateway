@@ -94,7 +94,7 @@ export function markTopupFailed(topupId: string) {
   return result.changes > 0;
 }
 
-export type FulfillResult = "paid" | "already_paid" | "missing";
+export type FulfillResult = "paid" | "already_paid" | "missing" | "mismatch";
 
 /**
  * Credits a customer exactly once for a paid checkout. The status transition
@@ -107,6 +107,8 @@ export function fulfillTopup(input: {
   paidAt?: string;
   expectedAmountMicros?: number;
   expectedCurrency?: string;
+  /** Metadata user; the top-up must belong to this customer. */
+  expectedUserId?: string;
 }): FulfillResult {
   return db
     .transaction((): FulfillResult => {
@@ -127,28 +129,35 @@ export function fulfillTopup(input: {
 
       if (!row) return "missing";
       if (row.status === "paid") return "already_paid";
-      if (row.status !== "pending") return "missing";
-      if (row.amount_micros <= 0) return "missing";
+      if (row.status !== "pending") return "mismatch";
+      if (row.amount_micros <= 0) return "mismatch";
 
       if (
         input.expectedAmountMicros !== undefined &&
         input.expectedAmountMicros !== row.amount_micros
       ) {
-        return "missing";
+        return "mismatch";
       }
 
       if (
         input.expectedCurrency !== undefined &&
         input.expectedCurrency.toLowerCase() !== row.currency.toLowerCase()
       ) {
-        return "missing";
+        return "mismatch";
+      }
+
+      if (
+        input.expectedUserId !== undefined &&
+        input.expectedUserId !== row.user_id
+      ) {
+        return "mismatch";
       }
 
       const conflicting = db
         .prepare("SELECT id FROM topups WHERE provider_ref = ? AND id <> ?")
         .get(input.providerRef, input.topupId) as { id: string } | undefined;
 
-      if (conflicting) return "missing";
+      if (conflicting) return "mismatch";
 
       const paidAt = input.paidAt ?? nowIso();
       const balance = db

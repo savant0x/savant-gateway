@@ -209,6 +209,14 @@ export async function runQuotaChecks(context) {
       { method: "POST", cookie, body: { id: "missing-quarantine" } },
     )).status, 404);
 
+    // FID-053: durable payment delivery state is observable.
+    const payments = await request(baseUrl, "/api/admin/payments", { cookie });
+
+    checkEqual("operator can inspect payment delivery", payments.status, 200);
+    check("payment events carry durable state", payments.json.events.every(
+      (event) => typeof event.status === "string",
+    ));
+
     // FID-052: audited, idempotent corrections and reconciliation read model.
     const reconciliation = await request(baseUrl, "/api/admin/reconciliation", { cookie });
 

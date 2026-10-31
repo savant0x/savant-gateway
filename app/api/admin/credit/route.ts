@@ -1,6 +1,7 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
 import { sanitizeError } from "@/lib/http";
 import { readPriceInput } from "@/lib/pricing";
+import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 import {
   findCustomerById,
   getAccountSummary,
@@ -33,9 +34,9 @@ export async function POST(request: Request) {
   let body: { amountUsd?: unknown; note?: unknown; userId?: unknown };
 
   try {
-    body = (await request.json()) as typeof body;
-  } catch {
-    return adminError(400, "Invalid JSON body.");
+    body = await readJsonObject(request);
+  } catch (error) {
+    return requestBodyError(error);
   }
 
   const amountMicros = readPriceInput(body.amountUsd);

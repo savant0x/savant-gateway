@@ -7,6 +7,7 @@ import { topupLimiter } from "@/lib/customer-rate-limit";
 import { resolveAppOrigin, readStripeConfig, stripeClient } from "@/lib/stripe";
 import { createTopup, markTopupFailed, setTopupProviderRef } from "@/lib/store";
 import { parseTopupAmount } from "@/lib/topup-amount";
+import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,9 +47,9 @@ export async function POST(request: Request) {
   let body: { amountUsd?: unknown };
 
   try {
-    body = (await request.json()) as typeof body;
-  } catch {
-    return customerError(400, "Invalid JSON body.");
+    body = await readJsonObject(request);
+  } catch (error) {
+    return requestBodyError(error);
   }
 
   const amount = parseTopupAmount(body.amountUsd);

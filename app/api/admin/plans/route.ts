@@ -1,5 +1,6 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
 import { createPlan, deletePlan, listPlans, updatePlan } from "@/lib/store";
+import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,9 +21,9 @@ export async function POST(request: Request) {
   let body: unknown;
 
   try {
-    body = await request.json();
-  } catch {
-    return adminError(400, "Invalid JSON body.");
+    body = await readJsonObject(request);
+  } catch (error) {
+    return requestBodyError(error);
   }
 
   const result = createPlan(body);
@@ -40,9 +41,9 @@ export async function PATCH(request: Request) {
   let body: { id?: unknown };
 
   try {
-    body = (await request.json()) as typeof body;
-  } catch {
-    return adminError(400, "Invalid JSON body.");
+    body = await readJsonObject(request);
+  } catch (error) {
+    return requestBodyError(error);
   }
 
   const id = typeof body.id === "string" ? body.id.trim() : "";
@@ -64,9 +65,9 @@ export async function DELETE(request: Request) {
   let body: { id?: unknown };
 
   try {
-    body = (await request.json()) as typeof body;
-  } catch {
-    return adminError(400, "Invalid JSON body.");
+    body = await readJsonObject(request);
+  } catch (error) {
+    return requestBodyError(error);
   }
 
   const id = typeof body.id === "string" ? body.id.trim() : "";

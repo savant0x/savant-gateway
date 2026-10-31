@@ -1,5 +1,6 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
 import { CONTEXT_BANNER_MAX_CHARS } from "@/lib/context-banner";
+import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 import {
   getAllocationSummary,
   saveAllocationConfig,
@@ -44,9 +45,9 @@ export async function PATCH(request: Request) {
   let body: JsonRecord;
 
   try {
-    body = record(await request.json()) ?? {};
-  } catch {
-    return adminError(400, "Invalid JSON body.");
+    body = await readJsonObject(request);
+  } catch (error) {
+    return requestBodyError(error);
   }
 
   const banner = body.banner === undefined ? null : record(body.banner);

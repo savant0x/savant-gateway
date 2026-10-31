@@ -55,11 +55,33 @@ export function createCustomerApiKey(userId: string, name: string) {
   const keyId = `key_${randomUUID()}`;
   const createdAt = nowIso();
 
-  db.prepare(
-    `INSERT INTO api_keys
+  const inserted = db
+    .transaction(() => {
+      const counts = db
+        .prepare(
+          `SELECT SUM(status = 'active') AS active,
+              SUM(datetime(created_at) > datetime(?, '-1 hour')) AS recent
+       FROM api_keys WHERE user_id = ?`,
+        )
+        .get(createdAt, userId) as {
+        active: number | null;
+        recent: number | null;
+      };
+
+      if ((counts.active ?? 0) >= 10 || (counts.recent ?? 0) >= 20)
+        return false;
+
+      db.prepare(
+        `INSERT INTO api_keys
       (id, user_id, name, prefix, secret_hash, status, created_at)
      VALUES (?, ?, ?, ?, ?, 'active', ?)`,
-  ).run(keyId, userId, keyName, prefix, secretHash, createdAt);
+      ).run(keyId, userId, keyName, prefix, secretHash, createdAt);
+
+      return true;
+    })
+    .immediate();
+
+  if (!inserted) return null;
 
   return {
     key: {

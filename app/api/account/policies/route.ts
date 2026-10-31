@@ -5,6 +5,7 @@ import {
 } from "@/lib/customer-auth";
 import { POLICY_VERSION } from "@/lib/legal";
 import { recordPolicyAcceptance } from "@/lib/store";
+import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,9 +23,9 @@ export async function POST(request: Request) {
   let body: unknown;
 
   try {
-    body = await request.json();
-  } catch {
-    return customerError(400, "Invalid JSON body.");
+    body = await readJsonObject(request);
+  } catch (error) {
+    return requestBodyError(error);
   }
 
   const version =

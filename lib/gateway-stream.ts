@@ -2,6 +2,7 @@ import "server-only";
 
 import { CORS_HEADERS, jsonError } from "./http";
 import { estimateTokensFromChars } from "./pricing";
+import { MAX_STREAM_BYTES, MAX_STREAM_FRAME_BYTES } from "./request-limits";
 import {
   estimatedUsage,
   type GatewayCallContext,
@@ -41,6 +42,7 @@ export function streamCompletion(
   let outputChars = 0;
   let settled = false;
   let terminalLine: string | null = null;
+  let responseBytes = 0;
 
   const finish = (status: "ok" | "error" | "cancelled", error?: string) => {
     if (settled) return;
@@ -127,14 +129,31 @@ export function streamCompletion(
           if (settled) return;
           if (done) break;
 
+          responseBytes += value.byteLength;
+
+          if (responseBytes > MAX_STREAM_BYTES) {
+            throw new Error("Provider stream exceeded the response limit.");
+          }
+
           buffer += decoder.decode(value, { stream: true });
 
           let newline = buffer.indexOf("\n");
 
           while (newline >= 0) {
+            if (
+              encoder.encode(buffer.slice(0, newline)).byteLength >
+              MAX_STREAM_FRAME_BYTES
+            ) {
+              throw new Error("Provider stream frame exceeded the limit.");
+            }
+
             forwardLine(buffer.slice(0, newline));
             buffer = buffer.slice(newline + 1);
             newline = buffer.indexOf("\n");
+          }
+
+          if (encoder.encode(buffer).byteLength > MAX_STREAM_FRAME_BYTES) {
+            throw new Error("Provider stream frame exceeded the limit.");
           }
         }
 
@@ -151,6 +170,11 @@ export function streamCompletion(
 
         controller.close();
       } catch {
+        void reader.cancel().catch(() => {
+          // eslint-disable-next-line no-console
+          console.error("[gateway.stream] Upstream cancellation failed.");
+        });
+
         try {
           finish("error", "Provider stream interrupted.");
         } catch (error) {

@@ -2,6 +2,38 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-31 (complete active FIDs)
+
+Operator request: "we need to complete all open fids". Automation level 3,
+strict, single agent. Complete implementation and verification in dependency
+order, preserving existing operator work. External inputs and explicit launch,
+spend and messaging boundaries remain binding; no missing evidence is invented.
+
+- [ ] **C1 — FID-2026-1030-046:** bounded request parsing, account dispatch/key
+  limits, trusted client identity and regression coverage before reservation.
+- [ ] **C2 — FID-2026-1030-045:** single-use ownership/recovery tokens, delivery,
+  routes and customer interactions; transport/sender and inbox inputs requested.
+- [ ] **C3 — FID-2026-1030-049:** audit quota/reset/allocation coverage against
+  the committed 063/069 fixes and finish missing invariants.
+- [ ] **C4 — FID-2026-1030-059:** monitoring, protected incident controls and
+  alert transport; destination/authorized delivery inputs requested.
+- [ ] **C5 — FID-2026-1030-060:** bounded load/fault gate and reconciliation.
+- [ ] **C6 — FID-2026-1030-056, FID-2026-1030-057 and FID-2026-1030-061:**
+  verify committed implementations, complete remaining development checks and
+  preserve each hosted/payment/policy observation in the tracking ledger.
+- [ ] **C7 — FID-2026-1030-044 and FID-2026-1030-068:** commercial and USDC
+  implementation; chain/token, xpub, RPC and screening inputs requested.
+- [ ] **C8 — FID-2026-1030-066:** reconcile the retained port plan with the
+  recorded decision to keep one persistent SQLite host; ruling requested.
+- [ ] **C9 — FID-2026-1030-043 and FID-2026-1030-062:** complete master
+  evidence and real acceptance, retaining the explicit release boundary.
+
+Initial evidence: 13 files in `dev/fids/`; working tree has an existing edit to
+`docs/project-status.md` plus untracked research and attachments. Preserve them.
+First implementation impact (046): reject oversized/malformed/multi-completion
+requests before financial holds; account-level capacity must survive key churn;
+fail closed on untrusted forwarded headers; retain the single-process topology.
+
 ## Current Session — 2026-10-31 (database recovery: 058)
 
 Operator request: "resume master plan w/ automation level 3." Automation level 3,

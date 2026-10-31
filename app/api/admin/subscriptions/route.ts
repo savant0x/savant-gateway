@@ -1,4 +1,5 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
+import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 import {
   fetchStripeSubscription,
   cancelStripeSubscriptionNow,
@@ -41,9 +42,9 @@ export async function POST(request: Request) {
   let body: Record<string, unknown>;
 
   try {
-    body = (await request.json()) as Record<string, unknown>;
-  } catch {
-    return adminError(400, "Invalid JSON body.");
+    body = await readJsonObject(request);
+  } catch (error) {
+    return requestBodyError(error);
   }
 
   const action = stringField(body, "action");

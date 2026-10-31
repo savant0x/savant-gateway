@@ -35,7 +35,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
       {
         question: "How do I rotate or revoke a key?",
         answer:
-          "Create a second key on /account, move your traffic to it, then revoke the first. Revocation is immediate: requests using that key stop working. A secret cannot be recovered after creation, so a lost key is replaced, not reset. One account can hold several keys for separate projects.",
+          "Create a second key on /account, move your traffic to it, then revoke the first. Revocation is immediate: requests using that key stop working. A secret cannot be recovered after creation, so a lost key is replaced, not reset. An account may hold 10 active keys and create 20 keys per hour; revoking one does not reset the hourly issuance limit.",
         link: { href: "/account", label: "Manage your keys" },
       },
       {
@@ -154,7 +154,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
       {
         question: "Why did I get a 429?",
         answer:
-          "A rate limit is active. Free traffic shares one bucket across every key and is bounded below the upstream account ceiling; paid keys have separate buckets. Read the Retry-After header and wait before retrying. A busy shared free pool is a capacity signal, not a key problem.",
+          "A rate limit is active. Free traffic shares one bucket across every key and is bounded below the upstream account ceiling; paid traffic shares one bucket per account across its keys. Read the Retry-After header and wait before retrying. A busy shared free pool is a capacity signal, not a key problem.",
       },
       {
         question: "Why did I get a 502 or 503?",
@@ -174,7 +174,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
       {
         question: "What are the output-token limits?",
         answer:
-          "The gateway defaults max_tokens to 4,096 and rejects a budget above 65,536. max_completion_tokens takes precedence when both are present. The model's context window is informational; the provider still enforces its own limits and can return an upstream error.",
+          "The gateway defaults max_tokens to 4,096. Supplied max_tokens and max_completion_tokens must each be integers from 1 to 65,536; max_completion_tokens takes precedence when both are valid. Only n=1 is supported. Inference bodies are limited to 2 MiB, with at most 256 messages and 128 tools. The model's context window is informational; the provider still enforces its own limits and can return an upstream error.",
         link: { href: "/docs#chat", label: "Read the request fields" },
       },
     ],

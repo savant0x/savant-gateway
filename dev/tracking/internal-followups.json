@@ -4,6 +4,15 @@
   "policy": "Archived implementations do not claim live acceptance. These are observation, operator-input or revisit items linked to archived records; they do not hold implementation closure.",
   "items": [
     {
+      "id": "FID-2026-1030-046-INGRESS",
+      "fid": "FID-2026-1030-046",
+      "state": "blocked",
+      "title": "Hosted ingress identity and resource-boundary acceptance",
+      "detail": "Local production HTTP proves byte/schema/issuance/account limits. No hosted ingress exists for proxy header stripping, slow/large transport behavior, timeout/SSE cancellation or restart observations. The default ignores forwarded headers and shares one untrusted-client bucket; selecting a header requires a controlled ingress that strips and sets it.",
+      "evidence": "dev/fids/archive/FID-2026-1030-046-abuse-and-request-limits.md; tests/request-limits.test.mjs; scripts/http-suite/request-limit-checks.mjs",
+      "next_action": "After explicit deployment approval, configure the trusted ingress header, prove clients cannot forge it or bypass the proxy, and record size/time/cancel/restart receipts against the pinned artifact. Limiter state resets on process restart; the supported topology remains one process."
+    },
+    {
       "id": "FID-2026-1030-069-E5",
       "fid": "FID-2026-1030-069",
       "state": "unverified",

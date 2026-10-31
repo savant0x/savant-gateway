@@ -3,6 +3,22 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-31 — Bounded requests and account abuse controls
+
+- **FID-2026-1030-046 — high — malformed and excessive requests are refused
+  before inference reservations.** Shared streaming reads bound actual bytes,
+  body time, JSON depth and nodes at every JSON mutation boundary; Stripe keeps
+  its raw signed payload under a separate byte cap. Completion budgets must be
+  positive integers, both aliases are validated, only `n=1` is supported, and
+  message/tool counts are bounded. Paid keys share one account RPM bucket;
+  key issuance is transactionally capped at ten active and twenty/hour.
+  Client identity uses only an explicitly selected ingress header, otherwise
+  one shared untrusted-client bucket. Limiter memory, SSE frames and response
+  bytes are bounded. Nine unit regressions and production HTTP refusal/churn
+  probes cover the new boundaries. Verification: 335 tests, quality PASS (308
+  files), production build, 609 main HTTP checks, trial suite and recovery drill
+  PASS. Hosted proxy stripping and restart acceptance remain live observations.
+
 ## 2026-10-31 — Customer docs cover the first request and the recurring questions
 
 - **FID-2026-1030-056 follow-up — low — the API reference was complete but did

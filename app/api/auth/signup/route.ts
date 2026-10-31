@@ -16,6 +16,7 @@ import { clientKey, signupLimiter } from "@/lib/customer-rate-limit";
 import { isSameOriginRequest } from "@/lib/admin-session";
 import { POLICY_VERSION } from "@/lib/legal";
 import { hashPassword } from "@/lib/password";
+import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 import {
   createCustomer,
   createCustomerSession,
@@ -56,9 +57,9 @@ export async function POST(request: Request) {
   };
 
   try {
-    body = (await request.json()) as typeof body;
-  } catch {
-    return customerError(400, "Invalid JSON body.");
+    body = await readJsonObject(request);
+  } catch (error) {
+    return requestBodyError(error);
   }
 
   // The policies are accepted at the point the account is created; an account

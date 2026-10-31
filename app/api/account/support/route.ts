@@ -6,6 +6,7 @@ import {
 import { supportLimiter } from "@/lib/customer-rate-limit";
 import { createSupportRequest, listSupportRequestsForUser } from "@/lib/store";
 import { readSupportRequest } from "@/lib/support";
+import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,9 +40,9 @@ export async function POST(request: Request) {
   let body: unknown;
 
   try {
-    body = await request.json();
-  } catch {
-    return customerError(400, "Invalid JSON body.");
+    body = await readJsonObject(request);
+  } catch (error) {
+    return requestBodyError(error);
   }
 
   const parsed = readSupportRequest(body);

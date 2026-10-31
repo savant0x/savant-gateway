@@ -26,6 +26,7 @@ import {
 } from "@/lib/store";
 import { db, nowIso } from "@/lib/db";
 import { redactSecrets } from "@/lib/redaction";
+import { readBoundedText, requestBodyError } from "@/lib/request-limits";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -297,7 +298,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const payload = await request.text();
+  let payload: string;
+
+  try {
+    payload = await readBoundedText(request, 1024 * 1024);
+  } catch (error) {
+    return requestBodyError(error);
+  }
+
   let event: Stripe.Event;
 
   try {

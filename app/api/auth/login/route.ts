@@ -13,6 +13,7 @@ import {
   loginLimiter,
 } from "@/lib/customer-rate-limit";
 import { hashPassword, verifyPassword } from "@/lib/password";
+import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 import {
   createCustomerSession,
   findCustomerByEmail,
@@ -49,9 +50,9 @@ export async function POST(request: Request) {
   let body: { email?: unknown; password?: unknown };
 
   try {
-    body = (await request.json()) as typeof body;
-  } catch {
-    return customerError(400, "Invalid JSON body.");
+    body = await readJsonObject(request);
+  } catch (error) {
+    return requestBodyError(error);
   }
 
   const email = normalizeEmail(body.email);

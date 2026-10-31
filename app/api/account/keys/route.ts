@@ -4,6 +4,7 @@ import {
   requireCustomerApi,
 } from "@/lib/customer-auth";
 import { createCustomerApiKey, listCustomerApiKeys } from "@/lib/store";
+import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,9 +28,9 @@ export async function POST(request: Request) {
   let body: { name?: unknown } = {};
 
   try {
-    body = (await request.json()) as { name?: unknown };
-  } catch {
-    // An empty body is fine; the key gets a default name.
+    body = await readJsonObject(request);
+  } catch (error) {
+    return requestBodyError(error);
   }
 
   const name = typeof body.name === "string" ? body.name : "";
@@ -39,6 +40,16 @@ export async function POST(request: Request) {
   }
 
   const created = createCustomerApiKey(customer.id, name);
+
+  if (!created) {
+    return customerError(
+      429,
+      "At most 10 active keys and 20 new keys per hour are allowed.",
+      {
+        "Retry-After": "3600",
+      },
+    );
+  }
 
   return Response.json(created, { status: 201, headers: NO_STORE });
 }

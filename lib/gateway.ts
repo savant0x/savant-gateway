@@ -29,7 +29,6 @@ import { reserveTrialRoute } from "./gateway-trial";
 import {
   CORS_HEADERS,
   extractApiKey,
-  isJsonObject,
   jsonError,
   upstreamUnavailable,
 } from "./http";
@@ -52,6 +51,12 @@ import {
 import { getBannerConfig } from "./store/banner";
 import { openCallSettlement } from "./store/settlements";
 import { reservePaidCall } from "./gateway-paid";
+import {
+  COMPLETION_BODY_BYTES,
+  completionResourceProblem,
+  readJsonObject,
+  RequestBodyError,
+} from "./request-limits";
 
 export async function handleChatCompletions(request: Request) {
   const secret = extractApiKey(request);
@@ -73,24 +78,21 @@ export async function handleChatCompletions(request: Request) {
   let body: Record<string, unknown>;
 
   try {
-    const parsed: unknown = await request.json();
-
-    if (!isJsonObject(parsed)) {
-      return jsonError(400, "Request body must be a JSON object.");
-    }
-
-    body = parsed;
-  } catch {
-    return jsonError(400, "Invalid JSON body");
+    body = await readJsonObject(request, COMPLETION_BODY_BYTES);
+  } catch (error) {
+    return jsonError(
+      error instanceof RequestBodyError ? error.status : 400,
+      error instanceof RequestBodyError ? error.message : "Invalid JSON body",
+    );
   }
 
   if (typeof body.model !== "string" || !body.model.trim()) {
     return jsonError(400, "model is required");
   }
 
-  if (!Array.isArray(body.messages) || body.messages.length === 0) {
-    return jsonError(400, "messages must be a non-empty array");
-  }
+  const resourceProblem = completionResourceProblem(body);
+
+  if (resourceProblem) return jsonError(400, resourceProblem);
 
   const model = resolveModel(body.model.trim());
 
@@ -121,14 +123,18 @@ export async function handleChatCompletions(request: Request) {
 
   // Rate limiting runs before any reservation: a throttled call must not hold
   // credit, a free-pool slot, or a subscription allowance.
-  const rate = checkCompletionRate({ keyId: auth.keyId, free });
+  const rate = checkCompletionRate({
+    keyId: auth.keyId,
+    userId: auth.userId,
+    free,
+  });
 
   if (!rate.allowed) {
     return jsonError(
       429,
       rate.scope === "free"
         ? `Free traffic is limited to ${rate.limit} requests per minute across all keys. Retry in ${rate.retryAfterSeconds}s, or add credit for a dedicated limit.`
-        : `This key is limited to ${rate.limit} requests per minute. Retry in ${rate.retryAfterSeconds}s.`,
+        : `This account is limited to ${rate.limit} requests per minute across its keys. Retry in ${rate.retryAfterSeconds}s.`,
       "rate_limit_error",
       {
         "Retry-After": String(rate.retryAfterSeconds),

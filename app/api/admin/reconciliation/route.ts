@@ -1,5 +1,6 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
 import { isJsonObject } from "@/lib/http";
+import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 import {
   getReconciliation,
   listBalanceBaselines,
@@ -36,9 +37,9 @@ export async function POST(request: Request) {
   let body: unknown;
 
   try {
-    body = await request.json();
-  } catch {
-    return adminError(400, "Invalid JSON body.");
+    body = await readJsonObject(request);
+  } catch (error) {
+    return requestBodyError(error);
   }
 
   if (!isJsonObject(body)) {

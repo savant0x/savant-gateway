@@ -1,3 +1,5 @@
+import { isIP } from "node:net";
+
 import { createRateLimiter } from "./admin-rate-limit.ts";
 
 /** Per-process fixed-window limits. SQLite deployments run one app process. */
@@ -38,9 +40,16 @@ export const supportLimiter = createRateLimiter({
   windowMs: 60 * 60 * 1000,
 });
 
-export function clientKey(request: Request) {
-  const forwarded = request.headers.get("x-forwarded-for");
-  const first = forwarded?.split(",")[0]?.trim();
+export function clientKey(
+  request: Request,
+  env: Record<string, string | undefined> = process.env,
+) {
+  const header = env.GATEWAY_TRUSTED_IP_HEADER?.trim().toLowerCase();
 
-  return first || request.headers.get("x-real-ip")?.trim() || "unknown";
+  if (!header || !["fly-client-ip", "x-real-ip"].includes(header))
+    return "untrusted-client";
+
+  const value = request.headers.get(header)?.trim();
+
+  return value && isIP(value) ? value : "untrusted-client";
 }

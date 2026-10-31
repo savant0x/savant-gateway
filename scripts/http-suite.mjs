@@ -18,6 +18,7 @@ import { runMetadataChecks } from "./http-suite/metadata-checks.mjs";
 import { seedCatalog } from "./http-suite/seed.mjs";
 import { runPolicyChecks } from "./http-suite/policy-checks.mjs";
 import { runQuotaChecks } from "./http-suite/quota-checks.mjs";
+import { runRequestLimitChecks } from "./http-suite/request-limit-checks.mjs";
 
 const ADMIN_PASSWORD = "http-suite-admin-password";
 const ADMIN_SECRET = "http-suite-admin-secret-0123456789abcdef";
@@ -98,6 +99,8 @@ try {
   await runPolicyChecks({ baseUrl, db: database });
 
   await runQuotaChecks({ baseUrl, db: database, mock, adminPassword: ADMIN_PASSWORD });
+
+  await runRequestLimitChecks({ baseUrl, db: database, mock, adminPassword: ADMIN_PASSWORD });
 
   await runChecks({
     baseUrl,

@@ -1,5 +1,6 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
 import { readMarkupInput, readPriceInput } from "@/lib/pricing";
+import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 import {
   applyCatalogMarkup,
   getPricingData,
@@ -31,9 +32,9 @@ export async function PATCH(request: Request) {
   };
 
   try {
-    body = (await request.json()) as typeof body;
-  } catch {
-    return adminError(400, "Invalid JSON body.");
+    body = await readJsonObject(request);
+  } catch (error) {
+    return requestBodyError(error);
   }
 
   const id = typeof body.id === "string" ? body.id : "";
@@ -76,9 +77,9 @@ export async function POST(request: Request) {
   let body: { markupBps?: unknown; applyToAll?: unknown };
 
   try {
-    body = (await request.json()) as typeof body;
-  } catch {
-    return adminError(400, "Invalid JSON body.");
+    body = await readJsonObject(request);
+  } catch (error) {
+    return requestBodyError(error);
   }
 
   const markupBps = readMarkupInput(body.markupBps);

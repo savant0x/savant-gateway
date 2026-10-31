@@ -7,6 +7,8 @@ import {
   NO_STORE,
 } from "@/lib/admin-auth";
 import { createRateLimiter } from "@/lib/admin-rate-limit";
+import { clientKey } from "@/lib/customer-rate-limit";
+import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 import {
   createSessionToken,
   isSameOriginRequest,
@@ -19,13 +21,6 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const limiter = createRateLimiter();
-
-function clientKey(request: Request) {
-  const forwarded = request.headers.get("x-forwarded-for");
-  const first = forwarded?.split(",")[0]?.trim();
-
-  return first || request.headers.get("x-real-ip")?.trim() || "unknown";
-}
 
 export async function POST(request: Request) {
   const config = readAdminConfig();
@@ -52,11 +47,11 @@ export async function POST(request: Request) {
   let password: unknown;
 
   try {
-    const body = (await request.json()) as { password?: unknown };
+    const body = await readJsonObject(request);
 
     password = body.password;
-  } catch {
-    return adminError(400, "Invalid JSON body.");
+  } catch (error) {
+    return requestBodyError(error);
   }
 
   if (!verifyAdminPassword(password, config.password)) {

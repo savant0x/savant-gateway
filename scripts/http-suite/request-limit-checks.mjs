@@ -1,0 +1,87 @@
+import { randomBytes, randomUUID, createHash } from "node:crypto";
+
+import { check, checkEqual, cookieValue, request } from "./harness.mjs";
+
+/** An isolated account keeps limit probes independent of later money receipts. */
+export async function runRequestLimitChecks({ baseUrl, db, mock, adminPassword }) {
+  const now = new Date().toISOString();
+  const id = `user_limits_${randomUUID()}`;
+  const token = randomBytes(32).toString("base64url");
+  const cookie = `sg_session=${token}`;
+  const hash = (value) => createHash("sha256").update(value).digest("hex");
+
+  db.prepare("INSERT INTO users (id, email, name, status, password_hash, created_at) VALUES (?, ?, 'Limits', 'active', 'fixture-only', ?)")
+    .run(id, `${id}@example.test`, now);
+  db.prepare("INSERT INTO customer_sessions (id, user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?, ?)")
+    .run(`session_${id}`, id, hash(token), new Date(Date.now() + 3600000).toISOString(), now);
+
+  const createKey = () => request(baseUrl, "/api/account/keys", { method: "POST", cookie, body: { name: "Bounded key" } });
+  const first = await createKey();
+
+  checkEqual("limit probe creates a key", first.status, 201);
+  const secret = first.json.secret;
+  const before = mock.state.calls;
+  const valid = { model: "mock-paid", messages: [{ role: "user", content: "ping" }], max_tokens: 8 };
+
+  for (const body of [null, [], { ...valid, n: 2 }, { ...valid, max_tokens: "8" },
+    { ...valid, max_completion_tokens: 8, max_tokens: -1 }, { ...valid, messages: [null] }]) {
+    const response = await request(baseUrl, "/v1/chat/completions", {
+      method: "POST", headers: { authorization: `Bearer ${secret}` }, body,
+    });
+    checkEqual("invalid inference resources return 400", response.status, 400);
+  }
+  const huge = await request(baseUrl, "/v1/chat/completions", {
+    method: "POST", headers: { authorization: `Bearer ${secret}` },
+    body: { ...valid, padding: "x".repeat(2 * 1024 * 1024) },
+  });
+  checkEqual("oversized inference returns 413", huge.status, 413);
+  checkEqual("invalid requests never dispatch upstream", mock.state.calls, before);
+  checkEqual("invalid requests never create credit holds", db.prepare("SELECT COUNT(*) AS n FROM credit_holds WHERE user_id = ?").get(id).n, 0);
+  checkEqual("invalid requests never open settlements", db.prepare("SELECT COUNT(*) AS n FROM settlements WHERE user_id = ?").get(id).n, 0);
+
+  for (const path of ["/api/auth/signup", "/api/auth/login", "/api/account/keys", "/api/account/support", "/api/account/policies"]) {
+    const bad = await request(baseUrl, path, { method: "POST", cookie, body: null });
+    checkEqual(`${path} rejects null safely`, bad.status, 400);
+    const large = await request(baseUrl, path, { method: "POST", cookie, body: { padding: "x".repeat(65536) } });
+    checkEqual(`${path} bounds body bytes`, large.status, 413);
+  }
+
+  const admin = await request(baseUrl, "/api/admin/session", { method: "POST", body: { password: adminPassword } });
+  checkEqual("limit probe signs in operator", admin.status, 200);
+  const adminCookie = `sg_admin=${cookieValue(admin, "sg_admin")}`;
+  for (const [path, method] of [["credit", "POST"], ["pricing", "PATCH"], ["models", "PATCH"],
+    ["support", "PATCH"], ["plans", "PATCH"], ["groups", "DELETE"], ["subscriptions", "POST"],
+    ["gateway", "PATCH"], ["benchmarks", "POST"], ["adjustments", "POST"],
+    ["settlements", "POST"], ["reconciliation", "POST"], ["providers", "POST"]]) {
+    const response = await request(baseUrl, `/api/admin/${path}`, { method, cookie: adminCookie, body: null });
+    checkEqual(`${path} operator mutation rejects null safely`, response.status, 400);
+  }
+
+  const attempts = await Promise.all(Array.from({ length: 12 }, createKey));
+  checkEqual("concurrent creation reaches exactly ten active keys", attempts.filter((r) => r.status === 201).length, 9);
+  checkEqual("concurrent excess key creation is refused", attempts.filter((r) => r.status === 429).length, 3);
+  checkEqual("key ceiling is persisted", db.prepare("SELECT COUNT(*) AS n FROM api_keys WHERE user_id = ? AND status = 'active'").get(id).n, 10);
+  const anotherSecret = attempts.find((response) => response.status === 201).json.secret;
+  for (let index = 0; index < 60; index++) {
+    const refused = await request(baseUrl, "/v1/chat/completions", {
+      method: "POST", headers: { authorization: `Bearer ${index % 2 ? secret : anotherSecret}` }, body: valid,
+    });
+    checkEqual("unfunded capacity probe creates no charge", refused.status, 402);
+  }
+  const multiplied = await request(baseUrl, "/v1/chat/completions", {
+    method: "POST", headers: { authorization: `Bearer ${anotherSecret}` }, body: valid,
+  });
+  checkEqual("paid account limit holds across different keys", multiplied.status, 429);
+  checkEqual("account refusal names paid rate scope", multiplied.headers.get("x-ratelimit-scope"), "paid");
+  checkEqual("capacity probes create no upstream spend", mock.state.calls, before);
+  db.prepare("UPDATE api_keys SET status = 'revoked' WHERE user_id = ?").run(id);
+  for (let index = 0; index < 10; index++) {
+    const created = await createKey();
+    checkEqual("key churn within hourly budget works", created.status, 201);
+    db.prepare("UPDATE api_keys SET status = 'revoked' WHERE user_id = ?").run(id);
+  }
+  const churn = await createKey();
+  checkEqual("revocation cannot bypass hourly key issuance", churn.status, 429);
+  check("key refusal has Retry-After", Number(churn.headers.get("retry-after")) > 0);
+  db.prepare("DELETE FROM users WHERE id = ?").run(id);
+}

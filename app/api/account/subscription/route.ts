@@ -5,6 +5,7 @@ import {
 } from "@/lib/customer-auth";
 import { subscriptionLimiter } from "@/lib/customer-rate-limit";
 import { readPlanSalesPolicy } from "@/lib/plan-sales";
+import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 import { resolveAppOrigin, readStripeConfig } from "@/lib/stripe";
 import {
   createPlanCheckout,
@@ -75,9 +76,9 @@ export async function POST(request: Request) {
   let body: { planSlug?: unknown };
 
   try {
-    body = (await request.json()) as typeof body;
-  } catch {
-    return customerError(400, "Invalid JSON body.");
+    body = await readJsonObject(request);
+  } catch (error) {
+    return requestBodyError(error);
   }
 
   const planSlug =

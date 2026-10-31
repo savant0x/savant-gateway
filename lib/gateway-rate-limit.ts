@@ -4,8 +4,7 @@
  * The upstream free plan permits 15 requests per minute for the whole account,
  * shared by every customer. Nothing stopped one free key from spending all of
  * it, so free traffic now draws from a single bucket that sits below that
- * ceiling, while each paid key gets its own bucket: paying customers are not
- * slowed down by anonymous bursts.
+ * ceiling, while paid traffic shares an account bucket across its keys.
  *
  * State is per process. The gateway runs as one Node process against local
  * SQLite, which is the deployment this protects; a multi-instance deployment
@@ -65,6 +64,13 @@ export function readRateLimitConfig(
 }
 
 const buckets = new Map<string, BucketState>();
+const MAX_BUCKETS = 10_000;
+
+function cleanBuckets(now: number) {
+  for (const [name, state] of Array.from(buckets)) {
+    if (now - state.updatedAt >= 60_000) buckets.delete(name);
+  }
+}
 
 function bucketConfig(rpm: number): BucketConfig {
   // A full minute of allowance may arrive at once; it refills over the minute.
@@ -73,6 +79,7 @@ function bucketConfig(rpm: number): BucketConfig {
 
 export function checkCompletionRate(input: {
   keyId: string;
+  userId?: string;
   free: boolean;
   now?: number;
   config?: RateLimitConfig;
@@ -83,7 +90,21 @@ export function checkCompletionRate(input: {
   const rpm = input.free ? config.freeSharedRpm : config.paidKeyRpm;
   const name = input.free
     ? "completion:free"
-    : `completion:paid:${input.keyId}`;
+    : `completion:paid:${input.userId ?? input.keyId}`;
+
+  if (!buckets.has(name) && buckets.size >= MAX_BUCKETS) {
+    cleanBuckets(now);
+
+    if (buckets.size >= MAX_BUCKETS) {
+      return {
+        allowed: false,
+        scope,
+        limit: rpm,
+        remaining: 0,
+        retryAfterSeconds: 60,
+      };
+    }
+  }
   const decision = takeToken(buckets.get(name), now, bucketConfig(rpm));
 
   buckets.set(name, decision.state);

@@ -5,6 +5,7 @@ import {
   resolveSupportRequest,
 } from "@/lib/store";
 import { readResolutionNote } from "@/lib/support";
+import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,9 +32,9 @@ export async function PATCH(request: Request) {
   let body: { id?: unknown; note?: unknown };
 
   try {
-    body = (await request.json()) as typeof body;
-  } catch {
-    return adminError(400, "Invalid JSON body.");
+    body = await readJsonObject(request);
+  } catch (error) {
+    return requestBodyError(error);
   }
 
   const id = typeof body.id === "string" ? body.id.trim() : "";

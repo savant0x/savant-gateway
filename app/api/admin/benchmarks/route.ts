@@ -1,6 +1,6 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
 import { syncBenchmarks } from "@/lib/benchmark-sync";
-import { isJsonObject } from "@/lib/http";
+import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 import { getBenchmarkStatus, listAllModels } from "@/lib/store";
 
 export const runtime = "nodejs";
@@ -29,15 +29,9 @@ export async function POST(request: Request) {
   let body: { force?: unknown } = {};
 
   try {
-    const parsed: unknown = await request.json();
-
-    if (!isJsonObject(parsed)) {
-      return adminError(400, "Request body must be a JSON object.");
-    }
-
-    body = parsed;
-  } catch {
-    // An empty body means "refresh if the interval allows it".
+    body = await readJsonObject(request);
+  } catch (error) {
+    return requestBodyError(error);
   }
 
   if (body.force !== undefined && typeof body.force !== "boolean") {

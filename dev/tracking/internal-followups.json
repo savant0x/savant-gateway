@@ -153,7 +153,7 @@
       "state": "watch",
       "title": "Promo distribution and first customer redemption",
       "detail": "The promo lane is implemented and default-off. No code has been issued to a real customer, there is no delivery channel, and the operator has not decided whether promo dollars should ever expire. Unit and HTTP tests prove the local route, ledger transaction and concurrent redemption only.",
-      "evidence": "dev/fids/FID-2026-1031-078-free-credit-grants-and-promo-codes.md; tests/promos.test.mjs; scripts/http-suite/promo-checks.mjs",
+      "evidence": "dev/fids/archive/FID-2026-1031-078-free-credit-grants-and-promo-codes.md; tests/promos.test.mjs; scripts/http-suite/promo-checks.mjs",
       "next_action": "Choose the recipient and distribution channel outside the app, enable PROMO_CODES_ENABLED only for the approved window, issue one code, record the customer redemption and ledger row, then close the flag."
     },
     {
@@ -162,7 +162,7 @@
       "state": "watch",
       "title": "Activity log retention, growth and export policy",
       "detail": "activity_events is append-only and metadata is bounded, but there is no retention job, export or customer-facing view. The table stores identifiers and amounts, not prompts or completions. No production-size growth measurement exists.",
-      "evidence": "dev/fids/FID-2026-1031-079-lifecycle-activity-tracking.md; lib/schema/activity.ts; tests/activity.test.mjs",
+      "evidence": "dev/fids/archive/FID-2026-1031-079-lifecycle-activity-tracking.md; lib/schema/activity.ts; tests/activity.test.mjs",
       "next_action": "Before public volume, decide the retention window, add a pruning job if needed, and measure table growth under the approved load envelope."
     }
   ]

@@ -1,8 +1,10 @@
 # FID-2026-1031-078 — Free-credit grants and promo codes
 
-- **Status:** CONVERGED
+- **Status:** closed
 - **Severity:** high
 - **Created:** 2026-10-31
+- **Closed:** 2026-10-31
+- **Commit:** `7996124`
 - **Automation:** 3
 - **Depends on:** FID-2026-1031-079 (activity log)
 - **Related:** FID-2026-1030-044 (offering and economics), FID-2026-1030-049 (free access)
@@ -179,3 +181,10 @@ Verification: focused promo tests 6/6; full `npm test` 394 pass; `npm run
 build` 0; `npm run test:http` 750 checks + trial suite PASS; lint/typecheck/
 quality PASS. No live payment lane was involved: credit is granted from the
 operator-issued code, not from a purchase.
+
+## 11. Closure
+
+Closed against `7996124` on 2026-10-31. The lane remains default-off; no code
+has been issued to a real customer and no delivery channel exists. Those are
+recorded as `FID-2026-1031-078-LIVE` in `dev/tracking/internal-followups.json`,
+not claimed as implementation.

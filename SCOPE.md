@@ -2093,6 +2093,6 @@ prompts, completions, keys, tokens, or full codes.
   writes are best-effort; money and account writes are transactional.
 - [x] **Q4 — Verification.** 394 unit tests, 750 main HTTP checks, trial suite,
   123 load checks, 34 recovery checks, lint/typecheck/quality/build and
-  `npm audit --omit=dev` (0 vulnerabilities) all pass. Live crypto purchase,
-  real-provider capacity, operator approval, container build and deployment
-  remain open external dependencies.
+  `npm audit --omit=dev` (0 vulnerabilities) all pass. Closed against
+  `7996124`. Live crypto purchase, real-provider capacity, operator approval,
+  container build and deployment remain open external dependencies.

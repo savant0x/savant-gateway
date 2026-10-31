@@ -30,7 +30,8 @@ image build, first deployment and timed production-volume restore have not run.
 No live Stripe payment, funded paid inference, email delivery or production
 proxy acceptance is claimed.
 
-Latest local quality pass: FID-2026-1031-077/078/079, recorded in the
+Latest local quality pass: FID-2026-1031-077/078/079, closed against
+`7996124` and recorded in the
 [A–Z audit](../dev/audits/2026-10-31-a-z-quality-audit.md). The audit covers 26
 dimensions and records the two concrete read-path fixes (direct ISO analytics
 predicates, payment-claim index), the measured rejection of a provider composite

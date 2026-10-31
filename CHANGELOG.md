@@ -41,7 +41,8 @@ Verification: `npm test` 394 pass; `npm run test:http` 750 checks plus the trial
 suite; `npm run test:load` 123 checks; `npm run test:recovery` 34 checks;
 `npm run typecheck`, `npm run lint` (zero warnings), `npm run quality` (355
 files), `npm run build` and `npm run config:check` exit 0; `npm audit --omit=dev`
-reports 0 vulnerabilities.
+reports 0 vulnerabilities. Closed against `7996124`; all three records are
+archived.
 
 ## 2026-10-31 — Measured capacity and failure acceptance
 

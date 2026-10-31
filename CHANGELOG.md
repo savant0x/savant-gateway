@@ -3,6 +3,24 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-31 — NOWPayments customer crypto top-up lane
+
+- **FID-2026-1031-076 — high — customers can now buy prepaid credit with crypto
+  through NOWPayments.** `NOWPAYMENTS_TOPUPS_ENABLED` defaults off and the new
+  `/api/account/topup/crypto` checkout route refuses with
+  `503 crypto_topups_disabled` before reading NOWPayments credentials. Fixed-rate
+  USD invoices are created over `x-api-key` against the sandbox or live base URL
+  chosen by `NOWPAYMENTS_SANDBOX`; the signature-verified IPN webhook at
+  `/api/webhooks/nowpayments` credits exactly once through the existing
+  `fulfillTopup` claim machine. Non-final statuses never claim, terminal failures
+  mark the topup failed, and unknown or mismatched orders quarantine. The webhook
+  stays active while the lane is closed so an in-flight invoice still credits.
+  The top-up card is lane-aware and billing history names the payment provider.
+  Verification: 363 unit tests (+15), quality PASS (323 files), build, 672 HTTP
+  checks (+28), trial suite and recovery drill PASS; lint and typecheck clean;
+  `npm run verify` exit 0. The live/sandbox smoke test is operator territory
+  before the lane is enabled. Closed against `4574fee` and archived.
+
 ## 2026-10-31 — Crypto-only payment gate
 
 - **FID-2026-1031-075 — high — card top-ups are now an explicit launch decision

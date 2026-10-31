@@ -39,6 +39,16 @@ spend and messaging boundaries remain binding; no missing evidence is invented.
   348 tests, 644 HTTP checks with Stripe keys present, build, quality (320 files)
   and trial suite pass. Closed and archived. No card sale was exercised because
   the lane is closed by operator decision.
+- [x] **C11 — FID-2026-1031-076:** NOWPayments customer crypto top-up lane.
+  Default-off `NOWPAYMENTS_TOPUPS_ENABLED`, origin-based sandbox/live base URL,
+  fixed-rate USD invoice creation via `x-api-key`, HMAC-SHA512 IPN verification
+  (recursive key sort), claim-based idempotent fulfillment through the existing
+  `fulfillTopup`, non-final statuses never claim, terminal failures mark failed,
+  unknown/mismatched orders quarantine, lane-aware TopupCard, provider column in
+  billing history, and a fixture that sets credentials without the policy flag so
+  the webhook checks run fully local. 363 unit tests, 672 HTTP checks, full
+  `npm run verify` exit 0; live/sandbox smoke test is operator territory before
+  the lane is enabled. Closed and archived; card lane stays closed by ruling #7.
 
 Initial evidence: 13 files in `dev/fids/`; working tree has an existing edit to
 `docs/project-status.md` plus untracked research and attachments. Preserve them.

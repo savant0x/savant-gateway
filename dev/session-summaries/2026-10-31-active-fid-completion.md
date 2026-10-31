@@ -86,3 +86,47 @@ Email sender/transport; alert destination and delivery authorization; USDC
 chain/token, xpub, RPC and screening; the four FID-044 implementation questions;
 confirm the reserve figures; retain hosting and launch holds. See the active
 FIDs for exact external acceptance contracts.
+
+## Operator Ruling: Fiat Permitted, Crypto First — FID-076 Created
+
+The operator ruled: "not against permitting fiat, it was just easier to start
+w/ crypto first." Ruling #7 is recorded in `docs/offering-evidence.md`; cards
+stay gated off at launch (`CARD_TOPUPS_ENABLED=false`) and may reopen later as
+lane #2 with Stripe credentials plus the flag. NOWPayments is the launch lane.
+
+FID-2026-1031-076 `dev/fids/FID-2026-1031-076-nowpayments-topup-lane.md` was
+created (status `created`, RED phase complete) with the full design: default-off
+`NOWPAYMENTS_TOPUPS_ENABLED` flag, `lib/nowpayments.ts` (policy/config/base
+URL/invoice/signature verify), `app/api/account/topup/crypto/route.ts` mirroring
+the Stripe route, `app/api/webhooks/nowpayments/route.ts` crediting through
+`fulfillTopup` with `claimPaymentEvent` dedupe (never claiming non-final
+statuses), lane-aware account UI, `.env.example` block, unit tests
+(`tests/nowpayments.test.mjs`) and HTTP checks (signed finished, replay, invalid
+signature, mismatch, unknown order, disabled gate).
+
+Next: operator creates a NOWPayments account/store + outcome wallet and puts
+`NOWPAYMENTS_API_KEY` and `NOWPAYMENTS_IPN_SECRET` in `.env.local` (never chat),
+confirming sandbox vs live; on FID convergence and operator approval the lane is
+implemented and verified through `npm run verify`.
+
+## FID-076 Closure Receipt
+
+FID-2026-1031-076 converged and was implemented on the working tree, then
+verified end to end: `npm run verify` exit 0 — lint 0/0 warnings, typecheck
+clean, config-check PASS, 363 unit tests (+15 in tests/nowpayments.test.mjs),
+quality PASS (323 files), production build PASS with both new routes registered,
+HTTP suite 672 checks (+28: signed finished credit, replay no-double-credit,
+forged/unsigned IPN 400, waiting no-claim, amount mismatch quarantine, unknown
+order quarantine, expired terminal fail, disabled-route 503), trial suite PASS,
+recovery drill PASS. Loop 2 SELF-CORRECT during the audit: `server-only` removed
+so the Node runner can import the module, `x-api-key` auth (Bearer is payout-only
+per the documenter), origin-only base URL with the client appending `/v1/invoice`,
+stale USDC copy fixed. Implementation commit `4574fee`; FID closed and archived
+on 2026-10-31; SCOPE C11 and CHANGELOG record the closure. Card lane remains
+closed by ruling #7. Next operator action: create the NOWPayments account/store
+and outcome wallet, put `NOWPAYMENTS_API_KEY` and `NOWPAYMENTS_IPN_SECRET` in
+`.env.local` (never chat), confirm sandbox vs live matches `NOWPAYMENTS_SANDBOX`,
+run the sandbox smoke test, then enable `NOWPAYMENTS_TOPUPS_ENABLED` for launch.
+`NOWPAYMENTS_API_KEY` and `NOWPAYMENTS_IPN_SECRET` in `.env.local` (never chat),
+confirming sandbox vs live; on FID convergence and operator approval the lane is
+implemented and verified through `npm run verify`.

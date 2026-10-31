@@ -161,6 +161,13 @@ export function streamCompletion(
 
         if (buffer.trim()) forwardLine(buffer);
 
+        // A clean transport close without the protocol terminator is a
+        // truncated source, not a completed completion. Settling it as `ok`
+        // would acknowledge a partial answer and charge an estimate for it.
+        if (terminalLine === null) {
+          throw new Error("Provider stream ended without a completion marker.");
+        }
+
         finish("ok");
 
         // Completion is acknowledged only after the accounting transaction.

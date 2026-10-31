@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "status": "candidate",
+  "operatorApproval": {
+    "approved": false,
+    "by": null,
+    "at": null,
+    "note": "Candidate envelope measured on a disposable production build. Operator approval and a production-equivalent host measurement remain FID-2026-1030-060-LIVE."
+  },
+  "environment": {
+    "providerRpm": 6000,
+    "providerConcurrency": 8,
+    "upstreamDelayMs": 25,
+    "completionBodyBytes": 2097152,
+    "streamBytes": 33554432,
+    "notes": "The fixture account declares no upstream RPM, so the configured 6000 rpm fallback is the serving ceiling. Concurrency 8 is the measured local envelope, not an upstream contract."
+  },
+  "budget": {
+    "maxOfferedCalls": 500,
+    "maxUpstreamCalls": 500,
+    "maxDurationMs": 120000
+  },
+  "targets": {
+    "maxP95Ms": 1500,
+    "maxP99Ms": 3000,
+    "minAdmittedBps": 9900,
+    "minSteadyAdmittedRps": 20,
+    "maxUnexpectedBps": 0,
+    "maxBaselineErrorBps": 0,
+    "maxPeakRssMb": 512,
+    "maxDbBytes": 268435456,
+    "maxUnaccountedAdmitted": 0,
+    "maxLedgerDifferenceMicros": 0,
+    "maxUnresolvedSettlements": 0,
+    "maxQuarantinedAfterCrash": 4,
+    "maxQuarantinedTotal": 5,
+    "headroomFactor": 0.7
+  },
+  "workloads": {
+    "ramp": {
+      "levels": [1, 2, 4, 8, 16],
+      "requestsPerLevel": 24
+    },
+    "steady": {
+      "concurrency": 8,
+      "requests": 120
+    },
+    "burst": {
+      "concurrency": 24,
+      "requests": 48
+    },
+    "streams": {
+      "concurrency": 6,
+      "long": 16,
+      "cancelled": 8,
+      "frames": 12,
+      "frameDelayMs": 10
+    },
+    "mixedBilling": {
+      "concurrency": 6,
+      "free": 12,
+      "paid": 12
+    },
+    "reservations": {
+      "concurrency": 16,
+      "requests": 16,
+      "creditMicros": 500,
+      "maxTokens": 64
+    },
+    "keyChurn": {
+      "attempts": 12
+    },
+    "faults": {
+      "repeats": 2
+    },
+    "drain": {
+      "streams": 4,
+      "frames": 20,
+      "frameDelayMs": 20
+    },
+    "crash": {
+      "inFlight": 4
+    },
+    "storageFailure": {
+      "requests": 1
+    }
+  }
+}

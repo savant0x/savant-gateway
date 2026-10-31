@@ -151,6 +151,15 @@ export async function startMockUpstream({ expectedKey }) {
   const state = {
     calls: 0, lastRequest: null, redirected: false, accountChecks: 0,
     quotaFailure: false, balanceFailure: false, quotaDelay: 0,
+    // Opt-in fault and pacing controls for the load/fault acceptance runner.
+    // Defaults preserve the existing behavior of every HTTP-suite fixture.
+    inference: {
+      delayMs: 0,
+      failure: null,
+      streamFrames: null,
+      streamFrameDelayMs: 5,
+      truncatedStream: false,
+    },
     quota: { mode: "free", plan_label: "FREE", unlimited: false,
       token_limit: 20_000_000, tokens_used: 0, tokens_remaining: 20_000_000,
       allowed: true, resets_at_utc: null },
@@ -389,6 +398,87 @@ export async function startMockUpstream({ expectedKey }) {
         return;
       }
 
+      const failure = state.inference.failure;
+
+      if (failure === "disconnect") {
+        request.socket.destroy();
+
+        return;
+      }
+
+      if (failure === "malformed") {
+        setTimeout(() => {
+          response.writeHead(200, { "content-type": "application/json" });
+          response.end('{"choices":');
+        }, state.inference.delayMs);
+
+        return;
+      }
+
+      if (failure === "429" || failure === "500") {
+        setTimeout(() => {
+          response.writeHead(Number(failure), {
+            "content-type": "application/json",
+            ...(failure === "429" ? { "retry-after": "2" } : {}),
+          });
+          response.end(
+            JSON.stringify({ error: { message: `fixture ${failure}` } }),
+          );
+        }, state.inference.delayMs);
+
+        return;
+      }
+
+      if (
+        body?.stream === true &&
+        state.inference.streamFrames !== null
+      ) {
+        const frames = Math.max(
+          1,
+          Math.min(200, Math.floor(state.inference.streamFrames)),
+        );
+        let index = 0;
+
+        response.writeHead(200, { "content-type": "text/event-stream" });
+
+        const sendFrame = () => {
+          if (index >= frames) {
+            if (state.inference.truncatedStream) {
+              // A clean transport close is not completion: no [DONE].
+              response.end();
+
+              return;
+            }
+
+            response.end("data: [DONE]\r\n\r\n");
+
+            return;
+          }
+
+          const last = index === frames - 1;
+          const frame = {
+            choices: [
+              {
+                delta: {
+                  content: index === 0 ? "load-stream" : `-${index}`,
+                },
+              },
+            ],
+            ...(last
+              ? { usage: { prompt_tokens: 100, completion_tokens: 50 } }
+              : {}),
+          };
+
+          response.write(`data: ${JSON.stringify(frame)}\r\n\r\n`);
+          index += 1;
+          setTimeout(sendFrame, state.inference.streamFrameDelayMs);
+        };
+
+        sendFrame();
+
+        return;
+      }
+
       if (body?.stream === true) {
         const cancelling = body.messages?.[0]?.content === "cancel probe";
         response.writeHead(200, { "content-type": "text/event-stream" });
@@ -406,27 +496,29 @@ export async function startMockUpstream({ expectedKey }) {
         return;
       }
 
-      response.writeHead(200, { "content-type": "application/json" });
-      response.end(
-        JSON.stringify({
-          id: "chatcmpl-http-suite",
-          object: "chat.completion",
-          created: Math.floor(Date.now() / 1000),
-          model: body?.model ?? "mock-upstream-model",
-          choices: [
-            {
-              index: 0,
-              message: { role: "assistant", content: "http-suite-ok" },
-              finish_reason: "stop",
+      setTimeout(() => {
+        response.writeHead(200, { "content-type": "application/json" });
+        response.end(
+          JSON.stringify({
+            id: "chatcmpl-http-suite",
+            object: "chat.completion",
+            created: Math.floor(Date.now() / 1000),
+            model: body?.model ?? "mock-upstream-model",
+            choices: [
+              {
+                index: 0,
+                message: { role: "assistant", content: "http-suite-ok" },
+                finish_reason: "stop",
+              },
+            ],
+            usage: {
+              prompt_tokens: 100,
+              completion_tokens: 50,
+              total_tokens: 150,
             },
-          ],
-          usage: {
-            prompt_tokens: 100,
-            completion_tokens: 50,
-            total_tokens: 150,
-          },
-        }),
-      );
+          }),
+        );
+      }, state.inference.delayMs);
     });
   });
 
@@ -445,6 +537,11 @@ export async function startMockUpstream({ expectedKey }) {
       state.calls = 0;
       state.lastRequest = null;
       state.redirected = false;
+      state.inference.delayMs = 0;
+      state.inference.failure = null;
+      state.inference.streamFrames = null;
+      state.inference.streamFrameDelayMs = 5;
+      state.inference.truncatedStream = false;
     },
     close() {
       return new Promise((resolve) => {

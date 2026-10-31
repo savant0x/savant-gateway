@@ -35,6 +35,11 @@ commands:
   # Backup/restore drill. Requires a completed production build; it boots real
   # servers on throwaway databases and proves recovery through HTTP reconciliation.
   test_recovery: 'npm run test:recovery'
+  # Bounded load/fault acceptance. Requires a completed production build and a
+  # disposable fixture upstream. `test:load` measures the candidate envelope;
+  # `test:load:accept` refuses to pass without dated operator approval.
+  test_load: 'npm run test:load'
+  test_load_accept: 'npm run test:load:accept'
   type_check: 'npm run typecheck'
   config_check: 'npm run config:check'
   config_check_prod: 'npm run config:check:prod'

@@ -152,4 +152,48 @@ export async function runSystemsChecks(context, alpha, adminCookie) {
   checkEqual("client disconnect settles once", afterCancel.usage, later.usage + 1);
   checkEqual("client disconnect records one ledger debit", afterCancel.ledger, later.ledger + 1);
   checkEqual("client disconnect releases only its own hold", afterCancel.held_micros, later.held_micros);
+
+  // FID-060: a clean transport close without `[DONE]` is a truncated source,
+  // not a successful completion. The response must not carry a success
+  // terminator and the durable row must say error.
+  const beforeTruncated = accounting(context.db, alpha.id);
+
+  context.mock.state.inference.streamFrames = 3;
+  context.mock.state.inference.streamFrameDelayMs = 5;
+  context.mock.state.inference.truncatedStream = true;
+  let truncated;
+
+  try {
+    truncated = await streamCall(context, alpha);
+  } finally {
+    context.mock.state.inference.streamFrames = null;
+    context.mock.state.inference.streamFrameDelayMs = 5;
+    context.mock.state.inference.truncatedStream = false;
+  }
+
+  let truncatedRows = null;
+
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    truncatedRows = context.db
+      .prepare(
+        `SELECT status FROM usage_events
+         WHERE user_id = ? ORDER BY rowid DESC LIMIT 1`,
+      )
+      .get(alpha.id);
+
+    if (truncatedRows?.status === "error") break;
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+
+  const afterTruncated = accounting(context.db, alpha.id);
+
+  check("a truncated upstream stream is not acknowledged as complete",
+    !truncated.text.includes("[DONE]"));
+  checkEqual("a truncated upstream stream records one error usage",
+    truncatedRows?.status, "error");
+  checkEqual("a truncated upstream stream settles once",
+    afterTruncated.usage, beforeTruncated.usage + 1);
+  checkEqual("a truncated upstream stream releases its hold",
+    afterTruncated.held_micros, beforeTruncated.held_micros);
 }

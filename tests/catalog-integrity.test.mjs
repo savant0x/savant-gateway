@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildSyncedModels } from "../lib/providers/catalog.ts";
+import {
+  buildSyncedModels,
+  importedModelStatus,
+} from "../lib/providers/catalog.ts";
 import { readUpstreamModelPage } from "../lib/providers/model-list.ts";
 
 const PROVIDER = {
@@ -100,6 +103,21 @@ test("a non-empty page with no usable ids fails instead of delisting", () => {
       JSON.stringify(data),
     );
   }
+});
+
+test("an unpriced import starts disabled and a priced or free one is active", () => {
+  assert.equal(
+    importedModelStatus({ costSource: "unknown", isFree: false }),
+    "disabled",
+  );
+  assert.equal(
+    importedModelStatus({ costSource: "synced", isFree: false }),
+    "active",
+  );
+  assert.equal(
+    importedModelStatus({ costSource: "unknown", isFree: true }),
+    "active",
+  );
 });
 
 test("a sync deduplicates repeated upstream ids", () => {

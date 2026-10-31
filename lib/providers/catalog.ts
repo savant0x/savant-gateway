@@ -57,6 +57,22 @@ function displayNameFromId(modelId: string) {
 }
 
 /**
+ * The status a newly imported row starts with. A row the upstream did not
+ * price cannot be sold, so it must not appear in the public catalog at $0.00
+ * while every call would answer `model_unpriced`. It imports disabled and the
+ * operator publishes it by setting a cost and activating it. Free-pool rows
+ * are priced by definition and stay active.
+ */
+export function importedModelStatus(input: {
+  costSource: "synced" | "unknown";
+  isFree: boolean;
+}): "active" | "disabled" {
+  return input.costSource === "unknown" && !input.isFree
+    ? "disabled"
+    : "active";
+}
+
+/**
  * Builds one provider's catalog rows. Identity is scoped to the provider:
  * public ids are namespaced for non-default providers, and rows the provider
  * cannot serve over a supported protocol are excluded rather than failing at

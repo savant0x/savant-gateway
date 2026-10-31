@@ -3,6 +3,26 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-31 — Apixo provider review and unpriced-import guard
+
+- **FID-2026-1031-080 — medium — A provider that publishes no prices can no
+  longer publish models.** Apixo's `GET /v1/models` answered with 43 rows and no
+  cost field, so a first sync imported every model as active at `$0.00`, listed
+  it in the public catalog, and answered `503 model_unpriced` on every call. New
+  rows whose cost is unknown now import disabled; a priced row and a free-pool
+  row still import active, and an existing row keeps whatever status the operator
+  gave it. The
+  [provider review](../docs/research/apixo-provider-review.md) records the
+  verified API surface (dual wire format, per-key rate limits, 402/429 errors,
+  a separate four-model image catalog at $0.01–$0.08 per image), the resale
+  economics ($50 panel fee, $100 first top-up, cost at their public price), and
+  the gaps this pass did not close: no image route, no cross-provider failover,
+  and no machine-readable text prices. The `apixo` provider row stays disabled.
+
+Verification: `node --test tests/catalog-integrity.test.mjs` 14 pass;
+`npm run typecheck`, `npm run lint` (zero warnings), `npm run quality` and
+`npm run build` exit 0.
+
 ## 2026-10-31 — Local quality pass: promo credit, lifecycle activity and read paths
 
 - **FID-2026-1031-077 — medium — The A–Z audit found and fixed two concrete

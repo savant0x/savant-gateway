@@ -5,6 +5,7 @@ import type { AdminModelSummary, ModelAccess, SyncedModel } from "../types";
 import { db, nowIso } from "../db";
 import { defaultGroupSlug, pricesForGroup } from "../model-groups";
 import { defaultSellMicros } from "../pricing";
+import { importedModelStatus } from "../providers/catalog";
 
 import { MODEL_SELECT } from "./model-sql";
 import { getMarkupBps } from "./settings";
@@ -291,6 +292,12 @@ export function replaceModels(
         : keepManualSell
           ? current.sell_output_micros
           : defaultSellMicros(costOutput, markupBps);
+      // A row that arrives without a cost has nothing to sell yet. It waits in
+      // the admin catalog as disabled instead of being published at $0.00 and
+      // answering `503 model_unpriced` on every call.
+      const status =
+        current?.status ??
+        importedModelStatus({ costSource: model.costSource, isFree });
 
       upsert.run(
         model.id,
@@ -314,7 +321,7 @@ export function replaceModels(
         model.supportsTools ? 1 : 0,
         model.supportsVision ? 1 : 0,
         model.health,
-        current?.status ?? "active",
+        status,
         model.sortOrder,
         syncedAt,
       );

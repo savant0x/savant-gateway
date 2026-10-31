@@ -38,6 +38,25 @@ FID-046 implementation `bb925af` verified and archived on 2026-10-31. Master
 child link updated; live ingress/restart observations remain in the tracking
 ledger. Existing operator edits and untracked research/attachments preserved.
 
+## Intended Next Change
+
+FID-045: hashed single-use verification/recovery actions, real opt-in Resend
+REST delivery, bounded request/consume routes, account verification and password
+recovery interactions. Reset revokes sessions and keys. Disabled configuration
+is shown honestly; no message is sent to a real destination without authority.
+Context7 supplied the official Resend POST /emails/idempotency contract.
+
+## Account Recovery Receipt
+
+FID-045: 344 tests, quality 319 files, build, 642 HTTP checks, trial gate and
+recovery drill PASS (7 concurrent writes, 1998ms). Post-format `npm run check`
+passes with no warnings; attribution and diff checks pass. Code/HTTP confirm
+token expiry, replay/purpose/email/delivery binding, atomic password changes and
+session/key revocation. A transport latch proves a public reset response does
+not wait for account-specific delivery. Live acceptance and privacy publication
+are retained as `FID-2026-1030-045-LIVE`; the concrete proposed disclosure is
+`docs/policies/drafts/email-disclosure.md`, not an edited published policy.
+
 ## Open Questions
 
 Email sender/transport; alert destination and delivery authorization; USDC

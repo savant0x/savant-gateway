@@ -191,6 +191,13 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
           {isSignup ? "Sign in" : "Create an account"}
         </Link>
       </p>
+      {!isSignup ? (
+        <p className="text-center text-xs">
+          <Link className="text-accent hover:underline" href="/recover">
+            Forgot your password?
+          </Link>
+        </p>
+      ) : null}
     </form>
   );
 }

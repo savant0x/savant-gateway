@@ -4,6 +4,7 @@ import { Card } from "@heroui/react";
 import { headers } from "next/headers";
 
 import { AccountHeader } from "@/components/account/account-header";
+import { EmailVerificationCard } from "@/components/account/email-verification-card";
 import { BillingHistory } from "@/components/account/billing-history";
 import { CustomerKeysCard } from "@/components/account/keys-card";
 import { PolicyAcceptanceCard } from "@/components/account/policy-acceptance-card";
@@ -22,6 +23,8 @@ import {
 import { UsageCard } from "@/components/dashboard/usage-card";
 import { siteConfig } from "@/config/site";
 import { requireCustomerPage } from "@/lib/customer-auth";
+import { readAccountEmailConfig } from "@/lib/account-email";
+import { accountEmailStatus } from "@/lib/store/account-email";
 import {
   POLICY_EFFECTIVE_LABEL,
   POLICY_VERSION,
@@ -148,6 +151,11 @@ export default async function AccountPage({
           effectiveLabel={POLICY_EFFECTIVE_LABEL}
           version={POLICY_VERSION}
           versionLabel={POLICY_VERSION_LABEL}
+        />
+
+        <EmailVerificationCard
+          configured={Boolean(readAccountEmailConfig())}
+          verified={accountEmailStatus(customer.id).verified}
         />
 
         <TrialCard userId={customer.id} />

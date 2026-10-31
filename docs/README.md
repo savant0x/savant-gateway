@@ -17,6 +17,7 @@ against, not automatically today's behavior.
 | Deploy, back up, restore and roll back | [deployment-runbook.md](deployment-runbook.md) |
 | Understand the hosting decision | [hosting-decision.md](hosting-decision.md) |
 | Handle a support or deletion request | [support-runbook.md](support-runbook.md) |
+| Configure verification and password recovery | [account-email.md](account-email.md) |
 | Change or publish a policy | [policies/README.md](policies/README.md) |
 
 ## Customer-facing documentation

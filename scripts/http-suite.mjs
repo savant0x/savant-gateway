@@ -19,6 +19,7 @@ import { seedCatalog } from "./http-suite/seed.mjs";
 import { runPolicyChecks } from "./http-suite/policy-checks.mjs";
 import { runQuotaChecks } from "./http-suite/quota-checks.mjs";
 import { runRequestLimitChecks } from "./http-suite/request-limit-checks.mjs";
+import { runAccountRecoveryChecks, startEmailDouble } from "./http-suite/account-recovery-checks.mjs";
 
 const ADMIN_PASSWORD = "http-suite-admin-password";
 const ADMIN_SECRET = "http-suite-admin-secret-0123456789abcdef";
@@ -40,6 +41,7 @@ if (!existsSync(buildMarker)) {
 const workspace = await createTempWorkspace();
 const serverPort = await reservePort();
 const mock = await startMockUpstream({ expectedKey: PROVIDER_KEY });
+const email = await startEmailDouble();
 let server = null;
 let database = null;
 
@@ -68,6 +70,11 @@ try {
       // throwaway database file. The validator requires this to be spelled
       // out rather than silently allowing a temp-database production start.
       GATEWAY_DISPOSABLE_START: "yes",
+      EMAIL_TRANSPORT: "resend",
+      EMAIL_FROM: "sender@example.test",
+      NEXT_PUBLIC_SITE_URL: `http://127.0.0.1:${serverPort}`,
+      RESEND_API_KEY: "fixture-email-key",
+      RESEND_API_URL: email.url,
       [PROVIDER_KEY_ENV]: PROVIDER_KEY,
     },
   });
@@ -102,6 +109,8 @@ try {
 
   await runRequestLimitChecks({ baseUrl, db: database, mock, adminPassword: ADMIN_PASSWORD });
 
+  await runAccountRecoveryChecks({ baseUrl, db: database, email });
+
   await runChecks({
     baseUrl,
     db: database,
@@ -132,6 +141,7 @@ try {
 } finally {
   database?.close();
   await mock.close();
+  await email.close();
   if (server) await stopNextServer(server.child);
   await workspace.remove();
 }

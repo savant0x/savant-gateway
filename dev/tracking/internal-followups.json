@@ -4,6 +4,15 @@
   "policy": "Archived implementations do not claim live acceptance. These are observation, operator-input or revisit items linked to archived records; they do not hold implementation closure.",
   "items": [
     {
+      "id": "FID-2026-1030-045-LIVE",
+      "fid": "FID-2026-1030-045",
+      "state": "blocked",
+      "title": "Account email sender, disclosure and controlled inbox acceptance",
+      "detail": "Verification/recovery implementation is tested against a local Resend-shaped endpoint. No operator sender, sending credential or controlled inbox has been supplied. Published policy v1.1 does not name the new email recipient; approval of a new immutable privacy version is required before real delivery is enabled. A provider acceptance id is not proof of inbox receipt.",
+      "evidence": "dev/fids/archive/FID-2026-1030-045-email-and-account-recovery.md; docs/account-email.md; tests/account-recovery.test.mjs; scripts/http-suite/account-recovery-checks.mjs",
+      "next_action": "Approve the recipient disclosure under FID-061, select/provision the sender and transport with credentials outside the tree, authorize a controlled verification/recovery message, and record actual inbox receipt, consumed links, replay refusal and revoked sessions/keys against the pinned artifact."
+    },
+    {
       "id": "FID-2026-1030-046-INGRESS",
       "fid": "FID-2026-1030-046",
       "state": "blocked",

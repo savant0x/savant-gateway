@@ -81,6 +81,7 @@ const server = startNextServer({
     ADMIN_PASSWORD: "trial-suite-admin-password",
     ADMIN_SESSION_SECRET: "trial-suite-admin-secret-0123456789abcdef",
     STRIPE_SECRET_KEY: "", STRIPE_WEBHOOK_SECRET: "",
+    EMAIL_TRANSPORT: "", RESEND_API_KEY: "", EMAIL_FROM: "",
   },
 });
 let db;
@@ -89,6 +90,11 @@ try {
   await waitForServer({ baseUrl, ...server });
   db = await waitForSchema(workspace.dbPath);
   seedCatalog(db, { mockBaseUrl: upstreamUrl });
+  checkEqual("unconfigured account email refuses sending", (await request(baseUrl, "/api/auth/email/request", {
+    method: "POST", body: { purpose: "reset", email: "absent@example.test" },
+  })).status, 503);
+  checkEqual("unconfigured email issues no action token", db.prepare("SELECT COUNT(*) AS n FROM account_actions").get().n, 0);
+  checkEqual("recovery page discloses disabled delivery", (await request(baseUrl, "/recover")).text.includes("Password recovery is unavailable"), true);
   db.prepare(`INSERT INTO models
     (id, upstream_id, name, provider, context_window, token_weight, allow_free,
      status, synced_at, upstream_slug, family, protocol, cost_source, in_catalog,

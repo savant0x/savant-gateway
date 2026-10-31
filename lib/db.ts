@@ -7,6 +7,7 @@ import Database from "better-sqlite3";
 
 import { normalizeFamilyName } from "./model-family";
 import { allocationSchema } from "./schema/allocations";
+import { accountActionSchema } from "./schema/account-actions";
 import { benchmarkSchema } from "./schema/benchmarks";
 import { ensureColumn, type DatabaseHandle } from "./schema/columns";
 import { modelGroupSchema } from "./schema/groups";
@@ -340,6 +341,7 @@ function createDb() {
       baseSchema(database);
       v2Schema(database);
       customerSchema(database);
+      accountActionSchema(database);
       freePoolSchema(database);
       allocationSchema(database);
       providerSchema(database);

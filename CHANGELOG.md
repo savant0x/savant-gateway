@@ -3,6 +3,21 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-31 — Email ownership and account recovery
+
+- **FID-2026-1030-045 — high — account links now establish ownership or reset
+  passwords through a single-use transaction.** Hash-only action records bind
+  links to account, purpose, current email, expiry and accepted delivery; resend
+  invalidates earlier links. Reset revokes sessions, keys and other actions
+  atomically. Account verification, recovery and fragment-based confirmation
+  pages call real request/consume routes. An opt-in Resend REST adapter uses
+  idempotency keys and bounded retries; disabled configuration is disclosed.
+  Public reset delivery runs after the generic response so transport timing
+  cannot reveal account existence. Verification: 344 unit tests, quality PASS
+  (319 files), build, 642 main HTTP checks, trial gate and recovery drill PASS;
+  post-format lint/typecheck clean. The controlled inbox, sender and new privacy
+  recipient disclosure remain explicit operator inputs; no real email was sent.
+
 ## 2026-10-31 — Bounded requests and account abuse controls
 
 - **FID-2026-1030-046 — high — malformed and excessive requests are refused

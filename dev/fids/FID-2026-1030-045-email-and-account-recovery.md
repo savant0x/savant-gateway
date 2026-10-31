@@ -4,7 +4,7 @@
 **ID:** FID-2026-1030-045
 **Parent:** FID-2026-1030-043
 **Severity:** high
-**Status:** converged
+**Status:** verified
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044
@@ -64,6 +64,8 @@ Use controlled mailbox evidence for delivery/link consumption; fixtures remain r
 
 ## Verification Gates
 
+- gate: test tests/account-recovery.test.mjs
+
 Planning audit under 043. Implementation: `npm run verify`, with `npm test`
 including planned `tests/account-recovery.test.mjs` once implemented. HTTP
 coverage must execute consumption and prove the database update/session revocation.
@@ -83,9 +85,81 @@ current email; email change/resend invalidates superseded tokens atomically.
 Test delivery retries separately from token replay and never expose raw tokens
 in logs. Final convergence checks are in the master planning-audit receipt.
 
-Design only; transport selection and controlled inbox are operator inputs.
-Trial activation is owned by 049 and cannot follow merely from adding a form.
+Implementation verified; sender configuration, controlled inbox and the privacy
+recipient disclosure remain operator inputs in the tracking ledger. Trial
+activation is owned by 049 and cannot follow merely from adding a form.
 
 ## Lessons Learned
 
 An email column and a verification label are not an ownership-verification system.
+
+## Execution audit — 2026-10-31
+
+RED: `users.email_verified_at` has readers but no production writer; customer
+password/session primitives exist, but no action-token table or recovery route.
+046 now supplies bounded body parsing and ingress identity. No email transport
+is configured or authorized for a real delivery exercise.
+
+GREEN: add a handle-injected action-token ledger with hashed 32-byte tokens,
+account/current-email/purpose binding, single use, expiry and delivery status.
+Issue at most three actions/account/purpose/hour in an immediate transaction;
+resend atomically invalidates earlier same-purpose tokens. Verification requires
+the authenticated account; recovery requests are public, rate-bounded and use
+identical generic responses for known/unknown accounts and delivery failures.
+Reset consumes and changes the password in one transaction, revokes all sessions
+and keys and invalidates outstanding actions. Verification consumes and writes
+ownership atomically. No redirect or email send alone establishes ownership.
+
+Add an explicitly configured Resend REST adapter (no new package), disabled
+until the operator selects it with EMAIL_TRANSPORT=resend and supplies sender,
+key and canonical origin. This implements an available transport without
+provisioning a service or selecting a commercial account for the operator.
+Use the documented POST /emails contract, idempotency keys, bounded deadlines
+and one retry on transient failure. Persist failure state with fixed diagnostics;
+never store/send raw tokens in logs or API responses. Link tokens live in URL
+fragments and are removed from browser history on load; consumption is POST,
+so scanners and link previews cannot consume them. GET pages perform no writes.
+
+AUDIT: production callers will be authenticated account verification request,
+public recovery request and action-consume routes; account/login links and the
+action page call those routes. Injected database tests prove hashing, expiry,
+wrong purpose/email, supersession, concurrent replay, atomic rollback and access
+revocation. HTTP fixtures exercise the real configured transport boundary and
+token consumption; they are never labelled controlled-inbox acceptance.
+
+ADVERSARIAL: bind tokens to the exact current email and active account; keep old
+tokens invalid even when an earlier asynchronous send completes after resend.
+Reject absent/failed delivery and expire at the exact deadline. Use the configured
+canonical origin rather than Host/forwarded headers. Do not enable trial grants.
+First/final document checks: no additional corrections (0%, 0%). Implementation
+may proceed. Controlled sender/inbox receipt remains an explicit operator input.
+
+Implementation audit correction: public reset responses must also hide
+transport latency. Next.js `after` schedules reset delivery after the generic
+response; authenticated verification can report delivery failure directly. The
+stored token remains `pending` and unusable if the process dies before sending;
+a new request supersedes it. No raw token is persisted for an automatic replay.
+HTTP acceptance holds the transport behind a latch and requires the recovery
+response to finish before releasing it, then observes delivery state separately.
+
+## Implementation receipt — 2026-10-31
+
+`account_actions` schema and handle-injected ledger; opt-in Resend transport;
+same-origin request/consume routes; verification status/action on `/account`;
+`/recover` and fragment-driven `/account/action`; sign-in recovery link; updated
+FAQ and operating guide. Delivery is disabled by default and no trial is enabled.
+
+Nine new unit tests pass, including two independent processes competing for one
+token, rollback of password/session/key changes, expiry/current-email/purpose/
+delivery binding, hashing, resend order, replay and transport semantics.
+Production HTTP verifies real route writers, canonical fragment links, a held
+transport that cannot delay the generic reset response, known/unknown/failure
+response equality, revocation and old/new password behavior. The trial gate
+proves disabled delivery issues no action and renders an honest unavailable state.
+
+`npm run verify` exit 0: 344 tests, quality PASS (319 files), production build,
+642 main HTTP checks PASS, trial suite PASS and recovery drill PASS (7 concurrent
+writes, 1998ms). Three formatting/import warnings in that run were corrected
+directly; clean post-correction lint is required before committing. No external
+message or service provisioning occurred. Live acceptance is
+`FID-2026-1030-045-LIVE`, linked to the implementation rather than fabricated.

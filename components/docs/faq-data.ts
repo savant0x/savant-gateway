@@ -204,7 +204,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
       {
         question: "Do you send email?",
         answer:
-          "No. Email verification, password reset and notification delivery are not implemented. Support is an authenticated queue: submit it from /account and read the resolution note there. The privacy notice prints the operator's contact email for data requests; it is not a ticketing channel and carries no response-time guarantee.",
+          "Email verification and password reset are available when the operator configures account email delivery. Request verification from /account or a password reset from /recover. Links expire and work once; requesting a newer link invalidates the earlier one. Password reset revokes all sessions and API keys. When delivery is not configured, those screens state that it is unavailable. Support remains an authenticated queue; read its resolution note on /account.",
         link: { href: "/support", label: "Read about support" },
       },
       {

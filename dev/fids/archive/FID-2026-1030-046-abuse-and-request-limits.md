@@ -4,7 +4,7 @@
 **ID:** FID-2026-1030-046
 **Parent:** FID-2026-1030-043
 **Severity:** high
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044
@@ -161,3 +161,8 @@ Post-format lint: `npm run lint` exit 0, no errors or warnings. Manual audit
 matched each route's authentication order, parser error path, transaction limits
 and stream ownership against this contract. No secrets or request content enter
 the new diagnostics. Hosted evidence is registered as `FID-2026-1030-046-INGRESS`.
+
+**Commit SHA:** `bb925af`
+**Closed:** 2026-10-31 — verified implementation; live ingress observation is
+retained in `dev/tracking/internal-followups.json`.
+**Archived:** 2026-10-31

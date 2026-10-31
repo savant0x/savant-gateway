@@ -32,6 +32,12 @@ and omitted its account password hash; corrected the fixture and reran the
 gates. Production authentication was preserved. Reachability search finds no
 remaining direct request JSON/text reads at the protected route boundaries.
 
+## Work Completed
+
+FID-046 implementation `bb925af` verified and archived on 2026-10-31. Master
+child link updated; live ingress/restart observations remain in the tracking
+ledger. Existing operator edits and untracked research/attachments preserved.
+
 ## Open Questions
 
 Email sender/transport; alert destination and delivery authorization; USDC

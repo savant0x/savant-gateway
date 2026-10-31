@@ -17,7 +17,8 @@ distinguish verified behavior from unverified claims.
   bytes are bounded. Nine unit regressions and production HTTP refusal/churn
   probes cover the new boundaries. Verification: 335 tests, quality PASS (308
   files), production build, 609 main HTTP checks, trial suite and recovery drill
-  PASS. Hosted proxy stripping and restart acceptance remain live observations.
+  PASS. Closed against `bb925af` and archived. Hosted proxy stripping and
+  restart acceptance remain live observations in the tracking ledger.
 
 ## 2026-10-31 — Customer docs cover the first request and the recurring questions
 

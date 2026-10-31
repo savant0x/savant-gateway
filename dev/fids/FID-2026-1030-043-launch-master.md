@@ -73,7 +73,7 @@ rather than disappearing work.
 | --- | --- | --- |
 | [044](FID-2026-1030-044-offering-and-economics.md) | Offering, verified rates and upstream permission | none |
 | [045](FID-2026-1030-045-email-and-account-recovery.md) | Email ownership and account recovery | 044 |
-| [046](FID-2026-1030-046-abuse-and-request-limits.md) | Abuse, key and resource bounds | 044 |
+| [046](archive/FID-2026-1030-046-abuse-and-request-limits.md) | Abuse, key and resource bounds — closed `bb925af`; hosted ingress acceptance tracked | 044 |
 | [047](archive/FID-2026-1030-047-security-and-account-isolation.md) | Auth, isolation, boundaries and redaction — closed `2ef2d74`; ingress pinning in 057 | none |
 | [048](archive/FID-2026-1030-048-shared-provider-admission.md) | Provider-wide RPM/concurrency | 044 |
 | [049](FID-2026-1030-049-quota-and-free-access.md) | Quota refresh, reset, allocation/trial safety | 044,045,048 |

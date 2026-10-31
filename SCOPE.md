@@ -9,8 +9,11 @@ strict, single agent. Complete implementation and verification in dependency
 order, preserving existing operator work. External inputs and explicit launch,
 spend and messaging boundaries remain binding; no missing evidence is invented.
 
-- [ ] **C1 — FID-2026-1030-046:** bounded request parsing, account dispatch/key
+- [x] **C1 — FID-2026-1030-046:** bounded request parsing, account dispatch/key
   limits, trusted client identity and regression coverage before reservation.
+  Implementation `bb925af`; 335 tests, 609 HTTP checks, trial suite, build,
+  recovery and clean lint pass. Archived; hosted ingress observation retained
+  as `FID-2026-1030-046-INGRESS` in the tracking ledger.
 - [ ] **C2 — FID-2026-1030-045:** single-use ownership/recovery tokens, delivery,
   routes and customer interactions; transport/sender and inbox inputs requested.
 - [ ] **C3 — FID-2026-1030-049:** audit quota/reset/allocation coverage against

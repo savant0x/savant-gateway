@@ -66,4 +66,5 @@ secret, scheduler or external destination was configured, and no authorized
 alert was received or responded to. The local webhook receiver proves the code
 path, not operator delivery. Hosted acceptance follows 062/067.
 
-Implementation `617935b`; closure record in the archived FID.
+Implementation `617935b`; transport-failure redaction proof `0656d07`; closure
+record in the archived FID.

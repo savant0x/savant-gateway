@@ -191,6 +191,10 @@ named operator-input/acceptance boundaries in `FID-2026-1030-059-LIVE`.
   unconfigured delivery, transport policy, HMAC signing and URL-redacted
   failure. The script was also run against a disposable file database and
   returned exit 0 with `noTraffic: true`.
+- **Test follow-up:** `0656d07` strengthens the transport-failure test so the
+  webhook endpoint echoes its URL and signing secret into the 500 body; the
+  stored error is asserted to contain neither. The focused file still passes
+  12/12.
 - **Residual (not claimed):** `FID-2026-1030-059-LIVE` remains blocked on an
   operator-selected webhook URL (and optional 16+ character signing secret), an
   installed cron/Fly scheduler, one authorized received alert and a recorded

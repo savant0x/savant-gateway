@@ -43,7 +43,7 @@ margin can be attributed by upstream rather than guessed at.
 - **CommandCode** — registered and enabled, OpenAI and Anthropic wire formats,
   no catalog synced yet because `COMMANDCODE_API_KEY` is unset.
 - **Apixo** — registered at install with base URL `https://api.apixoai.online/v1`,
-  dual wire format, key variable `APIXO_API_KEY`. It ships **disabled**: its
+  dual wire format, key variable `APIXOAI_API_KEY`. It ships **disabled**: its
   catalog endpoint needs a key, so enabling it before the key exists would fail
   every sync. Published rates are recorded in
   [`docs/data/provider-prices.json`](data/provider-prices.json) with the capture

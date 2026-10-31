@@ -3,6 +3,17 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-31 — Apixo credential name aligned with the upstream
+
+- **FID-2026-1031-083 — low — The Apixo provider row now expects
+  `APIXOAI_API_KEY`, the name the upstream documents, and an untouched row
+  seeded as `APIXO_API_KEY` is renamed on boot.** Without the alignment a key
+  stored under the documented name reads as unconfigured, so the provider stays
+  disabled, no sync can run, and no Apixo model can appear anywhere on the site.
+  The migration matches that exact seed value only: a provider row an operator
+  pointed at a different variable is left alone, and a second boot changes
+  nothing.
+
 ## 2026-10-31 — Sortable catalog columns and provider sections
 
 - **FID-2026-1031-082 — medium — Every catalog column now sorts from its

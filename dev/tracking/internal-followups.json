@@ -170,9 +170,9 @@
       "fid": "FID-2026-1031-080",
       "state": "blocked",
       "title": "Apixo key, first sync and model publication",
-      "detail": "The provider is registered as seed data with enabled = 0 and status 'unconfigured', so it appears in /admin/catalog under Catalog by provider with zero synced models and no public rows exist for it. Nothing from Apixo can reach /models or the landing table until APIXO_API_KEY is present, the provider is enabled, a sync imports the catalog, and rows carry a price. The routing takeover (081) only acts on rows that exist, so the public catalog is unchanged while the key is absent.",
+      "detail": "The provider is registered as seed data with enabled = 0 and status 'unconfigured', so it appears in /admin/catalog under Catalog by provider with zero synced models and no public rows exist for it. Nothing from Apixo can reach /models or the landing table until APIXOAI_API_KEY is present, the provider is enabled, a sync imports the catalog, and rows carry a price. On 2026-10-31 the operator supplied the credential in .env.local; the remaining steps are enable, sync and manual pricing, because Apixo publishes no machine-readable price list and every imported row lands cost_source = 'unknown' and stays out of the public catalog. The routing takeover (081) only acts on rows that exist, so the public catalog is unchanged while the key is absent.",
       "evidence": "dev/fids/archive/FID-2026-1031-080-apixo-provider-onboarding.md; dev/fids/archive/FID-2026-1031-081-provider-route-selection.md; lib/schema/providers.ts (seedProviders); components/admin/provider-catalog-sections.tsx",
-      "next_action": "Supply APIXO_API_KEY outside the tree, enable Apixo in /admin/providers, run Sync, price or auto-price the imported rows, and record the first reconciliation showing which published models now serve from Apixo."
+      "next_action": "Restart the server so the provider row adopts the key, enable Apixo in /admin/providers, run Sync, confirm the imported row count, then enter input/output cost per model in /admin/pricing and activate only the rows intended for sale; record the first reconciliation showing which published models now serve from Apixo."
     }
   ]
 }

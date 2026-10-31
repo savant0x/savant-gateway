@@ -74,7 +74,7 @@ here means image generation only.
 
 The provider registry added for FID-2026-1029-022 already carries a disabled
 `apixo` row: slug `apixo`, kind `both`, base URL `https://api.apixoai.online/v1`,
-key variable `APIXO_API_KEY`, balance/subscription/pricing capabilities off.
+key variable `APIXOAI_API_KEY`, balance/subscription/pricing capabilities off.
 That maps cleanly onto this upstream:
 
 - `providerFetch` appends `/chat/completions` and `/messages` to the `/v1`
@@ -139,7 +139,7 @@ automatic pricing, no Apixo credential, and no published `apixo/*` model.
 
 To onboard once an account exists:
 
-1. Put `APIXO_API_KEY` in `.env.local` and restart.
+1. Put `APIXOAI_API_KEY` in `.env.local` and restart.
 2. Enable the `apixo` provider in `/admin/providers` and run **Sync**; expect 43
    text models, every one disabled and `cost_source = 'unknown'`.
 3. Enter input/output cost per model you intend to sell in `/admin/pricing`,

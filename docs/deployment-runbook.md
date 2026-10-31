@@ -42,7 +42,7 @@ Required in production:
 | `ADMIN_SESSION_SECRET` | 32+ characters. Rotating it invalidates operator sessions. |
 
 Optional (see `../.env.example` for the full list and defaults):
-`PROVIDER_KEY`, `COMMANDCODE_API_KEY`, `APIXO_API_KEY`, `PROVIDER_BASE_URL`,
+`PROVIDER_KEY`, `COMMANDCODE_API_KEY`, `APIXOAI_API_KEY`, `PROVIDER_BASE_URL`,
 `PROVIDER_PUBLIC_MODELS_URL`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
 `ARTIFICIAL_ANALYSIS_API_KEY`, `TRIAL_ENABLED=false` (must stay `false` until
 launch rulings 044 close), free-pool knobs (`FREE_*`), rate limits

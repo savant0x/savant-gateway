@@ -100,6 +100,24 @@ export function providerSchema(database: DatabaseHandle) {
   `);
 
   seedProviders(database);
+  adoptDocumentedApixoKey(database);
+}
+
+/**
+ * Apixo documents its credential as APIXOAI_API_KEY, matching the upstream
+ * name. Installations seeded before that alignment store the older spelling;
+ * renaming only that exact value keeps a deliberate operator edit intact while
+ * letting a key stored under the documented name be recognized without a
+ * manual provider edit. Idempotent: a second boot matches nothing.
+ */
+export function adoptDocumentedApixoKey(database: DatabaseHandle) {
+  database
+    .prepare(
+      `UPDATE providers
+       SET key_env_var = 'APIXOAI_API_KEY', updated_at = ?
+       WHERE slug = 'apixo' AND key_env_var = 'APIXO_API_KEY'`,
+    )
+    .run(new Date().toISOString());
 }
 
 /**
@@ -164,7 +182,7 @@ function seedProviders(database: DatabaseHandle) {
   // Apixo serves /v1/chat/completions, /v1/messages and /v1/models behind one
   // base URL, but publishes no balance or subscription endpoint and no machine
   // readable price list, so only the catalog sync is claimed. It starts
-  // disabled: enabling it before APIXO_API_KEY exists would fail every sync.
+  // disabled: enabling it before APIXOAI_API_KEY exists would fail every sync.
   database
     .prepare(
       `INSERT OR IGNORE INTO providers
@@ -173,7 +191,7 @@ function seedProviders(database: DatabaseHandle) {
          sort_order, status, created_at, updated_at)
        VALUES ('apixo', 'Apixo', 'both',
                'https://api.apixoai.online/v1',
-               'APIXO_API_KEY', '{}', 0, 0, 0, 0, 30,
+               'APIXOAI_API_KEY', '{}', 0, 0, 0, 0, 30,
                'unconfigured', ?, ?)`,
     )
     .run(now, now);

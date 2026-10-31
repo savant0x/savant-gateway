@@ -55,7 +55,7 @@ The full first-run path, including provider sync and the first request, is in
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `PROVIDER_KEY` | Yes | Default upstream credential. Server-only. |
-| `COMMANDCODE_API_KEY`, `APIXO_API_KEY` | Optional | Further upstreams. Provider rows store the variable *name*, never the value. |
+| `COMMANDCODE_API_KEY`, `APIXOAI_API_KEY` | Optional | Further upstreams. Provider rows store the variable *name*, never the value. |
 | `ADMIN_PASSWORD` | For `/admin` | 12+ characters, compared in constant time. |
 | `ADMIN_SESSION_SECRET` | For `/admin` | 32+ characters, signs the admin cookie. |
 | `NEXT_PUBLIC_SITE_URL` | Production | Canonical origin for metadata, sitemap/robots and Stripe redirects; also passed as a Docker build argument for static social images. |

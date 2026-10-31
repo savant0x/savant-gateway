@@ -104,6 +104,26 @@ export async function runQuotaChecks(context) {
     checkEqual("customer account renders daily trial credits", customerPage.status, 200);
     check("customer account renders the actual allocated remainder", customerPage.text.includes("99,850 weighted-token credits available"));
 
+    // FID-049 disabled-trial branch: daily-free mode must never issue a
+    // lifetime grant, publish a paid transition, or advertise the one-time
+    // trial card. The enabled suite proves the mirror (no daily allocation in
+    // lifetime mode); these pin the reverse invariant and the truthful UI.
+    checkEqual("daily mode writes no lifetime trial grant",
+      db.prepare("SELECT COUNT(*) AS n FROM trial_grants WHERE user_id = 'quota_user'").get().n, 0);
+    const catalog = await request(baseUrl, "/v1/models", {
+      headers: { authorization: `Bearer ${secret}` },
+    });
+
+    checkEqual("model API serves the catalog while disabled", catalog.status, 200);
+    check("model API publishes no trial transitions while disabled",
+      catalog.json.data.every((model) => model.trial_paid_transition === null));
+    check("customer account hides the one-time trial card",
+      !customerPage.text.includes("Your one-time trial"));
+    check("customer account shows the daily credits card",
+      customerPage.text.includes("Daily trial credits"));
+    check("customer credits omit lifetime grant fields",
+      !credits.text.includes("grantedTokens"));
+
     mock.state.quotaFailure = true;
     const failed = await read();
 

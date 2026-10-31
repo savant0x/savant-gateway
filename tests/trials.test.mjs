@@ -43,6 +43,17 @@ test("trials are off, unpaired and unbudgeted by default", () => {
   assert.deepEqual(readTrialConfig({ TRIAL_MODEL_PAIRS: '{"free/a":"a","free/b":true}' }).pairs, { "free/a": "a" });
 });
 
+test("disabled trial config can never issue a grant or reservation", () => {
+  const db = fixture();
+
+  try {
+    assert.equal(reserve(db, "off", { config: { ...CONFIG, enabled: false } }), false);
+    assert.equal(db.prepare("SELECT COUNT(*) AS n FROM trial_grants").get().n, 0);
+    assert.equal(db.prepare("SELECT COUNT(*) AS n FROM trial_reservations").get().n, 0);
+    assert.equal(trialBalance(db, "a", NOW).granted, 0);
+  } finally { db.close(); }
+});
+
 test("holds share one grant and settlement is isolated and replay safe", () => {
   const db = fixture();
 

@@ -101,3 +101,36 @@ disabled behavior and truthful UI, rather than treating the feature as completed
 ## Lessons Learned
 
 A provider quota snapshot and a customer entitlement are different clocks and ledgers.
+
+## Implementation Receipt — disabled-trial branch proof
+
+Delivered as a test-only change (no production code, no harness change):
+
+- **Hermeticity confirmed by read, not changed.** Every `startNextServer`
+  caller pins trial mode explicitly and the harness applies caller env last, so
+  an operator shell cannot flip the daily-free proof: `scripts/http-suite.mjs`
+  pins `TRIAL_ENABLED: "false"`, `scripts/db-recovery-drill.mjs` pins
+  `TRIAL_ENABLED: "false"`, and `scripts/trial-http-suite.mjs` pins
+  `TRIAL_ENABLED: "true"`.
+- **Unit gate:** `tests/trials.test.mjs` adds "disabled trial config can never
+  issue a grant or reservation": `reserveTrial` with `config.enabled=false`
+  returns false and writes zero `trial_grants` / `trial_reservations` rows
+  (`trial-ledger.ts` first guard).
+- **HTTP invariants** (`scripts/http-suite/quota-checks.mjs`, daily-free proof):
+  daily mode writes no `trial_grants` row (the reverse of the enabled suite's
+  "no daily allocation in lifetime mode" check); `/v1/models` publishes
+  `trial_paid_transition: null` for every model while disabled; the account page
+  renders "Daily trial credits" and never "Your one-time trial" (TrialCard null
+  guard); `/api/account/trial` omits the lifetime-only `grantedTokens` field.
+- **Deliberate non-additions:** no pure unit test for `trialOffer` disabled —
+  it reads process env and the live DB with no injection point, and the
+  end-to-end `/v1/models` invariant is the stronger proof. Account-page copy
+  ("Access follows your trial allowance...") is truthful under daily mode and
+  unchanged.
+- **Receipt:** `npm run verify` full chain PASS — lint, typecheck, config-check,
+  364 unit tests, quality, production build, main HTTP suite (678 checks
+  including the six disabled-branch checks above), enabled trial suite, recovery
+  drill.
+
+Status remains `converged`: real launch/reset acceptance and the C3 provider-quota
+refresh scope stay operator-gated (062 / offering decision).

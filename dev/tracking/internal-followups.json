@@ -71,9 +71,9 @@
       "fid": "FID-2026-1030-058",
       "state": "blocked",
       "title": "Operator RPO/RTO and first production-volume restore",
-      "detail": "The backup/restore code and a disposable drill are verified. No recovery-point or restore-time target is set, and no timed restore has run on the actual Fly volume; a different filesystem, mount permission or disk-full condition is untested.",
-      "evidence": "dev/fids/archive/FID-2026-1030-058-database-backup-and-restore.md; docs/deployment-runbook.md:242",
-      "next_action": "Before launch under FID-2026-1030-062, set the backup interval and restore target, pull a backup off the volume with its sidecar, run the timed restore, confirm /api/ready and /admin/reconciliation, and record the receipt."
+      "detail": "The backup/restore code and a disposable drill are verified. No recovery-point or restore-time target is set, and no timed restore has run on the actual Fly volume. On 2026-10-31 the authenticated Fly CLI (v0.5.1) could not list apps: `fly apps list` exited 1 with 'trial has ended, please add a credit card'. No app, volume or machine exists, so the timed restore could not start.",
+      "evidence": "dev/fids/archive/FID-2026-1030-058-database-backup-and-restore.md; docs/deployment-runbook.md:242; 2026-10-31 flyctl observation: apps list exit 1, no app/volume",
+      "next_action": "Enable the Fly account payment method and provision the app/volume under FID-2026-1030-067/062. Then set the backup interval and restore target, pull a backup off the volume with its sidecar, run the timed restore, confirm /api/ready and /admin/reconciliation, and record the receipt."
     }
   ]
 }

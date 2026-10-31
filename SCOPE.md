@@ -14,8 +14,11 @@ spend and messaging boundaries remain binding; no missing evidence is invented.
   Implementation `bb925af`; 335 tests, 609 HTTP checks, trial suite, build,
   recovery and clean lint pass. Archived; hosted ingress observation retained
   as `FID-2026-1030-046-INGRESS` in the tracking ledger.
-- [ ] **C2 — FID-2026-1030-045:** single-use ownership/recovery tokens, delivery,
-  routes and customer interactions; transport/sender and inbox inputs requested.
+- [x] **C2 — FID-2026-1030-045:** single-use ownership/recovery tokens, delivery,
+  routes and customer interactions. Implementation `871f19e`; 344 tests, 642 HTTP
+  checks, trial suite, build, quality (319 files) and recovery drill pass. FID
+  closed and archived; sender, controlled inbox and privacy recipient disclosure
+  remain operator inputs as `FID-2026-1030-045-LIVE` in the tracking ledger.
 - [ ] **C3 — FID-2026-1030-049:** audit quota/reset/allocation coverage against
   the committed 063/069 fixes and finish missing invariants.
 - [ ] **C4 — FID-2026-1030-059:** monitoring, protected incident controls and

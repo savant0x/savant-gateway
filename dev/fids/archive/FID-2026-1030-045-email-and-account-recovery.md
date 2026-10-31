@@ -4,7 +4,7 @@
 **ID:** FID-2026-1030-045
 **Parent:** FID-2026-1030-043
 **Severity:** high
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044
@@ -78,16 +78,68 @@ transport. AUDIT: pending. ADVERSARIAL: reused links, resend races and account
 enumeration must fail safely. Five questions: bound send volume, handle all token
 states, resist takeover, centralize token rules and retain auditable ownership transitions.
 
+## Implementation Evidence
+
+- **Commit SHA:** `871f19e` — `feat(auth): implement email verification and
+  recovery (FID-2026-1030-045)`, 27 files, 1323 insertions.
+- **File:line ranges:**
+  - `lib/schema/account-actions.ts:3` — `account_actions` table, purpose and
+    delivery-state checks, one-active-action unique index.
+  - `lib/account-actions.ts:26` issue (three/hour, resend supersession),
+    `:76` delivery state, `:95` atomic consume with password reset, session/key
+    revocation and outstanding-action invalidation.
+  - `lib/account-email.ts:12` opt-in configuration with canonical origin and
+    pinned production endpoint, `:69` Resend POST with idempotency key, two
+    bounded attempts and no provider-text logging.
+  - `app/api/auth/email/request/route.ts:29` and
+    `app/api/auth/email/consume/route.ts:17` — same-origin, rate-bounded,
+    bounded-JSON routes; reset delivery runs in `after` so transport latency
+    cannot disclose account existence.
+  - `app/account/page.tsx:156`, `app/recover/page.tsx:12`,
+    `app/account/action/page.tsx:11`,
+    `components/account/email-verification-card.tsx:8`,
+    `components/account/recovery-form.tsx:9`,
+    `components/account/account-action-form.tsx:10`,
+    `components/account/auth-form.tsx:197`.
+  - `tests/account-recovery.test.mjs:31-159` — nine cases including the
+    two-process consumption race.
+  - `scripts/http-suite/account-recovery-checks.mjs:34` — 25 production HTTP
+    checks against a Resend-shaped double.
+- **Gate output:** `npm run verify` exit 0 on `871f19e`: 344 unit tests,
+  quality PASS (400-line ceiling, 319 files), production build, 642 HTTP checks
+  PASS, trial suite PASS, recovery drill PASS (7 concurrent writes, 1911 ms).
+- **Reproducibility:** `grep -rn "account_actions" lib app tests scripts`
+  returns the schema, ledger, routes, UI and both suites; the table is created
+  by `lib/db.ts` through `accountActionSchema`.
+- **Step statuses:** 1 implemented, 2 implemented, 3 implemented,
+  4 implemented.
+
 ## Resolution
+
+- **Closed Date:** 2026-10-31
+- **Fix Description:** Hash-only, single-use, purpose/email-bound action tokens
+  with expiry and delivery state; authenticated verification request, public
+  enumeration-safe recovery request and same-origin consume routes; atomic
+  ownership write and password reset that revokes sessions, keys and other
+  actions; opt-in Resend transport; verification card, recovery page and
+  fragment-driven confirmation page.
+- **Tests Added:** Yes — `tests/account-recovery.test.mjs` (nine cases,
+  including an independent-process replay race) and the production HTTP
+  recovery checks.
+- **Verification Evidence:** `npm run verify` exit 0 with the counts above;
+  `npm run lint` and `npm run typecheck` exit 0 after the final formatting edit;
+  attribution guard PASS.
+- **Archived:** 2026-10-31
 
 Loop 2 AUDIT/ADVERSARIAL → SELF-CORRECT: bind tokens to account, purpose and
 current email; email change/resend invalidates superseded tokens atomically.
 Test delivery retries separately from token replay and never expose raw tokens
 in logs. Final convergence checks are in the master planning-audit receipt.
 
-Implementation verified; sender configuration, controlled inbox and the privacy
-recipient disclosure remain operator inputs in the tracking ledger. Trial
-activation is owned by 049 and cannot follow merely from adding a form.
+Live acceptance remains `FID-2026-1030-045-LIVE` in the tracking ledger:
+sender configuration, controlled inbox receipt and the privacy recipient
+disclosure are operator inputs. Trial activation is owned by 049 and cannot
+follow merely from adding a form.
 
 ## Lessons Learned
 
@@ -160,6 +212,7 @@ proves disabled delivery issues no action and renders an honest unavailable stat
 `npm run verify` exit 0: 344 tests, quality PASS (319 files), production build,
 642 main HTTP checks PASS, trial suite PASS and recovery drill PASS (7 concurrent
 writes, 1998ms). Three formatting/import warnings in that run were corrected
-directly; clean post-correction lint is required before committing. No external
-message or service provisioning occurred. Live acceptance is
+directly; the post-correction `npm run lint` and `npm run typecheck` both exit 0
+with no warnings, and the closure run on `871f19e` repeated `npm run verify`
+exit 0. No external message or service provisioning occurred. Live acceptance is
 `FID-2026-1030-045-LIVE`, linked to the implementation rather than fabricated.

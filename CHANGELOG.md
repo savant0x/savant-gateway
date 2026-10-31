@@ -17,6 +17,7 @@ distinguish verified behavior from unverified claims.
   (319 files), build, 642 main HTTP checks, trial gate and recovery drill PASS;
   post-format lint/typecheck clean. The controlled inbox, sender and new privacy
   recipient disclosure remain explicit operator inputs; no real email was sent.
+  Closed against `871f19e` and archived.
 
 ## 2026-10-31 — Bounded requests and account abuse controls
 

@@ -49,13 +49,21 @@ Context7 supplied the official Resend POST /emails/idempotency contract.
 ## Account Recovery Receipt
 
 FID-045: 344 tests, quality 319 files, build, 642 HTTP checks, trial gate and
-recovery drill PASS (7 concurrent writes, 1998ms). Post-format `npm run check`
-passes with no warnings; attribution and diff checks pass. Code/HTTP confirm
-token expiry, replay/purpose/email/delivery binding, atomic password changes and
-session/key revocation. A transport latch proves a public reset response does
-not wait for account-specific delivery. Live acceptance and privacy publication
-are retained as `FID-2026-1030-045-LIVE`; the concrete proposed disclosure is
-`docs/policies/drafts/email-disclosure.md`, not an edited published policy.
+recovery drill PASS (7 concurrent writes, 1911ms on the closure run). Post-format
+`npm run check` passes with no warnings; attribution and diff checks pass.
+Code/HTTP confirm token expiry, replay/purpose/email/delivery binding, atomic
+password changes and session/key revocation. A transport latch proves a public
+reset response does not wait for account-specific delivery. Live acceptance and
+privacy publication are retained as `FID-2026-1030-045-LIVE`; the concrete
+proposed disclosure is `docs/policies/drafts/email-disclosure.md`, not an edited
+published policy.
+
+## Work Completed — FID-045
+
+Implementation `871f19e` verified on the committed tree (`npm run verify` exit 0)
+and archived on 2026-10-31. SCOPE C2 is checked; the master child link and
+CHANGELOG record the closure. Existing operator edits and untracked
+research/attachments remain preserved and unstaged.
 
 ## Open Questions
 

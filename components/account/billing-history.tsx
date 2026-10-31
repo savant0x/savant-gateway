@@ -9,6 +9,15 @@ import {
   formatSignedMicros,
 } from "@/components/dashboard/format";
 
+const PROVIDER_LABELS: Record<string, string> = {
+  stripe: "Stripe",
+  nowpayments: "NOWPayments",
+};
+
+function providerLabel(provider: string) {
+  return PROVIDER_LABELS[provider] ?? provider;
+}
+
 export function BillingHistory({
   ledger,
   topups,
@@ -93,6 +102,7 @@ export function BillingHistory({
                 <thead>
                   <tr>
                     <th>Created</th>
+                    <th>Provider</th>
                     <th className="text-right">Amount</th>
                     <th>Status</th>
                     <th>Paid</th>
@@ -103,6 +113,9 @@ export function BillingHistory({
                     <tr key={topup.id}>
                       <td className="whitespace-nowrap text-muted">
                         <LocalTime value={topup.createdAt} />
+                      </td>
+                      <td className="text-muted">
+                        {providerLabel(topup.provider)}
                       </td>
                       <td className="text-right">
                         {formatMicros(topup.amountMicros)}

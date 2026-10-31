@@ -8,7 +8,7 @@ test("card top-ups are off when the flag is unset", () => {
 
   assert.equal(policy.enabled, false);
   assert.equal(policy.configured, false);
-  assert.match(policy.reason, /USDC/);
+  assert.match(policy.reason, /crypto/);
 });
 
 test("card top-ups stay off for an explicit false", () => {

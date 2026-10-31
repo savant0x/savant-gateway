@@ -198,6 +198,19 @@ export function fulfillTopup(input: {
     .immediate();
 }
 
+export function getTopupById(topupId: string): TopupSummary | null {
+  const row = db
+    .prepare(
+      `SELECT ${TOPUP_COLUMNS}
+       FROM topups t
+       LEFT JOIN users u ON u.id = t.user_id
+       WHERE t.id = ?`,
+    )
+    .get(topupId) as TopupRow | undefined;
+
+  return row ? toSummary(row) : null;
+}
+
 export function listTopups(limit = 50): TopupSummary[] {
   const rows = db
     .prepare(

@@ -24,6 +24,7 @@ import { runAccountRecoveryChecks, startEmailDouble } from "./http-suite/account
 const ADMIN_PASSWORD = "http-suite-admin-password";
 const ADMIN_SECRET = "http-suite-admin-secret-0123456789abcdef";
 const WEBHOOK_SECRET = "whsec_http_suite_0123456789abcdef";
+const IPN_SECRET = "nowpayments-ipn-secret-0123456789abcdef";
 const PROVIDER_KEY = "http-suite-provider-key";
 const BENCHMARK_KEY = "http-suite-benchmark-key";
 const PROVIDER_KEY_ENV = "HTTP_SUITE_PROVIDER_KEY";
@@ -61,6 +62,12 @@ try {
       ADMIN_SESSION_SECRET: ADMIN_SECRET,
       STRIPE_SECRET_KEY: "sk_test_http_suite_placeholder",
       STRIPE_WEBHOOK_SECRET: WEBHOOK_SECRET,
+      // The crypto lane mirrors the card lane: credentials exist so the webhook
+      // can run fully local, but the policy flag is deliberately unset. The
+      // checkout route must refuse with crypto_topups_disabled, proving the
+      // policy gate precedes the config gate.
+      NOWPAYMENTS_API_KEY: "np_http_suite_placeholder_key",
+      NOWPAYMENTS_IPN_SECRET: IPN_SECRET,
       ARTIFICIAL_ANALYSIS_API_KEY: BENCHMARK_KEY,
       // The fixture source is local; no third-party quota is spent by the gate.
       ARTIFICIAL_ANALYSIS_BASE_URL: mock.baseUrl,
@@ -116,6 +123,7 @@ try {
     db: database,
     mock,
     webhookSecret: WEBHOOK_SECRET,
+    ipnSecret: IPN_SECRET,
     adminPassword: ADMIN_PASSWORD,
     providerKey: PROVIDER_KEY,
     logs: server.logs,

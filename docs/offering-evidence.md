@@ -40,7 +40,7 @@ model. It does not approve an offering, a price, a limit or a spend budget.
 | Outstanding customer credit (local) | $5.00, held $0.00, one ledger row, zero paid top-ups | Observed | local `users`, `credit_ledger`, `topups`, read 2026-10-30 |
 | APInex partner response | Provider offers support for Savant Code as a foundation customer; exact commercial/resale terms are unconfirmed | Provider-supplied evidence | Email supplied by operator 2026-10-30; see below |
 | Confirmed per-model upstream rates | — | Unknown | Synced values exist, but no dated provider rate-card confirmation is recorded |
-| Payment processing fee | — | Unknown | `docs/research/` suggests card fees; research is not a contract |
+| Payment processing fee | — | Unknown | NOWPayments fee schedule not yet read; invoice created with `is_fee_paid_by_user: true` (see customer payment lane below) |
 | Refund/dispute reserve | — | Unknown | No operator policy recorded |
 | Monthly fixed operating cost | — | Unknown | Hosting selection belongs to FID-057 |
 | Paid upstream spend budget | — | Unknown | Operator funding decision |
@@ -133,6 +133,17 @@ are read from this repository; nothing below re-derives them.
    $150 before paid inference is admitted.
 6. **Savings claims — approved as published.** The landing page's per-model
    comparison against the public list may be published as it stands.
+7. **Fiat permitted for customers; crypto-first is sequencing.** The operator
+   is not opposed to customer card payments; crypto was chosen only because it
+   was easier to start there. The launch lane is NOWPayments-hosted crypto
+   invoices; card top-ups stay gated off by `CARD_TOPUPS_ENABLED=false` and may
+   be reopened later as a second lane with Stripe credentials plus the flag.
+8. **Sell markup — 2500 bps (2.5×).** The operator ruled the catalog markup at
+   2.5× over the synced rate card (down from the 3.0× discussion baseline; up
+   from the configured 3000-bps default). At 2.5×, 17/19 OpenRouter-matched
+   paid rows remain cheaper than OpenRouter; `glm-5.3-flash` and one further
+   row price above OpenRouter and are handled separately. FID-044 tracks the
+   settings/constant update and catalog recompute.
 
 ## Verified upstream platform facts (2026-10-31)
 
@@ -178,6 +189,23 @@ Proposed, not yet confirmed: **$50 reserve, alert at $50, hard stop at $25**.
 That holds one third of the $150 unspent, covers ten times the current $5.00
 outstanding credit, and still leaves $100 of paid working capital.
 
+### Customer payment lane (NOWPayments, 2026-10-31)
+
+The operator identified NOWPayments (`https://nowpayments.io/`) as the payment
+processor; APInex's own checkout uses NOWPayments invoices
+(`createTopup` → `invoiceUrl`; analytics channel `nowpayments`; UI "USDT, BTC,
+ETH and more"). FID-2026-1031-076 builds the gateway lane from the documented
+contract: `POST /v1/invoice` creates a fixed-rate USD invoice
+(`price_amount`, `price_currency`, optional `pay_currency`, `order_id`,
+`ipn_callback_url`, `success_url`, `cancel_url`), and the IPN webhook is signed
+with HMAC-SHA512 over the recursively key-sorted JSON body
+(`x-nowpayments-sig`), with `finished` the settled status that releases credit.
+The exact NOWPayments fee schedule is **Unknown**; the invoice is created with
+`is_fee_paid_by_user: true` so the customer covers the processor fee and the
+credited price equals the listed price. Settlement is non-custodial to an
+operator-chosen outcome wallet, which keeps the provider-funding lane (upstream
+wholesale) and the customer-collection lane (NOWPayments) separate.
+
 ## Still open after these rulings
 
 - **Free-share scope.** Whether the daily share is spendable on paid-group models
@@ -185,9 +213,11 @@ outstanding credit, and still leaves $100 of paid working capital.
   `allow_free = 1`, so a paid model with no credit returns a credit error.
 - **Operating reserve and low-balance threshold**, as absolute dollars derived
   from the $150 funding decision.
-- **Payment-path consequence.** "Crypto only" disables the Stripe Checkout
-  top-up at launch, which makes the USDC lane in FID-2026-1030-068 a launch
-  dependency rather than an optional second lane.
+- **Payment-path consequence.** Ruling #4 named direct USDC as the launch lane;
+  ruling #7 and the NOWPayments facts above supersede the processor choice.
+  FID-2026-1031-076 (NOWPayments invoice lane) is the launch payment path;
+  FID-2026-1030-068 (direct USDC) is deferred behind it. The no-refund remedy
+  path (service credit) is unchanged.
 - **No-refund terms.** The published policy still describes a manual Stripe
   refund and must be rewritten as a new immutable version before launch.
 - **Provider rate-card confirmation.** The resell programme establishes

@@ -5,6 +5,7 @@ import {
   cookieFlags,
   cookieValue,
   request,
+  signIpn,
   signWebhook,
 } from "./harness.mjs";
 import {
@@ -37,6 +38,12 @@ const CREDIT_TOPUP_ID = "topup_http_suite_credit";
 const CREDIT_TOPUP_REF = "pending_topup_http_suite_credit";
 const MISMATCH_TOPUP_ID = "topup_http_suite_mismatch";
 const MISMATCH_TOPUP_REF = "pending_topup_http_suite_mismatch";
+const NP_TOPUP_ID = "topup_http_suite_np_credit";
+const NP_TOPUP_REF = "pending_topup_http_suite_np_credit";
+const NP_MISMATCH_TOPUP_ID = "topup_http_suite_np_mismatch";
+const NP_MISMATCH_TOPUP_REF = "pending_topup_http_suite_np_mismatch";
+const NP_FAIL_TOPUP_ID = "topup_http_suite_np_fail";
+const NP_FAIL_TOPUP_REF = "pending_topup_http_suite_np_fail";
 
 function signup(context, account, origin) {
   return request(context.baseUrl, "/api/auth/signup", {
@@ -102,6 +109,41 @@ function sendWebhook(context, payload, timestamp) {
         context.webhookSecret,
         timestamp,
       ),
+    },
+  });
+}
+
+/**
+ * NOWPayments IPN fixtures. The signature is computed over the exact raw body
+ * with the shared harness signIpn, so a delivery here is byte-identical to one
+ * NOWPayments would send.
+ */
+function buildIpn(input) {
+  return JSON.stringify({
+    payment_id: input.paymentId,
+    payment_status: input.status,
+    pay_address: "0x0000000000000000000000000000000000000000",
+    price_amount: input.priceAmount,
+    price_currency: input.priceCurrency ?? "usd",
+    pay_amount: input.payAmount ?? input.priceAmount,
+    actually_paid: input.actuallyPaid ?? input.priceAmount,
+    pay_currency: input.payCurrency ?? "usdc",
+    order_id: input.orderId,
+    order_description: "Savant Gateway credit",
+    purchase_id: input.purchaseId ?? `purchase_${input.paymentId}`,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    outcome_amount: input.outcomeAmount ?? input.priceAmount,
+    outcome_currency: input.outcomeCurrency ?? "usdc",
+  });
+}
+
+function sendIpn(context, payload, signature) {
+  return request(context.baseUrl, "/api/webhooks/nowpayments", {
+    method: "POST",
+    rawBody: payload,
+    headers: {
+      "x-nowpayments-sig": signature ?? signIpn(payload, context.ipnSecret),
     },
   });
 }
@@ -241,6 +283,29 @@ async function runAuthChecks(context) {
     "card refusal names the disabled policy",
     cardTopup.headers.get("x-reason"),
     "card_topups_disabled",
+  );
+
+  // The fixture provides NOWPayments credentials but no policy flag, so this
+  // refusal proves the policy gate precedes the config gate on the route.
+  const cryptoTopup = await request(
+    context.baseUrl,
+    "/api/account/topup/crypto",
+    {
+      method: "POST",
+      cookie: `sg_session=${sessionCookie}`,
+      body: { amountUsd: "25.00" },
+    },
+  );
+
+  checkEqual(
+    "crypto top-ups are refused while the lane is closed",
+    cryptoTopup.status,
+    503,
+  );
+  checkEqual(
+    "crypto refusal names the disabled policy",
+    cryptoTopup.headers.get("x-reason"),
+    "crypto_topups_disabled",
   );
 
   return {
@@ -1584,6 +1649,189 @@ async function runPlanSalesChecks(context, alpha, adminCookie) {
   );
 }
 
+async function runNowpaymentsChecks(context, alpha) {
+  const balance = async () =>
+    (await me(context, alpha.cookie)).json?.account?.creditMicros;
+  const before = await balance();
+
+  // The fixture has real IPN credentials but no policy flag, so the webhook
+  // gate must be configuration-only (mirroring the card lane): a signed
+  // delivery for an order this gateway never created is still processed, and
+  // every branch below is exercised fully local.
+  const forged = buildIpn({
+    paymentId: 1_234_567_890,
+    status: "finished",
+    orderId: "topup_never_created",
+    priceAmount: 1,
+  });
+
+  const badSig = await sendIpn(context, forged, "0".repeat(128));
+
+  checkEqual("a forged IPN signature returns 400", badSig.status, 400);
+  checkEqual(
+    "a forged IPN signature changes nothing",
+    await balance(),
+    before,
+  );
+
+  const missingSig = await request(context.baseUrl, "/api/webhooks/nowpayments", {
+    method: "POST",
+    rawBody: forged,
+  });
+
+  checkEqual("an unsigned IPN returns 400", missingSig.status, 400);
+
+  seedPendingTopup(context.db, {
+    id: NP_TOPUP_ID,
+    userId: alpha.id,
+    amountMicros: 25_000_000,
+    providerRef: NP_TOPUP_REF,
+    provider: "nowpayments",
+  });
+
+  const paymentId = 9_876_543_210;
+  const waiting = await sendIpn(
+    context,
+    buildIpn({
+      paymentId,
+      status: "waiting",
+      orderId: NP_TOPUP_ID,
+      priceAmount: 25,
+    }),
+  );
+
+  checkEqual("a waiting IPN returns 200", waiting.status, 200);
+  checkEqual(
+    "a waiting IPN does not claim or credit",
+    waiting.json?.credited,
+    undefined,
+  );
+  checkEqual("a waiting IPN leaves the balance unchanged", await balance(), before);
+
+  const finished = await sendIpn(
+    context,
+    buildIpn({
+      paymentId,
+      status: "finished",
+      orderId: NP_TOPUP_ID,
+      priceAmount: 25,
+    }),
+  );
+
+  checkEqual("a signed crypto IPN returns 200", finished.status, 200);
+  checkEqual("a finished IPN credits the top-up", finished.json?.credited, true);
+  checkEqual(
+    "a finished IPN credits the exact amount",
+    await balance(),
+    before + 25_000_000,
+  );
+  checkEqual(
+    "a finished IPN marks the top-up paid",
+    getTopupStatus(context.db, NP_TOPUP_ID),
+    "paid",
+  );
+
+  const replay = await sendIpn(
+    context,
+    buildIpn({
+      paymentId,
+      status: "finished",
+      orderId: NP_TOPUP_ID,
+      priceAmount: 25,
+    }),
+  );
+
+  checkEqual("a replayed IPN returns 200", replay.status, 200);
+  checkEqual("a replayed IPN is identified as a replay", replay.json?.replay, true);
+  checkEqual(
+    "a replayed IPN does not credit twice",
+    await balance(),
+    before + 25_000_000,
+  );
+
+  seedPendingTopup(context.db, {
+    id: NP_MISMATCH_TOPUP_ID,
+    userId: alpha.id,
+    amountMicros: 10_000_000,
+    providerRef: NP_MISMATCH_TOPUP_REF,
+    provider: "nowpayments",
+  });
+
+  const mismatch = await sendIpn(
+    context,
+    buildIpn({
+      paymentId: 1_111_111_111,
+      status: "finished",
+      orderId: NP_MISMATCH_TOPUP_ID,
+      priceAmount: 1,
+    }),
+  );
+
+  checkEqual("an amount-mismatch IPN returns 200", mismatch.status, 200);
+  checkEqual("an amount-mismatch IPN does not credit", mismatch.json?.credited, false);
+  checkEqual("an amount-mismatch IPN is quarantined", mismatch.json?.quarantined, true);
+  checkEqual(
+    "an amount-mismatch top-up stays pending",
+    getTopupStatus(context.db, NP_MISMATCH_TOPUP_ID),
+    "pending",
+  );
+  checkEqual(
+    "an amount-mismatch IPN leaves the balance unchanged",
+    await balance(),
+    before + 25_000_000,
+  );
+
+  const unknown = await sendIpn(
+    context,
+    buildIpn({
+      paymentId: 2_222_222_222,
+      status: "finished",
+      orderId: "topup_never_seeded",
+      priceAmount: 25,
+    }),
+  );
+
+  checkEqual("an unknown-order IPN returns 200", unknown.status, 200);
+  checkEqual("an unknown-order IPN does not credit", unknown.json?.credited, false);
+  checkEqual("an unknown-order IPN is quarantined", unknown.json?.quarantined, true);
+  checkEqual(
+    "an unknown-order IPN leaves the balance unchanged",
+    await balance(),
+    before + 25_000_000,
+  );
+
+  seedPendingTopup(context.db, {
+    id: NP_FAIL_TOPUP_ID,
+    userId: alpha.id,
+    amountMicros: 5_000_000,
+    providerRef: NP_FAIL_TOPUP_REF,
+    provider: "nowpayments",
+  });
+
+  const failed = await sendIpn(
+    context,
+    buildIpn({
+      paymentId: 3_333_333_333,
+      status: "expired",
+      orderId: NP_FAIL_TOPUP_ID,
+      priceAmount: 5,
+    }),
+  );
+
+  checkEqual("a terminal-failure IPN returns 200", failed.status, 200);
+  checkEqual("a terminal-failure IPN does not credit", failed.json?.credited, false);
+  checkEqual(
+    "a terminal-failure top-up is marked failed",
+    getTopupStatus(context.db, NP_FAIL_TOPUP_ID),
+    "failed",
+  );
+  checkEqual(
+    "a terminal-failure IPN leaves the balance unchanged",
+    await balance(),
+    before + 25_000_000,
+  );
+}
+
 export async function runChecks(context) {
   await runAvailabilityChecks(context);
 
@@ -1593,6 +1841,7 @@ export async function runChecks(context) {
   await runKeyIsolationChecks(context, alpha, beta);
   await runWebhookChecks(context, alpha);
   await runSettlementChecks(context, alpha, beta);
+  await runNowpaymentsChecks(context, alpha);
   const adminCookie = await runAdminChecks(context);
 
   await runSystemsChecks(context, alpha, adminCookie);

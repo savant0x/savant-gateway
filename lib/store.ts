@@ -124,6 +124,7 @@ export {
   createTopup,
   fulfillTopup,
   getCustomerPurchasedMicros,
+  getTopupById,
   listCustomerTopups,
   listTopups,
   markTopupFailed,

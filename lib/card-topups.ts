@@ -26,7 +26,7 @@ export function readCardTopupPolicy(env: Env = process.env): CardTopupPolicy {
       enabled: false,
       configured: false,
       reason:
-        "Card top-ups are disabled for this launch. Prepaid credit opens with the direct USDC lane.",
+        "Card top-ups are disabled for this launch. Prepaid credit opens through the crypto lane.",
     };
   }
 

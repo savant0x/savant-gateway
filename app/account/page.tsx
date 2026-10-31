@@ -4,13 +4,13 @@ import { Card } from "@heroui/react";
 import { headers } from "next/headers";
 
 import { AccountHeader } from "@/components/account/account-header";
-import { EmailVerificationCard } from "@/components/account/email-verification-card";
 import { BillingHistory } from "@/components/account/billing-history";
+import { EmailVerificationCard } from "@/components/account/email-verification-card";
 import { CustomerKeysCard } from "@/components/account/keys-card";
 import { PolicyAcceptanceCard } from "@/components/account/policy-acceptance-card";
 import { SubscriptionCard } from "@/components/account/subscription-card";
 import { SupportCard } from "@/components/account/support-card";
-import { TopupCard } from "@/components/account/topup-card";
+import { TopupCard, type TopupLane } from "@/components/account/topup-card";
 import { TrialCard } from "@/components/account/trial-card";
 import { DailyTrialCard } from "@/components/account/daily-trial-card";
 import { StatCard } from "@/components/dashboard/chips";
@@ -25,6 +25,10 @@ import { siteConfig } from "@/config/site";
 import { requireCustomerPage } from "@/lib/customer-auth";
 import { readAccountEmailConfig } from "@/lib/account-email";
 import { readCardTopupPolicy } from "@/lib/card-topups";
+import {
+  readNowpaymentsConfig,
+  readNowpaymentsPolicy,
+} from "@/lib/nowpayments";
 import { accountEmailStatus } from "@/lib/store/account-email";
 import {
   POLICY_EFFECTIVE_LABEL,
@@ -66,8 +70,29 @@ export default async function AccountPage({
   const subscription = customerSubscriptionSummary(customer.id);
   const stripe = readStripeConfig();
   const cardTopups = readCardTopupPolicy();
-  const topupReady = stripe.configured && cardTopups.enabled;
-  const topupReason = cardTopups.enabled ? stripe.reason : cardTopups.reason;
+  const nowpayments = readNowpaymentsPolicy();
+  const nowpaymentsConfig = readNowpaymentsConfig();
+  // Each lane decides its own availability. The checkout routes repeat the same
+  // gate ordering (policy before credentials), so the card copy never promises
+  // a lane the route would refuse.
+  const topupLanes: TopupLane[] = [
+    {
+      id: "crypto",
+      name: "Crypto",
+      endpoint: "/api/account/topup/crypto",
+      available: nowpayments.enabled && nowpaymentsConfig.configured,
+      reason: nowpayments.enabled
+        ? nowpaymentsConfig.reason
+        : nowpayments.reason,
+    },
+    {
+      id: "card",
+      name: "Card",
+      endpoint: "/api/account/topup",
+      available: cardTopups.enabled && stripe.configured,
+      reason: cardTopups.enabled ? stripe.reason : cardTopups.reason,
+    },
+  ];
   const sales = readPlanSalesPolicy();
   const requestHeaders = await headers();
   const params = await searchParams;
@@ -100,7 +125,7 @@ export default async function AccountPage({
 
         {params.topup === "success" ? (
           <p className="rounded-xl border border-accent/30 bg-accent/10 px-4 py-3 text-sm">
-            Stripe returned successfully. Credit is applied by the signed
+            Payment returned successfully. Credit is applied by the signed
             webhook — refresh in a moment if the balance has not moved yet.
           </p>
         ) : null}
@@ -131,7 +156,7 @@ export default async function AccountPage({
             value={formatMicros(data.account.availableMicros)}
           />
           <StatCard
-            detail="successful Stripe top-ups"
+            detail="successful top-ups"
             icon="fa-sack-dollar"
             label="Purchased"
             value={formatMicros(data.totalPurchasedMicros)}
@@ -166,7 +191,7 @@ export default async function AccountPage({
         <DailyTrialCard userId={customer.id} />
 
         <section className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
-          <TopupCard configured={topupReady} reason={topupReason} />
+          <TopupCard lanes={topupLanes} />
           <CustomerKeysCard keys={data.keys} />
         </section>
 

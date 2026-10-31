@@ -664,6 +664,39 @@ export function signWebhook(payload, secret, timestamp) {
   return `t=${timestamp},v1=${signature}`;
 }
 
+/**
+ * NOWPayments signs IPNs with HMAC-SHA512 over the JSON of the payment object
+ * with keys sorted recursively. This mirrors lib/nowpayments.ts so a signature
+ * built here is byte-identical to the one the route verifies. It is distinct
+ * from signWebhook (Stripe's t=...,v1=... scheme) on purpose.
+ */
+export function sortObjectDeep(value) {
+  if (Array.isArray(value)) return value.map(sortObjectDeep);
+
+  if (
+    value !== null &&
+    typeof value === "object" &&
+    value.constructor === Object
+  ) {
+    return Object.keys(value)
+      .sort()
+      .reduce((result, key) => {
+        result[key] = sortObjectDeep(value[key]);
+        return result;
+      }, {});
+  }
+
+  return value;
+}
+
+export function signIpn(rawPayload, secret) {
+  const payload = JSON.parse(rawPayload);
+
+  return createHmac("sha512", secret.trim())
+    .update(JSON.stringify(sortObjectDeep(payload)))
+    .digest("hex");
+}
+
 function waitForExit(child, timeoutMs) {
   if (child.exitCode !== null) return Promise.resolve(true);
 

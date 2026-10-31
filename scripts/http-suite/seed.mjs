@@ -44,9 +44,16 @@ export function seedPendingTopup(database, input) {
       `INSERT OR REPLACE INTO topups
         (id, user_id, provider, provider_ref, amount_micros, currency, status,
          created_at, paid_at)
-       VALUES (?, ?, 'stripe', ?, ?, 'usd', 'pending', ?, NULL)`,
+       VALUES (?, ?, ?, ?, ?, 'usd', 'pending', ?, NULL)`,
     )
-    .run(input.id, input.userId, input.providerRef, input.amountMicros, now);
+    .run(
+      input.id,
+      input.userId,
+      input.provider ?? "stripe",
+      input.providerRef,
+      input.amountMicros,
+      now,
+    );
 }
 
 export function readUsageRows(database, userId) {

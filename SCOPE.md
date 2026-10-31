@@ -1777,3 +1777,29 @@ that call answered in 3.8 s warm and then `503` in 8 ms after any quiet period.
   account: the suite uses the mock, so the real 15 rpm fallback and the real
   provider's `/balance` cadence under load remain unmeasured until the next live
   call pass.
+
+## Current Session — 2026-10-31 (fixture capability coverage: 070)
+
+Operator request: add a check that every HTTP test double answers each provider
+endpoint its seeded provider advertises, so a capability mismatch fails loudly.
+
+The motivation is measured, not theoretical: the same class of defect broke the
+gate twice in the preceding hour (FID-069's fixture denying a capability it
+served, and the trial double accepting a request it could not parse).
+
+- [x] **E1 — The probe (FID-070).** `checkProviderDouble` reads
+  `supports_balance` and `supports_subscription` from the provider row — the same
+  flags production reads — calls each advertised endpoint with the serving
+  credential, and accepts the body only when the gateway's own parser accepts
+  it. Both suites call it before any check that depends on the fixture, so a
+  mismatch names its own cause instead of surfacing as a parse error three
+  layers away.
+- [x] **E2 — Verification.** RED: a double answering its advertised `/balance`
+  with `404` exits 1 with
+  `the "mock" double answers /balance, which its provider advertises — expected 200, got 404`.
+  GREEN: main suite 466 checks (463 before), trial suite five probe checks, both
+  exit 0. `lint` (zero warnings), `typecheck`, `quality` and `build` exit 0.
+- [ ] **E3 — Unverified.** The probe covers the two capabilities the schema has
+  today and proves nothing about endpoints a row does *not* advertise. It also
+  cannot see a double that answers correctly but diverges from the real
+  provider's payload in a field no parser reads.

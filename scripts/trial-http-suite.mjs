@@ -1,8 +1,8 @@
 import { createServer } from "node:http";
 
 import {
-  checkEqual, createTempWorkspace, request, reservePort, startNextServer,
-  stopNextServer, waitForSchema, waitForServer, cookieValue,
+  checkEqual, checkProviderDouble, createTempWorkspace, request, reservePort,
+  startNextServer, stopNextServer, waitForSchema, waitForServer, cookieValue,
 } from "./http-suite/harness.mjs";
 import { seedCatalog } from "./http-suite/seed.mjs";
 
@@ -103,6 +103,9 @@ try {
   };
 
   refresh();
+  // `refresh` is what turns subscription support on, so the probe runs after
+  // it to cover both advertised endpoints of this double.
+  await checkProviderDouble({ db, slug: "mock", upstreamUrl, apiKey: "trial-test-key" });
 
   async function customer(email) {
     const signup = await request(baseUrl, "/api/auth/signup", {

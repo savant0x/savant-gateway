@@ -9,6 +9,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
+import {
+  parseProviderBalance,
+  parseProviderSubscription,
+} from "../../lib/provider-quota.ts";
+
 const require = createRequire(import.meta.url);
 const Database = require("better-sqlite3");
 
@@ -35,6 +40,74 @@ export function checkEqual(label, actual, expected) {
 
 export function summary() {
   return passed;
+}
+
+const PROVIDER_ENDPOINTS = [
+  {
+    column: "supports_balance",
+    path: "/balance",
+    parse: parseProviderBalance,
+  },
+  {
+    column: "supports_subscription",
+    path: "/subscription",
+    parse: parseProviderSubscription,
+  },
+];
+
+/**
+ * Proves that a seeded provider's advertised capabilities are answered by the
+ * double it points at, with payloads the gateway's own parsers accept.
+ *
+ * The capability flags are what the gateway reads before it decides to call an
+ * endpoint, so they are the source of truth here: a row that claims balance
+ * support obliges the double to answer `/balance`. When one did not, the mock
+ * received a GET, parsed an empty body as a completion and killed the whole
+ * run with an unrelated SyntaxError — the failure named neither the capability
+ * nor the endpoint. This check fails with both.
+ */
+export async function checkProviderDouble({ db, slug, upstreamUrl, apiKey }) {
+  const row = db
+    .prepare(
+      "SELECT supports_balance, supports_subscription FROM providers WHERE slug = ?",
+    )
+    .get(slug);
+
+  check(
+    `the "${slug}" fixture provider exists for the capability probe`,
+    Boolean(row),
+  );
+
+  for (const endpoint of PROVIDER_ENDPOINTS) {
+    if (row[endpoint.column] !== 1) continue;
+
+    // Read it the way the gateway reads it: with the serving credential, so a
+    // double that only answers unauthenticated is still caught.
+    const response = await fetch(`${upstreamUrl}${endpoint.path}`, {
+      headers: { authorization: `Bearer ${apiKey}` },
+    });
+    const text = await response.text();
+
+    check(
+      `the "${slug}" double answers ${endpoint.path}, which its provider advertises`,
+      response.status === 200,
+      `expected 200, got ${response.status}`,
+    );
+
+    let parsed = true;
+
+    try {
+      endpoint.parse(JSON.parse(text));
+    } catch {
+      parsed = false;
+    }
+
+    check(
+      `the ${endpoint.path} payload satisfies the provider parser`,
+      parsed,
+      `body ${text.slice(0, 120)}`,
+    );
+  }
 }
 
 export async function createTempWorkspace() {

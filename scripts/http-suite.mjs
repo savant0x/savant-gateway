@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 import { runChecks } from "./http-suite/checks.mjs";
 import {
+  checkProviderDouble,
   createTempWorkspace,
   logTail,
   reservePort,
@@ -76,6 +77,16 @@ try {
 
   database = await waitForSchema(workspace.dbPath);
   seedCatalog(database, { mockBaseUrl: mock.baseUrl });
+
+  // Before anything depends on the fixture: every endpoint its provider row
+  // advertises must really be answered, with a payload the gateway would
+  // accept (FID-2026-1030-070).
+  await checkProviderDouble({
+    db: database,
+    slug: "mock",
+    upstreamUrl: mock.baseUrl,
+    apiKey: PROVIDER_KEY,
+  });
 
   // Needs a populated catalog, so it runs before anything that leaves the
   // database unusable for a page request.

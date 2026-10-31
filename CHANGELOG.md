@@ -3,6 +3,27 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-31 — Test doubles must answer what they advertise
+
+- **FID-2026-1030-070 — medium — both HTTP doubles could advertise a provider
+  capability they never implemented, and nothing compared the two.** It bit
+  twice in one pass: the trial double received a `GET /balance` it did not
+  answer, parsed the empty body as a completion and killed the run with a
+  `SyntaxError` that named neither the capability nor the endpoint; the main
+  double had the mirror problem, answering `/balance` for a row that denied the
+  capability, which hid the FID-069 outage behind a configured fallback.
+  `checkProviderDouble` now reads the same `supports_balance` /
+  `supports_subscription` flags production reads, calls each advertised endpoint
+  with the serving credential, and accepts the payload only if
+  `parseProviderBalance` / `parseProviderSubscription` accept it — so a 200 with
+  the wrong shape fails too. It runs in both suites before any check that
+  depends on the fixture. Verified RED→GREEN: a double answering an advertised
+  `/balance` with `404` exits 1 with
+  `the "mock" double answers /balance, which its provider advertises — expected 200, got 404`;
+  green runs report 466 checks in the main suite (463 before) and five probe
+  checks in the trial suite. Gates: `lint` (zero warnings), `typecheck`,
+  `quality`, `build` and both HTTP suites exit 0.
+
 ## 2026-10-30 — The free path no longer dies on idleness
 
 - **FID-2026-1030-069 — critical — every free request after thirty seconds of

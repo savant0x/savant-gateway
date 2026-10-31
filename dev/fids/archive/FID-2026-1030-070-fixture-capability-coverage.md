@@ -4,7 +4,7 @@
 **ID:** FID-2026-1030-070
 **Parent:** FID-2026-1030-048
 **Severity:** medium
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-31 00:20
 **Automation level:** 2
 **YAGNI-Compliance:** Verified
@@ -173,7 +173,8 @@ answers with `404`.
 
 ### Implementation Evidence
 
-- [x] **Commit SHA:** recorded in the follow-up receipts commit for this pass.
+- [x] **Commit SHA:** `7fcc032` — the probe, both call sites, and this record in
+  one commit.
 - [x] **File:line ranges:** `scripts/http-suite/harness.mjs:45-112` (table and
   probe), `scripts/http-suite.mjs:84-89` (call), `scripts/trial-http-suite.mjs:108`
   (call).
@@ -193,7 +194,8 @@ answers with `404`.
 
 ## Resolution
 
-- **Closed Date:** not closed — commit receipt recorded in the follow-up commit.
+- **Closed Date:** 2026-10-31 00:34 — closed on commit `7fcc032`.
+- **Archived:** 2026-10-31 00:34 — moved to `dev/fids/archive/`.
 - **Fix Description:** a capability-driven probe for both HTTP doubles.
 - **Tests Added:** Yes — inside the two suites, so they run in `npm run test:http`.
 - **Verification Evidence:** RED exit 1 with the named mismatch; GREEN exit 0 on

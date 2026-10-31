@@ -4,7 +4,7 @@ As of 2026-10-31. This is the current index; dated session receipts describe the
 tree they tested, not automatically the current working tree.
 
 Latest implementation: [FID-2026-1030-058](../dev/fids/archive/FID-2026-1030-058-database-backup-and-restore.md),
-closed against the pending implementation commit, adds a checksummed online
+closed against `2dc005e`, adds a checksummed online
 backup, an isolated restore verifier and a real-server recovery drill. The
 operator RPO/RTO and first production-volume restore remain blocked as
 `FID-2026-1030-058-LIVE`. The

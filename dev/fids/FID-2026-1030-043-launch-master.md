@@ -85,7 +85,7 @@ rather than disappearing work.
 | [055](FID-2026-1030-055-provider-and-catalog-integrity.md) | Provider sync, catalog and benchmarks | 044,047 |
 | [056](FID-2026-1030-056-customer-experience-and-api-docs.md) | Honest accessible UI and real client docs | 044,045,046,047,049,050,052,053,054,055,061 |
 | [057](FID-2026-1030-057-production-deployment-readiness.md) | Secure persistent production runtime | 044,047,048 |
-| [058](FID-2026-1030-058-database-backup-and-restore.md) | Migration, backup and restore | 051,057 |
+| [058](archive/FID-2026-1030-058-database-backup-and-restore.md) | Migration, backup and restore — closed `2dc005e`; live RPO/RTO and real-volume restore tracked | 051,057 |
 | [059](FID-2026-1030-059-observability-and-incident-response.md) | Monitoring, delivered alerts and response | 048,049,051,052,053,057,058 |
 | [060](FID-2026-1030-060-load-and-resilience-acceptance.md) | Capacity and failure acceptance | 046,048,049,050,051,055,057,058,059 |
 | [061](FID-2026-1030-061-policies-privacy-and-support.md) | Policies, privacy and functioning support | 044,047 |

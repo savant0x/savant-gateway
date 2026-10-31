@@ -29,9 +29,10 @@ distinguish verified behavior from unverified claims.
   `docs/deployment-runbook.md` now separates backup, isolated restore,
   RPO/RTO, payment replay and code rollback. Verification: `npm run verify` exit
   0 — 326 unit tests, 466 HTTP checks, trial suite, quality PASS (295 files),
-  production build and recovery drill PASS. FID-058 closed; the operator RPO/RTO
-  and first timed restore on the production volume remain blocked as
-  `FID-2026-1030-058-LIVE`, not claimed by this closure.
+  production build and recovery drill PASS. FID-058 closed against `2dc005e` and
+  archived 2026-10-31; the operator RPO/RTO and first timed restore on the
+  production volume remain blocked as `FID-2026-1030-058-LIVE`, not claimed by
+  this closure.
 
 ## 2026-10-31 — FID ledger integrity
 

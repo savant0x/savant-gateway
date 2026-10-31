@@ -2,7 +2,7 @@
 
 **Session:** 2026-10-31 database backup and restore
 **Contract:** FID-2026-1030-058
-**Status:** implemented, verified, closed against the implementation commit
+**Status:** implemented, verified, closed against `2dc005e`
 
 ## What the operator asked for
 

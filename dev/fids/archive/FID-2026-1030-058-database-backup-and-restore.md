@@ -4,7 +4,7 @@
 **ID:** FID-2026-1030-058
 **Parent:** FID-2026-1030-043
 **Severity:** critical
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-051, FID-2026-1030-057
@@ -199,8 +199,8 @@ drill through the real HTTP reconciliation endpoint and a second startup.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [x] **Commit SHA:** pending the implementation commit recorded in the closure
-  entry.
+- [x] **Commit SHA:** `2dc005e` — checksummed backup, isolated restore, drill,
+  tests, runbook and gate wiring.
 - [x] **File:line ranges:**
   - `scripts/db-backup.mjs:33` required tables; `:59` SHA-256; `:143` atomic
     metadata; `:198` required-table refusal; `:244` pair-aware prune.
@@ -265,7 +265,7 @@ drill through the real HTTP reconciliation endpoint and a second startup.
 
 ## Resolution
 
-- **Closed Date:** pending the implementation commit and closure record.
+- **Closed Date:** 2026-10-31 01:17 UTC
 - **Fix Description:** Checksummed online backup with a sidecar and required-table
   verification; isolated restore verifier with integrity, foreign-key, credit
   equation and replay checks; disposable real-server recovery drill; operator
@@ -276,7 +276,7 @@ drill through the real HTTP reconciliation endpoint and a second startup.
 - **Verification Evidence:** `npm run verify` exit 0 — 326 unit tests, 295
   quality files, production build, 466 HTTP checks, trial suite, recovery drill
   PASS (8 concurrent writes, 2009ms).
-- **Archived:** pending.
+- **Archived:** 2026-10-31 01:17 UTC
 
 ## Lessons Learned
 

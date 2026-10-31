@@ -33,8 +33,7 @@ inputs it cannot invent; trials, offering activation and deployment remain off.
   restore, RPO/RTO, payment replay and code rollback.
 - [x] **R5 — Verification and closure.** `npm run verify` exit 0: 326 unit
   tests, 466 HTTP checks, trial suite, quality 295 files, production build and
-  recovery drill. Implementation commit pending the closure record; FID-058
-  closed and archived. The live RPO/RTO and first production-volume restore stay
+  recovery drill. Implementation `2dc005e`; FID-058 closed and archived. The live RPO/RTO and first production-volume restore stay
   blocked as `FID-2026-1030-058-LIVE`, not claimed by the code closure.
 
 ## Current Session — 2026-10-31 (FID ledger integrity: 071)

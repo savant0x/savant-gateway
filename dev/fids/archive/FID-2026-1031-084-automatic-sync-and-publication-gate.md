@@ -204,7 +204,7 @@ the next gate before a release. That is a stated limitation, not a pass.
 
 ### Implementation Evidence
 
-- [x] **Commit SHA:** recorded below
+- [x] **Commit SHA:** `33e36ef`
 - [x] **File:line ranges:** `lib/provider-sync-policy.ts`,
   `lib/provider-sync.ts`, `PUBLIC_MODEL_SCOPE` in `lib/store/model-sql.ts`,
   `setModelCost` in `lib/store/models.ts`, `ProviderSyncCard`
@@ -229,7 +229,7 @@ the next gate before a release. That is a stated limitation, not a pass.
   state.
 - **Tests Added:** Yes — `tests/provider-sync.test.mjs`.
 - **Verification Evidence:** receipt above.
-- **Archived:** `dev/fids/archive/` after the commit below
+- **Archived:** `dev/fids/archive/` after `33e36ef`
 
 ## Non-Goals
 

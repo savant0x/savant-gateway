@@ -23,6 +23,12 @@ COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts && npm rebuild better-sqlite3
 
 FROM deps AS build
+# Static pages resolve their social image URLs during `next build`, so the
+# public origin must be present here as well as at runtime. It is public data.
+ARG NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+# Fail the image build rather than baking localhost social URLs into it.
+RUN test -n "$NEXT_PUBLIC_SITE_URL" || (echo "NEXT_PUBLIC_SITE_URL build argument is required" >&2; exit 1)
 COPY . .
 RUN npm run build
 

@@ -36,12 +36,12 @@ Required in production:
 
 | Env var | Requirement |
 | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | Public canonical origin, `https://`, non-loopback, no credentials/path/query/fragment. Used for Stripe redirects and customer links. |
+| `NEXT_PUBLIC_SITE_URL` | Public canonical origin, `https://`, non-loopback, no credentials/path/query/fragment. Used for Stripe redirects, customer links, the sitemap/robots canonical origin, and static social metadata at build time. |
 | `DB_PATH` | Absolute path to the SQLite file, outside the system temporary directory. |
 | `ADMIN_PASSWORD` | 12+ characters. Enables `/admin`. |
 | `ADMIN_SESSION_SECRET` | 32+ characters. Rotating it invalidates operator sessions. |
 
-Optional (see `../../.env.example` for the full list and defaults):
+Optional (see `../.env.example` for the full list and defaults):
 `PROVIDER_KEY`, `COMMANDCODE_API_KEY`, `APIXO_API_KEY`, `PROVIDER_BASE_URL`,
 `PROVIDER_PUBLIC_MODELS_URL`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
 `ARTIFICIAL_ANALYSIS_API_KEY`, `TRIAL_ENABLED=false` (must stay `false` until
@@ -90,16 +90,22 @@ fly secrets set ADMIN_PASSWORD=... ADMIN_SESSION_SECRET=...
 Do not run `fly launch`: it regenerates the configuration this file describes.
 Create the app and the volume explicitly.
 
-Before the first deploy, set `NEXT_PUBLIC_SITE_URL` in `fly.toml` to the origin
-that will actually serve — `https://<app>.fly.dev` until a custom domain exists.
-A leftover localhost value fails the readiness check rather than going live with
-broken redirects and cookies.
+Before the first deploy, set `NEXT_PUBLIC_SITE_URL` in `fly.toml` in **both**
+`[build.args]` and `[env]` to the origin that will actually serve —
+`https://<app>.fly.dev` until a custom domain exists. They must match. The build
+argument is what static pages use for their social image URLs, which are
+resolved during `next build`; the runtime value feeds redirects and the
+sitemap/robots routes. A leftover localhost value fails the readiness check
+rather than going live with broken redirects and cookies. The sitemap and robots
+routes read the runtime value per request, so changing the origin does not
+require a rebuild for them; changing static social metadata does.
 
 ```bash
 fly deploy            # builds the image on Fly's remote builder
 fly status
 fly logs
 curl -fsS https://<app>.fly.dev/api/ready
+curl -fsS https://<app>.fly.dev/sitemap.xml | head -3  # public origin, not localhost
 ```
 
 The local machine needs no Docker for this. What `fly.toml` pins, and why:
@@ -272,7 +278,7 @@ verification. Disposition for this run (2026-10-30): **0 vulnerabilities found
 in production dependencies** (`found 0 vulnerabilities`, exit 0); no
 high/critical finding required a waiver or a resolution plan. Re-run this audit
 before going live and record it in
-[dev/session-summaries/2026-10-30-deployment-readiness.md](dev/session-summaries/2026-10-30-deployment-readiness.md).
+[dev/session-summaries/2026-10-30-deployment-readiness.md](../dev/session-summaries/2026-10-30-deployment-readiness.md).
 
 ## Missing operator inputs (blockers to actual deployment)
 

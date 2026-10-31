@@ -6,7 +6,7 @@ import { secondaryCta } from "./cta";
 const REQUEST = `curl "$GATEWAY_URL/v1/chat/completions" \\
   -H "Authorization: Bearer sk-..." \\
   -H "Content-Type: application/json" \\
-  -d '{"model":"free/gpt-6-luna","messages":[{"role":"user","content":"Hello"}]}'`;
+  -d '{"model":"YOUR_MODEL_ID","messages":[{"role":"user","content":"Hello"}]}'`;
 
 export function QuickStart() {
   return (
@@ -43,9 +43,18 @@ export function QuickStart() {
               </span>
             </li>
           </ol>
-          <Link className={`${secondaryCta} mt-7`} href="/models">
-            Browse the catalog
-          </Link>
+          <div className="mt-7 flex flex-wrap items-center gap-4">
+            <Link className={secondaryCta} href="/models">
+              Browse the catalog
+            </Link>
+            <Link
+              className="text-xs text-muted transition-colors hover:text-foreground"
+              href="/docs/start"
+            >
+              New here? Read the newcomer guide
+              <i aria-hidden className="fa-solid fa-arrow-right ml-2" />
+            </Link>
+          </div>
         </div>
 
         <CodeSample code={REQUEST} label="Request" />

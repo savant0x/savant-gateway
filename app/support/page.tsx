@@ -49,6 +49,9 @@ export default async function SupportPage() {
               <Link className={secondaryCta} href="/docs">
                 Read the API reference
               </Link>
+              <Link className={secondaryCta} href="/docs/faq">
+                Read the FAQ
+              </Link>
             </div>
           </div>
         </section>
@@ -85,9 +88,9 @@ export default async function SupportPage() {
                 </li>
               </ol>
               <p className="mt-4 text-xs leading-5 text-muted">
-                No address, response-time guarantee or third-party ticket system
-                is implied. Requests are handled by the operator of this
-                deployment.
+                No support address, response-time guarantee or third-party
+                ticket system is implied. Requests are handled by the operator
+                of this deployment.
               </p>
             </div>
           </div>

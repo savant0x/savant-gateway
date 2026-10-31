@@ -21,13 +21,15 @@ export function AccountHeader({ customer }: { customer: Customer }) {
         </div>
         <nav
           aria-label="Account navigation"
-          className="flex gap-6 border-t border-border py-3 font-mono text-[11px] text-muted"
+          className="flex flex-wrap gap-x-6 gap-y-2 border-t border-border py-3 font-mono text-[11px] text-muted"
         >
           <Link className="text-accent" href="/account">
             Account
           </Link>
           <Link href="/models">Models &amp; pricing</Link>
+          <Link href="/docs/start">Newcomer guide</Link>
           <Link href="/docs">API reference</Link>
+          <Link href="/docs/faq">FAQ</Link>
         </nav>
       </div>
     </header>

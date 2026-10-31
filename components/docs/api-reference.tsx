@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { DocsNav } from "./docs-nav";
 import {
   CHAT_REQUEST,
   CHAT_RESPONSE,
@@ -115,6 +116,8 @@ export function ApiReference() {
                 </span>
               ))}
             </div>
+
+            <DocsNav active="api" />
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Link className={primaryCta} href="/signup">

@@ -1000,8 +1000,32 @@ function h1Count(html) {
   return (html.match(/<h1\b/gi) ?? []).length;
 }
 
+function jsonLdObjects(html) {
+  return [
+    ...html.matchAll(
+      /<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi,
+    ),
+  ]
+    .map((match) => {
+      try {
+        return JSON.parse(match[1]);
+      } catch {
+        return null;
+      }
+    })
+    .filter((value) => value !== null);
+}
+
 async function runCustomerExperienceChecks(context, alpha, beta) {
-  const publicPages = ["/", "/models", "/plans", "/docs", "/support"];
+  const publicPages = [
+    "/",
+    "/models",
+    "/plans",
+    "/docs",
+    "/docs/start",
+    "/docs/faq",
+    "/support",
+  ];
 
   for (const path of publicPages) {
     const page = await request(context.baseUrl, path);
@@ -1018,6 +1042,69 @@ async function runCustomerExperienceChecks(context, alpha, beta) {
     );
     checkEqual(`${path} has exactly one top-level heading`, h1Count(page.text), 1);
   }
+
+  const sitemap = await request(context.baseUrl, "/sitemap.xml");
+
+  checkEqual("the sitemap serves", sitemap.status, 200);
+  check(
+    "the sitemap is XML",
+    (sitemap.headers.get("content-type") ?? "").includes("xml"),
+    sitemap.headers.get("content-type") ?? "missing",
+  );
+  check("the sitemap is a urlset", sitemap.text.includes("<urlset"));
+  check(
+    "the sitemap lists the documentation",
+    ["/docs</loc>", "/docs/start</loc>", "/docs/faq</loc>"].every(
+      (path) => sitemap.text.includes(path),
+    ),
+  );
+  check(
+    "the sitemap omits private surfaces",
+    !/\/account<\/loc>|\/admin<\/loc>|\/dashboard<\/loc>/.test(sitemap.text),
+  );
+
+  const robots = await request(context.baseUrl, "/robots.txt");
+
+  checkEqual("robots.txt serves", robots.status, 200);
+  check(
+    "robots.txt is plain text",
+    (robots.headers.get("content-type") ?? "").startsWith("text/plain"),
+    robots.headers.get("content-type") ?? "missing",
+  );
+  check(
+    "robots.txt points at the sitemap",
+    /Sitemap: .*\/sitemap\.xml/.test(robots.text),
+  );
+  check(
+    "robots.txt keeps private surfaces out",
+    ["/account", "/admin", "/api/", "/v1/"].every((path) =>
+      robots.text.includes(`Disallow: ${path}`),
+    ),
+  );
+
+  const faq = await request(context.baseUrl, "/docs/faq");
+  const faqSchema = jsonLdObjects(faq.text).find(
+    (value) => value?.["@type"] === "FAQPage",
+  );
+
+  check("the FAQ publishes FAQPage structured data", Boolean(faqSchema));
+  checkEqual(
+    "the FAQ schema covers every answer",
+    Array.isArray(faqSchema?.mainEntity) ? faqSchema.mainEntity.length : 0,
+    33,
+  );
+  check(
+    "the FAQ schema answers every question",
+    Array.isArray(faqSchema?.mainEntity) &&
+      faqSchema.mainEntity.every(
+        (item) =>
+          typeof item?.name === "string" &&
+          item.name.length > 0 &&
+          item?.acceptedAnswer?.["@type"] === "Answer" &&
+          typeof item.acceptedAnswer.text === "string" &&
+          item.acceptedAnswer.text.length > 0,
+      ),
+  );
 
   const plans = await request(context.baseUrl, "/plans");
 

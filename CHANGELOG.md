@@ -3,6 +3,39 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-31 — Customer docs cover the first request and the recurring questions
+
+- **FID-2026-1030-056 follow-up — low — the API reference was complete but did
+  not answer how to start or what the recurring failure and billing states
+  mean.** Added `/docs/start`, a six-step newcomer guide (account and key,
+  billing group, first request, first bill, failure table, next steps) and
+  `/docs/faq`, 33 answers in five groups (start, models and pricing, credit and
+  billing, errors and limits, account/privacy/support) with links into the
+  contract. Added shared docs navigation, per-page social cards, and entry
+  points from the site header, footer, account header, account page, support
+  page and landing quick start. The guide states the local origin, includes an
+  explicit shell setup and a JavaScript streaming example, and uses a
+  placeholder model id instead of a stale seeded row. The FAQ adds key rotation,
+  prompt and output retention, top-up bounds and the unsupported endpoint list.
+  Claims were written against the implemented behavior: Chat Completions only,
+  plan sales off, no email, manual support and deletion, one process and no
+  failover. Added `/sitemap.xml` for 13 canonical public pages, `/robots.txt`
+  for the crawl policy, and FAQPage JSON-LD generated from the same answers the
+  page renders. The sitemap and robots routes render per request, so they read
+  `NEXT_PUBLIC_SITE_URL` from the deployed process instead of baking the build
+  machine's origin into the image; the FAQPage markup omits an absolute URL for
+  the same reason. Static pages still resolve social image URLs during
+  `next build`, so the Dockerfile requires `NEXT_PUBLIC_SITE_URL` as a build
+  argument and `fly.toml` supplies it alongside the runtime value; a build with
+  `https://runtime.example` emitted that origin in both docs pages' social
+  tags, while the earlier unconfigured build emitted `http://localhost:3000`.
+  The HTTP suite now renders `/docs/start` and `/docs/faq`
+  anonymously, checks their social metadata, verifies the sitemap, robots policy
+  and FAQ schema, and keeps the unimplemented Messages/Responses guard on the
+  API reference. Verification: `npm run verify` exit 0 — 326 unit tests, 496
+  HTTP checks (466 before), trial suite PASS, quality PASS (307 files), clean
+  production build, recovery drill PASS.
+
 ## 2026-10-31 — The recovery drill gates every push
 
 - **FID-2026-1030-058 follow-up — low — the drill existed but a push could skip

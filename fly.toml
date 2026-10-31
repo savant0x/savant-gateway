@@ -10,6 +10,10 @@ primary_region = "ord"
 
 [build]
   dockerfile = "Dockerfile"
+  # This value must match [env] below. The build arg resolves social image URLs
+  # in static pages; the runtime value feeds redirects and the sitemap/robots.
+  [build.args]
+    NEXT_PUBLIC_SITE_URL = "https://savant-gateway.fly.dev"
 
 [env]
   NODE_ENV = "production"

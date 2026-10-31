@@ -12,6 +12,8 @@ const PAGES = [
   "/models",
   "/compare",
   "/docs",
+  "/docs/start",
+  "/docs/faq",
   "/plans",
   "/signup",
   "/login",
@@ -26,7 +28,7 @@ const PAGES = [
 ];
 
 /** Pages that replaced the site-wide card with one generated from their data. */
-const OWN_CARD = ["/models", "/docs"];
+const OWN_CARD = ["/models", "/docs", "/docs/start", "/docs/faq"];
 
 const SITE_CARD = "/images/og.png";
 

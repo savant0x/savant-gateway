@@ -188,6 +188,10 @@ export default async function AccountPage({
               or read the{" "}
               <a className="text-accent hover:underline" href="/docs">
                 API reference
+              </a>{" "}
+              and the{" "}
+              <a className="text-accent hover:underline" href="/docs/start">
+                newcomer guide
               </a>
               . Access follows your trial allowance, available credit and plan
               entitlements. Plan-only rows need a subscription that includes

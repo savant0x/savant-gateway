@@ -2,6 +2,38 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-31 (operations monitoring: 059)
+
+Operator request: complete FID-2026-1030-056's residual accessibility/responsive
+matrix and implement FID-2026-1030-059's observability, alert transport and
+incident controls. Automation level 3, strict, single agent. No deployment,
+webhook destination, scheduler or external alert was created.
+
+- [x] **O1 — Confirm the 056 residual.** FID-056 was already closed in
+  `7945f84` with a 132/132 production-build matrix (33 routes, 320/1024, both
+  themes, focus and contrast), with real payment/deployed-origin acceptance
+  tracked as `FID-2026-1030-056-LIVE`. No new 056 change was required.
+- [x] **O2 — Implement operations.** Added the additive
+  `operations_incidents` schema; split read model/rules, durable incident state,
+  bounded delivery retry and the monitor tick into `lib/operations-*`; added the
+  vendor-neutral HMAC-signed HTTPS webhook transport; settings-backed
+  pause/drain/provider controls with a gateway gate before any hold; protected
+  `/admin/operations` and `/api/admin/operations`; the scheduled
+  `scripts/operations-monitor.mjs`; and `docs/operations-runbook.md`.
+- [x] **O3 — Prove the controls.** The HTTP drill proves pause/drain 503 before
+  usage or credit holds, readiness remains 200 and discloses the state, resume
+  and provider enable restore service, acknowledgment is durable, and the manual
+  tick works with an unconfigured transport. Unit tests cover every rule,
+  dedup/reopen, recovery, retry ceiling, unconfigured delivery, HMAC and
+  URL-redacted failure.
+- [x] **O4 — Record truth.** `.env.example`, the documentation index, the
+  operator runbook and the readiness behavior now describe what the code does;
+  the runbook states that no destination or scheduler is configured and that an
+  authorized received alert is still an operator receipt.
+- [x] **O5 — Verification and closure.** Full declared gate exit 0; CHANGELOG
+  entry, tracking item and archive move. Implementation `617935b`. No live
+  alert was sent; `FID-2026-1030-059-LIVE` remains blocked on operator inputs.
+
 ## Current Session — 2026-10-31 (FID closures: 049, 057, 061)
 
 Operator request: close FID-2026-1030-049, FID-2026-1030-057 and
@@ -52,8 +84,10 @@ spend and messaging boundaries remain binding; no missing evidence is invented.
   the committed 063/069 fixes and finish missing invariants. Closed 2026-10-31
   with `d31d9e0`, `b8a1a50` and `057f6c2`; live reset acceptance is
   `FID-2026-1030-049-LIVE`.
-- [ ] **C4 — FID-2026-1030-059:** monitoring, protected incident controls and
-  alert transport; destination/authorized delivery inputs requested.
+- [x] **C4 — FID-2026-1030-059:** monitoring, protected incident controls and
+  alert transport; destination/authorized delivery inputs requested. Implemented
+  and closed 2026-10-31 (`617935b`); the operator destination, scheduler and
+  received-alert receipt remain `FID-2026-1030-059-LIVE`.
 - [ ] **C5 — FID-2026-1030-060:** bounded load/fault gate and reconciliation.
 - [x] **C6 — FID-2026-1030-056, FID-2026-1030-057 and FID-2026-1030-061:**
   verify committed implementations, complete remaining development checks and

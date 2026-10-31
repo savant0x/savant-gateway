@@ -3,6 +3,31 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-31 — Durable operations incidents, alerts and admission controls
+
+- **FID-2026-1030-059 — high — monitoring now has durable incident state, a real
+  transport, and protected pause/drain controls.** The additive
+  `operations_incidents` schema deduplicates by fingerprint, records
+  open/resolved/acknowledgment and delivery state, and queues one recovery when a
+  condition clears. A bounded snapshot reads traffic/errors, unresolved
+  settlements, failed/quarantined payment events, provider quota age/unknown/
+  error, reserve, held/quarantined money and database/backup observations from
+  SQLite; no traffic is reported as `noTraffic`, never as 0% healthy. The
+  operator-configured HTTPS webhook signs the raw body with HMAC-SHA256 when a
+  secret is set, retries with bounded backoff, treats an unconfigured URL as
+  local-only, and stores URL-redacted errors. `open`/`paused`/`draining` state is
+  settings-backed and checked after authentication/model resolution but before
+  rate limit, provider slot, allowance or credit hold, so a refused call writes
+  no usage or hold; payment webhooks, settlement, quarantine release and
+  in-flight streams keep working. `/admin/operations`, the protected API, the
+  manual tick and `scripts/operations-monitor.mjs` expose the same state; the
+  monitor opens the live database directly and runs from cron without an
+  in-process timer. Verification: 376 unit tests (12 focused), quality PASS (340
+  files), production build, 718 HTTP checks (+46), trial suite and recovery drill
+  PASS; lint/typecheck/config-check clean. No webhook destination, scheduler or
+  external alert was configured; those and a received-alert receipt remain
+  `FID-2026-1030-059-LIVE`. Closed against `617935b` and archived.
+
 ## 2026-10-31 — Accessible customer experience matrix verified
 
 - **FID-2026-1030-056 — high — the residual customer-experience matrix is

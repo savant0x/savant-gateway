@@ -128,6 +128,15 @@
       "detail": "The 33-route, two-theme, 320/1024 matrix passes on a disposable production build (132/132). It is not a real payment: card top-ups are off by ruling and the NOWPayments sandbox/live smoke remains operator territory. No deployed origin exists, so the same matrix has not run against the public host.",
       "evidence": "dev/fids/archive/FID-2026-1030-056-customer-experience-and-api-docs.md; dev/audits/2026-10-31-browser-matrix-056.md; scripts/http-suite/checks.mjs",
       "next_action": "After FID-062 approval and the FID-2026-1031-076 lane smoke, run one real top-up through the enabled lane and repeat the matrix against the deployed origin; record the payment state and the rendered account balance."
+    },
+    {
+      "id": "FID-2026-1030-059-LIVE",
+      "fid": "FID-2026-1030-059",
+      "state": "blocked",
+      "title": "Operator alert destination, scheduler and received-alert receipt",
+      "detail": "The monitor, HMAC-signed HTTPS transport, retry/dedup state and pause/drain/provider controls are verified against a local webhook receiver. No OPERATIONS_ALERT_WEBHOOK_URL, signing secret, cron/Fly scheduler or external destination was configured, and no authorized alert has been received or responded to. The local suite is not proof of delivery to the operator.",
+      "evidence": "dev/fids/archive/FID-2026-1030-059-observability-and-incident-response.md; docs/operations-runbook.md; tests/operations.test.mjs; scripts/http-suite/operations-checks.mjs",
+      "next_action": "After the operator selects a destination and supplies the URL (and optional 16+ character secret) outside the tree, install one scheduler run, trigger a controlled incident through the authenticated tick, record the received payload and HMAC verification, acknowledge/resolve it, and record the response action. Repeat against the hosted deployment after 062/067."
     }
   ]
 }

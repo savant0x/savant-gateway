@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1031-081-provider-route-selection.md`
 **ID:** FID-2026-1031-081
 **Severity:** high
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-31 22:15
 **Automation level:** 2
 **YAGNI-Compliance:** Pending
@@ -188,7 +188,7 @@ deployment. Gates below.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [x] **Commit SHA:** pending the commit recorded below
+- [x] **Commit SHA:** `314c6974ba70668d715d300c33580e2a0e392cdc`
 - [x] **File:line ranges:** `canonicalModelKey` in `lib/model-identity.ts`,
   `planModelRoutes`/`isServableRoute` in `lib/model-routing.ts`,
   `reconcileRoutesIn` in `lib/route-reconcile.ts`, `reconcileRoutes` in
@@ -250,7 +250,8 @@ deployment. Gates below.
 
 ## Resolution
 
-- **Closed Date:** 2026-10-31 after the commit below
+- **Closed Date:** 2026-10-31 (implementation commit
+  `314c6974ba70668d715d300c33580e2a0e392cdc`)
 - **Fix Description:** Provider-neutral `route_group` on every catalog row;
   cheapest servable provider per model; stable published id; `served_*`
   identity, protocol and cost on the published row; admin visibility of every
@@ -260,7 +261,8 @@ deployment. Gates below.
   `tests/model-routing.test.mjs`, `tests/route-reconcile.test.mjs`.
 - **Verification Evidence:** receipt above; `npm test` 410 pass,
   `npm run test:http` 750 checks plus the trial suite.
-- **Archived:** after the commit below
+- **Archived:** 2026-10-31 (`dev/fids/archive/`), recording commit
+  `314c6974ba70668d715d300c33580e2a0e392cdc`
 
 ## Lessons Learned
 

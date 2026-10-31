@@ -28,5 +28,6 @@ run_gate "tests" npm test
 run_gate "quality" npm run quality
 run_gate "build" npm run build
 run_gate "http suite" npm run test:http
+run_gate "recovery drill" npm run test:recovery
 
 echo "pre-push: all gates passed"

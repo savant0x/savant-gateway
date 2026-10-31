@@ -21,9 +21,9 @@ through the `prepare` script.
 npm run verify
 ```
 
-That runs lint, typecheck, tests, the 400-line quality gate, and the production
-build. The pre-push hook runs the same gates plus the attribution guard and
-fails closed.
+That runs lint, typecheck, tests, the 400-line quality gate, the production
+build, both HTTP suites and the backup/restore drill. The pre-push hook runs
+the same gates plus the attribution guard and fails closed.
 
 ## Rules
 

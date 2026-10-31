@@ -356,6 +356,7 @@ npm run quality    # 400-line file ceiling
 npm run build      # next build
 npm run test:http  # HTTP suites against a disposable database, including a
                    # per-page social metadata audit of every public page
+npm run test:recovery  # backup, restore and operator reconciliation drill
 npm run verify     # all of the above
 ```
 

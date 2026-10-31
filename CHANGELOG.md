@@ -3,6 +3,17 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-31 — The recovery drill gates every push
+
+- **FID-2026-1030-058 follow-up — low — the drill existed but a push could skip
+  it.** The pre-push hook ran the attribution guard, lint, typecheck, tests,
+  quality, build and both HTTP suites, then stopped. `.githooks/pre-push` now
+  runs `npm run test:recovery` after `npm run test:http`, and the CI `gates` job
+  does the same. The gate descriptions in `AGENTS.md`, `README.md` and
+  `CONTRIBUTING.md` now name the drill and match `npm run verify`. No application
+  code changed. Verification: the hook was run end-to-end on the working tree;
+  the recovery drill passed after the 466-check HTTP suite.
+
 ## 2026-10-31 — Recovery is a tested path, not a backup file
 
 - **FID-2026-1030-058 — critical — the backup existed, but no restore or

@@ -88,11 +88,12 @@ npm run typecheck    # tsc --noEmit
 npm test             # node --test tests/
 npm run quality      # 400-line file ceiling
 npm run build        # next build
-npm run verify       # check + test + quality + build
+npm run test:recovery # backup/restore drill against disposable databases
+npm run verify       # check + test + quality + build + HTTP + recovery
 ```
 
 The pre-push hook runs the attribution guard, lint, typecheck, tests, quality,
-and build. It fails closed.
+build, both HTTP suites and the recovery drill. It fails closed.
 
 ## Quality Bar
 

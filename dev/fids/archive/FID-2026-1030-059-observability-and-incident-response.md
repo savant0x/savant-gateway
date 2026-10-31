@@ -185,7 +185,7 @@ named operator-input/acceptance boundaries in `FID-2026-1030-059-LIVE`.
 - **Verification Evidence:** `npm run verify` exit 0 — lint, typecheck,
   `config:check PASS (non-production)`, 376 unit tests, quality PASS (340 files),
   production build, 718 HTTP checks, trial suite PASS and the recovery drill PASS
-  (7 concurrent writes, backup/restore, both startups, 1918ms). The 12 focused
+  (8 concurrent writes, backup/restore, both startups, 1944ms). The 12 focused
   operations tests cover threshold fallback, no-traffic semantics, every rule,
   dedup/reopen/acknowledgment, delivery once, recovery, retry/backoff/ceiling,
   unconfigured delivery, transport policy, HMAC signing and URL-redacted

@@ -53,8 +53,8 @@ and a skip link. Real payment and deployed-origin acceptance remain
   503 before usage or credit holds, readiness 200 disclosing pause, resume,
   provider disable/enable, manual tick;
 - trial suite PASS;
-- recovery drill PASS (7 concurrent writes, backup/restore, both startups,
-  1918 ms).
+- recovery drill PASS (8 concurrent writes, backup/restore, both startups,
+  1944 ms).
 
 The monitor script was also run against a disposable file database: exit 0,
 `noTraffic: true`, zero incidents.

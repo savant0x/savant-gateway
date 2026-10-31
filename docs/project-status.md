@@ -3,7 +3,37 @@
 As of 2026-10-31. This is the current index; dated session receipts describe the
 tree they tested, not automatically the current working tree.
 
-Latest implementation: [FID-2026-1030-058](../dev/fids/archive/FID-2026-1030-058-database-backup-and-restore.md),
+## Repository and launch state
+
+Local `main` is at `805bd04`, seven commits ahead of `origin/main` (`4d890bd`);
+the FID-059 implementation/test/closure commits and the three earlier FID
+closures are local and not pushed. The last pushed head is `4d890bd` (the
+NOWPayments live-smoke record), which sits on `c8669b5` (documentation index,
+newcomer/operator/troubleshooting guides and QC receipts). The earlier
+`c8669b5` push passed its pre-push gate: attribution, lint, typecheck,
+non-production config check, 326 unit tests, quality (307 files), a production
+build (22 static/SSG pages), 496 HTTP checks plus the trial suite, and the
+recovery drill (2720 ms).
+
+The current local tree's final `npm run verify` exit 0: 376 unit tests, quality
+PASS (340 files), production build, 718 HTTP checks, trial suite PASS, recovery
+drill PASS (8 concurrent writes, 1944 ms), and a non-production config check.
+The pre-push hook mirrors the gate and adds the attribution guard.
+
+The product remains pre-launch and is not deployed. No Fly app, volume, machine
+or secret exists; `fly apps list` is blocked by an ended trial, so the first
+image build, first deployment and timed production-volume restore have not run.
+No live Stripe payment, funded paid inference, email delivery or production
+proxy acceptance is claimed.
+
+Latest implementation: [FID-2026-1030-059](../dev/fids/archive/FID-2026-1030-059-observability-and-incident-response.md),
+closed against `617935b`, adds durable operations incidents, bounded rules, a
+vendor-neutral signed webhook with retry/backoff, settings-backed pause/drain
+controls and the scheduled monitor. Operator alert destination, scheduler and a
+received-alert receipt remain blocked as `FID-2026-1030-059-LIVE`, documented in
+[operations-runbook.md](operations-runbook.md).
+
+Previous recovery implementation: [FID-2026-1030-058](../dev/fids/archive/FID-2026-1030-058-database-backup-and-restore.md),
 closed against `2dc005e`, adds a checksummed online
 backup, an isolated restore verifier and a real-server recovery drill. The
 operator RPO/RTO and first production-volume restore remain blocked as
@@ -97,11 +127,13 @@ money path or schema is implemented.
 
 Launch planning session baseline: `b0b65ac`. Master 043 and nineteen children
 044–062 cover A–Z requirements and passed individual document Perfection Loops.
-As of 2026-10-31 the active queue is thirteen records: 043–046, 049, 056–057,
-059–062, 066 and 068. FID-047, 048, 050–055, 058, 063 (provider truth), 064 (CI
-race), 067, 069, 070, 071, 072, 073 and 074 are archived closed. 056/057/061 are
-`fixed` with residual gates; 066 is a dormant converged decision record; 068 is
-converged with its implementation steps blocked on operator inputs. Authoring/
+As of 2026-10-31 the active queue is six records: 043, 044, 060, 062, 066 and
+068. FID-045, 046, 047, 048, 049, 050–055, 056–059, 061, 063 (provider truth),
+064 (CI race), 067 and 069–074 are archived closed. 066 is a dormant converged
+decision record; 068 is converged with its implementation steps blocked on
+operator inputs. Archived records keep their live observations in
+`dev/tracking/internal-followups.json`; those observations do not reopen the
+implementation. Authoring/
 audit is complete; implementation and live acceptance are not. The
 [audit receipt](../dev/audits/2026-10-30-launch-fid-perfection-loop.md) records
 source/dependency/test checks, measured revisions, two stable passes and hashes.

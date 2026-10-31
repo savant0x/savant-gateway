@@ -18,6 +18,7 @@ import { runMetadataChecks } from "./http-suite/metadata-checks.mjs";
 import { seedCatalog } from "./http-suite/seed.mjs";
 import { runOperationsChecks } from "./http-suite/operations-checks.mjs";
 import { runPolicyChecks } from "./http-suite/policy-checks.mjs";
+import { runPromoChecks } from "./http-suite/promo-checks.mjs";
 import { runQuotaChecks } from "./http-suite/quota-checks.mjs";
 import { runRequestLimitChecks } from "./http-suite/request-limit-checks.mjs";
 import { runAccountRecoveryChecks, startEmailDouble } from "./http-suite/account-recovery-checks.mjs";
@@ -60,6 +61,7 @@ try {
       // production does not set (FID-069). A current upstream rpm still wins.
       PROVIDER_SHARED_RPM: "",
       TRIAL_ENABLED: "false",
+      PROMO_CODES_ENABLED: "true",
       ADMIN_SESSION_SECRET: ADMIN_SECRET,
       STRIPE_SECRET_KEY: "sk_test_http_suite_placeholder",
       STRIPE_WEBHOOK_SECRET: WEBHOOK_SECRET,
@@ -107,6 +109,8 @@ try {
   // Needs a populated catalog, so it runs before anything that leaves the
   // database unusable for a page request.
   await runMetadataChecks({ baseUrl });
+
+  await runPromoChecks({ baseUrl, db: database, adminPassword: ADMIN_PASSWORD });
 
   // Runs before the main checks: one of those deliberately drops a required
   // table to prove readiness fails closed, which makes the database unusable

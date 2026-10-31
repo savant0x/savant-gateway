@@ -4,6 +4,7 @@ import type { TopupSummary } from "../types";
 
 import { randomUUID } from "node:crypto";
 
+import { insertActivity } from "../activity";
 import { db, nowIso } from "../db";
 
 type TopupRow = {
@@ -51,20 +52,34 @@ export function createTopup(input: {
   const id = `topup_${randomUUID()}`;
   const createdAt = nowIso();
 
-  db.prepare(
-    `INSERT INTO topups
-      (id, user_id, provider, provider_ref, amount_micros, currency, status,
-       created_at, paid_at)
-     VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, NULL)`,
-  ).run(
-    id,
-    input.userId,
-    input.provider ?? "stripe",
-    `pending_${id}`,
-    input.amountMicros,
-    input.currency ?? "usd",
-    createdAt,
-  );
+  const provider = input.provider ?? "stripe";
+
+  db.transaction(() => {
+    db.prepare(
+      `INSERT INTO topups
+        (id, user_id, provider, provider_ref, amount_micros, currency, status,
+         created_at, paid_at)
+       VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, NULL)`,
+    ).run(
+      id,
+      input.userId,
+      provider,
+      `pending_${id}`,
+      input.amountMicros,
+      input.currency ?? "usd",
+      createdAt,
+    );
+
+    insertActivity(db, {
+      userId: input.userId,
+      actor: "customer",
+      kind: "topup.created",
+      entityType: "topup",
+      entityId: id,
+      metadata: { topupId: id, amountMicros: input.amountMicros, provider },
+      now: createdAt,
+    });
+  }).immediate();
 
   return { id, createdAt };
 }
@@ -190,8 +205,18 @@ export function fulfillTopup(input: {
         row.amount_micros,
         balanceAfter,
         `Credit top-up ${row.id}`,
-        nowIso(),
+        paidAt,
       );
+
+      insertActivity(db, {
+        userId: row.user_id,
+        actor: "system",
+        kind: "topup.paid",
+        entityType: "topup",
+        entityId: row.id,
+        metadata: { topupId: row.id, amountMicros: row.amount_micros },
+        now: paidAt,
+      });
 
       return "paid";
     })

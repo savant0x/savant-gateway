@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
 
 import { AdminPanel } from "@/components/admin/admin-panel";
-import { getAdminOverview, getAnalyticsData } from "@/lib/store";
+import { readPromoPolicy } from "@/lib/promo-codes";
+import {
+  getAdminOverview,
+  getAnalyticsData,
+  listActivity,
+  listPromoCodes,
+} from "@/lib/store";
 import { refreshProviderRuntime } from "@/lib/providers/runtime";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +20,18 @@ export const metadata: Metadata = {
 export default async function AdminPage() {
   await refreshProviderRuntime("savant");
 
+  const promoPolicy = readPromoPolicy();
+
   return (
-    <AdminPanel analytics={getAnalyticsData(30)} data={getAdminOverview()} />
+    <AdminPanel
+      activity={listActivity(12)}
+      analytics={getAnalyticsData(30)}
+      data={getAdminOverview()}
+      promos={{
+        enabled: promoPolicy.enabled,
+        reason: promoPolicy.reason,
+        codes: listPromoCodes(),
+      }}
+    />
   );
 }

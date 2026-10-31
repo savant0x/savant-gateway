@@ -8,7 +8,11 @@ import {
   NO_STORE,
 } from "@/lib/customer-auth";
 import { CUSTOMER_COOKIE } from "@/lib/customer-session";
-import { revokeCustomerSession } from "@/lib/store";
+import {
+  recordActivityBestEffort,
+  resolveCustomerSession,
+  revokeCustomerSession,
+} from "@/lib/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,8 +24,19 @@ export async function POST(request: Request) {
 
   const store = await cookies();
   const token = store.get(CUSTOMER_COOKIE)?.value;
+  const customer = resolveCustomerSession(token);
 
   revokeCustomerSession(token);
+
+  if (customer) {
+    recordActivityBestEffort({
+      userId: customer.id,
+      actor: "customer",
+      kind: "customer.logout",
+      entityType: "customer",
+      entityId: customer.id,
+    });
+  }
 
   return clearCustomerCookie(
     NextResponse.json({ ok: true }, { headers: NO_STORE }),

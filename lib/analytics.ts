@@ -129,7 +129,7 @@ function readPlanRows(
        JOIN subscriptions s ON s.id = i.subscription_id
        LEFT JOIN plans p ON p.id = s.plan_id
        WHERE i.status = 'paid' AND i.currency = 'usd'
-         AND datetime(COALESCE(i.paid_at, i.created_at)) >= datetime(?)
+         AND COALESCE(i.paid_at, i.created_at) >= ?
        GROUP BY s.plan_id, s.interval_snapshot
        ORDER BY plan_revenue_micros DESC, plan_name ASC`,
     )
@@ -238,7 +238,7 @@ export function readAnalyticsData(
          COALESCE(AVG(latency_ms), 0) AS average_latency_ms,
          COALESCE(MAX(latency_ms), 0) AS max_latency_ms
        FROM usage_events
-       WHERE datetime(created_at) >= datetime(?)`,
+       WHERE created_at >= ?`,
     )
     .get(since) as TotalsRow;
 
@@ -250,7 +250,7 @@ export function readAnalyticsData(
               COALESCE(SUM(charged_micros), 0) AS charged_micros,
               COALESCE(SUM(cost_micros), 0) AS cost_micros
        FROM usage_events
-       WHERE datetime(created_at) >= datetime(?)
+       WHERE created_at >= ?
        GROUP BY day
        ORDER BY day ASC`,
     )
@@ -267,7 +267,7 @@ export function readAnalyticsData(
               COALESCE(SUM(u.cost_micros), 0) AS cost_micros
        FROM usage_events u
        LEFT JOIN models m ON m.id = u.model_id
-       WHERE datetime(u.created_at) >= datetime(?)
+       WHERE u.created_at >= ?
        GROUP BY u.model_id
        ORDER BY charged_micros DESC, requests DESC
        LIMIT 12`,
@@ -280,7 +280,7 @@ export function readAnalyticsData(
               COALESCE(SUM(amount_micros), 0) AS plan_revenue_micros
        FROM subscription_invoices
        WHERE status = 'paid' AND currency = 'usd'
-         AND datetime(COALESCE(paid_at, created_at)) >= datetime(?)
+         AND COALESCE(paid_at, created_at) >= ?
        GROUP BY day
        ORDER BY day ASC`,
     )

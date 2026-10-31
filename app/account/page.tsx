@@ -8,6 +8,7 @@ import { BillingHistory } from "@/components/account/billing-history";
 import { EmailVerificationCard } from "@/components/account/email-verification-card";
 import { CustomerKeysCard } from "@/components/account/keys-card";
 import { PolicyAcceptanceCard } from "@/components/account/policy-acceptance-card";
+import { PromoCard } from "@/components/account/promo-card";
 import { SubscriptionCard } from "@/components/account/subscription-card";
 import { SupportCard } from "@/components/account/support-card";
 import { TopupCard, type TopupLane } from "@/components/account/topup-card";
@@ -36,6 +37,7 @@ import {
   POLICY_VERSION_LABEL,
 } from "@/lib/legal";
 import { readPlanSalesPolicy } from "@/lib/plan-sales";
+import { readPromoPolicy } from "@/lib/promo-codes";
 import { readStripeConfig } from "@/lib/stripe";
 import {
   customerSubscriptionSummary,
@@ -94,6 +96,7 @@ export default async function AccountPage({
     },
   ];
   const sales = readPlanSalesPolicy();
+  const promo = readPromoPolicy();
   const requestHeaders = await headers();
   const params = await searchParams;
   const baseUrl = baseUrlFromHeaders(
@@ -189,6 +192,8 @@ export default async function AccountPage({
 
         <TrialCard userId={customer.id} />
         <DailyTrialCard userId={customer.id} />
+
+        {promo.enabled ? <PromoCard /> : null}
 
         <section className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
           <TopupCard lanes={topupLanes} />

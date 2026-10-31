@@ -3,6 +3,7 @@ import test from "node:test";
 
 import Database from "better-sqlite3";
 
+import { activitySchema } from "../lib/schema/activity.ts";
 import { creditAdjustmentSchema } from "../lib/schema/credits.ts";
 import {
   applyAdjustment,
@@ -33,6 +34,7 @@ function fixture(balance = 500) {
     INSERT INTO users VALUES ('a', ${balance}), ('b', 0);
   `);
   creditAdjustmentSchema(db);
+  activitySchema(db);
 
   return db;
 }
@@ -129,6 +131,16 @@ test("a refund appends once per reference", () => {
         .get().n,
       1,
     );
+    const activity = db
+      .prepare("SELECT kind, metadata FROM activity_events")
+      .all();
+
+    assert.equal(activity.length, 1);
+    assert.equal(activity[0].kind, "credit.adjusted");
+    assert.deepEqual(JSON.parse(activity[0].metadata), {
+      amountMicros: 100,
+      adjustmentKind: "refund",
+    });
     assert.equal(reconcileDatabase(db).totals.balanced, true);
   } finally {
     db.close();

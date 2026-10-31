@@ -4,6 +4,7 @@ import type { AccountSummary, CreditLedgerEntry } from "../types";
 
 import { randomUUID } from "node:crypto";
 
+import { insertActivity } from "../activity";
 import { db, nowIso } from "../db";
 import { quarantineHold } from "../settlement-ledger";
 
@@ -84,12 +85,15 @@ export function grantCredit(input: {
     throw new Error("Credit grants must be a positive amount.");
   }
 
+  const now = nowIso();
+
   db.transaction(() => {
     const before = balanceRow(userId);
 
     if (!before) throw new Error("Tenant not found.");
 
     const balanceAfter = before.credit_micros + amount;
+    const ledgerKind = input.kind ?? "grant";
 
     db.prepare("UPDATE users SET credit_micros = ? WHERE id = ?").run(
       balanceAfter,
@@ -103,12 +107,22 @@ export function grantCredit(input: {
     ).run(
       `ledger_${randomUUID()}`,
       userId,
-      input.kind ?? "grant",
+      ledgerKind,
       amount,
       balanceAfter,
       input.note?.slice(0, 300) ?? null,
-      nowIso(),
+      now,
     );
+
+    insertActivity(db, {
+      userId,
+      actor: "admin",
+      kind: "credit.granted",
+      entityType: "credit",
+      entityId: userId,
+      metadata: { amountMicros: amount, source: ledgerKind },
+      now,
+    });
   }).immediate();
 
   return getAccountSummary(userId);

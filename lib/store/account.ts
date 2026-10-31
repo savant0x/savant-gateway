@@ -9,6 +9,7 @@ import type {
 
 import { randomUUID } from "node:crypto";
 
+import { insertActivity } from "../activity";
 import { generateApiKey } from "../api-keys";
 import { db, nowIso } from "../db";
 
@@ -77,6 +78,16 @@ export function createCustomerApiKey(userId: string, name: string) {
      VALUES (?, ?, ?, ?, ?, 'active', ?)`,
       ).run(keyId, userId, keyName, prefix, secretHash, createdAt);
 
+      insertActivity(db, {
+        userId,
+        actor: "customer",
+        kind: "customer.key_created",
+        entityType: "api_key",
+        entityId: keyId,
+        metadata: { keyId },
+        now: createdAt,
+      });
+
       return true;
     })
     .immediate();
@@ -97,14 +108,29 @@ export function createCustomerApiKey(userId: string, name: string) {
 }
 
 export function revokeCustomerApiKey(userId: string, keyId: string) {
-  const result = db
-    .prepare(
-      `UPDATE api_keys SET status = 'revoked'
-       WHERE id = ? AND user_id = ? AND status = 'active'`,
-    )
-    .run(keyId, userId);
+  return db
+    .transaction(() => {
+      const result = db
+        .prepare(
+          `UPDATE api_keys SET status = 'revoked'
+           WHERE id = ? AND user_id = ? AND status = 'active'`,
+        )
+        .run(keyId, userId);
 
-  return result.changes > 0;
+      if (result.changes === 0) return false;
+
+      insertActivity(db, {
+        userId,
+        actor: "customer",
+        kind: "customer.key_revoked",
+        entityType: "api_key",
+        entityId: keyId,
+        metadata: { keyId },
+      });
+
+      return true;
+    })
+    .immediate();
 }
 
 const USAGE_COLUMNS = `

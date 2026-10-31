@@ -10,6 +10,7 @@ import {
   hashSessionToken,
   isSessionToken,
 } from "../customer-session";
+import { insertActivity } from "../activity";
 import { db, nowIso } from "../db";
 
 type CustomerRow = {
@@ -78,11 +79,22 @@ export function createCustomer(input: {
   const id = `cust_${randomUUID()}`;
   const createdAt = nowIso();
 
-  db.prepare(
-    `INSERT INTO users
-      (id, email, name, status, created_at, password_hash, credit_micros, held_micros)
-     VALUES (?, ?, ?, 'active', ?, ?, 0, 0)`,
-  ).run(id, input.email, input.name, createdAt, input.passwordHash);
+  db.transaction(() => {
+    db.prepare(
+      `INSERT INTO users
+        (id, email, name, status, created_at, password_hash, credit_micros, held_micros)
+       VALUES (?, ?, ?, 'active', ?, ?, 0, 0)`,
+    ).run(id, input.email, input.name, createdAt, input.passwordHash);
+
+    insertActivity(db, {
+      userId: id,
+      actor: "customer",
+      kind: "customer.signup",
+      entityType: "customer",
+      entityId: id,
+      now: createdAt,
+    });
+  }).immediate();
 
   return {
     id,

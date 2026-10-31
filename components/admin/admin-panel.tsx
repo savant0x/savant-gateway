@@ -1,9 +1,13 @@
+import type { ActivitySummary } from "@/lib/activity";
+import type { PromoCodeSummary } from "@/lib/promo-codes";
 import type { AdminOverview, AnalyticsData } from "@/lib/types";
 
 import { Card } from "@heroui/react";
 import Link from "next/link";
 
+import { ActivityPanel } from "./activity-panel";
 import { CreditCard } from "./credit-card";
+import { PromoPanel } from "./promo-panel";
 
 import { KeysCard } from "@/components/dashboard/keys-card";
 import { ProviderCard } from "@/components/dashboard/provider-card";
@@ -40,9 +44,17 @@ function LinkButton({
 export function AdminPanel({
   data,
   analytics,
+  activity,
+  promos,
 }: {
   data: AdminOverview;
   analytics: AnalyticsData;
+  activity: ActivitySummary[];
+  promos: {
+    enabled: boolean;
+    reason: string | null;
+    codes: PromoCodeSummary[];
+  };
 }) {
   const disabled = data.models.filter(
     (model) => model.status === "disabled",
@@ -157,6 +169,18 @@ export function AdminPanel({
 
       <section id="credit">
         <CreditCard account={data.account} ledger={data.ledger} />
+      </section>
+
+      <section>
+        <ActivityPanel events={activity} />
+      </section>
+
+      <section>
+        <PromoPanel
+          enabled={promos.enabled}
+          initial={promos.codes}
+          reason={promos.reason}
+        />
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">

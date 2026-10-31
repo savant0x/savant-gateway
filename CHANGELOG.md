@@ -3,6 +3,46 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-31 — Local quality pass: promo credit, lifecycle activity and read paths
+
+- **FID-2026-1031-077 — medium — The A–Z audit found and fixed two concrete
+  read-path defects.** `lib/analytics.ts` wrapped indexed timestamps in
+  `datetime(...)`, defeating `usage_events_created_idx` on every admin analytics
+  range; predicates now compare ISO strings directly and the query-plan test
+  asserts the index. `billing_events(status, claimed_at)` was missing for stale
+  claim recovery and is added additively. A provider-scoped usage composite was
+  measured and rejected: it adds one index write to every settlement, while the
+  existing `created_at` index already bounds the day window. The
+  [A–Z audit](../dev/audits/2026-10-31-a-z-quality-audit.md) records 26 dimensions,
+  evidence and the open launch dependencies. Load passed 123/123 checks at
+  213.71–224.31 sustained admitted rps across post-change runs (one cold 181.42)
+  against the 229.84 candidate baseline; the envelope remains unapproved.
+- **FID-2026-1031-078 — high — Free credit now has an operator-issued promo
+  path without a second balance.** `promo_codes` stores only a SHA-256 hash and
+  a display prefix; the full 12-character code is returned once at creation.
+  A code carries a dollar amount (max $500), a redemption cap and an optional
+  UTC window. Redemption is default-off behind `PROMO_CODES_ENABLED`, runs in
+  one immediate transaction that increments the cap, records the customer
+  redemption, credits `credit_balance_micros`, writes a `promo` ledger row and
+  appends an activity event. The admin panel issues/lists/pauses; the customer
+  card renders only while the flag is on. Promo dollars do not expire; the code
+  can. The existing weighted-token free pool is unchanged.
+- **FID-2026-1031-079 — medium — Business lifecycle events now have one
+  append-only record.** `activity_events` stores actor, kind, entity and
+  allowlisted scalar metadata, never prompts, completions, keys, passwords,
+  tokens or full promo codes. Signup, login/logout, key create/revoke, credit
+  grant/adjustment, top-up create/paid and promo create/redeem are instrumented;
+  money/account writes are transactional, while login/logout writes are
+  best-effort so an audit failure cannot block a session. The
+  `GET /api/admin/activity` route and the admin overview expose the latest rows
+  with a clamped limit and user/kind filters.
+
+Verification: `npm test` 394 pass; `npm run test:http` 750 checks plus the trial
+suite; `npm run test:load` 123 checks; `npm run test:recovery` 34 checks;
+`npm run typecheck`, `npm run lint` (zero warnings), `npm run quality` (355
+files), `npm run build` and `npm run config:check` exit 0; `npm audit --omit=dev`
+reports 0 vulnerabilities.
+
 ## 2026-10-31 — Measured capacity and failure acceptance
 
 - **FID-2026-1030-060 — high — the gateway now has a bounded, reproducible load

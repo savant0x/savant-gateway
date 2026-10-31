@@ -113,6 +113,13 @@ export {
   resolveCustomerSession,
   revokeCustomerSession,
 } from "./store/customer";
+export { listActivity, recordActivityBestEffort } from "./store/activity";
+export {
+  createPromoCode,
+  listPromoCodes,
+  redeemPromoCode,
+  setPromoCodeStatus,
+} from "./store/promos";
 export {
   createCustomerApiKey,
   getCustomerAccount,

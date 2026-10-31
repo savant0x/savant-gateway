@@ -6,17 +6,20 @@ import { dirname, join, resolve } from "node:path";
 import Database from "better-sqlite3";
 
 import { normalizeFamilyName } from "./model-family";
+import { activitySchema } from "./schema/activity";
 import { allocationSchema } from "./schema/allocations";
 import { accountActionSchema } from "./schema/account-actions";
 import { benchmarkSchema } from "./schema/benchmarks";
 import { ensureColumn, type DatabaseHandle } from "./schema/columns";
 import { modelGroupSchema } from "./schema/groups";
+import { performanceIndexSchema } from "./schema/indexes";
 import { operationsSchema } from "./schema/operations";
 import { providerSchema } from "./schema/providers";
 import { subscriptionSchema } from "./schema/subscriptions";
 import { creditAdjustmentSchema } from "./schema/credits";
 import { paymentEventSchema } from "./schema/payments";
 import { policySchema } from "./schema/policies";
+import { promoSchema } from "./schema/promos";
 import { settlementSchema } from "./schema/settlements";
 import { supportSchema } from "./schema/support";
 import { trialSchema } from "./schema/trials";
@@ -342,6 +345,7 @@ function createDb() {
       baseSchema(database);
       v2Schema(database);
       customerSchema(database);
+      activitySchema(database);
       accountActionSchema(database);
       freePoolSchema(database);
       allocationSchema(database);
@@ -354,6 +358,8 @@ function createDb() {
       settlementSchema(database);
       creditAdjustmentSchema(database);
       paymentEventSchema(database);
+      performanceIndexSchema(database);
+      promoSchema(database);
       supportSchema(database);
       policySchema(database);
       operationsSchema(database);

@@ -40,15 +40,20 @@ Do these once, in order, before inviting a customer:
    not create a top-up record or a Stripe payment. Customer balances are funded
    by Stripe webhook fulfilment; `/admin/customers` is the read-only customer and
    payment view.
-7. **Reconciliation** — `/admin/reconciliation`. Require `totals.balanced`, then
+7. **Promo credit** — the **Promo credit** card on `/admin`. It creates a code
+   with a dollar amount, redemption cap and optional expiry. The full code is
+   shown once and only its hash is stored. Redemption is closed until
+   `PROMO_CODES_ENABLED=true`; a redemption credits the same prepaid ledger as a
+   top-up. Promo dollars do not expire; the code can.
+8. **Reconciliation** — `/admin/reconciliation`. Require `totals.balanced`, then
    review unresolved settlements and quarantined holds. A failed stream can
    leave a hold without a debit; it is a work item, not a refund instruction.
-8. **Support** — `/admin/support`. Read open requests, act, and resolve with a
+9. **Support** — `/admin/support`. Read open requests, act, and resolve with a
    note. The note is customer-visible. There is no email delivery; the customer
    sees the note the next time `/account` renders.
-9. **Analytics** — `/admin/analytics`. Check revenue, upstream cost, margin and
-   token volume over 7/30/90 days. Upstream cost and customer revenue are
-   separate columns; do not infer one from the other.
+10. **Analytics** — `/admin/analytics`. Check revenue, upstream cost, margin and
+    token volume over 7/30/90 days. Upstream cost and customer revenue are
+    separate columns; do not infer one from the other.
 
 ## Daily checks
 

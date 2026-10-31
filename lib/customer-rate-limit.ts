@@ -40,6 +40,13 @@ export const supportLimiter = createRateLimiter({
   windowMs: 60 * 60 * 1000,
 });
 
+/** A code is a guessable secret if the space were small; this bounds attempts
+ * per account independently of the address the request came from. */
+export const promoLimiter = createRateLimiter({
+  limit: 10,
+  windowMs: 60 * 60 * 1000,
+});
+
 export function clientKey(
   request: Request,
   env: Record<string, string | undefined> = process.env,

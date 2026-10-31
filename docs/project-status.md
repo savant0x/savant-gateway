@@ -16,12 +16,13 @@ non-production config check, 326 unit tests, quality (307 files), a production
 build (22 static/SSG pages), 496 HTTP checks plus the trial suite, and the
 recovery drill (2720 ms).
 
-The current local tree's final `npm run verify` exit 0: 381 unit tests, quality
-PASS (340 files), production build, 722 HTTP checks, trial suite PASS, recovery
-drill PASS (7 concurrent writes, 1929 ms), and a non-production config check.
-The pre-push hook mirrors the gate and adds the attribution guard. The separate
-`npm run test:load` measurement passed 123/123 checks against `8c10a07`; it is
-not part of `verify` because it is an additional release measurement.
+The current local tree's gates: 394 unit tests, quality PASS (355 files), a
+production build, 750 HTTP checks plus the trial suite, the recovery drill PASS,
+and a non-production config check. The pre-push hook mirrors the gate and adds
+the attribution guard. The post-change `npm run test:load` measurement passed
+123/123 checks at 213.71–224.31 sustained admitted rps (one cold run at 181.42)
+against the FID-060 229.84 baseline; it remains a candidate measurement, not
+approved capacity and not part of `verify`.
 
 The product remains pre-launch and is not deployed. No Fly app, volume, machine
 or secret exists; `fly apps list` is blocked by an ended trial, so the first
@@ -29,7 +30,16 @@ image build, first deployment and timed production-volume restore have not run.
 No live Stripe payment, funded paid inference, email delivery or production
 proxy acceptance is claimed.
 
-Latest implementation: [FID-2026-1030-060](../dev/fids/archive/FID-2026-1030-060-load-and-resilience-acceptance.md),
+Latest local quality pass: FID-2026-1031-077/078/079, recorded in the
+[A–Z audit](../dev/audits/2026-10-31-a-z-quality-audit.md). The audit covers 26
+dimensions and records the two concrete read-path fixes (direct ISO analytics
+predicates, payment-claim index), the measured rejection of a provider composite
+index on the settlement write path, the default-off promo-credit scaffold, and
+the append-only lifecycle activity log. Promo credit is dollar credit in the
+existing ledger; the weighted-token free pool is unchanged. No crypto purchase,
+live payment, deployment or operator capacity approval is claimed.
+
+Previous measured capacity: [FID-2026-1030-060](../dev/fids/archive/FID-2026-1030-060-load-and-resilience-acceptance.md),
 closed against `8c10a07`, adds the bounded load/fault runner, the candidate
 envelope, capacity invariants and the truncated-stream repair. The measured run
 passed 123/123 checks: 229.84 sustained admitted rps at p95 137.53 ms, 186.7 MB
@@ -76,7 +86,7 @@ remain open.
 | What is approved now? | [SCOPE](../SCOPE.md), current launch-FID planning section P1–P4 |
 | What must happen before launch? | [Launch plan](launch-plan.md) |
 | What organizes all launch work? | [Master FID 043](../dev/fids/FID-2026-1030-043-launch-master.md), children 044–062, plus supplemental 066–068 |
-| What has actually been examined? | [Systems review](../dev/audits/2026-10-30-systems-review.md), [quality pass](../dev/audits/2026-10-31-quality-pass.md), [docs QC pass](../dev/audits/2026-10-31-docs-qc-pass.md) |
+| What has actually been examined? | [A–Z audit](../dev/audits/2026-10-31-a-z-quality-audit.md), [systems review](../dev/audits/2026-10-30-systems-review.md), [quality pass](../dev/audits/2026-10-31-quality-pass.md), [docs QC pass](../dev/audits/2026-10-31-docs-qc-pass.md) |
 | What can honestly be offered now? | [Offering evidence ledger](offering-evidence.md) |
 | What changed? | [CHANGELOG](../CHANGELOG.md), then the implementation commit |
 | What should implementation preserve? | [Knowledge](../knowledge.md) |
@@ -90,7 +100,14 @@ keys, integer-micro-dollar pricing, credit holds/ledger/settlement, Stripe
 webhook fulfillment, subscription snapshots/allowances, admin control plane,
 revenue/cost analytics, daily free allocation and a shared free rate bucket.
 
-Recent additions, committed as `50758c1`: stored Artificial Analysis benchmarks and admin
+Recent local additions: operator-issued promo credit behind
+`PROMO_CODES_ENABLED` (default off, SHA-256 hash at rest, one redemption per
+account per code, existing credit ledger), an append-only lifecycle activity
+log with an admin read view, and index-friendly analytics range reads. These are
+documented in the [A–Z audit](../dev/audits/2026-10-31-a-z-quality-audit.md) and
+have no live customer, payment or deployment receipt.
+
+Earlier additions, committed as `50758c1`: stored Artificial Analysis benchmarks and admin
 sync controls, side-by-side model comparison, catalog/brand refinements, and
 browser-local timestamp display. A committed implementation is not real service
 or launch acceptance. The verification receipt records what was exercised.

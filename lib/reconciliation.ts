@@ -1,5 +1,7 @@
 import type { DatabaseHandle } from "./schema/columns.ts";
 
+import { insertActivity } from "./activity.ts";
+
 /**
  * Credit reconciliation and append-only corrections.
  *
@@ -144,6 +146,16 @@ export function applyAdjustment(
       database
         .prepare("UPDATE users SET credit_micros = ? WHERE id = ?")
         .run(balanceAfter, input.userId);
+
+      insertActivity(database, {
+        userId: input.userId,
+        actor: "admin",
+        kind: "credit.adjusted",
+        entityType: "credit",
+        entityId: id,
+        metadata: { amountMicros: amount, adjustmentKind: input.kind },
+        now: input.now,
+      });
 
       return { ok: true as const, created: true, entryId: id };
     })

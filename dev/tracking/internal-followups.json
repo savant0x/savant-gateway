@@ -146,6 +146,24 @@
       "detail": "The 2026-10-31 run measured the production artifact on a disposable SQLite file and local provider fixture: 123/123 checks, 229.84 sustained rps, p95 137.53 ms, 186.7 MB peak RSS, 310 committed settlements and zero unresolved/ledger differences. The envelope in config/load-envelope.json has no dated approval; no real provider was called, no spend occurred, ENOSPC and 120 s/300 s deadline waits were not reproduced, and no hosted proxy or Fly volume was used. 160.89 rps is candidate-only.",
       "evidence": "dev/audits/2026-10-31-load-acceptance.json; docs/load-acceptance.md; config/load-envelope.json; dev/fids/archive/FID-2026-1030-060-load-and-resilience-acceptance.md",
       "next_action": "After 062/067 approval, date the operator traffic/spend envelope, run `npm run test:load:accept` on the production Fly machine against a funded authorized provider budget, then repeat with the hosted proxy and production-sized dataset; record ENOSPC/deadline behavior and publish only the approved cap."
+    },
+    {
+      "id": "FID-2026-1031-078-LIVE",
+      "fid": "FID-2026-1031-078",
+      "state": "watch",
+      "title": "Promo distribution and first customer redemption",
+      "detail": "The promo lane is implemented and default-off. No code has been issued to a real customer, there is no delivery channel, and the operator has not decided whether promo dollars should ever expire. Unit and HTTP tests prove the local route, ledger transaction and concurrent redemption only.",
+      "evidence": "dev/fids/FID-2026-1031-078-free-credit-grants-and-promo-codes.md; tests/promos.test.mjs; scripts/http-suite/promo-checks.mjs",
+      "next_action": "Choose the recipient and distribution channel outside the app, enable PROMO_CODES_ENABLED only for the approved window, issue one code, record the customer redemption and ledger row, then close the flag."
+    },
+    {
+      "id": "FID-2026-1031-079-RETENTION",
+      "fid": "FID-2026-1031-079",
+      "state": "watch",
+      "title": "Activity log retention, growth and export policy",
+      "detail": "activity_events is append-only and metadata is bounded, but there is no retention job, export or customer-facing view. The table stores identifiers and amounts, not prompts or completions. No production-size growth measurement exists.",
+      "evidence": "dev/fids/FID-2026-1031-079-lifecycle-activity-tracking.md; lib/schema/activity.ts; tests/activity.test.mjs",
+      "next_action": "Before public volume, decide the retention window, add a pruning job if needed, and measure table growth under the approved load envelope."
     }
   ]
 }

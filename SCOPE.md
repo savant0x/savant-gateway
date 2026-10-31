@@ -2057,3 +2057,42 @@ served, and the trial double accepting a request it could not parse).
   today and proves nothing about endpoints a row does *not* advertise. It also
   cannot see a double that answers correctly but diverges from the real
   provider's payload in a field no parser reads.
+
+## Current Session — 2026-10-31 (local quality pass: 077–079)
+
+Operator request: the crypto lane cannot proceed until the operator buys the
+asset, so work locally on the remaining quality debt — a project-wide A–Z audit,
+gateway performance, a free-credit/promo scaffold, full lifecycle tracking, and
+general optimisation.
+
+Scope decision: the existing `free` billing source is a weighted-token daily
+allocation, not a dollar balance. It is left unchanged. A promo code grants
+dollar credit into the existing prepaid ledger, default-off behind
+`PROMO_CODES_ENABLED`, and is recorded as a `promo` ledger row. A separate
+append-only `activity_events` table carries business lifecycle events without
+prompts, completions, keys, tokens, or full codes.
+
+- [x] **Q1 — A–Z quality audit and read-path performance (FID-077).** The
+  [A–Z audit](../dev/audits/2026-10-31-a-z-quality-audit.md) covers 26 dimensions.
+  Analytics now compares ISO timestamps directly and the query plan uses
+  `usage_events_created_idx`. The low-write payment-claim index was added; a
+  provider composite was measured and rejected because it adds a write to every
+  settlement while the day window is already index-bounded. Load: 123/123
+  checks, 213.71–224.31 rps across post-change runs (one cold 181.42), against
+  the 229.84 candidate baseline. No operator approval is claimed.
+- [x] **Q2 — Free-credit and promo scaffold (FID-078).** SHA-256-hashed
+  12-character codes, $500 amount ceiling, redemption cap, optional window,
+  admin issue/list/pause, customer redeem behind `PROMO_CODES_ENABLED`, and a
+  transactional ledger row in the existing prepaid balance. The HTTP suite races
+  two redemptions and proves one 200, one 409 and one ledger row. Promo dollars
+  do not expire; the code can.
+- [x] **Q3 — Lifecycle activity tracking (FID-079).** Append-only
+  `activity_events`, allowlisted scalar metadata with secret rejection, admin
+  API and overview panel, and instrumentation of signup, login/logout, keys,
+  credit grants/adjustments, top-ups, and promo issue/redemption. Login/logout
+  writes are best-effort; money and account writes are transactional.
+- [x] **Q4 — Verification.** 394 unit tests, 750 main HTTP checks, trial suite,
+  123 load checks, 34 recovery checks, lint/typecheck/quality/build and
+  `npm audit --omit=dev` (0 vulnerabilities) all pass. Live crypto purchase,
+  real-provider capacity, operator approval, container build and deployment
+  remain open external dependencies.

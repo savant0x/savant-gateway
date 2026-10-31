@@ -18,6 +18,7 @@ import {
   createCustomerSession,
   findCustomerByEmail,
   markCustomerLogin,
+  recordActivityBestEffort,
 } from "@/lib/store";
 
 export const runtime = "nodejs";
@@ -90,6 +91,14 @@ export async function POST(request: Request) {
   loginLimiter.reset(key);
   loginAccountLimiter.reset(email);
   markCustomerLogin(customer.id);
+  recordActivityBestEffort({
+    userId: customer.id,
+    actor: "customer",
+    kind: "customer.login",
+    entityType: "customer",
+    entityId: customer.id,
+    metadata: { source: "password" },
+  });
 
   const session = createCustomerSession(customer.id);
   const response = NextResponse.json(

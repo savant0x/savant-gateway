@@ -16,6 +16,7 @@ const ITEMS = [
   },
   { href: "/admin/providers", icon: "fa-plug", label: "Providers" },
   { href: "/admin/support", icon: "fa-life-ring", label: "Support" },
+  { href: "/admin/operations", icon: "fa-heart-pulse", label: "Operations" },
   { href: "/admin/gateway", icon: "fa-sliders", label: "Gateway" },
   { href: "/admin/pricing", icon: "fa-calculator", label: "Pricing" },
   { href: "/admin/analytics", icon: "fa-chart-line", label: "Analytics" },

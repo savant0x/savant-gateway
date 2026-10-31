@@ -17,6 +17,7 @@ against, not automatically today's behavior.
 | Deploy, back up, restore and roll back | [deployment-runbook.md](deployment-runbook.md) |
 | Understand the hosting decision | [hosting-decision.md](hosting-decision.md) |
 | Handle a support or deletion request | [support-runbook.md](support-runbook.md) |
+| Configure alerts, pause admission and respond to incidents | [operations-runbook.md](operations-runbook.md) |
 | Configure verification and password recovery | [account-email.md](account-email.md) |
 | Change or publish a policy | [policies/README.md](policies/README.md) |
 
@@ -59,6 +60,8 @@ same answer data the page renders.
 - [hosting-decision.md](hosting-decision.md) — one persistent Node process on a
   local volume; the Vercel/libSQL path is dormant.
 - [support-runbook.md](support-runbook.md) — support queue and manual deletion.
+- [operations-runbook.md](operations-runbook.md) — scheduled monitor, alert
+  webhook and signature, incident dedup/retry, and pause/drain/provider controls.
 - [policies/README.md](policies/README.md) — policy versions `v1.1` (current) and
   `v1` (superseded, still readable).
 - [echo-protocol.md](echo-protocol.md) — short orientation to the governing

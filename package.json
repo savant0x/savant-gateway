@@ -22,6 +22,7 @@
 		"test:recovery": "node scripts/db-recovery-drill.mjs",
 		"db:backup": "node scripts/db-backup.mjs",
 		"db:restore": "node scripts/db-restore.mjs",
+		"operations:monitor": "node scripts/operations-monitor.mjs",
 		"images": "node scripts/render-images.mjs",
 		"quality": "node scripts/quality-report.mjs",
 		"business-model": "node scripts/business-model.mjs",

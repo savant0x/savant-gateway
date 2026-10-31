@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { getAdmissionControl } from "@/lib/store/operations";
 import {
   readinessReport,
   validateProductionConfig,
@@ -20,6 +21,16 @@ const REQUIRED_TABLES = [
  * the probe runs inside a transaction that is always rolled back. A read-only
  * mount reports not-ready here instead of failing on the first customer write.
  */
+/** Admission is informational for readiness; a missing settings table must
+ * still produce the 503 readiness report instead of an unhandled 500. */
+function admissionState() {
+  try {
+    return getAdmissionControl().state;
+  } catch {
+    return "unavailable";
+  }
+}
+
 function storageReady(): boolean {
   try {
     for (const table of REQUIRED_TABLES) {
@@ -72,6 +83,9 @@ export async function GET() {
       // Discloses the deliberately disposable runtime instead of looking
       // identical to a durable production configuration.
       mode: configuration.disposable ? "disposable" : "durable",
+      // Paused and draining are admission controls, not readiness failures:
+      // the operator console and payment webhooks must stay reachable.
+      admission: admissionState(),
     },
     {
       status: report.httpStatus,

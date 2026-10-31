@@ -49,6 +49,7 @@ import {
   safeUpstreamMessage,
 } from "./gateway-resolution";
 import { getBannerConfig } from "./store/banner";
+import { getAdmissionControl } from "./store/operations";
 import { openCallSettlement } from "./store/settlements";
 import { reservePaidCall } from "./gateway-paid";
 import {
@@ -107,6 +108,23 @@ export async function handleChatCompletions(request: Request) {
       503,
       `Model ${model.id} is currently unavailable`,
       "model_unavailable",
+    );
+  }
+
+  // Operator admission control is checked after authentication and model
+  // resolution but before any rate limit, provider slot, allowance hold or
+  // credit hold. Pause and drain are admission-only: payment webhooks,
+  // settlement, quarantine release and in-flight streams keep working.
+  const gatewayAdmission = getAdmissionControl();
+
+  if (gatewayAdmission.state !== "open") {
+    return jsonError(
+      503,
+      gatewayAdmission.state === "paused"
+        ? "The gateway is paused by the operator. No new inference is being admitted; payment fulfillment and the operator console remain available."
+        : "The gateway is draining for maintenance. No new inference is being admitted; existing calls finish and settle normally.",
+      "service_unavailable",
+      { "Retry-After": "30" },
     );
   }
 

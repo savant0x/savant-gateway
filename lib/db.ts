@@ -11,6 +11,7 @@ import { accountActionSchema } from "./schema/account-actions";
 import { benchmarkSchema } from "./schema/benchmarks";
 import { ensureColumn, type DatabaseHandle } from "./schema/columns";
 import { modelGroupSchema } from "./schema/groups";
+import { operationsSchema } from "./schema/operations";
 import { providerSchema } from "./schema/providers";
 import { subscriptionSchema } from "./schema/subscriptions";
 import { creditAdjustmentSchema } from "./schema/credits";
@@ -355,6 +356,7 @@ function createDb() {
       paymentEventSchema(database);
       supportSchema(database);
       policySchema(database);
+      operationsSchema(database);
       normalizeLegacyFamilies(database);
       seed(database);
     })

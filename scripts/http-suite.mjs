@@ -16,6 +16,7 @@ import {
 } from "./http-suite/harness.mjs";
 import { runMetadataChecks } from "./http-suite/metadata-checks.mjs";
 import { seedCatalog } from "./http-suite/seed.mjs";
+import { runOperationsChecks } from "./http-suite/operations-checks.mjs";
 import { runPolicyChecks } from "./http-suite/policy-checks.mjs";
 import { runQuotaChecks } from "./http-suite/quota-checks.mjs";
 import { runRequestLimitChecks } from "./http-suite/request-limit-checks.mjs";
@@ -117,6 +118,16 @@ try {
   await runRequestLimitChecks({ baseUrl, db: database, mock, adminPassword: ADMIN_PASSWORD });
 
   await runAccountRecoveryChecks({ baseUrl, db: database, email });
+
+  // Runs before the main checks: that suite deliberately drops a required
+  // table to prove readiness fails closed. This drill restores admission,
+  // provider state and its fixture rows before returning.
+  await runOperationsChecks({
+    baseUrl,
+    db: database,
+    mock,
+    adminPassword: ADMIN_PASSWORD,
+  });
 
   await runChecks({
     baseUrl,

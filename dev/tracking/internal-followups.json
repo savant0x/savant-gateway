@@ -119,6 +119,15 @@
       "detail": "Policy v1.1 is published and the authenticated support queue is implemented. No registered entity/address, counsel review, verified host retention, Stripe business-profile/tax decision, real account deletion or controlled outside-channel inquiry exists yet.",
       "evidence": "dev/fids/archive/FID-2026-1030-061-policies-privacy-and-support.md; content/legal/v1.1/; docs/launch-plan.md (Pre-launch policy gates)",
       "next_action": "Record each operator decision with its date, publish a new immutable policy version when text changes, and exercise one real deletion and one controlled inquiry through the owned channel."
+    },
+    {
+      "id": "FID-2026-1030-056-LIVE",
+      "fid": "FID-2026-1030-056",
+      "state": "blocked",
+      "title": "Real payment and deployed-origin customer journey",
+      "detail": "The 33-route, two-theme, 320/1024 matrix passes on a disposable production build (132/132). It is not a real payment: card top-ups are off by ruling and the NOWPayments sandbox/live smoke remains operator territory. No deployed origin exists, so the same matrix has not run against the public host.",
+      "evidence": "dev/fids/archive/FID-2026-1030-056-customer-experience-and-api-docs.md; dev/audits/2026-10-31-browser-matrix-056.md; scripts/http-suite/checks.mjs",
+      "next_action": "After FID-062 approval and the FID-2026-1031-076 lane smoke, run one real top-up through the enabled lane and repeat the matrix against the deployed origin; record the payment state and the rendered account balance."
     }
   ]
 }

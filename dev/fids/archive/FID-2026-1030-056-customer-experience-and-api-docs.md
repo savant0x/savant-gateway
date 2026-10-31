@@ -4,8 +4,7 @@
 **ID:** FID-2026-1030-056
 **Parent:** FID-2026-1030-043
 **Severity:** high
-**Status:** fixed — implementation present; residual manual matrix and
-real-payment acceptance remain
+**Status:** closed — residual matrix verified; real-payment acceptance tracked
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044, FID-2026-1030-045, FID-2026-1030-046, FID-2026-1030-047, FID-2026-1030-049, FID-2026-1030-050, FID-2026-1030-052, FID-2026-1030-053, FID-2026-1030-054, FID-2026-1030-055, FID-2026-1030-061
@@ -129,17 +128,41 @@ Browser receipt (production build, disposable database, 2026-10-30):
 Verification: `npm run verify` exit 0 — 297 unit tests, 351 HTTP checks, trial
 HTTP PASS, quality PASS (267 files), clean lint/typecheck/build.
 
-## Remaining Gates
+## Residual Matrix — Verified 2026-10-31
 
-- Policy, privacy, terms and support routes now exist (FID-2026-1030-061,
-v1.1 published); the earlier dependency is cleared and the footer links are
-present.
-- 320 and 1024 widths, both themes on every page, admin screens, and a keyboard
-  focus-ring screenshot were not exercised.
-- Real payment success still cannot be proven without Stripe credentials; the
-  account copy is verified as truthful, not as a completed purchase.
+The earlier gaps are closed by a Playwright/Edge run against the production
+build on a disposable database, with a seeded paid catalog, a signed-in
+customer and an authenticated admin session:
 
-056 remains open for the residual matrix above; the 061 dependency has landed.
+- 33 routes — 18 public, `/account`, and 14 admin/dashboard surfaces — at
+  320x844 and 1024x900 in both themes: 132/132 page checks pass.
+- Every page: 200, `lang="en"`, exactly one `h1`, a skip link targeting
+  `#main-content`, the requested theme applied (`html.class` and
+  `color-scheme` = `dark`/`light`), and no horizontal document overflow.
+- Body contrast is at least 14.03:1 across the matrix. Keyboard Tab focuses the
+  skip link with `outline: 2px solid` (`rgb(0, 251, 255)` in dark), resolving the
+  earlier inconclusive focus reading.
+- `/compare` rendered its truthful empty state because the disposable catalog
+  held one model; the comparison itself is covered by `tests/compare.test.mjs`
+  and the earlier browser receipt.
+
+Real payment success is not claimed. Card top-ups are off by operator ruling
+and the NOWPayments sandbox/live smoke is FID-2026-1031-076 operator territory;
+the account copy is verified as truthful, not as a completed purchase.
+
+## Closure Record — 2026-10-31
+
+- **Closed Date:** 2026-10-31
+- **Implementation:** `1f6fb2f` plus the docs follow-up; the state matrix and
+  HTTP assertions are in `scripts/http-suite/checks.mjs`.
+- **Verification Evidence:** the 132/132 browser matrix recorded in
+  `dev/audits/2026-10-31-browser-matrix-056.md` and
+  `npm run verify` exit 0 — 364 unit tests, quality PASS (323 files),
+  production build, 678 HTTP checks, trial suite and recovery drill PASS;
+  lint and typecheck clean.
+- **Residual (not claimed):** real payment fulfillment and a deployed-origin
+  browser pass remain `FID-2026-1030-056-LIVE`.
+- **Archived:** `dev/fids/archive/FID-2026-1030-056-customer-experience-and-api-docs.md`
 
 ## Lessons Learned
 

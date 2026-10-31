@@ -3,6 +3,21 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-31 — Accessible customer experience matrix verified
+
+- **FID-2026-1030-056 — high — the residual customer-experience matrix is
+  verified and the record closes.** A Playwright/Edge run against the production
+  build on a disposable database covered 33 routes — 18 public, `/account`, and
+  14 admin/dashboard surfaces — at 320x844 and 1024x900 in both themes:
+  132/132 checks pass. Every page returned 200 with `lang="en"`, exactly one
+  `h1`, a skip link to `#main-content`, the resolved `dark`/`light` class and
+  `color-scheme`, and no horizontal document overflow. Minimum body contrast was
+  14.03:1; keyboard Tab focused the skip link with a solid 2px outline, closing
+  the earlier inconclusive focus reading. `/compare` showed its truthful empty
+  state with the one-model fixture. Real payment fulfillment and a
+  deployed-origin browser pass remain `FID-2026-1030-056-LIVE`. Closed against
+  `1f6fb2f` and the docs follow-up; archived.
+
 ## 2026-10-31 — Launch FID closures: quota, deployment readiness and policies
 
 - **FID-2026-1030-049 — high — quota freshness, reset and allocation coverage is

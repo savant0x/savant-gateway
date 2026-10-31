@@ -23,7 +23,13 @@ policy text or runtime data changed.
   `FID-2026-1030-061-LIVE`. Archived.
 - [x] **F4 — Ledger updates.** Three CHANGELOG entries, three tracking items,
   master 043 links moved to archive paths, and the active queue reduced from 11
-  to 8. No code, schema, policy text or runtime data changed.
+  to 8 with these three closures. No code, schema, policy text or runtime data
+  changed.
+- [x] **F5 — Close FID-2026-1030-056.** A Playwright/Edge production-build
+  matrix covered 33 routes at 320/1024 in both themes — 132/132 checks, minimum
+  body contrast 14.03:1, a 2px focus ring, no document overflow, one `h1` and a
+  skip link on every page. Real payment and a deployed-origin pass remain
+  `FID-2026-1030-056-LIVE`. Archived; the active queue is now 7.
 
 ## Current Session — 2026-10-31 (complete active FIDs)
 
@@ -49,11 +55,12 @@ spend and messaging boundaries remain binding; no missing evidence is invented.
 - [ ] **C4 — FID-2026-1030-059:** monitoring, protected incident controls and
   alert transport; destination/authorized delivery inputs requested.
 - [ ] **C5 — FID-2026-1030-060:** bounded load/fault gate and reconciliation.
-- [ ] **C6 — FID-2026-1030-056, FID-2026-1030-057 and FID-2026-1030-061:**
+- [x] **C6 — FID-2026-1030-056, FID-2026-1030-057 and FID-2026-1030-061:**
   verify committed implementations, complete remaining development checks and
   preserve each hosted/payment/policy observation in the tracking ledger.
   057 and 061 closed 2026-10-31 with their hosted/policy observations tracked;
-  056 remains for its residual accessibility matrix and payment acceptance.
+  056 closed after a 132/132 browser matrix, with real payment acceptance as
+  `FID-2026-1030-056-LIVE`.
 - [ ] **C7 — FID-2026-1030-044 and FID-2026-1030-068:** commercial and USDC
   implementation; chain/token, xpub, RPC and screening inputs requested.
 - [ ] **C8 — FID-2026-1030-066:** reconcile the retained port plan with the

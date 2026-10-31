@@ -101,7 +101,7 @@ the `apixo` row, and leaves an unrelated provider whose variable happens to be
 - gate: test tests/schema-migration.test.mjs
 - gate: quality
 
-`npm run build` and the HTTP suites were not rerun: this change is a seed
+The full unit suite was run after the change (417 pass). `npm run build` and the HTTP suites were not rerun: this change is a seed
 literal plus a scoped `UPDATE` executed inside the existing migration
 transaction, and neither touches a request path. That is a limitation of this
 receipt, not a claim that those gates passed on this change.
@@ -112,6 +112,7 @@ receipt, not a claim that those gates passed on this change.
 - lint: exit 0, zero warnings
 - typecheck: exit 0
 - test tests/schema-migration.test.mjs: exit 0 (4 pass, 0 fail)
+- test: exit 0 (417 pass, 0 fail)
 - quality: PASS (400-line ceiling, 366 files scanned)
 
 ## Perfection Loop
@@ -140,7 +141,7 @@ receipt, not a claim that those gates passed on this change.
 
 ### Implementation Evidence
 
-- [x] **Commit SHA:** recorded below
+- [x] **Commit SHA:** `ecf4f19`
 - [x] **File:line ranges:** `lib/schema/providers.ts` (`adoptDocumentedApixoKey`,
   apixo seed), `tests/schema-migration.test.mjs`
 - [x] **Gate output:** receipt above

@@ -165,7 +165,8 @@ the same log cannot credit twice. The spike's assertions become
 
 ### Implementation Evidence
 
-- [ ] **Commit SHA:** none — working tree, uncommitted.
+- [x] **Commit SHA:** `b2790d1` — the decision, the step-0 spike and this record
+  in one commit.
 - [x] **File:line ranges:** `scripts/usdc-receive-spike.mjs`.
 - [x] **Gate output:** spike 6/6; repository gates recorded in the receipt.
 - [x] **Reproducibility:** `node scripts/usdc-receive-spike.mjs`.
@@ -174,7 +175,7 @@ the same log cannot credit twice. The spike's assertions become
 
 ## Resolution
 
-- **Closed Date:** not closed — step 0 only.
+- **Closed Date:** not closed — step 0 only, committed as `b2790d1`.
 - **Fix Description:** offline proof of the receive mechanism.
 - **Tests Added:** No — the spike asserts directly; it becomes a test file when
   the modules land.

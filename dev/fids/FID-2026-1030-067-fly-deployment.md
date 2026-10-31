@@ -259,8 +259,9 @@ siblings for pruned copies and after a successful verification.
 
 ### Implementation Evidence
 
-- [x] **Commit SHA:** none — the change is a working-tree slice awaiting an
-      operator commit request. The receipt above is against this tree.
+- [x] **Commit SHA:** `1081362` — the artifact, its runbook and README procedure,
+      and the FID-067 records in one commit. The receipt above was taken against
+      that same tree.
 - [x] **File:line ranges:** `Dockerfile`, `.dockerignore`, `fly.toml`,
       `scripts/docker-entrypoint.sh`, `scripts/db-backup.mjs`.
 - [x] **Gate output:** receipt below.
@@ -297,8 +298,9 @@ the ledger correct. Only a container can prove the image; it could not be built.
 
 ## Resolution
 
+- **Commit:** `1081362` — `feat(deploy)`.
 - **Closed Date:** not closed — the operator deferred deployment until the
-  launch date, so the artifact ships dormant. The change is also uncommitted.
+  launch date, so the artifact ships dormant. It is committed as `1081362`.
 - **Fix Description:** container image, Fly configuration, volume entrypoint,
   backup script and runbook procedure.
 - **Tests Added:** No. No application code changed.

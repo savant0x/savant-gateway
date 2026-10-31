@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1031-080-apixo-provider-onboarding.md`
 **ID:** FID-2026-1031-080
 **Severity:** medium
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-31 21:40
 **Automation level:** 2
 **YAGNI-Compliance:** Verified
@@ -178,7 +178,7 @@ row whose cost is unknown starts disabled.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [x] **Commit SHA:** the commit that carries this file
+- [x] **Commit SHA:** `c1ddf7d4e8011af49da82fffadc62388ee411e2b`
 - [x] **File:line ranges:** `lib/providers/catalog.ts` (importedModelStatus),
   `lib/store/models.ts` (status in `replaceModels`),
   `tests/catalog-integrity.test.mjs`
@@ -227,11 +227,13 @@ row whose cost is unknown starts disabled.
 
 - **Closed Date:** 2026-10-31 (local; operator approval not required for
   documentation and the guard)
+- **Commit:** `c1ddf7d4e8011af49da82fffadc62388ee411e2b`
 - **Fix Description:** An unpriced import starts disabled, so the public catalog
   never advertises a model that answers `503 model_unpriced`.
 - **Tests Added:** Yes — `tests/catalog-integrity.test.mjs`.
 - **Verification Evidence:** receipt above.
-- **Archived:** 2026-10-31
+- **Archived:** 2026-10-31 (`dev/fids/archive/`), recording commit
+  `c1ddf7d4e8011af49da82fffadc62388ee411e2b`
 
 ## Lessons Learned
 

@@ -2,6 +2,41 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-31 (database recovery: 058)
+
+Operator request: "resume master plan w/ automation level 3." Automation level 3,
+strict, single agent. 058 depends on 051 (closed) and 057 (fixed with residual
+hosted gates). This pass implements the recovery path and records the operator
+inputs it cannot invent; trials, offering activation and deployment remain off.
+
+- [x] **R1 — Re-audit recovery.** Measured: the online backup verified
+  integrity and a table count only; no checksum/metadata, no restore tool, no
+  financial restore check and no drill. Evidence: pre-change
+  `scripts/db-backup.mjs`, `docs/deployment-runbook.md`, and the absent
+  `db-restore`/`db-recovery-drill`/`database-recovery.test` files.
+- [x] **R2 — Checksummed backup and isolated restore.** `scripts/db-backup.mjs`
+  writes a `savant-backup/1` sidecar with SHA-256, bytes, page size, journal
+  mode and table inventory; it requires core money tables, uses `0700`/`0600`
+  POSIX bits, writes metadata atomically and prunes the pair. `db-restore.mjs`
+  refuses a missing/mismatched sidecar, an existing target and a target equal to
+  `DB_PATH`, then checks integrity, foreign keys, required tables, the credit
+  equation, negative balances and orphan ledger rows before an atomic rename.
+- [x] **R3 — Real-server drill.** `scripts/db-recovery-drill.mjs` seeds a
+  reconciled history, keeps writes running during the backup, restores into a
+  new file, boots the real production server, signs in and reads
+  `/api/admin/reconciliation`, then restarts on the restored copy. Receipt: 8
+  concurrent writes, verified restore, both startups, 2009ms.
+- [x] **R4 — Regression coverage and runbook.** `tests/database-recovery.test.mjs`
+  (5 tests) covers backup under writes, restore invariants, target/live/checksum
+  refusals, unverified consent, process interruption, additive migration and
+  replay rejection. `docs/deployment-runbook.md` documents backup, isolated
+  restore, RPO/RTO, payment replay and code rollback.
+- [x] **R5 — Verification and closure.** `npm run verify` exit 0: 326 unit
+  tests, 466 HTTP checks, trial suite, quality 295 files, production build and
+  recovery drill. Implementation commit pending the closure record; FID-058
+  closed and archived. The live RPO/RTO and first production-volume restore stay
+  blocked as `FID-2026-1030-058-LIVE`, not claimed by the code closure.
+
 ## Current Session — 2026-10-31 (FID ledger integrity: 071)
 
 Operator request: "proceed with the house keeping and update the changelog, then

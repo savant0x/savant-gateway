@@ -1,7 +1,15 @@
 # Project status and navigation
 
-As of 2026-10-30. This is the current index; dated session receipts describe the
+As of 2026-10-31. This is the current index; dated session receipts describe the
 tree they tested, not automatically the current working tree.
+
+Latest implementation: [FID-2026-1030-058](../dev/fids/archive/FID-2026-1030-058-database-backup-and-restore.md),
+closed against the pending implementation commit, adds a checksummed online
+backup, an isolated restore verifier and a real-server recovery drill. The
+operator RPO/RTO and first production-volume restore remain blocked as
+`FID-2026-1030-058-LIVE`. The
+[runbook](deployment-runbook.md#backup-and-restore) separates code evidence from
+that live acceptance.
 
 Latest repair: [FID-2026-1031-071](../dev/fids/archive/FID-2026-1031-071-fid-ledger-integrity.md),
 closed against `d991967`, corrects the active ledger:
@@ -28,7 +36,7 @@ remain open.
 | What can honestly be offered now? | [Offering evidence ledger](offering-evidence.md) |
 | What changed? | [CHANGELOG](../CHANGELOG.md), then the implementation commit |
 | What should implementation preserve? | [Knowledge](../knowledge.md) |
-| Where is the session handoff? | [FID ledger integrity](../dev/session-summaries/2026-10-31-fid-ledger-integrity.md) |
+| Where is the session handoff? | [Database recovery](../dev/session-summaries/2026-10-31-database-recovery.md), [FID ledger integrity](../dev/session-summaries/2026-10-31-fid-ledger-integrity.md) |
 
 ## Product state
 
@@ -77,12 +85,12 @@ money path or schema is implemented.
 
 Launch planning session baseline: `b0b65ac`. Master 043 and nineteen children
 044–062 cover A–Z requirements and passed individual document Perfection Loops.
-As of 2026-10-31 the active queue is fourteen records: 043–046, 049, 056–062, 066
-and 068. FID-047, 048, 050–055, 063 (provider truth), 064 (CI race), 067, 069,
-070, 071, 072, 073 and 074 are archived closed. 056/057/061 are `fixed` with
-residual gates; 066 is a dormant converged decision record; 068 is converged with
-its implementation steps blocked on operator inputs. Authoring/audit is complete;
-implementation and live acceptance are not. The
+As of 2026-10-31 the active queue is thirteen records: 043–046, 049, 056–057,
+059–062, 066 and 068. FID-047, 048, 050–055, 058, 063 (provider truth), 064 (CI
+race), 067, 069, 070, 071, 072, 073 and 074 are archived closed. 056/057/061 are
+`fixed` with residual gates; 066 is a dormant converged decision record; 068 is
+converged with its implementation steps blocked on operator inputs. Authoring/
+audit is complete; implementation and live acceptance are not. The
 [audit receipt](../dev/audits/2026-10-30-launch-fid-perfection-loop.md) records
 source/dependency/test checks, measured revisions, two stable passes and hashes.
 

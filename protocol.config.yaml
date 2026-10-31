@@ -32,6 +32,9 @@ commands:
   # Route-level HTTP gate. Requires a completed production build and boots
   # `next start` against a disposable database; it is not part of `npm test`.
   test_http: 'npm run test:http'
+  # Backup/restore drill. Requires a completed production build; it boots real
+  # servers on throwaway databases and proves recovery through HTTP reconciliation.
+  test_recovery: 'npm run test:recovery'
   type_check: 'npm run typecheck'
   lint: 'npm run lint'
   quality: 'npm run quality'

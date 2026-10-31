@@ -3,6 +3,36 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-31 — Recovery is a tested path, not a backup file
+
+- **FID-2026-1030-058 — critical — the backup existed, but no restore or
+  financial recovery path had ever been exercised.** `scripts/db-backup.mjs` now
+  binds each online copy to a `savant-backup/1` sidecar with SHA-256, byte count,
+  page size, journal mode and table inventory; it requires the core
+  customer/money tables, writes the sidecar atomically, applies `0700`/`0600`
+  POSIX bits, prunes the `.db` and `.json` as a pair, and never prunes the
+  resolved live file. New `scripts/db-restore.mjs` refuses a missing or mismatched
+  sidecar, an existing target and a target equal to `DB_PATH`; it verifies
+  integrity, foreign keys, required tables, the credit equation
+  (`balance = latest baseline + ledger`), negative balances and orphan ledger
+  rows, then renames the verified copy into place and writes a
+  `<target>.restore.json` receipt with counts, unresolved settlements and
+  quarantined holds. New `scripts/db-recovery-drill.mjs` seeds a reconciled
+  history, keeps writes running through the backup, restores into a new file,
+  boots the real production server, signs in and reads
+  `/api/admin/reconciliation`, then restarts on the restored copy. The drill
+  completed with 8 concurrent writes and both startups in 2009ms. New
+  `tests/database-recovery.test.mjs` (5 tests) covers backup under writes,
+  restore invariants, target/live/checksum refusals, explicit unverified
+  consent, a killed uncommitted write, additive migration on a restored copy and
+  replay rejection by the event-id and provider-reference unique constraints.
+  `docs/deployment-runbook.md` now separates backup, isolated restore,
+  RPO/RTO, payment replay and code rollback. Verification: `npm run verify` exit
+  0 — 326 unit tests, 466 HTTP checks, trial suite, quality PASS (295 files),
+  production build and recovery drill PASS. FID-058 closed; the operator RPO/RTO
+  and first timed restore on the production volume remain blocked as
+  `FID-2026-1030-058-LIVE`, not claimed by this closure.
+
 ## 2026-10-31 — FID ledger integrity
 
 - **FID-2026-1031-071 — medium — The active queue now describes itself

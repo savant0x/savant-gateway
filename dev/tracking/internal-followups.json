@@ -65,6 +65,15 @@
       "detail": "FID-2026-1030-066 stays converged as the path back. D6 selected one persistent Node process on one local volume; the port reopens if the service must scale beyond one process or move to a host without same-host storage. The capability spike is scripts/libsql-capability-spike.mjs.",
       "evidence": "dev/fids/FID-2026-1030-066-libsql-storage-port.md; docs/hosting-decision.md",
       "next_action": "Re-run the settlement concurrency proof before any remote engine carries the ledger; do not port without that receipt."
+    },
+    {
+      "id": "FID-2026-1030-058-LIVE",
+      "fid": "FID-2026-1030-058",
+      "state": "blocked",
+      "title": "Operator RPO/RTO and first production-volume restore",
+      "detail": "The backup/restore code and a disposable drill are verified. No recovery-point or restore-time target is set, and no timed restore has run on the actual Fly volume; a different filesystem, mount permission or disk-full condition is untested.",
+      "evidence": "dev/fids/archive/FID-2026-1030-058-database-backup-and-restore.md; docs/deployment-runbook.md:242",
+      "next_action": "Before launch under FID-2026-1030-062, set the backup interval and restore target, pull a backup off the volume with its sidecar, run the timed restore, confirm /api/ready and /admin/reconciliation, and record the receipt."
     }
   ]
 }

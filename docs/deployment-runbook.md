@@ -121,12 +121,32 @@ single-writer contract, not a misconfiguration.
 ```bash
 fly ssh console -C "node /app/scripts/db-backup.mjs"
 fly sftp get /data/backups/<name>.db ./
+fly sftp get /data/backups/<name>.db.json ./
 ```
 
-The script uses SQLite's online backup API, verifies `integrity_check` and a table
-count, prunes to `BACKUP_RETENTION` (default 7) and removes the WAL siblings that
-verification creates. Copies land on the **same volume as the database**: pulling
-them off is a separate step, and off-site retention is not automated yet.
+The script uses SQLite's online backup API, verifies `integrity_check`, requires
+the core customer/money tables, and writes a `.json` sidecar containing the
+SHA-256, byte count, page size, journal mode and table list. The `.db` and its
+`.json` are one restore point: copy both off the volume. Retention
+(`BACKUP_RETENTION`, default 7) prunes the pair together. On POSIX the backup
+directory is created `0700` and files are `0600`; a failed backup exits non-zero
+and leaves no sidecar, so an unverified file is never presented as a restore
+point.
+
+Copies still land on the **same volume as the database**. Pulling them off is a
+separate, required step, and off-site retention is not automated yet.
+
+The backup interval is the recovery-point objective (RPO). The operator must
+choose the interval and the restore-time objective (RTO) before launch; this
+repository does not choose them. An example on a host with cron:
+
+```cron
+17 */6 * * * cd /app && DB_PATH=/data/gateway.db BACKUP_RETENTION=14 \
+  node scripts/db-backup.mjs >> /data/backups/backup.log 2>&1
+```
+
+On Fly, use a scheduled machine or an external scheduler; the app container does
+not run cron.
 
 ## Health and readiness
 
@@ -180,16 +200,70 @@ proves this by dropping a required table on the disposable suite database
 
 ## Backup and restore
 
-- Backup: while the process runs, copy the database with SQLite's online backup
-  (or stop the process and copy `gateway.db` plus `-wal`/`-shm` together);
-  copying only the main file while the process writes is not a restore point.
-- Restore: stop the process, put the database files back on the persistent
-  volume, set the same `DB_PATH`, start, and confirm `/api/ready` returns 200
-  `ready` before re-admitting traffic.
-- Secret rotation: `ADMIN_SESSION_SECRET` rotation invalidates operator
-  sessions immediately (safe to rotate). Provider and Stripe keys are env
-  values only, never persisted rows, so rotation is an environment change and a
-  restart.
+### Backup
+
+1. Run `DB_PATH=/data/gateway.db node scripts/db-backup.mjs` (or
+   `npm run db:backup`) while the process is live. The online API produces one
+   consistent file; do not copy only `gateway.db` while writes continue.
+2. Require exit 0 and both `<name>.db` and `<name>.db.json`.
+3. Pull both files off the volume and verify `sha256sum <name>.db` against the
+   sidecar. Keep at least one copy outside the volume/provider failure domain.
+
+### Restore and drill
+
+Never overwrite the live file to "test" a restore. Restore into a new path:
+
+```bash
+node scripts/db-restore.mjs \
+  --backup /data/backups/<name>.db \
+  --target /data/restore/gateway.db
+```
+
+The tool refuses a missing or mismatched sidecar (only a legacy file may use
+`--allow-unverified`), an existing target, and a target equal to `DB_PATH`. It
+checks integrity and foreign keys, required tables, the credit equation
+(`balance = latest baseline + ledger`), negative balances and orphan ledger rows,
+then writes `<target>.restore.json` with counts and the unresolved
+settlement/quarantine inventory.
+
+1. Stop the gateway with SIGTERM and let it drain.
+2. Move the verified file to the volume at `DB_PATH`, keeping the previous file
+   until readiness passes; or point `DB_PATH` at the verified target.
+3. Start and require `GET /api/ready` → 200 `ready`.
+4. Sign in to `/admin/reconciliation`; confirm `totals.balanced` and review the
+   accounts. The restore receipt's unresolved settlements and quarantined holds
+   are the recovery worklist.
+5. Reconcile payments delivered after the snapshot: replay the missing Stripe
+   events and match `topups.provider_ref` / `billing_events`. A replayed event id
+   is a claim conflict and a replayed provider reference violates the unique
+   constraint, so it cannot credit the same top-up twice.
+6. Re-admit traffic only after reconciliation.
+
+### Targets and evidence
+
+- RPO is the backup interval; RTO is stop + restore + readiness +
+  reconciliation. Both are operator targets and must be recorded before launch.
+- `npm run test:recovery` is the disposable drill: it seeds a reconciled credit
+  history, keeps writes running during the backup, restores into a new file,
+  boots the real server, checks `/api/admin/reconciliation`, and restarts on the
+  restored copy. `npm run verify` runs it after the HTTP suite.
+- The local drill currently completes in a few seconds but is **not** a
+  production-equivalent timing. The first timed restore on the actual volume is
+  still required and must be recorded.
+
+### Code rollback
+
+Roll back the application image, not the database. Migrations are additive
+(`CREATE TABLE IF NOT EXISTS`, `ensureColumn`); the current image opens and
+upgrades a restored snapshot forward. Do not rewind payments or repair history
+with ad-hoc SQL; use the audited adjustment/refund endpoint and record the
+reference.
+
+### Secret rotation
+
+`ADMIN_SESSION_SECRET` rotation invalidates operator sessions immediately (safe
+to rotate). Provider and Stripe keys are env values only, never persisted rows,
+so rotation is an environment change and a restart.
 
 ## Dependency vulnerability disposition
 
@@ -221,7 +295,11 @@ The following are open inputs from the FIDs, not implementation gaps:
 5. **Ingress acceptance** (057): real proxy receipts for SSE flush/cancel,
    timeouts and header behavior must be collected against the chosen host; they
    cannot be produced locally.
-6. **Deployment itself** (062): publishing remains gated on explicit operator
+6. **Database recovery targets and real-volume drill** (058): the backup/restore
+   path and a disposable drill are verified, but the RPO/RTO are not set and no
+   timed restore has run on the actual volume. Treat the local drill as code
+   evidence, not a production recovery receipt.
+7. **Deployment itself** (062): publishing remains gated on explicit operator
    approval even after every artifact check passes.
 
 ## What was verified here

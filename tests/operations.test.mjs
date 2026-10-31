@@ -667,15 +667,18 @@ test("webhook delivery signs the body and keeps the URL out of stored errors", a
 });
 
 test("a failed delivery records a redacted error rather than the webhook URL", async () => {
+  const secret = "0123456789abcdef";
+  let url = "";
   const server = createServer((_request, response) => {
     response.writeHead(500, { "content-type": "text/plain" });
-    response.end("upstream failed");
+    response.end(`upstream failed at ${url} with ${secret}`);
   });
 
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 
   const address = server.address();
-  const url = `http://127.0.0.1:${address.port}/secret-token`;
+
+  url = `http://127.0.0.1:${address.port}/secret-token`;
 
   try {
     const result = await deliverAlert(
@@ -692,14 +695,15 @@ test("a failed delivery records a redacted error rather than the webhook URL", a
         deliveryAttempt: 1,
         at: T0,
       },
-      { configured: true, url, secret: null, timeoutMs: 1000 },
-      {},
+      { configured: true, url, secret, timeoutMs: 1000 },
+      { OPERATIONS_ALERT_WEBHOOK_SECRET: secret },
     );
 
     assert.equal(result.ok, false);
     assert.match(result.error, /HTTP 500/);
     assert.equal(result.error.includes(url), false);
     assert.equal(result.error.includes("secret-token"), false);
+    assert.equal(result.error.includes(secret), false);
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }

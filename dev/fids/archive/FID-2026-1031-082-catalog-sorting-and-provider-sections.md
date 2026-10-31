@@ -164,7 +164,7 @@ served_provider_slug = provider`, so a takeover is visible where it happened.
 
 ### Implementation Evidence
 
-- [x] **Commit SHA:** pending the commit recorded below
+- [x] **Commit SHA:** `45dcb5a`
 - [x] **File:line ranges:** `lib/catalog-sort.ts`,
   `components/catalog/catalog-sort-head.tsx`,
   `components/catalog/model-catalog-table.tsx`,
@@ -215,7 +215,7 @@ served_provider_slug = provider`, so a takeover is visible where it happened.
 - **Tests Added:** Yes — `tests/catalog-sort.test.mjs`,
   `tests/provider-catalog.test.mjs`.
 - **Verification Evidence:** receipt above.
-- **Archived:** after the commit below
+- **Archived:** `dev/fids/archive/` after `45dcb5a`
 
 ## Lessons Learned
 

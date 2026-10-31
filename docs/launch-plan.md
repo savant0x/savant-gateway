@@ -98,10 +98,10 @@ written evidence, not intent, and each text change ships as a new policy version
   placeholder sentence removed, no address invented earlier.
 - [ ] **Retention facts against the chosen host.** Terms claim 30-day log
   retention and 30-day backups with deletions not propagated. Both are statements
-  about the host, not the application. Checked against the leading candidate on
-  2026-10-30: Vercel keeps runtime logs for **1 hour on Hobby, 1 day on Pro and
-  3 days on Enterprise**, with Observability Plus extending retention to about 30
-  days. Close during Phase 3 by selecting the plan and either matching the
+  about the host, not the application. Checked against the then-leading candidate
+  (Vercel, since rejected) on 2026-10-30: Vercel keeps runtime logs for **1 hour
+  on Hobby, 1 day on Pro and 3 days on Enterprise**, with Observability Plus
+  extending retention to about 30 days. Close during Phase 3 by selecting the plan and either matching the
   configuration or changing the numbers in a new version. Evidence: the plan and
   setting actually in use, plus the published sentence that matches it.
 - [ ] **Role contact address on an owned domain.** The contract contact is
@@ -171,14 +171,19 @@ may block acceptance; it does not turn an unverified system into a passing one.
 
 ## Phase 3 — Deployment and operations
 
-### Hosting candidate: Vercel
+> **Superseded 2026-10-30 — retained as decision history.** The Vercel/libSQL
+> path below was rejected. The selected topology is one Fly Machine with one
+> persistent local volume; see [hosting-decision.md](hosting-decision.md) and
+> [deployment-runbook.md](deployment-runbook.md). The database-move premise and
+> the "SQLite is a placeholder" ruling no longer apply.
 
-**Operator ruling, 2026-10-30: SQLite is a local-development placeholder, not the
-production design. A production database will be selected before launch whichever
-host is used.** So the migration below is planned work, not a Vercel penalty, and
-the host decision should be judged on what it adds *after* the database move.
+### Rejected candidate: Vercel (historical)
 
-Vercel is the leading candidate and is **not compatible with this application as
+**Historical ruling, superseded 2026-10-30 by the hosting decision.** The
+migration below was planned work, not a Vercel penalty, and the host decision was
+judged on what it added *after* the database move.
+
+Vercel was the leading candidate and is **not compatible with this application as
 built**. Checked against Vercel's documentation, not memory:
 
 | Requirement in this repository | Vercel |

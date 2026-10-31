@@ -1,8 +1,11 @@
 # Contributing
 
-Savant Gateway is governed by [ECHO Protocol v0.2.0](ECHO.md). Read
-[AGENTS.md](AGENTS.md) and [protocol.config.yaml](protocol.config.yaml) before
-changing code.
+Savant Gateway is governed by the [ECHO Protocol v0.1.2 single-agent
+contract](dev/echo-v0.1.2-single-agent.md), reached through
+[ECHO-single-agent.md](ECHO-single-agent.md). Read [AGENTS.md](AGENTS.md) and
+[protocol.config.yaml](protocol.config.yaml) before changing code. The harness
+protocol in [ECHO.md](ECHO.md) is reference material, not the governing contract
+for this repository.
 
 ## Setup
 
@@ -13,7 +16,9 @@ npm run dev
 ```
 
 `npm install` wires `core.hooksPath` to `.githooks` and sets the commit template
-through the `prepare` script.
+through the `prepare` script. Finish the first provider sync and first request
+with [docs/getting-started.md](docs/getting-started.md); common setup failures
+are in [docs/troubleshooting.md](docs/troubleshooting.md).
 
 ## Before a Pull Request
 
@@ -21,9 +26,12 @@ through the `prepare` script.
 npm run verify
 ```
 
-That runs lint, typecheck, tests, the 400-line quality gate, the production
-build, both HTTP suites and the backup/restore drill. The pre-push hook runs
-the same gates plus the attribution guard and fails closed.
+That runs lint, typecheck, the production-config validator, tests, the 400-line
+quality gate, the production build, both HTTP suites and the backup/restore
+drill. The pre-push hook runs the same gates plus the attribution guard and
+fails closed. Before a production deployment, run
+`npm run config:check:prod`, which enforces the deployment inventory rather than
+reporting the non-production pass.
 
 ## Rules
 

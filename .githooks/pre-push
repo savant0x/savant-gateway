@@ -24,6 +24,7 @@ run_gate() {
 run_gate "attribution guard" node scripts/attribution-guard.mjs
 run_gate "lint" npm run lint
 run_gate "typecheck" npm run typecheck
+run_gate "config check" npm run config:check
 run_gate "tests" npm test
 run_gate "quality" npm run quality
 run_gate "build" npm run build

@@ -1,14 +1,15 @@
 # Production database options
 
-**Status: research input, not a decision.** Written 2026-10-30 against the
-requirements in `docs/launch-plan.md` Phase 3. No dependency, schema or code
-changed. Prices and retention windows are as published on the dates below and
-must be re-checked at purchase.
+**Status: superseded 2026-10-30 — retained as research.** The hosting decision
+selected one persistent Node process with a local SQLite volume; no remote
+database port is planned for launch. This document records the candidate
+comparison and the conditions that would reopen the port (FID-2026-1030-066).
+It is not a pending recommendation. Prices and retention windows are as
+published on the dates below and must be re-checked if the work is revived.
 
-The operator's ruling is that SQLite is the local-development placeholder and a
-production database will be chosen before launch, whatever the host. This
-document compares candidates against what the code needs, not against feature
-lists.
+This comparison was written against the requirements in `docs/launch-plan.md`
+Phase 3 and measures candidates against what the code needs, not against feature
+lists. The current topology is in [hosting-decision.md](hosting-decision.md).
 
 ## What the code actually needs
 
@@ -83,10 +84,11 @@ What differs between the candidates is everything on top of that port:
   targets for the 9 `ON CONFLICT` and 11 `INSERT OR IGNORE` sites; keep the
   settlement sequence on one pooled client for the whole transaction.
 
-## Recommendation
+## Historical recommendation
 
-Adopt **Turso with a libSQL-engine database and `@libsql/client`** unless there is
-a reason to want Postgres specifically. It preserves 265 statements and the
+If the port were revived, the research recommended **Turso with a libSQL-engine
+database and `@libsql/client`** unless there is a reason to want Postgres
+specifically. It preserves 265 statements and the
 transaction semantics the money path was written against, and its 30-day PITR
 tier matches the retention the privacy notice already claims (v1.1 says backups
 are kept up to 30 days). Choosing Neon would require either Scale for the same

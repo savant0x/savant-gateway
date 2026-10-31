@@ -17,13 +17,13 @@ console that never confuses upstream cost with revenue.
 
 > **Pre-launch software, published in the open.** This repository is step 1 of a
 > multi-step build. Nothing is deployed, no domain is attached, and no plan is
-> sold. Subscriptions are implemented behind an enforced no-sales state, SQLite
-> is a local development placeholder that must be replaced before any hosted
-> deployment (see [docs/database-options.md](docs/database-options.md)), and the
-> customer policies are published but not counsel-reviewed. Every claim below
-> describes code in this tree; where something is unverified it is named as a
-> limitation rather than a capability. [docs/launch-plan.md](docs/launch-plan.md)
-> holds the gates that stand between here and service.
+> sold. Subscriptions are implemented behind an enforced no-sales state, the
+> selected host is one persistent process on a local SQLite volume (see
+> [docs/hosting-decision.md](docs/hosting-decision.md)), and the customer policies
+> are published but not counsel-reviewed. Every claim below describes code in
+> this tree; where something is unverified it is named as a limitation rather
+> than a capability. [docs/launch-plan.md](docs/launch-plan.md) holds the gates
+> that stand between here and service.
 
 ---
 
@@ -47,6 +47,9 @@ node -e "console.log(require('node:crypto').randomBytes(24).toString('base64url'
 npm run dev
 ```
 
+The full first-run path, including provider sync and the first request, is in
+[docs/getting-started.md](docs/getting-started.md).
+
 ### Environment
 
 | Variable | Required | Purpose |
@@ -55,7 +58,7 @@ npm run dev
 | `COMMANDCODE_API_KEY`, `APIXO_API_KEY` | Optional | Further upstreams. Provider rows store the variable *name*, never the value. |
 | `ADMIN_PASSWORD` | For `/admin` | 12+ characters, compared in constant time. |
 | `ADMIN_SESSION_SECRET` | For `/admin` | 32+ characters, signs the admin cookie. |
-| `NEXT_PUBLIC_SITE_URL` | Production | Canonical origin for metadata and Stripe redirects. |
+| `NEXT_PUBLIC_SITE_URL` | Production | Canonical origin for metadata, sitemap/robots and Stripe redirects; also passed as a Docker build argument for static social images. |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | For billing | Absent, checkout returns `503`; nothing else invents credit. |
 | `STRIPE_EXPECTED_LIVEMODE` | Recommended | A delivery whose livemode disagrees is quarantined without credit. |
 | `PLAN_SALES_ENABLED` | Launch switch | `false` by default: plans stay out of the catalog, checkouts are refused, publishing for purchase is blocked. |
@@ -132,7 +135,7 @@ was not.
 | UI | React + HeroUI, Tailwind CSS 4 | 19.3.0, 3.2.7, 4.3.3 |
 | Language | TypeScript (`strict`) | 5.9.3 |
 | Runtime | Node | `>=22.18.0` |
-| Storage | SQLite via `better-sqlite3` (dev placeholder) | 13.0.3 |
+| Storage | SQLite via `better-sqlite3`, one persistent volume | 13.0.3 |
 | Payments | Stripe Checkout, Subscriptions, Billing Portal | SDK 23.0.1 |
 | Icons | Font Awesome Free | ^6.7.2 |
 | Package manager | npm | lockfile committed |
@@ -231,6 +234,10 @@ was not.
 | `/models` | Public | Searchable, sortable, paginated catalog with sell prices. |
 | `/compare` | Public | Benchmark comparison with provenance. |
 | `/docs` | Public | API reference: auth, payload, catalog vocabulary, errors. |
+| `/docs/start` | Public | Newcomer guide: account, model choice, first request, first bill. |
+| `/docs/faq` | Public | Grouped FAQ for access, billing, errors, privacy and support. |
+| `/sitemap.xml` | Public | Canonical public URLs for crawlers. |
+| `/robots.txt` | Public | Crawl policy and sitemap pointer. |
 | `/plans` | Public | Active plans, inclusions and allowance — while sales are closed. |
 | `/terms`, `/privacy`, `/refunds`, `/acceptable-use` | Public | Current published policy versions. |
 | `/legal/<version>/<slug>` | Public | Every published policy version, permanently. |
@@ -241,12 +248,18 @@ was not.
 | `/admin/*` | Admin session | Overview, customers, catalog, groups, plans, subscriptions, providers, pricing, analytics, reconciliation, support. |
 | `/v1/*` | Consumer key | The OpenAI-compatible gateway. |
 
-43 route handlers and 29 pages back these surfaces. Customer pages and the
-operator console are strictly separate namespaces, and every operator page and
-API sends `Cache-Control: no-store` with `noindex`.
+45 API route handlers and 31 pages back these surfaces, plus the generated
+`sitemap.xml` and `robots.txt`. Those two routes render per request from
+`NEXT_PUBLIC_SITE_URL`, so the canonical origin is the deployed one rather than
+the build machine's. Static pages resolve their social image URLs at build time,
+so the Docker build passes the same origin as a build argument. The FAQ's FAQPage
+JSON-LD is generated from the answers it renders and carries no build-time
+absolute URL. Customer pages and the operator console are strictly separate
+namespaces, and every operator page and API sends `Cache-Control: no-store` with
+`noindex`.
 
 <details>
-<summary><strong>API surface</strong> — 43 handlers</summary>
+<summary><strong>API surface</strong> — 45 handlers</summary>
 
 **Gateway**
 
@@ -349,25 +362,31 @@ a paid or subscription group and set a price to charge for it.
 ## Quality Gates
 
 ```bash
-npm run check      # eslint + tsc --noEmit
-npm run config:check
-npm test           # node --test "tests/*.test.mjs"
-npm run quality    # 400-line file ceiling
-npm run build      # next build
-npm run test:http  # HTTP suites against a disposable database, including a
-                   # per-page social metadata audit of every public page
-npm run test:recovery  # backup, restore and operator reconciliation drill
-npm run verify     # all of the above
+npm run check             # eslint + tsc --noEmit
+npm run config:check      # validator; PASS (non-production) outside production
+npm run config:check:prod # operator gate; enforces the deployment inventory
+npm test                  # node --test "tests/*.test.mjs"
+npm run quality           # 400-line file ceiling
+npm run build             # next build
+npm run test:http         # HTTP suites against a disposable database,
+                          # including a per-page social metadata audit
+npm run test:recovery     # backup, restore and reconciliation drill
+
+npm run verify            # all of the above except config:check:prod
 ```
 
-The pre-push hook runs the attribution guard plus these gates and fails closed.
-CI runs the same set on every push and pull request, and a separate workflow
-rejects coding-agent attribution anywhere in commit history.
+`config:check` reports `PASS (non-production)` when `NODE_ENV` is not
+`production`; `config:check:prod` is the operator gate that enforces the
+production inventory. The pre-push hook runs the attribution guard plus the
+local gate set (`npm run verify`) and fails closed. CI runs the same set on
+every push and pull request, and a separate workflow rejects coding-agent
+attribution anywhere in commit history.
 
-**Last full receipt (FID-2026-1030-061, policy v1.1):** `npm run verify` exit 0 —
-312 unit tests passing, 423 HTTP checks, trial HTTP suite PASS, quality PASS,
-clean production build. Archived receipts and their exact counts are in
-[CHANGELOG.md](CHANGELOG.md); each one names what was exercised and what was not.
+**Last full receipt (current tree):** `npm run verify` exit 0 — 326 unit tests
+passing, 496 HTTP checks, trial HTTP suite PASS, quality PASS (307 files), clean
+production build, recovery drill PASS. Archived receipts and their exact counts
+are in [CHANGELOG.md](CHANGELOG.md); each one names what was exercised and what
+was not.
 
 **Known unexercised paths**, recorded rather than claimed: no live Stripe card
 payment, no Stripe-delivered recurring invoice, no funded paid-upstream
@@ -379,7 +398,7 @@ activation are tested locally against disposable databases.
 ## Repository
 
 ```text
-app/                 pages and route handlers (29 pages, 43 APIs)
+app/                 pages and route handlers (31 pages, 45 APIs)
 components/          landing, catalog, account, admin, legal, ui
 lib/                 gateway, settlement, pricing, plans, providers, store/
 content/legal/       published policy text, one directory per version
@@ -409,11 +428,12 @@ code change; only a new aspect ratio needs the size beside it updated.
 `npm run images` rasterises the SVG sources in that directory; `sharp` comes
 with Next's image pipeline, so it adds no dependency.
 
-The catalog and API-reference pages override that card with one generated from
-their own data by `next/og` — `/models` counts what the catalog currently holds,
-`/docs` states the documented surface. Both live beside their page as
-`opengraph-image.tsx` and share one layout in [`lib/social-card.tsx`](lib/social-card.tsx).
-A page with no card of its own keeps the site-wide `og.png`.
+The catalog, API reference, newcomer guide and FAQ override that card with one
+generated from their own content by `next/og` — `/models` counts what the
+catalog currently holds, and the documentation pages state the surface they
+document. Each lives beside its page as `opengraph-image.tsx` and shares one
+layout in [`lib/social-card.tsx`](lib/social-card.tsx). A page with no card of
+its own keeps the site-wide `og.png`.
 
 ---
 
@@ -433,9 +453,10 @@ and gates.
 
 ## Current limits
 
-- **Not deployable as built.** SQLite is single-instance local storage. The
-  hosting decision and the storage port are pre-launch gates; the analysis is in
-  [docs/database-options.md](docs/database-options.md).
+- **Not deployed.** The selected topology is one Fly Machine with one persistent
+  SQLite volume; the container has not been built, no app or volume exists, and
+  the first live restore has not run. See
+  [docs/deployment-runbook.md](docs/deployment-runbook.md).
 - **Not selling.** Plans are authored and enforced but checkout is refused for
   every plan until sales are deliberately opened. Plan pricing is undecided.
 - **Unfunded billing paths.** No real card payment, recurring invoice, or refund
@@ -457,11 +478,20 @@ and gates.
 
 ## Documentation
 
+Customer-facing documentation is served by the app at `/docs` (API reference),
+`/docs/start` (newcomer guide) and `/docs/faq` (grouped FAQ).
+
 | Document | What it answers |
 | --- | --- |
+| [docs/README.md](docs/README.md) | Documentation index with current, historical and research labels. |
 | [docs/project-status.md](docs/project-status.md) | Verified state, evidence boundaries, launch gates. |
 | [docs/launch-plan.md](docs/launch-plan.md) | Phase-by-phase path to service, with owners and receipts. |
-| [docs/database-options.md](docs/database-options.md) | Storage candidates against transaction and restore requirements. |
+| [docs/getting-started.md](docs/getting-started.md) | Local setup, first provider sync, first request. |
+| [docs/operator-first-run.md](docs/operator-first-run.md) | Operator console first-run checklist and safety rails. |
+| [docs/deployment-runbook.md](docs/deployment-runbook.md) | Deployment, backup, restore, RPO/RTO and rollback. |
+| [docs/troubleshooting.md](docs/troubleshooting.md) | Common local, config, gate and Fly failures. |
+| [docs/hosting-decision.md](docs/hosting-decision.md) | Why one persistent Fly process is the selected topology. |
+| [docs/database-options.md](docs/database-options.md) | Historical remote-database research; superseded 2026-10-30. |
 | [docs/policies/README.md](docs/policies/README.md) | Policy versions, acceptance, versioning rule, known gaps. |
 | [docs/support-runbook.md](docs/support-runbook.md) | Support queue operation and open operator decisions. |
 | [SECURITY.md](SECURITY.md) | Threat model, session and key handling, origin checks. |

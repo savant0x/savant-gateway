@@ -28,7 +28,7 @@ verified; the container is not.
 
 ## Environment inventory
 
-Checked by `npm run config:check` and the startup gate (`instrumentation.ts`):
+Checked by `npm run config:check:prod` and the startup gate (`instrumentation.ts`):
 a production process that cannot honour this contract fails to start with issue
 codes, not values.
 
@@ -61,9 +61,9 @@ Forbidden / never set:
 
 ```bash
 npm ci
-npm run config:check   # operator gate; passes only with the inventory above
+npm run config:check:prod   # operator gate; enforces the inventory above
 npm run build
-npm start              # instrumentation gate re-validates and refuses bad config
+npm start                   # instrumentation gate re-validates and refuses bad config
 ```
 
 The startup gate runs once per process before serving and exits with issue
@@ -334,9 +334,9 @@ sets, on a file database instead of the suites' disposable one:
 - `scripts/db-backup.mjs` produced a copy of the live database reporting 35
   tables, `integrity ok`, from which the account was readable; retention pruned
   the oldest and left no orphaned `-wal`/`-shm` files.
-- `npm run config:check` passed on the correct environment and exited 1 with
-  `admin_unconfigured`, `origin_loopback`/`origin_insecure`, `db_relative` and
-  `multi_worker` on each broken one, printing codes and never values.
+- `npm run config:check:prod` passed on the correct environment and exited 1
+  with `admin_unconfigured`, `origin_loopback`/`origin_insecure`, `db_relative`
+  and `multi_worker` on each broken one, printing codes and never values.
 
 Not verified: the container image itself. `docker build` could not run because
 Docker's Linux engine cannot start without virtualization enabled on this

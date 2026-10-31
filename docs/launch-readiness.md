@@ -1,5 +1,10 @@
 # Launch readiness
 
+> **Dated prerequisite inventory (2026-10-29).** The current execution order is
+> the [launch plan](launch-plan.md). Hosting, storage and backup details below are
+> superseded by the 2026-10-30 [Fly decision](hosting-decision.md) and the recovery
+> work; the lifetime-trial offering remains conditional and is not authorized.
+
 Current execution order and acceptance gates:
 [full launch plan](launch-plan.md), prepared 2026-10-30. This document preserves
 the earlier prerequisite inventory and dated evidence. The lifetime-trial

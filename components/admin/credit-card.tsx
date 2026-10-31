@@ -191,8 +191,9 @@ export function CreditCard({
         <p className="text-[11px] text-muted">
           Grants are audited in `credit_ledger`. Holds are admission control;
           settlement debits actual usage, so a provider token report above the
-          estimate can overdraw the balance. Checkout and customer self-service
-          top-ups are not implemented in this build.
+          estimate can overdraw the balance. Customer self-service top-ups use
+          Stripe Checkout when Stripe is configured; this operator grant path
+          does not require Stripe.
         </p>
       </Card.Content>
     </Card>

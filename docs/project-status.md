@@ -29,10 +29,11 @@ remain open.
 | Question | Authority |
 | --- | --- |
 | How is work governed? | [Single-agent ECHO](../dev/echo-v0.1.2-single-agent.md), [configuration](../protocol.config.yaml) |
+| Where do I start locally? | [Getting started](getting-started.md), [operator first run](operator-first-run.md) |
 | What is approved now? | [SCOPE](../SCOPE.md), current launch-FID planning section P1–P4 |
 | What must happen before launch? | [Launch plan](launch-plan.md) |
 | What organizes all launch work? | [Master FID 043](../dev/fids/FID-2026-1030-043-launch-master.md), children 044–062, plus supplemental 066–068 |
-| What has actually been examined? | [Systems review](../dev/audits/2026-10-30-systems-review.md) |
+| What has actually been examined? | [Systems review](../dev/audits/2026-10-30-systems-review.md), [quality pass](../dev/audits/2026-10-31-quality-pass.md), [docs QC pass](../dev/audits/2026-10-31-docs-qc-pass.md) |
 | What can honestly be offered now? | [Offering evidence ledger](offering-evidence.md) |
 | What changed? | [CHANGELOG](../CHANGELOG.md), then the implementation commit |
 | What should implementation preserve? | [Knowledge](../knowledge.md) |
@@ -59,6 +60,17 @@ v1.1 corrects two v1 statements: tax is not calculated or collected, because the
 checkout session never enables it, and the operator is not a registered entity,
 so no address is printed and a postal address is offered on request. The only
 open item is that no lawyer reviewed the text; the operator accepted that.
+
+Public documentation now has a newcomer guide at `/docs/start` and a grouped FAQ
+at `/docs/faq`, beside the API reference at `/docs`. The app also serves
+`/sitemap.xml`, `/robots.txt` and FAQPage JSON-LD generated from the FAQ data.
+The sitemap and robots routes render per request from `NEXT_PUBLIC_SITE_URL`, so
+the canonical origin is the deployed one, not the build machine's. Static pages
+resolve social image URLs during `next build`, so the Dockerfile takes the same
+origin as a build argument. The HTTP gate
+renders all three documentation pages for an anonymous visitor, checks their
+social metadata, and verifies the sitemap, robots policy and FAQ schema; none of
+the pages claims an unimplemented upstream protocol.
 
 Packaging and host decision: FID-067 is closed against `1081362`; the repository
 carries a single-container Fly artifact, but no app, volume, secret or machine

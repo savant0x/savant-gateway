@@ -28,7 +28,7 @@ the Perfection Loop. The operator is the approval boundary.
 - **Next.js 16** App Router + route handlers (Turbopack)
 - **HeroUI v3** with Tailwind CSS 4
 - **Font Awesome Free** for icons
-- **SQLite** via `better-sqlite3` (local development storage)
+- **SQLite** via `better-sqlite3`, one process on one persistent volume
 - **TypeScript** strict, Node `>=22.18.0`
 - **npm** for installs and gates
 
@@ -85,15 +85,18 @@ npm install          # also wires .githooks and the commit template
 npm run dev          # http://localhost:3000
 npm run lint         # eslint ., zero warnings expected
 npm run typecheck    # tsc --noEmit
+npm run config:check # production-config validator; PASS (non-production) outside prod
+npm run config:check:prod # enforce the production inventory
 npm test             # node --test tests/
 npm run quality      # 400-line file ceiling
 npm run build        # next build
+npm run test:http    # HTTP suites against a disposable database
 npm run test:recovery # backup/restore drill against disposable databases
-npm run verify       # check + test + quality + build + HTTP + recovery
+npm run verify       # check + config + test + quality + build + HTTP + recovery
 ```
 
-The pre-push hook runs the attribution guard, lint, typecheck, tests, quality,
-build, both HTTP suites and the recovery drill. It fails closed.
+The pre-push hook runs the attribution guard, lint, typecheck, config check,
+tests, quality, build, both HTTP suites and the recovery drill. It fails closed.
 
 ## Quality Bar
 
@@ -177,6 +180,10 @@ must pass the gates and must not claim unverified behavior.
 - [ECHO-single-agent.md](ECHO-single-agent.md) — boot marker
 - [ECHO.md](ECHO.md) — canonical harness protocol (reference)
 - [protocol.config.yaml](protocol.config.yaml) — gates and quality policy
+- [docs/README.md](docs/README.md) — documentation index and status labels
+- [docs/getting-started.md](docs/getting-started.md) — local setup and first request
+- [docs/operator-first-run.md](docs/operator-first-run.md) — operator console walkthrough
+- [docs/troubleshooting.md](docs/troubleshooting.md) — common local and deployment failures
 - [docs/echo-protocol.md](docs/echo-protocol.md) — orientation
 - [SCOPE.md](SCOPE.md) — approved scope and operator rulings
 - [CHANGELOG.md](CHANGELOG.md) — release history

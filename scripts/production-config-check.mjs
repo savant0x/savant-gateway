@@ -1,5 +1,12 @@
 import { validateProductionConfig } from "../lib/production-config.ts";
 
+// The default check is safe for development and is the form `npm run verify`
+// runs. `--production` is the operator gate: it holds an unspecified
+// NODE_ENV to the same inventory a production start requires.
+if (process.argv.includes("--production")) {
+  process.env.NODE_ENV = "production";
+}
+
 const result = validateProductionConfig(process.env);
 
 if (result.ok) {

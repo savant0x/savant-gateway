@@ -1,10 +1,11 @@
 # Support and data-request runbook
 
 Status: the authenticated support queue is implemented, and customer policies
-`v1` (terms, privacy, refunds, acceptable use) are **published and effective
+`v1.1` (terms, privacy, refunds, acceptable use) are **published and effective
 2026-10-30** at `/terms`, `/privacy`, `/refunds` and `/acceptable-use`. The draft
 text and the review trail are in `docs/policies/`; the served text is in
-`content/legal/v1/`. See "Open operator decisions".
+`content/legal/v1.1/`, and the superseded v1 text remains readable at
+`/legal/v1/<slug>`. See "Open operator decisions".
 
 ## What exists
 
@@ -65,7 +66,7 @@ deliberately for billing and audit integrity. Any policy text must say this.
 
 ## Open operator decisions (FID-2026-1030-061)
 
-Published v1 resolved the questions below; `docs/policies/README.md` lists the
+Published v1.1 resolved the questions below; `docs/policies/README.md` lists the
 positions taken and the ones engineering selected on the operator's behalf.
 Changing any of them requires a new policy version, not an edit in place. The
 items that remain genuinely open:

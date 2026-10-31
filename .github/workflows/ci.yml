@@ -23,6 +23,7 @@ jobs:
       - run: node scripts/attribution-guard.mjs
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm run config:check
       - run: npm test
       - run: npm run quality
       - run: npm run build

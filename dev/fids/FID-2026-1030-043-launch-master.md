@@ -75,14 +75,14 @@ rather than disappearing work.
 | [045](FID-2026-1030-045-email-and-account-recovery.md) | Email ownership and account recovery | 044 |
 | [046](FID-2026-1030-046-abuse-and-request-limits.md) | Abuse, key and resource bounds | 044 |
 | [047](archive/FID-2026-1030-047-security-and-account-isolation.md) | Auth, isolation, boundaries and redaction — closed `2ef2d74`; ingress pinning in 057 | none |
-| [048](FID-2026-1030-048-shared-provider-admission.md) | Provider-wide RPM/concurrency | 044 |
+| [048](archive/FID-2026-1030-048-shared-provider-admission.md) | Provider-wide RPM/concurrency | 044 |
 | [049](FID-2026-1030-049-quota-and-free-access.md) | Quota refresh, reset, allocation/trial safety | 044,045,048 |
-| [050](FID-2026-1030-050-usage-and-billing-fidelity.md) | Actual usage/cost and charge rules | 044 |
-| [051](FID-2026-1030-051-durable-settlement-recovery.md) | Durable accounting and crash recovery | 050 |
-| [052](FID-2026-1030-052-credit-reconciliation-and-adjustments.md) | Reconciliation and corrections | 044,050,051 |
-| [053](FID-2026-1030-053-payments-and-webhook-reliability.md) | Payments, webhook atomicity and fraud | 044,047,052 |
-| [054](FID-2026-1030-054-subscription-launch-safety.md) | Subscription lifecycle/no-sales enforcement | 044,048,049,050,051,053 |
-| [055](FID-2026-1030-055-provider-and-catalog-integrity.md) | Provider sync, catalog and benchmarks | 044,047 |
+| [050](archive/FID-2026-1030-050-usage-and-billing-fidelity.md) | Actual usage/cost and charge rules | 044 |
+| [051](archive/FID-2026-1030-051-durable-settlement-recovery.md) | Durable accounting and crash recovery | 050 |
+| [052](archive/FID-2026-1030-052-credit-reconciliation-and-adjustments.md) | Reconciliation and corrections | 044,050,051 |
+| [053](archive/FID-2026-1030-053-payments-and-webhook-reliability.md) | Payments, webhook atomicity and fraud | 044,047,052 |
+| [054](archive/FID-2026-1030-054-subscription-launch-safety.md) | Subscription lifecycle/no-sales enforcement | 044,048,049,050,051,053 |
+| [055](archive/FID-2026-1030-055-provider-and-catalog-integrity.md) | Provider sync, catalog and benchmarks | 044,047 |
 | [056](FID-2026-1030-056-customer-experience-and-api-docs.md) | Honest accessible UI and real client docs | 044,045,046,047,049,050,052,053,054,055,061 |
 | [057](FID-2026-1030-057-production-deployment-readiness.md) | Secure persistent production runtime | 044,047,048 |
 | [058](archive/FID-2026-1030-058-database-backup-and-restore.md) | Migration, backup and restore — closed `2dc005e`; live RPO/RTO and real-volume restore tracked | 051,057 |

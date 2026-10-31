@@ -36,6 +36,8 @@ commands:
   # servers on throwaway databases and proves recovery through HTTP reconciliation.
   test_recovery: 'npm run test:recovery'
   type_check: 'npm run typecheck'
+  config_check: 'npm run config:check'
+  config_check_prod: 'npm run config:check:prod'
   lint: 'npm run lint'
   quality: 'npm run quality'
   verify: 'npm run verify'

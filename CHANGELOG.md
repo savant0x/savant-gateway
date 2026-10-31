@@ -34,7 +34,41 @@ distinguish verified behavior from unverified claims.
   and FAQ schema, and keeps the unimplemented Messages/Responses guard on the
   API reference. Verification: `npm run verify` exit 0 — 326 unit tests, 496
   HTTP checks (466 before), trial suite PASS, quality PASS (307 files), clean
-  production build, recovery drill PASS.
+  production build, recovery drill PASS. The QC receipt is
+  `dev/audits/2026-10-31-docs-qc-pass.md`.
+
+## 2026-10-31 — Current docs and the operator gate tell the truth
+
+- **FID-2026-1030-057 follow-up — medium — the docs still described a rejected
+  topology and the named operator gate did not enforce production.** README,
+  `AGENTS.md`, the launch plan and the database research said SQLite was a local
+  placeholder that must be replaced, although FID-067 selected one persistent
+  process on a local volume. The launch plan's Vercel section and
+  `docs/database-options.md` are now labelled superseded history, and README's
+  limit is "Not deployed" rather than "not deployable." Separately,
+  `npm run config:check` reports `PASS (non-production)` unless `NODE_ENV` is
+  `production`, so the runbook's claim that it was the operator gate was false.
+  New `npm run config:check:prod` forces production mode and is now the documented
+  deployment gate; `config:check` is added to the pre-push hook and CI for parity
+  with `npm run verify`. `CONTRIBUTING.md` now names the v0.1.2 single-agent
+  contract instead of the harness protocol, and the support runbook names policy
+  v1.1 as current. Master FID-043 links to archived children 048 and 050–055 at
+  their real `archive/` paths, and the internal-followups restore citation uses
+  the runbook anchor instead of a drifting line number. New
+  `docs/getting-started.md`, `docs/operator-first-run.md`,
+  `docs/troubleshooting.md` and `docs/README.md` cover local setup, first provider
+  sync, first request, operator ordering, failure codes and doc status. The
+  admin credit card no longer claims checkout and customer top-ups are
+  unimplemented (FID-056 follow-up). The audit receipt is
+  `dev/audits/2026-10-31-quality-pass.md`. Verification: `npm run check` exit 0,
+  `npm test` 326 passing, production build exit 0 (18 static/SSG pages), quality
+  PASS (295 files), attribution guard PASS; `config:check` exit 0 in
+  non-production and with a synthetic production inventory;
+  `config:check:prod` exit 1 with the expected codes when the inventory is
+  absent; a 33-file current-document link scan found zero broken links; the
+  full 168-file scan leaves 20 historical archive/audit links. `npm run verify`
+  itself was not rerun because no route, schema, settlement or HTTP behavior
+  changed; the FID-058 receipt remains the last full gate run.
 
 ## 2026-10-31 — The recovery drill gates every push
 

@@ -16,6 +16,8 @@ import {
   type ProviderInput,
 } from "../providers/registry";
 
+import { reconcileRoutes } from "./routes";
+
 type ProviderRow = {
   slug: string;
   label: string;
@@ -304,6 +306,8 @@ export function updateProvider(slug: string, input: ProviderInput) {
       slug,
     );
 
+  if (result.changes > 0) reconcileRoutes();
+
   return result.changes > 0 ? getProvider(slug) : undefined;
 }
 
@@ -316,6 +320,8 @@ export function setProviderEnabled(slug: string, enabled: boolean) {
     )
     .run(enabled ? 1 : 0, nowIso(), slug);
 
+  if (result.changes > 0) reconcileRoutes();
+
   return result.changes > 0;
 }
 
@@ -327,7 +333,7 @@ export function setProviderEnabled(slug: string, enabled: boolean) {
 export function deleteProvider(slug: string) {
   if (slug === DEFAULT_PROVIDER_SLUG) return false;
 
-  return db
+  const removed = db
     .transaction(() => {
       db.prepare("DELETE FROM models WHERE upstream_slug = ?").run(slug);
 
@@ -336,6 +342,12 @@ export function deleteProvider(slug: string) {
       );
     })
     .immediate();
+
+  // The published row for a group may have been this provider's; republish the
+  // group through whatever remains, or hide it when nothing does.
+  if (removed) reconcileRoutes();
+
+  return removed;
 }
 
 export function saveProviderCatalogSync(slug: string) {

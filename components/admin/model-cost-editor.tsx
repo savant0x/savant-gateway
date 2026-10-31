@@ -6,7 +6,7 @@ import { Button, Spinner } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { responseError } from "@/components/dashboard/format";
+import { formatPricePer1M, responseError } from "@/components/dashboard/format";
 
 export function ModelCostEditor({ model }: { model: AdminModelSummary }) {
   const router = useRouter();
@@ -46,6 +46,26 @@ export function ModelCostEditor({ model }: { model: AdminModelSummary }) {
     } finally {
       setBusy(false);
     }
+  }
+
+  // The published row may be served by another provider. Its cost is the one
+  // the gateway records, so editing this row's own cost would change nothing
+  // about what a call pays.
+  if (
+    model.servedProviderSlug &&
+    model.servedProviderSlug !== model.upstreamSlug
+  ) {
+    return (
+      <div className="min-w-[13rem] space-y-1">
+        <p className="mono text-xs">
+          {formatPricePer1M(model.costInputPer1M)} /{" "}
+          {formatPricePer1M(model.costOutputPer1M)}
+        </p>
+        <p className="text-[11px] text-muted">
+          Served by {model.servedProviderSlug}; edit that provider&apos;s row.
+        </p>
+      </div>
+    );
   }
 
   return (

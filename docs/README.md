@@ -63,6 +63,8 @@ same answer data the page renders.
 - [support-runbook.md](support-runbook.md) — support queue and manual deletion.
 - [operations-runbook.md](operations-runbook.md) — scheduled monitor, alert
   webhook and signature, incident dedup/retry, and pause/drain/provider controls.
+- [providers.md](providers.md) — register an upstream, price it, and how the
+  cheapest-provider routing and stable published ids work.
 - [research/apixo-provider-review.md](research/apixo-provider-review.md) —
   verified Apixo API, image catalog, resale economics and the onboarding gaps.
 - [load-acceptance.md](load-acceptance.md) — bounded load/fault gate, candidate

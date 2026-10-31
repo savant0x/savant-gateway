@@ -17,6 +17,7 @@ export const MODEL_SELECT = `
  * story; the admin surfaces never use it.
  */
 export const PUBLIC_MODEL_SCOPE = `m.in_catalog = 1 AND m.status = 'active'
+       AND m.is_primary = 1
        AND COALESCE(g.hidden, 0) = 0
        AND (
          COALESCE(g.billing_mode, 'paid') <> 'subscription'

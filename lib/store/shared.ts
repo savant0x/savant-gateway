@@ -5,11 +5,13 @@ import type {
   AdminUsageSummary,
   KeySummary,
   ModelAccess,
+  ModelRouteSummary,
   ModelSummary,
   ProviderStatus,
   UsageSummary,
 } from "../types";
 
+import { canonicalModelKey } from "../model-identity";
 import {
   accessFromGroup,
   legacyAccessFor,
@@ -25,6 +27,13 @@ export type ModelRow = {
   provider: string;
   family: string | null;
   protocol: "chat" | "messages";
+  route_group: string | null;
+  is_primary: number;
+  served_provider_slug: string | null;
+  served_upstream_id: string | null;
+  served_protocol: "chat" | "messages" | null;
+  served_cost_input_micros: number | null;
+  served_cost_output_micros: number | null;
   cost_source: "synced" | "manual" | "unknown";
   context_window: string;
   token_weight: number;
@@ -150,19 +159,32 @@ export function accessFor(
 
 export function toGatewayModel(row: ModelRow): GatewayModel {
   const billingMode = accessFor(row);
+  // The published row names the model; the serving route answers it. A model
+  // whose cheapest provider changed keeps its public id and sell price while
+  // the upstream identity, protocol and cost follow the winning route.
+  const servedSlug = row.served_provider_slug ?? row.upstream_slug;
+  const servedId = row.served_upstream_id ?? row.upstream_id;
+  const servedProtocol =
+    row.served_protocol === "chat" || row.served_protocol === "messages"
+      ? row.served_protocol
+      : row.protocol;
+  const costInputMicros =
+    row.served_cost_input_micros ?? row.input_price_micros;
+  const costOutputMicros =
+    row.served_cost_output_micros ?? row.output_price_micros;
 
   return {
     id: row.id,
-    upstreamId: row.upstream_id,
+    upstreamId: servedId,
     name: row.name,
-    upstreamSlug: row.upstream_slug,
+    upstreamSlug: servedSlug,
     family: row.family ?? row.provider,
-    protocol: row.protocol,
+    protocol: servedProtocol,
     costSource: row.cost_source,
     contextWindow: row.context_window,
     tokenWeight: row.token_weight,
-    costInputMicros: row.input_price_micros,
-    costOutputMicros: row.output_price_micros,
+    costInputMicros,
+    costOutputMicros,
     sellInputMicros: row.sell_input_micros,
     sellOutputMicros: row.sell_output_micros,
     allowFree: row.allow_free === 1,
@@ -202,22 +224,36 @@ export function toModelSummary(row: ModelRow): ModelSummary {
   };
 }
 
-export function toAdminModelSummary(row: ModelRow): AdminModelSummary {
+export function toAdminModelSummary(
+  row: ModelRow,
+  routes: ModelRouteSummary[] = [],
+): AdminModelSummary {
   const summary = toModelSummary(row);
+  // Margin and cost are the serving route's numbers, because that is what the
+  // gateway records at settlement. The row's own cost stays visible so an
+  // operator can see what this provider charges before it wins a route.
+  const costInput = row.served_cost_input_micros ?? row.input_price_micros;
+  const costOutput = row.served_cost_output_micros ?? row.output_price_micros;
 
   return {
     ...summary,
     upstreamSlug: row.upstream_slug,
     protocol: row.protocol,
     costSource: row.cost_source,
-    costInputPer1M: microsToPrice(row.input_price_micros),
-    costOutputPer1M: microsToPrice(row.output_price_micros),
+    costInputPer1M: microsToPrice(costInput),
+    costOutputPer1M: microsToPrice(costOutput),
+    ownCostInputPer1M: microsToPrice(row.input_price_micros),
+    ownCostOutputPer1M: microsToPrice(row.output_price_micros),
     priceSource: row.price_source,
-    inputMarginBps: marginBps(row.input_price_micros, row.sell_input_micros),
-    outputMarginBps: marginBps(row.output_price_micros, row.sell_output_micros),
+    routeGroup: row.route_group ?? canonicalModelKey(row.upstream_id),
+    isPrimary: row.is_primary === 1,
+    servedProviderSlug: row.served_provider_slug,
+    routes,
+    inputMarginBps: marginBps(costInput, row.sell_input_micros),
+    outputMarginBps: marginBps(costOutput, row.sell_output_micros),
     blendedProfitMicros: blendedProfitMicros({
-      costInputMicros: row.input_price_micros,
-      costOutputMicros: row.output_price_micros,
+      costInputMicros: costInput,
+      costOutputMicros: costOutput,
       sellInputMicros: row.sell_input_micros,
       sellOutputMicros: row.sell_output_micros,
     }),

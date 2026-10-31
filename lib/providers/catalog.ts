@@ -2,6 +2,7 @@ import type { SyncedModel } from "../types";
 import type { ProviderRecord, UpstreamModel } from "./types";
 
 import { normalizeFamilyName } from "../model-family.ts";
+import { canonicalModelKey } from "../model-identity.ts";
 
 import { inferModelProtocol, publicModelId } from "./registry.ts";
 
@@ -134,6 +135,7 @@ export function buildSyncedModels(
       id: publicModelId(provider.slug, upstreamId),
       upstreamId,
       upstreamSlug: provider.slug,
+      routeGroup: canonicalModelKey(upstreamId),
       name:
         String(spec.name ?? item.name ?? "").trim() ||
         displayNameFromId(upstreamId),

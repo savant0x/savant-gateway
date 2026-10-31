@@ -248,8 +248,22 @@ export function AdminModelsTable({
                       </div>
                     </td>
                     <td className="whitespace-nowrap text-muted">
-                      {model.upstreamSlug}
-                      <p className="text-[11px]">{model.protocol}</p>
+                      {model.servedProviderSlug ?? model.upstreamSlug}
+                      {model.servedProviderSlug &&
+                      model.servedProviderSlug !== model.upstreamSlug ? (
+                        <p className="text-[11px] text-accent">
+                          cheapest of {model.routes.length}
+                        </p>
+                      ) : (
+                        <p className="text-[11px]">{model.protocol}</p>
+                      )}
+                      {model.routes.length > 1 ? (
+                        <p className="text-[11px]">
+                          {model.routes
+                            .map((route) => route.providerSlug)
+                            .join(" · ")}
+                        </p>
+                      ) : null}
                     </td>
                     <td className="text-muted">{model.family}</td>
                     <td>

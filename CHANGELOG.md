@@ -3,6 +3,26 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-31 — Cheapest-provider routing for a shared catalog
+
+- **FID-2026-1031-081 — high — A model sold by two providers is now one
+  published entry, served by the cheaper one.** Every synced row carries a
+  provider-neutral `route_group` (case, separators and the `family/` path
+  folded; release stamps and `-backup` dropped, variants preserved). After each
+  sync, cost/price/status change and provider enable/disable/delete, the
+  gateway ranks servable rows by `3 × input + output` cost and publishes the
+  stable unscoped id while serving the winner. The serving provider's upstream
+  id, protocol and cost are stored on the published row (`served_*`), so a
+  cheaper takeover raises margin instead of recording a cost that was never
+  paid. A model only the new provider sells appears once it is priced; a
+  disabled published row hides the group rather than promoting another
+  provider. Pinned `provider/model` ids still resolve directly. The admin
+  catalog shows the serving provider, every competing route and a read-only
+  cost when another provider serves the row. Adding a provider stays registry
+  + key + sync + price (see [docs/providers.md](../docs/providers.md)).
+  Automatic cross-provider failover, media endpoints and Apixo price import are
+  explicit non-goals.
+
 ## 2026-10-31 — Apixo provider review and unpriced-import guard
 
 - **FID-2026-1031-080 — medium — A provider that publishes no prices can no

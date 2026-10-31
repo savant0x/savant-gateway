@@ -15,6 +15,7 @@ import { modelGroupSchema } from "./schema/groups";
 import { performanceIndexSchema } from "./schema/indexes";
 import { operationsSchema } from "./schema/operations";
 import { providerSchema } from "./schema/providers";
+import { backfillRouteGroups, routeSchema } from "./schema/routes";
 import { subscriptionSchema } from "./schema/subscriptions";
 import { creditAdjustmentSchema } from "./schema/credits";
 import { paymentEventSchema } from "./schema/payments";
@@ -350,6 +351,7 @@ function createDb() {
       freePoolSchema(database);
       allocationSchema(database);
       providerSchema(database);
+      routeSchema(database);
       modelGroupSchema(database);
       subscriptionSchema(database);
       trialSchema(database);
@@ -364,6 +366,7 @@ function createDb() {
       policySchema(database);
       operationsSchema(database);
       normalizeLegacyFamilies(database);
+      backfillRouteGroups(database);
       seed(database);
     })
     .immediate();

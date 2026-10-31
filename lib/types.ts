@@ -1,3 +1,4 @@
+import type { ModelRouteSummary } from "./model-route-types";
 import type { QuotaObservation } from "./provider-quota";
 
 export type ModelAccess = "free" | "subscription" | "paid";
@@ -66,7 +67,14 @@ export type AdminModelSummary = ModelSummary & {
   costSource: "synced" | "manual" | "unknown";
   costInputPer1M: number;
   costOutputPer1M: number;
+  /** This row's own cost; the serving route may be another provider. */
+  ownCostInputPer1M: number;
+  ownCostOutputPer1M: number;
   priceSource: "auto" | "manual";
+  routeGroup: string;
+  isPrimary: boolean;
+  servedProviderSlug: string | null;
+  routes: ModelRouteSummary[];
   inputMarginBps: number | null;
   outputMarginBps: number | null;
   blendedProfitMicros: number;
@@ -253,25 +261,6 @@ export type AnalyticsData = {
   byPlan: AnalyticsPlan[];
 };
 
-export type SyncedModel = {
-  id: string;
-  upstreamId: string;
-  upstreamSlug: string;
-  name: string;
-  family: string;
-  protocol: "chat" | "messages";
-  costSource: "synced" | "unknown";
-  contextWindow: string;
-  tokenWeight: number;
-  costInputMicros: number;
-  costOutputMicros: number;
-  allowFree: boolean;
-  supportsTools: boolean;
-  supportsVision: boolean;
-  health: string | null;
-  sortOrder: number;
-};
-
 export type PlanInterval = "month" | "year";
 export type PlanStatus = "draft" | "active" | "archived";
 export type PlanOverageMode = "block" | "credit";
@@ -397,3 +386,5 @@ export type TopupSummary = {
   createdAt: string;
   paidAt: string | null;
 };
+
+export type { ModelRouteSummary, SyncedModel } from "./model-route-types";

@@ -3,11 +3,13 @@ import "server-only";
 import type { AdminModelSummary, ModelAccess, SyncedModel } from "../types";
 
 import { db, nowIso } from "../db";
+import { canonicalModelKey } from "../model-identity";
 import { defaultGroupSlug, pricesForGroup } from "../model-groups";
 import { defaultSellMicros } from "../pricing";
 import { importedModelStatus } from "../providers/catalog";
 
 import { MODEL_SELECT } from "./model-sql";
+import { reconcileRoutes, routesByGroup } from "./routes";
 import { getMarkupBps } from "./settings";
 import {
   accessFor,
@@ -28,8 +30,14 @@ export function listAllModels(): AdminModelSummary[] {
                 m.sort_order ASC, m.name ASC`,
     )
     .all() as ModelRow[];
+  const routes = routesByGroup(rows);
 
-  return rows.map(toAdminModelSummary);
+  return rows.map((row) =>
+    toAdminModelSummary(
+      row,
+      routes.get(row.route_group ?? canonicalModelKey(row.upstream_id)) ?? [],
+    ),
+  );
 }
 
 export type ModelStatusResult = "ok" | "not_found" | "cost_unknown";
@@ -69,6 +77,8 @@ export function setModelStatus(
   const result = db
     .prepare("UPDATE models SET status = ? WHERE id = ?")
     .run(status, modelId);
+
+  if (result.changes > 0) reconcileRoutes();
 
   return result.changes > 0 ? "ok" : "not_found";
 }
@@ -118,6 +128,8 @@ export function setModelCost(
     modelId,
   );
 
+  reconcileRoutes();
+
   return true;
 }
 
@@ -158,6 +170,8 @@ export function setModelPricing(
       Math.max(0, Math.round(sellOutputMicros)),
       modelId,
     );
+
+  if (result.changes > 0) reconcileRoutes();
 
   return result.changes > 0;
 }
@@ -217,14 +231,16 @@ export function replaceModels(
   const upsert = db.prepare(`
     INSERT INTO models
       (id, upstream_id, upstream_slug, name, provider, family, protocol,
-       cost_source, context_window, token_weight, input_price_micros,
-       output_price_micros, sell_input_micros, sell_output_micros,
-       price_source, in_catalog, allow_free, group_slug, group_source,
-       supports_tools, supports_vision, health, status, sort_order, synced_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       route_group, cost_source, context_window, token_weight,
+       input_price_micros, output_price_micros, sell_input_micros,
+       sell_output_micros, price_source, in_catalog, allow_free, group_slug,
+       group_source, supports_tools, supports_vision, health, status,
+       sort_order, synced_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       upstream_id = excluded.upstream_id,
       upstream_slug = excluded.upstream_slug,
+      route_group = excluded.route_group,
       name = excluded.name,
       provider = excluded.provider,
       family = excluded.family,
@@ -307,6 +323,7 @@ export function replaceModels(
         model.family,
         model.family,
         model.protocol,
+        model.routeGroup,
         costSource,
         model.contextWindow,
         model.tokenWeight,
@@ -327,6 +344,8 @@ export function replaceModels(
       );
     }
   })(rows);
+
+  reconcileRoutes();
 }
 
 export function applyCatalogMarkup(markupBps: number, applyToAll: boolean) {
@@ -362,6 +381,8 @@ export function applyCatalogMarkup(markupBps: number, applyToAll: boolean) {
       changed += 1;
     }
   })();
+
+  reconcileRoutes();
 
   return changed;
 }

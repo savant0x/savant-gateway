@@ -15,6 +15,7 @@ distinguish verified behavior from unverified claims.
   sessions. Verification: 348 unit tests, quality PASS (320 files), build,
   644 HTTP checks with Stripe keys present, trial suite PASS; lint and typecheck
   clean. No card sale was exercised because the lane is closed by decision.
+  Closed against `98b6eb9` and archived.
 
 ## 2026-10-31 — Email ownership and account recovery
 

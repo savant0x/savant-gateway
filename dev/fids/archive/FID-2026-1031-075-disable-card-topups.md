@@ -4,7 +4,7 @@
 **ID:** FID-2026-1031-075
 **Parent:** FID-2026-1030-043
 **Severity:** high
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-31
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044, FID-2026-1030-068
@@ -83,6 +83,8 @@ years, and honest about a lane that is not built yet.
 
 ## Implementation Evidence
 
+- **Commit SHA:** `98b6eb9` — `feat(payments): gate card top-ups behind an
+  explicit launch flag (FID-2026-1031-075)`, 14 files, 384 insertions.
 - **File:line ranges:**
   - `lib/card-topups.ts:21` — `readCardTopupPolicy()`, unset means disabled,
     only `1/true/yes/on` enables.
@@ -115,6 +117,19 @@ Loop 1 AUDIT: the flag is read once per request on the route and once per render
 on the account page; both derive from the same helper, so they cannot disagree.
 SELF-CORRECT: the disabled copy names USDC rather than promising generic
 "payments", because the operator's ruling is a specific lane, not a date.
+
+- **Closed Date:** 2026-10-31
+- **Fix Description:** One policy helper (`readCardTopupPolicy`) gates card
+  checkout ahead of Stripe configuration; the route, account page, top-up card
+  and billing copy all derive from it. `CARD_TOPUPS_ENABLED` defaults off, so
+  credentials alone cannot reopen the lane.
+- **Tests Added:** Yes — `tests/card-topups.test.mjs` (four cases, including the
+  credential-presence case) and two live HTTP checks.
+- **Verification Evidence:** `npm test` exit 0 (348/348), `npm run lint` exit 0,
+  `npm run typecheck` exit 0, `npm run quality` PASS (320 files),
+  `npm run build` exit 0, `npm run test:http` exit 0 (644 checks, trial suite
+  PASS).
+- **Archived:** 2026-10-31
 
 ## Lessons Learned
 

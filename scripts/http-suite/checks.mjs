@@ -230,6 +230,19 @@ async function runAuthChecks(context) {
 
   checkEqual("me returns 200 after login", afterLogin.status, 200);
 
+  const cardTopup = await request(context.baseUrl, "/api/account/topup", {
+    method: "POST",
+    cookie: `sg_session=${sessionCookie}`,
+    body: { amountUsd: "25.00" },
+  });
+
+  checkEqual("card top-ups are refused while disabled", cardTopup.status, 503);
+  checkEqual(
+    "card refusal names the disabled policy",
+    cardTopup.headers.get("x-reason"),
+    "card_topups_disabled",
+  );
+
   return {
     id: alphaId,
     email: ALPHA.email,

@@ -78,14 +78,14 @@ export function BillingHistory({
         <Card.Header>
           <Card.Title>Top-ups</Card.Title>
           <Card.Description>
-            Stripe checkouts for this account. A pending row has not been
+            Recorded top-ups for this account. A pending row has not been
             credited.
           </Card.Description>
         </Card.Header>
         <Card.Content className="px-0 pb-0">
           {topups.length === 0 ? (
             <p className="px-5 pb-5 text-sm text-muted">
-              No top-ups yet. Add credit to run paid models.
+              No top-ups yet. Paid models need prepaid credit.
             </p>
           ) : (
             <div className="scroll-shell">

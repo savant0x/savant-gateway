@@ -3,6 +3,19 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-31 — Crypto-only payment gate
+
+- **FID-2026-1031-075 — high — card top-ups are now an explicit launch decision
+  rather than a consequence of Stripe credentials.** `CARD_TOPUPS_ENABLED`
+  defaults off; the checkout route refuses with `503 card_topups_disabled`
+  before reading Stripe configuration, and the account page derives its top-up
+  state from the same policy. Disabled copy names the USDC lane instead of
+  promising generic payments, and billing history no longer claims Stripe
+  checkouts. The webhook and fulfillment path stay active for in-flight
+  sessions. Verification: 348 unit tests, quality PASS (320 files), build,
+  644 HTTP checks with Stripe keys present, trial suite PASS; lint and typecheck
+  clean. No card sale was exercised because the lane is closed by decision.
+
 ## 2026-10-31 — Email ownership and account recovery
 
 - **FID-2026-1030-045 — high — account links now establish ownership or reset

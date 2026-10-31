@@ -24,6 +24,7 @@ import { UsageCard } from "@/components/dashboard/usage-card";
 import { siteConfig } from "@/config/site";
 import { requireCustomerPage } from "@/lib/customer-auth";
 import { readAccountEmailConfig } from "@/lib/account-email";
+import { readCardTopupPolicy } from "@/lib/card-topups";
 import { accountEmailStatus } from "@/lib/store/account-email";
 import {
   POLICY_EFFECTIVE_LABEL,
@@ -64,6 +65,9 @@ export default async function AccountPage({
   const data = getCustomerAccount(customer);
   const subscription = customerSubscriptionSummary(customer.id);
   const stripe = readStripeConfig();
+  const cardTopups = readCardTopupPolicy();
+  const topupReady = stripe.configured && cardTopups.enabled;
+  const topupReason = cardTopups.enabled ? stripe.reason : cardTopups.reason;
   const sales = readPlanSalesPolicy();
   const requestHeaders = await headers();
   const params = await searchParams;
@@ -162,7 +166,7 @@ export default async function AccountPage({
         <DailyTrialCard userId={customer.id} />
 
         <section className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
-          <TopupCard configured={stripe.configured} reason={stripe.reason} />
+          <TopupCard configured={topupReady} reason={topupReason} />
           <CustomerKeysCard keys={data.keys} />
         </section>
 
@@ -221,7 +225,9 @@ export default async function AccountPage({
       <footer className="border-t border-black/10 dark:border-white/10">
         <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-5 text-xs text-muted sm:px-6 lg:px-8">
           <span>{siteConfig.name}</span>
-          <span>Customer account · payments confirmed by Stripe webhook</span>
+          <span>
+            Customer account · credit applied only after payment confirmation
+          </span>
         </div>
       </footer>
     </div>

@@ -99,12 +99,18 @@ was invented.
   tests/price-comparison.test.mjs tests/trials.test.mjs` — 32 tests, 0 failures.
   The wider `npm run verify` receipt is recorded in the session summary.
 
-**Blocked closure input (operator-only):** the six dated rulings listed in the
-ledger: the free-versus-trial offering; approved paid models and prices; dated
-resale permission and a confirmed per-model rate card; processing fee, refund,
-reserve and credit-expiry policy; funded budget, operating reserve and low-balance
-threshold; permission to publish savings claims. The item stays active and is
-re-attempted when those rulings exist. No launch approval is claimed.
+**Operator rulings recorded 2026-10-31.** All six decisions now exist in
+`docs/offering-evidence.md`: a daily shared free share with a held-back reserve
+and no lifetime trial; the configured paid catalog and prices approved as
+published; resale under the provider's resell programme with the synced cost
+column as the rate card; crypto-only payment with no refunds; $150 upstream
+funding; and savings claims approved as published.
+
+Four implementation questions remain and are recorded in the ledger: whether the
+free share is spendable on paid-group models; the operating reserve and
+low-balance threshold in dollars; the Stripe-disable consequence of crypto-only;
+and the no-refund policy rewrite. The item stays active and `converged` until
+those are answered. No launch approval is claimed.
 
 ## Perfection Loop
 

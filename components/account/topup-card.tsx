@@ -12,6 +12,7 @@ import {
 
 export function TopupCard({
   configured,
+  reason,
 }: {
   configured: boolean;
   reason: string | null;
@@ -108,11 +109,14 @@ export function TopupCard({
         ) : (
           <div className="space-y-3 text-sm">
             <p className="rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
-              Credit top-ups are not available yet.
+              Prepaid credit is not open yet.
             </p>
             <p className="text-xs leading-5 text-muted">
-              You can create project keys and explore the model catalog. Adding
-              prepaid credit will become available when payments open.
+              {reason ??
+                "Card top-ups are disabled for this launch. Prepaid credit opens with the direct USDC lane."}
+            </p>
+            <p className="text-xs leading-5 text-muted">
+              You can create project keys and use the free-pool models now.
             </p>
           </div>
         )}

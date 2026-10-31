@@ -110,22 +110,90 @@ a refusal, not an overdraft.
 This is the cap that follows from the evidence. It is not a decision to sell
 nothing; it is the position until the funding input exists.
 
-## Operator decisions required
+## Operator rulings recorded 2026-10-31
 
-Each item needs a dated ruling; the engineering work can then apply it through
-the existing settings, pricing and model helpers.
+The operator reviewed the published catalog and landing page and supplied these
+rulings directly. They are dated decisions. The configured values they approve
+are read from this repository; nothing below re-derives them.
 
-1. Free versus lifetime-trial offering at launch, and whether the daily shared
-   allocation remains the public free path.
-2. Approved paid models and sell prices, or approval to publish the current
-   synced catalog at the configured markup.
-3. Dated Apinex resale permission and confirmation of the per-model rate card,
-   including whether identical input/output rates are correct.
-4. Payment-processing fee schedule, minimum top-up, refund/dispute reserve and
-   credit-expiry policy.
-5. Paid upstream budget, operating reserve and low-balance threshold.
-6. Whether public savings claims may be published, given that synced costs are
-   arithmetic evidence rather than a confirmed provider rate card.
+1. **Launch mode — daily shared free share, no lifetime trial.** Free access is a
+   daily share allocated from available upstream inference with a held-back
+   reserve, not a lifetime grant. `TRIAL_ENABLED` stays `false`.
+2. **Paid catalog and prices — approved as configured and published.** The 24
+   priced paid rows (23 in the public catalog) and their sell prices are the
+   approved offering. The landing page and `/models` catalog are the
+   authoritative display; no separate price table is required.
+3. **Resale — the upstream provider is a resell programme.** Resale permission
+   follows from the operator's reseller enrollment. The synced cost column is the
+   per-model rate card and the configured markup is the sell basis.
+4. **Payments — crypto only, no refunds.** USDC received directly to an operator
+   wallet is the only launch payment method. Customer payments are not refunded;
+   the remedy path is service credit.
+5. **Budget — $150 to activate the system.** The upstream wallet is funded with
+   $150 before paid inference is admitted.
+6. **Savings claims — approved as published.** The landing page's per-model
+   comparison against the public list may be published as it stands.
 
-Until 1–6 are recorded, the activation paths stay as they are: trial disabled,
-no plan on sale, and no funded paid inference claimed.
+## Verified upstream platform facts (2026-10-31)
+
+Read from `https://apinex.bond/resell` (client-rendered bundle) and
+`https://apinex.bond/api/public/models` at 2026-10-31T14:21Z. These are the
+resell programme's own statements, not local assumptions.
+
+- **Resell model.** One `sk-apx.` upstream key imports the paid and `free/*`
+  catalog at wholesale base rates; the reseller sets its own `$ / 1M` prices and
+  keeps the margin. The programme markets `2x–5x` markup and wholesale rates
+  "up to 10x cheaper" than direct vendor APIs.
+- **Balance unit.** Top-ups are USD at `$1 = 1,000,000` balance tokens, and
+  models and tools share one balance. A balance token is therefore one
+  micro-dollar, the same unit the gateway already stores.
+- **Free allowance.** It is a weighted-token allowance, not a wallet charge:
+  `allowance_tokens = ceil((input + output) × weight)` and
+  `wallet_balance_charge = 0`. Subscriptions raise or remove the daily
+  free-model allowance.
+- **Catalog.** 44 rows in the public feed, `fromDollarsPer1M: 0.04`. Paid rows
+  carry `allowFree: true`; `free/*` rows carry `weight` and may carry
+  `allowFree: false` (subscription-only).
+- **Rate-card reconciliation.** Eight spot-checked paid rows match the upstream
+  published rate exactly (`deepseek-v4-flash` 0.05, `deepseek-v4-pro` 0.07,
+  `gpt-6-astra` 0.50, `gpt-6.1-sol` 0.30, `gpt-6.1-terra` 0.17,
+  `gemini-4-argon` 0.60, `claude-opus-5.5` 0.50, `claude-fable-5.1` 2.00), and
+  every automatic sell price is exactly `cost × 1.3` at the stored `3000` bps.
+  The synced cost column is therefore the rate card, and the published catalog
+  is arithmetic over it.
+- **Free-share scope consequence.** Because the upstream marks paid rows
+  `allowFree: true`, spending the daily share on paid models is permitted
+  upstream and would be a local admission change only. The operator ruled
+  free-pool models only, so no admission change is made.
+
+### Reserve derivation
+
+The wallet funds paid inference only; free traffic charges it nothing. With
+cards disabled and the USDC lane not yet live, no new customer-credit liability
+accrues, so the wallet reserve is a credit-liability buffer rather than a
+free-capacity reserve. The free-capacity reserve is already the 10% held back
+from the 20M weighted-token daily allowance (2M tokens).
+
+Proposed, not yet confirmed: **$50 reserve, alert at $50, hard stop at $25**.
+That holds one third of the $150 unspent, covers ten times the current $5.00
+outstanding credit, and still leaves $100 of paid working capital.
+
+## Still open after these rulings
+
+- **Free-share scope.** Whether the daily share is spendable on paid-group models
+  or only on the 11 `allow_free` rows. Today `isFreeCall` admits only
+  `allow_free = 1`, so a paid model with no credit returns a credit error.
+- **Operating reserve and low-balance threshold**, as absolute dollars derived
+  from the $150 funding decision.
+- **Payment-path consequence.** "Crypto only" disables the Stripe Checkout
+  top-up at launch, which makes the USDC lane in FID-2026-1030-068 a launch
+  dependency rather than an optional second lane.
+- **No-refund terms.** The published policy still describes a manual Stripe
+  refund and must be rewritten as a new immutable version before launch.
+- **Provider rate-card confirmation.** The resell programme establishes
+  permission; it does not by itself prove that every synced cost row matches the
+  provider's current published rate.
+
+Until the four implementation questions above are answered, the activation paths
+stay as they are: trial disabled, no plan on sale, and no funded paid inference
+claimed.

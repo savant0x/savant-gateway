@@ -33,6 +33,11 @@ spend and messaging boundaries remain binding; no missing evidence is invented.
   recorded decision to keep one persistent SQLite host; ruling requested.
 - [ ] **C9 — FID-2026-1030-043 and FID-2026-1030-062:** complete master
   evidence and real acceptance, retaining the explicit release boundary.
+- [x] **C10 — FID-2026-1031-075:** crypto-only launch gate. `CARD_TOPUPS_ENABLED`
+  defaults off and the checkout route refuses before reading Stripe credentials;
+  the account page and copy follow the same policy. 348 tests, 644 HTTP checks
+  with Stripe keys present, build, quality (320 files) and trial suite pass.
+  No card sale was exercised because the lane is closed by operator decision.
 
 Initial evidence: 13 files in `dev/fids/`; working tree has an existing edit to
 `docs/project-status.md` plus untracked research and attachments. Preserve them.

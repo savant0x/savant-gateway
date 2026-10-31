@@ -58,15 +58,31 @@ privacy publication are retained as `FID-2026-1030-045-LIVE`; the concrete
 proposed disclosure is `docs/policies/drafts/email-disclosure.md`, not an edited
 published policy.
 
-## Work Completed — FID-045
+## Work Completed - FID-045
 
 Implementation `871f19e` verified on the committed tree (`npm run verify` exit 0)
 and archived on 2026-10-31. SCOPE C2 is checked; the master child link and
 CHANGELOG record the closure. Existing operator edits and untracked
 research/attachments remain preserved and unstaged.
 
+## Operator Rulings and FID-075
+
+The operator supplied six dated rulings for FID-044 and directed a crypto-only
+launch with card top-ups disabled immediately. `docs/offering-evidence.md` now
+records the rulings, the verified APInex resell-platform facts, the eight-row
+rate-card reconciliation (synced cost equals the published upstream rate; every
+automatic sell price is `cost × 1.3`), and the derived reserve proposal
+($50 reserve / $50 alert / $25 hard stop, pending confirmation).
+
+FID-2026-1031-075 implements the payment gate: `CARD_TOPUPS_ENABLED` defaults
+off, the checkout route refuses before reading Stripe credentials, and the
+account page, top-up card and billing copy follow the same policy. Receipt:
+348 tests, 644 HTTP checks with Stripe keys present, build, quality (320 files),
+trial suite; lint and typecheck clean.
+
 ## Open Questions
 
 Email sender/transport; alert destination and delivery authorization; USDC
-chain/token, xpub, RPC and screening; commercial decisions; retain hosting and
-launch holds. See the active FIDs for exact external acceptance contracts.
+chain/token, xpub, RPC and screening; the four FID-044 implementation questions;
+confirm the reserve figures; retain hosting and launch holds. See the active
+FIDs for exact external acceptance contracts.

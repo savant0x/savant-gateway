@@ -3,6 +3,7 @@ import {
   NO_STORE,
   requireCustomerApi,
 } from "@/lib/customer-auth";
+import { readCardTopupPolicy } from "@/lib/card-topups";
 import { topupLimiter } from "@/lib/customer-rate-limit";
 import { resolveAppOrigin, readStripeConfig, stripeClient } from "@/lib/stripe";
 import { createTopup, markTopupFailed, setTopupProviderRef } from "@/lib/store";
@@ -25,6 +26,14 @@ export async function POST(request: Request) {
       `Too many top-up attempts. Retry in ${decision.retryAfterSeconds}s.`,
       { "Retry-After": String(decision.retryAfterSeconds) },
     );
+  }
+
+  const cardTopups = readCardTopupPolicy();
+
+  if (!cardTopups.enabled) {
+    return customerError(503, cardTopups.reason, {
+      "X-Reason": "card_topups_disabled",
+    });
   }
 
   const config = readStripeConfig();

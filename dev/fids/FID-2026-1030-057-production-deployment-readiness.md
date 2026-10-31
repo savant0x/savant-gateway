@@ -129,6 +129,3 @@ Implemented with deployment unexecuted, per operator instruction.
 ## Lessons Learned
 
 The deployed topology is part of the accounting and capacity correctness contract.
-
-
-The deployed topology is part of the accounting and capacity correctness contract.

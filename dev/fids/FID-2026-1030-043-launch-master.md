@@ -76,7 +76,7 @@ rather than disappearing work.
 | [046](archive/FID-2026-1030-046-abuse-and-request-limits.md) | Abuse, key and resource bounds — closed `bb925af`; hosted ingress acceptance tracked | 044 |
 | [047](archive/FID-2026-1030-047-security-and-account-isolation.md) | Auth, isolation, boundaries and redaction — closed `2ef2d74`; ingress pinning in 057 | none |
 | [048](archive/FID-2026-1030-048-shared-provider-admission.md) | Provider-wide RPM/concurrency | 044 |
-| [049](FID-2026-1030-049-quota-and-free-access.md) | Quota refresh, reset, allocation/trial safety | 044,045,048 |
+| [049](archive/FID-2026-1030-049-quota-and-free-access.md) | Quota refresh, reset, allocation/trial safety — closed `b8a1a50`; live reset acceptance tracked | 044,045,048 |
 | [050](archive/FID-2026-1030-050-usage-and-billing-fidelity.md) | Actual usage/cost and charge rules | 044 |
 | [051](archive/FID-2026-1030-051-durable-settlement-recovery.md) | Durable accounting and crash recovery | 050 |
 | [052](archive/FID-2026-1030-052-credit-reconciliation-and-adjustments.md) | Reconciliation and corrections | 044,050,051 |
@@ -84,11 +84,11 @@ rather than disappearing work.
 | [054](archive/FID-2026-1030-054-subscription-launch-safety.md) | Subscription lifecycle/no-sales enforcement | 044,048,049,050,051,053 |
 | [055](archive/FID-2026-1030-055-provider-and-catalog-integrity.md) | Provider sync, catalog and benchmarks | 044,047 |
 | [056](FID-2026-1030-056-customer-experience-and-api-docs.md) | Honest accessible UI and real client docs | 044,045,046,047,049,050,052,053,054,055,061 |
-| [057](FID-2026-1030-057-production-deployment-readiness.md) | Secure persistent production runtime | 044,047,048 |
+| [057](archive/FID-2026-1030-057-production-deployment-readiness.md) | Secure persistent production runtime — closed `b9764fe`; hosted ingress/SIGTERM tracked | 044,047,048 |
 | [058](archive/FID-2026-1030-058-database-backup-and-restore.md) | Migration, backup and restore — closed `2dc005e`; live RPO/RTO and real-volume restore tracked | 051,057 |
 | [059](FID-2026-1030-059-observability-and-incident-response.md) | Monitoring, delivered alerts and response | 048,049,051,052,053,057,058 |
 | [060](FID-2026-1030-060-load-and-resilience-acceptance.md) | Capacity and failure acceptance | 046,048,049,050,051,055,057,058,059 |
-| [061](FID-2026-1030-061-policies-privacy-and-support.md) | Policies, privacy and functioning support | 044,047 |
+| [061](archive/FID-2026-1030-061-policies-privacy-and-support.md) | Policies, privacy and functioning support — closed `69e050d`; operator launch gates tracked | 044,047 |
 | [062](FID-2026-1030-062-launch-acceptance-and-rollout.md) | Real acceptance, approval and rollout | every child 044–061 |
 
 ### A–Z coverage

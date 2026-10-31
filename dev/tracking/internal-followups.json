@@ -92,6 +92,33 @@
       "detail": "The backup/restore code and a disposable drill are verified. No recovery-point or restore-time target is set, and no timed restore has run on the actual Fly volume. On 2026-10-31 the authenticated Fly CLI (v0.5.1) could not list apps: `fly apps list` exited 1 with 'trial has ended, please add a credit card'. No app, volume or machine exists, so the timed restore could not start.",
       "evidence": "dev/fids/archive/FID-2026-1030-058-database-backup-and-restore.md; docs/deployment-runbook.md#backup-and-restore; 2026-10-31 flyctl observation: apps list exit 1, no app/volume",
       "next_action": "Enable the Fly account payment method and provision the app/volume under FID-2026-1030-067/062. Then set the backup interval and restore target, pull a backup off the volume with its sidecar, run the timed restore, confirm /api/ready and /admin/reconciliation, and record the receipt."
+    },
+    {
+      "id": "FID-2026-1030-049-LIVE",
+      "fid": "FID-2026-1030-049",
+      "state": "blocked",
+      "title": "Live provider reset and quota-refresh acceptance",
+      "detail": "Parsing, freshness, reset, lease fencing and allocation are covered by tests/quota-refresh.test.mjs, tests/free-pool.test.mjs, tests/allocation.test.mjs and tests/trials.test.mjs. The real upstream reset boundary and the 15 rpm fallback under load were not exercised; the suite uses the mock provider.",
+      "evidence": "dev/fids/archive/FID-2026-1030-049-quota-and-free-access.md; tests/quota-refresh.test.mjs; scripts/http-suite/quota-checks.mjs",
+      "next_action": "On the next live provider pass, observe a UTC reset and a stale-observation refresh against the real account, record the used/remaining/reset values, and confirm admission refuses on failure rather than inventing capacity."
+    },
+    {
+      "id": "FID-2026-1030-057-LIVE",
+      "fid": "FID-2026-1030-057",
+      "state": "blocked",
+      "title": "Hosted ingress, SIGTERM drain and first deployment acceptance",
+      "detail": "The readiness code and disposable production start are verified. No Fly app, volume, machine or secret exists, so hosted proxy-header stripping, SSE flush/timeout/cancel, a live in-flight SIGTERM drain and the first deployment have not run. Final deployment approval remains FID-2026-1030-062.",
+      "evidence": "dev/fids/archive/FID-2026-1030-057-production-deployment-readiness.md; dev/fids/archive/FID-2026-1030-067-fly-deployment.md; docs/deployment-runbook.md",
+      "next_action": "After the operator enables the Fly account and approves deployment under 062, provision the app/volume, configure the trusted ingress header, and record the SSE/cancel, SIGTERM drain and readiness receipts against the pinned artifact."
+    },
+    {
+      "id": "FID-2026-1030-061-LIVE",
+      "fid": "FID-2026-1030-061",
+      "state": "blocked",
+      "title": "Operator policy and support launch gates",
+      "detail": "Policy v1.1 is published and the authenticated support queue is implemented. No registered entity/address, counsel review, verified host retention, Stripe business-profile/tax decision, real account deletion or controlled outside-channel inquiry exists yet.",
+      "evidence": "dev/fids/archive/FID-2026-1030-061-policies-privacy-and-support.md; content/legal/v1.1/; docs/launch-plan.md (Pre-launch policy gates)",
+      "next_action": "Record each operator decision with its date, publish a new immutable policy version when text changes, and exercise one real deletion and one controlled inquiry through the owned channel."
     }
   ]
 }

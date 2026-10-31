@@ -2,6 +2,29 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-31 (FID closures: 049, 057, 061)
+
+Operator request: close FID-2026-1030-049, FID-2026-1030-057 and
+FID-2026-1030-061 with CHANGELOG, archive moves, SCOPE updates and tracking
+entries. Automation level 3, strict, single agent. No application code, schema,
+policy text or runtime data changed.
+
+- [x] **F1 — Close FID-2026-1030-049.** Evidence: quota truth and daily
+  allocation `d31d9e0`, free-path refresh `b8a1a50`, disabled-trial proof
+  `057f6c2`; the focused quota/trial set passes 47/47 and the full gate passes.
+  Residual live reset acceptance is `FID-2026-1030-049-LIVE`. Archived.
+- [x] **F2 — Close FID-2026-1030-057.** Evidence: production readiness
+  `b9764fe`; `tests/production-config.test.mjs` and the full gate pass. Hosted
+  ingress, SIGTERM drain and deployment acceptance are
+  `FID-2026-1030-057-LIVE`; deployment remains 062/067. Archived.
+- [x] **F3 — Close FID-2026-1030-061.** Evidence: support queue `790aaab`,
+  policy v1 `69e050d`, v1.1 corrections `d2db4ae`; policy/support tests and the
+  full gate pass. Operator/legal launch gates are
+  `FID-2026-1030-061-LIVE`. Archived.
+- [x] **F4 — Ledger updates.** Three CHANGELOG entries, three tracking items,
+  master 043 links moved to archive paths, and the active queue reduced from 11
+  to 8. No code, schema, policy text or runtime data changed.
+
 ## Current Session — 2026-10-31 (complete active FIDs)
 
 Operator request: "we need to complete all open fids". Automation level 3,
@@ -19,14 +42,18 @@ spend and messaging boundaries remain binding; no missing evidence is invented.
   checks, trial suite, build, quality (319 files) and recovery drill pass. FID
   closed and archived; sender, controlled inbox and privacy recipient disclosure
   remain operator inputs as `FID-2026-1030-045-LIVE` in the tracking ledger.
-- [ ] **C3 — FID-2026-1030-049:** audit quota/reset/allocation coverage against
-  the committed 063/069 fixes and finish missing invariants.
+- [x] **C3 — FID-2026-1030-049:** audit quota/reset/allocation coverage against
+  the committed 063/069 fixes and finish missing invariants. Closed 2026-10-31
+  with `d31d9e0`, `b8a1a50` and `057f6c2`; live reset acceptance is
+  `FID-2026-1030-049-LIVE`.
 - [ ] **C4 — FID-2026-1030-059:** monitoring, protected incident controls and
   alert transport; destination/authorized delivery inputs requested.
 - [ ] **C5 — FID-2026-1030-060:** bounded load/fault gate and reconciliation.
 - [ ] **C6 — FID-2026-1030-056, FID-2026-1030-057 and FID-2026-1030-061:**
   verify committed implementations, complete remaining development checks and
   preserve each hosted/payment/policy observation in the tracking ledger.
+  057 and 061 closed 2026-10-31 with their hosted/policy observations tracked;
+  056 remains for its residual accessibility matrix and payment acceptance.
 - [ ] **C7 — FID-2026-1030-044 and FID-2026-1030-068:** commercial and USDC
   implementation; chain/token, xpub, RPC and screening inputs requested.
 - [ ] **C8 — FID-2026-1030-066:** reconcile the retained port plan with the

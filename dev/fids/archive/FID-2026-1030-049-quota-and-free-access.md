@@ -4,7 +4,7 @@
 **ID:** FID-2026-1030-049
 **Parent:** FID-2026-1030-043
 **Severity:** high
-**Status:** converged
+**Status:** closed
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044, FID-2026-1030-045, FID-2026-1030-048
@@ -132,5 +132,18 @@ Delivered as a test-only change (no production code, no harness change):
   including the six disabled-branch checks above), enabled trial suite, recovery
   drill.
 
-Status remains `converged`: real launch/reset acceptance and the C3 provider-quota
-refresh scope stay operator-gated (062 / offering decision).
+## Closure Record — 2026-10-31
+
+- **Closed Date:** 2026-10-31
+- **Implementation:** quota truth and daily allocation `d31d9e0` (FID-063),
+  free-path capacity refresh `b8a1a50` (FID-069), disabled-trial branch proof
+  `057f6c2`.
+- **Tests:** `tests/quota-refresh.test.mjs` covers parsing, freshness, reset and
+  lease fencing; `tests/trials.test.mjs` carries the disabled-trial probe added
+  in `057f6c2`; the four focused files pass 47/47.
+- **Verification Evidence:** `npm run verify` exit 0 — 364 unit tests, quality
+  PASS (323 files), production build, 678 HTTP checks, trial suite and recovery
+  drill PASS; lint and typecheck clean.
+- **Residual (not claimed):** a live upstream reset and refresh observation
+  remains `FID-2026-1030-049-LIVE` in `dev/tracking/internal-followups.json`.
+- **Archived:** `dev/fids/archive/FID-2026-1030-049-quota-and-free-access.md`

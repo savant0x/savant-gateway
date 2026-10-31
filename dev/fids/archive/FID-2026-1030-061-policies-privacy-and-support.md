@@ -4,7 +4,7 @@
 **ID:** FID-2026-1030-061
 **Parent:** FID-2026-1030-043
 **Severity:** high
-**Status:** fixed — policies v1.1 published (v1 superseded), acceptance recorded; launch gates remain
+**Status:** closed — policies v1.1 published, support and acceptance implemented; operator launch gates tracked
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044, FID-2026-1030-047
@@ -246,7 +246,23 @@ documents false.
 - Deletion remains a manual operator action; no self-service deletion writer.
 - No controlled live inquiry through an outside channel has been exercised.
 
-061 remains open for the launch gates above; the policy text is published.
+The policy text is published and the support path is implemented. The remaining
+items are operator/legal launch gates tracked as
+`FID-2026-1030-061-LIVE`; they no longer hold this implementation record.
+
+## Closure Record — 2026-10-31
+
+- **Closed Date:** 2026-10-31
+- **Implementation:** support queue `790aaab`, policy v1 publication `69e050d`,
+  v1.1 corrections `d2db4ae`.
+- **Verification Evidence:** `npm run verify` exit 0 — 364 unit tests, quality
+  PASS (323 files), production build, 678 HTTP checks, trial suite and recovery
+  drill PASS; lint and typecheck clean.
+- **Residual (not claimed):** entity registration and address, counsel review,
+  host retention facts, tax and Stripe business-profile gates, a real deletion
+  and a controlled outside-channel inquiry remain `FID-2026-1030-061-LIVE`.
+  They are launch gates, not claims made by the published text.
+- **Archived:** `dev/fids/archive/FID-2026-1030-061-policies-privacy-and-support.md`
 
 ## Lessons Learned
 

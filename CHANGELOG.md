@@ -3,6 +3,35 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-31 — Launch FID closures: quota, deployment readiness and policies
+
+- **FID-2026-1030-049 — high — quota freshness, reset and allocation coverage is
+  closed.** The implementation lives in FID-063 (`d31d9e0`: fresh upstream
+  reads, exact unknown/zero/unlimited/reset semantics, daily allocated credits)
+  and FID-069 (`b8a1a50`: refresh before admission when the observation
+  expired), with the disabled-trial branch pinned by `057f6c2`. The focused
+  quota/allocation/trial files pass 47/47. A live upstream reset and refresh
+  observation is not claimed; it remains `FID-2026-1030-049-LIVE`.
+  Verification: `npm run verify` exit 0 — 364 unit tests, quality PASS (323
+  files), production build, 678 HTTP checks, trial suite and recovery drill
+  PASS; lint and typecheck clean. Closed and archived.
+- **FID-2026-1030-057 — critical — production readiness is closed without
+  claiming a deployment.** `b9764fe` adds the startup configuration gate,
+  truthful liveness/readiness, secure headers and the deployment runbook, with
+  `tests/production-config.test.mjs` proving the failure codes and disposable
+  runtime. Hosting/domain/TLS/volume decisions, hosted ingress SSE and timeout
+  observation, a live SIGTERM drain receipt and deployment approval remain
+  `FID-2026-1030-057-LIVE`; deployment stays 062/067. Verification: the same
+  full gate, exit 0. Closed and archived.
+- **FID-2026-1030-061 — high — published policies and the support path are
+  closed; the operator's launch gates are not claimed.** The authenticated
+  support queue landed in `790aaab`, policy v1 in `69e050d`, and the tax/entity
+  corrections in v1.1 under `d2db4ae`. Entity registration and address, counsel
+  review, host retention facts, tax and Stripe business-profile gates, a real
+  deletion and a controlled outside-channel inquiry remain
+  `FID-2026-1030-061-LIVE`. Verification: the same full gate, exit 0. Closed
+  and archived.
+
 ## 2026-10-31 — NOWPayments customer crypto top-up lane
 
 - **FID-2026-1031-076 — high — customers can now buy prepaid credit with crypto

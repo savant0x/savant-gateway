@@ -99,17 +99,24 @@ was invented.
   tests/price-comparison.test.mjs tests/trials.test.mjs` — 32 tests, 0 failures.
   The wider `npm run verify` receipt is recorded in the session summary.
 
-**Operator rulings recorded 2026-10-31.** All six decisions now exist in
+**Operator rulings recorded 2026-10-31.** All eight rulings now exist in
 `docs/offering-evidence.md`: a daily shared free share with a held-back reserve
 and no lifetime trial; the configured paid catalog and prices approved as
 published; resale under the provider's resell programme with the synced cost
 column as the rate card; crypto-only payment with no refunds; $150 upstream
-funding; and savings claims approved as published.
+funding; savings claims approved as published; fiat-permitted crypto-first
+collection with card top-ups gated off (NOWPayments is the launch lane); and a
+2500-bps (2.5×) sell markup over the synced rate card, replacing the configured
+3000-bps default.
 
 Four implementation questions remain and are recorded in the ledger: whether the
-free share is spendable on paid-group models; the operating reserve and
-low-balance threshold in dollars; the Stripe-disable consequence of crypto-only;
-and the no-refund policy rewrite. The item stays active and `converged` until
+free share is spendable on paid-group models or only on the allow_free rows; the
+operating reserve and low-balance threshold in dollars; the no-refund policy
+rewrite as a new immutable version; and provider rate-card confirmation. The
+Stripe-disable consequence of crypto-only is resolved: ruling 7 opens
+NOWPayments-hosted crypto invoices with card top-ups gated off — implemented by
+FID-2026-1031-076 — and the direct-USDC lane (FID-2026-1030-068) is deferred
+behind it. The item stays active and `converged` until
 those are answered. No launch approval is claimed.
 
 ## Perfection Loop

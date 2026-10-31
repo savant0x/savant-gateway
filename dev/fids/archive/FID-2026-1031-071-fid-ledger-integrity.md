@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1031-071-fid-ledger-integrity.md`
 **ID:** FID-2026-1031-071
 **Severity:** medium
-**Status:** verified
+**Status:** closed
 **Created:** 2026-10-31 00:55
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — repair the existing records; no new tracker,
@@ -201,7 +201,8 @@ record against its implementation commit.
 
 ### Implementation Evidence
 
-- [x] **Commit SHA:** recorded in the closure commit that follows this receipt.
+- [x] **Commit SHA:** `d991967` — the repair, the four archived records, the
+      tracking ledger, the session summary and the updated index.
 - [x] **File:line ranges:** `SCOPE.md` (new session section and 068 registration),
       `CHANGELOG.md` (entry and the four archived records' closure notes),
       `docs/project-status.md` (current queue and Fly decision), and the four
@@ -234,14 +235,15 @@ record against its implementation commit.
 
 ## Resolution
 
-- **Closed Date:** pending the implementation commit.
+- **Closed Date:** 2026-10-31
+- **Commit:** `d991967`
 - **Fix Description:** repair the active FID ledger and closure records.
 - **Tests Added:** No application tests; verification is record scans plus the
   repository gates.
 - **Verification Evidence:** `npm run verify` exit 0 — 321 tests, 295 quality
   files, production build, 466 HTTP checks, trial suite PASS; no duplicate IDs
   and no SCOPE coverage gaps.
-- **Archived:** pending.
+- **Archived:** 2026-10-31
 
 ## Lessons Learned
 

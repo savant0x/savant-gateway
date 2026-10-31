@@ -26,7 +26,7 @@ distinguish verified behavior from unverified claims.
   application code, schema, policy text or runtime data changed. Verification:
   `npm run verify` exit 0 — 321 tests, quality PASS (295 files), production
   build, 466 HTTP checks and the trial suite PASS; the duplicate-ID and SCOPE
-  coverage scans return no gaps. The receipt is in FID-071.
+  coverage scans return no gaps. Closed against `d991967`; archived 2026-10-31.
 
 ## 2026-10-31 — Test doubles must answer what they advertise
 

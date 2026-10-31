@@ -2,7 +2,7 @@
 
 **Session:** 2026-10-31 FID ledger repair
 **Contract:** FID-2026-1031-071
-**Status:** implemented, verified, closing
+**Status:** implemented, verified, closed against `d991967`
 
 ## What the operator asked for
 
@@ -73,10 +73,10 @@ Record scans:
 
 ## Active queue after the repair
 
-Fourteen records before this FID closes, fifteen including it:
+Fourteen records after this FID closes:
 
 ```text
-043 044 045 046 049 056 057 058 059 060 061 062 066 068 [+071]
+043 044 045 046 049 056 057 058 059 060 061 062 066 068
 ```
 
 The real implementation queue is 043–046, 049, 058–060 and 062; 044 and 062 are

@@ -34,9 +34,9 @@ is changed. The repair contract is FID-2026-1031-071.
   remaining observations, and refresh `docs/project-status.md` to the current
   queue and the Fly hosting decision. Evidence: the 068 section below, the
   seven-item JSON ledger, and the updated status index.
-- [ ] **L5 — Verification and closure.** `npm run verify` exit 0; duplicate-ID
+- [x] **L5 — Verification and closure.** `npm run verify` exit 0; duplicate-ID
   and SCOPE-coverage checks return no gaps; CHANGELOG updated; FID-071 closed
-  and archived with its implementation commit.
+  and archived with implementation `d991967`.
 
 ## Current Session — 2026-10-30 (support queue: 061)
 

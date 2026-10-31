@@ -4,7 +4,7 @@ As of 2026-10-30. This is the current index; dated session receipts describe the
 tree they tested, not automatically the current working tree.
 
 Latest repair: [FID-2026-1031-071](../dev/fids/archive/FID-2026-1031-071-fid-ledger-integrity.md),
-closed against the commit recorded in that record, corrects the active ledger:
+closed against `d991967`, corrects the active ledger:
 active 063/064/065 are now 072/073/074, six non-canonical statuses are
 normalized, 067 and the three renumbered records are archived, 068 is
 registered, and the tracking ledger exists. No application code changed. The
@@ -77,12 +77,11 @@ money path or schema is implemented.
 
 Launch planning session baseline: `b0b65ac`. Master 043 and nineteen children
 044–062 cover A–Z requirements and passed individual document Perfection Loops.
-As of 2026-10-31 the active queue is fourteen substantive records plus the repair
-record 071: 043–046, 049, 056–062, 066 and 068. FID-047, 048, 050–055, 063
-(provider truth), 064 (CI race), 067, 069, 070, 072, 073 and 074 are archived
-closed; 071 closes with this pass. 056/057/061 are `fixed` with residual gates;
-066 is a dormant converged decision record; 068 is converged with its
-implementation steps blocked on operator inputs. Authoring/audit is complete;
+As of 2026-10-31 the active queue is fourteen records: 043–046, 049, 056–062, 066
+and 068. FID-047, 048, 050–055, 063 (provider truth), 064 (CI race), 067, 069,
+070, 071, 072, 073 and 074 are archived closed. 056/057/061 are `fixed` with
+residual gates; 066 is a dormant converged decision record; 068 is converged with
+its implementation steps blocked on operator inputs. Authoring/audit is complete;
 implementation and live acceptance are not. The
 [audit receipt](../dev/audits/2026-10-30-launch-fid-perfection-loop.md) records
 source/dependency/test checks, measured revisions, two stable passes and hashes.

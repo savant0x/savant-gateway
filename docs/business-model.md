@@ -82,8 +82,8 @@ the numbers below matter before any traffic exists.
 ## The margin rule
 
 Cost is synced from the provider; the sell rate is cost × (1 + markup), with the
-markup held in `pricing.markup_bps`. At the default 30%, gross margin is
-`0.30 / 1.30 = 23.1%` of revenue. That is the budget out of which the free tier,
+markup held in `pricing.markup_bps`. At the default 25%, gross margin is
+`0.25 / 1.25 = 20%` of revenue. That is the budget out of which the free tier,
 failed requests, refunds, and payment fees all have to be paid. A deeper public
 discount than the markup allows is a loss on every paid request, not a
 marketing cost that averages out.
@@ -92,7 +92,7 @@ marketing cost that averages out.
 
 <!-- generated:start -->
 
-_Generated 2026-10-29 23:02 UTC from `data/gateway.db`._
+_Generated 2026-10-31 17:32 UTC from `data/gateway.db`._
 
 ### Upstream providers
 
@@ -104,15 +104,15 @@ _Generated 2026-10-29 23:02 UTC from `data/gateway.db`._
 
 ### Catalog economics — Apinex
 
-**44** models: 11 free-pool, 23 priced, 10 subscription-only. Configured markup: **30.0%** on synced cost.
+**44** models: 11 free-pool, 23 priced, 10 subscription-only. Configured markup: **25.0%** on synced cost.
 
 | Group | Rows | Priced | Mean cost / 1M in | Mean sell / 1M in | Gross margin |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | free | 11 | 0 | — | — | — |
-| paid | 23 | 23 | $0.287 | $0.374 | 23.2% |
+| paid | 23 | 23 | $0.287 | $0.360 | 20.2% |
 | subscription | 10 | 0 | — | — | — |
 
-Paid input cost ranges from **$0.040** to **$2.00** per 1M, median **$0.150**. Blended gross margin on paid rows: **23.2%** (equal weight per model, not per token).
+Paid input cost ranges from **$0.040** to **$2.00** per 1M, median **$0.150**. Blended gross margin on paid rows: **20.2%** (equal weight per model, not per token).
 
 ### Daily free allowance — Apinex
 
@@ -126,7 +126,7 @@ Pool **20,000,000** weighted tokens/day; **90.0%** allocatable = **18,000,000**/
 
 Free-pool rows are synced with zero cost: the upstream grants them as a plan allowance. The table above is the exposure if that allowance is exhausted and the same traffic has to be served from a funded wallet.
 
-At a **23.2%** gross margin, carrying that exposure needs **$350** of paid revenue a month in the median case, **$4,661** in the worst case, and **$93.22** at the cheapest row.
+At a **20.2%** gross margin, carrying that exposure needs **$400** of paid revenue a month in the median case, **$5,336** in the worst case, and **$107** at the cheapest row.
 
 ### Sourcing pivot — Apixo published rate vs our current cost
 
@@ -144,7 +144,7 @@ Savings are against our **cost** from Apinex, so moving a row to Apixo widens ma
 
 | Provider | Requests | Cost | Charged | Margin |
 | --- | ---: | ---: | ---: | ---: |
-| `savant` | 3 | $0 | $0 | — |
+| `savant` | 5 | $0 | $0 | — |
 
 Free allowance divided evenly: at **1** activated account it is 18,000,000 weighted tokens/day, at **5** it is 3,600,000, at **20** it is 900,000.
 

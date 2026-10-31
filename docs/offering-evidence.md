@@ -27,7 +27,7 @@ model. It does not approve an offering, a price, a limit or a spend budget.
 | Catalog rows | 45 total: 11 free-pool, 24 paid (24 priced and costed), 10 subscription-only | Observed | local `models` table, read 2026-10-30 |
 | Dated economics report | 44 rows, 23 paid priced, generated 2026-10-29 23:02 UTC | Observed, date-stamped | `docs/business-model.md` generated section |
 | Report drift | The local catalog gained one priced paid row after that report was generated | Observed | 45 rows today versus 44 in the dated report |
-| Markup | 3000 bps (30%) | Configured and stored | `lib/pricing.ts`; local `settings` value `3000` |
+| Markup | 2500 bps (25%) | Configured and stored | `lib/pricing.ts`; local `settings` value `2500`; recompute applied 2026-10-31 under ruling 8 |
 | Daily free pool | 20,000,000 weighted tokens/day | Configured | `.env.example` |
 | Free allocation share | 9000 bps (90%) → 18,000,000 allocatable, 2,000,000 reserve | Configured | `.env.example`; `docs/business-model.md` |
 | Per-account daily cap | 100,000 weighted tokens/day | Configured | `.env.example` |
@@ -58,15 +58,17 @@ satisfy:
 required paid revenue = (F + E) / (m − f)
 ```
 
-Measured today: `m = 23.2%` on paid rows (30% markup yields 23.08% of revenue,
-rounded in the report), and `E` is $81.00/month at the median paid row, $21.60
+Measured today: `m = 20.2%` on paid rows (the 2500-bps markup recomputed
+2026-10-31 under ruling 8 yields 20% at the formula level; the report blends to
+20.2% including the manual row), and `E` is $81.00/month at the median paid row,
+$21.60
 at the cheapest and $1,080 at the priciest. With `F` and `f` unknown, the only
 honest statement is:
 
 | Fee assumption | Required revenue, median exposure | Required revenue, worst-row exposure |
 | --- | ---: | ---: |
-| No processor fee (`f = 0`) | $349.14 | $4,655.17 |
-| 2.9% (`f = 0.029`, research illustration only) | $399.01 | $5,320.20 |
+| No processor fee (`f = 0`) | $401.00 | $5,346.53 |
+| 2.9% (`f = 0.029`, research illustration only) | $468.21 | $6,242.77 |
 
 Neither row is a plan. The 2.9% value is an unapproved research assumption shown
 only so the sensitivity is visible; a real fee schedule must replace it.
@@ -169,9 +171,10 @@ resell programme's own statements, not local assumptions.
   published rate exactly (`deepseek-v4-flash` 0.05, `deepseek-v4-pro` 0.07,
   `gpt-6-astra` 0.50, `gpt-6.1-sol` 0.30, `gpt-6.1-terra` 0.17,
   `gemini-4-argon` 0.60, `claude-opus-5.5` 0.50, `claude-fable-5.1` 2.00), and
-  every automatic sell price is exactly `cost × 1.3` at the stored `3000` bps.
-  The synced cost column is therefore the rate card, and the published catalog
-  is arithmetic over it.
+  every automatic sell price is exactly `cost × 1.3` at the stored `3000` bps;
+  the catalog was recomputed to `cost × 1.25` at `2500` bps on 2026-10-31 under
+  ruling 8, so the synced cost column remains the rate card and the published
+  catalog is arithmetic over it.
 - **Free-share scope consequence.** Because the upstream marks paid rows
   `allowFree: true`, spending the daily share on paid models is permitted
   upstream and would be a local admission change only. The operator ruled

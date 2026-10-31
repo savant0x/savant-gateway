@@ -72,7 +72,7 @@ function microFromUsd(value) {
 }
 
 const settings = settingsMap();
-const markupBps = settingNumber(settings, "pricing.markup_bps", 3000);
+const markupBps = settingNumber(settings, "pricing.markup_bps", 2500);
 const dailyTokens = settingNumber(
   settings,
   "free_pool.daily_tokens",

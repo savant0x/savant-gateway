@@ -31,13 +31,15 @@ test("default markup prices cost above zero and leaves free rows at zero", () =>
   assert.equal(defaultSellMicros(0, 3000), 0);
   assert.equal(defaultSellMicros(1000, 0), 1000);
   assert.equal(defaultSellMicros(1000, 3000), 1300);
+  assert.equal(defaultSellMicros(1000, 2500), 1250);
   assert.equal(defaultSellMicros(333, 3000), 433);
+  assert.equal(defaultSellMicros(333, 2500), 417);
   assert.equal(defaultSellMicros(1000, 100_000), 11_000);
   assert.equal(defaultSellMicros(-100, 3000), 0);
 });
 
 test("markup clamping is bounded and falls back to the default", () => {
-  assert.equal(clampMarkupBps(DEFAULT_MARKUP_BPS), 3000);
+  assert.equal(clampMarkupBps(DEFAULT_MARKUP_BPS), 2500);
   assert.equal(clampMarkupBps(-1), 0);
   assert.equal(clampMarkupBps(200_000), 100_000);
   assert.equal(clampMarkupBps(Number.NaN), DEFAULT_MARKUP_BPS);

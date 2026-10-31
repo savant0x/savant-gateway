@@ -1,7 +1,7 @@
 export const TOKENS_PER_PRICE_UNIT = 1_000_000;
 
-/** Default markup over upstream cost, in basis points (3000 = +30%). */
-export const DEFAULT_MARKUP_BPS = 3000;
+/** Default markup over upstream cost, in basis points (2500 = +25%). */
+export const DEFAULT_MARKUP_BPS = 2500;
 export const MAX_MARKUP_BPS = 100_000;
 
 /** Paid models without an explicit max_tokens get this output budget. */

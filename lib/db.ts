@@ -201,11 +201,11 @@ function v2Schema(database: DatabaseHandle) {
       `UPDATE models
        SET sell_input_micros = CASE
              WHEN allow_free = 1 OR input_price_micros <= 0 THEN 0
-             ELSE MAX(1, CAST(ROUND(input_price_micros * 1.3) AS INTEGER))
+             ELSE MAX(1, CAST(ROUND(input_price_micros * 1.25) AS INTEGER))
            END,
            sell_output_micros = CASE
              WHEN allow_free = 1 OR output_price_micros <= 0 THEN 0
-             ELSE MAX(1, CAST(ROUND(output_price_micros * 1.3) AS INTEGER))
+             ELSE MAX(1, CAST(ROUND(output_price_micros * 1.25) AS INTEGER))
            END
        WHERE price_source = 'auto'
          AND sell_input_micros = 0
@@ -216,7 +216,7 @@ function v2Schema(database: DatabaseHandle) {
   database
     .prepare(
       `INSERT OR IGNORE INTO settings (key, value, updated_at)
-       VALUES ('pricing.markup_bps', '3000', ?)`,
+       VALUES ('pricing.markup_bps', '2500', ?)`,
     )
     .run(new Date().toISOString());
 }

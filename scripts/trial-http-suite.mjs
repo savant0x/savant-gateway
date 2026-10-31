@@ -28,11 +28,27 @@ const mock = createServer((req, res) => {
     return;
   }
 
+  // The fixture provider is seeded with balance support, so the gateway reads
+  // this endpoint when its observation expires. Answering it here is what keeps
+  // the double honest about the capability it advertises.
+  if (req.url === "/balance") {
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ balance_usd: 0, rpm: 9000, rpm_plan: "free" }));
+    return;
+  }
+
   let body = "";
 
   req.on("data", (chunk) => { body += chunk; });
   req.on("end", () => {
-    const parsed = JSON.parse(body);
+    let parsed;
+
+    // A malformed body is a named 400, not a crash that hides the real failure.
+    try { parsed = JSON.parse(body); } catch {
+      res.writeHead(400, { "content-type": "application/json" });
+      res.end(JSON.stringify({ error: "mock expects a JSON completion body" }));
+      return;
+    }
 
     calls++;
     serving = parsed.model;

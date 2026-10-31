@@ -154,6 +154,25 @@ repository does not choose them. An example on a host with cron:
 On Fly, use a scheduled machine or an external scheduler; the app container does
 not run cron.
 
+## Capacity and failure acceptance
+
+`npm run test:load` boots the production artifact against a disposable SQLite
+file and a local provider fixture, then measures ramp, steady, burst, mixed
+billing, streams, cancellations, key churn, competing reservations, provider
+faults, quota reset, database contention, alert failure, drain, process crash
+and a durable storage-write failure. It reconciles dispatch, settlement, usage,
+ledger and holds independently and writes the full receipt to
+`dev/audits/2026-10-31-load-acceptance.json` when given `--json`.
+
+The 2026-10-31 run measured 229.84 sustained admitted rps at p95 137.53 ms,
+186.7 MB peak RSS and a 5.1 MB database, with zero unresolved admissions and
+zero ledger/held differences. The candidate safe cap is 160.89 rps at 30%
+headroom. **That is a local fixture measurement, not approved production
+capacity.** `npm run test:load:accept` exits 2 until the operator dates an
+approval in `config/load-envelope.json`. Read
+[load-acceptance.md](load-acceptance.md) for the full table, no-go conditions and
+the real-upstream/Fly-volume gaps.
+
 ## Health and readiness
 
 - `GET /api/health` — liveness only: the process can answer. It makes no claim

@@ -137,6 +137,15 @@
       "detail": "The monitor, HMAC-signed HTTPS transport, retry/dedup state and pause/drain/provider controls are verified against a local webhook receiver. No OPERATIONS_ALERT_WEBHOOK_URL, signing secret, cron/Fly scheduler or external destination was configured, and no authorized alert has been received or responded to. The local suite is not proof of delivery to the operator.",
       "evidence": "dev/fids/archive/FID-2026-1030-059-observability-and-incident-response.md; docs/operations-runbook.md; tests/operations.test.mjs; scripts/http-suite/operations-checks.mjs",
       "next_action": "After the operator selects a destination and supplies the URL (and optional 16+ character secret) outside the tree, install one scheduler run, trigger a controlled incident through the authenticated tick, record the received payload and HMAC verification, acknowledge/resolve it, and record the response action. Repeat against the hosted deployment after 062/067."
+    },
+    {
+      "id": "FID-2026-1030-060-LIVE",
+      "fid": "FID-2026-1030-060",
+      "state": "blocked",
+      "title": "Operator-approved production envelope, real provider and Fly-volume acceptance",
+      "detail": "The 2026-10-31 run measured the production artifact on a disposable SQLite file and local provider fixture: 123/123 checks, 229.84 sustained rps, p95 137.53 ms, 186.7 MB peak RSS, 310 committed settlements and zero unresolved/ledger differences. The envelope in config/load-envelope.json has no dated approval; no real provider was called, no spend occurred, ENOSPC and 120 s/300 s deadline waits were not reproduced, and no hosted proxy or Fly volume was used. 160.89 rps is candidate-only.",
+      "evidence": "dev/audits/2026-10-31-load-acceptance.json; docs/load-acceptance.md; config/load-envelope.json; dev/fids/archive/FID-2026-1030-060-load-and-resilience-acceptance.md",
+      "next_action": "After 062/067 approval, date the operator traffic/spend envelope, run `npm run test:load:accept` on the production Fly machine against a funded authorized provider budget, then repeat with the hosted proxy and production-sized dataset; record ENOSPC/deadline behavior and publish only the approved cap."
     }
   ]
 }

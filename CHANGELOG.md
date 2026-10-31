@@ -3,6 +3,37 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-31 — Measured capacity and failure acceptance
+
+- **FID-2026-1030-060 — high — the gateway now has a bounded, reproducible load
+  and fault receipt instead of a capacity assumption.** `scripts/load-acceptance.mjs`
+  boots the production artifact on a disposable SQLite file and a local provider
+  fixture, then measures ramp, steady, burst, mixed billing, long streams,
+  cancellations, key churn, competing reservations, provider 429/5xx/disconnect/
+  malformed/truncated responses, quota reset, database contention, alert failure,
+  drain, process crash and a durable storage-write rejection. Dispatch is counted
+  at the fixture upstream; settlement, usage, ledger and held credit are read
+  independently from SQLite, so the run cannot pass by refusing work or leaving
+  admitted calls unresolved. The fault matrix found and repaired a real SSE
+  defect: a clean upstream close without `[DONE]` was settled as success, charged
+  as an estimate and acknowledged as complete; it now settles as error, releases
+  admission and never forwards `[DONE]`, with four HTTP regression checks.
+  `tests/capacity-invariants.test.mjs` (5 tests) covers interleaved admission,
+  refusal without RPM spend, alias sharing, idempotent release and unknown
+  ceilings. The measured run passed 123/123 checks: 229.84 sustained admitted
+  rps at p95 137.53 ms, 186.7 MB peak RSS, 5.07 MB database, 310 committed
+  settlements, 310 usage rows, 5 explicit quarantines (4 crash + 1 storage
+  failure), zero unresolved admissions and zero ledger/held differences. The
+  candidate safe cap is 160.89 rps at 30% headroom; the receipt and docs label
+  it candidate-only. Verification: `npm run verify` exit 0 — 381 unit tests,
+  quality PASS (340 files), production build, 722 HTTP checks, trial suite and
+  recovery drill PASS (7 concurrent writes, 1929 ms); `npm run test:load -- --json
+  dev/audits/2026-10-31-load-acceptance.json` exit 0. ENOSPC and actual 120 s/
+  300 s deadline waits were not reproduced; a storage-write rejection and
+  provider disconnect cover those code paths. Operator approval, a funded real
+  provider budget, the Fly volume and hosted proxy acceptance remain
+  `FID-2026-1030-060-LIVE`. Closed against `8c10a07`; archived.
+
 ## 2026-10-31 — Durable operations incidents, alerts and admission controls
 
 - **FID-2026-1030-059 — high — monitoring now has durable incident state, a real

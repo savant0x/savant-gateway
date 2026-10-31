@@ -92,11 +92,15 @@ npm run quality      # 400-line file ceiling
 npm run build        # next build
 npm run test:http    # HTTP suites against a disposable database
 npm run test:recovery # backup/restore drill against disposable databases
+npm run test:load    # bounded load/fault measurement (explicit release gate)
+npm run test:load:accept # same run, refuses without operator approval
 npm run verify       # check + config + test + quality + build + HTTP + recovery
 ```
 
 The pre-push hook runs the attribution guard, lint, typecheck, config check,
 tests, quality, build, both HTTP suites and the recovery drill. It fails closed.
+`test:load` is an additional release measurement with a disposable fixture and
+is intentionally not part of `verify` or the pre-push hook.
 
 ## Quality Bar
 

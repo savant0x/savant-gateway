@@ -2,6 +2,46 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-31 (load and resilience: 060)
+
+Operator request: implement FID-2026-1030-060 load and resilience acceptance
+with real measurements. Automation level 3, strict, single agent. No deployment,
+real provider call, spend, operator approval or hosted receipt was created.
+
+- [x] **L1 — Specify the candidate envelope.** Added
+  `config/load-envelope.json` with served RPM/concurrency, fixture delay, body/
+  stream bounds, 387 offered calls under a 500 ceiling, latency/error targets,
+  512 MB RSS and 256 MB database budgets, reconciliation limits and 30%
+  headroom. Operator approval is absent, so it stays `candidate` and
+  `test:load:accept` refuses.
+- [x] **L2 — Build the bounded runner.** Added `scripts/load-acceptance.mjs`
+  and `scripts/load/*`: ramp/steady/burst, mixed billing, long streams,
+  cancellation, key churn, competing reservations, provider faults, quota reset,
+  database contention, alert failure, drain, process crash and storage-write
+  rejection. Dispatch comes from the fixture upstream; settlement/usage/ledger/
+  held credit are reconciled from SQLite.
+- [x] **L3 — Repair findings.** The fault matrix found a truncated SSE close
+  without `[DONE]` being settled as success; `lib/gateway-stream.ts` now settles
+  it as error and withholds `[DONE]`, with four HTTP checks. The reservation
+  probe was resized after its first run measured the documented
+  actual-over-estimate overrun rather than competing reservations. The Windows
+  RSS parser was corrected from the PID column to the memory column.
+- [x] **L4 — Measure and record.** `npm run test:load` exit 0 with 123/123
+  checks: 229.84 sustained admitted rps at p95 137.53 ms, 186.7 MB peak RSS,
+  5.07 MB database, 310 committed settlements, 310 usage rows, 5 explicit
+  quarantines, zero unresolved admissions and zero ledger/held differences. The
+  full receipt is `dev/audits/2026-10-31-load-acceptance.json`; the candidate
+  safe cap is 160.89 rps at 30% headroom.
+- [x] **L5 — Close the implementation record.** `npm run verify` exit 0: 381
+  unit tests, quality PASS (340 files), production build, 722 HTTP checks, trial
+  suite and recovery drill PASS (7 concurrent writes, 1929 ms). FID-060 closed
+  and archived against `8c10a07`; CHANGELOG, docs and tracking updated.
+- [ ] **L6 — Live acceptance.** `FID-2026-1030-060-LIVE` remains blocked on a
+  dated operator approval, a funded real provider budget and the production Fly
+  volume/hosted proxy. ENOSPC and actual 120 s/300 s deadline waits were not
+  reproduced; the receipt names the substitutes, so no production capacity is
+  claimed.
+
 ## Current Session — 2026-10-31 (operations monitoring: 059)
 
 Operator request: complete FID-2026-1030-056's residual accessibility/responsive
@@ -88,7 +128,10 @@ spend and messaging boundaries remain binding; no missing evidence is invented.
   alert transport; destination/authorized delivery inputs requested. Implemented
   and closed 2026-10-31 (`617935b`); the operator destination, scheduler and
   received-alert receipt remain `FID-2026-1030-059-LIVE`.
-- [ ] **C5 — FID-2026-1030-060:** bounded load/fault gate and reconciliation.
+- [x] **C5 — FID-2026-1030-060:** bounded load/fault gate and reconciliation.
+  Implemented and closed 2026-10-31 (`8c10a07`); 123/123 measured checks, full
+  gate exit 0, candidate cap documented, live approval/hosted receipt tracked as
+  `FID-2026-1030-060-LIVE`.
 - [x] **C6 — FID-2026-1030-056, FID-2026-1030-057 and FID-2026-1030-061:**
   verify committed implementations, complete remaining development checks and
   preserve each hosted/payment/policy observation in the tracking ledger.

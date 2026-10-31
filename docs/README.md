@@ -18,6 +18,7 @@ against, not automatically today's behavior.
 | Understand the hosting decision | [hosting-decision.md](hosting-decision.md) |
 | Handle a support or deletion request | [support-runbook.md](support-runbook.md) |
 | Configure alerts, pause admission and respond to incidents | [operations-runbook.md](operations-runbook.md) |
+| Measure capacity and rehearse load/failure recovery | [load-acceptance.md](load-acceptance.md) |
 | Configure verification and password recovery | [account-email.md](account-email.md) |
 | Change or publish a policy | [policies/README.md](policies/README.md) |
 
@@ -62,6 +63,9 @@ same answer data the page renders.
 - [support-runbook.md](support-runbook.md) — support queue and manual deletion.
 - [operations-runbook.md](operations-runbook.md) — scheduled monitor, alert
   webhook and signature, incident dedup/retry, and pause/drain/provider controls.
+- [load-acceptance.md](load-acceptance.md) — bounded load/fault gate, candidate
+  envelope, measured throughput/latency/resources, reconciliation and the
+  operator-approval boundary.
 - [policies/README.md](policies/README.md) — policy versions `v1.1` (current) and
   `v1` (superseded, still readable).
 - [echo-protocol.md](echo-protocol.md) — short orientation to the governing

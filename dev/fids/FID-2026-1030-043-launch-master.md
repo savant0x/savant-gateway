@@ -87,7 +87,7 @@ rather than disappearing work.
 | [057](archive/FID-2026-1030-057-production-deployment-readiness.md) | Secure persistent production runtime — closed `b9764fe`; hosted ingress/SIGTERM tracked | 044,047,048 |
 | [058](archive/FID-2026-1030-058-database-backup-and-restore.md) | Migration, backup and restore — closed `2dc005e`; live RPO/RTO and real-volume restore tracked | 051,057 |
 | [059](archive/FID-2026-1030-059-observability-and-incident-response.md) | Monitoring, durable incidents and response — closed `617935b`; operator destination/scheduler/received-alert tracked | 048,049,051,052,053,057,058 |
-| [060](FID-2026-1030-060-load-and-resilience-acceptance.md) | Capacity and failure acceptance | 046,048,049,050,051,055,057,058,059 |
+| [060](archive/FID-2026-1030-060-load-and-resilience-acceptance.md) | Capacity and failure acceptance — closed `8c10a07`; 123/123 local measurement, operator/hosted/ENOSPC tracked | 046,048,049,050,051,055,057,058,059 |
 | [061](archive/FID-2026-1030-061-policies-privacy-and-support.md) | Policies, privacy and functioning support — closed `69e050d`; operator launch gates tracked | 044,047 |
 | [062](FID-2026-1030-062-launch-acceptance-and-rollout.md) | Real acceptance, approval and rollout | every child 044–061 |
 
@@ -165,6 +165,9 @@ Converged launch plan; no child implementation or release is completed. Master c
 requires every child outcome and the final launch decision/evidence. Children
 with archived implementation must retain links to separate real acceptance
 receipts where observation is still required. A closed code FID is not launch approval.
+FID-060's local load/fault implementation is closed against `8c10a07`; the
+operator-approved envelope, real provider budget, Fly volume/ENOSPC and hosted
+proxy receipt remain `FID-2026-1030-060-LIVE`.
 
 ## Lessons Learned
 

@@ -1689,6 +1689,59 @@ remains the only data layer, and the Vercel deployment still fails closed on
   against databases on its network volumes. Nothing was deployed and no account
   was created: provisioning the machine needs the operator's own credentials.
 
+## Current Session — 2026-10-30 (deployable artifact; deployment deferred: 067)
+
+Operator request: deploy the site and confirm it is fully functional, then wire
+Stripe in test mode at the operator's pace — "we're simply taking baby steps and
+checking every step considering this is a real money business." Then, after the
+host refused provisioning: "we'll complete everything deployment-related at a
+later date once we're ready to fully launch. We can continue regular dev without
+launching the site."
+
+This pass packaged the deployment and did **not** publish anything. Deploying and
+launching are separate events, and the recorded decision is to build without a
+public launch until the operator calls it.
+
+- [x] **E1 — Packaging (FID-067).** Automation level 2. `Dockerfile`,
+  `.dockerignore`, `fly.toml`, `scripts/docker-entrypoint.sh` and
+  `scripts/db-backup.mjs`, with the Fly procedure added to
+  `docs/deployment-runbook.md` and a Deploying section in `README.md`. Four
+  decisions are load-bearing rather than stylistic: `/api/ready` is the machine
+  health check so a deploy with a wrong origin, database path or admin
+  credentials never enters rotation; `next` is the entry process rather than
+  `npm`, so SIGTERM reaches the listener and the documented drain happens; the
+  entrypoint chowns the root-owned volume mount and drops to `node` instead of
+  serving as root; and `npm ci --ignore-scripts` plus an explicit
+  `npm rebuild better-sqlite3` is required because `package.json`'s `prepare`
+  script cannot run without a git repository.
+- [x] **E2 — Application-contract verification.** A real production `next start`
+  on a file database returned `ready`/`durable`; an independent connection
+  reported `journal_mode: wal`; an account written before a stop authenticated
+  after a restart by a new process; the backup produced 35 tables with
+  `integrity ok` and the account readable from the copy; `config:check` exited 1
+  with `admin_unconfigured`, `origin_loopback`, `db_relative` and `multi_worker`
+  on each broken environment. Two defects were caught by that verification: a
+  first restart run that reported success while the new process had actually
+  died with `EADDRINUSE`, and orphaned `-wal`/`-shm` files left behind by the
+  backup pruner.
+- [~] **E3 — Container build.** Not verified. Docker's Linux engine cannot start
+  on the development machine (`WSL2 is unable to start since virtualization is
+  not enabled`), so no image was built locally; `fly config validate` does report
+  `✓ Configuration is valid`. The first `fly deploy` will therefore also be the
+  image's first build.
+- [~] **E4 — Provisioning blocked, then deferred.** The Fly CLI is installed and
+  authenticated as the operator's account, but `fly apps create savant-gateway`
+  returns `trial has ended, please add a credit card`. No app, volume, secret or
+  machine exists, no spend was incurred, and no URL was allocated. The operator
+  then deferred all deployment work until launch. FID-067 step 7 is recorded as
+  `deferred`; resuming is the five documented commands.
+- [ ] **E5 — Stripe in test mode.** Not started. `.env.local` holds
+  `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET` and `PROVIDER_KEY` and no `STRIPE_*`
+  variable at all, and the Stripe CLI is not installed, so B1 (real test-mode
+  Checkout and paid completion) and B4 (subscription invoice acceptance) remain
+  open for the next pass. The keys already stored in Vercel are not usable for
+  this: they are not in the local environment and cannot be read back.
+
 ## Current Session — 2026-10-30 (free-path capacity refresh: 069)
 
 Operator request: fix the free-path outage — refresh provider capacity before

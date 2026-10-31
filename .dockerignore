@@ -1,0 +1,21 @@
+# Keep secrets and local state out of the build context.
+.git
+.github
+.githooks
+.next
+node_modules
+data
+coverage
+*.tsbuildinfo
+npm-debug.log*
+*.pdf
+
+# Never bake credentials into an image layer. .env.example is documentation.
+.env
+.env.*
+!.env.example
+
+# Not needed by `next build`, and large.
+dev
+docs
+tests

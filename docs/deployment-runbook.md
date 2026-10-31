@@ -6,6 +6,14 @@ deployment, hosting provisioning, DNS change, secret injection or release has
 been executed.** Deployment requires explicit operator approval and the operator
 inputs listed in "Missing operator inputs" below.
 
+Since FID-2026-1030-067 the host is chosen — one persistent process on a local
+volume, per [hosting-decision.md](hosting-decision.md) — and the packaging
+exists (`Dockerfile`, `.dockerignore`, `fly.toml`, `scripts/docker-entrypoint.sh`).
+What has *not* happened is a build of that image: Docker's Linux engine cannot
+start on the development machine, so the image is unbuilt and the first
+`fly deploy` is also its first build. The application-side contract below is
+verified; the container is not.
+
 ## Runtime contract
 
 - Single application process. `WEB_CONCURRENCY`, `PM2_INSTANCES` must be unset
@@ -61,6 +69,64 @@ npm start              # instrumentation gate re-validates and refuses bad confi
 The startup gate runs once per process before serving and exits with issue
 codes (`origin_missing`, `db_ephemeral`, `multi_worker`, …). The full list is in
 `../lib/production-config.ts`.
+
+## Fly.io procedure
+
+Chosen because its volumes are local NVMe rather than network storage: SQLite
+runs in WAL mode here, and WAL requires every reader and writer on the same host
+and the same filesystem. Railway, Render, Hetzner's network volumes and Vercel do
+not meet that; see [hosting-decision.md](hosting-decision.md).
+
+One-time provisioning (operator, spends money):
+
+```bash
+fly auth login
+fly apps create savant-gateway        # or change `app` in fly.toml first
+fly volumes create gateway_data --region ord --size 1
+fly secrets set ADMIN_PASSWORD=... ADMIN_SESSION_SECRET=...
+# once a provider is configured: fly secrets set PROVIDER_KEY=...
+```
+
+Do not run `fly launch`: it regenerates the configuration this file describes.
+Create the app and the volume explicitly.
+
+Before the first deploy, set `NEXT_PUBLIC_SITE_URL` in `fly.toml` to the origin
+that will actually serve — `https://<app>.fly.dev` until a custom domain exists.
+A leftover localhost value fails the readiness check rather than going live with
+broken redirects and cookies.
+
+```bash
+fly deploy            # builds the image on Fly's remote builder
+fly status
+fly logs
+curl -fsS https://<app>.fly.dev/api/ready
+```
+
+The local machine needs no Docker for this. What `fly.toml` pins, and why:
+
+| Setting | Reason |
+| --- | --- |
+| `health check: /api/ready` | Readiness, not liveness. 503 unless the origin is https, `DB_PATH` is durable, admin credentials exist and the volume accepts a write, so a bad deploy never enters rotation. |
+| `auto_stop_machines = "off"` | The gateway settles billing on stream close; a suspended machine cannot. |
+| one machine, no process manager | A second writer against this volume corrupts the ledger, and the startup gate rejects a multi-process topology. |
+| `kill_timeout = "120s"` | Drain long streams before the process is replaced. |
+| entrypoint drops to `node` | The volume mount arrives root-owned; the server should not run as root to fix that. |
+
+A deploy replaces the machine because the volume attaches to exactly one at a
+time. Expect a few seconds of downtime per release; that is the cost of the
+single-writer contract, not a misconfiguration.
+
+### Backup on the volume
+
+```bash
+fly ssh console -C "node /app/scripts/db-backup.mjs"
+fly sftp get /data/backups/<name>.db ./
+```
+
+The script uses SQLite's online backup API, verifies `integrity_check` and a table
+count, prunes to `BACKUP_RETENTION` (default 7) and removes the WAL siblings that
+verification creates. Copies land on the **same volume as the database**: pulling
+them off is a separate step, and off-site retention is not automated yet.
 
 ## Health and readiness
 
@@ -138,9 +204,10 @@ before going live and record it in
 
 The following are open inputs from the FIDs, not implementation gaps:
 
-1. **Hosting, domain, TLS and process count** (057): no provider chosen, no
-   domain reserved, no persistent volume attached. The artifact supports
-   exactly one process on one volume.
+1. **Hosting, domain, TLS and process count** (057): provider chosen (Fly), but
+   no app, volume, secret or domain has been provisioned, so nothing is attached
+   and nothing is served. The artifact supports exactly one process on one
+   volume.
 2. **Offering and economics** (044, open): free-versus-trial offering, approved
    model/price set, resale permission and confirmed rate card, fee/refund/expiry
    policy, funded upstream wallet or reserve, permission to publish savings
@@ -167,3 +234,26 @@ The following are open inputs from the FIDs, not implementation gaps:
   `no-store` on both endpoints, baseline security headers on a page response,
   and readiness failing closed (503) after storage loses a required table.
 - Startup gate exercised as part of every `next start` in the suites.
+
+### FID-2026-1030-067 additions
+
+Run against a real production `next start` with the environment shape `fly.toml`
+sets, on a file database instead of the suites' disposable one:
+
+- `/api/ready` → `200 {"status":"ready","configuration":"ok","storage":"ok","mode":"durable"}`.
+- A signup wrote a customer through the app; an independent process then read
+  the file and reported `journal_mode: wal` with the row present, so the WAL
+  siblings are a real requirement of this tree rather than an assumption.
+- The server was stopped, confirmed to refuse connections, restarted as a new
+  process, and that new process authenticated the account created by the previous
+  one — persistence across a process boundary, not within it.
+- `scripts/db-backup.mjs` produced a copy of the live database reporting 35
+  tables, `integrity ok`, from which the account was readable; retention pruned
+  the oldest and left no orphaned `-wal`/`-shm` files.
+- `npm run config:check` passed on the correct environment and exited 1 with
+  `admin_unconfigured`, `origin_loopback`/`origin_insecure`, `db_relative` and
+  `multi_worker` on each broken one, printing codes and never values.
+
+Not verified: the container image itself. `docker build` could not run because
+Docker's Linux engine cannot start without virtualization enabled on this
+machine.

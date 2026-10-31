@@ -66,6 +66,17 @@ npm run dev
 [`.env.example`](.env.example) documents the free-pool allocation, RPM and
 concurrency ceilings, provider floor, and staleness windows.
 
+### Deploying
+
+This gateway is one process writing one SQLite file, and it is meant to be
+hosted that way: WAL mode requires every reader and writer on the same host and
+filesystem. `Dockerfile`, `.dockerignore` and `fly.toml` package that as a single
+machine with a persistent volume, a readiness check on `/api/ready`, and no
+autoscaling. [docs/deployment-runbook.md](docs/deployment-runbook.md) is the
+procedure and the environment inventory; [docs/hosting-decision.md](docs/hosting-decision.md)
+records why a serverless or multi-replica host is rejected. Nothing here is
+deployed yet, and the image has not been built.
+
 Open `http://localhost:3000`, then sync a provider so the catalog is populated:
 sign in at `/admin/login`, go to **Admin → Providers**, and press **Sync**. Until
 a sync completes, `/models` is empty and `/v1/models` returns nothing — an empty

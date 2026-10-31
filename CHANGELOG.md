@@ -31,6 +31,33 @@ distinguish verified behavior from unverified claims.
   `build`, `config:check` and the http suite all exit 0. Not exercised against
   the live provider account — the suite uses the mock.
 
+## 2026-10-30 — Deployable on one persistent host
+
+- **FID-2026-1030-067 — high — the gateway described how it must be hosted and
+  provided no way to do it.** `docs/deployment-runbook.md` already recorded the
+  contract and the previous FID declined a libSQL port to Vercel on the strength
+  of it, so the missing piece was packaging: `Dockerfile`, `.dockerignore`,
+  `fly.toml`, `scripts/docker-entrypoint.sh` and `scripts/db-backup.mjs`. The
+  configuration pins one machine on one volume with `auto_stop_machines = "off"`,
+  runs `next` as the entry process rather than `npm` so SIGTERM reaches the
+  listener and the documented drain happens, and uses `/api/ready` — not
+  liveness — as the health check, so a deploy whose origin, database path or
+  admin credentials are wrong never enters rotation. **Nothing was deployed and
+  the image was not built**: `docker build` cannot run here because Docker's
+  Linux engine needs virtualization enabled on this machine, so the first
+  `fly deploy` will also be the image's first build. Verified against a real
+  production `next start` on a file database instead: `/api/ready` returned
+  `ready`/`durable`, `journal_mode` read back as `wal` from an independent
+  connection, an account written before a stop authenticated after a restart by a
+  new process, and `npm run config:check` failed with `admin_unconfigured`,
+  `origin_loopback`, `db_relative` and `multi_worker` on each broken environment.
+  The backup path was exercised against the live database (35 tables,
+  `integrity ok`, account readable from the copy). **That run found a real defect
+  in the new script:** verifying a WAL copy creates `-wal`/`-shm` siblings, and
+  pruning removed only the `.db`, so backups accumulated orphans; pruning and
+  cleanup now remove the siblings too. Gates: `npm run lint`, `typecheck`,
+  `test` (321 passing), `quality` (295 files) and `build` all exit 0.
+
 ## 2026-10-30 — Operator banner replaces the placeholder
 
 - **Asset change — the operator's own banner is now the README hero.** The

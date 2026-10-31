@@ -4,7 +4,7 @@
 **ID:** FID-2026-1030-057
 **Parent:** FID-2026-1030-043
 **Severity:** critical
-**Status:** implemented (deployment pending 062 approval)
+**Status:** fixed — deployment pending 062 approval; packaging is FID-2026-1030-067 (closed)
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044, FID-2026-1030-047, FID-2026-1030-048

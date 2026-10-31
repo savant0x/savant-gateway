@@ -1,17 +1,19 @@
 # FID: Per-page social cards from page data
 
-**Filename:** `FID-2026-1030-064-per-page-social-cards.md`
-**ID:** FID-2026-1030-064
-**Parent:** FID-2026-1030-063
+**Filename:** `FID-2026-1031-073-per-page-social-cards.md`
+**ID:** FID-2026-1031-073
+**Renumbered:** 2026-10-31 — formerly `FID-2026-1030-064`; that number belongs to
+the archived `FID-2026-1030-064-ci-fresh-database-migration-race.md`.
+**Parent:** FID-2026-1031-072
 **Severity:** low
-**Status:** implemented — verified against a disposable production server
+**Status:** closed
 **Created:** 2026-10-30
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — two pages, one shared layout, no card builder framework.
 
 ## Summary
 
-FID-063 gave the site one social card, which every page inherited. The two pages
+FID-2026-1031-072 gave the site one social card, which every page inherited. The two pages
 most likely to be shared — the model catalog and the API reference — therefore
 advertised a generic strip instead of what the page actually contains. Add
 per-segment `opengraph-image` routes rendered by `next/og` from each page's own
@@ -22,7 +24,8 @@ urls.
 
 - OS: Windows (Git Bash), Node 22.18.0
 - Next.js 16.4.3 App Router, `next/og` (satori + resvg), `runtime = "nodejs"`
-- Commit/State: working tree on `main` after `6751513`, uncommitted
+- Commit/State: committed as `d72f6ef`; the receipt below was taken on the
+  working tree before that commit
 
 ## Detailed Description
 
@@ -63,7 +66,7 @@ it adds one query per crawler request and nothing per user request.
    so Twitter falls back to the page's `og:image` instead of the inherited site
    card. The card type is restated because a partial `twitter` object otherwise
    downgrades the card to the small summary variant — a mistake this change made
-   first and FID-2026-1030-065's gate then caught.
+   first and FID-2026-1031-074's gate then caught.
 
 ### Verification
 
@@ -95,8 +98,15 @@ head for both pages, and fetch both card routes.
 
 ## Resolution
 
-Implemented and verified. `/docs` stays static (its content is static); `/models`
-is per-request.
+- **Closed Date:** 2026-10-31
+- **Commit:** `d72f6ef` — per-page cards and the metadata coverage gate.
+- **Fix Description:** per-segment card routes, shared satori layout, corrected
+  root metadata.
+- **Tests Added:** No application tests; the served card routes and the gate's
+  live run are the receipt.
+- **Verification Evidence:** `npm run check`, `npm test` (312), `npm run build`,
+  and disposable production fetches of both card routes.
+- **Archived:** 2026-10-31
 
 ## Implementation Evidence
 

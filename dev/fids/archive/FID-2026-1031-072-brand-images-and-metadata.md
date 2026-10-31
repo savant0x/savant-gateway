@@ -1,10 +1,12 @@
 # FID: One brand-image directory and complete page metadata
 
-**Filename:** `FID-2026-1030-063-brand-images-and-metadata.md`
-**ID:** FID-2026-1030-063
+**Filename:** `FID-2026-1031-072-brand-images-and-metadata.md`
+**ID:** FID-2026-1031-072
+**Renumbered:** 2026-10-31 — formerly `FID-2026-1030-063`; that number belongs to
+the archived `FID-2026-1030-063-provider-account-truth.md`.
 **Parent:** FID-2026-1030-061
 **Severity:** low
-**Status:** implemented — verified against a disposable production server
+**Status:** closed
 **Created:** 2026-10-30
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — one directory, one list, one new derived asset.
@@ -105,7 +107,17 @@ config gate that already governs every other route, and serves
 
 ## Resolution
 
-Implemented and verified. `public/` now contains exactly `images/`.
+- **Closed Date:** 2026-10-31
+- **Commit:** `4ad9a21` — brand-image consolidation, social preview and metadata;
+  `9953dc1` later added the operator banner without changing this record's claim.
+- **Fix Description:** one image directory, one path list, a generated manifest
+  and a real social preview.
+- **Tests Added:** No application tests; the receipt is the served manifest and
+  image fetches plus the metadata gate added by FID-2026-1031-074.
+- **Verification Evidence:** `npm run check`, `npm test` (312), `npm run build`,
+  and disposable production fetches; CI run 41125090006 and attribution-guard
+  run 41125090105 are green.
+- **Archived:** 2026-10-31
 
 ## Implementation Evidence
 

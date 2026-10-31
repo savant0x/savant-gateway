@@ -3,15 +3,18 @@
 As of 2026-10-30. This is the current index; dated session receipts describe the
 tree they tested, not automatically the current working tree.
 
-Latest repair: [FID-2026-1030-063](../dev/fids/archive/FID-2026-1030-063-provider-account-truth.md),
-closed against `d31d9e0`, separates current upstream account observation
-from catalog sync and implements daily allocated trial-credit readouts. A live
-October 30 16:09 UTC local check matches upstream: $0, 0 used / 20M remaining,
-next reset October 31 00:00 UTC. Every explicit check reads upstream; failure
-reports unavailable. Receipt: 242 unit tests and 242 HTTP checks plus trial HTTP,
-clean lint/typecheck/quality/build. The one-time trial switch stays off. The
-supplied APInex email identifies the master-account pool as an integration
-sandbox and commercial production as PAYG; exact terms/rates/funding remain open.
+Latest repair: [FID-2026-1031-071](../dev/fids/archive/FID-2026-1031-071-fid-ledger-integrity.md),
+closed against the commit recorded in that record, corrects the active ledger:
+active 063/064/065 are now 072/073/074, six non-canonical statuses are
+normalized, 067 and the three renumbered records are archived, 068 is
+registered, and the tracking ledger exists. No application code changed. The
+prior provider-account repair
+([FID-2026-1030-063](../dev/fids/archive/FID-2026-1030-063-provider-account-truth.md),
+`d31d9e0`) remains the current account-truth implementation: every explicit check
+reads upstream, failure reports unavailable, and the one-time trial switch stays
+off. The supplied APInex email identifies the master-account pool as an
+integration sandbox and commercial production as PAYG; exact terms/rates/funding
+remain open.
 
 ## Start here
 
@@ -20,12 +23,12 @@ sandbox and commercial production as PAYG; exact terms/rates/funding remain open
 | How is work governed? | [Single-agent ECHO](../dev/echo-v0.1.2-single-agent.md), [configuration](../protocol.config.yaml) |
 | What is approved now? | [SCOPE](../SCOPE.md), current launch-FID planning section P1–P4 |
 | What must happen before launch? | [Launch plan](launch-plan.md) |
-| What organizes all launch work? | [Master FID 043](../dev/fids/FID-2026-1030-043-launch-master.md), children 044–062 |
+| What organizes all launch work? | [Master FID 043](../dev/fids/FID-2026-1030-043-launch-master.md), children 044–062, plus supplemental 066–068 |
 | What has actually been examined? | [Systems review](../dev/audits/2026-10-30-systems-review.md) |
 | What can honestly be offered now? | [Offering evidence ledger](offering-evidence.md) |
 | What changed? | [CHANGELOG](../CHANGELOG.md), then the implementation commit |
 | What should implementation preserve? | [Knowledge](../knowledge.md) |
-| Where is the session handoff? | [Published customer policies handoff](../dev/session-summaries/2026-10-30-policies-published.md) |
+| Where is the session handoff? | [FID ledger integrity](../dev/session-summaries/2026-10-31-fid-ledger-integrity.md) |
 
 ## Product state
 
@@ -49,6 +52,14 @@ checkout session never enables it, and the operator is not a registered entity,
 so no address is printed and a postal address is offered on request. The only
 open item is that no lawyer reviewed the text; the operator accepted that.
 
+Packaging and host decision: FID-067 is closed against `1081362`; the repository
+carries a single-container Fly artifact, but no app, volume, secret or machine
+exists and deployment is operator-deferred. The libSQL port is not proceeding
+(FID-066, D6): one persistent Node process on one local volume is the selected
+topology. The USDC receive lane has an offline step-0 proof (`b2790d1`, FID-068)
+and is blocked on the operator's chain/token, xpub, RPC and screening inputs; no
+money path or schema is implemented.
+
 ## Offering decisions
 
 - Lifetime trial activation stays off. Email verification delivery is absent;
@@ -66,7 +77,12 @@ open item is that no lawyer reviewed the text; the operator accepted that.
 
 Launch planning session baseline: `b0b65ac`. Master 043 and nineteen children
 044–062 cover A–Z requirements and passed individual document Perfection Loops.
-All twenty remain active `converged` plans. Authoring/audit is complete;
+As of 2026-10-31 the active queue is fourteen substantive records plus the repair
+record 071: 043–046, 049, 056–062, 066 and 068. FID-047, 048, 050–055, 063
+(provider truth), 064 (CI race), 067, 069, 070, 072, 073 and 074 are archived
+closed; 071 closes with this pass. 056/057/061 are `fixed` with residual gates;
+066 is a dormant converged decision record; 068 is converged with its
+implementation steps blocked on operator inputs. Authoring/audit is complete;
 implementation and live acceptance are not. The
 [audit receipt](../dev/audits/2026-10-30-launch-fid-perfection-loop.md) records
 source/dependency/test checks, measured revisions, two stable passes and hashes.

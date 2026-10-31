@@ -2,6 +2,42 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-10-31 (FID ledger integrity: 071)
+
+Operator request: "proceed with the house keeping and update the changelog, then
+repair the ledger." Automation level 3, strict, single agent. This pass corrects
+record truth only; no application code, schema, policy text or runtime behavior
+is changed. The repair contract is FID-2026-1031-071.
+
+- [x] **L1 — Audit the active ledger.** Measured 18 active records, six
+  non-canonical FID statuses, two reused same-day FID numbers (063/064), one
+  active FID absent from SCOPE (068), one `converged` record with committed
+  implementation (067), four `pending` step statuses (068), a missing tracking
+  ledger for the 069/070 live-observation gaps, and a stale project-status
+  index. Evidence: the status scan, duplicate filenames, `grep 068 SCOPE.md`
+  returning zero, 067's `Commit SHA: 1081362`, 068's four steps, and `ls
+  dev/tracking` failing.
+- [x] **L2 — Renumber the colliding records.** Active 063, 064 and 065 move to
+  072, 073 and 074 under the current date; the archived provider-account-truth
+  063 and CI-race 064 keep their numbers. Every reference in SCOPE, CHANGELOG,
+  the FID metadata and the parent links is updated. Evidence: the three files
+  carry the new names and renumber notes, and the duplicate-ID scan returns
+  nothing.
+- [x] **L3 — Normalize status and step vocabulary.** 056, 057 and 061 become
+  `fixed` (implementation exists; residual gates remain); 072, 073, 074 and 067
+  become `closed` and archive with their existing commits and gate receipts;
+  068's four `pending` steps become `blocked` on steps 1–2's operator inputs.
+  Evidence: the active-status scan returns only `converged` and `fixed`; the
+  four closure records carry commit and archive lines.
+- [x] **L4 — Restore registration and tracking.** Register 068 in this file,
+  create `dev/tracking/internal-followups.json` for the archived records'
+  remaining observations, and refresh `docs/project-status.md` to the current
+  queue and the Fly hosting decision. Evidence: the 068 section below, the
+  seven-item JSON ledger, and the updated status index.
+- [ ] **L5 — Verification and closure.** `npm run verify` exit 0; duplicate-ID
+  and SCOPE-coverage checks return no gaps; CHANGELOG updated; FID-071 closed
+  and archived with its implementation commit.
+
 ## Current Session — 2026-10-30 (support queue: 061)
 
 Handoff continuation to unblock 056. Automation level 3, strict, single agent.
@@ -1517,9 +1553,9 @@ Git repository and the template's required local commit could not exist. Fresh g
   three untracked IONOS PDFs in it are the operator's to move or delete. The
   manifest changing from a static file to a route was accepted knowingly: it now
   inherits the production configuration gate instead of being served beside a
-  failing app. FID-2026-1030-063 carries the receipt.
+  failing app. FID-2026-1031-072 carries the receipt.
 - 2026-10-30: **Per-page social cards for the catalog and the API reference.**
-  FID-063 gave the site one card that every page inherited, and the root metadata
+  FID-2026-1031-072 gave the site one card that every page inherited, and the root metadata
   pinned `openGraph.title` and `openGraph.url`, so a shared catalog link read
   "Savant Gateway" at the url `/`. Both pages now generate their own card with
   `next/og` from the data they already load, sharing one layout in
@@ -1532,7 +1568,7 @@ Git repository and the template's required local commit could not exist. Fresh g
   name would render in fallback glyphs. The first build marked the catalog card
   static, which would have frozen the build machine's model count forever — the
   route is now `force-dynamic`, proven by an empty database rendering `0 models`
-  against the build's `34`. FID-2026-1030-064 carries the receipt.
+  against the build's `34`. FID-2026-1031-073 carries the receipt.
 - 2026-10-30: **Billing documents moved out of the tree and ignore-listed.** Three
   untracked IONOS invoices and credit notes had been sitting in `assets/`, which
   is a published directory: one `git add -A` would have put the operator's name,
@@ -1546,16 +1582,17 @@ Git repository and the template's required local commit could not exist. Fresh g
   `git ls-files "*.pdf"` in CI — that gate was not added because it is new
   machinery for a case ignore already covers.
 - 2026-10-30: **A gate now fails CI when a public page loses its social card.**
-  The missing-metadata gap in FID-063 survived every gate because none of them
-  read the head of a rendered page — the same blind spot would have let FID-064
-  be reverted, or a new public page ship bare. `scripts/http-suite/metadata.mjs`
+  The missing-metadata gap in FID-2026-1031-072 survived every gate because none
+  of them read the head of a rendered page — the same blind spot would have let
+  FID-2026-1031-073 be reverted, or a new public page ship bare. `scripts/http-suite/metadata.mjs`
   holds the rules as a pure module (first tag wins, `property` or `name`, entity
   decoding, absolute `og:image` with dimensions, `summary_large_image`), so nine
   unit tests prove the failure path; `metadata-checks.mjs` applies them to fifteen
   public pages inside `npm run test:http` and fetches each declared card image
   back from the running server. The gate earned its place on its first run: it
-  failed on `/models` with `twitter:card is "summary"`, exposing that FID-064's
-  `twitter: { images: [] }` override had downgraded the two carded pages to a
+  failed on `/models` with `twitter:card is "summary"`, exposing that
+  FID-2026-1031-073's `twitter: { images: [] }` override had downgraded the two
+  carded pages to a
   small image-less card. Both pages now restate `card: "summary_large_image"`;
   suite reports 461 checks PASS (was 423) and 321 unit tests pass. Deliberately
   not covered: `/account` and the admin surfaces (session-gated or noindex), every
@@ -1741,6 +1778,24 @@ public launch until the operator calls it.
   Checkout and paid completion) and B4 (subscription invoice acceptance) remain
   open for the next pass. The keys already stored in Vercel are not usable for
   this: they are not in the local environment and cannot be read back.
+
+## Current Session — 2026-10-30 (USDC receive lane: 068)
+
+Operator decision: accept USDC directly into a wallet the operator controls,
+with credit released only at confirmation depth. The decision and its obligations
+are in `docs/crypto-payments-decision.md`; the mechanism contract is
+FID-2026-1030-068. This pass is the mechanism record and step 0 only. No money
+path, schema or call site has been touched.
+
+- [x] **U1 — Decision and step 0.** Automation level 2. `scripts/usdc-receive-spike.mjs`
+  proves derivation against the published Hardhat vector, xpub-only address
+  generation, exact Transfer decoding, depth gating at 12 confirmations and a
+  unique `chain:txHash:logIndex` key: 6/6 checks, exit 0. Commit `b2790d1`.
+- [ ] **U2 — Operator inputs.** Blocked on the chain and token confirmation, an
+  xpub generated on the hardware wallet, an RPC endpoint and a screening ruling.
+- [ ] **U3 — Implementation.** Blocked on U2: invoice/schema, derivation and
+  decoding modules, resumable watcher, credit transaction, top-up UI and the
+  refund-policy clause. No schema, money path or call site has been touched.
 
 ## Current Session — 2026-10-30 (free-path capacity refresh: 069)
 

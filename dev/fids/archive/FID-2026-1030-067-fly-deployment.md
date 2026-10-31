@@ -4,7 +4,7 @@
 **ID:** FID-2026-1030-067
 **Parent:** FID-2026-1030-057
 **Severity:** high
-**Status:** converged
+**Status:** closed
 **Created:** 2026-10-30 18:40
 **Automation level:** 2
 **YAGNI-Compliance:** Verified
@@ -30,7 +30,8 @@ and publishing remains gated by FID-062.
 - **OS:** Windows 11 host, Linux container target
 - **Language/Runtime:** Node `v24.21.0` local, `node:22-bookworm-slim` image
 - **Tool Versions:** npm `12.2.1`, Docker `28.4.0`, Fly CLI absent
-- **Commit/State:** `2484c1c`
+- **Commit/State:** `1081362` (implementation); the environment was measured at
+  `2484c1c` before the artifact was written
 
 ## Detailed Description
 
@@ -299,13 +300,18 @@ the ledger correct. Only a container can prove the image; it could not be built.
 ## Resolution
 
 - **Commit:** `1081362` — `feat(deploy)`.
-- **Closed Date:** not closed — the operator deferred deployment until the
-  launch date, so the artifact ships dormant. It is committed as `1081362`.
+- **Closed Date:** 2026-10-31 — the packaging implementation is closed; the
+  operator deferred deployment until launch, so the artifact ships dormant.
 - **Fix Description:** container image, Fly configuration, volume entrypoint,
   backup script and runbook procedure.
 - **Tests Added:** No. No application code changed.
 - **Verification Evidence:** the gate receipt and container transcript.
-- **Archived:** not archived.
+- **Implementation Commit:** `1081362` — `feat(deploy)`.
+- **Deployment:** blocked on the operator's Fly account (the trial ended and a
+  credit card is required) and tracked in
+  `dev/tracking/internal-followups.json`; the first `fly deploy` is also the
+  image's first build. No app, volume, secret or machine exists.
+- **Archived:** 2026-10-31
 
 ## Lessons Learned
 

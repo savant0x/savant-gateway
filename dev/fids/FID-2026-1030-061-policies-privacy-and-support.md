@@ -4,7 +4,7 @@
 **ID:** FID-2026-1030-061
 **Parent:** FID-2026-1030-043
 **Severity:** high
-**Status:** implemented — policies v1.1 published (v1 superseded), acceptance recorded
+**Status:** fixed — policies v1.1 published (v1 superseded), acceptance recorded; launch gates remain
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044, FID-2026-1030-047
@@ -216,7 +216,7 @@ preserved), trial HTTP PASS, quality PASS.
 
 ## Remaining Gates
 
-Every deferred item is now an executable launch gate in
+Every operator-gated item is now an executable launch gate in
 `docs/launch-plan.md` → Phase 1 → "Pre-launch policy gates", with the evidence
 that closes it. The list covers registration and address, host retention facts,
 the role contact address, the tax position staying matched to the checkout
@@ -246,7 +246,7 @@ documents false.
 - Deletion remains a manual operator action; no self-service deletion writer.
 - No controlled live inquiry through an outside channel has been exercised.
 
-061 stays open until approved policy text is published.
+061 remains open for the launch gates above; the policy text is published.
 
 ## Lessons Learned
 

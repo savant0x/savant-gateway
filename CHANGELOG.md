@@ -3,6 +3,31 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-31 — FID ledger integrity
+
+- **FID-2026-1031-071 — medium — The active queue now describes itself
+  truthfully.** Eighteen records were active and none was closed. Active 063 and
+  064 reused numbers already held by archived records (`provider-account-truth`
+  and `ci-fresh-database-migration-race`), so the brand-image, social-card and
+  metadata-gate records were renumbered to 072, 073 and 074 with a renumber note;
+  the archived numbers were not moved. Six records used `implemented` as a FID
+  status, which is not one of the six permitted values: 056, 057 and 061 now read
+  `fixed` with their residual gates named, and 072, 073, 074 and 067 were closed
+  against `4ad9a21`, `d72f6ef` and `1081362`. 067 had been `converged` while its
+  packaging was committed — corrected, with the operator-approved deployment
+  deferral kept as a named blocker rather than a closure claim. 068 was missing
+  from `SCOPE.md` and used `pending` for four steps; it is registered and those
+  steps are now `blocked` on the chain/token, xpub, RPC and screening inputs.
+  `dev/tracking/internal-followups.json` now carries the archived records' live
+  observation gaps (069 live capacity, 070 probe limits, 067's first image build,
+  card crawler coverage), and `docs/project-status.md` reflects the Fly decision
+  and the current queue. 066 remains `converged` as the dormant path back, with
+  its D6 no-port decision recorded instead of being mislabelled as closure. No
+  application code, schema, policy text or runtime data changed. Verification:
+  `npm run verify` exit 0 — 321 tests, quality PASS (295 files), production
+  build, 466 HTTP checks and the trial suite PASS; the duplicate-ID and SCOPE
+  coverage scans return no gaps. The receipt is in FID-071.
+
 ## 2026-10-31 — Test doubles must answer what they advertise
 
 - **FID-2026-1030-070 — medium — both HTTP doubles could advertise a provider
@@ -77,7 +102,9 @@ distinguish verified behavior from unverified claims.
   in the new script:** verifying a WAL copy creates `-wal`/`-shm` siblings, and
   pruning removed only the `.db`, so backups accumulated orphans; pruning and
   cleanup now remove the siblings too. Gates: `npm run lint`, `typecheck`,
-  `test` (321 passing), `quality` (295 files) and `build` all exit 0.
+  `test` (321 passing), `quality` (295 files) and `build` all exit 0. Closed
+  against `1081362`; deployment remains operator-blocked and is tracked in
+  `dev/tracking/internal-followups.json`.
 
 ## 2026-10-30 — Operator banner replaces the placeholder
 
@@ -96,7 +123,7 @@ distinguish verified behavior from unverified claims.
 
 ## 2026-10-30 — Social metadata coverage gate
 
-- **FID-2026-1030-065 — medium — Nothing checked the head of a rendered page, so
+- **FID-2026-1031-074 — medium — Nothing checked the head of a rendered page, so
   the missing social card had shipped with every gate green.** The HTTP suite now
   audits every public page for `og:title`, `og:description`, an absolute
   `og:image` with dimensions, and `twitter:card`, then fetches the card image it
@@ -104,17 +131,18 @@ distinguish verified behavior from unverified claims.
   required to use their own card rather than the site-wide one. The rules live in
   a pure module (`scripts/http-suite/metadata.mjs`) so the failure path is
   unit-tested, which is the difference between a check and a gate. **Its first
-  live run failed**, catching a regression from FID-064: `twitter: { images: [] }`
+  live run failed**, catching a regression from FID-2026-1031-073: `twitter: { images: [] }`
   had downgraded `/models` and `/docs` to Next's small `summary` card with no
   image — worse than before that change. Both pages now restate
   `card: "summary_large_image"`. Verified: `node --test tests/metadata.test.mjs`
   9 passing, `npm run check` exit 0, `npm run build` exit 0, and `npm run
   test:http` ending `http-suite: 461 checks PASS` (up from 423) with
-  `trial-http-suite: all checks PASS`.
+  `trial-http-suite: all checks PASS`. Closed against `d72f6ef`; archived
+  2026-10-31.
 
 ## 2026-10-30 — Per-page social cards from page data
 
-- **FID-2026-1030-064 — low — The catalog and API reference shared one generic
+- **FID-2026-1031-073 — low — The catalog and API reference shared one generic
   card.** Every page inherited the site-wide `og.png`, and the root metadata
   pinned `openGraph.title` and `openGraph.url`, so all pages claimed the title
   "Savant Gateway" and the url `/`. `/models` and `/docs` now carry
@@ -129,11 +157,11 @@ distinguish verified behavior from unverified claims.
   image/png` on a disposable production server, `og:title "Model catalog -
   Savant Gateway"` on `/models`, and the catalog card rendering `0 models`
   against an empty database after showing `34` at build — the proof that it is
-  per-request and not baked.
+  per-request and not baked. Closed against `d72f6ef`; archived 2026-10-31.
 
 ## 2026-10-30 — One brand-image directory and a real social preview
 
-- **FID-2026-1030-063 — low — Artwork had two homes and the site had no social
+- **FID-2026-1031-072 — low — Artwork had two homes and the site had no social
   card.** `assets/` and `public/` held byte-identical copies of the logo and the
   favicon set, `public/site.webmanifest` duplicated the icon list that
   `app/layout.tsx` already declared, paths were hardcoded in four components and
@@ -153,7 +181,8 @@ distinguish verified behavior from unverified claims.
   attribution-guard run 41125090105 are green on that commit, and the pre-push
   gate re-ran the full verify before the refs were accepted. **Still open:**
   `assets/bg_pattern.jpg` remains as the only source for the CSS texture, and no
-  crawler has been used to confirm how a platform crops the card.
+  crawler has been used to confirm how a platform crops the card. Closed against
+  `4ad9a21`; archived 2026-10-31.
 
 ## 2026-10-30 — Repository presentation and Apache 2.0 license
 

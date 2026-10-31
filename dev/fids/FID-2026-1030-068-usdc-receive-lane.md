@@ -111,10 +111,14 @@ before a reorg must be identifiable.
 2. `blocked` — operator inputs: chain/token confirmation, an xpub generated on
    the hardware wallet, and an RPC endpoint.
 3. `blocked` — screening ruling: accept the exposure or budget a service.
-4. `pending` — schema, derivation and decoding modules with unit tests.
-5. `pending` — resumable watcher and the credit transaction.
-6. `pending` — top-up UI showing address, exact amount and expiry.
-7. `pending` — refund policy clause for a lane with outbound-only refunds.
+4. `blocked` — schema, derivation and decoding modules with unit tests; blocked
+   on steps 1–2 (chain/token, xpub and RPC inputs).
+5. `blocked` — resumable watcher and the credit transaction; blocked on the
+   same inputs and step 4.
+6. `blocked` — top-up UI showing address, exact amount and expiry; blocked on
+   steps 1–2 and step 4.
+7. `blocked` — refund policy clause for a lane with outbound-only refunds;
+   blocked on the screening ruling and step 1.
 
 ### Verification
 
@@ -170,8 +174,9 @@ the same log cannot credit twice. The spike's assertions become
 - [x] **File:line ranges:** `scripts/usdc-receive-spike.mjs`.
 - [x] **Gate output:** spike 6/6; repository gates recorded in the receipt.
 - [x] **Reproducibility:** `node scripts/usdc-receive-spike.mjs`.
-- [x] **Step statuses:** one `implemented`, two `blocked` on operator inputs,
-  four `pending`.
+- [x] **Step statuses:** one `implemented`, six `blocked` (steps 1–2 on operator
+  inputs; steps 4–7 on those inputs and the screening ruling); none deferred or
+  skipped.
 
 ## Resolution
 

@@ -1,10 +1,12 @@
 # FID: Social metadata coverage gate
 
-**Filename:** `FID-2026-1030-065-social-metadata-coverage-gate.md`
-**ID:** FID-2026-1030-065
-**Parent:** FID-2026-1030-063
+**Filename:** `FID-2026-1031-074-social-metadata-coverage-gate.md`
+**ID:** FID-2026-1031-074
+**Renumbered:** 2026-10-31 — formerly `FID-2026-1030-065`; the record was moved
+with its card predecessors to keep the three-record sequence contiguous.
+**Parent:** FID-2026-1031-072
 **Severity:** medium
-**Status:** implemented — gate green in the HTTP suite, failure path unit-tested
+**Status:** closed
 **Created:** 2026-10-30
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — one parser, one check module, no crawler simulation.
@@ -12,8 +14,8 @@
 ## Summary
 
 The site shipped for weeks with **no social card metadata at all** and every gate
-stayed green, because nothing in CI ever read the head of a rendered page. FID-063
-added the card and FID-064 added per-page cards; neither would stop the same gap
+stayed green, because nothing in CI ever read the head of a rendered page. FID-2026-1031-072
+added the card (FID-2026-1031-072) and per-page cards (FID-2026-1031-073); neither would stop the same gap
 returning in a new route or a metadata refactor. Add a gate that fails when a
 public page emits an incomplete card or names a card image that does not serve.
 
@@ -22,14 +24,14 @@ public page emits an incomplete card or names a card image that does not serve.
 - OS: Windows (Git Bash), Node 22.18.0 with type stripping
 - Next.js 16.4.3; gate runs inside `scripts/http-suite.mjs` against a disposable
   production build, so it is already part of `npm run test:http` and CI
-- Commit/State: working tree on `main` after `6751513`
+- Commit/State: committed as `d72f6ef`
 
 ## Detailed Description
 
 ### Problem
 
 `npm test`, `npm run quality`, `npm run build` and both HTTP suites never parsed
-`<head>`. Both FID-063 and FID-064 could have been reverted, or a new public page
+`<head>`. Both FID-2026-1031-072 and FID-2026-1031-073 could have been reverted, or a new public page
 added without metadata, and CI would still pass.
 
 ### Expected behavior
@@ -76,15 +78,15 @@ live pages.
 
 ## Perfection Loop
 
-- **RED:** no gate inspected `<head>`; the FID-063 gap had passed CI unnoticed.
+- **RED:** no gate inspected `<head>`; the FID-2026-1031-072 gap had passed CI unnoticed.
 - **GREEN:** parser, live checks, unit tests, suite wiring.
 - **AUDIT:** ran the gate against the real build rather than assuming it would
   pass.
 - **ADVERSARIAL:** this is the part that mattered. The gate's **first live run
   failed**: `metadata /models carries a social card — twitter:card is "summary"`.
-  FID-064's `twitter: { images: [] }` override was replacing the root
+  FID-2026-1031-073's `twitter: { images: [] }` override was replacing the root
   `summary_large_image` with Next's default small card, so the two busiest pages
-  would have shipped a small card with **no image** — worse than before FID-064.
+  would have shipped a small card with **no image** — worse than before FID-2026-1031-073.
   Both pages now restate `card: "summary_large_image"` and the suite passes.
 - **SELF-CORRECT:** the audit deliberately does not require `twitter:image`,
   because Twitter falls back to `og:image` and a second generated route per page
@@ -92,8 +94,11 @@ live pages.
 
 ## Resolution
 
-Gate green: `http-suite: 461 checks PASS` (up from 423), `trial-http-suite: all
-checks PASS`.
+- **Closed Date:** 2026-10-31
+- **Commit:** `d72f6ef` — per-page cards and the metadata coverage gate.
+- **Gate result:** `http-suite: 461 checks PASS` (up from 423),
+  `trial-http-suite: all checks PASS`; `tests/metadata.test.mjs` 9/9.
+- **Archived:** 2026-10-31
 
 ## Implementation Evidence
 

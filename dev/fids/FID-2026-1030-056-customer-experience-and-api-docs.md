@@ -4,8 +4,8 @@
 **ID:** FID-2026-1030-056
 **Parent:** FID-2026-1030-043
 **Severity:** high
-**Status:** implemented (policy/support pages and the remaining manual matrix
-pending 061)
+**Status:** fixed — implementation present; residual manual matrix and
+real-payment acceptance remain
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** FID-2026-1030-044, FID-2026-1030-045, FID-2026-1030-046, FID-2026-1030-047, FID-2026-1030-049, FID-2026-1030-050, FID-2026-1030-052, FID-2026-1030-053, FID-2026-1030-054, FID-2026-1030-055, FID-2026-1030-061
@@ -131,14 +131,15 @@ HTTP PASS, quality PASS (267 files), clean lint/typecheck/build.
 
 ## Remaining Gates
 
-- Policy, privacy, terms and support routes do not exist; they belong to
-  FID-2026-1030-061, which this FID depends on. Footer links are unchanged.
+- Policy, privacy, terms and support routes now exist (FID-2026-1030-061,
+v1.1 published); the earlier dependency is cleared and the footer links are
+present.
 - 320 and 1024 widths, both themes on every page, admin screens, and a keyboard
   focus-ring screenshot were not exercised.
 - Real payment success still cannot be proven without Stripe credentials; the
   account copy is verified as truthful, not as a completed purchase.
 
-056 stays open until 061 lands and the remaining matrix is recorded.
+056 remains open for the residual matrix above; the 061 dependency has landed.
 
 ## Lessons Learned
 

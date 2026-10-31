@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "updated": "2026-10-31",
+  "policy": "Archived implementations do not claim live acceptance. These are observation, operator-input or revisit items linked to archived records; they do not hold implementation closure.",
+  "items": [
+    {
+      "id": "FID-2026-1030-069-E5",
+      "fid": "FID-2026-1030-069",
+      "state": "unverified",
+      "title": "Live upstream capacity under the 15 rpm fallback",
+      "detail": "The free-path fix was verified against the mock provider only. The real 15 rpm fallback and the provider's /balance cadence under load were not exercised.",
+      "evidence": "dev/fids/archive/FID-2026-1030-069-free-path-capacity-refresh.md; SCOPE.md, 2026-10-30 free-path session E5",
+      "next_action": "On the next live call pass, measure the fallback and the account-check cadence against the real upstream account."
+    },
+    {
+      "id": "FID-2026-1030-070-E3",
+      "fid": "FID-2026-1030-070",
+      "state": "unverified",
+      "title": "Probe coverage beyond advertised capabilities",
+      "detail": "checkProviderDouble covers the two capability flags the schema has today. It proves nothing about endpoints a row does not advertise, and it cannot detect a double that answers correctly but diverges from the real payload in a field no parser reads.",
+      "evidence": "dev/fids/archive/FID-2026-1030-070-fixture-capability-coverage.md; SCOPE.md, 2026-10-31 fixture session E3",
+      "next_action": "Extend the probe when a new capability flag or parser field is added; add a payload-shape comparison if a fixture divergence is observed."
+    },
+    {
+      "id": "FID-2026-1030-067-DEPLOY",
+      "fid": "FID-2026-1030-067",
+      "state": "blocked",
+      "title": "First Fly deployment and first image build",
+      "detail": "The packaging is committed, but no app, volume, secret or machine exists. fly apps create returns 'trial has ended, please add a credit card'. Docker's Linux engine cannot start on the development machine, so the first fly deploy will also be the image's first build. The 512 MB machine is an unmeasured cost point.",
+      "evidence": "dev/fids/archive/FID-2026-1030-067-fly-deployment.md; docs/deployment-runbook.md",
+      "next_action": "After the operator enables the Fly account and approves deployment under FID-2026-1030-062, run the five documented commands, confirm /api/ready, and record the image build and memory behavior."
+    },
+    {
+      "id": "FID-2026-1031-072-CRAWLER",
+      "fid": "FID-2026-1031-072",
+      "state": "unverified",
+      "title": "Brand assets: texture source, logo weight and crawler crop",
+      "detail": "assets/bg_pattern.jpg remains as the only source for bg-pattern.webp. logo.png is an 888 KB raster used at 36 px. No real crawler has been used, so platform crop and cache behavior for the 1200x630 card is unmeasured.",
+      "evidence": "dev/fids/archive/FID-2026-1031-072-brand-images-and-metadata.md",
+      "next_action": "Delete the texture source only when it is redrawn; ship a 512 px square mark on the next logo change; test a real share when a public origin exists."
+    },
+    {
+      "id": "FID-2026-1031-073-CRAWLER",
+      "fid": "FID-2026-1031-073",
+      "state": "unverified",
+      "title": "Per-page cards: crawler behavior, font coverage and /compare",
+      "detail": "The card routes and tags are verified, but no crawler was used. Cards are Latin-only because next/og's default font has no CJK coverage, and /compare still inherits the site card.",
+      "evidence": "dev/fids/archive/FID-2026-1031-073-per-page-social-cards.md",
+      "next_action": "Verify one real share per platform after a public origin exists; add a bundled CJK font if a non-Latin model name is published; revisit /compare only if its share volume justifies a per-query route."
+    },
+    {
+      "id": "FID-2026-1031-074-COVERAGE",
+      "fid": "FID-2026-1031-074",
+      "state": "unverified",
+      "title": "Metadata gate coverage boundaries",
+      "detail": "Slug-level legal pages use one representative each; /account, /admin/* and /dashboard are excluded as session-gated or noindex; the gate asserts tags and image serving, not platform cache or crop behavior.",
+      "evidence": "dev/fids/archive/FID-2026-1031-074-social-metadata-coverage-gate.md",
+      "next_action": "Extend the representative set when a policy slug becomes a share surface; add a real-crawler check only if a public origin and a stable test target exist."
+    },
+    {
+      "id": "FID-2026-1030-066-REVISIT",
+      "fid": "FID-2026-1030-066",
+      "state": "watch",
+      "title": "libSQL port revisit criteria",
+      "detail": "FID-2026-1030-066 stays converged as the path back. D6 selected one persistent Node process on one local volume; the port reopens if the service must scale beyond one process or move to a host without same-host storage. The capability spike is scripts/libsql-capability-spike.mjs.",
+      "evidence": "dev/fids/FID-2026-1030-066-libsql-storage-port.md; docs/hosting-decision.md",
+      "next_action": "Re-run the settlement concurrency proof before any remote engine carries the ledger; do not port without that receipt."
+    }
+  ]
+}

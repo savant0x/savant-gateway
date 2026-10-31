@@ -82,6 +82,7 @@ export {
   updateProvider,
 } from "./store/providers";
 export { getProviderStatus } from "./store/provider";
+export { listProviderCatalogSummary } from "./store/provider-catalog";
 export { reserveFreeCall } from "./store/free-pool";
 export { listAdminUsage, listUsage, recordUsage } from "./store/usage";
 export {

@@ -1,255 +1,144 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildSyncedModels } from "../lib/providers/catalog.ts";
+import Database from "better-sqlite3";
 
-const SAVANT = {
-  slug: "savant",
-  label: "Savant",
-  kind: "openai",
-  baseUrl: "https://api.apinex.bond/v1",
-  keyEnvVar: "PROVIDER_KEY",
-  defaultHeaders: { src: "gate" },
-  capabilities: { balance: true, subscription: true, pricing: true },
-  enabled: true,
-  sortOrder: 10,
-  createdAt: "2026-10-29T00:00:00.000Z",
-  updatedAt: "2026-10-29T00:00:00.000Z",
-};
+import { providerCatalogSummaryIn } from "../lib/provider-catalog.ts";
 
-const COMMANDCODE = {
-  ...SAVANT,
-  slug: "commandcode",
-  label: "CommandCode",
-  kind: "both",
-  baseUrl: "https://api.commandcode.ai/provider/v1",
-  keyEnvVar: "COMMANDCODE_API_KEY",
-  defaultHeaders: {},
-  capabilities: { balance: false, subscription: false, pricing: false },
-  sortOrder: 20,
-};
+function database() {
+  const db = new Database(":memory:");
 
-test("a non-default provider publishes namespaced ids only for its own models", () => {
-  const rows = buildSyncedModels(
-    COMMANDCODE,
-    [{ id: "gpt-6-luna" }],
-    new Map(),
+  db.exec(`
+    CREATE TABLE providers (
+      slug TEXT PRIMARY KEY,
+      label TEXT NOT NULL,
+      key_env_var TEXT NOT NULL,
+      enabled INTEGER NOT NULL DEFAULT 1,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      synced_at TEXT
+    );
+    CREATE TABLE models (
+      id TEXT PRIMARY KEY,
+      upstream_slug TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'active',
+      in_catalog INTEGER NOT NULL DEFAULT 1,
+      allow_free INTEGER NOT NULL DEFAULT 0,
+      sell_input_micros INTEGER NOT NULL DEFAULT 0,
+      sell_output_micros INTEGER NOT NULL DEFAULT 0,
+      cost_source TEXT NOT NULL DEFAULT 'synced',
+      is_primary INTEGER NOT NULL DEFAULT 1,
+      served_provider_slug TEXT
+    );
+  `);
+
+  return db;
+}
+
+function provider(db, slug, label, sortOrder = 10) {
+  db.prepare(
+    `INSERT INTO providers (slug, label, key_env_var, enabled, sort_order, synced_at)
+     VALUES (?, ?, ?, 1, ?, '2026-10-31T00:00:00.000Z')`,
+  ).run(slug, label, `${slug.toUpperCase()}_KEY`, sortOrder);
+}
+
+function model(db, overrides) {
+  const row = {
+    id: "gpt-6-astra",
+    upstream_slug: "savant",
+    status: "active",
+    in_catalog: 1,
+    allow_free: 0,
+    sell_input_micros: 1_000_000,
+    sell_output_micros: 1_000_000,
+    cost_source: "synced",
+    is_primary: 1,
+    served_provider_slug: null,
+    ...overrides,
+  };
+
+  db.prepare(
+    `INSERT INTO models (id, upstream_slug, status, in_catalog, allow_free,
+       sell_input_micros, sell_output_micros, cost_source, is_primary,
+       served_provider_slug)
+     VALUES (@id, @upstream_slug, @status, @in_catalog, @allow_free,
+       @sell_input_micros, @sell_output_micros, @cost_source, @is_primary,
+       @served_provider_slug)`,
+  ).run(row);
+}
+
+test("each provider reports its own contribution and serving count", () => {
+  const db = database();
+
+  provider(db, "savant", "Savant", 10);
+  provider(db, "apixo", "Apixo", 30);
+  model(db, { id: "gpt-6-astra", served_provider_slug: "apixo" });
+  model(db, {
+    id: "free/gpt-6-luna",
+    allow_free: 1,
+    sell_input_micros: 0,
+    sell_output_micros: 0,
+    served_provider_slug: "savant",
+  });
+  model(db, {
+    id: "apixo/glm-5.3",
+    upstream_slug: "apixo",
+    served_provider_slug: "apixo",
+  });
+
+  const summary = providerCatalogSummaryIn(db);
+
+  assert.deepEqual(
+    summary.map((row) => row.slug),
+    ["savant", "apixo"],
   );
-  const savantRows = buildSyncedModels(
-    SAVANT,
-    [{ id: "free/gpt-6-luna", weight: 2 }],
-    new Map(),
-  );
-
-  assert.equal(rows[0].id, "commandcode/gpt-6-luna");
-  assert.equal(rows[0].upstreamId, "gpt-6-luna");
-  assert.equal(rows[0].upstreamSlug, "commandcode");
-  assert.equal(savantRows[0].id, "free/gpt-6-luna");
-  assert.equal(savantRows[0].upstreamSlug, "savant");
-  assert.equal(rows.length, 1);
-});
-
-test("a mixed-protocol provider routes Claude to Messages and excludes unsupported endpoints", () => {
-  const rows = buildSyncedModels(
-    COMMANDCODE,
-    [
-      {
-        id: "claude-sonnet-4-6",
-        supported_endpoints: [
-          "https://api.commandcode.ai/provider/v1/messages",
-        ],
-      },
-      {
-        id: "deepseek/deepseek-v4-flash",
-        supported_endpoints: [
-          "https://api.commandcode.ai/provider/v1/chat/completions",
-        ],
-      },
-      {
-        id: "responses-only",
-        supported_endpoints: [
-          "https://api.commandcode.ai/provider/v1/responses",
-        ],
-      },
-    ],
-    new Map(),
-  );
-  const byId = new Map(rows.map((row) => [row.upstreamId, row]));
-
-  assert.equal(rows.length, 2);
-  assert.equal(byId.get("claude-sonnet-4-6").protocol, "messages");
-  assert.equal(byId.get("claude-sonnet-4-6").family, "Claude");
-  assert.equal(byId.get("deepseek/deepseek-v4-flash").protocol, "chat");
-  assert.equal(byId.has("responses-only"), false);
-});
-
-test("free-pool rows keep their weight and zero cost while unpaid rows stay unknown", () => {
-  const rows = buildSyncedModels(
-    COMMANDCODE,
-    [{ id: "free/gpt-6-luna", weight: 3 }, { id: "claude-sonnet-4-6" }],
-    new Map(),
-  );
-  const free = rows.find((row) => row.upstreamId === "free/gpt-6-luna");
-  const unknown = rows.find((row) => row.upstreamId === "claude-sonnet-4-6");
-
-  assert.equal(free.id, "commandcode/free/gpt-6-luna");
-  assert.equal(free.allowFree, true);
-  assert.equal(free.tokenWeight, 3);
-  assert.equal(free.costInputMicros, 0);
-  assert.equal(free.costOutputMicros, 0);
-  assert.equal(unknown.costSource, "unknown");
-  assert.equal(unknown.allowFree, false);
-});
-
-test("a priced row carries synced cost and derives family from metadata", () => {
-  const rows = buildSyncedModels(
-    SAVANT,
-    [{ id: "deepseek/deepseek-v4-flash" }],
-    new Map([
-      [
-        "deepseek/deepseek-v4-flash",
-        {
-          provider: "DeepSeek",
-          dollarsPer1M: 0.5,
-          outputDollarsPer1M: 2,
-        },
-      ],
+  assert.deepEqual(
+    summary.map((row) => [
+      row.modelCount,
+      row.activeCount,
+      row.pricedCount,
+      row.servingCount,
     ]),
-  );
-
-  assert.equal(rows[0].family, "DeepSeek");
-  assert.equal(rows[0].costSource, "synced");
-  assert.equal(rows[0].costInputMicros, 500_000);
-  assert.equal(rows[0].costOutputMicros, 2_000_000);
-  assert.equal(rows[0].sortOrder, 10);
-});
-
-test("a group sentinel never becomes the family", () => {
-  const rows = buildSyncedModels(
-    SAVANT,
-    [{ id: "free/gpt-6-luna", provider: "Free", weight: 1 }],
-    new Map(),
-  );
-
-  assert.equal(rows[0].family, "GPT");
-});
-
-test("subscription-only weights survive without granting free access", () => {
-  const [row] = buildSyncedModels(
-    SAVANT,
-    [{ id: "free/claude-opus", allowFree: false, weight: 8 }],
-    new Map(),
-  );
-
-  assert.equal(row.tokenWeight, 8);
-  assert.equal(row.allowFree, false);
-  assert.equal(row.costSource, "unknown");
-});
-
-test("context aliases and partial public metadata preserve authenticated fields", () => {
-  const [row] = buildSyncedModels(
-    SAVANT,
     [
-      {
-        id: "gpt-example",
-        context_window: 128000,
-        weight: 3,
-        supportsTools: true,
-        supportsVision: true,
-        health: "healthy",
-        dollarsPer1M: 0.4,
-        outputDollarsPer1M: 0.6,
-      },
+      [2, 2, 2, 1],
+      [1, 1, 1, 2],
     ],
-    new Map([["gpt-example", { name: "Example", contextWindow: " 1M " }]]),
   );
-
-  assert.equal(row.contextWindow, "1M");
-  assert.equal(row.tokenWeight, 3);
-  assert.equal(row.supportsTools, true);
-  assert.equal(row.supportsVision, true);
-  assert.equal(row.health, "healthy");
-  assert.equal(row.costInputMicros, 400000);
-  assert.equal(row.costOutputMicros, 600000);
+  assert.equal(summary[1].label, "Apixo");
+  assert.equal(summary[1].configured, false);
 });
 
-test("blank or malformed context metadata falls back to authenticated context", () => {
-  for (const context of ["", "   ", null, false, {}]) {
-    const [row] = buildSyncedModels(
-      SAVANT,
-      [{ id: "gpt-example", context_window: 128000 }],
-      new Map([["gpt-example", { contextWindow: context }]]),
-    );
+test("an unpriced or unknown-cost row is counted but not priced", () => {
+  const db = database();
 
-    assert.equal(row.contextWindow, "128000");
-  }
+  provider(db, "apixo", "Apixo");
+  model(db, {
+    id: "apixo/unknown",
+    upstream_slug: "apixo",
+    status: "disabled",
+    cost_source: "unknown",
+    sell_input_micros: 0,
+    sell_output_micros: 0,
+  });
+
+  const [row] = providerCatalogSummaryIn(db);
+
+  assert.equal(row.modelCount, 1);
+  assert.equal(row.activeCount, 0);
+  assert.equal(row.pricedCount, 0);
+  assert.equal(row.unknownCostCount, 1);
+  assert.equal(row.servingCount, 0);
 });
 
-test("absent and malformed prices never claim a known zero cost", () => {
-  for (const price of [
-    undefined,
-    null,
-    "",
-    "  ",
-    false,
-    true,
-    -1,
-    "-2",
-    Infinity,
-    NaN,
-  ]) {
-    const [row] = buildSyncedModels(
-      SAVANT,
-      [{ id: "gpt-example", dollarsPer1M: price }],
-      new Map(),
-    );
+test("a provider with no synced models still appears with zeros", () => {
+  const db = database();
 
-    assert.equal(row.costSource, "unknown", String(price));
-  }
-});
+  provider(db, "twigpine", "Twigpine");
 
-test("explicit zero and numeric price strings remain valid costs", () => {
-  for (const price of [0, "0", "0.25"]) {
-    const [row] = buildSyncedModels(
-      SAVANT,
-      [{ id: "gpt-example", dollarsPer1M: price }],
-      new Map(),
-    );
+  const [row] = providerCatalogSummaryIn(db);
 
-    assert.equal(row.costSource, "synced");
-    assert.equal(row.costInputMicros, Number(price) * 1000000);
-    assert.equal(row.costOutputMicros, row.costInputMicros);
-  }
-});
-
-test("an explicitly invalid output price makes the model unpriced", () => {
-  const [row] = buildSyncedModels(
-    SAVANT,
-    [{ id: "gpt-example", dollarsPer1M: 1, outputDollarsPer1M: -2 }],
-    new Map(),
-  );
-
-  assert.equal(row.costSource, "unknown");
-});
-
-test("a published zero output rate falls back to the input rate", () => {
-  const [row] = buildSyncedModels(
-    SAVANT,
-    [{ id: "drex-like", dollarsPer1M: 0.04, outputDollarsPer1M: 0 }],
-    new Map(),
-  );
-
-  assert.equal(row.costInputMicros, 40000);
-  assert.equal(row.costOutputMicros, 40000);
-  assert.equal(row.costSource, "synced");
-});
-
-test("a zero output rate with no input rate stays unknown rather than free", () => {
-  const [row] = buildSyncedModels(
-    SAVANT,
-    [{ id: "unpriced", outputDollarsPer1M: 0 }],
-    new Map(),
-  );
-
-  assert.equal(row.costSource, "unknown");
+  assert.equal(row.modelCount, 0);
+  assert.equal(row.activeCount, 0);
+  assert.equal(row.pricedCount, 0);
+  assert.equal(row.servingCount, 0);
+  assert.equal(row.syncedAt, "2026-10-31T00:00:00.000Z");
 });

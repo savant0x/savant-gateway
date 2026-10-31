@@ -57,6 +57,11 @@ Auto-priced published rows follow the serving cost, so a cheaper takeover
 raises margin instead of leaving a stale sell price behind. Manual sell prices
 are never overwritten.
 
+The admin catalog opens with **Catalog by provider**: one card per registered
+provider with synced, active, priced, unknown-cost and currently-serving
+counts. A provider that has not been synced shows zero models and says so. The
+public catalog stays white-label, so provider identity never appears there.
+
 ## Not implemented
 
 - **Automatic failover.** The ranking knows the next candidate, but a failed

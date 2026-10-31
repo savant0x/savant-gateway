@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 
 import { BenchmarkPanel } from "@/components/admin/benchmark-panel";
 import { AdminModelsTable } from "@/components/admin/models-table";
+import { ProviderCatalogSections } from "@/components/admin/provider-catalog-sections";
 import {
   getBenchmarkStatus,
   listAllModels,
   listModelGroups,
+  listProviderCatalogSummary,
 } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
@@ -43,6 +45,7 @@ export default function AdminCatalogPage() {
       </div>
 
       <div className="space-y-6">
+        <ProviderCatalogSections providers={listProviderCatalogSummary()} />
         <BenchmarkPanel status={getBenchmarkStatus(models.length)} />
         <AdminModelsTable groups={groups} models={models} />
       </div>

@@ -2,8 +2,6 @@
 
 import type { ModelAccess } from "@/lib/types";
 
-import { SORTS, type SortKey } from "./catalog-cells";
-
 import { formatNumber } from "@/components/dashboard/format";
 
 export type GroupOption = {
@@ -16,7 +14,6 @@ export function CatalogFilters({
   query,
   group,
   family,
-  sort,
   groups,
   families,
   modelCount,
@@ -27,12 +24,10 @@ export function CatalogFilters({
   onQuery,
   onGroup,
   onFamily,
-  onSort,
 }: {
   query: string;
   group: string;
   family: string;
-  sort: SortKey;
   groups: GroupOption[];
   families: string[];
   modelCount: number;
@@ -43,7 +38,6 @@ export function CatalogFilters({
   onQuery: (value: string) => void;
   onGroup: (value: string) => void;
   onFamily: (value: string) => void;
-  onSort: (value: SortKey) => void;
 }) {
   return (
     <div className="flex flex-col gap-3 border-b border-black/10 p-5 dark:border-white/10">
@@ -88,19 +82,6 @@ export function CatalogFilters({
             {families.map((name) => (
               <option key={name} value={name}>
                 {name}
-              </option>
-            ))}
-          </select>
-
-          <select
-            aria-label="Sort models"
-            className="h-11 rounded-xl border border-black/10 bg-background px-3 text-xs outline-none focus:border-accent dark:border-white/10"
-            value={sort}
-            onChange={(event) => onSort(event.target.value as SortKey)}
-          >
-            {SORTS.map((item) => (
-              <option key={item.key} value={item.key}>
-                {item.label}
               </option>
             ))}
           </select>

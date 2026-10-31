@@ -16,11 +16,18 @@ import {
   priceProvenance,
   QualityCell,
   RateCell,
-  type SortKey,
 } from "./catalog-cells";
 import { CatalogFilters, type GroupOption } from "./catalog-filters";
 import { CatalogFootnote } from "./catalog-footnote";
+import { SortableHead } from "./catalog-sort-head";
 
+import {
+  compareCatalogRows,
+  defaultSortDirection,
+  type CatalogSortDirection,
+  type CatalogSortKey,
+  type SortableCatalogRow,
+} from "@/lib/catalog-sort";
 import { AccessChip } from "@/components/dashboard/chips";
 import { formatPricePer1M } from "@/components/dashboard/format";
 import { Pagination } from "@/components/ui/pagination";
@@ -43,7 +50,8 @@ export function ModelCatalogTable({
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState("all");
   const [family, setFamily] = useState("all");
-  const [sort, setSort] = useState<SortKey>("name");
+  const [sort, setSort] = useState<CatalogSortKey | null>(null);
+  const [direction, setDirection] = useState<CatalogSortDirection>("asc");
   const [page, setPage] = useState(1);
 
   const families = useMemo(
@@ -87,31 +95,30 @@ export function ModelCatalogTable({
       );
     });
 
-    return rows.sort((left, right) => {
-      if (sort === "family") {
-        return (
-          left.family.localeCompare(right.family) ||
-          left.name.localeCompare(right.name)
-        );
-      }
+    const decorated = rows.map((model) => ({
+      model,
+      sortable: {
+        id: model.id,
+        name: model.name,
+        family: model.family,
+        groupLabel: model.groupLabel,
+        groupBillingMode: model.groupBillingMode,
+        tokenWeight: model.tokenWeight,
+        supportsTools: model.supportsTools,
+        supportsVision: model.supportsVision,
+        inputPricePer1M: model.inputPricePer1M,
+        outputPricePer1M: model.outputPricePer1M,
+        benchmarkIndex: benchmarks[model.id]?.intelligenceIndex ?? null,
+        comparisonBps: comparisons[model.id]?.blendedDeltaBps ?? null,
+      } satisfies SortableCatalogRow,
+    }));
 
-      if (sort === "price-asc") {
-        return (
-          left.inputPricePer1M - right.inputPricePer1M ||
-          left.outputPricePer1M - right.outputPricePer1M
-        );
-      }
+    if (!sort) return decorated;
 
-      if (sort === "price-desc") {
-        return (
-          right.inputPricePer1M - left.inputPricePer1M ||
-          right.outputPricePer1M - left.outputPricePer1M
-        );
-      }
-
-      return left.name.localeCompare(right.name);
-    });
-  }, [comparisons, family, group, models, query, sort]);
+    return decorated.sort((left, right) =>
+      compareCatalogRows(left.sortable, right.sortable, sort, direction),
+    );
+  }, [benchmarks, comparisons, direction, family, group, models, query, sort]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, pageCount);
@@ -154,6 +161,31 @@ export function ModelCatalogTable({
     setPage(1);
   }
 
+  function toggleSort(key: CatalogSortKey) {
+    resetPage(() => {
+      if (key === sort) {
+        setDirection(direction === "asc" ? "desc" : "asc");
+
+        return;
+      }
+
+      setSort(key);
+      setDirection(defaultSortDirection(key));
+    });
+  }
+
+  const head = (label: string, key: CatalogSortKey, className?: string) => (
+    <SortableHead
+      key={key}
+      activeKey={sort}
+      className={className}
+      direction={direction}
+      label={label}
+      sortKey={key}
+      onSort={toggleSort}
+    />
+  );
+
   return (
     <div className="catalog-shell overflow-hidden rounded-md border border-border bg-surface">
       <CatalogFilters
@@ -167,11 +199,9 @@ export function ModelCatalogTable({
         query={query}
         showComparison={showComparison}
         shownCount={filtered.length}
-        sort={sort}
         onFamily={(value) => resetPage(() => setFamily(value))}
         onGroup={(value) => resetPage(() => setGroup(value))}
         onQuery={(value) => resetPage(() => setQuery(value))}
-        onSort={(value) => resetPage(() => setSort(value))}
       />
 
       {rows.length === 0 ? (
@@ -192,23 +222,29 @@ export function ModelCatalogTable({
             </colgroup>
             <thead>
               <tr>
-                <th>Model</th>
-                <th>Group</th>
-                <th className="text-right">Weight</th>
-                <th className="catalog-col-features text-center">Features</th>
-                {showBenchmarks ? (
-                  <th className="catalog-col-benchmark text-right">
-                    AA Benchmark
-                  </th>
-                ) : null}
-                <th className="text-right">Savant $/1M</th>
-                {showComparison ? (
-                  <th className="text-right">vs OpenRouter</th>
-                ) : null}
+                {head("Model", "model")}
+                {head("Group", "group")}
+                {head("Weight", "weight", "text-right")}
+                {head(
+                  "Features",
+                  "features",
+                  "catalog-col-features text-center",
+                )}
+                {showBenchmarks
+                  ? head(
+                      "AA Benchmark",
+                      "benchmark",
+                      "catalog-col-benchmark text-right",
+                    )
+                  : null}
+                {head("Savant $/1M", "price", "text-right")}
+                {showComparison
+                  ? head("vs OpenRouter", "comparison", "text-right")
+                  : null}
               </tr>
             </thead>
             <tbody>
-              {rows.map((model) => {
+              {rows.map(({ model }) => {
                 const comparison = showComparison
                   ? comparisons[model.id]
                   : undefined;

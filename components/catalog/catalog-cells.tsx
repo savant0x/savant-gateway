@@ -3,15 +3,6 @@ import type { PriceComparison } from "@/lib/price-comparison";
 
 import { formatPricePer1M } from "@/components/dashboard/format";
 
-export type SortKey = "name" | "family" | "price-asc" | "price-desc";
-
-export const SORTS: Array<{ key: SortKey; label: string }> = [
-  { key: "name", label: "Name" },
-  { key: "family", label: "Family" },
-  { key: "price-asc", label: "Input price ↑" },
-  { key: "price-desc", label: "Input price ↓" },
-];
-
 /**
  * A zero rate is not always "no price". Twenty-one of forty-four catalog rows
  * bill through the free pool or a plan, where a per-token rate is meaningless —

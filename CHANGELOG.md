@@ -3,6 +3,20 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-31 — Sortable catalog columns and provider sections
+
+- **FID-2026-1031-082 — medium — Every catalog column now sorts from its
+  header, and the admin catalog shows what each provider contributes.** Model,
+  Group, Weight, Features, AA Benchmark, Savant $/1M and vs OpenRouter are
+  header buttons with `aria-sort` and a direction arrow; the four-option sort
+  dropdown is gone. Missing measurements and unmatched comparisons sort last in
+  both directions, ties fall back to the model name, and the default order keeps
+  the free-first presentation. `Catalog by provider` on `/admin/catalog` counts,
+  per provider, synced models, active rows, priced rows, unknown-cost rows and
+  the published models it currently serves — where serving can differ from
+  ownership when the cheapest route wins. Public pages stay white-label; the
+  provider section is admin-only.
+
 ## 2026-10-31 — Cheapest-provider routing for a shared catalog
 
 - **FID-2026-1031-081 — high — A model sold by two providers is now one

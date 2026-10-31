@@ -10,6 +10,7 @@ import type {
 } from "../types";
 
 import { db } from "../db";
+import { ensureProvidersFresh } from "../provider-sync";
 
 import { getAccountSummary, listCreditLedger } from "./billing";
 import { listApiKeys } from "./keys";
@@ -95,6 +96,10 @@ function toPublicProvider(): PublicProviderStatus {
 }
 
 export function getLandingData(): LandingData {
+  // Stale-while-revalidate: a stale provider catalog refreshes in the
+  // background and the render serves stored rows either way.
+  ensureProvidersFresh();
+
   const models = listModels();
 
   return {
@@ -105,6 +110,8 @@ export function getLandingData(): LandingData {
 }
 
 export function getCatalogData(): CatalogData {
+  ensureProvidersFresh();
+
   return {
     models: listModels(),
     stats: getOverviewStats(),

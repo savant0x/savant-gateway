@@ -57,6 +57,28 @@ Auto-priced published rows follow the serving cost, so a cheaper takeover
 raises margin instead of leaving a stale sell price behind. Manual sell prices
 are never overwritten.
 
+## Automatic sync and the publication gate
+
+A catalog read calls `ensureProvidersFresh()`: any enabled provider whose last
+sync is older than `PROVIDER_SYNC_INTERVAL_HOURS` (default 6, `0` disables) is
+re-synced in the background while the page serves stored rows. A provider with
+no credential is skipped, because it cannot sync. The in-process guard allows
+one run at a time; the supported topology is one Node process, so a second
+instance would run its own refresh.
+
+Publication is not the same as import. `PUBLIC_MODEL_SCOPE` publishes a row only
+when it is active, its group is visible, `is_primary` selects it, a paid group
+has a sell price above zero, and — for an operator-entered cost — that cost is
+newer than `PROVIDER_PRICE_MAX_AGE_DAYS` (default 30, `0` disables). An
+unpriced or stale-cost row stays in the admin catalog and out of `/models`, so a
+customer is never shown a model the gateway cannot bill. Crypto sales are not
+refundable, so an unverified price is withheld rather than sold and reversed.
+
+Wallet funding is separate. A provider that publishes no balance endpoint has no
+observable reserve: the gateway admits against `PROVIDER_SHARED_RPM` and the call
+fails when the wallet is empty. The admin overview reports that boundary next to
+the per-provider sync state.
+
 The admin catalog opens with **Catalog by provider**: one card per registered
 provider with synced, active, priced, unknown-cost and currently-serving
 counts. A provider that has not been synced shows zero models and says so. The

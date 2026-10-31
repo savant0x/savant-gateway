@@ -3,6 +3,21 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-10-31 — Automatic provider sync and a publication gate
+
+- **FID-2026-1031-084 — medium — Catalogs refresh themselves, and a model the
+  gateway cannot bill is no longer published.** A catalog read now re-syncs any
+  enabled, configured provider whose catalog is older than
+  `PROVIDER_SYNC_INTERVAL_HOURS` (default 6, `0` disables), one run at a time,
+  serving stored rows while it happens. `PUBLIC_MODEL_SCOPE` additionally
+  withholds a paid row with no sell price and a row priced from a manually
+  entered cost older than `PROVIDER_PRICE_MAX_AGE_DAYS` (default 30). The cost
+  timestamp is recorded on write and backfilled from the sync time. The admin
+  **Sync and boundaries** card now reads live per-provider state — synced,
+  priced, without cost, serving, last sync and an overdue flag — instead of a
+  single while-label provider, and states the reserve boundary for providers
+  with no balance endpoint.
+
 ## 2026-10-31 — Apixo credential name aligned with the upstream
 
 - **FID-2026-1031-083 — low — The Apixo provider row now expects

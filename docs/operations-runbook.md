@@ -28,6 +28,23 @@ The monitor exits non-zero only when the run itself fails or a configured
 delivery attempt fails. An unconfigured webhook exits 0 and says so on stderr;
 it is neither a successful delivery nor a scheduler failure.
 
+## Automatic provider sync
+
+Provider catalogs refresh without a scheduler. A render of `/`, `/models` or the
+catalog data calls `ensureProvidersFresh()` (`lib/provider-sync.ts`): any enabled
+provider whose `synced_at` is older than `PROVIDER_SYNC_INTERVAL_HOURS` (default
+6) is synced in the background, at most one run per process at a time and never
+more often than every five minutes. The page always serves stored rows, so an
+unresponsive upstream cannot delay it. `PROVIDER_SYNC_INTERVAL_HOURS=0` turns it
+off and leaves only the **Sync** button.
+
+An imported catalog is not a published catalog. A paid row without a sell price
+is never public, and a row priced from a manually entered cost is withheld once
+that cost is older than `PROVIDER_PRICE_MAX_AGE_DAYS` (default 30, `0` disables).
+Re-enter the cost in `/admin/pricing` to republish it. This is the guard against
+silent upstream price drift on providers that publish no machine-readable rates;
+crypto sales are not refundable, so a price nobody re-checked is not offered.
+
 ## What it observes
 
 All values come from SQLite; the monitor makes no upstream call and no health

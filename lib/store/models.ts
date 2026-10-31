@@ -118,13 +118,14 @@ export function setModelCost(
   db.prepare(
     `UPDATE models
      SET input_price_micros = ?, output_price_micros = ?, cost_source = 'manual',
-         sell_input_micros = ?, sell_output_micros = ?
+         sell_input_micros = ?, sell_output_micros = ?, cost_observed_at = ?
      WHERE id = ?`,
   ).run(
     input,
     output,
     priced.sellInputMicros,
     priced.sellOutputMicros,
+    nowIso(),
     modelId,
   );
 

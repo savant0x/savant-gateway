@@ -66,12 +66,26 @@ export function providerSchema(database: DatabaseHandle) {
     "cost_source",
     "TEXT NOT NULL DEFAULT 'unknown'",
   );
+  // When the operator entered the cost. `cost_source = 'manual'` has no
+  // machine-readable source, so the age of this timestamp is the only drift
+  // signal available.
+  ensureColumn(database, "models", "cost_observed_at", "TEXT");
   ensureColumn(
     database,
     "usage_events",
     "provider_slug",
     "TEXT NOT NULL DEFAULT 'savant'",
   );
+
+  // Disposable test schemas build a reduced `models` table, so the backfill is
+  // guarded rather than assumed; a legacy row without a sync time keeps a null
+  // observation and is treated as fresh until its cost is re-entered.
+  if (hasColumn(database, "models", "synced_at")) {
+    database.exec(
+      `UPDATE models SET cost_observed_at = synced_at
+       WHERE cost_observed_at IS NULL AND synced_at IS NOT NULL`,
+    );
+  }
 
   database.exec(`
     UPDATE models SET family = provider WHERE family IS NULL OR family = '';

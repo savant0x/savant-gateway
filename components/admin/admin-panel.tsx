@@ -1,5 +1,6 @@
 import type { ActivitySummary } from "@/lib/activity";
 import type { PromoCodeSummary } from "@/lib/promo-codes";
+import type { ProviderCatalogSummary } from "@/lib/provider-catalog";
 import type { AdminOverview, AnalyticsData } from "@/lib/types";
 
 import { Card } from "@heroui/react";
@@ -8,6 +9,7 @@ import Link from "next/link";
 import { ActivityPanel } from "./activity-panel";
 import { CreditCard } from "./credit-card";
 import { PromoPanel } from "./promo-panel";
+import { ProviderSyncCard } from "./provider-sync-card";
 
 import { KeysCard } from "@/components/dashboard/keys-card";
 import { ProviderCard } from "@/components/dashboard/provider-card";
@@ -19,7 +21,6 @@ import {
   formatSignedMicros,
 } from "@/components/dashboard/format";
 import { LocalTime } from "@/components/local-time";
-import { ProviderSyncButton } from "@/components/provider-sync";
 
 function LinkButton({
   href,
@@ -46,6 +47,7 @@ export function AdminPanel({
   analytics,
   activity,
   promos,
+  providers,
 }: {
   data: AdminOverview;
   analytics: AnalyticsData;
@@ -55,11 +57,11 @@ export function AdminPanel({
     reason: string | null;
     codes: PromoCodeSummary[];
   };
+  providers: Array<ProviderCatalogSummary & { keyEnvVar: string }>;
 }) {
   const disabled = data.models.filter(
     (model) => model.status === "disabled",
   ).length;
-  const unpriced = data.pricing.unpricedCount;
 
   return (
     <>
@@ -127,44 +129,7 @@ export function AdminPanel({
 
       <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]" id="provider">
         <ProviderCard provider={data.provider} />
-        <Card variant="secondary">
-          <Card.Header>
-            <Card.Title>Sync and boundaries</Card.Title>
-            <Card.Description>
-              Sync reads the upstream balance, subscription, and catalog. It
-              preserves operator disables, manual prices, and delisted rows.
-            </Card.Description>
-          </Card.Header>
-          <Card.Content className="space-y-4">
-            <ProviderSyncButton />
-            <div className="space-y-2 text-xs text-muted">
-              <p>
-                Provider key:{" "}
-                <span className="text-foreground">
-                  {data.provider.configured ? "configured" : "missing"}
-                </span>
-              </p>
-              <p>
-                Pricing:{" "}
-                <span className="text-foreground">
-                  {(data.pricing.markupBps / 100).toFixed(0)}% default markup
-                </span>{" "}
-                · {data.pricing.pricedCount} auto/manual rows priced
-              </p>
-              {unpriced > 0 ? (
-                <p className="text-warning">
-                  {unpriced} non-free{" "}
-                  {unpriced === 1 ? "model has" : "models have"} no sell price
-                  and will be rejected by the gateway.
-                </p>
-              ) : null}
-              <p>
-                Session: signed HttpOnly cookie, eight-hour expiry, SameSite
-                Strict.
-              </p>
-            </div>
-          </Card.Content>
-        </Card>
+        <ProviderSyncCard pricing={data.pricing} providers={providers} />
       </section>
 
       <section id="credit">

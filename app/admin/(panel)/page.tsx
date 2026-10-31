@@ -6,6 +6,7 @@ import {
   getAdminOverview,
   getAnalyticsData,
   listActivity,
+  listProviderCatalogSummary,
   listPromoCodes,
 } from "@/lib/store";
 import { refreshProviderRuntime } from "@/lib/providers/runtime";
@@ -32,6 +33,7 @@ export default async function AdminPage() {
         reason: promoPolicy.reason,
         codes: listPromoCodes(),
       }}
+      providers={listProviderCatalogSummary()}
     />
   );
 }

@@ -7,6 +7,7 @@ import type {
 } from "@/lib/types";
 import type { PriceComparison } from "@/lib/price-comparison";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import {
@@ -252,7 +253,12 @@ export function ModelCatalogTable({
                 return (
                   <tr key={model.id}>
                     <td className="catalog-model">
-                      <div className="truncate font-medium">{model.name}</div>
+                      <Link
+                        className="block truncate font-medium underline-offset-4 hover:underline"
+                        href={`/models/${model.id.split("/").map(encodeURIComponent).join("/")}`}
+                      >
+                        {model.name}
+                      </Link>
                       <div className="catalog-sub mono" title={model.id}>
                         {model.family} · {model.contextWindow} · {model.id}
                       </div>

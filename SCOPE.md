@@ -2,6 +2,49 @@
 
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
+## Current Session — 2026-11-01 (model identity verification: 087)
+
+Operator request: build the admin-run, operator-published model identity check
+for the free pool. API-only, advisory, no automated gate, no operator-funded
+full-catalog sweep. Scope interpreted and presented 2026-11-01; operator
+confirmed alignment 2026-11-01. The operator granted automation level 3 on
+2026-11-01, so I2–I9 may be actioned without a further approval exchange. I2–I7
+are implemented and the declared code gates pass; I8's live admin run receipt
+and I9's commit remain open (no provider quota was spent).
+
+- [x] **I1 — Converge the identity record.**
+  `dev/fids/FID-2026-1101-087-model-identity-verification.md` records the
+  protocol, battery, evidence schema, runner, admin/publish flow, public page,
+  claims matrix, and gates. The full SQL block was executed against PGlite
+  0.5.14 and created all seven tables. Status `converged`; no application code
+  was written.
+- [x] **I2 — Identity core.** `lib/identity/` now holds the sealed protocol,
+  battery, normalizer, JSD, split-half noise, Wilson intervals, context parser,
+  estimate, verdict ladder, and public copy. Four unit suites cover it.
+- [x] **I3 — Identity storage.** `lib/storage/schema/identity.ts` is in the
+  additive migration, with protocol sealing, TTL references, run lifecycle,
+  idempotent samples, findings, verdicts, corrections, and the published read;
+  PGlite tests cover all seven tables.
+- [x] **I4 — Probe client and runner.** Both wire protocols, the global rate
+  limiter, retry taxonomy, gates, control selection, cancellation, stale-run
+  recovery, and preflight are implemented and exercised by the runner suite.
+- [x] **I5 — Admin API.** The guarded create/dry-run and lifecycle action
+  routes implement the FID's validation and status codes, including the
+  free-only, cap, quota, and publish gates.
+- [x] **I6 — Admin console.** `/admin/identity` and `/admin/identity/[id]` render
+  targets, coverage, findings, and the polling action client; the nav entry is
+  present.
+- [x] **I7 — Public surface.** `/models/[...id]` renders the published panel,
+  `/identity` renders the method and correction ledger, and catalog names link
+  to the detail page.
+- [ ] **I8 — Free-pool operation and receipt.** The unit gates cover the
+  free-only, cap, quota, and publish rules, and the public pages were checked
+  under `next dev`. A full admin baseline/publish receipt against a fixture
+  upstream is still open; it needs an admin session and a credentialed provider.
+- [ ] **I9 — Verification and closure.** Lint, typecheck, the identity suites,
+  the repository suite, quality, build, and the public dev receipt pass. The
+  commit and the FID status move are still open.
+
 ## Current Session — 2026-10-31 (load and resilience: 060)
 
 Operator request: implement FID-2026-1030-060 load and resilience acceptance
@@ -1531,6 +1574,11 @@ Recorded read-only under the approved review item; any fix remains blocked pendi
   needs no shared-limiter work, while Vercel adds per-invocation connections and
   a shared rate limiter. Requirements and the compatibility table are in
   `docs/launch-plan.md` Phase 3.
+- 2026-11-01: **Identity verification is approved at automation level 3.**
+  "grant automation level 3, run the perfection loop on the fid then present
+  it" — FID-2026-1101-087 may be implemented without a further approval
+  exchange; the record stays `converged` until the code, gates, and commit
+  exist.
 
 ## Progress Log
 
@@ -2096,3 +2144,42 @@ prompts, completions, keys, tokens, or full codes.
   `npm audit --omit=dev` (0 vulnerabilities) all pass. Closed against
   `7996124`. Live crypto purchase, real-provider capacity, operator approval,
   container build and deployment remain open external dependencies.
+
+## Current Session — 2026-10-31 (production storage ruling: 085)
+
+Operator ruling: a website holding real money will not run production
+accounting on SQLite on a single volume. The objection is availability and
+recoverability — the 2026-10-31 load run measured 229.84 sustained rps at p95
+137.53 ms, so throughput was never the problem — plus one file with no
+replica, no managed point-in-time restore, a deploy that stops the only
+writer, and an RPO equal to the operator's own backup cadence.
+
+Budget fact recorded so it is not misread later: the operator's **$300 is
+provider working capital** (prepaid inference that converts to sold tokens),
+not infrastructure burn. Infrastructure is therefore judged on absolute
+monthly cost, not on that figure.
+
+- [x] **S1 — The ruling.** [FID-2026-1031-085](../dev/fids/FID-2026-1031-085-postgres-production-storage.md)
+  is `converged` and supersedes the 2026-10-30 hosting decision for the data
+  layer. Target: managed Postgres (Neon, Launch plan), Fly host retained. The
+  libSQL plan in FID-2026-1030-066 is no longer the path because libSQL is also
+  single-writer, so it relieves the file but not the topology.
+- [x] **S2 — Measured port cost.** 323 `.prepare` call sites in `lib` (634
+  tree-wide), 47 transaction wrappers, 37 `.immediate()` locks, 44 files
+  importing `lib/db`, 532 exported functions, 54 route handlers, 40 tables, 19
+  schema modules, 6,141 `lib/store` lines. SQLite-only constructs: 30
+  `datetime(`, 12 `ON CONFLICT`, 11 `INSERT OR IGNORE`, 2 `strftime(`, 2
+  `julianday(`, 2 `COLLATE NOCASE`, 2 `CAST(ROUND …)`, 1 `PRAGMA`.
+  `better-sqlite3` appears in only two files, which is what keeps this
+  mechanical rather than a redesign.
+- [x] **S3 — Cost and Free-plan boundary.** Launch at the 0.25 CU floor is
+  ~182.5 CU-h ≈ $19.35, plus ~$0.55 storage/history ≈ **$19.90/mo**; with the
+  existing Fly machine ≈ **$23.74/mo**. Neon Free cannot host it: 100 CU-h is
+  ~400 h against a ~730 h month, so compute suspends around day 17; scale to
+  zero is mandatory; PITR is 6 hours; there are no scheduled backups. At the
+  measured 20.2% blended margin, $23.74/mo needs ~$118/mo of paid revenue.
+- [ ] **S4 — Not done.** No code changed, so there is nothing to verify: no
+  adapter, no migration port, no double-spend proof, no `DATABASE_URL`
+  contract, no cutover. Free plan is scoped to development and preview only,
+  and the 30-day retention claim in `content/legal/` still depends on
+  snapshots plus off-site dumps rather than native PITR.

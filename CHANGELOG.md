@@ -3,6 +3,485 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-01 — Step 4 slice 2: readers and provider writers on PostgreSQL
+
+- **FID-2026-1031-086 (step 4, slice 2) — critical — The public model list, the
+  chat entry, the account page and the operator console read PostgreSQL.**
+  `/v1/models`, `/v1/chat/completions` (now the ported entry), `/account`, the
+  admin gateway and operations pages and APIs, admin session, the provider
+  runtime route and the account trial route all use the async façade.
+  `lib/providers/runtime.ts` and `lib/providers/sync.ts` became production
+  wrappers over the ported modules, so the catalog writer and its readers moved
+  together rather than leaving one side empty. Verified: `npm test` 681 tests
+  (680 pass, 0 fail, 1 skipped), typecheck 0, lint 0 warnings, quality PASS at
+  464 files, build exit 0 with 23 static pages.
+- **`/api/ready` probes PostgreSQL.** The table check reads `information_schema`
+  instead of `sqlite_master`, the write is an upsert on `settings.key`, and the
+  rollback is a sentinel that aborts the probe transaction so no row is kept.
+  Verified with a live request: `{"status":"ready","checks":{"configuration":
+  "ok","storage":"ok"},"mode":"durable","admission":"open"}` at HTTP 200.
+- **Runtime bug found and fixed.** A route importing one façade group never ran
+  the barrel's `bindStoreRuntime`, so the resolver threw and readiness reported
+  `admission: "unavailable"` behind a 200. The resolver now binds the server
+  runtime on first use; an explicit binding still wins. This affected every
+  converted route.
+- **HTTP suites currently fail, for a storage reason.** Against the flipped
+  build they reach 53 PASS (metadata, page renders, promo origin guards) then
+  stop at `promo admin list serves — expected 200, got 401`. The server log gives
+  the cause: `DATABASE_URL is required in production. The local storage engine is
+  a single-process database and is not a production fallback.` The harness still
+  hands `next start` a SQLite `DB_PATH`. Reported as a failure, not a pass.
+- **Known gap, stated plainly.** The legacy `lib/store` modules and barrel still
+  exist (`npm run storage:check` exits 1), the HTTP suites and monitor/backup
+  scripts still seed and read SQLite (`npm run test:http` was not run against
+  the converted routes), and a fresh PostgreSQL database has no catalog until an
+  admin sync or `npm run db:import` runs. Those are the remaining cutover steps,
+  not completed here.
+
+## 2026-11-01 — Step 4 slice 1: the async store façade
+
+- **FID-2026-1031-086 (step 4, slice 1) — medium — A bound façade lets the
+  caller conversion be `await` insertion rather than a rewrite.**
+  `lib/store-facade/{runtime,bound,catalog,insights,access,money,operations}.ts`
+  wrap the ported store under the names callers already import, strip the
+  database-handle argument and supply one bound handle. The resolver is injected
+  so the façade loads under the test runner, and an unbound façade throws rather
+  than returning `undefined`. Verified by four suites (7 tests) against a real
+  PGlite handle; typecheck, lint and quality pass at 464 files.
+- **Deliberately not wired.** No caller is converted by this slice: the
+  application still runs the synchronous store end to end, including the chat
+  entry. The façade is the seam the atomic sweep needs, not the sweep itself.
+
+## 2026-11-01 — Batch B slice 10: trial-offer on the async handle
+
+- **FID-2026-1031-086 (step 2, slice 10) — medium — The trial-to-paid offer runs
+  on the async handle.** `lib/storage/store/trial-offer.ts` publishes the paid
+  model id and its exact rates only when the trial is enabled, the pair exists,
+  both rows share a provider, the paid row is active and in the catalog, its cost
+  is known and it has a sell price. Verified by
+  `tests/trial-offer-postgres.test.mjs` (4 tests); `npm test` is 674 tests with
+  673 pass, 0 fail, 1 skipped, zero lint warnings and a quality PASS at 457
+  files.
+- **Correction to earlier wording:** the storage contract check does not count
+  missing modules and never reported `trial-offer`. Its counters are 43 SQLite
+  importers, 28 legacy modules with inline statements and 199 statements — all
+  unchanged, since `trial-offer` contains no SQL. The port removes the last
+  module-level special case from the caller conversion, not a contract failure.
+
+## 2026-11-01 — Batch B slice 9: the gateway orchestration ported
+
+- **FID-2026-1031-086 (step 2, slice 9) — critical — The chat-completions entry
+  exists on the async handle.** `lib/storage/gateway/call.ts` follows the same
+  decision order as `lib/gateway.ts` — authenticate, validate, resolve, operator
+  admission, rate limit, serving-account ceiling, subscription/free/paid
+  reservation, durable admission, dispatch, settle — with every storage call
+  awaited against one handle. `resolution.ts`, `provider-call.ts`, `paid.ts`,
+  `trial.ts` and `payload.ts` hold the lookups, dispatch, reservations and
+  payload rewrites; the pure refusal helpers moved to `lib/gateway-refusal.ts`
+  and are shared by both entries rather than copied. Typecheck, lint and quality
+  pass; `npm test` is 667 tests with 666 pass, 0 fail, 1 skipped.
+- **Deliberately not wired.** Pointing `lib/gateway.ts` at the ported entry while
+  every other route still reads SQLite would make the gateway the only reader of
+  an empty PostgreSQL catalog: every inference call would answer
+  `model_not_found`, and the HTTP suite would go red. The live entry is
+  unchanged until the caller conversion lands in the same commit. The port
+  therefore has no behavior test yet; the composed HTTP suite is its proof and
+  runs at the flip.
+
+## 2026-11-01 — Batch B slice 8: promo codes, and a pre-flip pipeline receipt
+
+- **FID-2026-1031-086 (step 2, slice 8) — high — Promo codes run on the async
+  handle.** `lib/storage/store/promos.ts` creates, lists and pauses codes;
+  `promo-redemption.ts` redeems them behind the conditional claim
+  `UPDATE ... WHERE redeemed_count < max_redemptions`, with the unique index on
+  `(promo_code_id, user_id)` as the durable guard. The credit is now an
+  assignment: `UPDATE users SET credit_micros = credit_micros + ? RETURNING
+  credit_micros`, and the ledger row carries the balance that statement
+  returned. The SQLite version read, added and wrote an absolute value, which
+  was safe only because one writer was admitted; two different codes redeemed at
+  the same moment would otherwise have lost one of the grants. Verified by
+  `tests/promos-postgres.test.mjs` (7 tests).
+- **Verification receipt — `npm run verify` exit 0.** Build compiled in 3.0s
+  (23 static pages), 667 tests with 666 pass, 0 fail, 1 skipped, quality PASS at
+  449 files, 792 HTTP check lines with zero failures across the composed and
+  trial suites, and 13 recovery-drill PASS lines covering dump, restore, replay
+  and refusals. **This proves the tree before the flip.** It is not evidence for
+  the flipped tree: the storage contract check still reports 43 SQLite handle
+  importers, 28 `lib/store` modules with 199 inline statements, and
+  `lib/store/trial-offer.ts` without an async counterpart, so the cutover in
+  step 4 has not started.
+
+## 2026-11-01 — Batch B slice 7: provider sync and the account runtime
+
+- **FID-2026-1031-086 (step 2, slice 7) — high — Provider catalog sync and the
+  provider account check run on the async handle.**
+  `lib/storage/ledger/quota.ts` holds the runtime lease ledger: claiming is
+  conditional on no live lease, completing is conditional on still owning it, and
+  a claim clears the stored observation so an in-flight check cannot be read as a
+  fresh reading. `lib/storage/providers/runtime.ts` keeps the account contract —
+  one check at a time, overlapping callers share the in-flight request, a failed
+  fetch is stored and reported as a warning rather than thrown, and a stale
+  observation is never served as current. `lib/storage/providers/sync.ts` reads
+  the provider catalog and replaces only that provider's rows, preserving manual
+  prices, costs, group assignments and operator disables. The upstream transport
+  is injected because `lib/providers/request.ts` reaches `server-only`, while
+  envelope validation, the page cap and the cursor rule stay in the port: a
+  `200` carrying an error object is refused before it can delist a catalog.
+  The analytics store from the same request had landed in slice 5 but had never
+  been called, because the live `lib/store/analytics.ts` still returns the
+  synchronous SQLite report; it now has a behaviour suite covering the zero-
+  filled series, the windowed totals, model ranking, plan revenue and the
+  monthly run-rate. Verified by `tests/provider-sync-postgres.test.mjs`
+  (9 tests) and `tests/store-analytics-postgres.test.mjs` (4 tests), with
+  `npm test` at 660 tests, 659 pass, 0 fail, 1 skipped, zero lint warnings and a
+  quality PASS. The application is still on the synchronous store; the flip
+  remains pending.
+
+## 2026-11-01 — Batch B slice 6: catalog freshness and the display cache
+
+- **FID-2026-1031-086 (step 2, slice 6) — medium — `ensureProvidersFresh` runs on
+  the async handle, and the landing and catalog reads call it directly.**
+  `lib/storage/providers/freshness.ts` keeps the stale-while-revalidate
+  contract: the render starts a refresh and does not wait, only enabled,
+  credentialed and stale providers are attempted, one run per handle at a time,
+  and a five-minute floor separates attempts. A landed refresh clears the
+  display cache so the next render sees the new catalog. The refresh state is
+  keyed by handle, matching the projection cache. The work is also awaitable
+  through `refreshProvidersIfDue`, which is what makes the policy testable
+  without sleeping on a detached promise. While wiring it, the duplicate
+  `public-catalog.ts` cache was removed in favour of the per-handle
+  `catalog.ts` — a module-level cache would answer one database's query with
+  another's rows. Verified by `tests/provider-freshness-postgres.test.mjs`
+  (6 tests), with `npm test` at 647 tests, 646 pass, 0 fail, 1 skipped, zero
+  lint warnings and a quality PASS. The application itself is still on the
+  synchronous store; the flip remains pending.
+
+## 2026-11-01 — Batch B slice 5: catalog reads
+
+- **FID-2026-1031-086 (step 2, slice 5) — medium — The overview, landing,
+  catalog and admin read models run on the async handle.** `public-catalog.ts`
+  keeps the 5-second display cache and the same visibility predicate the gateway
+  uses; `overview.ts` reads the seven catalog counts in one statement so a page's
+  headline cannot disagree with the list beside it; `provider-catalog.ts` imports
+  the statement and mapper from `lib/provider-catalog.ts` instead of restating
+  them, and `banner.ts` ports the context-banner settings. As with
+  `daily-trial`, the catalog refresher is a parameter rather than an import,
+  because `lib/provider-sync.ts` reaches `server-only`. `npm test` is at 641
+  tests, 640 pass, 0 fail, 1 skipped, with zero lint warnings and a quality PASS.
+  **This does not flip the application**: the synchronous store is still the live
+  path, and `analytics` plus provider sync are still unported.
+
+## 2026-11-01 — Batch B slice 4: the settlement money path
+
+- **FID-2026-1031-086 (step 2, slice 4) — high — `recordUsage`, `settleCall` and
+  the streaming relay run on the async handle.** Settlement still makes one
+  promise and the port keeps it: one admitted call settles once. The durable
+  settlement row is claimed before any write, an already-settled free
+  reservation stops the same way, and the debit, its ledger row, the hold
+  release, the allowance move, the free-pool settle and the usage row commit in
+  one transaction. Two findings shaped the port. The pricing and SSE helpers had
+  to move out of `lib/gateway-settle.ts` into `lib/gateway-usage.ts`, because
+  that module imports `server-only` and the port must load under the Node test
+  runner; the live module re-exports them, so no caller changed. And the debit
+  deliberately does **not** use `debitCredit`: its `WHERE credit_micros >= ?`
+  guard would silently drop a charge when a provider reports more tokens than
+  the estimate, which the hold — admission control, not a price ceiling — still
+  permits. Settlement debits unconditionally and records the balance the
+  statement returned. The relay now awaits settlement, so `[DONE]` is forwarded
+  only after commit and a truncated stream settles as an error. Verified by
+  `tests/gateway-settlement-postgres.test.mjs` (7 tests) and end to end by
+  `tests/gateway-e2e-postgres.test.mjs` (2 tests), which admits, streams and
+  settles two calls and then asks `reconcileDatabase` and `balanceAudit` whether
+  the database agrees. `npm test` is at 641 tests, 640 pass, 0 fail, 1 skipped,
+  with zero lint warnings and a quality PASS. Not wired into the request path:
+  the flip is step 4.
+
+## 2026-11-01 — Batch B slice 3: the operations cluster
+
+- **FID-2026-1031-086 (step 2, slice 3) — high — Incident records, the snapshot
+  and the monitor tick run on the async handle.** `lib/storage/operations/`
+  carries the durable state machine (`incidents.ts`), the read model
+  (`snapshot.ts`), one monitor pass (`tick.ts`) and the volume observation
+  (`storage.ts`), with `lib/storage/store/operations.ts` as the shared entry
+  point for the admin panel and the scheduler. The transitions are unchanged and
+  tested: one alert per open condition, a fresh alert when a resolved condition
+  returns, a single escalation from warning to critical, and a bounded,
+  resumable delivery schedule that stays visible when it stops. One part could
+  not be ported literally: the storage guard measured a SQLite file and
+  `gateway-*.db` archives, so it now reads `pg_database_size(current_database())`
+  and counts the manifest-bearing directory dumps — otherwise both halves would
+  report "0 bytes, no backups" forever while looking healthy. Verified by
+  `tests/operations-postgres.test.mjs` (9 tests), with `npm test` at 632 tests,
+  631 pass, 0 fail, 1 skipped, zero lint warnings and a quality PASS. Not wired
+  into the application: the flip is step 4.
+
+## 2026-11-01 — Batch B slice 2: the allocation and trial cluster
+
+- **FID-2026-1031-086 (step 2, slice 2) — high — Free-pool allocation, admission
+  and settlement run on the async handle.** `lib/storage/ledger/allocations.ts`
+  ports the daily split: an even share per activated account, re-derived when a
+  late signup joins, lowered to the new fair share but never below what the
+  account has already used or holds, and withdrawn when its last active key is
+  revoked. `lib/storage/store/allocations.ts`, `store/daily-trial.ts` and
+  `store/free-pool.ts` sit on it, so the display summary and the admission path
+  now read the same policy and the same rows. Two port findings are recorded in
+  the FID: `INSERT OR IGNORE` plus a select became
+  `ON CONFLICT DO NOTHING … RETURNING`, and the live provider refresher is a
+  parameter because `lib/providers/runtime.ts` imports `server-only`. Verified by
+  `tests/store-allocation-cluster-postgres.test.mjs` (10 tests) against a real
+  PostgreSQL engine, with `npm test` at 623 tests, 622 pass, 0 fail, 1 skipped,
+  zero lint warnings and a quality PASS. Not wired into the application: the flip
+  is step 4.
+
+## 2026-11-01 — Batch B slice 1: benchmarks and the admin epoch
+
+- **FID-2026-1031-086 (step 2, slice 1) — medium — The benchmark sync lease and
+  the admin session epoch run on the async handle.** `lib/storage/store/benchmarks.ts`
+  keeps the lease exclusive through the statement itself
+  (`ON CONFLICT … DO UPDATE … WHERE lease_until < now`), so two syncs cannot both
+  run, and keeps the stale-not-deleted rule for rows that disappear from the
+  source catalogue. `lib/storage/store/admin.ts` increments the epoch with
+  `UPDATE … RETURNING`, replacing a read-after-write that was correct only under
+  SQLite's single writer. One finding shaped the port: `getBenchmarkStatus`
+  cannot import `artificialAnalysisConfigured`, because that module imports
+  `server-only` and cannot be loaded by the test runner, so configuration is now
+  a parameter. Verified by `tests/store-batch-b-postgres.test.mjs` (4 tests),
+  with `npm test` at 613 tests, 612 pass, 0 fail, 1 skipped. The remaining six
+  Batch B modules depend on unported helper ledgers and are not claimed.
+- **FID-2026-1031-086 (importer) — the dry run against the operator's real
+  database succeeds without a refusal.** `data/gateway.db` imports 3 providers,
+  3 groups, 89 models, 1 setting, 33 benchmark rows and 6 syncs into a throwaway
+  target, with the source read-only and its digest unchanged.
+
+## 2026-10-31 — Backup, restore and the recovery drill on PostgreSQL
+
+- **FID-2026-1031-086 (step 6, durability) — high — The backup path now copies a
+  database that does not exist as a file, and the drill proves the restore
+  instead of describing it.** `lib/storage/backup.ts` writes a logical dump —
+  `manifest.json` plus one `.jsonl` per table, ordered by the catalog's foreign
+  keys — and refuses to write one when any user's `credit_micros` is not the sum
+  of their ledger rows or `held_micros` not their live holds. Each table records
+  an order-independent checksum, so a restore proves it loaded the same rows, not
+  merely the same count. `scripts/db-restore.mjs` replaces a target in one
+  transaction and refuses a missing manifest, a target holding customers without
+  `--force`, a row count that disagrees with the manifest, a checksum mismatch
+  and an unreconstructible balance; every refusal rolls back, leaving the target
+  as it was. `scripts/db-recovery-drill.mjs` seeds a reconciled history, dumps
+  it, deletes the source database, restores into a fresh one, reads a spendable
+  balance back, and proves a replayed payment event and a tampered or truncated
+  dump are all rejected. The shared invariant lives in
+  `lib/storage/ledger/invariants.ts`, used by the importer, the backup and the
+  drill. `tests/database-recovery.test.mjs` was ported to the new engine;
+  `npm run test:recovery` passes 12 checks, `npm test` 609 tests / 608 pass / 1
+  skipped. **Honest limits:** logical snapshot, not point-in-time recovery (no
+  WAL archiving); rows are loaded per table, so very large archives should use
+  `pg_dump`; and the server-level drill returns with the storage flip.
+
+## 2026-10-31 — One-shot SQLite → PostgreSQL import
+
+- **FID-2026-1031-086 (step 6, importer) — high — The operator's local
+  configuration and customers can now be carried across the storage flip, with
+  a balance check that refuses rather than guesses.** `scripts/sqlite-import.mjs`
+  (`npm run db:import`) opens the SQLite file read-only, replaces the target's
+  configuration rows inside one transaction, and copies customers, keys, ledger,
+  holds, top-ups and subscriptions only with `--include-customers`. Four
+  refusals are explicit: a target that already holds customers without
+  `--force`, a target schema missing a column the source has (named, never
+  dropped), a row shortfall between source and imported counts, and any user
+  whose `credit_micros` does not equal the sum of their imported ledger rows or
+  whose `held_micros` does not equal their live holds. A refusal rolls the whole
+  transaction back, and the source digest is reported before and after so the
+  untouched file is evidence. Counts compare rows the import inserted rather than
+  the target's totals, because the migration seeds a dev user and system groups
+  into a fresh database. Verified by `tests/sqlite-import.test.mjs` (5 tests:
+  counts and unchanged bytes, recomputed balances, rollback on a dishonest
+  ledger, non-empty-target refusal, column refusal), with `npm test` at 609
+  tests, 608 pass, 0 fail, 1 skipped. **Still pending:** PostgreSQL
+  backup/restore and the recovery-drill rerun, which need a networked database
+  and the flip itself.
+
+## 2026-10-31 — Batch A: subscriptions, top-ups and customers on the async handle
+
+- **FID-2026-1031-086 (step 1) — high — The money and customer surface now has
+  an async target, and fulfilment credits exactly once.**
+  `lib/storage/store/topups.ts` credits a paid checkout with
+  `UPDATE users SET credit_micros = credit_micros + ? RETURNING credit_micros`,
+  so the balance written to the ledger is the balance the customer holds after
+  the write; the previous read-then-write was safe only because SQLite admitted
+  one writer. Replays still return `already_paid` from the status transition, so
+  a webhook delivered twice adds no second ledger row. `customer.ts`,
+  `account.ts` and `account-email.ts` carry identity, sessions, the key cap and
+  the account read model; `subscriptions.ts`, `subscription-lifecycle.ts`,
+  `subscription-invoices.ts`, `subscription-entitlements.ts` and
+  `subscription-admin.ts` carry checkout, activation, reconciliation,
+  cancellation and the operator grant, with the invoice upsert keyed on the
+  unique `provider_invoice_id`. A concurrent second grant is now refused by the
+  partial unique index and mapped to the same 409 the pre-check returns, instead
+  of racing past it. **Not yet a behaviour change:** `lib/store/*` still serves
+  the application, 29 statements across 8 modules remain unported, and the flip
+  is still one atomic commit (FID-086 step 4). Verified by
+  `tests/store-customer-batch-postgres.test.mjs` (12 tests against PostgreSQL),
+  with `npm test` at 604 tests, 603 pass, 0 fail, 1 skipped.
+
+## 2026-10-31 — Storage cutover prerequisites: one engine, one handle
+
+- **FID-2026-1031-085 (step 4 + 5, slice 1) — high — The data layer now has a
+  single runtime entry point, and production cannot be served from the local
+  engine.** `lib/storage/database.ts` builds the storage handle: PostgreSQL when
+  `DATABASE_URL` is set, otherwise an in-process PGlite database, with the
+  migration run after readiness. `lib/storage/runtime.ts` caches it as a lazy
+  single-flight promise and raises in production when `DATABASE_URL` is absent.
+  Establishing the shape of the cutover produced the finding that decides it:
+  the store layer is SQLite dialect (`datetime()`, scalar `MAX`,
+  `INSERT OR IGNORE`) and the ported ledger is Postgres dialect (`GREATEST`,
+  `ON CONFLICT`, `::timestamptz`), so neither statement set runs on the other
+  engine and the flip is per dialect, not per connection — it cannot be staged
+  with both databases live. **Not yet a behavior change:** nothing under `app/`
+  imports the new handle, the 39 store modules and 73 callers are still the
+  synchronous SQLite implementation, and the application continues to run on
+  SQLite until the flip lands as one sequence.
+- **FID-2026-1031-085 (step 4, slice 2) — high — The money-core store has an
+  async target.** `lib/storage/store/billing.ts`, `activity.ts` and
+  `reconciliation.ts` implement the account summary, ledger read, grant,
+  activity log, adjustment, baseline and reconciliation report on the async
+  handle. Reserve, release and quarantine are re-exported from the already
+  ported `store/credit.ts` rather than restated, so the guarded reservation has
+  one implementation. Two guarantees became explicit rather than assumed: a
+  grant locks its read with `FOR UPDATE` (SQLite got that from being
+  single-writer), and a summary read quarantines elapsed holds before reading.
+  **No call site changed** — `lib/store/*` still serves the application, so this
+  is a ported implementation awaiting the single atomic flip, not a behaviour
+  change.
+
+## 2026-10-31 — Shared projections and the first read-path ports
+
+- **FID-2026-1031-085 (step 4, slices 3–4) — high — The row projections and key
+  crypto moved out of modules that cannot be imported by a test, and the key and
+  pricing stores now run on the async handle.** `lib/projections.ts` owns the
+  row types and every projection; `lib/api-key-crypto.ts` owns key generation and
+  hashing. `lib/store/shared.ts` and `lib/api-keys.ts` are now thin
+  `server-only` re-exports, so each helper has exactly one implementation while
+  the server boundary stays where the application needs it — the split was
+  forced because `server-only` throws outside a React server context, which made
+  the ported key store unloadable under the Node test runner. Also ported:
+  `store/settings.ts`, `store/keys.ts` and `store/pricing.ts`, with explicit
+  `.ts` import extensions because Node's ESM resolver does not infer them.
+  Found and recorded, not silently changed: `averageMarginBps([])` returns
+  `NaN`, so a catalog with nothing priced renders `NaN%` — a defect in the live
+  path, left for its own change so the port's verification stays meaningful.
+  **Still no caller flip:** `lib/store/*` serves the application unchanged.
+
+## 2026-10-31 — The public catalog on the async handle
+
+- **FID-2026-1031-085 (step 4, slice 5) — high — The published catalog and its
+  publication gate now run on the async handle.** `store/catalog.ts` and
+  `store/model-sql.ts` are ported, with the manual-cost freshness guard moved
+  from `julianday()` to `cost_observed_at::timestamptz >= now() - interval 'N
+days'` (the interval is built from a validated integer at module load, never
+  from a request). Two deliberate differences from the live version: the catalog
+  cache is keyed per database handle instead of module-wide, so one database
+  cannot answer another's query; and the tests are withhold/publish pairs, so
+  each guard is shown refusing a row *and* admitting it once satisfied. Also
+  recorded: the migration seeds the three system groups, so catalog fixtures
+  must not insert them again. **Still no caller flip:** the application continues
+  to run on the synchronous SQLite store.
+
+## 2026-10-31 — Admin catalog, routes and usage on the async handle
+
+- **FID-2026-1031-085 (step 4, slice 6) — high — Route reconciliation, the admin
+  model store and the usage reads now run on the async handle.** `store/routes.ts`
+  reconciles serving routes (cheapest provider answers the stable published id),
+  `store/models.ts` owns admin reads and single-row pricing edits, and
+  `store/usage.ts` owns `listUsage` / `listAdminUsage`. The full-catalog upsert
+  moved to `store/model-sync.ts` when `models.ts` crossed the 400-line ceiling —
+  a cut that also separates wholesale catalog rewrites from admin reads.
+  `routesByGroup` is re-exported from `lib/route-reconcile.ts` rather than
+  rewritten, since it is a pure grouping with no handle. Two contracts are now
+  encoded in tests rather than assumed: `applyCatalogMarkup` must be preceded by
+  `saveMarkupBps`, because its trailing reconcile re-derives auto prices from the
+  stored markup and would otherwise undo the apply; and the published id is the
+  plain upstream id, while an additional provider publishes a namespaced one.
+  `recordUsage` — the settlement write — is deliberately **not** ported yet: it
+  belongs with the gateway cutover, and half of it would be a stub.
+
+## 2026-10-31 — Group and support stores on the async handle
+
+- **FID-2026-1031-085 (step 4, slice 7) — high — The model group and support
+  stores now run on the async handle.** `store/groups.ts` keeps the three rules
+  that make a group edit a money edit: a system group keeps its billing mode, a
+  plan-included group cannot be deleted, and moving rows into a free group zeroes
+  their sell prices in the same transaction that moves them. Its label check now
+  compares `lower(label)`, because the PostgreSQL constraint is a unique index on
+  `lower(label)` — the exact-match check would have passed a case-only duplicate
+  in the application and then failed inside the index as a driver error.
+  `store/support.ts` preserves the operator queue's ordering (open first, then
+  recency) with an explicit `::timestamptz` cast. **Still no caller flip:** the
+  application continues to run on the synchronous SQLite store.
+
+## 2026-10-31 — Plans on the async handle
+
+- **FID-2026-1031-085 (step 4, slice 8) — high — The plan read model and plan
+  mutations now run on the async handle.** `store/plan-rows.ts` and
+  `store/plans.ts` port the purchasable product: group and model inclusions are
+  expanded to the exact entitlement ids a subscription snapshot will hold, a free
+  group cannot be sold, an active plan must cover at least one model, and a plan
+  with subscriptions is archived rather than deleted. `decidePlanActivation`,
+  `readPlanValues` and `expandEntitlementIds` are reused from `lib/plan-sales.ts`
+  and `lib/plans.ts`, so the sales policy keeps one answer. `toPlanSummary`
+  became a pure function with subscriber counts passed in — necessary once the
+  database handle is an argument, and it makes a plan summary testable without a
+  database. **Still no caller flip:** the application continues to run on the
+  synchronous SQLite store.
+
+## 2026-10-31 — Settlement and policy stores on the async handle
+
+- **FID-2026-1031-085 (step 4, slice 9) — high — The settlement and policy
+  acceptance stores now run on the async handle.** Both are evidence stores, so
+  the port is judged on preservation: a settlement row is written before
+  dispatch and throws if it cannot be stored (admitting a call whose row did not
+  commit would be a charge with no audit trail); a quarantined hold releases
+  exactly once, so a double-click cannot free the same reservation twice; and a
+  repeat policy acceptance returns the *first* row, keeping the time the customer
+  agreed to the version they were shown. The settlements store stays thin by
+  design — the ledger owns every statement and this module supplies the call id
+  and the clock, so a `stl_` id is minted in exactly one place. **Still no caller
+  flip:** the application continues to run on the synchronous SQLite store.
+
+## 2026-10-31 — The provider registry on the async handle
+
+- **FID-2026-1031-085 (step 4, slice 10) — high — The provider registry now runs
+  on the async handle.** `store/providers.ts`, `store/provider.ts` and the new
+  `store/provider-rows.ts` and `store/quota.ts` port the registry that decides
+  where a call is sent. The admission rules are unchanged: an unconfigured
+  provider reports `unconfigured` and never inherits a stale balance or quota, a
+  stale quota hides the subscription numbers, a provider claiming subscription
+  support without a current quota reports `error`, the default provider cannot be
+  deleted, deleting another removes its catalog and re-runs route reconciliation,
+  and usage history is never rewritten. `toStatus` became asynchronous because it
+  consults the quota ledger — splitting the pure part out would have duplicated
+  the admission logic — and `providers.ts` crossed the line ceiling, so the row
+  mapping moved to `provider-rows.ts`. Only `effectiveProviderRemaining` is
+  ported from `lib/quota-ledger.ts`; the runtime lease belongs to the provider
+  runtime cutover. **Still no caller flip:** the application continues to run on
+  the synchronous SQLite store.
+
+## 2026-10-31 — Subscription admission on the async handle
+
+- **FID-2026-1031-085 (step 4, slice 11) — high — The subscription read model
+  and admission path now run on the async handle.** `store/subscription-rows.ts`
+  and `store/subscription-access.ts` port the second money path. The ordering is
+  unchanged and load-bearing: a past-due subscription blocks before free or
+  credit routing, and a model the plan does not cover returns `none` so the caller
+  falls through instead of answering a confusing refusal. Admission still takes a
+  hold and increments `weighted_tokens_held` in one transaction, settlement still
+  moves that hold into used, and an expired hold is still quarantined rather than
+  silently returned, reusing the ported settlement ledger. Snapshot columns remain
+  the source of truth for price and allowance, so editing a plan cannot rewrite a
+  purchased subscription. `MAX(0, …)` became `GREATEST(0, …)` and `datetime(…)`
+  orderings became `::timestamptz` casts; `toSubscriptionSummary` became
+  asynchronous for the same reason `toPlanSummary` did. **Still no caller flip:**
+  the application continues to run on the synchronous SQLite store.
+
 ## 2026-10-31 — Automatic provider sync and a publication gate
 
 - **FID-2026-1031-084 — medium — Catalogs refresh themselves, and a model the

@@ -7,13 +7,14 @@ import type {
   GatewayModel,
 } from "./store/shared";
 
-import { computeTokenCostMicros } from "./pricing";
-import { redactSecrets } from "./redaction";
+import { usagePrices } from "./gateway-usage";
 import { subscriptionWeightedTokens } from "./plans";
+import { redactSecrets } from "./redaction";
 import { recordUsage } from "./store/usage";
-import { estimatedUsage, usageSource, type ResolvedUsage } from "./usage";
+import { usageSource, type ResolvedUsage } from "./usage";
 
-export { estimatedUsage };
+export { estimatedUsage } from "./usage";
+export { completionText, streamDeltaChars, usagePrices } from "./gateway-usage";
 
 export type SubscriptionCallContext =
   | {
@@ -43,84 +44,6 @@ export type GatewayCallContext = {
   /** Serving-account concurrency slot; idempotent, called on every exit. */
   releaseAdmission?: (() => void) | null;
 };
-
-function contentText(content: unknown) {
-  if (typeof content === "string") return content;
-
-  if (!Array.isArray(content)) return "";
-
-  return content
-    .map((part) => {
-      if (!part || typeof part !== "object") return "";
-
-      const text = (part as Record<string, unknown>).text;
-
-      return typeof text === "string" ? text : "";
-    })
-    .join("");
-}
-
-export function completionText(data: unknown) {
-  if (!data || typeof data !== "object") return "";
-
-  const choices = (data as Record<string, unknown>).choices;
-
-  if (!Array.isArray(choices)) return "";
-
-  return choices
-    .map((choice) => {
-      if (!choice || typeof choice !== "object") return "";
-
-      const message = (choice as Record<string, unknown>).message;
-
-      if (!message || typeof message !== "object") return "";
-
-      return contentText((message as Record<string, unknown>).content);
-    })
-    .join("");
-}
-
-/** Counts streamed output characters for the no-usage fallback. */
-export function streamDeltaChars(data: unknown) {
-  if (!data || typeof data !== "object") return 0;
-
-  const choices = (data as Record<string, unknown>).choices;
-
-  if (!Array.isArray(choices)) return 0;
-
-  return choices.reduce((total, choice) => {
-    if (!choice || typeof choice !== "object") return total;
-
-    const delta = (choice as Record<string, unknown>).delta;
-
-    if (!delta || typeof delta !== "object") return total;
-
-    const record = delta as Record<string, unknown>;
-
-    return (
-      total +
-      contentText(record.content).length +
-      contentText(record.reasoning_content).length
-    );
-  }, 0);
-}
-
-export function usagePrices(
-  model: GatewayModel,
-  inputTokens: number,
-  outputTokens: number,
-) {
-  const listPrice =
-    computeTokenCostMicros(inputTokens, model.sellInputMicros) +
-    computeTokenCostMicros(outputTokens, model.sellOutputMicros);
-
-  return {
-    costMicros:
-      computeTokenCostMicros(inputTokens, model.costInputMicros) +
-      computeTokenCostMicros(outputTokens, model.costOutputMicros),
-    chargedMicros: model.billingMode === "free" ? 0 : listPrice,
-  };
-}
 
 export function settleCall(
   context: GatewayCallContext,

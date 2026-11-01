@@ -1,6 +1,6 @@
 import { NO_STORE, requireCustomerApi } from "@/lib/customer-auth";
 import { sanitizeError } from "@/lib/http";
-import { getDailyTrialSummary } from "@/lib/store/daily-trial";
+import { getDailyTrialSummary } from "@/lib/store-facade/operations";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

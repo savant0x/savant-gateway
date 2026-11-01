@@ -1,6 +1,6 @@
 import { DailyTrialBalance } from "./daily-trial-balance";
 
-import { getDailyTrialSummary } from "@/lib/store/daily-trial";
+import { getDailyTrialSummary } from "@/lib/store-facade/operations";
 
 export async function DailyTrialCard({ userId }: { userId: string }) {
   const trial = await getDailyTrialSummary(userId);

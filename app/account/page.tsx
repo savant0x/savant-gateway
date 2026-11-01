@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { Card } from "@heroui/react";
+import Link from "next/link";
 import { headers } from "next/headers";
 
 import { AccountHeader } from "@/components/account/account-header";
@@ -30,7 +31,7 @@ import {
   readNowpaymentsConfig,
   readNowpaymentsPolicy,
 } from "@/lib/nowpayments";
-import { accountEmailStatus } from "@/lib/store/account-email";
+import { accountEmailStatus } from "@/lib/store-facade/access";
 import {
   POLICY_EFFECTIVE_LABEL,
   POLICY_VERSION,
@@ -39,12 +40,10 @@ import {
 import { readPlanSalesPolicy } from "@/lib/plan-sales";
 import { readPromoPolicy } from "@/lib/promo-codes";
 import { readStripeConfig } from "@/lib/stripe";
-import {
-  customerSubscriptionSummary,
-  getCustomerAccount,
-  hasAcceptedPolicy,
-  listSupportRequestsForUser,
-} from "@/lib/store";
+import { getCustomerAccount } from "@/lib/store-facade/access";
+import { customerSubscriptionSummary } from "@/lib/store-facade/money";
+import { hasAcceptedPolicy } from "@/lib/store";
+import { listSupportRequestsForUser } from "@/lib/store-facade/operations";
 
 export const dynamic = "force-dynamic";
 
@@ -68,8 +67,11 @@ export default async function AccountPage({
   searchParams: Promise<{ topup?: string; subscription?: string }>;
 }) {
   const customer = await requireCustomerPage();
-  const data = getCustomerAccount(customer);
-  const subscription = customerSubscriptionSummary(customer.id);
+  const data = await getCustomerAccount(customer);
+  const subscription = await customerSubscriptionSummary(customer.id);
+  const acceptedPolicy = await hasAcceptedPolicy(customer.id, POLICY_VERSION);
+  const email = await accountEmailStatus(customer.id);
+  const supportRequests = await listSupportRequestsForUser(customer.id);
   const stripe = readStripeConfig();
   const cardTopups = readCardTopupPolicy();
   const nowpayments = readNowpaymentsPolicy();
@@ -179,7 +181,7 @@ export default async function AccountPage({
         </section>
 
         <PolicyAcceptanceCard
-          accepted={hasAcceptedPolicy(customer.id, POLICY_VERSION)}
+          accepted={acceptedPolicy}
           effectiveLabel={POLICY_EFFECTIVE_LABEL}
           version={POLICY_VERSION}
           versionLabel={POLICY_VERSION_LABEL}
@@ -187,7 +189,7 @@ export default async function AccountPage({
 
         <EmailVerificationCard
           configured={Boolean(readAccountEmailConfig())}
-          verified={accountEmailStatus(customer.id).verified}
+          verified={email.verified}
         />
 
         <TrialCard userId={customer.id} />
@@ -206,7 +208,7 @@ export default async function AccountPage({
           subscription={subscription}
         />
 
-        <SupportCard initial={listSupportRequestsForUser(customer.id)} />
+        <SupportCard initial={supportRequests} />
 
         <Card variant="secondary">
           <Card.Header>
@@ -224,9 +226,9 @@ export default async function AccountPage({
             </pre>
             <p className="text-xs text-muted">
               Browse model ids and sell prices in the{" "}
-              <a className="text-accent hover:underline" href="/models">
+              <Link className="text-accent hover:underline" href="/models">
                 public catalog
-              </a>{" "}
+              </Link>{" "}
               or read the{" "}
               <a className="text-accent hover:underline" href="/docs">
                 API reference

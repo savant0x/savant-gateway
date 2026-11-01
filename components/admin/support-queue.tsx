@@ -1,6 +1,6 @@
 "use client";
 
-import type { SupportRequestRow } from "@/lib/store/support";
+import type { SupportRequestRow } from "@/lib/storage/store/support";
 
 import { Button, Chip, Input, Spinner } from "@heroui/react";
 import { useState } from "react";

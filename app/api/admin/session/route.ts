@@ -15,7 +15,10 @@ import {
   readAdminConfig,
   verifyAdminPassword,
 } from "@/lib/admin-session";
-import { bumpAdminSessionEpoch, getAdminSessionEpoch } from "@/lib/store/admin";
+import {
+  bumpAdminSessionEpoch,
+  getAdminSessionEpoch,
+} from "@/lib/store-facade/operations";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -66,7 +69,7 @@ export async function POST(request: Request) {
 
   return attachSessionCookie(
     response,
-    createSessionToken(config, getAdminSessionEpoch()),
+    createSessionToken(config, await getAdminSessionEpoch()),
   );
 }
 
@@ -75,7 +78,7 @@ export async function DELETE(request: Request) {
     return adminError(403, "Cross-origin logout rejected.");
   }
 
-  bumpAdminSessionEpoch();
+  await bumpAdminSessionEpoch();
 
   return clearSessionCookie(
     NextResponse.json({ ok: true }, { headers: NO_STORE }),

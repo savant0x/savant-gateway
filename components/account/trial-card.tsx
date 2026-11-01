@@ -1,15 +1,25 @@
 import { formatNumber, formatPricePer1M } from "@/components/dashboard/format";
-import { db } from "@/lib/db";
-import { trialOffer } from "@/lib/store/trial-offer";
-import { trialBalance } from "@/lib/trial-ledger";
+import { trialBalance } from "@/lib/storage/ledger/trials";
+import { getDatabase } from "@/lib/storage/runtime";
+import { trialOffer } from "@/lib/store-facade/catalog";
 import { readTrialConfig } from "@/lib/trials";
 
-export function TrialCard({ userId }: { userId: string }) {
+export async function TrialCard({ userId }: { userId: string }) {
   const config = readTrialConfig();
 
   if (!config.enabled) return null;
 
-  const balance = trialBalance(db, userId, new Date().toISOString());
+  const balance = await trialBalance(
+    await getDatabase(),
+    userId,
+    new Date().toISOString(),
+  );
+  const offers = await Promise.all(
+    Object.keys(config.pairs).map(async (id) => ({
+      id,
+      offer: await trialOffer(id),
+    })),
+  );
 
   return (
     <section className="rounded-md border border-border bg-surface p-6">
@@ -26,16 +36,14 @@ export function TrialCard({ userId }: { userId: string }) {
         a top-up.
       </p>
       <ul className="mt-4 space-y-2 font-mono text-xs">
-        {Object.keys(config.pairs).map((id) => {
-          const offer = trialOffer(id);
-
-          return offer ? (
+        {offers.map(({ id, offer }) =>
+          offer ? (
             <li key={id} className="break-all">
               {id}: {formatPricePer1M(offer.input_price_per_1m)} input /{" "}
               {formatPricePer1M(offer.output_price_per_1m)} output per 1M tokens
             </li>
-          ) : null;
-        })}
+          ) : null,
+        )}
       </ul>
     </section>
   );

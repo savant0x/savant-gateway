@@ -1,12 +1,12 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
 import { CONTEXT_BANNER_MAX_CHARS } from "@/lib/context-banner";
 import { readJsonObject, requestBodyError } from "@/lib/request-limits";
+import { getBannerConfig, saveBannerConfig } from "@/lib/store-facade/catalog";
 import {
   getAllocationSummary,
   saveAllocationConfig,
-} from "@/lib/store/allocations";
-import { getBannerConfig, saveBannerConfig } from "@/lib/store/banner";
-import { utcDay } from "@/lib/store/free-pool";
+  utcDay,
+} from "@/lib/store-facade/operations";
 import { refreshProviderRuntime } from "@/lib/providers/runtime";
 
 export const runtime = "nodejs";
@@ -75,7 +75,7 @@ export async function PATCH(request: Request) {
       return adminError(400, "banner.text must be a string.");
     }
 
-    const saved = saveBannerConfig({
+    const saved = await saveBannerConfig({
       enabled: banner.enabled === undefined ? undefined : banner.enabled,
       text: banner.text === undefined ? undefined : banner.text,
     });
@@ -128,7 +128,7 @@ export async function PATCH(request: Request) {
       );
     }
 
-    saveAllocationConfig({
+    await saveAllocationConfig({
       enabled:
         allocation.enabled === undefined ? undefined : allocation.enabled,
       dailyPoolTokens:

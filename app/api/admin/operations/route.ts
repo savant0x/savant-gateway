@@ -1,7 +1,7 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
 import { readAlertTransportConfig } from "@/lib/alert-transport";
 import { readJsonObject, requestBodyError } from "@/lib/request-limits";
-import { listProviders, setProviderEnabled } from "@/lib/store";
+import { listProviders, setProviderEnabled } from "@/lib/store-facade/catalog";
 import {
   acknowledgeOperationIncident,
   getAdmissionControl,
@@ -9,19 +9,20 @@ import {
   listOperationIncidents,
   runOperationsMonitor,
   setAdmissionState,
-} from "@/lib/store/operations";
+} from "@/lib/store-facade/insights";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function overview() {
+async function overview() {
   const transport = readAlertTransportConfig(process.env);
+  const providers = await listProviders();
 
   return {
-    snapshot: getOperationsSnapshot(),
-    admission: getAdmissionControl(),
-    incidents: listOperationIncidents(200),
-    providers: listProviders().map((provider) => ({
+    snapshot: await getOperationsSnapshot(),
+    admission: await getAdmissionControl(),
+    incidents: await listOperationIncidents(200),
+    providers: providers.map((provider) => ({
       slug: provider.slug,
       label: provider.label,
       enabled: provider.enabled,
@@ -39,7 +40,7 @@ export async function GET(request: Request) {
 
   if (blocked) return blocked;
 
-  return Response.json(overview(), { headers: NO_STORE });
+  return Response.json(await overview(), { headers: NO_STORE });
 }
 
 export async function POST(request: Request) {
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
           failed: tick.failed,
           unconfigured: tick.unconfigured,
         },
-        ...overview(),
+        ...(await overview()),
       },
       { headers: NO_STORE },
     );
@@ -81,7 +82,7 @@ export async function POST(request: Request) {
   if (action === "pause" || action === "drain" || action === "resume") {
     const state =
       action === "resume" ? "open" : action === "pause" ? "paused" : "draining";
-    const result = setAdmissionState({
+    const result = await setAdmissionState({
       state,
       reason: typeof body.reason === "string" ? body.reason : "",
     });
@@ -96,12 +97,12 @@ export async function POST(request: Request) {
 
     if (!id) return adminError(400, "An incident id is required.");
 
-    const incident = acknowledgeOperationIncident(id);
+    const incident = await acknowledgeOperationIncident(id);
 
     if (!incident) return adminError(404, "Incident not found.");
 
     return Response.json(
-      { ok: true, incident, ...overview() },
+      { ok: true, incident, ...(await overview()) },
       { headers: NO_STORE },
     );
   }
@@ -114,11 +115,14 @@ export async function POST(request: Request) {
       return adminError(400, "provider enabled must be a boolean.");
     }
 
-    if (!setProviderEnabled(slug, body.enabled)) {
+    if (!(await setProviderEnabled(slug, body.enabled))) {
       return adminError(404, "Provider not found.");
     }
 
-    return Response.json({ ok: true, ...overview() }, { headers: NO_STORE });
+    return Response.json(
+      { ok: true, ...(await overview()) },
+      { headers: NO_STORE },
+    );
   }
 
   return adminError(

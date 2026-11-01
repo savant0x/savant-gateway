@@ -103,17 +103,19 @@ completion, failure or stream close.
 
 ## Local database and recovery
 
-The database is a single SQLite file at `DB_PATH`. WAL mode adds
-`gateway.db-wal` and `gateway.db-shm` beside it, so keep the file and its
-siblings together.
+Local development runs PostgreSQL through PGlite in `data/pg`; a deployment
+runs on the server named by `DATABASE_URL`. There is no database file to copy.
 
 ```bash
 npm run db:backup
-npm run db:restore -- --backup <name>.db --target <new-path>.db
+npm run db:restore -- --from data/backups/gateway-<stamp> [--force]
 ```
 
-A backup is one `.db` plus its `.db.json` sidecar. Do not copy only the `.db`
-while writes continue, and never overwrite the live file to test a restore.
+A backup is a directory: `manifest.json` plus one `.jsonl` per table. The
+manifest holds row counts and per-table checksums, and every dump is verified
+against the ledger equation before it is written. A restore re-checks both and
+rolls back on any disagreement. It is a logical snapshot, not point-in-time
+recovery — there is no WAL archiving.
 
 ## Before a change
 

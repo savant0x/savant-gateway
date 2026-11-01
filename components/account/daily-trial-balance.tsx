@@ -1,6 +1,6 @@
 "use client";
 
-import type { DailyTrialSummary } from "@/lib/store/daily-trial";
+import type { DailyTrialSummary } from "@/lib/storage/store/daily-trial";
 
 import { Button } from "@heroui/react";
 

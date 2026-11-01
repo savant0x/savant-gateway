@@ -2,7 +2,10 @@ import { guardLocalOrAdmin, NO_STORE } from "@/lib/admin-auth";
 import { sanitizeError } from "@/lib/http";
 import { refreshProviderRuntime } from "@/lib/providers/runtime";
 import { quotaIsCurrent } from "@/lib/provider-quota";
-import { getProvider, getProviderStatusBySlug } from "@/lib/store/providers";
+import {
+  getProvider,
+  getProviderStatusBySlug,
+} from "@/lib/store-facade/catalog";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,7 +17,7 @@ export async function GET(request: Request) {
 
   const slug = new URL(request.url).searchParams.get("slug") ?? "savant";
 
-  if (!getProvider(slug)) {
+  if (!(await getProvider(slug))) {
     return Response.json(
       { error: "Unknown provider." },
       { status: 404, headers: NO_STORE },
@@ -23,7 +26,7 @@ export async function GET(request: Request) {
 
   try {
     const result = await refreshProviderRuntime(slug);
-    const provider = getProviderStatusBySlug(slug);
+    const provider = await getProviderStatusBySlug(slug);
     const ok = result.warnings.length === 0 && quotaIsCurrent(provider);
 
     return Response.json(

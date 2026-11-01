@@ -31,6 +31,10 @@ export default defineConfig([globalIgnores([
     "public/*",
     "tests/*",
     "scripts/*",
+    // Reference-only copies of other projects live here for reading, never for
+    // building. Their own lint config does not apply to this tree, so linting
+    // them reports this project's rules against their code.
+    "resources/**",
     "**/*.config.js",
     "**/.DS_Store",
     "**/node_modules",

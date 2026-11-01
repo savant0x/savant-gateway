@@ -227,37 +227,39 @@ proves this by dropping a required table on the disposable suite database
 
 ### Backup
 
-1. Run `DB_PATH=/data/gateway.db node scripts/db-backup.mjs` (or
-   `npm run db:backup`) while the process is live. The online API produces one
-   consistent file; do not copy only `gateway.db` while writes continue.
-2. Require exit 0 and both `<name>.db` and `<name>.db.json`.
-3. Pull both files off the volume and verify `sha256sum <name>.db` against the
-   sidecar. Keep at least one copy outside the volume/provider failure domain.
+1. Run `npm run db:backup` (or
+   `BACKUP_DIR=/data/backups BACKUP_RETENTION=14 node scripts/db-backup.mjs`)
+   while the gateway is serving. It reads one snapshot through the configured
+   pool; do not copy database files yourself.
+2. Require exit 0 and a new `gateway-<timestamp>/` directory containing
+   `manifest.json` and one `.jsonl` per table.
+3. Sync that directory off the volume/provider failure domain. The dump records
+   row counts and per-table checksums and refuses to exist when a balance does
+   not equal its ledger. It is a logical snapshot, not point-in-time recovery:
+   there is no WAL archiving, so RPO is the backup interval.
 
 ### Restore and drill
 
-Never overwrite the live file to "test" a restore. Restore into a new path:
+Never restore over a live deployment to "test" it. Restore into a scratch
+database, verify it, then promote:
 
 ```bash
-node scripts/db-restore.mjs \
-  --backup /data/backups/<name>.db \
-  --target /data/restore/gateway.db
+DATABASE_URL=postgres://… npm run db:restore -- --from /data/backups/gateway-<stamp>
 ```
 
-The tool refuses a missing or mismatched sidecar (only a legacy file may use
-`--allow-unverified`), an existing target, and a target equal to `DB_PATH`. It
-checks integrity and foreign keys, required tables, the credit equation
-(`balance = latest baseline + ledger`), negative balances and orphan ledger rows,
-then writes `<target>.restore.json` with counts and the unresolved
-settlement/quarantine inventory.
+The tool refuses a directory with no manifest, a target that already holds
+customers without `--force`, a table whose row count disagrees with the
+manifest, a checksum mismatch, and any user whose `credit_micros` is not the sum
+of their ledger rows (or `held_micros` their live holds). Every refusal rolls the
+whole transaction back, so a failed restore leaves the target as it was.
 
 1. Stop the gateway with SIGTERM and let it drain.
-2. Move the verified file to the volume at `DB_PATH`, keeping the previous file
-   until readiness passes; or point `DB_PATH` at the verified target.
+2. Restore into the deployment database with `--force`, or point `DATABASE_URL`
+   at the verified target.
 3. Start and require `GET /api/ready` → 200 `ready`.
 4. Sign in to `/admin/reconciliation`; confirm `totals.balanced` and review the
-   accounts. The restore receipt's unresolved settlements and quarantined holds
-   are the recovery worklist.
+   accounts. The backup does not resolve admitted settlements or quarantined
+   holds, so that page is the recovery worklist.
 5. Reconcile payments delivered after the snapshot: replay the missing Stripe
    events and match `topups.provider_ref` / `billing_events`. A replayed event id
    is a claim conflict and a replayed provider reference violates the unique
@@ -269,9 +271,12 @@ settlement/quarantine inventory.
 - RPO is the backup interval; RTO is stop + restore + readiness +
   reconciliation. Both are operator targets and must be recorded before launch.
 - `npm run test:recovery` is the disposable drill: it seeds a reconciled credit
-  history, keeps writes running during the backup, restores into a new file,
-  boots the real server, checks `/api/admin/reconciliation`, and restarts on the
-  restored copy. `npm run verify` runs it after the HTTP suite.
+  history, dumps it, destroys the source database, restores into a fresh one,
+  reads a spendable balance back, proves a replayed payment event is rejected,
+  and proves a tampered or truncated dump is refused without touching the
+  target. `npm run verify` runs it after the HTTP suite. The server-level check
+  returns with the storage flip (FID-086 step 4), because the application still
+  runs on SQLite.
 - The local drill currently completes in a few seconds but is **not** a
   production-equivalent timing. The first timed restore on the actual volume is
   still required and must be recorded.

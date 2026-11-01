@@ -6,9 +6,8 @@ import { GatewaySettings } from "@/components/admin/gateway-settings";
 import { StatCard } from "@/components/dashboard/chips";
 import { formatNumber } from "@/components/dashboard/format";
 import { CONTEXT_BANNER_MAX_CHARS } from "@/lib/context-banner";
-import { getAllocationSummary } from "@/lib/store/allocations";
-import { getBannerConfig } from "@/lib/store/banner";
-import { utcDay } from "@/lib/store/free-pool";
+import { getBannerConfig } from "@/lib/store-facade/catalog";
+import { getAllocationSummary, utcDay } from "@/lib/store-facade/operations";
 import { refreshProviderRuntime } from "@/lib/providers/runtime";
 
 export const dynamic = "force-dynamic";
@@ -21,8 +20,8 @@ export const metadata: Metadata = {
 export default async function AdminGatewayPage() {
   await refreshProviderRuntime("savant");
 
-  const summary = getAllocationSummary(utcDay());
-  const banner = getBannerConfig();
+  const summary = await getAllocationSummary(utcDay());
+  const banner = await getBannerConfig();
 
   return (
     <>

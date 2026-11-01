@@ -13,7 +13,8 @@ import {
   verifySessionToken,
 } from "./admin-session";
 import { isLocalRequest } from "./http";
-import { getAdminSessionEpoch } from "./store/admin";
+import { getDatabase } from "./storage/runtime";
+import { getAdminSessionEpoch } from "./storage/store/admin";
 
 export const NO_STORE = { "Cache-Control": "no-store" } as const;
 
@@ -41,7 +42,16 @@ export async function getAdminSession(): Promise<boolean> {
   const store = await cookies();
   const token = store.get(ADMIN_COOKIE)?.value;
 
-  return verifySessionToken(token, config, getAdminSessionEpoch());
+  // The login route signs the epoch from the Postgres store. Reading the
+  // SQLite epoch here made every issued cookie fail once the two dev databases
+  // disagreed. One session, one epoch source.
+  try {
+    const epoch = await getAdminSessionEpoch(await getDatabase());
+
+    return verifySessionToken(token, config, epoch);
+  } catch {
+    return false;
+  }
 }
 
 export async function requireAdminPage() {

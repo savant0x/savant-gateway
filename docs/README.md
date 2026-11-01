@@ -67,6 +67,11 @@ same answer data the page renders.
   cheapest-provider routing and stable published ids work.
 - [research/apixo-provider-review.md](research/apixo-provider-review.md) —
   verified Apixo API, image catalog, resale economics and the onboarding gaps.
+- [research/aio-source-review.md](research/aio-source-review.md) — static review
+  of the ten identity/fingerprint reference repositories, corrections to the
+  Gemini research report, and the operator-scoped AIO architecture and build
+  path: admin-run, advisory, free-pool first, API-only, user-funded runs
+  optional. Proposal only; no application code.
 - [load-acceptance.md](load-acceptance.md) — bounded load/fault gate, candidate
   envelope, measured throughput/latency/resources, reconciliation and the
   operator-approval boundary.

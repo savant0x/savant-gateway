@@ -41,6 +41,10 @@ bun.lockb
 # local database, cookies, and runtime logs
 /data/
 
+# Reference-only copies of other projects. Read them, never import from them and
+# never commit them; they carry their own dependencies, lockfiles and configs.
+/resources/
+
 # local agent/runtime state
 .freebuff/
 /.commandcode/

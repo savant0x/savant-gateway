@@ -12,7 +12,7 @@ import {
   recordActivityBestEffort,
   resolveCustomerSession,
   revokeCustomerSession,
-} from "@/lib/store";
+} from "@/lib/store-facade/access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,12 +24,12 @@ export async function POST(request: Request) {
 
   const store = await cookies();
   const token = store.get(CUSTOMER_COOKIE)?.value;
-  const customer = resolveCustomerSession(token);
+  const customer = await resolveCustomerSession(token);
 
-  revokeCustomerSession(token);
+  await revokeCustomerSession(token);
 
   if (customer) {
-    recordActivityBestEffort({
+    await recordActivityBestEffort({
       userId: customer.id,
       actor: "customer",
       kind: "customer.logout",

@@ -18,22 +18,28 @@ export type ProviderCatalogSummary = {
   servingCount: number;
 };
 
-type ProviderCatalogRow = ProviderCatalogSummary & { keyEnvVar: string };
-
-type SummaryRow = {
-  slug: string;
-  label: string;
-  enabled: number;
-  key_env_var: string;
-  synced_at: string | null;
-  model_count: number;
-  active_count: number;
-  priced_count: number;
-  unknown_cost_count: number;
-  serving_count: number;
+export type ProviderCatalogSummaryRow = ProviderCatalogSummary & {
+  keyEnvVar: string;
 };
 
-const SUMMARY_SELECT = `
+export type ProviderCatalogSummarySource = {
+  slug: string;
+  label: string;
+  enabled: number | boolean;
+  key_env_var: string;
+  synced_at: string | null;
+  model_count: number | string;
+  active_count: number | string | null;
+  priced_count: number | string | null;
+  unknown_cost_count: number | string | null;
+  serving_count: number | string;
+};
+
+/**
+ * Exported so the async port runs the same statement instead of a copy that
+ * could drift. The mapping is shared for the same reason.
+ */
+export const PROVIDER_CATALOG_SUMMARY_SELECT = `
   SELECT p.slug, p.label, p.enabled, p.key_env_var, p.synced_at,
          COUNT(m.id) AS model_count,
          SUM(CASE WHEN m.status = 'active' AND m.in_catalog = 1
@@ -57,22 +63,30 @@ const SUMMARY_SELECT = `
  * `configured` stays false here because it depends on the environment; the
  * store wrapper fills it from the key variable name, never the value.
  */
-export function providerCatalogSummaryIn(
-  database: DatabaseHandle,
-): ProviderCatalogRow[] {
-  const rows = database.prepare(SUMMARY_SELECT).all() as SummaryRow[];
-
-  return rows.map((row) => ({
+export function toProviderCatalogSummary(
+  row: ProviderCatalogSummarySource,
+): ProviderCatalogSummaryRow {
+  return {
     slug: row.slug,
     label: row.label,
-    enabled: row.enabled === 1,
+    enabled: Number(row.enabled) === 1,
     configured: false,
     syncedAt: row.synced_at,
-    modelCount: row.model_count,
-    activeCount: row.active_count,
-    pricedCount: row.priced_count,
-    unknownCostCount: row.unknown_cost_count,
-    servingCount: row.serving_count,
+    modelCount: Number(row.model_count),
+    activeCount: Number(row.active_count ?? 0),
+    pricedCount: Number(row.priced_count ?? 0),
+    unknownCostCount: Number(row.unknown_cost_count ?? 0),
+    servingCount: Number(row.serving_count),
     keyEnvVar: row.key_env_var,
-  }));
+  };
+}
+
+export function providerCatalogSummaryIn(
+  database: DatabaseHandle,
+): ProviderCatalogSummaryRow[] {
+  const rows = database
+    .prepare(PROVIDER_CATALOG_SUMMARY_SELECT)
+    .all() as ProviderCatalogSummarySource[];
+
+  return rows.map(toProviderCatalogSummary);
 }

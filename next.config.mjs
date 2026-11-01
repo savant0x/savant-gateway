@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ["better-sqlite3"],
+  // PGlite is the local development engine. It must load from Node, not from a
+  // Turbopack RSC bundle: its loader resolves WASM against `import.meta.url`,
+  // and a bundled module URL is not a filesystem path.
+  serverExternalPackages: ["better-sqlite3", "@electric-sql/pglite"],
   async headers() {
     return [
       {

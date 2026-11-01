@@ -1,8 +1,15 @@
 import "server-only";
 
-import type { GatewayModel } from "./store";
-
 import { getModelByUpstreamId, getModelForGateway } from "./store";
+
+// The pure refusals live in one place so the PostgreSQL entry can share them
+// without importing this synchronous module (FID-086, gateway port).
+export {
+  failureStatus,
+  isFreeCall,
+  retryHeaders,
+  safeUpstreamMessage,
+} from "./gateway-refusal";
 
 export function resolveModel(publicId: string) {
   const exact = getModelForGateway(publicId);
@@ -30,27 +37,4 @@ export function resolveModel(publicId: string) {
   }
 
   return getModelByUpstreamId(publicId);
-}
-
-export function isFreeCall(model: GatewayModel) {
-  return model.billingMode === "free";
-}
-
-export function safeUpstreamMessage(status: number, message: string) {
-  if (status >= 500 || status === 401 || status === 403)
-    return "Provider request failed";
-
-  return message || "Provider request failed";
-}
-
-export function failureStatus(status: number) {
-  return status === 400 || status === 402 || status === 429 ? status : 502;
-}
-
-export function retryHeaders(upstream: Response): Record<string, string> {
-  const retryAfter = upstream.headers.get("retry-after");
-
-  if (!retryAfter) return {};
-
-  return { "Retry-After": retryAfter };
 }

@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 import { OperationsPanel } from "@/components/admin/operations-panel";
 import { readAlertTransportConfig } from "@/lib/alert-transport";
-import { listProviders } from "@/lib/store";
+import { listProviders } from "@/lib/store-facade/catalog";
 import {
   getAdmissionControl,
   getOperationsSnapshot,
   listOperationIncidents,
-} from "@/lib/store/operations";
+} from "@/lib/store-facade/insights";
 
 export const dynamic = "force-dynamic";
 
@@ -16,13 +16,14 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function AdminOperationsPage() {
+export default async function AdminOperationsPage() {
   const transport = readAlertTransportConfig(process.env);
+  const providers = await listProviders();
   const initial = {
-    snapshot: getOperationsSnapshot(),
-    admission: getAdmissionControl(),
-    incidents: listOperationIncidents(200),
-    providers: listProviders().map((provider) => ({
+    snapshot: await getOperationsSnapshot(),
+    admission: await getAdmissionControl(),
+    incidents: await listOperationIncidents(200),
+    providers: providers.map((provider) => ({
       slug: provider.slug,
       label: provider.label,
       enabled: provider.enabled,

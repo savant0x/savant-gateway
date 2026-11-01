@@ -19,10 +19,15 @@ timer per instance would multiply deliveries. Schedule one run from cron, a Fly
 scheduled machine or another external scheduler:
 
 ```cron
-*/5 * * * * cd /app && DB_PATH=/data/gateway.db \
+*/5 * * * * cd /app && DATABASE_URL=postgres://user:pass@host/db \
   OPERATIONS_ALERT_WEBHOOK_URL=https://alerts.example.test/hook \
   node scripts/operations-monitor.mjs >> /data/operations-monitor.log 2>&1
 ```
+
+The monitor reads PostgreSQL directly. Set `DATABASE_URL` for a networked
+database, or `PG_LOCAL_PATH` to a PGlite directory for a single-process
+deployment. With neither set it exits non-zero naming what is missing rather
+than guessing a path, and it never runs a destructive migration.
 
 The monitor exits non-zero only when the run itself fails or a configured
 delivery attempt fails. An unconfigured webhook exits 0 and says so on stderr;
@@ -47,8 +52,8 @@ crypto sales are not refundable, so a price nobody re-checked is not offered.
 
 ## What it observes
 
-All values come from SQLite; the monitor makes no upstream call and no health
-claim from missing data.
+All values come from PostgreSQL; the monitor makes no upstream call and no
+health claim from missing data.
 
 | Area | Source | Rule |
 | --- | --- | --- |
@@ -58,7 +63,7 @@ claim from missing data.
 | Quota | enabled `providers` | `quota_error` critical; stale observation warning; configured provider with no observation warning. |
 | Reserve | `providers.subscription_tokens_remaining` | Below `OPERATIONS_RESERVE_MIN_TOKENS` per provider when the rule is enabled. |
 | Money | `credit_holds`, `quarantined_holds`, `users.credit_micros` | Displayed for reconciliation; no rule. |
-| Storage | `DB_PATH` file and `BACKUP_DIR` | Database size and backup-age rules when their thresholds are non-zero. |
+| Storage | `pg_database_size(current_database())` and `BACKUP_DIR` | Database size and backup-age rules when their thresholds are non-zero. |
 | Admission | `settings` | Current `open`, `paused` or `draining` state and reason. |
 
 Threshold parsing is bounded. A malformed value falls back to the safe default,

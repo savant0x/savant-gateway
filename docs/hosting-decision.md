@@ -1,5 +1,14 @@
 # Production hosting — Vercel plus libSQL, or one persistent process
 
+> **Superseded for the data layer on 2026-10-31.** The operator ruled that
+> production accounting will not run on a single SQLite file on one volume:
+> the objection is availability and recoverability, not throughput. The target
+> is now managed Postgres (Neon, Launch plan) with the Fly host retained — see
+> [FID-2026-1031-085](../dev/fids/FID-2026-1031-085-postgres-production-storage.md).
+> This document remains the record of what the **current** tree deploys (one
+> process, one volume) until that port lands, and its "What shipping on one
+> process costs us" list is the evidence the ruling rests on.
+
 Decision date: 2026-10-30. Status: **do not port the data layer. Deploy one
 persistent Node process with a local volume.** Vercel remains unable to serve
 this build and is not the launch host. The port stays planned, not started:

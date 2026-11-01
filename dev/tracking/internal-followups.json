@@ -173,6 +173,15 @@
       "detail": "On 2026-10-31 the operator supplied APIXOAI_API_KEY. The provider row adopted the documented variable name on restart and reports configured, was enabled, and synced 44 models with no warnings. All 43 models that appear on Apixo's public pricing page were costed and activated under the 2500-bps markup from a 2026-10-31 capture in docs/data/provider-prices.json; one synced id, glm5.3-flash-abliterated-backup, has no row on that page and stays disabled and unpublished. The capture also corrected qwen3-uncensored from a rounded 0.49/2.37 to the page's 0.4896/2.3664. The public catalog grew from 39 to 58 rows, with 25 published Apixo rows and 30 models served from Apixo, including takeovers of existing ids (gpt-6.1-sol, grok-4.7, free/mimo-v2.6-pro, glm-5.3 and others). Apixo exposes no balance or quota endpoint, so admission falls back to PROVIDER_SHARED_RPM and an unfunded wallet would fail those calls with no observable reserve.",
       "evidence": "dev/fids/archive/FID-2026-1031-080-apixo-provider-onboarding.md; dev/fids/archive/FID-2026-1031-081-provider-route-selection.md; dev/fids/archive/FID-2026-1031-083-apixo-key-variable-alignment.md; docs/data/provider-prices.json; local providers/models rows read 2026-10-31",
       "next_action": "Fund the Apixo wallet and place one billed call on a model that Apixo now serves, then re-read https://apixoai.online/pricing before 2026-11-30 (PROVIDER_PRICE_MAX_AGE_DAYS) and correct any captured rate that moved, because the cost is manual and the price window withholds the row once it ages out."
+    },
+    {
+      "id": "FID-2026-1031-085-PORT",
+      "fid": "FID-2026-1031-085",
+      "state": "watch",
+      "title": "Postgres port is planned but not implemented",
+      "detail": "The operator ruled on 2026-10-31 that production accounting will not run on one SQLite file on one volume. FID-085 is converged and supersedes docs/hosting-decision.md for the data layer; FID-066's libSQL target is retired because libSQL is also single-writer. No code changed: better-sqlite3 is still the only data layer, so the deployed topology and the startup gate still require one process on one local volume. Admission remains process-local, which is correct only while that is true.",
+      "evidence": "dev/fids/FID-2026-1031-085-postgres-production-storage.md; docs/hosting-decision.md; SCOPE.md (2026-10-31 storage ruling)",
+      "next_action": "Run step 0 against a Neon Launch database and record the output in the FID: two-connection settlement serialization, conditional update rejection, named ON CONFLICT targets, timestamptz ordering, BIGINT micros fidelity, statement timeout. Do not port a call site until the double-spend test passes."
     }
   ]
 }

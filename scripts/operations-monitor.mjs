@@ -8,29 +8,26 @@
  * deliver a configured alert; an unconfigured webhook is reported as such and
  * is not treated as a successful delivery or a scheduler failure.
  *
- * It opens the live SQLite file directly instead of importing the Next server
- * store, so it does not depend on Next's `server-only` runtime. It never runs a
- * migration and refuses a missing file.
+ * It opens the configured PostgreSQL database directly instead of importing the
+ * Next server store, so it does not depend on Next's `server-only` runtime. It
+ * never runs a destructive migration and refuses a missing configuration.
+ *
+ * Two variables are accepted, in this order:
+ *
+ *   DATABASE_URL    a PostgreSQL server (production)
+ *   PG_LOCAL_PATH   a PGlite directory (local and single-process deployments)
  *
  * Example:
- *   DB_PATH=/data/gateway.db node scripts/operations-monitor.mjs
+ *   DATABASE_URL=postgres://... node scripts/operations-monitor.mjs
+ *   PG_LOCAL_PATH=./data/pg node scripts/operations-monitor.mjs
  */
 import { resolve } from "node:path";
 
-import Database from "better-sqlite3";
+import { createStorageDatabase } from "../lib/storage/database.ts";
+import { runOperationsMonitor } from "../lib/storage/store/operations.ts";
 
-import {
-  deliverAlert,
-  readAlertTransportConfig,
-} from "../lib/alert-transport.ts";
-import {
-  readOperationsSnapshot,
-  readOperationsThresholds,
-  runOperationsTick,
-} from "../lib/operations.ts";
-import { readStorageObservation } from "../lib/operations-storage.ts";
-
-const configured = process.env.DB_PATH?.trim();
+const remote = process.env.DATABASE_URL?.trim();
+const local = process.env.PG_LOCAL_PATH?.trim();
 let database = null;
 
 function fail(message) {
@@ -39,29 +36,15 @@ function fail(message) {
 }
 
 try {
-  if (!configured || configured === ":memory:") {
-    fail("DB_PATH must name the live SQLite file.");
+  if (!remote && !local) {
+    fail("DATABASE_URL or PG_LOCAL_PATH must name the live database.");
   } else {
-    const dbPath = resolve(configured);
-
-    database = new Database(dbPath, { fileMustExist: true });
-    database.pragma("busy_timeout = 5000");
-
-    const thresholds = readOperationsThresholds(process.env);
-    const now = new Date().toISOString();
-    const snapshot = readOperationsSnapshot(database, {
-      now,
-      thresholds,
-      storage: readStorageObservation(dbPath, process.env, Date.parse(now)),
+    database = await createStorageDatabase({
+      env: process.env,
+      localDirectory: remote ? undefined : resolve(local),
     });
-    const config = readAlertTransportConfig(process.env);
-    const result = await runOperationsTick({
-      database,
-      snapshot,
-      thresholds,
-      transport: (payload) => deliverAlert(payload, config),
-      now,
-    });
+
+    const result = await runOperationsMonitor(database);
 
     console.log(
       JSON.stringify(
@@ -99,5 +82,5 @@ try {
 } catch (error) {
   fail(error instanceof Error ? error.message : String(error));
 } finally {
-  database?.close();
+  await database?.close();
 }

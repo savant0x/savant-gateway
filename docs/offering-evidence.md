@@ -241,11 +241,14 @@ not new measurements:
 capped at $25/day, with 8 concurrent customers and a 25-customer cohort.
 Expansion requires seven consecutive clean days: zero unresolved settlements,
 zero ledger difference, no critical incident, p95 inside target, and spend below
-the cap. The provider account is on the Free tier at 15 RPM; the admin panel
-offers a **30 RPM Boost for $15 / 30 days**, which is the recommended purchase
-before acceptance. At 30 RPM the sustained ceiling is 0.5 rps, so the load
-envelope's 20 rps steady target is a gateway-capability target only and cannot
-be offered as launch capacity.
+the cap. The provider account is on the Free tier at 15 RPM (0.25 rps). The
+admin panel offers a **30 RPM Boost for $15 / 30 days** and subscription plans
+that include RPM: **30 RPM for $30 / 30 days** (5B free-model tokens) and
+**200 RPM for $100 / 30 days** (20B tokens; $80 at the current welcome
+discount). The 200 RPM plan is the recommended capacity purchase because it
+lifts the sustained ceiling to **3.33 rps**, but it is a separate purchase from
+the $150 wallet funding and is not yet bought. The load envelope's 20 rps steady
+target would require 1,200 RPM, so it remains a gateway-capability target only.
 
 Still open: publishing `v1.2`, configuring the reserve on the provider account,
 and observing a funded paid call. Activation paths otherwise stay as they are:

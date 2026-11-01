@@ -196,22 +196,26 @@ Measurement date: not yet scheduled; must run before launch.
 
 ### 2.3 Provider limits
 
-The fixture fallback is 6,000 rpm and concurrency 8. Confirm the real account
-limits, or leave blank if unknown and the fallback should govern.
+Provider panel, 2026-11-01:
 
-- Real account rpm: **15 RPM on the Free tier** (confirmed in the provider
-  admin panel, 2026-11-01). That is **0.25 requests/second** sustained.
-- Available upgrade: **30 RPM for $15 / 30 days (Boost)**. That is **0.5
-  requests/second** sustained.
-- Concurrency: **1** until a higher plan is observed on the account.
-- [x] Buy the **$15 / 30 RPM Boost** before the acceptance run and use 30 RPM /
-      1 concurrency as the launch ceiling. Record the boost expiry date and
-      re-check the panel.
+| Option | RPM | Sustained rps | Cost | Notes |
+| --- | ---: | ---: | ---: | --- |
+| Free tier (current) | 15 | 0.25 | $0 | default account limit |
+| RPM Boost | 30 | 0.50 | $15 / 30 days | limit upgrades after crypto confirmation |
+| Subscription, 30 days | 30 | 0.50 | $30 list / $24 welcome | 5B free-model tokens |
+| Subscription, 30 days | 200 | 3.33 | $100 list / $80 welcome | 20B free-model tokens; best RPM per dollar |
 
-**Consequence:** even the 30 RPM boost is 0.5 rps. The load envelope's 20 rps
-steady target would require 1,200 RPM, so it is a gateway-capability target only;
-0.5 rps is the launch capacity and the 20 rps number must not be published as
-available capacity.
+- [x] **Recommended capacity purchase:** the **30-day 200 RPM subscription** at
+the current $80 welcome price ($100 list), as a separate capacity purchase from
+the $150 wallet funding. It raises the ceiling from 0.25 to 3.33 rps.
+- [ ] Fallback if the $100 is not approved: the **$15 / 30 RPM Boost** (0.5 rps).
+- Concurrency: **1** until the provider confirms a higher concurrency allowance.
+- Purchase status: **not purchased.** The recommendation does not authorize the
+  spend; the operator completes the crypto checkout and records the expiry.
+
+**Consequence:** 200 RPM is 3.33 rps. The load envelope's 20 rps steady target
+would require 1,200 RPM, so it remains a gateway-capability target only. Launch
+capacity is **3.33 rps** on the 200 RPM plan, or 0.5 rps on the Boost.
 
 ### 2.4 Real acceptance run
 
@@ -325,9 +329,9 @@ Tick only after reading the limitation:
       operator bears settlement-asset movement between invoice and conversion.
 - [x] **No chargeback path:** on-chain payments are final; the remedy is service
       credit.
-- [x] **Provider ceiling:** 15 RPM free is 0.25 rps and the 30 RPM Boost is
-      0.5 rps, so the 20 rps load target cannot be offered as launch capacity.
-      The Boost is the recommended launch purchase.
+- [x] **Provider ceiling:** 15 RPM free is 0.25 rps, the 30 RPM Boost is 0.5
+      rps, and the 200 RPM subscription is 3.33 rps. The 20 rps load target
+      cannot be offered as launch capacity on any current plan.
 - [x] **Policy drift:** `v1.1` terms/privacy still name Stripe; `v1.2` must be
       published before a customer can pay through NOWPayments.
 - [x] Other: no additional risk accepted outside these items.

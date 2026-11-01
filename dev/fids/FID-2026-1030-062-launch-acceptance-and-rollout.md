@@ -100,10 +100,12 @@ answers in [`launch-decision-form.md`](../../docs/launch-decision-form.md) on
 2026-11-01: load targets are approved, and real provider spend is authorized up
 to $150 for the acceptance run. That is an authorization, not a receipt. The
 accepted operating envelope is $25/day paid upstream spend, 8 concurrent
-customers, a 25-customer cohort, and the provider's **30 RPM Boost** ($15 / 30
-days) with 1 concurrency. That is 0.5 requests/second. The 20 rps load target is
-a gateway-capability target only; it would require 1,200 RPM and cannot be
-offered as launch capacity.
+customers, a 25-customer cohort, and 1 concurrency. The recommended capacity
+purchase is the provider's **30-day 200 RPM subscription** ($100 list / $80
+welcome, 20B free-model tokens), which raises the sustained ceiling to **3.33
+rps**; the $15 / 30 RPM Boost (0.5 rps) is the fallback. The purchase is not yet
+made and is separate from the $150 wallet funding. The 20 rps load target would
+require 1,200 RPM, so it remains a gateway-capability target only.
 
 Open items, each requiring a dated receipt before approval:
 
@@ -117,9 +119,9 @@ Open items, each requiring a dated receipt before approval:
    first UTC reset, 24h and 7d observations.
 5. FID-060 load envelope re-measured against PostgreSQL and operator-approved;
    the targets are accepted, but the current measurements remain SQLite-era and
-   the envelope remains `candidate`. The 30 RPM Boost (0.5 rps) makes the 20 rps
-   target unreachable, so the rerun must state both the gateway ceiling and the
-   provider ceiling.
+   the envelope remains `candidate`. The recommended 200 RPM plan (3.33 rps)
+   still makes the 20 rps target unreachable, so the rerun must state both the
+   gateway ceiling and the provider ceiling.
 6. `v1.2` terms, privacy and refunds published. `v1.1` still names Stripe and
    cannot be the served text for a NOWPayments launch.
 7. Hosted restore rehearsal on Neon Launch with the confirmed retention window,

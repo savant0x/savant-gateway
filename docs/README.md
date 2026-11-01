@@ -14,6 +14,7 @@ against, not automatically today's behavior.
 | Fix a setup, gate or deployment failure | [troubleshooting.md](troubleshooting.md) |
 | Know what is verified and what is blocked | [project-status.md](project-status.md) |
 | See the path to launch | [launch-plan.md](launch-plan.md) |
+| Answer the open launch decisions | [launch-decision-form.md](launch-decision-form.md) |
 | Deploy, back up, restore and roll back | [deployment-runbook.md](deployment-runbook.md) |
 | Understand the hosting decision | [hosting-decision.md](hosting-decision.md) |
 | Handle a support or deletion request | [support-runbook.md](support-runbook.md) |

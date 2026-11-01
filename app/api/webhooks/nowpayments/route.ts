@@ -1,4 +1,4 @@
-import { db, nowIso } from "@/lib/db";
+import { storeRuntime } from "@/lib/store-facade/runtime";
 import {
   isCreditWorthyStatus,
   isFinalFailStatus,
@@ -11,7 +11,7 @@ import {
   completePaymentEvent,
   failPaymentEvent,
   quarantinePaymentEvent,
-} from "@/lib/payment-events";
+} from "@/lib/storage/ledger/payment-events";
 import { redactSecrets } from "@/lib/redaction";
 import { readBoundedText, requestBodyError } from "@/lib/request-limits";
 import { fulfillTopup, getTopupById, markTopupFailed } from "@/lib/store";
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
   if (isFinalFailStatus(payment.paymentStatus)) {
     // Terminal without credit. The idempotent failure mark releases the
     // pending top-up; nothing later can revive this payment into credit.
-    markTopupFailed(payment.orderId);
+    await markTopupFailed(payment.orderId);
 
     return Response.json({
       received: true,
@@ -101,7 +101,8 @@ export async function POST(request: Request) {
     return Response.json({ received: true });
   }
 
-  const claim = claimPaymentEvent(db, {
+  const db = await storeRuntime();
+  const claim = await claimPaymentEvent(db, {
     id: eventId(payment.paymentId),
     type: "nowpayments_payment",
     livemode: null,
@@ -120,10 +121,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    const topup = getTopupById(payment.orderId);
+    const topup = await getTopupById(payment.orderId);
 
     if (!topup) {
-      quarantinePaymentEvent(
+      await quarantinePaymentEvent(
         db,
         eventId(payment.paymentId),
         `Unknown order ${payment.orderId}; no credit was issued.`,
@@ -136,7 +137,7 @@ export async function POST(request: Request) {
       });
     }
 
-    const result = fulfillTopup({
+    const result = await fulfillTopup({
       topupId: topup.id,
       providerRef: eventId(payment.paymentId),
       expectedAmountMicros: expectedAmountMicros(payment.priceAmount),
@@ -145,7 +146,7 @@ export async function POST(request: Request) {
     });
 
     if (result === "mismatch" || result === "missing") {
-      quarantinePaymentEvent(
+      await quarantinePaymentEvent(
         db,
         eventId(payment.paymentId),
         `IPN top-up ${result}; no credit was issued.`,
@@ -159,7 +160,11 @@ export async function POST(request: Request) {
       });
     }
 
-    completePaymentEvent(db, eventId(payment.paymentId), nowIso());
+    await completePaymentEvent(
+      db,
+      eventId(payment.paymentId),
+      new Date().toISOString(),
+    );
 
     return Response.json({
       received: true,
@@ -168,7 +173,7 @@ export async function POST(request: Request) {
   } catch (error) {
     // Keep the claim with a failed state so an operator can see it and a
     // NOWPayments retry can reclaim it; never delete the evidence.
-    failPaymentEvent(
+    await failPaymentEvent(
       db,
       eventId(payment.paymentId),
       error instanceof Error ? error.message : "unknown",

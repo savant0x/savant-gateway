@@ -78,7 +78,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const customer = findCustomerByEmail(email);
+  const customer = await findCustomerByEmail(email);
   const valid = verifyPassword(password, customer?.passwordHash ?? dummyHash());
 
   if (!customer || !valid) {
@@ -90,8 +90,8 @@ export async function POST(request: Request) {
 
   loginLimiter.reset(key);
   loginAccountLimiter.reset(email);
-  markCustomerLogin(customer.id);
-  recordActivityBestEffort({
+  await markCustomerLogin(customer.id);
+  await recordActivityBestEffort({
     userId: customer.id,
     actor: "customer",
     kind: "customer.login",
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
     metadata: { source: "password" },
   });
 
-  const session = createCustomerSession(customer.id);
+  const session = await createCustomerSession(customer.id);
   const response = NextResponse.json(
     {
       customer: {

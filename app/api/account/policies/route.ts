@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     return customerError(400, "That policy version is not the current one.");
   }
 
-  const acceptance = recordPolicyAcceptance({
+  const acceptance = await recordPolicyAcceptance({
     userId: customer.id,
     version: POLICY_VERSION,
     source: "account",

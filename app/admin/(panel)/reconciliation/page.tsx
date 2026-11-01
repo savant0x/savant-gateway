@@ -27,9 +27,11 @@ function Stat({ label, value }: { label: string; value: string }) {
  * Financial reconciliation: the customer balance must equal the recorded
  * baseline plus every ledger entry. A difference is shown, never tuned away.
  */
-export default function ReconciliationPage() {
-  const report = getReconciliation();
-  const baselines = listBalanceBaselines(10);
+export default async function ReconciliationPage() {
+  const [report, baselines] = await Promise.all([
+    getReconciliation(),
+    listBalanceBaselines(10),
+  ]);
   const unbalanced = report.accounts.filter((account) => !account.balanced);
 
   return (

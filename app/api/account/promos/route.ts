@@ -41,7 +41,10 @@ export async function POST(request: Request) {
     return customerError(400, "Enter a promo code.");
   }
 
-  const result = redeemPromoCode({ userId: customer.id, code: body.code });
+  const result = await redeemPromoCode({
+    userId: customer.id,
+    code: body.code,
+  });
 
   if (!result.ok) {
     if (result.reason === "disabled") {

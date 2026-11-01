@@ -9,7 +9,7 @@ import {
   formatMarginPercent,
   formatNumber,
 } from "@/components/dashboard/format";
-import { getPricingData, listModelGroups } from "@/lib/store";
+import { getPricingSummary, listAllModels, listModelGroups } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
@@ -18,9 +18,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function AdminPricingPage() {
-  const data = getPricingData();
-  const groups = listModelGroups();
+export default async function AdminPricingPage() {
+  const [models, groups] = await Promise.all([
+    listAllModels(),
+    listModelGroups(),
+  ]);
+  const data = { models, summary: await getPricingSummary(models) };
 
   return (
     <>

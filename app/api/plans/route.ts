@@ -24,7 +24,7 @@ function publicPlan(plan: PlanSummary) {
 
 export async function GET() {
   return Response.json(
-    { plans: listSellablePlans().map(publicPlan) },
+    { plans: (await listSellablePlans()).map(publicPlan) },
     { headers: { "Cache-Control": "no-store" } },
   );
 }

@@ -42,7 +42,7 @@ export default async function AdminAnalyticsPage({
   const params = await searchParams;
   const rawRange = Array.isArray(params.range) ? params.range[0] : params.range;
   const range = normalizeAnalyticsRange(rawRange);
-  const data = getAnalyticsData(range);
+  const data = await getAnalyticsData(range);
   const { totals } = data;
   const marginBps = grossMarginBps(
     totals.totalRevenueMicros,

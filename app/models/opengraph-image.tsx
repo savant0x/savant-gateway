@@ -20,8 +20,8 @@ export const contentType = "image/png";
  * Counts come from the same `getCatalogData()` call the page renders, so a
  * share of /models cannot advertise a catalog size the page does not show.
  */
-export default function Image() {
-  const { stats } = getCatalogData();
+export default async function Image() {
+  const { stats } = await getCatalogData();
 
   return new ImageResponse(
     socialCard({

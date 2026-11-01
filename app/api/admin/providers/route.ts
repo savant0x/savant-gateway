@@ -14,7 +14,10 @@ export async function GET(request: Request) {
 
   await refreshEnabledProviderAccounts();
 
-  return Response.json({ providers: listProviders() }, { headers: NO_STORE });
+  return Response.json(
+    { providers: await listProviders() },
+    { headers: NO_STORE },
+  );
 }
 
 export async function POST(request: Request) {
@@ -33,11 +36,11 @@ export async function POST(request: Request) {
   const input = readProviderInput(body);
 
   if (!input.ok) return adminError(400, input.error);
-  if (getProvider(input.value.slug)) {
+  if (await getProvider(input.value.slug)) {
     return adminError(409, "A provider with that slug already exists.");
   }
 
-  const provider = createProvider(input.value);
+  const provider = await createProvider(input.value);
 
   return Response.json(
     { ok: true, provider },

@@ -30,7 +30,12 @@ export const dynamic = "force-dynamic";
 function duplicateEmail(error: unknown) {
   const code = (error as { code?: string } | null)?.code;
 
-  return typeof code === "string" && code.startsWith("SQLITE_CONSTRAINT");
+  // 23505 is PostgreSQL's unique_violation; the SQLite prefix is kept for the
+  // legacy fixture suite until its port lands.
+  return (
+    code === "23505" ||
+    (typeof code === "string" && code.startsWith("SQLITE_CONSTRAINT"))
+  );
 }
 
 export async function POST(request: Request) {
@@ -82,16 +87,16 @@ export async function POST(request: Request) {
 
   // Reject a known email before paying for scrypt or hitting the unique
   // constraint. The insert catch still covers the concurrent-signup race.
-  if (findCustomerByEmail(email)) {
+  if (await findCustomerByEmail(email)) {
     return customerError(409, "An account with this email already exists.");
   }
 
   const passwordHash = hashPassword(password);
 
   try {
-    const customer = createCustomer({ email, name, passwordHash });
+    const customer = await createCustomer({ email, name, passwordHash });
 
-    recordPolicyAcceptance({
+    await recordPolicyAcceptance({
       userId: customer.id,
       version: POLICY_VERSION,
       source: "signup",
@@ -99,7 +104,7 @@ export async function POST(request: Request) {
 
     signupLimiter.fail(key);
 
-    const session = createCustomerSession(customer.id);
+    const session = await createCustomerSession(customer.id);
     const response = NextResponse.json(
       { customer },
       { status: 201, headers: NO_STORE },

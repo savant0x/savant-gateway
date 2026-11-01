@@ -22,18 +22,25 @@ export default async function AdminPage() {
   await refreshProviderRuntime("savant");
 
   const promoPolicy = readPromoPolicy();
+  const [activity, analytics, data, codes, providers] = await Promise.all([
+    listActivity(12),
+    getAnalyticsData(30),
+    getAdminOverview(),
+    listPromoCodes(),
+    listProviderCatalogSummary(),
+  ]);
 
   return (
     <AdminPanel
-      activity={listActivity(12)}
-      analytics={getAnalyticsData(30)}
-      data={getAdminOverview()}
+      activity={activity}
+      analytics={analytics}
+      data={data}
       promos={{
         enabled: promoPolicy.enabled,
         reason: promoPolicy.reason,
-        codes: listPromoCodes(),
+        codes,
       }}
-      providers={listProviderCatalogSummary()}
+      providers={providers}
     />
   );
 }

@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     return adminError(400, "A refund must credit the customer.");
   }
 
-  const result = adjustCredit({
+  const result = await adjustCredit({
     userId,
     amountMicros,
     kind,
@@ -67,8 +67,8 @@ export async function POST(request: Request) {
     {
       ok: true,
       created: result.created,
-      ...getReconciliation(),
-      ledger: listCreditLedger(25, userId),
+      ...(await getReconciliation()),
+      ledger: await listCreditLedger(25, userId),
     },
     { headers: NO_STORE },
   );

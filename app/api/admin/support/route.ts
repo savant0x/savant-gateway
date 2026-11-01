@@ -15,13 +15,12 @@ export async function GET(request: Request) {
 
   if (blocked) return blocked;
 
-  return Response.json(
-    {
-      requests: listSupportRequests(200),
-      open: countOpenSupportRequests(),
-    },
-    { headers: NO_STORE },
-  );
+  const [requests, open] = await Promise.all([
+    listSupportRequests(200),
+    countOpenSupportRequests(),
+  ]);
+
+  return Response.json({ requests, open }, { headers: NO_STORE });
 }
 
 export async function PATCH(request: Request) {
@@ -45,7 +44,7 @@ export async function PATCH(request: Request) {
 
   if (!note.ok) return adminError(400, note.error);
 
-  const resolved = resolveSupportRequest(id, note.value);
+  const resolved = await resolveSupportRequest(id, note.value);
 
   if (!resolved) return adminError(404, "Support request not found.");
 

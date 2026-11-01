@@ -16,13 +16,12 @@ export async function GET(request: Request) {
 
   if (blocked) return blocked;
 
-  return Response.json(
-    {
-      ...getReconciliation(),
-      baselines: listBalanceBaselines(25),
-    },
-    { headers: NO_STORE },
-  );
+  const [reconciliation, baselines] = await Promise.all([
+    getReconciliation(),
+    listBalanceBaselines(25),
+  ]);
+
+  return Response.json({ ...reconciliation, baselines }, { headers: NO_STORE });
 }
 
 /**
@@ -61,12 +60,17 @@ export async function POST(request: Request) {
     return adminError(400, "baselineUsd must be a nonnegative dollar amount.");
   }
 
-  if (!saveBaseline({ userId, baselineMicros, note })) {
+  if (!(await saveBaseline({ userId, baselineMicros, note }))) {
     return adminError(404, "Customer not found.");
   }
 
+  const [reconciliation, baselines] = await Promise.all([
+    getReconciliation(),
+    listBalanceBaselines(25),
+  ]);
+
   return Response.json(
-    { ok: true, ...getReconciliation(), baselines: listBalanceBaselines(25) },
+    { ok: true, ...reconciliation, baselines },
     { headers: NO_STORE },
   );
 }

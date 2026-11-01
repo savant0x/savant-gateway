@@ -1,13 +1,13 @@
-import { consumeAccountAction } from "@/lib/account-actions";
+import { consumeAccountAction } from "@/lib/storage/ledger/account-actions";
 import { createRateLimiter } from "@/lib/admin-rate-limit";
 import { isSameOriginRequest } from "@/lib/admin-session";
 import { validateNewPassword } from "@/lib/customer";
 import { customerError, NO_STORE } from "@/lib/customer-auth";
 import { clientKey } from "@/lib/customer-rate-limit";
 import { isSessionToken } from "@/lib/customer-session";
-import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
 import { readJsonObject, requestBodyError } from "@/lib/request-limits";
+import { storeRuntime } from "@/lib/store-facade/runtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -51,7 +51,8 @@ export async function POST(request: Request) {
     if (problem) return customerError(400, problem);
   }
 
-  const consumed = consumeAccountAction(db, {
+  const db = await storeRuntime();
+  const consumed = await consumeAccountAction(db, {
     token: body.token,
     purpose: body.purpose,
     ...(body.purpose === "reset"

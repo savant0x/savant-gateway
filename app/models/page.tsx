@@ -8,6 +8,7 @@ import { primaryCta, secondaryCta } from "@/components/landing/cta";
 import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
 import { siteConfig } from "@/config/site";
+import { artificialAnalysisConfigured } from "@/lib/artificial-analysis";
 import { ensureBenchmarksFresh } from "@/lib/benchmark-sync";
 import { getOpenRouterModels } from "@/lib/openrouter-prices";
 import {
@@ -45,11 +46,16 @@ export const metadata: Metadata = {
 };
 
 export default async function ModelsPage() {
-  const data = getCatalogData();
+  const [data, benchmarks] = await Promise.all([
+    getCatalogData(),
+    listBenchmarks(),
+  ]);
   // Stored rows only; the freshness check may start a sync but never waits on
   // one, so a slow benchmark source cannot delay this response.
-  const benchmarks = listBenchmarks();
-  const benchmarkStatus = getBenchmarkStatus(data.models.length);
+  const benchmarkStatus = await getBenchmarkStatus(
+    data.models.length,
+    artificialAnalysisConfigured(),
+  );
 
   ensureBenchmarksFresh();
 

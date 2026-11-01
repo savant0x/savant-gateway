@@ -27,7 +27,7 @@ export default async function DashboardPage() {
     <div className="workspace relative flex min-h-screen flex-col">
       <Navbar />
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-20 pt-6 sm:px-6 lg:px-8">
-        <Dashboard initial={getOverview()} />
+        <Dashboard initial={await getOverview()} />
       </main>
       <footer className="border-t border-black/10 dark:border-white/10">
         <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-5 text-xs text-muted sm:px-6 lg:px-8">

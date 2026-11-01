@@ -1,4 +1,5 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
+import { artificialAnalysisConfigured } from "@/lib/artificial-analysis";
 import { syncBenchmarks } from "@/lib/benchmark-sync";
 import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 import { getBenchmarkStatus, listAllModels } from "@/lib/store";
@@ -11,9 +12,13 @@ export async function GET(request: Request) {
 
   if (blocked) return blocked;
 
-  return Response.json(getBenchmarkStatus(listAllModels().length), {
-    headers: NO_STORE,
-  });
+  return Response.json(
+    await getBenchmarkStatus(
+      (await listAllModels()).length,
+      artificialAnalysisConfigured(),
+    ),
+    { headers: NO_STORE },
+  );
 }
 
 /**

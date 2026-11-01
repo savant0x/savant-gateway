@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { BenchmarkPanel } from "@/components/admin/benchmark-panel";
 import { AdminModelsTable } from "@/components/admin/models-table";
 import { ProviderCatalogSections } from "@/components/admin/provider-catalog-sections";
+import { artificialAnalysisConfigured } from "@/lib/artificial-analysis";
 import {
   getBenchmarkStatus,
   listAllModels,
@@ -17,9 +18,16 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function AdminCatalogPage() {
-  const models = listAllModels();
-  const groups = listModelGroups();
+export default async function AdminCatalogPage() {
+  const [models, groups, providers] = await Promise.all([
+    listAllModels(),
+    listModelGroups(),
+    listProviderCatalogSummary(),
+  ]);
+  const benchmarkStatus = await getBenchmarkStatus(
+    models.length,
+    artificialAnalysisConfigured(),
+  );
   const disabled = models.filter((model) => model.status === "disabled").length;
   const delisted = models.filter((model) => !model.inCatalog).length;
 
@@ -45,8 +53,8 @@ export default function AdminCatalogPage() {
       </div>
 
       <div className="space-y-6">
-        <ProviderCatalogSections providers={listProviderCatalogSummary()} />
-        <BenchmarkPanel status={getBenchmarkStatus(models.length)} />
+        <ProviderCatalogSections providers={providers} />
+        <BenchmarkPanel status={benchmarkStatus} />
         <AdminModelsTable groups={groups} models={models} />
       </div>
     </>

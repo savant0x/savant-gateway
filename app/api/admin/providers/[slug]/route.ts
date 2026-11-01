@@ -14,7 +14,7 @@ export async function PATCH(request: Request, context: Context) {
   if (blocked) return blocked;
 
   const { slug } = await context.params;
-  const existing = getProvider(slug);
+  const existing = await getProvider(slug);
 
   if (!existing) return adminError(404, "Provider not found.");
 
@@ -34,7 +34,7 @@ export async function PATCH(request: Request, context: Context) {
 
   if (!input.ok) return adminError(400, input.error);
 
-  const provider = updateProvider(slug, input.value);
+  const provider = await updateProvider(slug, input.value);
 
   if (!provider) return adminError(404, "Provider not found.");
 
@@ -52,7 +52,7 @@ export async function DELETE(request: Request, context: Context) {
     return adminError(400, "The default provider cannot be deleted.");
   }
 
-  if (!deleteProvider(slug)) {
+  if (!(await deleteProvider(slug))) {
     return adminError(404, "Provider not found.");
   }
 

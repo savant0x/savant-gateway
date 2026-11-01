@@ -68,59 +68,55 @@ export async function reserveTrial(
     return false;
   }
 
+  if (input.config.grantTokens <= 0) return false;
+
   return db
     .transaction(async () => {
-      const existing = await db
-        .prepare("SELECT user_id FROM trial_grants WHERE user_id = ?")
+      // Every decision below is one statement, because a read followed by a
+      // write lets concurrent calls both see the same balance. The row lock
+      // serializes them on PostgreSQL; the conditional inserts keep the rule
+      // true on engines where the lock cannot exclude.
+      await db
+        .prepare("SELECT id FROM users WHERE id = ? FOR UPDATE")
         .get(input.userId);
 
-      if (!existing) {
-        const user = await db
-          .prepare("SELECT email_verified_at FROM users WHERE id = ?")
-          .get<{ email_verified_at: string | null }>(input.userId);
-        const issued = await db
-          .prepare(
-            "SELECT COALESCE(SUM(granted_tokens), 0) AS total FROM trial_grants",
-          )
-          .get<{ total: number }>();
-
-        if (
-          !user?.email_verified_at ||
-          input.config.grantTokens <= 0 ||
-          Number(issued?.total ?? 0) + input.config.grantTokens >
-            input.config.grantBudget
-        ) {
-          return false;
-        }
-
-        const historic = await db
-          .prepare(
-            "SELECT COALESCE(SUM(weighted_tokens), 0) AS total FROM free_pool_usage WHERE user_id = ?",
-          )
-          .get<{ total: number }>(input.userId);
-
-        await db
-          .prepare(
-            `INSERT INTO trial_grants (user_id, granted_tokens, used_tokens, issued_at)
-           VALUES (?, ?, ?, ?)`,
-          )
-          .run(
-            input.userId,
-            input.config.grantTokens,
-            Number(historic?.total ?? 0),
-            input.now,
-          );
-      }
-
-      const balance = await trialBalance(db, input.userId, input.now);
-
-      if (balance.remaining < input.estimated) return false;
+      const historic = await db
+        .prepare(
+          "SELECT COALESCE(SUM(weighted_tokens), 0) AS total FROM free_pool_usage WHERE user_id = ?",
+        )
+        .get<{ total: number }>(input.userId);
 
       await db
         .prepare(
+          `INSERT INTO trial_grants (user_id, granted_tokens, used_tokens, issued_at)
+           SELECT ?, ?, ?, ?
+            WHERE EXISTS (SELECT 1 FROM users
+                           WHERE id = ? AND email_verified_at IS NOT NULL)
+              AND (SELECT COALESCE(SUM(granted_tokens), 0) FROM trial_grants)
+                    + ? <= ?
+           ON CONFLICT (user_id) DO NOTHING`,
+        )
+        .run(
+          input.userId,
+          input.config.grantTokens,
+          Number(historic?.total ?? 0),
+          input.now,
+          input.userId,
+          input.config.grantTokens,
+          input.config.grantBudget,
+        );
+
+      const reserved = await db
+        .prepare(
           `INSERT INTO trial_reservations
-          (id, user_id, reserved_tokens, created_at, expires_at)
-         VALUES (?, ?, ?, ?, ?)`,
+            (id, user_id, reserved_tokens, created_at, expires_at)
+           SELECT ?, ?, ?, ?, ?
+            WHERE COALESCE((SELECT granted_tokens - used_tokens
+                              FROM trial_grants WHERE user_id = ?), 0)
+                - (SELECT COALESCE(SUM(reserved_tokens), 0)
+                     FROM trial_reservations
+                    WHERE user_id = ? AND settled_at IS NULL
+                      AND expires_at > ?) >= ?`,
         )
         .run(
           input.id,
@@ -128,9 +124,13 @@ export async function reserveTrial(
           input.estimated,
           input.now,
           input.expiresAt,
+          input.userId,
+          input.userId,
+          input.now,
+          input.estimated,
         );
 
-      return true;
+      return reserved.changes > 0;
     })
     .immediate();
 }

@@ -89,7 +89,10 @@ export async function POST(request: Request) {
 
     if (!result.ok) return adminError(400, result.error);
 
-    return Response.json({ ok: true, ...overview() }, { headers: NO_STORE });
+    return Response.json(
+      { ok: true, ...(await overview()) },
+      { headers: NO_STORE },
+    );
   }
 
   if (action === "acknowledge") {

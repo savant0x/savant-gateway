@@ -2,8 +2,8 @@ import "server-only";
 
 import type { PlanSummary } from "./types";
 
-import { db } from "./db";
 import { readStripeSubscriptionSnapshot } from "./plan-lifecycle";
+import { storeRuntime } from "./store-facade/runtime";
 import { readStripeConfig, stripeClient } from "./stripe";
 
 type Env = Readonly<Record<string, string | undefined>>;
@@ -22,9 +22,10 @@ export async function ensureStripeCustomer(
   input: { id: string; email: string; name: string },
   env: Env = process.env,
 ) {
-  const existing = db
+  const db = await storeRuntime();
+  const existing = await db
     .prepare("SELECT stripe_customer_id FROM users WHERE id = ?")
-    .get(input.id) as { stripe_customer_id: string | null } | undefined;
+    .get<{ stripe_customer_id: string | null }>(input.id);
 
   if (existing?.stripe_customer_id) return existing.stripe_customer_id;
 
@@ -34,10 +35,9 @@ export async function ensureStripeCustomer(
     metadata: { userId: input.id },
   });
 
-  db.prepare("UPDATE users SET stripe_customer_id = ? WHERE id = ?").run(
-    created.id,
-    input.id,
-  );
+  await db
+    .prepare("UPDATE users SET stripe_customer_id = ? WHERE id = ?")
+    .run(created.id, input.id);
 
   return created.id;
 }

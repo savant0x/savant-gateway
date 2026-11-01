@@ -12,6 +12,6 @@ export async function GET(request: Request) {
 
   return Response.json({
     provider: siteConfig.provider.name,
-    models: listModels(),
+    models: await listModels(),
   });
 }

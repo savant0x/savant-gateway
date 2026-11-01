@@ -6,7 +6,10 @@ import { getLandingData, listSellablePlans } from "@/lib/store";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const data = getLandingData();
+  const [data, plans] = await Promise.all([
+    getLandingData(),
+    listSellablePlans(),
+  ]);
   // The benchmark is cached for six hours and fails open, so the landing page
   // keeps rendering its own prices when the public list is unreachable.
   const benchmark = await getOpenRouterModels();
@@ -21,7 +24,7 @@ export default async function HomePage() {
       }
       comparisons={comparison.comparisons}
       data={data}
-      plans={listSellablePlans()}
+      plans={plans}
     />
   );
 }

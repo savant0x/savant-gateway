@@ -10,9 +10,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function AdminSupportPage() {
-  const open = countOpenSupportRequests();
-  const requests = listSupportRequests(200);
+export default async function AdminSupportPage() {
+  const [open, requests] = await Promise.all([
+    countOpenSupportRequests(),
+    listSupportRequests(200),
+  ]);
 
   return (
     <div className="space-y-6 p-6">

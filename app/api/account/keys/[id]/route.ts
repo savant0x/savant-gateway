@@ -18,7 +18,7 @@ export async function DELETE(
 
   const { id } = await context.params;
 
-  if (!revokeCustomerApiKey(customer.id, id)) {
+  if (!(await revokeCustomerApiKey(customer.id, id))) {
     return customerError(404, "API key not found.");
   }
 

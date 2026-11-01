@@ -67,7 +67,7 @@ export async function POST(request: Request) {
 
   topupLimiter.fail(customer.id);
 
-  const topup = createTopup({
+  const topup = await createTopup({
     userId: customer.id,
     amountMicros: amount.amountMicros,
   });
@@ -98,19 +98,19 @@ export async function POST(request: Request) {
     });
 
     if (!session.url) {
-      markTopupFailed(topup.id);
+      await markTopupFailed(topup.id);
 
       return customerError(502, "Stripe did not return a checkout URL.");
     }
 
-    setTopupProviderRef(topup.id, session.id);
+    await setTopupProviderRef(topup.id, session.id);
 
     return Response.json(
       { url: session.url, topupId: topup.id },
       { headers: NO_STORE },
     );
   } catch {
-    markTopupFailed(topup.id);
+    await markTopupFailed(topup.id);
 
     return customerError(502, "Could not start checkout. Try again.");
   }

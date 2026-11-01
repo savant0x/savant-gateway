@@ -17,7 +17,7 @@ export async function POST(request: Request) {
 
   if (customer instanceof Response) return customer;
 
-  const subscription = customerSubscriptionSummary(customer.id);
+  const subscription = await customerSubscriptionSummary(customer.id);
 
   if (
     !subscription ||
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const updated = setSubscriptionCancellation(subscription.id, false);
+  const updated = await setSubscriptionCancellation(subscription.id, false);
 
   if (!updated) {
     return customerError(409, "The subscription is no longer active.");

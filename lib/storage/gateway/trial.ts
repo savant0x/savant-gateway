@@ -14,7 +14,6 @@ import { reserveCredit } from "../store/credit.ts";
 import { reserveFreeCall } from "../store/free-pool.ts";
 import { trialBalance } from "../ledger/trials.ts";
 import { getModelForGateway } from "../store/models.ts";
-import { refreshProviderRuntime } from "../providers/runtime.ts";
 
 export type TrialRouteResult =
   | { blocked: Response }
@@ -48,6 +47,7 @@ export async function reserveTrialRoute(
     model: GatewayModel;
     promptTokens: number;
     outputBudget: number;
+    refreshProvider: (slug: string) => Promise<unknown>;
   },
 ): Promise<TrialRouteResult> {
   const config = readTrialConfig();
@@ -87,7 +87,7 @@ export async function reserveTrialRoute(
     config.enabled && balance.granted > 0 && balance.remaining < estimate;
 
   if (!exhausted) {
-    await refreshProviderRuntime(db, input.model.upstreamSlug);
+    await input.refreshProvider(input.model.upstreamSlug);
   }
 
   const admission = exhausted ? null : await reserveFreeCall(db, input);

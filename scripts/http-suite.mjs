@@ -11,9 +11,13 @@ import {
   startNextServer,
   stopNextServer,
   summary,
-  waitForSchema,
   waitForServer,
 } from "./http-suite/harness.mjs";
+import {
+  openDatabase,
+  startDatabaseServer,
+  waitForSchema,
+} from "./http-suite/db.mjs";
 import { runMetadataChecks } from "./http-suite/metadata-checks.mjs";
 import { seedCatalog } from "./http-suite/seed.mjs";
 import { runOperationsChecks } from "./http-suite/operations-checks.mjs";
@@ -43,8 +47,13 @@ if (!existsSync(buildMarker)) {
 
 const workspace = await createTempWorkspace();
 const serverPort = await reservePort();
+const databasePort = await reservePort();
 const mock = await startMockUpstream({ expectedKey: PROVIDER_KEY });
 const email = await startEmailDouble();
+const databaseServer = await startDatabaseServer({
+  directory: workspace.databaseDirectory,
+  port: databasePort,
+});
 let server = null;
 let database = null;
 
@@ -52,7 +61,7 @@ try {
   server = startNextServer({
     repo,
     port: serverPort,
-    dbPath: workspace.dbPath,
+    databaseUrl: databaseServer.connectionString,
     env: {
       ADMIN_PASSWORD,
       // Deliberately blank: the suite must mirror a deployment that has no
@@ -93,8 +102,9 @@ try {
 
   await waitForServer({ baseUrl, child: server.child, logs: server.logs });
 
-  database = await waitForSchema(workspace.dbPath);
-  seedCatalog(database, { mockBaseUrl: mock.baseUrl });
+  database = await openDatabase(databaseServer.connectionString);
+  await waitForSchema(database);
+  await seedCatalog(database, { mockBaseUrl: mock.baseUrl });
 
   // Before anything depends on the fixture: every endpoint its provider row
   // advertises must really be answered, with a payload the gateway would
@@ -162,7 +172,8 @@ try {
 
   process.exitCode = 1;
 } finally {
-  database?.close();
+  await database?.close();
+  await databaseServer.close();
   await mock.close();
   await email.close();
   if (server) await stopNextServer(server.child);

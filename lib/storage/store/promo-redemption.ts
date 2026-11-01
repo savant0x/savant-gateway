@@ -56,7 +56,7 @@ export type RedeemPromoResult =
         | "unknown_user";
     };
 
-export async function redeemPromoCode(
+async function redeemOnce(
   db: PostgresDatabase,
   input: {
     userId: string;
@@ -83,7 +83,7 @@ export async function redeemPromoCode(
           .prepare(
             `SELECT id, code_prefix, label, amount_micros, max_redemptions,
                     redeemed_count, status, starts_at, expires_at
-               FROM promo_codes WHERE code_hash = ?`,
+               FROM promo_codes WHERE code_hash = ? FOR UPDATE`,
           )
           .get(hash)) as
           | {
@@ -132,6 +132,8 @@ export async function redeemPromoCode(
           )
           .run(row.id);
 
+        // A losing race is retried once by `redeemPromoCode` on a fresh
+        // transaction, where the winner's redemption is visible.
         if (claim.changes !== 1) return { ok: false, reason: "exhausted" };
 
         const credited = (await db
@@ -204,4 +206,28 @@ export async function redeemPromoCode(
 
     throw error;
   }
+}
+
+/**
+ * A losing race can observe `exhausted` before the winner's redemption row is
+ * visible. One short retry turns that into the precise `already_redeemed`
+ * answer when the same customer won the slot; a genuinely exhausted code
+ * simply reports exhausted twice.
+ */
+export async function redeemPromoCode(
+  db: PostgresDatabase,
+  input: {
+    userId: string;
+    code: string;
+    now?: string;
+    enabled?: boolean;
+  },
+): Promise<RedeemPromoResult> {
+  const first = await redeemOnce(db, input);
+
+  if (first.ok || first.reason !== "exhausted") return first;
+
+  await new Promise((resolve) => setTimeout(resolve, 25));
+
+  return redeemOnce(db, input);
 }

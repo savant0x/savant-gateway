@@ -15,11 +15,11 @@ import {
   failSync,
   latestSuccessfulSync,
   latestSyncAttempt,
+  listAllModels,
   releaseSyncLease,
   syncLeaseHeld,
   writeBenchmarks,
-} from "./store/benchmarks";
-import { listAllModels } from "./store/models";
+} from "./store";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const LEASE_MS = 5 * 60 * 1000;
@@ -66,8 +66,10 @@ export async function syncBenchmarks({
 }: { force?: boolean } = {}): Promise<SyncOutcome> {
   if (!artificialAnalysisConfigured()) return { status: "disabled" };
 
-  const previous = latestSuccessfulSync();
-  const attempt = latestSyncAttempt();
+  const [previous, attempt] = await Promise.all([
+    latestSuccessfulSync(),
+    latestSyncAttempt(),
+  ]);
   const now = Date.now();
 
   // A spent window cannot be refilled by trying harder, not even when forced.
@@ -94,17 +96,17 @@ export async function syncBenchmarks({
 
   const runId = randomUUID();
 
-  if (!claimSyncLease(runId, new Date(now + LEASE_MS).toISOString())) {
+  if (!(await claimSyncLease(runId, new Date(now + LEASE_MS).toISOString()))) {
     return { status: "busy" };
   }
 
-  beginSync(runId);
+  await beginSync(runId);
 
   try {
     const { parsed, quotaRemaining } = await fetchBenchmarkCatalog();
     const outcome = matchBenchmarks(
       parsed.candidates,
-      listAllModels().map((model) => ({
+      (await listAllModels()).map((model) => ({
         id: model.id,
         upstreamId: model.upstreamId,
         name: model.name,
@@ -119,13 +121,13 @@ export async function syncBenchmarks({
     );
 
     if (problem) {
-      failSync(runId, problem, parsed.candidates.length);
+      await failSync(runId, problem, parsed.candidates.length);
 
       return { status: "failed", error: problem };
     }
 
-    writeBenchmarks(Object.values(outcome.matches), parsed.indexVersion);
-    completeSync({
+    await writeBenchmarks(Object.values(outcome.matches), parsed.indexVersion);
+    await completeSync({
       runId,
       candidates: parsed.candidates.length,
       matched: outcome.matched,
@@ -147,11 +149,11 @@ export async function syncBenchmarks({
       error instanceof Error ? error.message : "Benchmark sync failed.",
     );
 
-    failSync(runId, message);
+    await failSync(runId, message);
 
     return { status: "failed", error: message };
   } finally {
-    releaseSyncLease(runId);
+    await releaseSyncLease(runId);
   }
 }
 
@@ -164,11 +166,18 @@ export async function syncBenchmarks({
 export function ensureBenchmarksFresh(): void {
   if (!artificialAnalysisConfigured()) return;
 
-  const previous = latestSuccessfulSync();
-  const attempt = latestSyncAttempt();
+  void refreshBenchmarksIfDue().catch(() => undefined);
+}
+
+async function refreshBenchmarksIfDue(): Promise<void> {
+  const [previous, attempt, leaseHeld] = await Promise.all([
+    latestSuccessfulSync(),
+    latestSyncAttempt(),
+    syncLeaseHeld(),
+  ]);
   const now = Date.now();
 
-  if (syncLeaseHeld()) return;
+  if (leaseHeld) return;
 
   if (previous) {
     if (now - Date.parse(previous.finishedAt) < REFRESH_MS) return;
@@ -188,5 +197,5 @@ export function ensureBenchmarksFresh(): void {
     return;
   }
 
-  void syncBenchmarks({ force: false }).catch(() => undefined);
+  await syncBenchmarks({ force: false });
 }

@@ -1,16 +1,26 @@
 import { check, checkEqual, request } from "./harness.mjs";
 
-function accounting(db, userId) {
+async function accounting(db, userId) {
   return {
-    ...db.prepare(
-      "SELECT credit_micros, held_micros FROM users WHERE id = ?",
-    ).get(userId),
-    usage: db.prepare(
-      "SELECT COUNT(*) AS n FROM usage_events WHERE user_id = ?",
-    ).get(userId).n,
-    ledger: db.prepare(
-      "SELECT COUNT(*) AS n FROM credit_ledger WHERE user_id = ?",
-    ).get(userId).n,
+    ...(await db
+      .prepare(
+        "SELECT credit_micros::int AS credit_micros, held_micros::int AS held_micros FROM users WHERE id = ?",
+      )
+      .get(userId)),
+    usage: (
+      await db
+        .prepare(
+          "SELECT COUNT(*)::int AS n FROM usage_events WHERE user_id = ?",
+        )
+        .get(userId)
+    ).n,
+    ledger: (
+      await db
+        .prepare(
+          "SELECT COUNT(*)::int AS n FROM credit_ledger WHERE user_id = ?",
+        )
+        .get(userId)
+    ).n,
   };
 }
 
@@ -56,7 +66,7 @@ async function streamCall(context, alpha, cancel = false) {
 }
 
 export async function runSystemsChecks(context, alpha, adminCookie) {
-  const before = accounting(context.db, alpha.id);
+  const before = await accounting(context.db, alpha.id);
   const providerCalls = context.mock.state.calls;
   const observations = [];
 
@@ -82,29 +92,37 @@ export async function runSystemsChecks(context, alpha, adminCookie) {
   ))}`);
   checkEqual("invalid roots never dispatch upstream", context.mock.state.calls, providerCalls);
   checkEqual("invalid roots leave accounting untouched",
-    JSON.stringify(accounting(context.db, alpha.id)), JSON.stringify(before));
+    JSON.stringify(await accounting(context.db, alpha.id)), JSON.stringify(before));
 
   const success = await streamCall(context, alpha);
 
   check("normal paid SSE completes", success.completed && success.text.includes("[DONE]"));
   check("split UTF-8 SSE content survives relay", success.text.includes("💠"));
-  const settled = accounting(context.db, alpha.id);
+  const settled = await accounting(context.db, alpha.id);
 
   checkEqual("paid SSE debits exact unequal rates", settled.credit_micros, before.credit_micros - 200);
   checkEqual("paid SSE releases held credit", settled.held_micros, 0);
   checkEqual("paid SSE records one usage", settled.usage, before.usage + 1);
   checkEqual("paid SSE records one debit", settled.ledger, before.ledger + 1);
 
-  context.db.exec(`CREATE TRIGGER reject_systems_usage BEFORE INSERT ON usage_events
-    BEGIN SELECT RAISE(ABORT, 'injected-write-failure-private-detail'); END`);
+  await context.db.exec(`CREATE OR REPLACE FUNCTION reject_systems_usage()
+    RETURNS trigger AS $$
+    BEGIN
+      RAISE EXCEPTION 'injected-write-failure-private-detail';
+    END;
+    $$ LANGUAGE plpgsql;
+    CREATE TRIGGER reject_systems_usage
+      BEFORE INSERT ON usage_events
+      FOR EACH ROW EXECUTE FUNCTION reject_systems_usage();`);
   let failed;
   let after;
 
   try {
     failed = await streamCall(context, alpha);
-    after = accounting(context.db, alpha.id);
+    after = await accounting(context.db, alpha.id);
   } finally {
-    context.db.exec("DROP TRIGGER reject_systems_usage");
+    await context.db.exec(`DROP TRIGGER IF EXISTS reject_systems_usage ON usage_events;
+      DROP FUNCTION IF EXISTS reject_systems_usage();`);
   }
 
   console.log(`systems-http: failed settlement completed=${failed.completed}, hold=${after.held_micros}, usageDelta=${after.usage - settled.usage}`);
@@ -116,7 +134,7 @@ export async function runSystemsChecks(context, alpha, adminCookie) {
   // Keep the failed reservation for reconciliation: a later successful request
   // must settle only its own hold, rather than hiding or refunding this one.
   const recovered = await streamCall(context, alpha);
-  const later = accounting(context.db, alpha.id);
+  const later = await accounting(context.db, alpha.id);
 
   check("a later paid stream succeeds after storage recovers", recovered.completed);
   checkEqual("later request debits only once", later.credit_micros, settled.credit_micros - 200);
@@ -137,16 +155,20 @@ export async function runSystemsChecks(context, alpha, adminCookie) {
   let cancelled;
 
   for (let attempt = 0; attempt < 40; attempt += 1) {
-    cancelled = context.db.prepare(
-      "SELECT COUNT(*) AS n FROM usage_events WHERE user_id = ? AND status = 'cancelled'",
-    ).get(alpha.id).n;
+    cancelled = (
+      await context.db
+        .prepare(
+          "SELECT COUNT(*)::int AS n FROM usage_events WHERE user_id = ? AND status = 'cancelled'",
+        )
+        .get(alpha.id)
+    ).n;
 
     if (cancelled === 1) break;
 
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
 
-  const afterCancel = accounting(context.db, alpha.id);
+  const afterCancel = await accounting(context.db, alpha.id);
 
   checkEqual("client disconnect records one cancelled usage", cancelled, 1);
   checkEqual("client disconnect settles once", afterCancel.usage, later.usage + 1);
@@ -156,7 +178,7 @@ export async function runSystemsChecks(context, alpha, adminCookie) {
   // FID-060: a clean transport close without `[DONE]` is a truncated source,
   // not a successful completion. The response must not carry a success
   // terminator and the durable row must say error.
-  const beforeTruncated = accounting(context.db, alpha.id);
+  const beforeTruncated = await accounting(context.db, alpha.id);
 
   context.mock.state.inference.streamFrames = 3;
   context.mock.state.inference.streamFrameDelayMs = 5;
@@ -174,7 +196,7 @@ export async function runSystemsChecks(context, alpha, adminCookie) {
   let truncatedRows = null;
 
   for (let attempt = 0; attempt < 40; attempt += 1) {
-    truncatedRows = context.db
+    truncatedRows = await context.db
       .prepare(
         `SELECT status FROM usage_events
          WHERE user_id = ? ORDER BY rowid DESC LIMIT 1`,
@@ -186,7 +208,7 @@ export async function runSystemsChecks(context, alpha, adminCookie) {
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
 
-  const afterTruncated = accounting(context.db, alpha.id);
+  const afterTruncated = await accounting(context.db, alpha.id);
 
   check("a truncated upstream stream is not acknowledged as complete",
     !truncated.text.includes("[DONE]"));

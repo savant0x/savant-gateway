@@ -10,7 +10,7 @@ export async function GET(request: Request) {
 
   if (blocked) return blocked;
 
-  return Response.json({ keys: listApiKeys() });
+  return Response.json({ keys: await listApiKeys() });
 }
 
 export async function POST(request: Request) {
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   }
 
   const name = typeof body.name === "string" ? body.name : "";
-  const created = createDevApiKey(name);
+  const created = await createDevApiKey(name);
 
   return Response.json(created, { status: 201 });
 }

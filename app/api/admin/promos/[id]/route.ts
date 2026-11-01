@@ -33,7 +33,7 @@ export async function PATCH(
   }
 
   const { id } = await context.params;
-  const result = setPromoCodeStatus(id, body.status as PromoStatus);
+  const result = await setPromoCodeStatus(id, body.status as PromoStatus);
 
   if (result === "missing") return adminError(404, "Promo code not found.");
 

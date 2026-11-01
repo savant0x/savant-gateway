@@ -18,7 +18,10 @@ export async function GET(request: Request) {
 
   if (blocked) return blocked;
 
-  return Response.json({ models: listAllModels() }, { headers: NO_STORE });
+  return Response.json(
+    { models: await listAllModels() },
+    { headers: NO_STORE },
+  );
 }
 
 export async function PATCH(request: Request) {
@@ -57,7 +60,7 @@ export async function PATCH(request: Request) {
   if (hasGroup) {
     if (!groupSlug) return adminError(400, "groupSlug is required.");
 
-    const result = assignModelGroup(id, groupSlug);
+    const result = await assignModelGroup(id, groupSlug);
 
     if (result === "model_not_found") {
       return adminError(404, "Model not found.");
@@ -68,7 +71,7 @@ export async function PATCH(request: Request) {
   }
 
   if (status) {
-    const result = setModelStatus(id, status as "active" | "disabled");
+    const result = await setModelStatus(id, status as "active" | "disabled");
 
     if (result === "not_found") return adminError(404, "Model not found.");
     if (result === "cost_unknown") {
@@ -90,7 +93,7 @@ export async function PATCH(request: Request) {
       );
     }
 
-    if (!setModelCost(id, input, output)) {
+    if (!(await setModelCost(id, input, output))) {
       return adminError(
         400,
         "Cost cannot be edited for this model. Check that it exists and is not free-pool.",
@@ -102,7 +105,7 @@ export async function PATCH(request: Request) {
     return adminError(400, "Provide a status, group, or cost to update.");
   }
 
-  const model = listAllModels().find((row) => row.id === id);
+  const model = (await listAllModels()).find((row) => row.id === id);
 
   return Response.json({ ok: true, model }, { headers: NO_STORE });
 }

@@ -1,27 +1,31 @@
 const PROVIDER_KEY_ENV = "HTTP_SUITE_PROVIDER_KEY";
 
-// `supports_balance` is on because the mock upstream answers `/balance` with its
-// own rpm, exactly as a real provider account does. The suite therefore runs
-// without a configured fallback ceiling, so a call can only be admitted on a
-// current observation — which is what makes a stale-observation regression
-// visible instead of being covered by PROVIDER_SHARED_RPM.
-export function seedCatalog(database, { mockBaseUrl }) {
+/**
+ * Fixture seeding for the HTTP suite on PostgreSQL (FID-086, D-5).
+ *
+ * `INSERT OR REPLACE` is gone: the suite runs against a fresh database, so a
+ * conflict means the fixture was seeded twice, and `DO NOTHING` keeps the first
+ * row instead of rewriting a row a check may already hold.
+ */
+
+export async function seedCatalog(database, { mockBaseUrl }) {
   const now = new Date().toISOString();
 
-  database
+  await database
     .prepare(
-      `INSERT OR REPLACE INTO providers
+      `INSERT INTO providers
         (slug, label, kind, base_url, key_env_var, default_headers,
          supports_balance, supports_subscription, supports_pricing,
          enabled, sort_order, status, created_at, updated_at)
        VALUES ('mock', 'HTTP Suite Mock', 'openai', ?, ?, '{}',
-         1, 0, 0, 1, 0, 'active', ?, ?)`,
+         1, 0, 0, 1, 0, 'active', ?, ?)
+       ON CONFLICT (slug) DO NOTHING`,
     )
     .run(mockBaseUrl, PROVIDER_KEY_ENV, now, now);
 
-  database
+  await database
     .prepare(
-      `INSERT OR REPLACE INTO models
+      `INSERT INTO models
         (id, upstream_id, name, provider, context_window, token_weight,
          input_price_micros, output_price_micros, allow_free,
          supports_tools, supports_vision, status, sort_order, synced_at,
@@ -31,20 +35,22 @@ export function seedCatalog(database, { mockBaseUrl }) {
        VALUES ('mock-paid', 'mock-upstream-model', 'HTTP Suite Paid Model',
          'Mock', '128000', 1, 500000, 1000000, 0, 0, 0, 'active', 0, ?,
          'mock', 'Mock', 'chat', 'manual', 1000000, 2000000, 'manual', 1,
-         'paid', 'manual')`,
+         'paid', 'manual')
+       ON CONFLICT (id) DO NOTHING`,
     )
     .run(now);
 }
 
-export function seedPendingTopup(database, input) {
+export async function seedPendingTopup(database, input) {
   const now = new Date().toISOString();
 
-  database
+  await database
     .prepare(
-      `INSERT OR REPLACE INTO topups
+      `INSERT INTO topups
         (id, user_id, provider, provider_ref, amount_micros, currency, status,
          created_at, paid_at)
-       VALUES (?, ?, ?, ?, ?, 'usd', 'pending', ?, NULL)`,
+       VALUES (?, ?, ?, ?, ?, 'usd', 'pending', ?, NULL)
+       ON CONFLICT (id) DO NOTHING`,
     )
     .run(
       input.id,
@@ -56,32 +62,33 @@ export function seedPendingTopup(database, input) {
     );
 }
 
-export function readUsageRows(database, userId) {
+export async function readUsageRows(database, userId) {
   return database
     .prepare(
-      `SELECT model_id, input_tokens, output_tokens, charged_micros,
-              cost_micros, status, billing_source, error
+      `SELECT model_id, input_tokens, output_tokens,
+              charged_micros::int AS charged_micros,
+              cost_micros::int AS cost_micros, status, billing_source, error
        FROM usage_events
        WHERE user_id = ?
-       ORDER BY datetime(created_at) DESC`,
+       ORDER BY created_at::timestamptz DESC`,
     )
     .all(userId);
 }
 
-export function readLatestErrorRow(database, userId) {
+export async function readLatestErrorRow(database, userId) {
   return database
     .prepare(
       `SELECT status, error FROM usage_events
        WHERE user_id = ? AND status = 'error'
-       ORDER BY rowid DESC LIMIT 1`,
+       ORDER BY ctid DESC LIMIT 1`,
     )
     .get(userId);
 }
 
-export function countPaidTopups(database, userId) {
-  const row = database
+export async function countPaidTopups(database, userId) {
+  const row = await database
     .prepare(
-      `SELECT COUNT(*) AS total FROM topups
+      `SELECT COUNT(*)::int AS total FROM topups
        WHERE user_id = ? AND status = 'paid'`,
     )
     .get(userId);
@@ -89,10 +96,10 @@ export function countPaidTopups(database, userId) {
   return row.total;
 }
 
-export function countTopupLedger(database, userId) {
-  const row = database
+export async function countTopupLedger(database, userId) {
+  const row = await database
     .prepare(
-      `SELECT COUNT(*) AS total FROM credit_ledger
+      `SELECT COUNT(*)::int AS total FROM credit_ledger
        WHERE user_id = ? AND kind = 'topup'`,
     )
     .get(userId);
@@ -100,8 +107,8 @@ export function countTopupLedger(database, userId) {
   return row.total;
 }
 
-export function getTopupStatus(database, topupId) {
-  const row = database
+export async function getTopupStatus(database, topupId) {
+  const row = await database
     .prepare("SELECT status FROM topups WHERE id = ?")
     .get(topupId);
 

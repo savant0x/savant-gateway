@@ -1,6 +1,3 @@
-import { tmpdir } from "node:os";
-import { isAbsolute, resolve, sep } from "node:path";
-
 import { readAdminConfig } from "./admin-session.ts";
 
 /**
@@ -19,6 +16,7 @@ export type ProductionIssueCode =
   | "db_missing"
   | "db_memory"
   | "db_relative"
+  | "db_invalid"
   | "db_ephemeral"
   | "admin_unconfigured"
   | "multi_worker"
@@ -33,8 +31,8 @@ export type ProductionConfig = {
   ok: boolean;
   /** Normalised public origin, or null when absent or unusable. */
   origin: string | null;
-  /** Absolute SQLite file, or null when absent or unusable. */
-  databasePath: string | null;
+  /** Credential-free PostgreSQL URL, or null when absent or unusable. */
+  databaseUrl: string | null;
   issues: ProductionIssue[];
   /**
    * True only when the operator explicitly opted into a disposable runtime
@@ -138,7 +136,7 @@ function readOrigin(
   return url.origin;
 }
 
-function readDatabasePath(
+function readDatabaseUrl(
   raw: string | undefined,
   issues: ProductionIssue[],
   options: { allowEphemeral: boolean },
@@ -146,50 +144,78 @@ function readDatabasePath(
   const value = raw?.trim() ?? "";
 
   if (!value) {
-    issues.push(issue("db_missing", "DB_PATH is required in production."));
+    issues.push(issue("db_missing", "DATABASE_URL is required in production."));
 
     return null;
   }
 
-  if (value === ":memory:") {
+  if (value === ":memory:" || value.startsWith("pglite:")) {
     issues.push(
-      issue("db_memory", "DB_PATH must be a file, not an in-memory database."),
+      issue(
+        "db_memory",
+        "DATABASE_URL must name a networked PostgreSQL database, not the local engine.",
+      ),
     );
 
     return null;
   }
 
-  if (!isAbsolute(value)) {
+  if (!value.includes("://")) {
     issues.push(
       issue(
         "db_relative",
-        "DB_PATH must be absolute so it survives a working-directory change.",
+        "DATABASE_URL must be an absolute postgres:// or postgresql:// URL.",
       ),
     );
 
     return null;
   }
 
-  const resolved = resolve(/* turbopackIgnore: true */ value);
+  let url: URL;
 
-  if (options.allowEphemeral) return resolved;
+  try {
+    url = new URL(value);
+  } catch {
+    issues.push(issue("db_invalid", "DATABASE_URL must be a valid URL."));
 
-  const temporary = resolve(tmpdir());
-  const compare = (path: string) =>
-    process.platform === "win32" ? path.toLowerCase() : path;
-  const target = compare(resolved);
-  const tempRoot = compare(temporary);
-
-  if (target === tempRoot || target.startsWith(`${tempRoot}${sep}`)) {
-    issues.push(
-      issue(
-        "db_ephemeral",
-        "DB_PATH must not be under the system temporary directory.",
-      ),
-    );
+    return null;
   }
 
-  return resolved;
+  if (url.protocol !== "postgres:" && url.protocol !== "postgresql:") {
+    issues.push(
+      issue("db_invalid", "DATABASE_URL must use the postgres protocol."),
+    );
+
+    return null;
+  }
+
+  if (!url.hostname) {
+    issues.push(issue("db_invalid", "DATABASE_URL must name a host."));
+
+    return null;
+  }
+
+  if (!options.allowEphemeral) {
+    const host = url.hostname.toLowerCase();
+
+    if (
+      host === "localhost" ||
+      host === "127.0.0.1" ||
+      host === "::1" ||
+      host === "0.0.0.0"
+    ) {
+      issues.push(
+        issue(
+          "db_ephemeral",
+          "DATABASE_URL must not point at a loopback database in production.",
+        ),
+      );
+    }
+  }
+
+  // Credentials are deliberately dropped from the returned value so a config
+  // report can print it without disclosing the database password.
+  return `${url.protocol}//${url.host}${url.pathname}`;
 }
 
 function readWorkerIssue(env: Env, issues: ProductionIssue[]) {
@@ -233,7 +259,7 @@ export function validateProductionConfig(
     return {
       ok: true,
       origin: env.NEXT_PUBLIC_SITE_URL?.trim() || null,
-      databasePath: env.DB_PATH?.trim() || null,
+      databaseUrl: env.DATABASE_URL?.trim() || null,
       issues: [],
       disposable,
     };
@@ -246,7 +272,7 @@ export function validateProductionConfig(
   const origin = disposable
     ? env.NEXT_PUBLIC_SITE_URL?.trim() || null
     : readOrigin(env.NEXT_PUBLIC_SITE_URL, issues);
-  const databasePath = readDatabasePath(env.DB_PATH, issues, {
+  const databaseUrl = readDatabaseUrl(env.DATABASE_URL, issues, {
     allowEphemeral: disposable,
   });
 
@@ -272,7 +298,7 @@ export function validateProductionConfig(
     );
   }
 
-  return { ok: issues.length === 0, origin, databasePath, issues, disposable };
+  return { ok: issues.length === 0, origin, databaseUrl, issues, disposable };
 }
 
 /** Readiness is false when either the configuration or storage is unusable. */

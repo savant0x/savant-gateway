@@ -10,9 +10,11 @@ export async function runRequestLimitChecks({ baseUrl, db, mock, adminPassword }
   const cookie = `sg_session=${token}`;
   const hash = (value) => createHash("sha256").update(value).digest("hex");
 
-  db.prepare("INSERT INTO users (id, email, name, status, password_hash, created_at) VALUES (?, ?, 'Limits', 'active', 'fixture-only', ?)")
+  await db
+    .prepare("INSERT INTO users (id, email, name, status, password_hash, created_at) VALUES (?, ?, 'Limits', 'active', 'fixture-only', ?)")
     .run(id, `${id}@example.test`, now);
-  db.prepare("INSERT INTO customer_sessions (id, user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?, ?)")
+  await db
+    .prepare("INSERT INTO customer_sessions (id, user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?, ?)")
     .run(`session_${id}`, id, hash(token), new Date(Date.now() + 3600000).toISOString(), now);
 
   const createKey = () => request(baseUrl, "/api/account/keys", { method: "POST", cookie, body: { name: "Bounded key" } });
@@ -36,8 +38,8 @@ export async function runRequestLimitChecks({ baseUrl, db, mock, adminPassword }
   });
   checkEqual("oversized inference returns 413", huge.status, 413);
   checkEqual("invalid requests never dispatch upstream", mock.state.calls, before);
-  checkEqual("invalid requests never create credit holds", db.prepare("SELECT COUNT(*) AS n FROM credit_holds WHERE user_id = ?").get(id).n, 0);
-  checkEqual("invalid requests never open settlements", db.prepare("SELECT COUNT(*) AS n FROM settlements WHERE user_id = ?").get(id).n, 0);
+  checkEqual("invalid requests never create credit holds", (await db.prepare("SELECT COUNT(*)::int AS n FROM credit_holds WHERE user_id = ?").get(id)).n, 0);
+  checkEqual("invalid requests never open settlements", (await db.prepare("SELECT COUNT(*)::int AS n FROM settlements WHERE user_id = ?").get(id)).n, 0);
 
   for (const path of ["/api/auth/signup", "/api/auth/login", "/api/account/keys", "/api/account/support", "/api/account/policies"]) {
     const bad = await request(baseUrl, path, { method: "POST", cookie, body: null });
@@ -60,7 +62,7 @@ export async function runRequestLimitChecks({ baseUrl, db, mock, adminPassword }
   const attempts = await Promise.all(Array.from({ length: 12 }, createKey));
   checkEqual("concurrent creation reaches exactly ten active keys", attempts.filter((r) => r.status === 201).length, 9);
   checkEqual("concurrent excess key creation is refused", attempts.filter((r) => r.status === 429).length, 3);
-  checkEqual("key ceiling is persisted", db.prepare("SELECT COUNT(*) AS n FROM api_keys WHERE user_id = ? AND status = 'active'").get(id).n, 10);
+  checkEqual("key ceiling is persisted", (await db.prepare("SELECT COUNT(*)::int AS n FROM api_keys WHERE user_id = ? AND status = 'active'").get(id)).n, 10);
   const anotherSecret = attempts.find((response) => response.status === 201).json.secret;
   for (let index = 0; index < 60; index++) {
     const refused = await request(baseUrl, "/v1/chat/completions", {
@@ -74,14 +76,14 @@ export async function runRequestLimitChecks({ baseUrl, db, mock, adminPassword }
   checkEqual("paid account limit holds across different keys", multiplied.status, 429);
   checkEqual("account refusal names paid rate scope", multiplied.headers.get("x-ratelimit-scope"), "paid");
   checkEqual("capacity probes create no upstream spend", mock.state.calls, before);
-  db.prepare("UPDATE api_keys SET status = 'revoked' WHERE user_id = ?").run(id);
+  await db.prepare("UPDATE api_keys SET status = 'revoked' WHERE user_id = ?").run(id);
   for (let index = 0; index < 10; index++) {
     const created = await createKey();
     checkEqual("key churn within hourly budget works", created.status, 201);
-    db.prepare("UPDATE api_keys SET status = 'revoked' WHERE user_id = ?").run(id);
+    await db.prepare("UPDATE api_keys SET status = 'revoked' WHERE user_id = ?").run(id);
   }
   const churn = await createKey();
   checkEqual("revocation cannot bypass hourly key issuance", churn.status, 429);
   check("key refusal has Retry-After", Number(churn.headers.get("retry-after")) > 0);
-  db.prepare("DELETE FROM users WHERE id = ?").run(id);
+  await db.prepare("DELETE FROM users WHERE id = ?").run(id);
 }

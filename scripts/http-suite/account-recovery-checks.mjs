@@ -43,7 +43,7 @@ export async function runAccountRecoveryChecks({ baseUrl, db, email }) {
   const actionRequest = (body, options = {}) => request(baseUrl, "/api/auth/email/request", { method: "POST", body, ...options });
   const awaitDelivery = async () => {
     for (let attempt = 0; attempt < 100; attempt++) {
-      const row = db.prepare("SELECT delivery_state FROM account_actions WHERE user_id = ? AND purpose = 'reset' ORDER BY created_at DESC LIMIT 1").get(userId);
+      const row = await db.prepare("SELECT delivery_state FROM account_actions WHERE user_id = ? AND purpose = 'reset' ORDER BY created_at DESC LIMIT 1").get(userId);
       if (row && row.delivery_state !== "pending") return;
       await new Promise((resolve) => setTimeout(resolve, 20));
     }
@@ -59,12 +59,12 @@ export async function runAccountRecoveryChecks({ baseUrl, db, email }) {
   checkEqual("mail link uses the canonical site origin", verification.link.origin, baseUrl);
   checkEqual("mail link keeps token out of query strings", verification.link.search, "");
   check("mail transport uses an idempotency key", Boolean(email.state.messages.at(-1).idempotencyKey));
-  checkEqual("request and delivery do not verify ownership", db.prepare("SELECT email_verified_at FROM users WHERE id = ?").get(userId).email_verified_at, null);
+  checkEqual("request and delivery do not verify ownership", (await db.prepare("SELECT email_verified_at FROM users WHERE id = ?").get(userId)).email_verified_at, null);
   checkEqual("action page is reachable without a session", (await request(baseUrl, verification.link.pathname)).status, 200);
-  checkEqual("GET does not consume the action", db.prepare("SELECT consumed_at FROM account_actions WHERE user_id = ?").get(userId).consumed_at, null);
+  checkEqual("GET does not consume the action", (await db.prepare("SELECT consumed_at FROM account_actions WHERE user_id = ?").get(userId)).consumed_at, null);
   checkEqual("purpose substitution is refused", (await consume(verification, { purpose: "reset", password: "new-valid-password" })).status, 400);
   checkEqual("verification consumes through production route", (await consume(verification)).status, 200);
-  check("verification route writes ownership", Boolean(db.prepare("SELECT email_verified_at FROM users WHERE id = ?").get(userId).email_verified_at));
+  check("verification route writes ownership", Boolean((await db.prepare("SELECT email_verified_at FROM users WHERE id = ?").get(userId)).email_verified_at));
   checkEqual("verification replay is refused", (await consume(verification)).status, 400);
   const account = await request(baseUrl, "/account", { cookie });
   check("account renders verified state", account.text.includes("Your email address is verified"));
@@ -108,7 +108,7 @@ export async function runAccountRecoveryChecks({ baseUrl, db, email }) {
   const failed = await actionRequest({ purpose: "reset", email: address });
   await awaitDelivery();
   checkEqual("delivery failure does not expose account existence", failed.text, unknown.text);
-  checkEqual("delivery failure is durably visible", db.prepare("SELECT delivery_state FROM account_actions WHERE user_id = ? AND purpose = 'reset' ORDER BY created_at DESC LIMIT 1").get(userId).delivery_state, "failed");
+  checkEqual("delivery failure is durably visible", (await db.prepare("SELECT delivery_state FROM account_actions WHERE user_id = ? AND purpose = 'reset' ORDER BY created_at DESC LIMIT 1").get(userId)).delivery_state, "failed");
   email.state.fail = false;
   const count = email.state.calls;
   checkEqual("per-address request limit stays generic", (await actionRequest({ purpose: "reset", email: address })).text, unknown.text);

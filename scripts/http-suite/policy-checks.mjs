@@ -126,7 +126,7 @@ export async function runPolicyChecks({ baseUrl, db }) {
 
   check("signup returns a session", Boolean(userId && session));
 
-  const stored = db
+  const stored = await db
     .prepare("SELECT version, source FROM policy_acceptances WHERE user_id = ?")
     .get(userId);
 
@@ -135,11 +135,13 @@ export async function runPolicyChecks({ baseUrl, db }) {
 
   // Replacing the current row with a v1 acceptance models a customer who agreed
   // to the earlier version: v1.1 is a new version, so they must be asked again.
-  db.prepare("DELETE FROM policy_acceptances WHERE user_id = ?").run(userId);
-  db.prepare(
-    `INSERT INTO policy_acceptances (id, user_id, version, source, accepted_at)
-     VALUES ('policy_legacy_v1', ?, 'v1', 'signup', ?)`,
-  ).run(userId, new Date().toISOString());
+  await db.prepare("DELETE FROM policy_acceptances WHERE user_id = ?").run(userId);
+  await db
+    .prepare(
+      `INSERT INTO policy_acceptances (id, user_id, version, source, accepted_at)
+       VALUES ('policy_legacy_v1', ?, 'v1', 'signup', ?)`,
+    )
+    .run(userId, new Date().toISOString());
 
   const cookie = `sg_session=${session}`;
   const account = await request(baseUrl, "/account", { cookie });
@@ -191,17 +193,17 @@ export async function runPolicyChecks({ baseUrl, db }) {
 
   checkEqual("repeating acceptance is accepted", repeated.status, 201);
 
-  const rows = db
+  const rows = await db
     .prepare(
-      "SELECT COUNT(*) AS total FROM policy_acceptances WHERE user_id = ? AND version = 'v1.1'",
+      "SELECT COUNT(*)::int AS total FROM policy_acceptances WHERE user_id = ? AND version = 'v1.1'",
     )
     .get(userId);
 
   checkEqual("acceptance is idempotent per version", rows?.total, 1);
 
-  const legacy = db
+  const legacy = await db
     .prepare(
-      "SELECT COUNT(*) AS total FROM policy_acceptances WHERE user_id = ? AND version = 'v1'",
+      "SELECT COUNT(*)::int AS total FROM policy_acceptances WHERE user_id = ? AND version = 'v1'",
     )
     .get(userId);
 

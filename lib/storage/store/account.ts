@@ -64,32 +64,44 @@ export async function createCustomerApiKey(
 
   const inserted = await db
     .transaction(async () => {
-      const counts = await db
-        .prepare(
-          `SELECT COUNT(*) FILTER (WHERE status = 'active') AS active,
-                  COUNT(*) FILTER (
-                    WHERE created_at::timestamptz > ?::timestamptz - interval '1 hour'
-                  ) AS recent
-             FROM api_keys WHERE user_id = ?`,
-        )
-        .get<{ active: number | string; recent: number | string }>(
-          createdAt,
-          userId,
-        );
-
-      if (
-        Number(counts?.active ?? 0) >= 10 ||
-        Number(counts?.recent ?? 0) >= 20
-      )
-        return false;
-
+      // The two counts below are a check-then-insert, so under READ COMMITTED
+      // two concurrent creations both read nine and both insert. Locking the
+      // account row serializes creations for this customer only (FID-085 D-4);
+      // `immediate()` has no locking equivalent on PostgreSQL.
       await db
+        .prepare("SELECT id FROM users WHERE id = ? FOR UPDATE")
+        .get(userId);
+
+      // The cap is decided in the same statement that inserts. A separate
+      // count followed by an insert leaves a window in which two requests both
+      // read nine and both insert; the row lock above closes it on a real
+      // PostgreSQL backend, and this conditional insert keeps the rule true on
+      // any engine that serializes statements.
+      const result = await db
         .prepare(
           `INSERT INTO api_keys
             (id, user_id, name, prefix, secret_hash, status, created_at)
-           VALUES (?, ?, ?, ?, ?, 'active', ?)`,
+           SELECT ?, ?, ?, ?, ?, 'active', ?
+            WHERE (SELECT COUNT(*) FROM api_keys
+                    WHERE user_id = ? AND status = 'active') < 10
+              AND (SELECT COUNT(*) FROM api_keys
+                    WHERE user_id = ?
+                      AND created_at::timestamptz
+                        > ?::timestamptz - interval '1 hour') < 20`,
         )
-        .run(keyId, userId, keyName, prefix, secretHash, createdAt);
+        .run(
+          keyId,
+          userId,
+          keyName,
+          prefix,
+          secretHash,
+          createdAt,
+          userId,
+          userId,
+          createdAt,
+        );
+
+      if (result.changes === 0) return false;
 
       await insertActivity(db, {
         userId,

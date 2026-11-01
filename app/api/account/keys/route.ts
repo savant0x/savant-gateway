@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   if (customer instanceof Response) return customer;
 
   return Response.json(
-    { keys: listCustomerApiKeys(customer.id) },
+    { keys: await listCustomerApiKeys(customer.id) },
     { headers: NO_STORE },
   );
 }
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     return customerError(400, "Key names are limited to 80 characters.");
   }
 
-  const created = createCustomerApiKey(customer.id, name);
+  const created = await createCustomerApiKey(customer.id, name);
 
   if (!created) {
     return customerError(

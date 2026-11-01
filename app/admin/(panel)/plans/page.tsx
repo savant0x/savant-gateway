@@ -11,10 +11,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function AdminPlansPage() {
-  const plans = listPlans();
-  const groups = listModelGroups();
-  const models = listAllModels();
+export default async function AdminPlansPage() {
+  const [plans, groups, models] = await Promise.all([
+    listPlans(),
+    listModelGroups(),
+    listAllModels(),
+  ]);
   const active = plans.filter((plan) => plan.status === "active").length;
   const subscribers = plans.reduce(
     (total, plan) => total + plan.activeSubscriberCount,

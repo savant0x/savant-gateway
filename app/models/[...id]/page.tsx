@@ -23,8 +23,9 @@ function modelIdFrom(segments: string[]) {
 
 async function findModel(segments: string[]) {
   const id = modelIdFrom(segments);
+  const catalog = await getCatalogData();
 
-  return getCatalogData().models.find((model) => model.id === id) ?? null;
+  return catalog.models.find((model) => model.id === id) ?? null;
 }
 
 export async function generateMetadata({

@@ -17,13 +17,12 @@ export async function GET(request: Request) {
 
   if (blocked) return blocked;
 
-  return Response.json(
-    {
-      account: getAccountSummary(),
-      ledger: listCreditLedger(25),
-    },
-    { headers: NO_STORE },
-  );
+  const [account, ledger] = await Promise.all([
+    getAccountSummary(),
+    listCreditLedger(25),
+  ]);
+
+  return Response.json({ account, ledger }, { headers: NO_STORE });
 }
 
 export async function POST(request: Request) {
@@ -49,21 +48,19 @@ export async function POST(request: Request) {
     typeof body.note === "string" ? body.note.trim().slice(0, 300) : "";
   const userId = typeof body.userId === "string" ? body.userId.trim() : "";
 
-  if (userId && !findCustomerById(userId)) {
+  if (userId && !(await findCustomerById(userId))) {
     return adminError(404, "Customer not found.");
   }
 
   try {
-    const account = grantCredit({
+    const account = await grantCredit({
       amountMicros,
       note: note || "Operator credit grant",
       userId: userId || undefined,
     });
+    const ledger = await listCreditLedger(25);
 
-    return Response.json(
-      { ok: true, account, ledger: listCreditLedger(25) },
-      { headers: NO_STORE },
-    );
+    return Response.json({ ok: true, account, ledger }, { headers: NO_STORE });
   } catch (error) {
     return adminError(
       500,

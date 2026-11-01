@@ -14,7 +14,7 @@ export async function DELETE(
 
   const { id } = await context.params;
 
-  if (!revokeApiKey(id)) {
+  if (!(await revokeApiKey(id))) {
     return Response.json({ error: "API key not found" }, { status: 404 });
   }
 

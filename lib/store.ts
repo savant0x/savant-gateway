@@ -1,166 +1,32 @@
 import "server-only";
 
+import { bindStoreRuntime } from "./store-facade/runtime.ts";
+import { getDatabase } from "./storage/runtime.ts";
+
+/**
+ * The server store surface (FID-2026-1031-086, step 4).
+ *
+ * Every export is asynchronous now. The synchronous SQLite implementations that
+ * used to live under `lib/store/` were deleted with the cutover; this module is
+ * the one place that binds the request path to the PostgreSQL handle and
+ * re-exports the ported modules under the names callers already use.
+ *
+ * The binding happens here because the application imports this barrel, while
+ * the tests bind their own handle through `bindStoreRuntime`.
+ */
+bindStoreRuntime(getDatabase);
+
 export type {
   AuthenticatedKey,
   FreePoolReservation,
   GatewayModel,
   ProviderStatusInput,
-} from "./store/shared";
+} from "./projections.ts";
 
-export {
-  getAdminOverview,
-  getCatalogData,
-  getLandingData,
-  getOverview,
-  getOverviewStats,
-} from "./store/overview";
-export {
-  authenticateApiKey,
-  createDevApiKey,
-  listApiKeys,
-  revokeApiKey,
-} from "./store/keys";
-export {
-  applyCatalogMarkup,
-  getModelByUpstreamId,
-  getModelForGateway,
-  listAllModels,
-  replaceModels,
-  setModelCost,
-  setModelPricing,
-  setModelStatus,
-} from "./store/models";
-export { clearPublicCatalogCache, listModels } from "./store/public-catalog";
-export {
-  createPlan,
-  deletePlan,
-  getPlanById,
-  getPlanBySlug,
-  listActivePlans,
-  listPlans,
-  listSellablePlans,
-  updatePlan,
-} from "./store/plans";
-export {
-  activateSubscription,
-  attachStripeCheckout,
-  createStripeCheckoutSubscription,
-  customerSubscriptionSummary,
-  findSubscriptionIdByStripeCustomer,
-  findSubscriptionIdByStripeId,
-  getSubscriptionSummary,
-  listSubscriptionSummaries,
-  markSubscriptionPastDue,
-  reconcileStripeSubscription,
-  recordSubscriptionInvoice,
-  revokeSubscription,
-  setSubscriptionCancellation,
-  sweepSubscriptions,
-} from "./store/subscriptions";
-export {
-  extendSubscription,
-  grantManualSubscription,
-  refreshSubscriptionEntitlements,
-} from "./store/subscription-admin";
-export { resolveSubscriptionAccess } from "./store/subscription-access";
-export {
-  assignModelGroup,
-  createModelGroup,
-  deleteModelGroup,
-  getModelGroup,
-  listModelGroups,
-  updateModelGroup,
-} from "./store/groups";
-export {
-  createProvider,
-  deleteProvider,
-  getDefaultProvider,
-  getProvider,
-  getProviderStatusBySlug,
-  listProviders,
-  setProviderEnabled,
-  updateProvider,
-} from "./store/providers";
-export { getProviderStatus } from "./store/provider";
-export { listProviderCatalogSummary } from "./store/provider-catalog";
-export { reserveFreeCall } from "./store/free-pool";
-export { listAdminUsage, listUsage, recordUsage } from "./store/usage";
-export {
-  listSettlementState,
-  openCallSettlement,
-  releaseQuarantined,
-} from "./store/settlements";
-export {
-  adjustCredit,
-  getReconciliation,
-  listBalanceBaselines,
-  saveBaseline,
-} from "./store/reconciliation";
-export {
-  DEFAULT_TENANT,
-  getAccountSummary,
-  grantCredit,
-  listCreditLedger,
-  releaseCreditHold,
-  reserveCreditHold,
-} from "./store/billing";
-export {
-  createCustomer,
-  createCustomerSession,
-  findCustomerByEmail,
-  findCustomerById,
-  listCustomerSummaries,
-  markCustomerLogin,
-  resolveCustomerSession,
-  revokeCustomerSession,
-} from "./store/customer";
-export { listActivity, recordActivityBestEffort } from "./store/activity";
-export {
-  createPromoCode,
-  listPromoCodes,
-  redeemPromoCode,
-  setPromoCodeStatus,
-} from "./store/promos";
-export {
-  createCustomerApiKey,
-  getCustomerAccount,
-  listCustomerApiKeys,
-  listCustomerUsage,
-  revokeCustomerApiKey,
-} from "./store/account";
-export {
-  createTopup,
-  fulfillTopup,
-  getCustomerPurchasedMicros,
-  getTopupById,
-  listCustomerTopups,
-  listTopups,
-  markTopupFailed,
-  setTopupProviderRef,
-} from "./store/topups";
-export { getMarkupBps, saveMarkupBps } from "./store/settings";
-export {
-  getBenchmarkStatus,
-  latestSuccessfulSync,
-  latestSyncAttempt,
-  listBenchmarks,
-} from "./store/benchmarks";
-export {
-  countOpenSupportRequests,
-  createSupportRequest,
-  getSupportRequest,
-  listSupportRequests,
-  listSupportRequestsForUser,
-  resolveSupportRequest,
-} from "./store/support";
-export {
-  getPolicyAcceptance,
-  hasAcceptedPolicy,
-  recordPolicyAcceptance,
-} from "./store/policies";
-export { getPricingData } from "./store/pricing";
-export {
-  ANALYTICS_RANGES,
-  getAnalyticsData,
-  normalizeAnalyticsRange,
-} from "./store/analytics";
+export { DEFAULT_TENANT } from "./storage/store/billing.ts";
+
+export * from "./store-facade/access.ts";
+export * from "./store-facade/catalog.ts";
+export * from "./store-facade/insights.ts";
+export * from "./store-facade/money.ts";
+export * from "./store-facade/operations.ts";

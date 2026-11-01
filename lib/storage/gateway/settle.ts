@@ -5,7 +5,6 @@ import type {
   GatewayModel,
 } from "../../projections.ts";
 import type { CreditHold } from "../store/credit.ts";
-import type { SubscriptionCallContext } from "../../gateway-settle.ts";
 import type { ResolvedUsage } from "../../usage.ts";
 
 import { usagePrices } from "../../gateway-usage.ts";
@@ -28,9 +27,25 @@ import { recordUsage } from "../store/usage.ts";
  * imported them would be unloadable by the test runner, and copying them would
  * have created a second implementation of the price arithmetic.
  *
- * `SubscriptionCallContext` is imported as a type only, so this module does not
- * load the server-only module that defines it.
+ * `SubscriptionCallContext` lives here rather than in the deleted synchronous
+ * gateway module, so the ported entry and the ported settlement cannot disagree
+ * about the shape of an included or overage call.
  */
+
+export type SubscriptionCallContext =
+  | {
+      kind: "included";
+      subscriptionId: string;
+      periodId: string;
+      holdId: string;
+      markupBps: 0;
+    }
+  | {
+      kind: "overage";
+      subscriptionId: string;
+      periodId: string;
+      markupBps: number;
+    };
 
 export type GatewaySettlementContext = {
   auth: AuthenticatedKey;

@@ -9,29 +9,29 @@ const NOW = new Date().toISOString();
 const LATER = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 const PROMO_IDS = [];
 
-function cleanup(db) {
-  db.prepare("DELETE FROM promo_redemptions WHERE user_id = ?").run(USER);
-  db.prepare("DELETE FROM credit_ledger WHERE user_id = ?").run(USER);
-  db.prepare("DELETE FROM activity_events WHERE user_id = ?").run(USER);
+async function cleanup(db) {
+  await db.prepare("DELETE FROM promo_redemptions WHERE user_id = ?").run(USER);
+  await db.prepare("DELETE FROM credit_ledger WHERE user_id = ?").run(USER);
+  await db.prepare("DELETE FROM activity_events WHERE user_id = ?").run(USER);
 
   for (const id of PROMO_IDS.splice(0)) {
-    db.prepare("DELETE FROM activity_events WHERE entity_id = ?").run(id);
-    db.prepare("DELETE FROM promo_codes WHERE id = ?").run(id);
+    await db.prepare("DELETE FROM activity_events WHERE entity_id = ?").run(id);
+    await db.prepare("DELETE FROM promo_codes WHERE id = ?").run(id);
   }
 
-  db.prepare("DELETE FROM customer_sessions WHERE user_id = ?").run(USER);
-  db.prepare("DELETE FROM users WHERE id = ?").run(USER);
+  await db.prepare("DELETE FROM customer_sessions WHERE user_id = ?").run(USER);
+  await db.prepare("DELETE FROM users WHERE id = ?").run(USER);
 }
 
-function seedCustomer(db) {
-  db.prepare(
+async function seedCustomer(db) {
+  await db.prepare(
     `INSERT INTO users
       (id, email, name, status, created_at, password_hash, credit_micros,
        held_micros)
      VALUES (?, ?, 'Promo probe', 'active', ?, 'not-used-by-this-check', 0, 0)`,
   ).run(USER, EMAIL, NOW);
 
-  db.prepare(
+  await db.prepare(
     `INSERT INTO customer_sessions
       (id, user_id, token_hash, created_at, expires_at, revoked_at)
      VALUES ('sess_promo_http', ?, ?, ?, ?, NULL)`,
@@ -44,8 +44,8 @@ function seedCustomer(db) {
  * is refused, and the activity view records the redemption without the code.
  */
 export async function runPromoChecks({ baseUrl, db, adminPassword }) {
-  cleanup(db);
-  seedCustomer(db);
+  await cleanup(db);
+  await seedCustomer(db);
 
   const adminSession = await request(baseUrl, "/api/admin/session", {
     method: "POST",
@@ -93,7 +93,7 @@ export async function runPromoChecks({ baseUrl, db, adminPassword }) {
     PROMO_IDS.push(created.json?.promo?.id);
 
     const code = created.json?.code;
-    const stored = db
+    const stored = await db
       .prepare("SELECT code_hash, code_prefix FROM promo_codes WHERE id = ?")
       .get(created.json?.promo?.id);
 
@@ -124,17 +124,19 @@ export async function runPromoChecks({ baseUrl, db, adminPassword }) {
     );
     checkEqual(
       "the balance moved by the promo amount",
-      db.prepare("SELECT credit_micros FROM users WHERE id = ?").get(USER)
+      (await db.prepare("SELECT credit_micros::int AS credit_micros FROM users WHERE id = ?").get(USER))
         .credit_micros,
       7_500_000,
     );
     checkEqual(
       "the ledger records a promo row",
-      db
-        .prepare(
-          "SELECT kind FROM credit_ledger WHERE user_id = ? AND kind = 'promo'",
-        )
-        .get(USER)?.kind,
+      (
+        await db
+          .prepare(
+            "SELECT kind FROM credit_ledger WHERE user_id = ? AND kind = 'promo'",
+          )
+          .get(USER)
+      )?.kind,
       "promo",
     );
 
@@ -147,7 +149,7 @@ export async function runPromoChecks({ baseUrl, db, adminPassword }) {
     checkEqual("a repeated redemption returns 409", repeat.status, 409);
     checkEqual(
       "a repeated redemption does not change the balance",
-      db.prepare("SELECT credit_micros FROM users WHERE id = ?").get(USER)
+      (await db.prepare("SELECT credit_micros::int AS credit_micros FROM users WHERE id = ?").get(USER))
         .credit_micros,
       7_500_000,
     );
@@ -186,9 +188,13 @@ export async function runPromoChecks({ baseUrl, db, adminPassword }) {
     );
     checkEqual(
       "concurrent redemptions write exactly one ledger row",
-      db
-        .prepare("SELECT COUNT(*) AS n FROM credit_ledger WHERE user_id = ?")
-        .get(USER).n,
+      (
+        await db
+          .prepare(
+            "SELECT COUNT(*)::int AS n FROM credit_ledger WHERE user_id = ?",
+          )
+          .get(USER)
+      ).n,
       2,
     );
 
@@ -227,8 +233,12 @@ export async function runPromoChecks({ baseUrl, db, adminPassword }) {
     checkEqual("a paused code is refused", pausedRedeem.status, 400);
     checkEqual(
       "a paused code writes no ledger row",
-      db.prepare("SELECT COUNT(*) AS n FROM credit_ledger WHERE user_id = ?").get(
-        USER,
+      (
+        await db
+          .prepare(
+            "SELECT COUNT(*)::int AS n FROM credit_ledger WHERE user_id = ?",
+          )
+          .get(USER)
       ).n,
       2,
     );
@@ -260,6 +270,6 @@ export async function runPromoChecks({ baseUrl, db, adminPassword }) {
       account.text.includes("Redeem a promo code"),
     );
   } finally {
-    cleanup(db);
+    await cleanup(db);
   }
 }

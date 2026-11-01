@@ -1,6 +1,6 @@
 import type { CreditHold } from "../store/credit.ts";
 import type { FreePoolReservation } from "../../projections.ts";
-import type { SubscriptionCallContext } from "../../gateway-settle.ts";
+import type { SubscriptionCallContext } from "./settle.ts";
 import type { GatewaySettlementContext } from "./settle.ts";
 
 import {
@@ -41,7 +41,10 @@ import { getAdmissionControl } from "../store/operations.ts";
 import { getProvider } from "../store/providers.ts";
 import { openCallSettlement } from "../store/settlements.ts";
 import { resolveSubscriptionAccess } from "../store/subscription-access.ts";
-import { ensureProviderObservation } from "../providers/runtime.ts";
+import {
+  ensureProviderObservation,
+  refreshProviderRuntime,
+} from "../../providers/runtime.ts";
 import { getDatabase } from "../runtime.ts";
 
 import { reservePaidCall } from "./paid.ts";
@@ -181,7 +184,7 @@ export async function handleChatCompletions(request: Request) {
     );
   }
 
-  const status = await ensureProviderObservation(db, model.upstreamSlug);
+  const status = await ensureProviderObservation(model.upstreamSlug);
   const admission = beginProviderAdmission({
     provider,
     observedRpm: status.rpm,
@@ -242,6 +245,7 @@ export async function handleChatCompletions(request: Request) {
         model,
         promptTokens,
         outputBudget: reservationBudget,
+        refreshProvider: refreshProviderRuntime,
       });
 
       if (trial.blocked) return trial.blocked;

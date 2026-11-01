@@ -3,7 +3,7 @@ import { readMarkupInput, readPriceInput } from "@/lib/pricing";
 import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 import {
   applyCatalogMarkup,
-  getPricingData,
+  getPricingSummary,
   listAllModels,
   saveMarkupBps,
   setModelPricing,
@@ -17,7 +17,12 @@ export async function GET(request: Request) {
 
   if (blocked) return blocked;
 
-  return Response.json(getPricingData(), { headers: NO_STORE });
+  const models = await listAllModels();
+
+  return Response.json(
+    { models, summary: await getPricingSummary(models) },
+    { headers: NO_STORE },
+  );
 }
 
 export async function PATCH(request: Request) {
@@ -48,7 +53,7 @@ export async function PATCH(request: Request) {
     );
   }
 
-  const model = listAllModels().find((row) => row.id === id);
+  const model = (await listAllModels()).find((row) => row.id === id);
 
   if (!model) return adminError(404, "Model not found.");
 
@@ -59,12 +64,12 @@ export async function PATCH(request: Request) {
     );
   }
 
-  if (!setModelPricing(id, inputMicros, outputMicros)) {
+  if (!(await setModelPricing(id, inputMicros, outputMicros))) {
     return adminError(404, "Model not found.");
   }
 
   return Response.json(
-    { ok: true, model: listAllModels().find((row) => row.id === id) },
+    { ok: true, model: (await listAllModels()).find((row) => row.id === id) },
     { headers: NO_STORE },
   );
 }
@@ -90,8 +95,8 @@ export async function POST(request: Request) {
 
   const applyToAll = body.applyToAll === true;
 
-  saveMarkupBps(markupBps);
-  const changed = applyCatalogMarkup(markupBps, applyToAll);
+  await saveMarkupBps(markupBps);
+  const changed = await applyCatalogMarkup(markupBps, applyToAll);
 
   return Response.json(
     { ok: true, markupBps, changed, applyToAll },

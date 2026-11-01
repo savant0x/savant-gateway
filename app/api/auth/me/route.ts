@@ -14,7 +14,7 @@ export async function GET() {
   if (!customer) return customerError(401, "Sign in to continue.");
 
   return Response.json(
-    { customer, account: getAccountSummary(customer.id) },
+    { customer, account: await getAccountSummary(customer.id) },
     { headers: NO_STORE },
   );
 }

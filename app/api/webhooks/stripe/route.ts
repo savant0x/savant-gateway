@@ -14,7 +14,7 @@ import {
   completePaymentEvent,
   failPaymentEvent,
   quarantinePaymentEvent,
-} from "@/lib/payment-events";
+} from "@/lib/storage/ledger/payment-events";
 import {
   activateSubscription,
   attachStripeCheckout,
@@ -24,7 +24,7 @@ import {
   markSubscriptionPastDue,
   reconcileStripeSubscription,
 } from "@/lib/store";
-import { db, nowIso } from "@/lib/db";
+import { storeRuntime } from "@/lib/store-facade/runtime";
 import { redactSecrets } from "@/lib/redaction";
 import { readBoundedText, requestBodyError } from "@/lib/request-limits";
 
@@ -103,7 +103,7 @@ function invoicePeriod(
   return start && end ? { start, end } : null;
 }
 
-function topupFromSession(
+async function topupFromSession(
   session: Stripe.Checkout.Session,
   event: Stripe.Event,
 ) {
@@ -119,7 +119,7 @@ function topupFromSession(
     return "mismatch" as const;
   }
 
-  return fulfillTopup({
+  return await fulfillTopup({
     topupId,
     providerRef: session.id,
     paidAt: new Date(event.created * 1000).toISOString(),
@@ -137,7 +137,7 @@ async function handleEvent(event: Stripe.Event) {
     const session = event.data.object as Stripe.Checkout.Session;
 
     if (session.mode !== "subscription") {
-      return { topup: topupFromSession(session, event) };
+      return { topup: await topupFromSession(session, event) };
     }
 
     const subscriptionId = session.metadata?.subscriptionId;
@@ -145,7 +145,7 @@ async function handleEvent(event: Stripe.Event) {
     const stripeCustomerId = idOf(session.customer);
 
     if (subscriptionId && stripeSubscriptionId) {
-      attachStripeCheckout({
+      await attachStripeCheckout({
         subscriptionId,
         stripeSubscriptionId,
         stripeCustomerId,
@@ -167,14 +167,14 @@ async function handleEvent(event: Stripe.Event) {
     const snapshot = readStripeSubscriptionSnapshot(subscription);
 
     if (localId && stripeId) {
-      attachStripeCheckout({
+      await attachStripeCheckout({
         subscriptionId: localId,
         stripeSubscriptionId: stripeId,
         stripeCustomerId: snapshot.stripeCustomerId,
       });
     }
 
-    const reconciled = reconcileStripeSubscription({
+    const reconciled = await reconcileStripeSubscription({
       stripeSubscriptionId: stripeId,
       stripeCustomerId: snapshot.stripeCustomerId,
       status:
@@ -198,23 +198,24 @@ async function handleEvent(event: Stripe.Event) {
     const metadata = invoiceMetadata(invoice);
     const stripeCustomerId = idOf(invoice.customer);
     let localId: string | null =
-      metadata.subscriptionId ?? findSubscriptionIdByStripeId(stripeId);
+      metadata.subscriptionId ?? (await findSubscriptionIdByStripeId(stripeId));
 
     if (!localId && stripeId && stripeCustomerId) {
-      const pending = db
+      const db = await storeRuntime();
+      const pending = await db
         .prepare(
           `SELECT s.id FROM subscriptions s
            JOIN users u ON u.id = s.user_id
            WHERE s.status = 'incomplete'
              AND (s.stripe_customer_id = ? OR u.stripe_customer_id = ?)
-           ORDER BY datetime(s.created_at) DESC LIMIT 1`,
+           ORDER BY s.created_at::timestamptz DESC LIMIT 1`,
         )
-        .get(stripeCustomerId, stripeCustomerId) as { id: string } | undefined;
+        .get<{ id: string }>(stripeCustomerId, stripeCustomerId);
 
       localId = pending?.id ?? null;
 
       if (localId) {
-        attachStripeCheckout({
+        await attachStripeCheckout({
           subscriptionId: localId,
           stripeSubscriptionId: stripeId,
           stripeCustomerId,
@@ -224,8 +225,11 @@ async function handleEvent(event: Stripe.Event) {
 
     if (!localId) return { ignored: "unknown_subscription" };
 
-    const existing = getSubscriptionSummary(localId);
-    const paidAt = epochIso(invoice.status_transitions?.paid_at, nowIso());
+    const existing = await getSubscriptionSummary(localId);
+    const paidAt = epochIso(
+      invoice.status_transitions?.paid_at,
+      new Date().toISOString(),
+    );
     const fallbackStart = existing?.currentPeriodStart ?? null;
     const fallbackEnd =
       existing && fallbackStart
@@ -255,7 +259,7 @@ async function handleEvent(event: Stripe.Event) {
     };
 
     if (event.type === "invoice.payment_failed") {
-      const result = markSubscriptionPastDue({
+      const result = await markSubscriptionPastDue({
         subscriptionId: localId,
         stripeSubscriptionId: stripeId || null,
         invoice: invoiceInput,
@@ -264,7 +268,7 @@ async function handleEvent(event: Stripe.Event) {
       return { pastDue: Boolean(result) };
     }
 
-    const result = activateSubscription({
+    const result = await activateSubscription({
       subscriptionId: localId,
       stripeSubscriptionId: stripeId || null,
       stripeCustomerId: stripeCustomerId || null,
@@ -318,7 +322,8 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid signature." }, { status: 400 });
   }
 
-  const claim = claimPaymentEvent(db, {
+  const db = await storeRuntime();
+  const claim = await claimPaymentEvent(db, {
     id: event.id,
     type: event.type,
     livemode: typeof event.livemode === "boolean" ? event.livemode : null,
@@ -341,7 +346,7 @@ export async function POST(request: Request) {
     const topup = "topup" in result ? result.topup : null;
 
     if (topup === "mismatch" || topup === "missing") {
-      quarantinePaymentEvent(
+      await quarantinePaymentEvent(
         db,
         event.id,
         `Checkout top-up ${topup}; no credit was issued.`,
@@ -355,7 +360,7 @@ export async function POST(request: Request) {
       });
     }
 
-    completePaymentEvent(db, event.id, nowIso());
+    await completePaymentEvent(db, event.id, new Date().toISOString());
 
     return Response.json({
       received: true,
@@ -365,7 +370,7 @@ export async function POST(request: Request) {
   } catch (error) {
     // Keep the claim with a failed state so an operator can see it and a
     // Stripe retry can reclaim it; never delete the evidence.
-    failPaymentEvent(
+    await failPaymentEvent(
       db,
       event.id,
       error instanceof Error ? error.message : "unknown",

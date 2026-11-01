@@ -1,9 +1,7 @@
 import { spawn, spawnSync } from "node:child_process";
 import { createHmac } from "node:crypto";
-import { existsSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { createServer as createHttpServer } from "node:http";
-import { createRequire } from "node:module";
 import { createServer as createNetServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -13,9 +11,6 @@ import {
   parseProviderBalance,
   parseProviderSubscription,
 } from "../../lib/provider-quota.ts";
-
-const require = createRequire(import.meta.url);
-const Database = require("better-sqlite3");
 
 const LOG_LIMIT = 40_000;
 
@@ -67,7 +62,7 @@ const PROVIDER_ENDPOINTS = [
  * nor the endpoint. This check fails with both.
  */
 export async function checkProviderDouble({ db, slug, upstreamUrl, apiKey }) {
-  const row = db
+  const row = await db
     .prepare(
       "SELECT supports_balance, supports_subscription FROM providers WHERE slug = ?",
     )
@@ -115,7 +110,7 @@ export async function createTempWorkspace() {
 
   return {
     directory,
-    dbPath: join(directory, "gateway.db"),
+    databaseDirectory: join(directory, "pg"),
     async remove() {
       await rm(directory, {
         recursive: true,
@@ -552,7 +547,7 @@ export async function startMockUpstream({ expectedKey }) {
   };
 }
 
-export function startNextServer({ repo, port, dbPath, env }) {
+export function startNextServer({ repo, port, databaseUrl, env }) {
   const logs = { out: "", err: "" };
   const nextBin = join(repo, "node_modules", "next", "dist", "bin", "next");
   const child = spawn(
@@ -560,7 +555,12 @@ export function startNextServer({ repo, port, dbPath, env }) {
     [nextBin, "start", "-p", String(port), "-H", "127.0.0.1"],
     {
       cwd: repo,
-      env: { ...process.env, NODE_ENV: "production", DB_PATH: dbPath, ...env },
+      env: {
+        ...process.env,
+        NODE_ENV: "production",
+        DATABASE_URL: databaseUrl,
+        ...env,
+      },
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
     },
@@ -610,44 +610,6 @@ export async function waitForServer({ baseUrl, child, logs }) {
   }
 
   throw new Error(`server did not answer within 60s\n${logTail(logs)}`);
-}
-
-export async function waitForSchema(dbPath) {
-  const deadline = Date.now() + 60_000;
-  let lastError = null;
-
-  while (Date.now() < deadline) {
-    if (!existsSync(dbPath)) {
-      await sleep(250);
-      continue;
-    }
-
-    try {
-      const database = new Database(dbPath);
-
-      database.pragma("busy_timeout = 5000");
-
-      const rows = database
-        .prepare(
-          `SELECT name FROM sqlite_master
-           WHERE type = 'table'
-             AND name IN ('topups', 'providers', 'models', 'model_groups')`,
-        )
-        .all();
-
-      if (rows.length === 4) return database;
-
-      database.close();
-    } catch (error) {
-      lastError = error;
-    }
-
-    await sleep(250);
-  }
-
-  throw new Error(
-    `schema not ready: ${lastError instanceof Error ? lastError.message : "timeout"}`,
-  );
 }
 
 export async function request(baseUrl, path, options = {}) {

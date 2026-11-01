@@ -21,7 +21,10 @@ export async function GET(request: Request) {
 
   if (blocked) return blocked;
 
-  return Response.json({ groups: listModelGroups() }, { headers: NO_STORE });
+  return Response.json(
+    { groups: await listModelGroups() },
+    { headers: NO_STORE },
+  );
 }
 
 export async function POST(request: Request) {
@@ -41,7 +44,7 @@ export async function POST(request: Request) {
 
   if (!parsed.ok) return adminError(400, parsed.error);
 
-  const result = createModelGroup(parsed.value);
+  const result = await createModelGroup(parsed.value);
 
   if (!result.ok) return adminError(result.status, result.error);
 
@@ -77,7 +80,7 @@ export async function PATCH(request: Request) {
 
   if (!parsed.ok) return adminError(400, parsed.error);
 
-  const result = updateModelGroup(slug, parsed.value);
+  const result = await updateModelGroup(slug, parsed.value);
 
   if (!result.ok) return adminError(result.status, result.error);
 
@@ -104,9 +107,11 @@ export async function DELETE(request: Request) {
 
   if (!slug) return adminError(400, "A group slug is required.");
 
-  if (!getModelGroup(slug)) return adminError(404, "Group not found.");
+  if (!(await getModelGroup(slug))) {
+    return adminError(404, "Group not found.");
+  }
 
-  const groups = listModelGroups();
+  const groups = await listModelGroups();
   const reassignment = readGroupReassignment({
     slug,
     reassignTo: body.reassignTo,
@@ -115,7 +120,7 @@ export async function DELETE(request: Request) {
 
   if (!reassignment.ok) return adminError(400, reassignment.error);
 
-  const result = deleteModelGroup(slug, reassignment.value);
+  const result = await deleteModelGroup(slug, reassignment.value);
 
   if (!result.ok) return adminError(result.status, result.error);
 

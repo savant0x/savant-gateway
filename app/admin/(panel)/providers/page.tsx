@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default async function AdminProvidersPage() {
   await refreshEnabledProviderAccounts();
 
-  const providers = listProviders();
+  const providers = await listProviders();
 
   return (
     <>

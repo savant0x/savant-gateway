@@ -71,7 +71,7 @@ export async function POST(request: Request) {
 
   topupLimiter.fail(customer.id);
 
-  const topup = createTopup({
+  const topup = await createTopup({
     userId: customer.id,
     amountMicros: amount.amountMicros,
     provider: "nowpayments",
@@ -87,14 +87,14 @@ export async function POST(request: Request) {
       cancelUrl: `${origin}/account?topup=cancelled`,
     });
 
-    setTopupProviderRef(topup.id, invoice.id);
+    await setTopupProviderRef(topup.id, invoice.id);
 
     return Response.json(
       { url: invoice.invoiceUrl, topupId: topup.id },
       { headers: NO_STORE },
     );
   } catch {
-    markTopupFailed(topup.id);
+    await markTopupFailed(topup.id);
 
     return customerError(502, "Could not start checkout. Try again.");
   }

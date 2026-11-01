@@ -1,4 +1,4 @@
-import type { AccountActionPurpose } from "./account-actions.ts";
+import type { AccountActionPurpose } from "./storage/ledger/account-actions.ts";
 
 import { isJsonObject } from "./http.ts";
 

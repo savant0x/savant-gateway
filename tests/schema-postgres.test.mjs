@@ -64,19 +64,16 @@ function createdTables(statements) {
   return [...names].sort();
 }
 
-/** Table names declared by the SQLite schema this port replaces. */
-function sqliteTables() {
-  const files = [
-    join(ROOT, "lib", "db.ts"),
-    ...readdirSync(join(ROOT, "lib", "schema"))
-      .filter((name) => name.endsWith(".ts"))
-      .map((name) => join(ROOT, "lib", "schema", name)),
-  ];
+/** Table names declared by the ported schema modules. */
+function declaredTables() {
+  const directory = join(ROOT, "lib", "storage", "schema");
   const names = new Set();
 
-  for (const file of files) {
-    for (const match of readFileSync(file, "utf8").matchAll(
-      /CREATE TABLE IF NOT EXISTS\s+([a-z_]+)/gi,
+  for (const name of readdirSync(directory).filter((file) =>
+    file.endsWith(".ts"),
+  )) {
+    for (const match of readFileSync(join(directory, name), "utf8").matchAll(
+      /CREATE TABLE IF NOT EXISTS\s+([a-z_.]+)/gi,
     )) {
       names.add(match[1]);
     }
@@ -94,7 +91,7 @@ async function migrate(respond) {
   return { ...fixture, db };
 }
 
-test("the Postgres schema creates every table the SQLite schema creates", async () => {
+test("the Postgres schema creates every table its modules declare", async () => {
   const { poolQueries, leases } = await migrate();
   const tables = createdTables(allStatements({ poolQueries, leases }));
   // The identity namespace (FID-087) is Postgres-only by design: it has no
@@ -103,7 +100,7 @@ test("the Postgres schema creates every table the SQLite schema creates", async 
   // dropped identity table still fails this gate.
   const publicTables = tables.filter((name) => !name.includes("."));
   const identityTables = tables.filter((name) => name.startsWith("identity."));
-  const expected = sqliteTables();
+  const expected = declaredTables().filter((name) => !name.includes("."));
 
   assert.ok(expected.length >= 40, `expected at least 40 tables, saw ${expected.length}`);
   assert.deepEqual(

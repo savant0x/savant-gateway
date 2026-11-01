@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { providersDue, syncIntervalMs } from "../lib/provider-sync-policy.ts";
-import { PUBLIC_MODEL_SCOPE, PRICE_MAX_AGE_DAYS } from "../lib/store/model-sql.ts";
+import { PUBLIC_MODEL_SCOPE, PRICE_MAX_AGE_DAYS } from "../lib/storage/store/model-sql.ts";
 
 const HOUR = 60 * 60 * 1000;
 const NOW = Date.parse("2026-10-31T12:00:00.000Z");
@@ -76,5 +76,8 @@ test("the public scope withholds paid rows without a sell price", () => {
 test("the public scope withholds stale manual costs with a 30-day default", () => {
   assert.equal(PRICE_MAX_AGE_DAYS, 30);
   assert.match(PUBLIC_MODEL_SCOPE, /cost_source <> 'manual'/);
-  assert.match(PUBLIC_MODEL_SCOPE, /julianday\(m\.cost_observed_at\)/);
+  assert.match(
+    PUBLIC_MODEL_SCOPE,
+    /m\.cost_observed_at::timestamptz >= now\(\) - interval '30 days'/,
+  );
 });

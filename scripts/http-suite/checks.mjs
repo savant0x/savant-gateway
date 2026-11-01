@@ -377,7 +377,7 @@ async function runKeyIsolationChecks(context, alpha, beta) {
 }
 
 async function runWebhookChecks(context, alpha) {
-  seedPendingTopup(context.db, {
+  await seedPendingTopup(context.db, {
     id: CREDIT_TOPUP_ID,
     userId: alpha.id,
     amountMicros: 50_000_000,
@@ -411,8 +411,16 @@ async function runWebhookChecks(context, alpha) {
     50_000_000,
   );
   checkEqual("webhook leaves no held credit", credited.json?.account?.heldMicros, 0);
-  checkEqual("webhook marks one top-up paid", countPaidTopups(context.db, alpha.id), 1);
-  checkEqual("webhook writes one ledger row", countTopupLedger(context.db, alpha.id), 1);
+  checkEqual(
+    "webhook marks one top-up paid",
+    await countPaidTopups(context.db, alpha.id),
+    1,
+  );
+  checkEqual(
+    "webhook writes one ledger row",
+    await countTopupLedger(context.db, alpha.id),
+    1,
+  );
 
   const replay = await sendWebhook(context, payload, created);
 
@@ -423,8 +431,16 @@ async function runWebhookChecks(context, alpha) {
     (await me(context, alpha.cookie)).json?.account?.creditMicros,
     50_000_000,
   );
-  checkEqual("replay does not duplicate the top-up", countPaidTopups(context.db, alpha.id), 1);
-  checkEqual("replay does not duplicate the ledger row", countTopupLedger(context.db, alpha.id), 1);
+  checkEqual(
+    "replay does not duplicate the top-up",
+    await countPaidTopups(context.db, alpha.id),
+    1,
+  );
+  checkEqual(
+    "replay does not duplicate the ledger row",
+    await countTopupLedger(context.db, alpha.id),
+    1,
+  );
 
   const invalid = await request(context.baseUrl, "/api/webhooks/stripe", {
     method: "POST",
@@ -445,7 +461,7 @@ async function runWebhookChecks(context, alpha) {
     50_000_000,
   );
 
-  seedPendingTopup(context.db, {
+  await seedPendingTopup(context.db, {
     id: MISMATCH_TOPUP_ID,
     userId: alpha.id,
     amountMicros: 10_000_000,
@@ -467,7 +483,7 @@ async function runWebhookChecks(context, alpha) {
   checkEqual("amount-mismatch webhook does not credit", mismatch.json?.credited, false);
   checkEqual(
     "amount-mismatch top-up stays pending",
-    getTopupStatus(context.db, MISMATCH_TOPUP_ID),
+    await getTopupStatus(context.db, MISMATCH_TOPUP_ID),
     "pending",
   );
   checkEqual(
@@ -527,7 +543,7 @@ async function runSettlementChecks(context, alpha, beta) {
   );
   checkEqual("paid call releases the hold", after.json?.account?.heldMicros, 0);
 
-  const rows = readUsageRows(context.db, alpha.id);
+  const rows = await readUsageRows(context.db, alpha.id);
 
   checkEqual("paid call writes one usage row", rows.length, 1);
 
@@ -558,7 +574,11 @@ async function runSettlementChecks(context, alpha, beta) {
     "insufficient_quota",
   );
   checkEqual("unfunded call does not reach the provider", context.mock.state.calls, 1);
-  checkEqual("unfunded call writes no usage row", readUsageRows(context.db, beta.id).length, 0);
+  checkEqual(
+    "unfunded call writes no usage row",
+    (await readUsageRows(context.db, beta.id)).length,
+    0,
+  );
   checkEqual(
     "unfunded balance stays zero",
     (await me(context, beta.cookie)).json?.account?.creditMicros,
@@ -673,7 +693,7 @@ async function runDegradeChecks(context) {
   // The truthful-negative readiness probe: when durable storage loses a
   // required table, readiness must fail closed instead of staying green. The
   // database is disposable at this point — this check runs last.
-  context.db.exec("DROP TABLE settings");
+  await context.db.exec("DROP TABLE settings");
 
   const degraded = await request(context.baseUrl, "/api/ready");
 
@@ -745,7 +765,7 @@ async function runSecurityChecks(context, alpha, beta, adminCookie) {
 
   checkEqual("a revoked key is rejected", revokedCall.status, 401);
 
-  context.db
+  await context.db
     .prepare("UPDATE users SET status = 'suspended' WHERE id = ?")
     .run(beta.id);
 
@@ -758,7 +778,7 @@ async function runSecurityChecks(context, alpha, beta, adminCookie) {
     checkEqual("a suspended account loses its session", suspendedMe.status, 401);
     checkEqual("a suspended account cannot use its key", suspendedCall.status, 401);
   } finally {
-    context.db
+    await context.db
       .prepare("UPDATE users SET status = 'active' WHERE id = ?")
       .run(beta.id);
   }
@@ -832,7 +852,7 @@ async function runSecurityChecks(context, alpha, beta, adminCookie) {
     leak.text,
   );
 
-  const failed = readLatestErrorRow(context.db, alpha.id);
+  const failed = await readLatestErrorRow(context.db, alpha.id);
   const failedError = String(failed?.error ?? "");
 
   checkEqual("the failed call records an error row", failed?.status, "error");
@@ -876,13 +896,14 @@ async function runCatalogIntegrityChecks(context, adminCookie) {
          WHERE upstream_slug = 'mock' ORDER BY id`,
       )
       .all();
+  const readRows = () => rows();
   const sync = () =>
     request(context.baseUrl, "/api/admin/providers/mock/sync", {
       method: "POST",
       cookie,
     });
 
-  const before = rows();
+  const before = await readRows();
 
   checkEqual("the seeded provider catalog has one row", before.length, 1);
   checkEqual("the seeded row is published", before[0].in_catalog, 1);
@@ -892,15 +913,19 @@ async function runCatalogIntegrityChecks(context, adminCookie) {
   const malformed = await sync();
 
   checkEqual("a 200 error object is a sync failure", malformed.status, 502);
-  checkEqual("a 200 error object does not delist the catalog", rows().length, 1);
+  checkEqual(
+    "a 200 error object does not delist the catalog",
+    (await readRows()).length,
+    1,
+  );
   checkEqual(
     "a 200 error object leaves the row published",
-    rows()[0].in_catalog,
+    (await readRows())[0].in_catalog,
     1,
   );
   checkEqual(
     "a 200 error object does not advance the sync timestamp",
-    rows()[0].synced_at,
+    (await readRows())[0].synced_at,
     before[0].synced_at,
   );
 
@@ -908,10 +933,14 @@ async function runCatalogIntegrityChecks(context, adminCookie) {
   const html = await sync();
 
   checkEqual("an HTML catalog page is a sync failure", html.status, 502);
-  checkEqual("an HTML catalog page does not delist the catalog", rows().length, 1);
+  checkEqual(
+    "an HTML catalog page does not delist the catalog",
+    (await readRows()).length,
+    1,
+  );
   checkEqual(
     "an HTML catalog page leaves the row published",
-    rows()[0].in_catalog,
+    (await readRows())[0].in_catalog,
     1,
   );
 
@@ -927,7 +956,7 @@ async function runCatalogIntegrityChecks(context, adminCookie) {
     String(context.mock.state.catalog.requests),
   );
 
-  const published = rows().filter((row) => row.in_catalog === 1);
+  const published = (await readRows()).filter((row) => row.in_catalog === 1);
 
   checkEqual("the sync publishes exactly the source model", published.length, 1);
   checkEqual(
@@ -936,7 +965,7 @@ async function runCatalogIntegrityChecks(context, adminCookie) {
     "sync-catalog-model",
   );
 
-  const absent = rows().find((row) => row.id === "mock-paid");
+  const absent = (await readRows()).find((row) => row.id === "mock-paid");
 
   check(
     "a model absent from the source is delisted, not deleted",
@@ -944,9 +973,9 @@ async function runCatalogIntegrityChecks(context, adminCookie) {
     JSON.stringify(absent),
   );
 
-  const duplicate = context.db
+  const duplicate = await context.db
     .prepare(
-      `SELECT COUNT(*) AS total FROM models
+      `SELECT COUNT(*)::int AS total FROM models
        WHERE upstream_slug = 'mock' AND in_catalog = 1`,
     )
     .get();
@@ -1304,6 +1333,7 @@ async function runBenchmarkIntegrityChecks(context, adminCookie) {
            AND source_slug = 'sync-catalog-model'`,
       )
       .get();
+  const readRow = () => row();
 
   // Page renders may have started a background refresh against the default
   // unavailable fixture; wait briefly so it does not hold the writer lease.
@@ -1332,18 +1362,18 @@ async function runBenchmarkIntegrityChecks(context, adminCookie) {
     String(first.json?.candidates),
   );
   checkEqual("the catalog model is matched", first.json?.matched, 1);
-  check("the matched measurement is stored", Boolean(row()));
+  check("the matched measurement is stored", Boolean(await readRow()));
   checkEqual(
     "the stored measurement keeps its source index version",
-    row()?.index_version,
+    (await readRow())?.index_version,
     "5.0",
   );
   checkEqual(
     "the stored measurement keeps its own observation date",
-    row()?.measured_at,
+    (await readRow())?.measured_at,
     "2026-10-21T00:00:00.000Z",
   );
-  checkEqual("a measured row starts fresh", row()?.stale, 0);
+  checkEqual("a measured row starts fresh", (await readRow())?.stale, 0);
 
   // A collapsed payload would mark every row stale; it must be refused instead.
   context.mock.state.benchmarks.mode = "collapse";
@@ -1355,7 +1385,11 @@ async function runBenchmarkIntegrityChecks(context, adminCookie) {
     String(collapse.json?.error ?? "").includes("shrank"),
     collapse.text,
   );
-  checkEqual("a refused payload leaves the measurement fresh", row()?.stale, 0);
+  checkEqual(
+    "a refused payload leaves the measurement fresh",
+    (await readRow())?.stale,
+    0,
+  );
 
   const attempt = await status();
 
@@ -1372,15 +1406,19 @@ async function runBenchmarkIntegrityChecks(context, adminCookie) {
   checkEqual("a sync without the model still succeeds", renamed.json?.status, "ok");
   checkEqual(
     "a dropped model keeps its own index version",
-    row()?.index_version,
+    (await readRow())?.index_version,
     "5.0",
   );
   checkEqual(
     "a dropped model keeps its own observation date",
-    row()?.measured_at,
+    (await readRow())?.measured_at,
     "2026-10-21T00:00:00.000Z",
   );
-  checkEqual("a dropped model is marked stale, not deleted", row()?.stale, 1);
+  checkEqual(
+    "a dropped model is marked stale, not deleted",
+    (await readRow())?.stale,
+    1,
+  );
 
   // A spent daily window is refused without another upstream request.
   context.mock.state.benchmarks.quotaRemaining = 0;
@@ -1446,7 +1484,7 @@ async function runPlanSalesChecks(context, alpha, adminCookie) {
 
   // A plan published before the policy existed must not become purchasable by
   // its stored status alone.
-  context.db
+  await context.db
     .prepare("UPDATE plans SET status = 'active' WHERE id = ?")
     .run(planId);
 
@@ -1494,7 +1532,7 @@ async function runPlanSalesChecks(context, alpha, adminCookie) {
   // new sale. It is activated through the webhook, never the public route.
   const inflightUser = "user_http_suite_inflight";
   const inflightSub = "sub_http_suite_inflight";
-  const inflightPlan = context.db
+  const inflightPlan = await context.db
     .prepare("SELECT * FROM plans WHERE id = ?")
     .get(planId);
   const inflightNow = new Date();
@@ -1503,13 +1541,13 @@ async function runPlanSalesChecks(context, alpha, adminCookie) {
     inflightNow.getTime() + 30 * 24 * 60 * 60 * 1000,
   ).toISOString();
 
-  context.db
+  await context.db
     .prepare(
       `INSERT INTO users (id, email, name, status, created_at)
        VALUES (?, ?, 'Inflight HTTP Suite', 'active', ?)`,
     )
     .run(inflightUser, `${inflightUser}@example.test`, inflightStart);
-  context.db
+  await context.db
     .prepare(
       `INSERT INTO subscriptions
         (id, user_id, plan_id, status, source, stripe_customer_id,
@@ -1537,7 +1575,7 @@ async function runPlanSalesChecks(context, alpha, adminCookie) {
       inflightStart,
       inflightStart,
     );
-  context.db
+  await context.db
     .prepare(
       `INSERT INTO subscription_models (subscription_id, model_id)
        VALUES (?, 'mock-paid')`,
@@ -1584,9 +1622,11 @@ async function runPlanSalesChecks(context, alpha, adminCookie) {
   );
   checkEqual(
     "the activated subscription is active while sales are off",
-    context.db
-      .prepare("SELECT status FROM subscriptions WHERE id = ?")
-      .get(inflightSub)?.status,
+    (
+      await context.db
+        .prepare("SELECT status FROM subscriptions WHERE id = ?")
+        .get(inflightSub)
+    )?.status,
     "active",
   );
 
@@ -1630,7 +1670,7 @@ async function runPlanSalesChecks(context, alpha, adminCookie) {
 
   checkEqual("included usage still serves while sales are off", includedCall.status, 200);
 
-  const settleRow = context.db
+  const settleRow = await context.db
     .prepare(
       `SELECT billing_source FROM usage_events
        WHERE user_id = ? ORDER BY rowid DESC LIMIT 1`,
@@ -1681,7 +1721,7 @@ async function runNowpaymentsChecks(context, alpha) {
 
   checkEqual("an unsigned IPN returns 400", missingSig.status, 400);
 
-  seedPendingTopup(context.db, {
+  await seedPendingTopup(context.db, {
     id: NP_TOPUP_ID,
     userId: alpha.id,
     amountMicros: 25_000_000,
@@ -1727,7 +1767,7 @@ async function runNowpaymentsChecks(context, alpha) {
   );
   checkEqual(
     "a finished IPN marks the top-up paid",
-    getTopupStatus(context.db, NP_TOPUP_ID),
+    await getTopupStatus(context.db, NP_TOPUP_ID),
     "paid",
   );
 
@@ -1749,7 +1789,7 @@ async function runNowpaymentsChecks(context, alpha) {
     before + 25_000_000,
   );
 
-  seedPendingTopup(context.db, {
+  await seedPendingTopup(context.db, {
     id: NP_MISMATCH_TOPUP_ID,
     userId: alpha.id,
     amountMicros: 10_000_000,
@@ -1772,7 +1812,7 @@ async function runNowpaymentsChecks(context, alpha) {
   checkEqual("an amount-mismatch IPN is quarantined", mismatch.json?.quarantined, true);
   checkEqual(
     "an amount-mismatch top-up stays pending",
-    getTopupStatus(context.db, NP_MISMATCH_TOPUP_ID),
+    await getTopupStatus(context.db, NP_MISMATCH_TOPUP_ID),
     "pending",
   );
   checkEqual(
@@ -1800,7 +1840,7 @@ async function runNowpaymentsChecks(context, alpha) {
     before + 25_000_000,
   );
 
-  seedPendingTopup(context.db, {
+  await seedPendingTopup(context.db, {
     id: NP_FAIL_TOPUP_ID,
     userId: alpha.id,
     amountMicros: 5_000_000,
@@ -1822,7 +1862,7 @@ async function runNowpaymentsChecks(context, alpha) {
   checkEqual("a terminal-failure IPN does not credit", failed.json?.credited, false);
   checkEqual(
     "a terminal-failure top-up is marked failed",
-    getTopupStatus(context.db, NP_FAIL_TOPUP_ID),
+    await getTopupStatus(context.db, NP_FAIL_TOPUP_ID),
     "failed",
   );
   checkEqual(

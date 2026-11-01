@@ -3,6 +3,25 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-01 — PostgreSQL storage cutover completed
+
+- **FID-2026-1031-086 / FID-2026-1031-085 — critical — The running application
+  uses one PostgreSQL storage engine.** `lib/store.ts` binds the async façade to
+  `lib/storage/runtime.ts`; the SQLite request path, `lib/db.ts`, `lib/store/*`
+  and their importers are gone. `better-sqlite3` is now a devDependency used
+  only by the one-way importer and its test. The storage contract gate reports
+  zero SQLite importers and is pinned by `tests/storage-contract.test.mjs`.
+  Fixed during the cutover: the trial route cleared the provider quota
+  observation by refreshing without network dependencies; concurrent key
+  creation could exceed the ten-key cap; PostgreSQL `BIGINT` micros arrived as
+  strings and priced calls at zero; several route handlers serialized
+  unresolved promises into JSON. Verified: `npm run verify` exit 0 — 749 tests
+  (748 pass, 1 skipped), lint 0 warnings, typecheck 0, quality PASS (465 files),
+  build exit 0, HTTP 750 + trial checks PASS, PostgreSQL recovery drill 12/12.
+  The FID-060 load envelope has **not** been re-measured against PostgreSQL and
+  remains `candidate`; that measurement is carried as a launch blocker, not a
+  pass.
+
 ## 2026-11-01 — Admin-run model identity verification (free pool)
 
 - **FID-2026-1101-087 — high — An operator can now run and publish an advisory
@@ -15,9 +34,9 @@ distinguish verified behavior from unverified claims.
   correction-ledger entry. `/models/[...id]` renders the published panel and
   `/identity` renders the method and ledger. Verified: 66 identity tests, 748
   repository tests, lint, typecheck, quality, build, the recovery drill, and a
-  live fixture baseline/publish run (181 samples). `npm run test:http` and
-  `npm run verify` remain red at FID-086's incomplete storage flip; that is
-  recorded in the FID as a limitation, not a pass.
+  live fixture baseline/publish run (181 samples). At the time of that FID
+  `npm run test:http` and `npm run verify` were red at FID-086's incomplete
+  storage flip; both are green after the cutover entry above.
 - **Account policy acceptance reads the lane that writes it.** The HTTP gate
   exposed the account page reading policy acceptance from the ported PostgreSQL
   façade while signup and the account route still write SQLite. The page now

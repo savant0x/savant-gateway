@@ -1,6 +1,5 @@
 import "server-only";
 
-export { callProvider } from "./providers";
 export { ProviderConfigError, readProviderError } from "./providers/request";
 export {
   syncAllEnabled,

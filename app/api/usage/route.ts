@@ -9,5 +9,5 @@ export async function GET(request: Request) {
 
   if (blocked) return blocked;
 
-  return Response.json({ usage: listUsage(50) });
+  return Response.json({ usage: await listUsage(50) });
 }

@@ -8,43 +8,59 @@ const SECRET = "http-operations-key-0123456789abcdef";
 const MODEL = "mock-paid";
 const NOW = new Date().toISOString();
 
-function insertFixture(db) {
-  db.prepare(
-    `INSERT OR REPLACE INTO users
+async function insertFixture(db) {
+  await db.prepare(
+    `INSERT INTO users
       (id, email, name, status, created_at, credit_micros, held_micros)
-     VALUES (?, 'ops-http@example.test', 'Operations probe', 'active', ?, 5000000, 0)`,
+     VALUES (?, 'ops-http@example.test', 'Operations probe', 'active', ?, 5000000, 0)
+     ON CONFLICT (id) DO UPDATE SET
+       email = excluded.email,
+       name = excluded.name,
+       status = excluded.status,
+       created_at = excluded.created_at,
+       credit_micros = excluded.credit_micros,
+       held_micros = excluded.held_micros`,
   ).run(USER, NOW);
-  db.prepare(
-    `INSERT OR REPLACE INTO api_keys
+  await db.prepare(
+    `INSERT INTO api_keys
       (id, user_id, name, prefix, secret_hash, status, created_at)
-     VALUES (?, ?, 'operations', 'sk-ops', ?, 'active', ?)`,
+     VALUES (?, ?, 'operations', 'sk-ops', ?, 'active', ?)
+     ON CONFLICT (id) DO UPDATE SET
+       user_id = excluded.user_id,
+       name = excluded.name,
+       prefix = excluded.prefix,
+       secret_hash = excluded.secret_hash,
+       status = excluded.status,
+       created_at = excluded.created_at`,
   ).run(KEY, USER, createHash("sha256").update(SECRET).digest("hex"), NOW);
-  db.prepare("UPDATE providers SET enabled = 1 WHERE slug = 'mock'").run();
-  db.prepare(
+  await db.prepare("UPDATE providers SET enabled = 1 WHERE slug = 'mock'").run();
+  await db.prepare(
     `INSERT INTO settings (key, value, updated_at)
      VALUES ('operations.admission_state', 'open', ?)
      ON CONFLICT(key) DO UPDATE SET value = 'open', updated_at = excluded.updated_at`,
   ).run(NOW);
-  db.prepare(
+  await db.prepare(
     `INSERT INTO settings (key, value, updated_at)
      VALUES ('operations.admission_reason', '', ?)
      ON CONFLICT(key) DO UPDATE SET value = '', updated_at = excluded.updated_at`,
   ).run(NOW);
 }
 
-function cleanup(db) {
-  db.prepare("DELETE FROM usage_events WHERE api_key_id = ?").run(KEY);
-  db.prepare("DELETE FROM settlements WHERE api_key_id = ?").run(KEY);
-  db.prepare("DELETE FROM credit_holds WHERE api_key_id = ?").run(KEY);
-  db.prepare("DELETE FROM credit_ledger WHERE user_id = ?").run(USER);
-  db.prepare("DELETE FROM free_pool_usage WHERE user_id = ?").run(USER);
-  db.prepare("DELETE FROM free_pool_reservations WHERE user_id = ?").run(USER);
-  db.prepare("DELETE FROM users WHERE id = ?").run(USER);
-  db.prepare("DELETE FROM operations_incidents WHERE id = ?").run(
+async function cleanup(db) {
+  await db.prepare("DELETE FROM usage_events WHERE api_key_id = ?").run(KEY);
+  await db.prepare("DELETE FROM settlements WHERE api_key_id = ?").run(KEY);
+  await db.prepare("DELETE FROM credit_holds WHERE api_key_id = ?").run(KEY);
+  await db.prepare("DELETE FROM credit_ledger WHERE user_id = ?").run(USER);
+  await db.prepare("DELETE FROM free_pool_usage WHERE user_id = ?").run(USER);
+  await db
+    .prepare("DELETE FROM free_pool_reservations WHERE user_id = ?")
+    .run(USER);
+  await db.prepare("DELETE FROM users WHERE id = ?").run(USER);
+  await db.prepare("DELETE FROM operations_incidents WHERE id = ?").run(
     "ops_http_incident",
   );
-  db.prepare("UPDATE providers SET enabled = 1 WHERE slug = 'mock'").run();
-  db.prepare(
+  await db.prepare("UPDATE providers SET enabled = 1 WHERE slug = 'mock'").run();
+  await db.prepare(
     `INSERT INTO settings (key, value, updated_at)
      VALUES ('operations.admission_state', 'open', ?)
      ON CONFLICT(key) DO UPDATE SET value = 'open', updated_at = excluded.updated_at`,
@@ -61,7 +77,7 @@ function cleanup(db) {
 export async function runOperationsChecks(context) {
   const { baseUrl, db, adminPassword } = context;
 
-  insertFixture(db);
+  await insertFixture(db);
 
   const chat = () =>
     request(baseUrl, "/v1/chat/completions", {
@@ -73,14 +89,22 @@ export async function runOperationsChecks(context) {
         max_tokens: 8,
       },
     });
-  const usageCount = () =>
-    db
-      .prepare("SELECT COUNT(*) AS total FROM usage_events WHERE api_key_id = ?")
-      .get(KEY).total;
-  const holdCount = () =>
-    db
-      .prepare("SELECT COUNT(*) AS total FROM credit_holds WHERE api_key_id = ?")
-      .get(KEY).total;
+  const usageCount = async () =>
+    (
+      await db
+        .prepare(
+          "SELECT COUNT(*)::int AS total FROM usage_events WHERE api_key_id = ?",
+        )
+        .get(KEY)
+    ).total;
+  const holdCount = async () =>
+    (
+      await db
+        .prepare(
+          "SELECT COUNT(*)::int AS total FROM credit_holds WHERE api_key_id = ?",
+        )
+        .get(KEY)
+    ).total;
 
   try {
     const anonymous = await request(baseUrl, "/api/admin/operations");
@@ -141,7 +165,7 @@ export async function runOperationsChecks(context) {
       page.text.includes("Observation and incident response"),
     );
 
-    db.prepare(
+    await db.prepare(
       `INSERT INTO operations_incidents
         (id, fingerprint, severity, status, title, detail, first_seen,
          last_seen, delivery_kind, delivery_state, delivery_attempts)
@@ -166,7 +190,7 @@ export async function runOperationsChecks(context) {
       404,
     );
 
-    db.prepare("DELETE FROM operations_incidents WHERE id = ?").run(
+    await db.prepare("DELETE FROM operations_incidents WHERE id = ?").run(
       "ops_http_incident",
     );
 
@@ -192,8 +216,8 @@ export async function runOperationsChecks(context) {
       "paused",
     );
 
-    const before = usageCount();
-    const holdsBefore = holdCount();
+    const before = await usageCount();
+    const holdsBefore = await holdCount();
     const refused = await chat();
 
     checkEqual("paused inference returns 503", refused.status, 503);
@@ -203,8 +227,12 @@ export async function runOperationsChecks(context) {
       refused.text.slice(0, 160),
     );
     checkEqual("paused refusal asks for a retry", refused.headers.get("retry-after"), "30");
-    checkEqual("paused refusal writes no usage", usageCount(), before);
-    checkEqual("paused refusal writes no credit hold", holdCount(), holdsBefore);
+    checkEqual("paused refusal writes no usage", await usageCount(), before);
+    checkEqual(
+      "paused refusal writes no credit hold",
+      await holdCount(),
+      holdsBefore,
+    );
 
     const drained = await act({ action: "drain", reason: "HTTP suite drain" });
 
@@ -242,8 +270,8 @@ export async function runOperationsChecks(context) {
     );
     check(
       "resumed call settles a usage row",
-      usageCount() > before,
-      `usage ${usageCount()}`,
+      (await usageCount()) > before,
+      `usage ${await usageCount()}`,
     );
 
     const disabled = await act({
@@ -290,6 +318,6 @@ export async function runOperationsChecks(context) {
       tick.json?.transport?.configured === false,
     );
   } finally {
-    cleanup(db);
+    await cleanup(db);
   }
 }

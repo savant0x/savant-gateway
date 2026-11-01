@@ -10,8 +10,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function AdminGroupsPage() {
-  const groups = listModelGroups();
+export default async function AdminGroupsPage() {
+  const groups = await listModelGroups();
   const custom = groups.filter((group) => !group.isSystem).length;
   const assigned = groups.reduce((total, group) => total + group.modelCount, 0);
 

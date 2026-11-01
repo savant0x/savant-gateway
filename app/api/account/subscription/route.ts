@@ -26,7 +26,7 @@ export async function GET(request: Request) {
   if (customer instanceof Response) return customer;
 
   return Response.json(
-    { subscription: customerSubscriptionSummary(customer.id) },
+    { subscription: await customerSubscriptionSummary(customer.id) },
     { headers: NO_STORE },
   );
 }
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
 
   const planSlug =
     typeof body.planSlug === "string" ? body.planSlug.trim() : "";
-  const plan = planSlug ? getPlanBySlug(planSlug) : null;
+  const plan = planSlug ? await getPlanBySlug(planSlug) : null;
 
   if (!plan || plan.status !== "active") {
     return customerError(404, "Plan not found.");
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
 
   subscriptionLimiter.fail(customer.id);
 
-  const local = createStripeCheckoutSubscription({
+  const local = await createStripeCheckoutSubscription({
     userId: customer.id,
     plan,
   });

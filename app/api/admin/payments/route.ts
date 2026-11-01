@@ -1,6 +1,6 @@
 import { guardAdminApi, NO_STORE } from "@/lib/admin-auth";
-import { db } from "@/lib/db";
-import { listPaymentEvents } from "@/lib/payment-events";
+import { listPaymentEvents } from "@/lib/storage/ledger/payment-events";
+import { storeRuntime } from "@/lib/store-facade/runtime";
 import { listTopups } from "@/lib/store";
 
 export const runtime = "nodejs";
@@ -16,10 +16,12 @@ export async function GET(request: Request) {
 
   if (blocked) return blocked;
 
+  const db = await storeRuntime();
+
   return Response.json(
     {
-      events: listPaymentEvents(db, 50),
-      topups: listTopups(25),
+      events: await listPaymentEvents(db, 50),
+      topups: await listTopups(25),
     },
     { headers: NO_STORE },
   );

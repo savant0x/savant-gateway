@@ -29,7 +29,7 @@ export async function GET(request: Request) {
   if (blocked) return blocked;
 
   return Response.json(
-    { subscriptions: listSubscriptionSummaries(200) },
+    { subscriptions: await listSubscriptionSummaries(200) },
     { headers: NO_STORE },
   );
 }
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   const action = stringField(body, "action");
 
   if (action === "grant") {
-    const result = grantManualSubscription({
+    const result = await grantManualSubscription({
       userId: stringField(body, "userId"),
       planId: stringField(body, "planId"),
       periodEnd: stringField(body, "periodEnd") || null,
@@ -68,12 +68,12 @@ export async function POST(request: Request) {
 
   if (!id) return adminError(400, "A subscription id is required.");
 
-  const current = getSubscriptionSummary(id);
+  const current = await getSubscriptionSummary(id);
 
   if (!current) return adminError(404, "Subscription not found.");
 
   if (action === "extend") {
-    const result = extendSubscription({
+    const result = await extendSubscription({
       subscriptionId: id,
       periodEnd: stringField(body, "periodEnd") || null,
     });
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
   }
 
   if (action === "refresh_entitlements") {
-    const result = refreshSubscriptionEntitlements(id);
+    const result = await refreshSubscriptionEntitlements(id);
 
     if (!result.ok) return adminError(result.status, result.error);
 
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const subscription = revokeSubscription(id);
+    const subscription = await revokeSubscription(id);
 
     return Response.json({ ok: true, subscription }, { headers: NO_STORE });
   }
@@ -123,7 +123,7 @@ export async function POST(request: Request) {
       const snapshot = await fetchStripeSubscription(
         current.stripeSubscriptionId,
       );
-      const subscription = reconcileStripeSubscription({
+      const subscription = await reconcileStripeSubscription({
         stripeSubscriptionId: current.stripeSubscriptionId,
         stripeCustomerId:
           snapshot.stripeCustomerId || current.stripeCustomerId || "",

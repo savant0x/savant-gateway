@@ -11,6 +11,7 @@ import { formatPricePer1M } from "@/components/dashboard/format";
 import { LocalTime } from "@/components/local-time";
 import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
+import { artificialAnalysisConfigured } from "@/lib/artificial-analysis";
 import { ensureBenchmarksFresh } from "@/lib/benchmark-sync";
 import { betterSide, resolveComparePair } from "@/lib/compare";
 import { AA_ATTRIBUTION_URL } from "@/lib/benchmarks";
@@ -76,15 +77,20 @@ export default async function ComparePage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const data = getCatalogData();
   const requested = {
     a: single(params.a),
     b: single(params.b),
   };
+  const [data, benchmarks] = await Promise.all([
+    getCatalogData(),
+    listBenchmarks(),
+  ]);
   // Stored rows only; the freshness check may start a sync but never waits on
   // one, so a slow benchmark source cannot delay this response.
-  const benchmarks = listBenchmarks();
-  const status = getBenchmarkStatus(data.models.length);
+  const status = await getBenchmarkStatus(
+    data.models.length,
+    artificialAnalysisConfigured(),
+  );
 
   ensureBenchmarksFresh();
 
@@ -178,7 +184,7 @@ function CompareBody({
   right: ModelSummary;
   benchmarks: Record<string, BenchmarkSummary>;
   comparison: Record<string, PriceComparison>;
-  status: ReturnType<typeof getBenchmarkStatus>;
+  status: Awaited<ReturnType<typeof getBenchmarkStatus>>;
   listFetchedAt: string | null;
 }) {
   const leftBench = benchmarks[left.id] ?? null;

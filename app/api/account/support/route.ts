@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   if (customer instanceof Response) return customer;
 
   return Response.json(
-    { requests: listSupportRequestsForUser(customer.id) },
+    { requests: await listSupportRequestsForUser(customer.id) },
     { headers: NO_STORE },
   );
 }
@@ -51,10 +51,14 @@ export async function POST(request: Request) {
 
   supportLimiter.fail(customer.id);
 
-  const created = createSupportRequest({
+  const created = await createSupportRequest({
     userId: customer.id,
     ...parsed.value,
   });
+
+  if (!created) {
+    return customerError(500, "The support request could not be saved.");
+  }
 
   return Response.json(
     {

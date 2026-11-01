@@ -181,10 +181,15 @@ export function toGatewayModel(row: ModelRow): GatewayModel {
     row.served_protocol === "chat" || row.served_protocol === "messages"
       ? row.served_protocol
       : row.protocol;
-  const costInputMicros =
-    row.served_cost_input_micros ?? row.input_price_micros;
-  const costOutputMicros =
-    row.served_cost_output_micros ?? row.output_price_micros;
+  // Micros are BIGINT, and node-postgres returns int8 as a string. Converting
+  // here keeps the gateway's price arithmetic on numbers; a string fails
+  // `Number.isFinite` and would silently price every call at zero.
+  const costInputMicros = Number(
+    row.served_cost_input_micros ?? row.input_price_micros,
+  );
+  const costOutputMicros = Number(
+    row.served_cost_output_micros ?? row.output_price_micros,
+  );
 
   return {
     id: row.id,
@@ -198,8 +203,8 @@ export function toGatewayModel(row: ModelRow): GatewayModel {
     tokenWeight: row.token_weight,
     costInputMicros,
     costOutputMicros,
-    sellInputMicros: row.sell_input_micros,
-    sellOutputMicros: row.sell_output_micros,
+    sellInputMicros: Number(row.sell_input_micros),
+    sellOutputMicros: Number(row.sell_output_micros),
     allowFree: row.allow_free === 1,
     groupSlug: row.group_slug ?? billingMode,
     groupLabel: row.group_label ?? SYSTEM_GROUP_LABELS[billingMode],

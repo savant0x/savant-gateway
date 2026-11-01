@@ -12,7 +12,7 @@ export async function GET(request: Request) {
 
   if (blocked) return blocked;
 
-  return Response.json(listSettlementState(50), { headers: NO_STORE });
+  return Response.json(await listSettlementState(50), { headers: NO_STORE });
 }
 
 /**
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
 
   const note = typeof body.note === "string" ? body.note.trim() : "";
 
-  if (!releaseQuarantined(id, note || "Operator release")) {
+  if (!(await releaseQuarantined(id, note || "Operator release"))) {
     return adminError(
       404,
       "Quarantined reservation not found or already released.",
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   }
 
   return Response.json(
-    { ok: true, ...listSettlementState(50) },
+    { ok: true, ...(await listSettlementState(50)) },
     { headers: NO_STORE },
   );
 }

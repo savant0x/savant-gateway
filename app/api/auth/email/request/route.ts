@@ -4,7 +4,7 @@ import { isSameOriginRequest } from "@/lib/admin-session";
 import {
   issueAccountAction,
   recordActionDelivery,
-} from "@/lib/account-actions";
+} from "@/lib/storage/ledger/account-actions";
 import { readAccountEmailConfig, sendAccountEmail } from "@/lib/account-email";
 import { createRateLimiter } from "@/lib/admin-rate-limit";
 import { normalizeEmail, validateEmail } from "@/lib/customer";
@@ -14,9 +14,9 @@ import {
   NO_STORE,
 } from "@/lib/customer-auth";
 import { clientKey } from "@/lib/customer-rate-limit";
-import { db } from "@/lib/db";
 import { readJsonObject, requestBodyError } from "@/lib/request-limits";
-import { findCustomerByEmail } from "@/lib/store/customer";
+import { findCustomerByEmail } from "@/lib/store-facade/access";
+import { storeRuntime } from "@/lib/store-facade/runtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -72,10 +72,11 @@ export async function POST(request: Request) {
   const allowed = addressLimiter.check(addressKey).allowed;
 
   addressLimiter.fail(addressKey);
-  const account = customer ?? findCustomerByEmail(email);
+  const db = await storeRuntime();
+  const account = customer ?? (await findCustomerByEmail(email));
   const action =
     allowed && account
-      ? issueAccountAction(db, {
+      ? await issueAccountAction(db, {
           userId: account.id,
           email,
           purpose,
@@ -93,7 +94,7 @@ export async function POST(request: Request) {
         token: action.token,
       });
 
-      recordActionDelivery(db, action.id, sent);
+      await recordActionDelivery(db, action.id, sent);
 
       return sent;
     };

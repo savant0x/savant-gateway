@@ -10,31 +10,33 @@ export async function runQuotaChecks(context) {
 
   tomorrow.setUTCHours(24, 0, 0, 0);
   mock.state.quota.resets_at_utc = tomorrow.toISOString();
-  const original = db.prepare("SELECT * FROM providers WHERE slug = 'savant'").get();
+  const original = await db
+    .prepare("SELECT * FROM providers WHERE slug = 'savant'")
+    .get();
   const now = new Date().toISOString();
   const secret = "http-quota-consumer-secret-0123456789";
   const session = "q".repeat(43);
 
-  db.prepare(`INSERT INTO users (id, email, name, status, created_at, password_hash)
+  await db.prepare(`INSERT INTO users (id, email, name, status, created_at, password_hash)
     VALUES ('quota_user', 'quota@example.test', 'Quota account', 'active', ?, ?)`)
     .run(now, hashPassword("quota-suite-password"));
-  db.prepare(`INSERT INTO api_keys
+  await db.prepare(`INSERT INTO api_keys
     (id, user_id, name, prefix, secret_hash, status, created_at)
     VALUES ('quota_key', 'quota_user', 'quota', 'sk-quota', ?, 'active', ?)`)
     .run(createHash("sha256").update(secret).digest("hex"), now);
-  db.prepare(`INSERT INTO customer_sessions
+  await db.prepare(`INSERT INTO customer_sessions
     (id, user_id, token_hash, created_at, expires_at)
     VALUES ('quota_session', 'quota_user', ?, ?, ?)`)
     .run(createHash("sha256").update(session).digest("hex"), now,
       new Date(Date.now() + 60000).toISOString());
-  db.prepare(`INSERT INTO models
+  await db.prepare(`INSERT INTO models
     (id, upstream_id, name, provider, context_window, token_weight, allow_free,
      status, synced_at, upstream_slug, family, protocol, cost_source, in_catalog,
      group_slug, group_source)
     VALUES ('quota-free', 'mock-free', 'Daily trial model', 'Mock', '128000',
       1, 1, 'active', ?, 'savant', 'Mock', 'chat', 'synced', 1, 'free', 'manual')`)
     .run(now);
-  db.prepare(`UPDATE providers SET base_url = ?, key_env_var = 'HTTP_SUITE_PROVIDER_KEY',
+  await db.prepare(`UPDATE providers SET base_url = ?, key_env_var = 'HTTP_SUITE_PROVIDER_KEY',
     default_headers = '{}', subscription_mode = 'free',
     subscription_token_limit = 20000000, subscription_tokens_used = 19631919,
     subscription_tokens_remaining = 368081, synced_at = '2026-10-29T21:15:21.452Z'
@@ -74,10 +76,16 @@ export async function runQuotaChecks(context) {
     checkEqual("admin initial render succeeds", page.status, 200);
     check("admin renders exact current remaining", page.text.includes("19,998,766"));
     check("admin renders observed reset and check time", page.text.includes("Upstream resets:") && page.text.includes("Account checked:"));
-    checkEqual("fresh free admission succeeds after yesterday exhaustion", (await chat()).status, 200);
-    checkEqual("daily trial usage settles as weighted tokens", db.prepare("SELECT weighted_tokens FROM free_pool_usage WHERE user_id = 'quota_user'").get().weighted_tokens, 150);
-    checkEqual("daily trial does not debit dollar credit", db.prepare("SELECT credit_micros FROM users WHERE id = 'quota_user'").get().credit_micros, 0);
-    checkEqual("daily trial releases its reservation", db.prepare("SELECT COUNT(*) AS n FROM free_pool_reservations WHERE user_id = 'quota_user'").get().n, 0);
+    const admission = await chat();
+
+    check(
+      "fresh free admission succeeds after yesterday exhaustion",
+      admission.status === 200,
+      `got ${admission.status}: ${admission.text.slice(0, 200)}`,
+    );
+    checkEqual("daily trial usage settles as weighted tokens", (await db.prepare("SELECT weighted_tokens::int AS weighted_tokens FROM free_pool_usage WHERE user_id = 'quota_user'").get()).weighted_tokens, 150);
+    checkEqual("daily trial does not debit dollar credit", (await db.prepare("SELECT credit_micros::int AS credit_micros FROM users WHERE id = 'quota_user'").get()).credit_micros, 0);
+    checkEqual("daily trial releases its reservation", (await db.prepare("SELECT COUNT(*)::int AS n FROM free_pool_reservations WHERE user_id = 'quota_user'").get()).n, 0);
     const trialRead = () => request(baseUrl, "/api/account/trial", {
       cookie: `sg_session=${session}`,
     });
@@ -109,7 +117,7 @@ export async function runQuotaChecks(context) {
     // trial card. The enabled suite proves the mirror (no daily allocation in
     // lifetime mode); these pin the reverse invariant and the truthful UI.
     checkEqual("daily mode writes no lifetime trial grant",
-      db.prepare("SELECT COUNT(*) AS n FROM trial_grants WHERE user_id = 'quota_user'").get().n, 0);
+      (await db.prepare("SELECT COUNT(*)::int AS n FROM trial_grants WHERE user_id = 'quota_user'").get()).n, 0);
     const catalog = await request(baseUrl, "/v1/models", {
       headers: { authorization: `Bearer ${secret}` },
     });
@@ -134,7 +142,7 @@ export async function runQuotaChecks(context) {
 
     checkEqual("free admission refuses unavailable upstream capacity", (await chat()).status, 503);
     checkEqual("unavailable capacity never reaches inference", mock.state.calls, calls);
-    checkEqual("failed check creates no reservation", db.prepare("SELECT COUNT(*) AS n FROM free_pool_reservations WHERE user_id = 'quota_user'").get().n, 0);
+    checkEqual("failed check creates no reservation", (await db.prepare("SELECT COUNT(*)::int AS n FROM free_pool_reservations WHERE user_id = 'quota_user'").get()).n, 0);
     const failedCredits = await trialRead();
 
     checkEqual("customer credits fail closed with upstream", failedCredits.status, 503);
@@ -166,7 +174,7 @@ export async function runQuotaChecks(context) {
 
     checkEqual("failed balance is unavailable rather than old zero", balanceFailed.json.provider.balanceUsd, null);
     mock.state.balanceFailure = false;
-    db.prepare(`INSERT INTO free_pool_reservations
+    await db.prepare(`INSERT INTO free_pool_reservations
       (id, user_id, api_key_id, model_id, provider_slug, day, weighted_tokens, created_at, expires_at)
       VALUES ('quota_held', 'quota_user', 'quota_key', 'quota-free', 'savant', ?, 19000000, ?, ?)`)
       .run(now.slice(0, 10), now, new Date(Date.now() + 60000).toISOString());
@@ -175,7 +183,7 @@ export async function runQuotaChecks(context) {
     checkEqual("raw upstream remains separate from local reservations", held.json.provider.subscriptionTokensRemaining, 19_998_766);
     check("admission capacity subtracts outstanding reservations", held.json.provider.admissionRemainingTokens < 1_000_000);
     checkEqual("a retained hold prevents oversubscription", (await chat()).status, 429);
-    db.prepare("DELETE FROM free_pool_reservations WHERE id = 'quota_held'").run();
+    await db.prepare("DELETE FROM free_pool_reservations WHERE id = 'quota_held'").run();
     mock.state.quotaDelay = 150;
     const concurrentBefore = mock.state.accountChecks;
     const concurrent = await Promise.all([read(), read(), read()]);
@@ -189,7 +197,7 @@ export async function runQuotaChecks(context) {
 
     checkEqual("catalog failure is reported independently", catalogueFailed.status, 502);
     check("catalog failure cannot erase the fresh account observation",
-      db.prepare("SELECT quota_observed_at FROM providers WHERE slug='savant'").get().quota_observed_at !== null);
+      (await db.prepare("SELECT quota_observed_at FROM providers WHERE slug='savant'").get()).quota_observed_at !== null);
     mock.state.quotaDelay = 200;
     const raceBefore = mock.state.accountChecks;
     const late = read();
@@ -205,7 +213,7 @@ export async function runQuotaChecks(context) {
     checkEqual("provider configuration edit succeeds during a check", changedConfig.status, 200);
     checkEqual("configuration edit fences the late account response", (await late).status, 503);
     checkEqual("late account response cannot certify changed configuration",
-      db.prepare("SELECT quota_observed_at FROM providers WHERE slug='savant'").get().quota_observed_at, null);
+      (await db.prepare("SELECT quota_observed_at FROM providers WHERE slug='savant'").get()).quota_observed_at, null);
     mock.state.quotaDelay = 0;
     checkEqual("changed provider recovers only after a new check", (await read()).status, 200);
     const account = await request(baseUrl, "/account", {
@@ -215,7 +223,7 @@ export async function runQuotaChecks(context) {
     });
 
     checkEqual("daily credits do not bypass customer authentication", account.status, 307);
-    check("daily allocation respects the per-account cap", db.prepare("SELECT allocated_tokens FROM free_pool_allocations WHERE user_id = 'quota_user'").get().allocated_tokens > 0);
+    check("daily allocation respects the per-account cap", (await db.prepare("SELECT allocated_tokens::int AS allocated_tokens FROM free_pool_allocations WHERE user_id = 'quota_user'").get()).allocated_tokens > 0);
 
     // FID-051: durable settlement identity and operator inspection.
     const settlements = await request(baseUrl, "/api/admin/settlements", { cookie });
@@ -283,7 +291,7 @@ export async function runQuotaChecks(context) {
     // the same condition as sixty seconds of silence without sleeping.
     const stale = new Date(Date.now() - 60_000).toISOString();
 
-    db.prepare(`UPDATE providers SET quota_observed_at = ?, balance_observed_at = ?
+    await db.prepare(`UPDATE providers SET quota_observed_at = ?, balance_observed_at = ?
       WHERE slug = 'savant'`).run(stale, stale);
     const checksBeforeIdle = mock.state.accountChecks;
     const revived = await chat();
@@ -296,18 +304,18 @@ export async function runQuotaChecks(context) {
     mock.state.quotaFailure = false;
     mock.state.balanceFailure = false;
     mock.state.quotaDelay = 0;
-    db.prepare("DELETE FROM free_pool_reservations WHERE user_id = 'quota_user'").run();
-    db.prepare("DELETE FROM usage_events WHERE user_id = 'quota_user'").run();
-    db.prepare("DELETE FROM free_pool_usage WHERE user_id = 'quota_user'").run();
-    db.prepare("DELETE FROM free_pool_allocations WHERE user_id = 'quota_user'").run();
-    db.prepare("DELETE FROM api_keys WHERE user_id = 'quota_user'").run();
-    db.prepare("DELETE FROM customer_sessions WHERE user_id = 'quota_user'").run();
-    db.prepare("DELETE FROM users WHERE id = 'quota_user'").run();
-    db.prepare("DELETE FROM models WHERE id = 'quota-free'").run();
-    db.prepare("DELETE FROM providers WHERE slug = 'savant'").run();
+    await db.prepare("DELETE FROM free_pool_reservations WHERE user_id = 'quota_user'").run();
+    await db.prepare("DELETE FROM usage_events WHERE user_id = 'quota_user'").run();
+    await db.prepare("DELETE FROM free_pool_usage WHERE user_id = 'quota_user'").run();
+    await db.prepare("DELETE FROM free_pool_allocations WHERE user_id = 'quota_user'").run();
+    await db.prepare("DELETE FROM api_keys WHERE user_id = 'quota_user'").run();
+    await db.prepare("DELETE FROM customer_sessions WHERE user_id = 'quota_user'").run();
+    await db.prepare("DELETE FROM users WHERE id = 'quota_user'").run();
+    await db.prepare("DELETE FROM models WHERE id = 'quota-free'").run();
+    await db.prepare("DELETE FROM providers WHERE slug = 'savant'").run();
     const columns = Object.keys(original);
 
-    db.prepare(`INSERT INTO providers (${columns.join(",")}) VALUES (${columns.map(() => "?").join(",")})`)
+    await db.prepare(`INSERT INTO providers (${columns.join(",")}) VALUES (${columns.map(() => "?").join(",")})`)
       .run(...columns.map((key) => original[key]));
     mock.reset();
   }

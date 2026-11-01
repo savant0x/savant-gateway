@@ -28,7 +28,7 @@ export async function GET(request: Request) {
 
   return Response.json(
     {
-      events: listActivity(parseLimit(url.searchParams.get("limit")), {
+      events: await listActivity(parseLimit(url.searchParams.get("limit")), {
         userId: userId || undefined,
         kind: (kindParam || undefined) as ActivityKind | undefined,
       }),

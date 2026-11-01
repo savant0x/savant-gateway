@@ -18,10 +18,12 @@ export const metadata: Metadata = {
 };
 
 export default async function PlansPage() {
-  const plans = listSellablePlans();
-  const customer = await getCustomerSession();
+  const [plans, customer] = await Promise.all([
+    listSellablePlans(),
+    getCustomerSession(),
+  ]);
   const subscription = customer
-    ? customerSubscriptionSummary(customer.id)
+    ? await customerSubscriptionSummary(customer.id)
     : null;
   const activePlanSlug =
     subscription &&

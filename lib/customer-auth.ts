@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 
 import { isSameOriginRequest } from "./admin-session";
 import { CUSTOMER_COOKIE, sessionCookieOptions } from "./customer-session";
-import { resolveCustomerSession } from "./store/customer";
+import { resolveCustomerSession } from "./store-facade/access";
 
 export const NO_STORE = { "Cache-Control": "no-store" } as const;
 
@@ -26,7 +26,7 @@ export async function getCustomerSession() {
   const store = await cookies();
   const token = store.get(CUSTOMER_COOKIE)?.value;
 
-  return resolveCustomerSession(token);
+  return await resolveCustomerSession(token);
 }
 
 export async function requireCustomerPage() {

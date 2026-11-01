@@ -35,7 +35,7 @@ export async function GET(request: Request) {
     {
       enabled: policy.enabled,
       reason: policy.reason,
-      codes: listPromoCodes(),
+      codes: await listPromoCodes(),
     },
     { headers: NO_STORE },
   );
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
   const code = typeof body.code === "string" ? body.code : undefined;
 
   try {
-    const created = createPromoCode({
+    const created = await createPromoCode({
       amountMicros,
       maxRedemptions,
       label,

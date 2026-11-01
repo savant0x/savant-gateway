@@ -15,8 +15,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function AdminSubscriptionsPage() {
-  const subscriptions = listSubscriptionSummaries(200);
+export default async function AdminSubscriptionsPage() {
+  const [subscriptions, customers, plans] = await Promise.all([
+    listSubscriptionSummaries(200),
+    listCustomerSummaries(),
+    listPlans(),
+  ]);
   const active = subscriptions.filter(
     (subscription) => subscription.status === "active",
   );
@@ -52,8 +56,8 @@ export default function AdminSubscriptionsPage() {
       </div>
 
       <SubscriptionsPanel
-        customers={listCustomerSummaries()}
-        plans={listPlans()}
+        customers={customers}
+        plans={plans}
         subscriptions={subscriptions}
       />
     </>

@@ -27,7 +27,7 @@ export async function POST(request: Request) {
 
   if (!origin) return customerError(503, "Set NEXT_PUBLIC_SITE_URL first.");
 
-  const subscription = customerSubscriptionSummary(customer.id);
+  const subscription = await customerSubscriptionSummary(customer.id);
 
   if (!subscription?.stripeCustomerId) {
     return customerError(409, "Manual subscriptions have no billing portal.", {

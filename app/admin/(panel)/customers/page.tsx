@@ -16,9 +16,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function AdminCustomersPage() {
-  const customers = listCustomerSummaries();
-  const topups = listTopups(50);
+export default async function AdminCustomersPage() {
+  const [customers, topups] = await Promise.all([
+    listCustomerSummaries(),
+    listTopups(50),
+  ]);
   const stripe = readStripeConfig();
   const totalCredit = customers.reduce(
     (sum, customer) => sum + customer.creditMicros,

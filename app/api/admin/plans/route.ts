@@ -10,7 +10,7 @@ export async function GET(request: Request) {
 
   if (blocked) return blocked;
 
-  return Response.json({ plans: listPlans() }, { headers: NO_STORE });
+  return Response.json({ plans: await listPlans() }, { headers: NO_STORE });
 }
 
 export async function POST(request: Request) {
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     return requestBodyError(error);
   }
 
-  const result = createPlan(body);
+  const result = await createPlan(body);
 
   if (!result.ok) return adminError(result.status, result.error);
 
@@ -50,7 +50,7 @@ export async function PATCH(request: Request) {
 
   if (!id) return adminError(400, "A plan id is required.");
 
-  const result = updatePlan(id, body);
+  const result = await updatePlan(id, body);
 
   if (!result.ok) return adminError(result.status, result.error);
 
@@ -74,7 +74,7 @@ export async function DELETE(request: Request) {
 
   if (!id) return adminError(400, "A plan id is required.");
 
-  const result = deletePlan(id);
+  const result = await deletePlan(id);
 
   if (!result.ok) return adminError(result.status, result.error);
 

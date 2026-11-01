@@ -30,7 +30,7 @@
 		"quality": "node scripts/quality-report.mjs",
 		"storage:check": "node scripts/storage-contract-check.mjs",
 		"business-model": "node scripts/business-model.mjs",
-		"verify": "npm run check && npm run config:check && npm run test && npm run quality && npm run build && npm run test:http && npm run test:recovery",
+		"verify": "npm run check && npm run storage:check && npm run config:check && npm run test && npm run quality && npm run build && npm run test:http && npm run test:recovery",
 		"prepare": "git config core.hooksPath .githooks && git config commit.template .gitmessage"
 	},
 	"dependencies": {

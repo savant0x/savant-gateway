@@ -4,7 +4,7 @@
 **ID:** FID-2026-1030-044
 **Parent:** FID-2026-1030-043
 **Severity:** high
-**Status:** converged
+**Status:** verified
 **Created:** 2026-10-30
 **Automation level:** 3
 **Depends on:** none
@@ -109,15 +109,24 @@ collection with card top-ups gated off (NOWPayments is the launch lane); and a
 2500-bps (2.5×) sell markup over the synced rate card, replacing the configured
 3000-bps default.
 
-Four implementation questions remain and are recorded in the ledger: whether the
-free share is spendable on paid-group models or only on the allow_free rows; the
-operating reserve and low-balance threshold in dollars; the no-refund policy
-rewrite as a new immutable version; and provider rate-card confirmation. The
-Stripe-disable consequence of crypto-only is resolved: ruling 7 opens
+**Fast-path decisions accepted 2026-11-01.** The operator accepted the eight
+recommended answers in [`launch-decision-form.md`](../../docs/launch-decision-form.md).
+The four implementation questions are answered:
+
+1. **Free-share scope:** `allow_free` rows only. Current admission already
+   matches; no code change.
+2. **Operating reserve:** $50 reserve, $50 alert, $25 hard stop, set on the
+   provider account rather than in application code.
+3. **No-refund terms:** the replacement text is approved for a new immutable
+   `v1.2` policy. Publication remains a launch task; `v1.1` is still served.
+4. **Provider rate card:** the operator confirmed the synced cost column and the
+   2.5× (2500 bps) markup as of 2026-11-01. The eight spot checks remain the
+   measured evidence.
+
+The Stripe-disable consequence of crypto-only is resolved: ruling 7 opens
 NOWPayments-hosted crypto invoices with card top-ups gated off — implemented by
 FID-2026-1031-076 — and the direct-USDC lane (FID-2026-1030-068) is deferred
-behind it. The item stays active and `converged` until
-those are answered. No launch approval is claimed.
+behind it. This record is `verified`; no launch approval is claimed.
 
 ## Perfection Loop
 
@@ -134,22 +143,18 @@ the release candidate. A changed rate requires new evidence and explicit price
 application; never silently overwrite purchased subscription snapshots. Final
 convergence checks are recorded in the master planning-audit receipt.
 
-The evidence ledger is implemented and committed; no offering, provider funding
-or commercial claim is approved by this record. Closure still requires the dated
-decisions above, and real paid acceptance remains 062.
+The evidence ledger is implemented and committed. The dated offering decisions
+now exist; real paid acceptance remains 062.
 
-**Cutover review 2026-11-01.** The storage cutover does not change any offering
-fact. Still open, and each needs a dated operator answer before activation:
+**Fast-path review 2026-11-01.** The four implementation questions are answered:
+free share on `allow_free` only; $50 reserve / $50 alert / $25 hard stop; the
+approved no-refund text for `v1.2`; and operator confirmation of the synced rate
+card and 2.5× markup. The direct-USDC lane (FID-068) remains deferred behind the
+NOWPayments crypto lane. Publishing `v1.2`, setting the reserve on the provider
+account and observing a funded paid call remain open; launch is still no-go.
 
-1. whether the daily free share is spendable on paid-group models or only on
-   `allow_free` rows;
-2. the operating reserve and low-balance threshold in dollars;
-3. the no-refund policy rewrite as a new immutable version;
-4. provider rate-card confirmation against the synced cost column.
-
-The direct-USDC lane (FID-068) remains deferred behind the NOWPayments crypto
-lane; no paid acceptance has been run against a real upstream. This record stays
-`converged`, not closed, and launch remains no-go.
+- **Closed:** 2026-11-01
+- **Archived:** `dev/fids/archive/` after the fast-path decisions
 
 ## Lessons Learned
 

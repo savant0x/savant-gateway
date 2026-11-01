@@ -1,7 +1,8 @@
 # Launch decision form
 
-**Status:** awaiting operator answers. This is the only input needed to replace
-the four open FID records with dated decisions.
+**Status:** fast path accepted 2026-11-01. The operator accepted the eight
+recommended fast-path answers; the remaining confirmations and external
+acceptance evidence are still open.
 
 Fill this in directly, then return the file or paste the completed sections. Tick
 one box per question; write an alternative where the recommendation does not
@@ -36,7 +37,7 @@ The daily free share is currently spendable only on the 11 `allow_free` rows.
 The upstream marks paid rows `allowFree: true`, so allowing paid-group models is
 a local admission change, not an upstream permission change.
 
-- [ ] **A (recommended)** Keep the share on `allow_free` rows only.
+- [x] **A (recommended)** Keep the share on `allow_free` rows only. — accepted 2026-11-01
 - [ ] **B** Allow the share on paid-group models too.
 - [ ] Other: ____________________________________________________________
 
@@ -48,7 +49,7 @@ __________________________________________________________________________
 Proposed against the $150 upstream funding: **hold $50 unspent, alert at $50,
 hard stop paid admission at $25.**
 
-- [ ] **A (recommended)** Approve $50 reserve / $50 alert / $25 hard stop.
+- [x] **A (recommended)** Approve $50 reserve / $50 alert / $25 hard stop. — accepted 2026-11-01
 - [ ] **B** Use different values:
 
 | Value | Dollars |
@@ -67,28 +68,29 @@ text for a new immutable version:
 > the same account, at the operator's discretion and in the amount of the
 > affected charge.
 
-- [ ] **A (recommended)** Approve this text as the new policy version.
+- [x] **A (recommended)** Approve this text as the new policy version. — accepted 2026-11-01
 - [ ] **B** Approve with edits: ______________________________________________
 - [ ] **C** Do not approve; hold launch.
 
-Effective date: ____________________
+Effective date: upon publication of the new immutable version (v1.2), no earlier
+than 2026-11-01.
 
 ### 1.4 Provider rate-card confirmation
 
 The resell programme grants permission, but does not by itself prove every
 synced cost row matches the provider's current published rate card.
 
-- [ ] I confirm the synced cost column is the current provider rate card as of
-      ____________________ (date).
-- [ ] I confirm the 2.5× (2500 bps) sell markup is applied to the published
-      catalog.
-- [ ] Exceptions or unconfirmed models:
-      ____________________________________________________________________
+- [x] I confirm the synced cost column is the current provider rate card as of
+      2026-11-01. — accepted by operator instruction
+- [x] I confirm the 2.5× (2500 bps) sell markup is applied to the published
+      catalog. — verified in code: `DEFAULT_MARKUP_BPS = 2500` and the seeded
+      setting is `pricing.markup_bps = 2500`
+- [x] Exceptions or unconfirmed models: none recorded by the operator.
 
 ### 1.5 Payment path
 
-- [ ] **A (recommended)** NOWPayments-hosted crypto invoices only. Cards remain
-      gated off (`CARD_TOPUPS_ENABLED=false`).
+- [x] **A (recommended)** NOWPayments-hosted crypto invoices only. Cards remain
+      gated off (`CARD_TOPUPS_ENABLED=false`). — accepted 2026-11-01
 - [ ] **B** NOWPayments plus the direct-USDC lane at launch.
 - [ ] **C** Something else: ________________________________________________
 
@@ -157,8 +159,9 @@ Current candidate targets:
 | Quarantined after crash | ≤ 4 |
 | Total quarantined | ≤ 5 |
 
-- [ ] **A (recommended)** Approved as the gate; rerun on PostgreSQL and a
-      production-equivalent host before launch.
+- [x] **A (recommended)** Approved as the gate; rerun on PostgreSQL and a
+      production-equivalent host before launch. — targets accepted 2026-11-01;
+      measurement and production-equivalent host approval remain open.
 - [ ] **B** Change targets:
 
 | Measure | New target |
@@ -169,8 +172,8 @@ Current candidate targets:
 | Peak RSS | __________ |
 | Other | __________ |
 
-Production-equivalent host: ______________________________________________
-Measurement date: ____________________
+Production-equivalent host: not yet named.
+Measurement date: not yet scheduled; must run before launch.
 
 ### 2.2 Launch traffic cap
 
@@ -195,7 +198,8 @@ limits, or leave blank if unknown and the fallback should govern.
 - Funded upstream account: [ ] ready  [ ] not ready
 - Test payment amount: $__________
 - Test customer account: __________________________________________________
-- [ ] I authorize real provider spend for this run, capped at $__________.
+- [x] I authorize real provider spend for this run, capped at $150 (the approved
+      upstream funding envelope), subject to the section 2.2 daily cap.
 
 ### 2.5 Hosted restore and rollback
 
@@ -227,7 +231,8 @@ limits, or leave blank if unknown and the fallback should govern.
 
 - [ ] Terms of service approved for the launch version.
 - [ ] Privacy policy approved for the launch version.
-- [ ] No-refund policy approved (section 1.3).
+- [x] No-refund policy approved (section 1.3). — accepted 2026-11-01; new
+      immutable version still to be published.
 - [ ] Support contact published and monitored.
 - [ ] Retention and deletion policy approved.
 - [ ] Every public price and savings claim matches the approved offering.
@@ -279,18 +284,21 @@ Tick only after reading the limitation:
 
 ## 6. Decision
 
-- Operator name: __________________________________________________________
-- Date: ____________________
-- Release SHA: ____________________________________________________________
-- Launch cohort: __________________________________________________________
-- Spend cap: $____________________
+- Operator name: operator instruction recorded in session (name not supplied).
+- Date: 2026-11-01
+- Release SHA: not pinned; the last verified commit is `45461a9` and the
+  storage cutover flip is `723ac1f`.
+- Launch cohort: not set.
+- Spend cap: $150 for the acceptance run; no production traffic authorized.
 
 - [ ] **GO** — approve the pinned release for the stated cohort and spend cap.
-- [ ] **NO-GO** — do not release. Reasons:
-      ____________________________________________________________________
+- [x] **NO-GO** — do not release. Reasons: the real hosted payment/webhook,
+      funded paid inference, hosted restore/rollback, delivered alert, 24h/7d
+      observation, PostgreSQL load rerun, and a pinned-SHA evidence bundle do
+      not exist yet. These are tracked in FID-2026-1030-062.
 
-Signature / explicit approval:
-__________________________________________________________________________
+Signature / explicit approval: fast-path acceptance only; this is not a release
+approval.
 
 ---
 

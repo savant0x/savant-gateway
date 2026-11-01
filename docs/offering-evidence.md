@@ -39,11 +39,11 @@ model. It does not approve an offering, a price, a limit or a spend budget.
 | Paid upstream wallet | $0.00, plan `free`, account RPM 15 | Observed, dated; not live | local providers row, synced 2026-10-29T21:15:21Z |
 | Outstanding customer credit (local) | $5.00, held $0.00, one ledger row, zero paid top-ups | Observed | local `users`, `credit_ledger`, `topups`, read 2026-10-30 |
 | APInex partner response | Provider offers support for Savant Code as a foundation customer; exact commercial/resale terms are unconfirmed | Provider-supplied evidence | Email supplied by operator 2026-10-30; see below |
-| Confirmed per-model upstream rates | — | Unknown | Synced values exist, but no dated provider rate-card confirmation is recorded |
+| Confirmed per-model upstream rates | Synced cost column confirmed as current | Operator-confirmed 2026-11-01 | `docs/launch-decision-form.md` §1.4; eight spot checks in the provider facts below |
 | Payment processing fee | — | Unknown | NOWPayments fee schedule not yet read; invoice created with `is_fee_paid_by_user: true` (see customer payment lane below) |
-| Refund/dispute reserve | — | Unknown | No operator policy recorded |
+| Refund/dispute reserve | No voluntary refunds; verified service failures receive service credit | Approved 2026-11-01; `v1.2` publication pending | `docs/launch-decision-form.md` §1.3; `content/legal/v1.1/refunds.md` is still served |
 | Monthly fixed operating cost | — | Unknown | Hosting selection belongs to FID-057 |
-| Paid upstream spend budget | — | Unknown | Operator funding decision |
+| Paid upstream spend budget | $150 funding; $50 reserve / $50 alert / $25 hard stop | Approved 2026-11-01; funding not yet observed | `docs/launch-decision-form.md` §1.2, §2.4 |
 
 ## Reconciliation of the existing model
 
@@ -209,24 +209,34 @@ credited price equals the listed price. Settlement is non-custodial to an
 operator-chosen outcome wallet, which keeps the provider-funding lane (upstream
 wholesale) and the customer-collection lane (NOWPayments) separate.
 
-## Still open after these rulings
+## Decisions recorded 2026-11-01
 
-- **Free-share scope.** Whether the daily share is spendable on paid-group models
-  or only on the 11 `allow_free` rows. Today `isFreeCall` admits only
-  `allow_free = 1`, so a paid model with no credit returns a credit error.
-- **Operating reserve and low-balance threshold**, as absolute dollars derived
-  from the $150 funding decision.
-- **Payment-path consequence.** Ruling #4 named direct USDC as the launch lane;
-  ruling #7 and the NOWPayments facts above supersede the processor choice.
-  FID-2026-1031-076 (NOWPayments invoice lane) is the launch payment path;
-  FID-2026-1030-068 (direct USDC) is deferred behind it. The no-refund remedy
-  path (service credit) is unchanged.
-- **No-refund terms.** The published policy still describes a manual Stripe
-  refund and must be rewritten as a new immutable version before launch.
-- **Provider rate-card confirmation.** The resell programme establishes
-  permission; it does not by itself prove that every synced cost row matches the
-  provider's current published rate.
+The operator accepted the fast-path answers in
+[`launch-decision-form.md`](launch-decision-form.md). These are dated decisions,
+not new measurements:
 
-Until the four implementation questions above are answered, the activation paths
-stay as they are: trial disabled, no plan on sale, and no funded paid inference
-claimed.
+- **Free-share scope — only `allow_free` rows.** The daily share is not spendable
+  on paid-group models. Current admission already matches this ruling, so no code
+  change is required. The upstream's `allowFree: true` on paid rows is permission
+  the gateway deliberately does not use.
+- **Operating reserve — $50 reserve / $50 alert / $25 hard stop.** Against the
+  $150 upstream funding, this holds one third unspent and stops paid admission
+  before the wallet is exhausted. The values are operational policy; they need
+  to be set on the provider account, not in application code.
+- **Payment path — NOWPayments only at launch.** Cards stay gated off
+  (`CARD_TOPUPS_ENABLED=false`). FID-2026-1031-076 is the launch collection lane;
+  the direct-USDC lane (FID-2026-1030-068) remains deferred and blocked on its
+  operator inputs.
+- **No-refund text — approved.** The replacement text in section 1.3 of the form
+  is approved for a new immutable policy version (`v1.2`). Publication is still
+  required; `v1.1` remains the served text until then and still describes Stripe
+  cards.
+- **Provider rate card and markup — confirmed.** The operator confirmed the
+  synced cost column as the current rate card as of 2026-11-01 and the 2.5×
+  (2500 bps) sell markup. Code confirms `DEFAULT_MARKUP_BPS = 2500` and the seeded
+  `pricing.markup_bps = 2500`; the eight spot checks above remain the measured
+  evidence for the rate rows.
+
+Still open: publishing `v1.2`, configuring the reserve on the provider account,
+and observing a funded paid call. Activation paths otherwise stay as they are:
+trial disabled, no plan on sale, and no funded paid inference claimed.

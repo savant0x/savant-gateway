@@ -71,7 +71,7 @@ rather than disappearing work.
 
 | Child | Responsibility | Depends on |
 | --- | --- | --- |
-| [044](FID-2026-1030-044-offering-and-economics.md) | Offering, verified rates and upstream permission | none |
+| [044](archive/FID-2026-1030-044-offering-and-economics.md) | Offering, verified rates and upstream permission | none |
 | [045](archive/FID-2026-1030-045-email-and-account-recovery.md) | Email ownership and account recovery - closed `871f19e`; live sender/inbox acceptance tracked | 044 |
 | [046](archive/FID-2026-1030-046-abuse-and-request-limits.md) | Abuse, key and resource bounds — closed `bb925af`; hosted ingress acceptance tracked | 044 |
 | [047](archive/FID-2026-1030-047-security-and-account-isolation.md) | Auth, isolation, boundaries and redaction — closed `2ef2d74`; ingress pinning in 057 | none |
@@ -173,13 +173,16 @@ proxy receipt remain `FID-2026-1030-060-LIVE`.
 one PostgreSQL handle, `npm run verify` is green (749 tests, HTTP 750 + trial,
 recovery 12/12) and the storage contract gate is green. That removes the storage
 blocker from launch, but it does not approve launch. The remaining blockers are
-owned as follows: FID-044 has four unanswered implementation questions (free
-share scope, reserve threshold, refund-policy version, provider rate-card
-confirmation); FID-062 has no real hosted payment/webhook/funded-inference,
-restore/rollback, delivered-alert or 24h/7d observation receipt, and the FID-060
-load envelope has not been re-measured against PostgreSQL; FID-068 remains
-blocked on chain/token confirmation, an xpub, an RPC endpoint and a screening
-ruling, and is deferred behind the NOWPayments lane. Release decision: **no-go**.
+owned as follows: FID-044's four offering questions are answered (free share on
+`allow_free` only; $50 reserve / $50 alert / $25 hard stop; no-refund text
+approved for `v1.2`; rate card and 2.5× markup confirmed), leaving only policy
+publication and a funded paid-call observation; FID-062 has no real hosted
+payment/webhook/funded-inference, restore/rollback, delivered-alert or 24h/7d
+observation receipt, and the FID-060 load targets are accepted but not
+re-measured against PostgreSQL; FID-068 remains blocked on chain/token
+confirmation, an xpub, an RPC endpoint and a screening ruling, and is deferred
+behind the NOWPayments lane. The operator recorded **NO-GO** for the current
+candidate in the launch decision form.
 
 ## Lessons Learned
 

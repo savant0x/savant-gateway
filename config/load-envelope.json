@@ -5,7 +5,12 @@
     "approved": false,
     "by": null,
     "at": null,
-    "note": "Candidate envelope measured on a disposable production build. Operator approval and a production-equivalent host measurement remain FID-2026-1030-060-LIVE."
+    "note": "Candidate envelope measured on a disposable production build. The operator accepted the targets on 2026-11-01; the PostgreSQL rerun, production-equivalent host measurement and release approval remain FID-2026-1030-060-LIVE."
+  },
+  "targetsApproval": {
+    "approved": true,
+    "at": "2026-11-01",
+    "note": "Targets accepted in docs/launch-decision-form.md. This is not approval of a measurement or of production capacity."
   },
   "environment": {
     "providerRpm": 6000,

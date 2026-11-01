@@ -185,6 +185,14 @@ the same log cannot credit twice. The spike's assertions become
 - **Tests Added:** No — the spike asserts directly; it becomes a test file when
   the modules land.
 
+**Cutover review 2026-11-01.** No mechanism step has landed. The lane is still
+blocked on four operator inputs: the chain and USDC token contract, an xpub
+generated on the hardware wallet, an RPC endpoint, and a screening ruling
+(accept the exposure or budget a screening service). It is also deferred behind
+the NOWPayments hosted-crypto lane, which is the launch collection path. The
+six-check offline spike remains the only evidence; no schema, watcher, credit
+transaction or UI exists, so nothing here is offered to customers.
+
 ## Lessons Learned
 
 Writing the spike first turned a design assertion ("we can derive addresses from

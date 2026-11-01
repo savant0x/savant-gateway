@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1031-086-storage-cutover-and-dev-data-migration.md`
 **ID:** FID-2026-1031-086
 **Severity:** critical
-**Status:** converged
+**Status:** verified
 **Created:** 2026-10-31 21:10
 **Automation level:** 2
 **YAGNI-Compliance:** Verified
@@ -219,7 +219,7 @@ existing suite run through `npm test`.
 
 - gate: lint
 - gate: typecheck
-- gate: storage:check (`npm run storage:check`, expected exit 1 until step 4)
+- gate: storage:check (`npm run storage:check`, exit 0 after the flip)
 - gate: quality
 - gate: build
 
@@ -751,6 +751,39 @@ when step 4 lands.
   providers and groups but no catalog until an admin sync or
   `npm run db:import` runs.
 
+**Final cutover receipt**
+
+- verified: 2026-11-01T22:35:00Z
+- `npm run verify`: exit 0
+  - lint: exit 0, zero warnings
+  - typecheck: exit 0
+  - config:check: PASS (non-production)
+  - test (`npm test`): exit 0 — 749 tests, 748 pass, 0 fail, 1 skipped
+    (`settlement-concurrency.test.mjs` needs an external `DATABASE_URL`)
+  - quality: PASS (400-line ceiling, 465 files)
+  - build: exit 0
+  - test:http: 750 checks PASS, trial suite all checks PASS
+  - test:recovery: 12/12 checks PASS against PostgreSQL
+- `node scripts/storage-contract-check.mjs`: exit 0 — 0 SQLite importers under
+  `app/`, `lib/`; 0 `lib/store` modules with inline statements; PASS
+- `better-sqlite3`: absent from `dependencies`; retained only as a devDependency
+  for the one-way importer and its test
+- call path: `lib/store.ts` binds `getDatabase()` from
+  `lib/storage/runtime.ts`; every route and page resolves the async façade
+- fixed during the cutover: the trial route called the ported runtime without
+  network dependencies and cleared the provider's quota observation; the
+  create-key cap was a check-then-insert race; BIGINT micros arrived from
+  `pg` as strings and priced calls at zero; several route handlers returned
+  unresolved promises in JSON bodies
+- **Open measurement, not a cutover failure:** the FID-060 load envelope has not
+  been re-measured against PostgreSQL. `scripts/load-acceptance.mjs` still opens
+  a SQLite workspace, so its published numbers remain engine-specific and the
+  envelope remains `candidate`. This is carried into FID-062's launch blockers
+  and is not claimed as passed here.
+- honest limits: sixteen legacy SQLite unit suites still exercise the
+  test-only `lib/*-ledger.ts` fixtures. They are not imported by `app/` or
+  `lib/storage/`; deleting them is cleanup, not a runtime dependency.
+
 **Step 4, slice 3 — RED/GREEN plan for the disposable PostgreSQL test gate**
 
 - RED (measured): `npm run test:http` exits 1 against the flipped build after 53
@@ -844,7 +877,7 @@ when step 4 lands.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [ ] **Commit SHA:** pending — the flip commit
+- [x] **Commit SHA:** `723ac1f` — the flip commit
 - [x] **File:line ranges:** `scripts/storage-contract-check.mjs:1` (gate),
   `lib/storage/store/topups.ts:1` (fulfilment at `:135`),
   `lib/storage/store/customer.ts:1`,
@@ -871,23 +904,27 @@ when step 4 lands.
     storage, store), the settlement money path (`recordUsage`, `settleCall`, the
     streaming relay) and the catalog reads (`overview`, `public-catalog`,
     `provider-catalog`, `banner`)
-  - step 3 delegating modules — pending
-  - step 4 flip — pending
-  - step 5 test port — pending
+  - step 3 delegating modules — implemented (`promos`, `provider-catalog`,
+    `analytics`, `banner`, `trial-offer` now resolve through the async façade)
+  - step 4 flip — implemented: `lib/store/*`, `lib/db.ts` and the app's SQLite
+    importers are gone; `lib/store.ts` binds the PostgreSQL handle; the contract
+    gate is green
+  - step 5 test port — implemented for the runtime: 23 PostgreSQL suites plus
+    the HTTP suite now exercise the ported handle. Sixteen legacy SQLite unit
+    suites remain as test-only fixtures of `lib/*-ledger.ts`; they are not
+    imported by `app/` or `lib/storage/` and do not touch the request path.
   - step 6 importer — implemented
   - step 6 durability (PostgreSQL backup/restore, recovery drill rerun) —
-    implemented at the database level; the server-level drill returns with
-    step 4, because the application still runs on SQLite
+    implemented and rerun against PostgreSQL
 
 ### Code Verification Evidence
 
 - [x] Files referenced in Affected Components exist
 - [x] Implementation matches the Proposed Solution (gate + decision only)
 - [x] Typecheck/tests/lint pass with pasted tool output
-- [ ] Production call-graph evidence — absent by definition until step 4; the
-  gate reports zero callers today
-- [x] FID status reflects the actual implementation state (`converged`, not
-  `closed`)
+- [x] Production call-graph evidence — `lib/store.ts` binds `getDatabase()` and
+  the contract gate reports zero SQLite importers under `app/` and `lib/`
+- [x] FID status reflects the actual implementation state (`verified`)
 
 ### Loop 2 — Independent audit and self-correction
 
@@ -925,15 +962,18 @@ when step 4 lands.
 
 ## Resolution
 
-- **Closed Date:** pending
-- **Fix Description:** Decision record plus the contract gate; the flip is
-  sequenced in six steps with acceptance criteria.
-- **Tests Added:** No — the gate itself is the artifact; `tests/storage-contract.test.mjs`
-  arrives with step 5.
-- **Verification Evidence:** `node scripts/storage-contract-check.mjs` (red by
-  design, names every remaining importer); `npm run lint`, `npm run typecheck`,
-  `npm test`, `npm run quality`.
-- **Archived:** pending
+- **Closed Date:** 2026-11-01
+- **Fix Description:** The flip landed. The application resolves one PostgreSQL
+  handle through `lib/store.ts`; the SQLite request path, `lib/db.ts` and the
+  legacy `lib/store/*` modules are deleted. `better-sqlite3` remains only as a
+  devDependency for the one-way importer, not as runtime storage. The contract
+  gate is green and `tests/storage-contract.test.mjs` pins it.
+- **Tests Added:** `tests/storage-contract.test.mjs`; 23 PostgreSQL suites and
+  the HTTP suite exercise the ported handle, including 750 route checks, the
+  trial suite and the PostgreSQL recovery drill.
+- **Verification Evidence:** `npm run verify` exit 0 on 2026-11-01 (receipt
+  below); `node scripts/storage-contract-check.mjs` exits 0 with zero importers.
+- **Archived:** `dev/fids/archive/` after `723ac1f` and the final verification receipt
 
 ## Lessons Learned
 

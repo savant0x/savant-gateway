@@ -169,6 +169,18 @@ FID-060's local load/fault implementation is closed against `8c10a07`; the
 operator-approved envelope, real provider budget, Fly volume/ENOSPC and hosted
 proxy receipt remain `FID-2026-1030-060-LIVE`.
 
+**Cutover review 2026-11-01.** FID-085/086 are closed: the application runs on
+one PostgreSQL handle, `npm run verify` is green (749 tests, HTTP 750 + trial,
+recovery 12/12) and the storage contract gate is green. That removes the storage
+blocker from launch, but it does not approve launch. The remaining blockers are
+owned as follows: FID-044 has four unanswered implementation questions (free
+share scope, reserve threshold, refund-policy version, provider rate-card
+confirmation); FID-062 has no real hosted payment/webhook/funded-inference,
+restore/rollback, delivered-alert or 24h/7d observation receipt, and the FID-060
+load envelope has not been re-measured against PostgreSQL; FID-068 remains
+blocked on chain/token confirmation, an xpub, an RPC endpoint and a screening
+ruling, and is deferred behind the NOWPayments lane. Release decision: **no-go**.
+
 ## Lessons Learned
 
 Make incomplete evidence visible and assign every boundary an owner; do not

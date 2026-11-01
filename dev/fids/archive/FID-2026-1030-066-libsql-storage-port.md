@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1030-066-libsql-storage-port.md`
 **ID:** FID-2026-1030-066
 **Severity:** critical
-**Status:** converged
+**Status:** superseded
 **Created:** 2026-10-30 18:20
 **Automation level:** 3
 **YAGNI-Compliance:** Pending
@@ -571,6 +571,11 @@ Exit code 0. What the run changed in this plan:
 
 ## Resolution
 
+- **Superseded (2026-11-01):** the operator replaced the libSQL target with
+  managed PostgreSQL. FID-2026-1031-085 records that ruling and the port;
+  FID-2026-1031-086 records the cutover that removed the SQLite request path.
+  This plan is retained for its cost and invariant analysis only; no libSQL code
+  was built.
 - **Status note (2026-10-30):** the port is **not proceeding for launch**. The
   operator delegated the hosting decision; `docs/hosting-decision.md` records the
   outcome — one persistent Node process on Fly.io with a local volume — because
@@ -579,11 +584,12 @@ Exit code 0. What the run changed in this plan:
   same-host local storage that a PaaS volume actually offers. Nothing in this
   plan is deleted: it stays `converged`, step 0 is its only executed work, and
   the revisit criteria name the conditions that would revive it.
-- **Closed Date:** —
-- **Fix Description:** Not implemented. Plan only.
-- **Tests Added:** None yet; every promised artifact is named in Verification.
-- **Verification Evidence:** None; `converged` precedes implementation.
-- **Archived:** —
+- **Closed Date:** 2026-11-01 (superseded, not implemented)
+- **Fix Description:** Not implemented and no longer applicable; PostgreSQL
+  replaced the libSQL target under FID-085/086.
+- **Tests Added:** None.
+- **Verification Evidence:** None; the superseding records carry the evidence.
+- **Archived:** `dev/fids/archive/` as superseded
 
 ## Lessons Learned
 

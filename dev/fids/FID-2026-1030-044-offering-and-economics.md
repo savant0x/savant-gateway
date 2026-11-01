@@ -138,6 +138,19 @@ The evidence ledger is implemented and committed; no offering, provider funding
 or commercial claim is approved by this record. Closure still requires the dated
 decisions above, and real paid acceptance remains 062.
 
+**Cutover review 2026-11-01.** The storage cutover does not change any offering
+fact. Still open, and each needs a dated operator answer before activation:
+
+1. whether the daily free share is spendable on paid-group models or only on
+   `allow_free` rows;
+2. the operating reserve and low-balance threshold in dollars;
+3. the no-refund policy rewrite as a new immutable version;
+4. provider rate-card confirmation against the synced cost column.
+
+The direct-USDC lane (FID-068) remains deferred behind the NOWPayments crypto
+lane; no paid acceptance has been run against a real upstream. This record stays
+`converged`, not closed, and launch remains no-go.
+
 ## Lessons Learned
 
 A numeric model can be internally consistent while its inputs are unverified.

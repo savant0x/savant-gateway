@@ -3,14 +3,14 @@
 **Filename:** `FID-2026-1031-085-postgres-production-storage.md`
 **ID:** FID-2026-1031-085
 **Severity:** critical
-**Status:** converged
+**Status:** verified
 **Created:** 2026-10-31
 **Automation level:** 1
 **YAGNI-Compliance:** Pending
 
-> Scope of this record: the plan and the operator ruling. No application code
-> changed while it was written, and `better-sqlite3` is still the only data
-> layer. `converged` is therefore the honest status.
+> Scope of this record: the plan, the operator ruling and the port. The cutover
+> completed under FID-2026-1031-086; the running application now resolves one
+> PostgreSQL handle through `lib/store.ts`.
 
 ---
 
@@ -1320,7 +1320,7 @@ npm test: 592 tests, 591 pass, 0 fail, 1 skipped
   data layer while remaining the record of the current deployable topology until
   the port lands. Target: Neon Postgres, Launch plan, ~$23.74/mo total
   infrastructure with the existing Fly machine. Free plan is development only.
-- **Closed Date:** —
+- **Closed Date:** 2026-11-01
 - **Fix Description:** Steps 1–4 (partial) implemented 2026-10-31. Step 3
   complete: settlements, payments, trials, allocations and reconciliation all
   ported to the async handle under `lib/storage/ledger/` (36 tests on a real
@@ -1346,18 +1346,19 @@ npm test: 592 tests, 591 pass, 0 fail, 1 skipped
   `lib/storage/runtime.ts` (lazy singleton with a production guard refusing the
   local engine), after establishing that the port is a dialect change and not a
   driver change (D-14, D-15). No app code imports it yet.
-- **Tests Added:** `tests/db-adapter.test.mjs` (15, fake pool),
-  `tests/schema-postgres.test.mjs` (8, parity and invariants),
-  `tests/ledger-postgres.test.mjs` (17, real PostgreSQL via PGlite), and
-  `tests/settlement-concurrency.test.mjs` (1, two real connections, **skipped**
-  until `DATABASE_URL` exists), plus `tests/trials-allocation-postgres.test.mjs`
-  (10), `tests/reconciliation-postgres.test.mjs` (9),
-  `tests/credit-reserve-postgres.test.mjs` (7) and
-  `tests/storage-handle.test.mjs` (8), all against a real PostgreSQL engine.
-- **Verification Evidence:** `lint` 0, `typecheck` 0, `test` 0 with 500 tests /
-  499 pass / 1 skipped, `quality` PASS (387 files), pasted in the step receipts
-  above.
-- **Archived:** —
+- **Tests Added:** `tests/db-adapter.test.mjs` (fake pool),
+  `tests/schema-postgres.test.mjs`, `tests/ledger-postgres.test.mjs`,
+  `tests/settlement-concurrency.test.mjs` (skipped without `DATABASE_URL`),
+  `tests/trials-allocation-postgres.test.mjs`,
+  `tests/reconciliation-postgres.test.mjs`,
+  `tests/credit-reserve-postgres.test.mjs`, `tests/storage-handle.test.mjs`, the
+  23 `store-*-postgres` suites and `tests/storage-contract.test.mjs`, all against
+  a real PostgreSQL engine.
+- **Verification Evidence:** FID-2026-1031-086 final receipt, 2026-11-01:
+  `npm run verify` exit 0 — 749 tests (748 pass, 1 skipped), quality PASS,
+  build exit 0, HTTP 750 + trial checks PASS, recovery 12/12 PASS, storage
+  contract exit 0 with zero SQLite importers.
+- **Archived:** `dev/fids/archive/` after `723ac1f`
 
 ## Lessons Learned
 

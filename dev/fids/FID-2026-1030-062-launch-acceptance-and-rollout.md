@@ -93,6 +93,24 @@ Design only. Launch stays no-go while any offered-feature prerequisite is unmet.
 Code implementation can be archived after verified commit, but master acceptance
 must retain explicit external/24h/7d observation evidence before final completion.
 
+**Cutover review 2026-11-01 — blocker register (launch no-go).** The storage
+cutover is complete and `npm run verify` is green, but no external acceptance
+journey has been run for this candidate. Open items, each requiring a dated
+receipt before approval:
+
+1. Real hosted payment and a provider-delivered signed webhook (Stripe and
+   NOWPayments), including replay refusal.
+2. Funded paid inference against a real upstream, with account/ledger/provider
+   cost reconciled exactly.
+3. Restore and rollback proof on the production-equivalent PostgreSQL host; the
+   local recovery drill is not a hosted restore.
+4. Delivered operational alert to a real operator destination, plus first-payment,
+   first UTC reset, 24h and 7d observations.
+5. FID-060 load envelope re-measured against PostgreSQL and operator-approved;
+   the current envelope remains `candidate` and its numbers are SQLite-era.
+6. Explicit operator go/no-go tied to a pinned SHA, configuration, cohort and
+   spend cap. Without that, silence is not approval.
+
 ## Lessons Learned
 
 Release approval and observed operational acceptance are evidence, not documentation statuses.

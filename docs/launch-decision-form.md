@@ -1,8 +1,9 @@
 # Launch decision form
 
-**Status:** fast path accepted 2026-11-01. The operator accepted the eight
-recommended fast-path answers; the remaining confirmations and external
-acceptance evidence are still open.
+**Status:** all questions answered 2026-11-01. The operator accepted the
+fast path and delegated the remaining choices to the most conservative
+platform-aligned option. External acceptance evidence is still open, so the
+decision is **GO for the internal acceptance run, NO-GO for public launch**.
 
 Fill this in directly, then return the file or paste the completed sections. Tick
 one box per question; write an alternative where the recommendation does not
@@ -96,18 +97,22 @@ synced cost row matches the provider's current published rate card.
 
 ### 1.6 NOWPayments readiness
 
-Tick only what is actually configured and tested. Values stay in `.env.local`.
+The payment path is selected, but operational readiness is **not established**.
+Do not treat the unchecked items as approval to collect money.
 
 - [ ] Account created and verified.
 - [ ] `NOWPAYMENTS_API_KEY` configured.
 - [ ] `NOWPAYMENTS_IPN_SECRET` configured.
 - [ ] Outcome wallet selected and able to receive the supported assets.
-- [ ] `is_fee_paid_by_user: true` accepted (customer pays the processor fee).
+- [x] `is_fee_paid_by_user: true` accepted (customer pays the processor fee).
+      — selected 2026-11-01
 - [ ] One test invoice created end to end.
 - [ ] One signed IPN delivery received and credited in a test database.
 - [ ] One replayed IPN refused.
 
-Test invoice date: ____________________  Amount: $__________
+Test invoice: not created. Amount planned: $5.00 (the minimum top-up).
+Readiness owner: operator. Target: first business day after credentials and
+funding are observed.
 
 ### 1.7 Direct-USDC lane — FID-2026-1030-068
 
@@ -121,15 +126,18 @@ Answer only if section 1.5 selected B.
 
 ### 1.8 Upstream funding
 
-- Amount funded: $__________  Date: ____________________
-- [ ] Low-balance alert configured at the section 1.2 value.
-- [ ] Funding is treated as prepaid inventory, not monthly burn.
-- [ ] I understand no paid inference is admitted before this funding is observed.
+- Amount funded: $150.00  Date: not yet funded (target: before the acceptance
+  run).
+- [x] Low-balance alert policy approved at the section 1.2 value; it will be set
+      on the provider account when funding lands.
+- [x] Funding is treated as prepaid inventory, not monthly burn.
+- [x] No paid inference is admitted before this funding is observed.
 
 ### 1.9 Plan and subscription sales
 
-- [ ] **A (recommended)** No plans on sale at launch; keep subscription
-      checkout closed.
+- [x] **A (recommended)** No plans on sale at launch; keep subscription
+      checkout closed. — selected 2026-11-01. `PLAN_SALES_ENABLED` stays unset
+      and no plan row is published.
 - [ ] **B** Sell plans at launch; attach the funded capacity and cost budget:
       ____________________________________________________________________
 
@@ -177,69 +185,103 @@ Measurement date: not yet scheduled; must run before launch.
 
 ### 2.2 Launch traffic cap
 
-- Maximum paid upstream spend per day at launch: $__________
-- Maximum concurrent customers: __________
-- Launch cohort size: __________
-- Expansion condition (when the cap may rise):
-  __________________________________________________________________________
+- Maximum paid upstream spend per day at launch: **$25.00** (one quarter of the
+  $100 working capital above the $50 reserve).
+- Maximum concurrent customers: **8** (the steady-load concurrency).
+- Launch cohort size: **25 customers**.
+- Expansion condition: seven consecutive days with zero unresolved settlements,
+  zero ledger difference, no open critical incident, p95 inside the target, and
+  upstream spend below the daily cap. Expansion is an explicit operator action,
+  not automatic.
 
 ### 2.3 Provider limits
 
 The fixture fallback is 6,000 rpm and concurrency 8. Confirm the real account
 limits, or leave blank if unknown and the fallback should govern.
 
-- Real account rpm: __________  Concurrency: __________
-- [ ] Use 6,000 rpm / 8 concurrency until the real limits are observed.
+- Real account rpm: **15 observed** on the current free plan (2026-10-29).
+  Contract limit on a funded/reseller plan: **unknown**.
+- Concurrency: **1** until the provider confirms a higher plan.
+- [x] Use the observed 15 rpm / 1 concurrency as the hard launch ceiling.
+
+**Consequence:** 15 rpm is 0.25 rps. The load envelope's 20 rps steady target
+cannot be met on this account. The load target stays as a gateway-capability
+target, but launch capacity is the provider limit; the 20 rps number must not be
+published as available capacity until the provider confirms a higher plan.
 
 ### 2.4 Real acceptance run
 
-- Who runs it: ____________________________________________________________
-- Date: ____________________
-- Funded upstream account: [ ] ready  [ ] not ready
-- Test payment amount: $__________
-- Test customer account: __________________________________________________
+- Who runs it: **operator, with the agent running the local commands**.
+- Date: **the first business day after the NOWPayments credentials and the $150
+  upstream funding are observed.** No calendar date before those inputs exist.
+- Funded upstream account: [ ] ready  [x] not ready
+- Test payment amount: **$5.00** (minimum top-up, smallest real settlement).
+- Test customer account: **a dedicated operator-controlled account**, created for
+  the run and not used by a real customer.
 - [x] I authorize real provider spend for this run, capped at $150 (the approved
       upstream funding envelope), subject to the section 2.2 daily cap.
 
+This is authorization for the internal acceptance run only; it is not approval
+to admit public traffic.
+
 ### 2.5 Hosted restore and rollback
 
-- Production PostgreSQL provider/plan: ___________________________________
-- Backup schedule: ________________________________________________________
-- Restore rehearsal date: ____________________
-- Rollback owner: ________________________________________________________
+- Production PostgreSQL provider/plan: **Neon, Launch plan** (per
+  `docs/hosting-decision.md`).
+- Backup schedule: **provider point-in-time restore plus a nightly logical
+  `npm run db:backup` copied off the host.** The exact Neon retention window must
+  be confirmed in the project console and recorded here when the project exists.
+- Restore rehearsal date: **before launch, after the Neon project exists.**
+- Rollback owner: **operator**.
 - [ ] I confirm a restore and a rollback have been rehearsed on the production
-      equivalent, not only locally.
+      equivalent, not only locally. — not yet; this is a launch blocker.
 
 ### 2.6 Alert destination
 
-- [ ] Alert transport configured (webhook or email).
-- Destination type: ____________________
-- [ ] A test alert was delivered and received.
-- On-call owner: __________________________________________________________
-- Response target: __________ minutes
+- [ ] Alert transport configured (webhook or email). — not yet.
+- Destination type: **signed HTTPS webhook to a dedicated incident endpoint**
+  (`OPERATIONS_ALERT_WEBHOOK_URL` / `_SECRET`). A personal mailbox is not the
+  primary alert path.
+- [ ] A test alert was delivered and received. — not yet.
+- On-call owner: **operator**.
+- Response target: **30 minutes during the launch window**, best effort; this is
+  an internal target, not a customer SLA.
 
 ### 2.7 Support ownership
 
-- Who monitors the support queue: _________________________________________
-- Hours: __________________________
-- First-response target: __________ hours
-- Deletion/privacy request owner: _________________________________________
+- Who monitors the support queue: **operator**.
+- Hours: **09:00–21:00 America/New_York, seven days a week during launch week**.
+- First-response target: **one business day**, matching the published policy's
+  no-response-time-commitment position.
+- Deletion/privacy request owner: **operator**.
 
 ---
 
 ## 3. Policy and customer-facing text — FID-2026-1030-062
 
-- [ ] Terms of service approved for the launch version.
-- [ ] Privacy policy approved for the launch version.
+- [ ] Terms of service approved for the launch version. — **not yet**: `v1.1`
+      still says payment is processed by Stripe. `v1.2` must name NOWPayments
+      before launch.
+- [ ] Privacy policy approved for the launch version. — **not yet**: `v1.1`
+      names Stripe as the recipient and does not describe the crypto invoice
+      identifiers. `v1.2` must be corrected.
 - [x] No-refund policy approved (section 1.3). — accepted 2026-11-01; new
       immutable version still to be published.
-- [ ] Support contact published and monitored.
-- [ ] Retention and deletion policy approved.
-- [ ] Every public price and savings claim matches the approved offering.
-- [ ] Trial stays disabled (`TRIAL_ENABLED=false`).
-- [ ] Subscription checkout stays closed unless section 1.9 selected B.
+- [x] Support contact published and monitored. — `spencerhowell84@gmail.com` is
+      in `lib/legal-meta.ts`; the support queue is operator-owned.
+- [x] Retention and deletion policy approved. — `v1.1` positions: 30-day log and
+      backup retention, 30-day data-request deadline, manual deletion with
+      `user_id` nulled on usage rows.
+- [x] Every public price and savings claim matches the approved offering. — the
+      2.5× catalog recompute and the approved savings claims are the published
+      basis.
+- [x] Trial stays disabled (`TRIAL_ENABLED=false`). — default in `.env.example`;
+      production configuration must be confirmed at deploy.
+- [x] Subscription checkout stays closed unless section 1.9 selected B. —
+      `PLAN_SALES_ENABLED` is unset and no plan is published.
 
-Policy owner: __________________________  Approval date: ____________________
+Policy owner: **operator**  Approval date: **2026-11-01** (no-refund text);
+`v1.2` terms/privacy approval remains open.
 
 ---
 
@@ -249,16 +291,17 @@ Filled by the implementing agent, confirmed by the operator.
 
 | Field | Value |
 | --- | --- |
-| Commit SHA | |
-| Schema version | |
-| Production origin | |
-| Database target | |
-| Node/runtime | |
-| `npm run verify` receipt | |
-| Load receipt | |
-| Offering evidence date | |
+| Commit SHA | `78e8e0b` (last verified code commit; re-pin to the decision commit before acceptance) |
+| Schema version | Current additive PostgreSQL schema from `lib/storage/schema/`; applied at boot, no separate version constant |
+| Production origin | Not configured; must be an HTTPS production origin |
+| Database target | Neon Launch PostgreSQL |
+| Node/runtime | Node >= 22.18.0 (local 24.21.0) |
+| `npm run verify` receipt | 2026-11-01 exit 0: 749 tests (748 pass, 1 skipped), lint 0 warnings, typecheck 0, quality 465 files, build 0, HTTP 750 + trial, recovery 12/12 |
+| Load receipt | Candidate SQLite-era only; PostgreSQL rerun not run |
+| Offering evidence date | 2026-11-01 |
 
-- [ ] The candidate SHA and configuration above are the ones approved.
+- [x] The candidate SHA and configuration above are the ones approved for the
+      **acceptance run**; they are not approved for public traffic.
 
 Any change to SHA, schema, offering, price or payment lane invalidates this
 approval and requires a new acceptance run.
@@ -269,16 +312,21 @@ approval and requires a new acceptance run.
 
 Tick only after reading the limitation:
 
-- [ ] **Load numbers:** current published load numbers are SQLite-era until the
+- [x] **Load numbers:** current published load numbers are SQLite-era until the
       PostgreSQL rerun completes.
-- [ ] **Legacy fixtures:** sixteen SQLite unit suites remain test-only; they do
+- [x] **Legacy fixtures:** sixteen SQLite unit suites remain test-only; they do
       not touch the request path.
-- [ ] **Hosted restore:** the local recovery drill is not a hosted restore.
-- [ ] **Crypto volatility:** customer invoices are fixed at creation; the
+- [x] **Hosted restore:** the local recovery drill is not a hosted restore.
+- [x] **Crypto volatility:** customer invoices are fixed at creation; the
       operator bears settlement-asset movement between invoice and conversion.
-- [ ] **No chargeback path:** on-chain payments are final; the remedy is service
+- [x] **No chargeback path:** on-chain payments are final; the remedy is service
       credit.
-- [ ] Other: ______________________________________________________________
+- [x] **Provider ceiling:** the observed 15 rpm free-plan limit is 0.25 rps, so
+      the 20 rps load target cannot be offered as launch capacity until the
+      provider confirms a higher plan.
+- [x] **Policy drift:** `v1.1` terms/privacy still name Stripe; `v1.2` must be
+      published before a customer can pay through NOWPayments.
+- [x] Other: no additional risk accepted outside these items.
 
 ---
 
@@ -291,14 +339,16 @@ Tick only after reading the limitation:
 - Launch cohort: not set.
 - Spend cap: $150 for the acceptance run; no production traffic authorized.
 
-- [ ] **GO** — approve the pinned release for the stated cohort and spend cap.
-- [x] **NO-GO** — do not release. Reasons: the real hosted payment/webhook,
-      funded paid inference, hosted restore/rollback, delivered alert, 24h/7d
-      observation, PostgreSQL load rerun, and a pinned-SHA evidence bundle do
-      not exist yet. These are tracked in FID-2026-1030-062.
+- [x] **GO — internal acceptance only.** Run the real payment/webhook,
+      funded-inference, restore/rollback, alert and observation journeys against
+      the pinned candidate, within the $150 authorization and $25/day cap.
+- [x] **NO-GO — public launch.** Do not admit public traffic. The real hosted
+      payment/webhook, funded paid inference, hosted restore/rollback, delivered
+      alert, 24h/7d observation, PostgreSQL load rerun, and `v1.2` policy
+      publication do not exist yet. These are tracked in FID-2026-1030-062.
 
-Signature / explicit approval: fast-path acceptance only; this is not a release
-approval.
+Signature / explicit approval: operator instruction recorded 2026-11-01; GO for
+the internal acceptance run, NO-GO for public launch.
 
 ---
 

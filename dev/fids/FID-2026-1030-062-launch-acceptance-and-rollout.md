@@ -98,11 +98,16 @@ cutover is complete and `npm run verify` is green, but no external acceptance
 journey has been run for this candidate. The operator accepted the fast-path
 answers in [`launch-decision-form.md`](../../docs/launch-decision-form.md) on
 2026-11-01: load targets are approved, and real provider spend is authorized up
-to $150 for the acceptance run. That is an authorization, not a receipt. Open
-items, each requiring a dated receipt before approval:
+to $150 for the acceptance run. That is an authorization, not a receipt. The
+accepted operating envelope is $25/day paid upstream spend, 8 concurrent
+customers, a 25-customer cohort, and the observed 15 rpm / 1 concurrency
+provider ceiling. The 20 rps load target is a gateway-capability target only; it
+cannot be offered as launch capacity until the provider confirms a higher plan.
 
-1. Real hosted payment and a provider-delivered signed webhook (Stripe and
-   NOWPayments), including replay refusal.
+Open items, each requiring a dated receipt before approval:
+
+1. Real NOWPayments invoice and provider-delivered signed IPN, including replay
+   refusal. Stripe cards remain gated off and are not a launch journey.
 2. Funded paid inference against a real upstream, with account/ledger/provider
    cost reconciled exactly.
 3. Restore and rollback proof on the production-equivalent PostgreSQL host; the
@@ -111,10 +116,17 @@ items, each requiring a dated receipt before approval:
    first UTC reset, 24h and 7d observations.
 5. FID-060 load envelope re-measured against PostgreSQL and operator-approved;
    the targets are accepted, but the current measurements remain SQLite-era and
-   the envelope remains `candidate`.
-6. Explicit operator go/no-go tied to a pinned SHA, configuration, cohort and
-   spend cap. The form records **NO-GO** for the current candidate; without a
-   later explicit GO, silence is not approval.
+   the envelope remains `candidate`. The observed 15 rpm provider ceiling makes
+   the 20 rps target unreachable on the current plan, so the rerun must state
+   both the gateway ceiling and the provider ceiling.
+6. `v1.2` terms, privacy and refunds published. `v1.1` still names Stripe and
+   cannot be the served text for a NOWPayments launch.
+7. Hosted restore rehearsal on Neon Launch with the confirmed retention window,
+   and a delivered signed alert to the operator webhook.
+8. Explicit operator go/no-go tied to a pinned SHA, configuration, cohort and
+   spend cap. The form records **GO for the internal acceptance run only and
+   NO-GO for public launch**; without a later explicit public GO, silence is not
+   approval.
 
 ## Lessons Learned
 

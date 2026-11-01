@@ -237,6 +237,15 @@ not new measurements:
   `pricing.markup_bps = 2500`; the eight spot checks above remain the measured
   evidence for the rate rows.
 
+**Launch operating envelope — accepted 2026-11-01.** Paid upstream spend is
+capped at $25/day, with 8 concurrent customers and a 25-customer cohort.
+Expansion requires seven consecutive clean days: zero unresolved settlements,
+zero ledger difference, no critical incident, p95 inside target, and spend below
+the cap. The observed provider account limit is 15 rpm / 1 concurrency, which is
+0.25 rps; the load envelope's 20 rps steady target is a gateway-capability
+target only and cannot be offered as launch capacity until the provider confirms
+a higher plan.
+
 Still open: publishing `v1.2`, configuring the reserve on the provider account,
 and observing a funded paid call. Activation paths otherwise stay as they are:
 trial disabled, no plan on sale, and no funded paid inference claimed.

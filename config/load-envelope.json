@@ -12,6 +12,14 @@
     "at": "2026-11-01",
     "note": "Targets accepted in docs/launch-decision-form.md. This is not approval of a measurement or of production capacity."
   },
+  "launchConstraints": {
+    "observedProviderRpm": 15,
+    "providerConcurrency": 1,
+    "maxPaidUpstreamSpendPerDayUsd": 25,
+    "maxConcurrentCustomers": 8,
+    "launchCohort": 25,
+    "note": "The 20 rps steady target is a gateway-capability target. The observed 15 rpm provider ceiling is 0.25 rps and is the launch constraint until a higher provider plan is confirmed."
+  },
   "environment": {
     "providerRpm": 6000,
     "providerConcurrency": 8,

@@ -8,12 +8,13 @@ Operator request: build the admin-run, operator-published model identity check
 for the free pool. API-only, advisory, no automated gate, no operator-funded
 full-catalog sweep. Scope interpreted and presented 2026-11-01; operator
 confirmed alignment 2026-11-01. The operator granted automation level 3 on
-2026-11-01, so I2–I9 may be actioned without a further approval exchange. I2–I7
-are implemented and the declared code gates pass; I8's live admin run receipt
-and I9's commit remain open (no provider quota was spent).
+2026-11-01, so I2–I10 may be actioned without a further approval exchange.
+I1–I10 are complete. The feature gates and the live admin receipt pass; the
+whole-repo `npm run verify` remains blocked by FID-086's incomplete storage flip
+and is recorded as a limitation, not a pass.
 
 - [x] **I1 — Converge the identity record.**
-  `dev/fids/FID-2026-1101-087-model-identity-verification.md` records the
+  `dev/fids/archive/FID-2026-1101-087-model-identity-verification.md` records the
   protocol, battery, evidence schema, runner, admin/publish flow, public page,
   claims matrix, and gates. The full SQL block was executed against PGlite
   0.5.14 and created all seven tables. Status `converged`; no application code
@@ -37,13 +38,23 @@ and I9's commit remain open (no provider quota was spent).
 - [x] **I7 — Public surface.** `/models/[...id]` renders the published panel,
   `/identity` renders the method and correction ledger, and catalog names link
   to the detail page.
-- [ ] **I8 — Free-pool operation and receipt.** The unit gates cover the
-  free-only, cap, quota, and publish rules, and the public pages were checked
-  under `next dev`. A full admin baseline/publish receipt against a fixture
-  upstream is still open; it needs an admin session and a credentialed provider.
-- [ ] **I9 — Verification and closure.** Lint, typecheck, the identity suites,
-  the repository suite, quality, build, and the public dev receipt pass. The
-  commit and the FID status move are still open.
+- [x] **I8 — Free-pool operation and receipt.** The unit gates cover the
+  free-only, cap, quota, and publish rules. A live admin dry-run, baseline run
+  `6c0506b6-375a-4572-ae06-53152e1fb9ab` against a local fixture upstream
+  (181 samples), publish, and the public model panel all pass under `next dev`
+  with PGlite; the receipt is in the FID.
+- [x] **I9 — Verification and closure.** Lint, typecheck, 66 identity tests, 748
+  repository tests, quality, build, and the recovery drill pass. `npm run
+  test:http`/`npm run verify` exit 1 at FID-086's incomplete storage flip
+  (`promo admin list serves — expected 200, got 401`; `DATABASE_URL is required
+  in production`), recorded in the FID as a limitation. Commit `ffcb8b2`;
+  record verified and archived.
+- [x] **I10 — Account policy lane alignment.** The HTTP gate exposed the
+  account page reading policy acceptance from the ported PostgreSQL façade
+  while signup and the account acceptance route write SQLite. The page now
+  reads the SQLite lane until FID-086's flip, so an accepted policy is not
+  shown as unaccepted. Verified by `npm run build` and the policy checks in the
+  HTTP suite before the FID-086 blocker.
 
 ## Current Session — 2026-10-31 (load and resilience: 060)
 

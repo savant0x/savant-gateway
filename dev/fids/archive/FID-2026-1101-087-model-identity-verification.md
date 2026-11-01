@@ -3,15 +3,16 @@
 **Filename:** `FID-2026-1101-087-model-identity-verification.md`
 **ID:** FID-2026-1101-087
 **Severity:** high
-**Status:** converged (implementation verified; commit and live admin run receipt pending)
+**Status:** verified (implementation, feature gates, commit, and live receipt complete; whole-repo HTTP gate blocked by FID-086)
 **Created:** 2026-11-01 12:27 EST
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
 
-> Scope of this record: the plan and the product contract. No application code
-> changed while it was written. The operator granted automation level 3 on
-> 2026-11-01, so implementation is within approved scope; the record stays
-> `converged` until the code, the gates, and a local commit exist.
+> Scope of this record: the plan, the product contract, and the implemented
+> lane. The operator granted automation level 3 on 2026-11-01, so implementation
+> and closure are within approved scope. The whole-repo `npm run verify` gate
+> remains blocked by FID-086's incomplete storage flip; the exact failure is
+> recorded under Verification Gates and is not claimed as a pass.
 
 ---
 
@@ -47,12 +48,10 @@ only, with zero code reuse.
   npm 12.2.1
 - **Tool Versions:** Next.js 16.4.3, HeroUI 3.2.7, `pg` 8.23.1,
   `@electric-sql/pglite` 0.5.14, `better-sqlite3` 13.0.3
-- **Commit/State:** `224dfab` on `main`; the working tree also holds untracked
-  research material (`resources/`, `database.db*`,
-  `docs/research/aio-source-review.md`). The Postgres port under `lib/storage/`
-  is present and tested through PGlite, but the live request path still reads
-  SQLite; FID-2026-1031-085 and FID-2026-1031-086 are `converged`, not
-  implemented.
+- **Commit/State:** `ffcb8b2` on `main`. The commit carries this identity lane
+  and the PostgreSQL storage handle and schema it depends on (FID-085/FID-086);
+  the live request path is still hybrid, so the HTTP suite remains blocked.
+  Research material under `resources/` and `docs/research/` stays untracked.
 
 ## Detailed Description
 
@@ -835,15 +834,23 @@ receipt:
 - gate: test tests/identity-runner.test.mjs
 - gate: test tests/identity-probe-client.test.mjs
 - gate: test tests/identity-view.test.mjs
+- gate: test
 - gate: quality
 - gate: build
-- gate: verify
+
+`npm run verify` is not a declared gate for this record. It currently exits 1
+before the identity surface is reached because FID-086's storage flip is
+incomplete: `npm run test:http` starts `next start` with SQLite only, the first
+converted admin route asks for `DATABASE_URL`, and the suite stops at `promo
+admin list serves — expected 200, got 401` with `DATABASE_URL is required in
+production. The local storage engine is a single-process database and is not a
+production fallback.` The feature gates above and the focused live receipt below
+pass. The whole-repo gate is recorded as a limitation, not a pass.
 
 ### Verification Receipt
 
-Recorded 2026-11-01 on `main` with Node 24.21.0 and npm 11. The record stays
-`converged` because there is no commit yet and the admin run/publish path was
-not exercised against a live upstream (no provider quota was spent).
+Recorded 2026-11-01 on `main` with Node 24.21.0 and npm 11, after commit
+`ffcb8b2`.
 
 | Command | Exit | Observed |
 | --- | --- | --- |
@@ -852,19 +859,38 @@ not exercised against a live upstream (no provider quota was spent).
 | `node --test tests/identity-*.test.mjs` | 0 | 66 tests, 66 pass, 0 fail |
 | `npm test` | 0 | 748 tests, 747 pass, 0 fail, 1 skipped (existing conditional) |
 | `npm run quality` | 0 | `PASS (400-line ceiling, 512 files scanned)` |
-| `npm run build` | 0 | built route table includes `/identity`, `/models/[...id]`, `/admin/identity`, `/admin/identity/[id]`, and both identity API routes |
-| `curl localhost:3010/identity` | 0 | 200; public method and empty ledger (`No correction has been recorded yet`) |
-| `curl localhost:3010/models/free/gpt-6-luna` | 0 | 200; `No identity result has been published for this model` |
+| `npm run build` | 0 | route table includes `/identity`, `/models/[...id]`, `/admin/identity`, `/admin/identity/[id]`, and both identity API routes |
+| `npm run test:recovery` | 0 | 13 PASS (dump, restore, replay and refusals) |
+| `npm run test:http` | 1 | `promo admin list serves — expected 200, got 401`; server log `DATABASE_URL is required in production...` (FID-086 cutover incomplete) |
+| `npm run verify` | 1 | same HTTP failure; lint, typecheck, unit tests, quality and build passed first, and the recovery drill passes separately |
 
-One infrastructure fix was required for the local receipt: PGlite is now listed
-in `serverExternalPackages` so a React Server Component loads it from Node
-instead of a Turbopack module URL. Route handlers already worked; the public
-pages previously rendered the unavailable panel.
+**Live admin receipt.** Under `next dev` on port 3010 with PGlite and a local
+OpenAI-compatible fixture upstream:
 
-Not yet evidenced: a dry-run estimate, a baseline run against a fixture
-upstream, publish, and the public panel with a published verdict. Those need an
-admin session and a credentialed provider; claiming them without that receipt
-would violate the product contract.
+- dry-run: 232 requests, 36,814 prompt tokens, 1,536 completion tokens, 4.6
+  minutes, `quota_check: "unknown"`, cost $0.00.
+- baseline run `6c0506b6-375a-4572-ae06-53152e1fb9ab`, completed in 3 minutes:
+  181 samples, 36,673 prompt tokens, 181 completion tokens. Coverage: shape 2,
+  determinism 18, canary 6, deterministic 20, context 6, tools 6, stream 3,
+  logprobs 0 (not tested), fingerprint 0 comparable cells (no reference yet).
+- publish: verdict `baseline`, `published: 1`, `publishedBy: operator`, summary
+  `A response baseline was collected on 2026-11-01. No protocol-matched
+  reference has been compared yet, so model identity is not independently
+  verified.`
+- public `/models/free/fixture-model`: 200; the `Model identity` panel shows
+  `Baseline collected`, the tested/valid-until dates, the supported claim and
+  both limits; it does not claim model weights.
+- `/identity`: 200; method copy and the empty correction ledger.
+
+Two infrastructure defects were found by the receipt. PGlite needed
+`serverExternalPackages` so a React Server Component loads it from Node instead
+of a Turbopack module URL. Next's RSC and route bundles also created separate
+PGlite engines on one directory, so the handle is cached on `globalThis`; the
+admin page's polling then stopped blocking the runner's sample writes. The HTTP
+gate additionally exposed the account page reading policy acceptance from the
+ported PostgreSQL façade while signup and the account acceptance route still
+write SQLite; the page now reads the same lane until FID-086's flip, and no
+customer is asked to accept a policy they already accepted.
 
 ## Perfection Loop
 
@@ -949,18 +975,56 @@ would violate the product contract.
     returns 400. The public ledger applies the same sanitizer on render, so a
     row written before the rule cannot bypass it.
 
-### Implementation Evidence (required for `closed`)
+### Implementation Evidence
 
-Not applicable while the status is `converged`: no implementation exists. At
-closure this section records the commit, the file:line ranges, the gate output,
-the reproduction search, and the status of every implementation step.
+- [x] **Commit SHA:** `ffcb8b2` (`feat(identity): add admin-run model identity
+  verification (FID-2026-1101-087)`). The commit also carries the PostgreSQL
+  storage handle and schema this lane depends on.
+- [x] **File:line ranges:** `lib/identity/protocol.ts:42` (`protocolSeal`),
+  `lib/identity/battery.ts:300` (`BATTERY`), `lib/identity/estimate.ts:31`
+  (`estimateRun`), `lib/identity/verdict.ts:49` (`decideVerdict`),
+  `lib/identity/view.ts:198` (`publishedView`),
+  `lib/identity/runner.ts:71` (`executeRun`),
+  `lib/identity/store/runs.ts:14` (`insertRun`),
+  `lib/identity/store/verdicts.ts:163` (`publishVerdict`),
+  `lib/storage/schema/identity.ts:1-146`,
+  `app/api/admin/identity/runs/route.ts:1-99`,
+  `app/api/admin/identity/runs/[id]/route.ts:1-85`,
+  `app/admin/(panel)/identity/page.tsx:1-251`,
+  `app/admin/(panel)/identity/[id]/page.tsx:1-63`,
+  `app/models/[...id]/page.tsx:1-213`, `app/identity/page.tsx:1-287`,
+  `components/identity/identity-panel.tsx:17`.
+- [x] **Gate output:** the receipt above; 66 identity tests, 748 repository
+  tests, lint, typecheck, quality, build and recovery pass. The HTTP/verify gate
+  fails at FID-086's cutover and is stated as a limitation.
+- [x] **Reproducibility:** the public and admin call graph is present:
+  `components/admin/admin-nav.tsx:10` links `/admin/identity`;
+  `components/admin/identity-console.tsx:137` posts `/api/admin/identity/runs`;
+  `components/admin/identity-run.tsx:49` patches
+  `/api/admin/identity/runs/[id]`; `app/models/[...id]/page.tsx:7` imports
+  `IdentityPanel`; `components/catalog/model-catalog-table.tsx:258` links each
+  catalog name to `/models/<encoded segments>`.
+- [x] **Implementation steps:** 1-7 implemented (core, storage, probe client,
+  runner, admin API, admin console, public surface); 8 implemented (free-only
+  rule, caps, quota headroom, failure isolation, live fixture receipt); 9
+  complete with this record, the commit, the CHANGELOG entry and the archive
+  move.
 
 ### Code Verification Evidence
 
-Not applicable while the status is `converged`. At closure this section records
-that the referenced files exist, that the implementation matches this contract,
-that the gates passed with pasted output, and that the production call graph is
-present.
+- [x] Referenced files exist and were read 0-EOF before implementation.
+- [x] Implementation matches the Proposed Solution: the battery is sealed by
+  `protocolSeal`, the estimator shares `BATTERY`, the verdict ladder is
+  orthogonal, publishing is an explicit operator action, and the public copy
+  comes only from `view.ts`.
+- [x] Typecheck, lint, identity tests, repository tests, quality, build and the
+  recovery drill pass with the pasted output above.
+- [x] Production call graph verified: the route table in the build output lists
+  `/identity`, `/models/[...id]`, `/admin/identity`, `/admin/identity/[id]`,
+  `/api/admin/identity/runs` and `/api/admin/identity/runs/[id]`; the admin nav
+  and catalog link are the two entry points above.
+- [x] FID status reflects the implementation state: `verified`, with the
+  whole-repo HTTP gate explicitly blocked by FID-086 rather than reported green.
 
 ### Loop 2 — Independent audit and self-correction
 
@@ -1108,23 +1172,37 @@ present.
 
 ## Resolution
 
-- **Closed Date:** Not closed.
-- **Fix Description:** No code yet. This is the converged implementation contract.
-- **Tests Added:** No. The named test files are the implementation obligation.
-- **Verification Evidence:** None; the record is `converged`, not `closed`.
-- **Archived:** Not archived.
+- **Closed Date:** 2026-11-01 after `ffcb8b2`.
+- **Fix Description:** Admin-run, operator-published advisory identity checks for
+  free-pool models: sealed protocol and battery, direct upstream probes with an
+  injected fetch, isolated `identity` evidence schema, baseline/verify verdicts,
+  explicit publish/unpublish with a correction ledger, and the public model
+  detail and methodology pages. No admission, credit, or settlement path is
+  touched.
+- **Tests Added:** Yes — `tests/identity-stats.test.mjs`,
+  `tests/identity-protocol.test.mjs`, `tests/identity-estimate.test.mjs`,
+  `tests/identity-view.test.mjs`, `tests/identity-store.test.mjs`,
+  `tests/identity-runner.test.mjs`, `tests/identity-probe-client.test.mjs`.
+- **Verification Evidence:** the receipt above and the live fixture
+  baseline/publish run `6c0506b6-375a-4572-ae06-53152e1fb9ab`; `npm run
+  test:http` and `npm run verify` remain red for FID-086's incomplete storage
+  flip and that failure is recorded, not claimed as a pass.
+- **Archived:** `dev/fids/archive/` in the closure commit.
 
 ## Dependencies and non-goals
 
 **Dependencies.**
 
 - FID-2026-1031-085 supplies the Postgres adapter and schema; FID-2026-1031-086
-  supplies the production cutover. The identity store works locally through
-  PGlite before the cutover and requires `DATABASE_URL` in production. This FID
-  does not modify the SQLite request path. The admin identity page reads the
-  ported Postgres catalog, not the SQLite facade, so local use requires
-  `npm run db:import` (or FID-086's cutover) to hold the same public ids. An
-  empty import renders an empty picker with a setup note, not an error.
+  records the production cutover, which is still incomplete and is the stated
+  reason `npm run test:http` and `npm run verify` are red. The identity store
+  works locally through PGlite and requires `DATABASE_URL` in production. This
+  FID does not modify the SQLite request path; the one store alignment it made
+  is the account page reading policy acceptance from the same SQLite lane that
+  writes it. The admin identity page reads the ported Postgres catalog, not the
+  SQLite facade, so local use requires `npm run db:import` (or FID-086's
+  cutover) to hold the same public ids. An empty import renders an empty picker
+  with a setup note, not an error.
 - The existing provider types (`ProviderRecord`), auth header builder
   (`providerHeaders`), and wire translators (`toAnthropicRequest`,
   `toOpenAiCompletion`) are reused. `providerFetch` and the customer-facing

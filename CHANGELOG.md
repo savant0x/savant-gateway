@@ -3,6 +3,27 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-01 — Admin-run model identity verification (free pool)
+
+- **FID-2026-1101-087 — high — An operator can now run and publish an advisory
+  identity check for a free-pool model.** `aio-identity-v2` seals the battery,
+  sampling and decision constants; the runner probes the upstream directly with
+  an injected fetch and an isolated `identity` schema, never through customer
+  admission or credit. Baseline and verify runs produce orthogonal findings; a
+  same-route baseline is `baseline` or `self_consistent`, never independent
+  verification. Publishing is a separate operator action and writes a
+  correction-ledger entry. `/models/[...id]` renders the published panel and
+  `/identity` renders the method and ledger. Verified: 66 identity tests, 748
+  repository tests, lint, typecheck, quality, build, the recovery drill, and a
+  live fixture baseline/publish run (181 samples). `npm run test:http` and
+  `npm run verify` remain red at FID-086's incomplete storage flip; that is
+  recorded in the FID as a limitation, not a pass.
+- **Account policy acceptance reads the lane that writes it.** The HTTP gate
+  exposed the account page reading policy acceptance from the ported PostgreSQL
+  façade while signup and the account route still write SQLite. The page now
+  reads the SQLite lane until FID-086's flip, so a customer who has accepted is
+  not asked again.
+
 ## 2026-11-01 — Step 4 slice 2: readers and provider writers on PostgreSQL
 
 - **FID-2026-1031-086 (step 4, slice 2) — critical — The public model list, the

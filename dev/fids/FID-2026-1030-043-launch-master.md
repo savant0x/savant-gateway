@@ -182,10 +182,10 @@ observation receipt, and the FID-060 load targets are accepted but not
 re-measured against PostgreSQL; FID-068 remains blocked on chain/token
 confirmation, an xpub, an RPC endpoint and a screening ruling, and is deferred
 behind the NOWPayments lane. The accepted launch envelope is $25/day paid
-upstream spend, 8 concurrent customers and a 25-customer cohort; the observed
-15 rpm provider ceiling makes the 20 rps target unavailable until a higher plan
-is confirmed. `v1.2` terms/privacy/refunds must be published before NOWPayments
-can be served. The operator recorded **GO for the internal acceptance run and
+upstream spend, 8 concurrent customers and a 25-customer cohort; the provider's
+30 RPM Boost ($15 / 30 days) is 0.5 rps, so the 20 rps target is a
+gateway-capability target only and is not available as launch capacity. `v1.2`
+terms/privacy/refunds must be published before NOWPayments can be served. The operator recorded **GO for the internal acceptance run and
 NO-GO for public launch** in the launch decision form.
 
 ## Lessons Learned

@@ -199,15 +199,19 @@ Measurement date: not yet scheduled; must run before launch.
 The fixture fallback is 6,000 rpm and concurrency 8. Confirm the real account
 limits, or leave blank if unknown and the fallback should govern.
 
-- Real account rpm: **15 observed** on the current free plan (2026-10-29).
-  Contract limit on a funded/reseller plan: **unknown**.
-- Concurrency: **1** until the provider confirms a higher plan.
-- [x] Use the observed 15 rpm / 1 concurrency as the hard launch ceiling.
+- Real account rpm: **15 RPM on the Free tier** (confirmed in the provider
+  admin panel, 2026-11-01). That is **0.25 requests/second** sustained.
+- Available upgrade: **30 RPM for $15 / 30 days (Boost)**. That is **0.5
+  requests/second** sustained.
+- Concurrency: **1** until a higher plan is observed on the account.
+- [x] Buy the **$15 / 30 RPM Boost** before the acceptance run and use 30 RPM /
+      1 concurrency as the launch ceiling. Record the boost expiry date and
+      re-check the panel.
 
-**Consequence:** 15 rpm is 0.25 rps. The load envelope's 20 rps steady target
-cannot be met on this account. The load target stays as a gateway-capability
-target, but launch capacity is the provider limit; the 20 rps number must not be
-published as available capacity until the provider confirms a higher plan.
+**Consequence:** even the 30 RPM boost is 0.5 rps. The load envelope's 20 rps
+steady target would require 1,200 RPM, so it is a gateway-capability target only;
+0.5 rps is the launch capacity and the 20 rps number must not be published as
+available capacity.
 
 ### 2.4 Real acceptance run
 
@@ -321,9 +325,9 @@ Tick only after reading the limitation:
       operator bears settlement-asset movement between invoice and conversion.
 - [x] **No chargeback path:** on-chain payments are final; the remedy is service
       credit.
-- [x] **Provider ceiling:** the observed 15 rpm free-plan limit is 0.25 rps, so
-      the 20 rps load target cannot be offered as launch capacity until the
-      provider confirms a higher plan.
+- [x] **Provider ceiling:** 15 RPM free is 0.25 rps and the 30 RPM Boost is
+      0.5 rps, so the 20 rps load target cannot be offered as launch capacity.
+      The Boost is the recommended launch purchase.
 - [x] **Policy drift:** `v1.1` terms/privacy still name Stripe; `v1.2` must be
       published before a customer can pay through NOWPayments.
 - [x] Other: no additional risk accepted outside these items.

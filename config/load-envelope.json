@@ -14,11 +14,14 @@
   },
   "launchConstraints": {
     "observedProviderRpm": 15,
+    "recommendedBoostRpm": 30,
+    "boostPriceUsd": 15,
+    "boostDurationDays": 30,
     "providerConcurrency": 1,
     "maxPaidUpstreamSpendPerDayUsd": 25,
     "maxConcurrentCustomers": 8,
     "launchCohort": 25,
-    "note": "The 20 rps steady target is a gateway-capability target. The observed 15 rpm provider ceiling is 0.25 rps and is the launch constraint until a higher provider plan is confirmed."
+    "note": "The 20 rps steady target is a gateway-capability target and would require 1,200 RPM. The Free tier is 15 RPM (0.25 rps); the recommended $15 / 30-day Boost is 30 RPM (0.5 rps). The Boost is the launch ceiling until the account shows a higher plan."
   },
   "environment": {
     "providerRpm": 6000,

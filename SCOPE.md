@@ -2247,6 +2247,14 @@ FIDs so each slice can converge and be verified on its own.
   comment POST 200 and every sidebar marker, and the restarted local server at
   200 with no schema errors. Existing items backfill on the next source Fetch. Not verified:
   `npm run verify`, a browser visual review, and a live YouTube Data API call.
+- [x] **C7 — Thumbnail player (FID-093).** Video cards on `/signal`, topic,
+  and saved pages open a portal modal player from the thumbnail, with autoplay,
+  Escape/backdrop/close dismissal, focus return, and a full-page link. Article
+  thumbnails link to the detail page; a malformed video id cannot become an
+  iframe source. Verified: lint 0 warnings, typecheck 0, quality PASS (514
+  files), build 0, 5/5 format tests, and live server HTML with 24 dialog
+  triggers and zero preloaded embeds. Not verified: an actual pointer/Escape
+  interaction (no browser available), `npm run verify`, and a visual review.
 
 Non-goals recorded so they are not mistaken for missing work: no paid content,
 no content entitlement, no separate content database, no copy of the reference

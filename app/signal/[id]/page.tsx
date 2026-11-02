@@ -11,7 +11,7 @@ import { ModelModule } from "@/components/content/model-module";
 import { SaveButton } from "@/components/content/save-button";
 import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
-import { contentDate, kindLabel } from "@/lib/content/format";
+import { contentDate, kindLabel, videoEmbedUrl } from "@/lib/content/format";
 import { contentEnabled } from "@/lib/content/policy";
 import { countComments, listComments } from "@/lib/content/store/comments";
 import { listLinksForItem } from "@/lib/content/store/links";
@@ -93,6 +93,7 @@ export default async function SignalDetailPage({ params }: PageProps) {
     })
     .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
   const isVideo = item.kind === "video";
+  const embedUrl = videoEmbedUrl(item.videoId);
 
   return (
     <div className="site-shell">
@@ -154,17 +155,14 @@ export default async function SignalDetailPage({ params }: PageProps) {
 
         <section className="mx-auto grid w-full max-w-[80rem] gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:px-8">
           <div className="min-w-0 space-y-6">
-            {item.videoId ? (
+            {embedUrl ? (
               <div className="aspect-video overflow-hidden rounded-xl border border-black/10 bg-black dark:border-white/10">
                 <iframe
-                  key={item.videoId}
                   allowFullScreen
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   className="h-full w-full"
                   referrerPolicy="strict-origin-when-cross-origin"
-                  src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(
-                    item.videoId,
-                  )}?rel=0&modestbranding=1`}
+                  src={embedUrl}
                   title={item.title}
                 />
               </div>

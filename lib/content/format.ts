@@ -73,6 +73,29 @@ export function purchaseCta(
     : { label: "Create an account", href: "/signup" };
 }
 
+const VIDEO_ID = /^[A-Za-z0-9_-]{6,32}$/;
+
+/**
+ * One embed URL for the card modal and the detail page. A malformed id returns
+ * null rather than becoming an iframe source.
+ */
+export function videoEmbedUrl(
+  videoId: string | null,
+  autoplay = false,
+): string | null {
+  const id = videoId?.trim() ?? "";
+
+  if (!VIDEO_ID.test(id)) return null;
+
+  const params = new URLSearchParams({ rel: "0", modestbranding: "1" });
+
+  if (autoplay) params.set("autoplay", "1");
+
+  return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(
+    id,
+  )}?${params.toString()}`;
+}
+
 export function formatCount(value: number): string {
   if (!Number.isFinite(value) || value <= 0) return "0";
 

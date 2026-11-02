@@ -2,6 +2,7 @@ import type { ContentItem } from "@/lib/content/types";
 
 import Link from "next/link";
 
+import { ContentMedia } from "@/components/content/content-media";
 import { contentDate, kindLabel, shortExcerpt } from "@/lib/content/format";
 
 const KIND_STYLES: Record<ContentItem["kind"], string> = {
@@ -21,11 +22,12 @@ export function ContentCard({
 }) {
   return (
     <article className="group flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-black/10 bg-surface transition-colors hover:border-accent/40 dark:border-white/10">
-      {item.thumbnailUrl && !compact ? (
-        <div
-          aria-hidden
-          className="h-36 w-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${item.thumbnailUrl})` }}
+      {!compact && (item.thumbnailUrl || item.videoId) ? (
+        <ContentMedia
+          itemId={item.id}
+          thumbnailUrl={item.thumbnailUrl}
+          title={item.title}
+          videoId={item.videoId}
         />
       ) : null}
       <div className="flex min-h-0 flex-1 flex-col p-4">
@@ -71,7 +73,7 @@ export function ContentCard({
             className="text-xs font-medium text-accent underline-offset-4 hover:underline"
             href={`/signal/${item.id}`}
           >
-            Read and see models →
+            {item.videoId ? "Watch and see models" : "Read and see models"} →
           </Link>
         </div>
       </div>

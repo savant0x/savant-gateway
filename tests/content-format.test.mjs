@@ -8,6 +8,7 @@ import {
   purchaseCta,
   relationLabel,
   shortExcerpt,
+  videoEmbedUrl,
 } from "../lib/content/format.ts";
 
 test("purchase CTA uses the existing route for every access state", () => {
@@ -40,6 +41,19 @@ test("counts are compact and an unreported zero stays zero", () => {
   assert.equal(formatCount(999), "999");
   assert.equal(formatCount(15400), "15.4K");
   assert.equal(formatCount(Number.NaN), "0");
+});
+
+test("video embeds validate the id and add autoplay only on request", () => {
+  assert.equal(videoEmbedUrl(null), null);
+  assert.equal(videoEmbedUrl("abc123"),
+    "https://www.youtube-nocookie.com/embed/abc123?rel=0&modestbranding=1",
+  );
+  assert.equal(
+    videoEmbedUrl("abc123", true),
+    "https://www.youtube-nocookie.com/embed/abc123?rel=0&modestbranding=1&autoplay=1",
+  );
+  assert.equal(videoEmbedUrl("bad/id"), null);
+  assert.equal(videoEmbedUrl("short"), null);
 });
 
 test("labels and excerpts stay presentation-only", () => {

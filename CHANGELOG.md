@@ -3,6 +3,20 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-02 — Signal video thumbnails open the player in a modal
+
+- **FID-2026-1102-093 — medium — Clicking a video thumbnail on Signal now
+  opens the YouTube player in a modal instead of doing nothing.** The card
+  thumbnail is a dialog trigger with autoplay, a close button, Escape and
+  backdrop dismissal, focus return, body scroll lock, and a “Full page” link.
+  Article thumbnails still navigate to the detail page, and a malformed video
+  id cannot become an iframe source. A video with no thumbnail renders a
+  gradient play placeholder instead of a dead area. Verified: lint 0 warnings,
+  typecheck 0, quality PASS (514 files), build exit 0, 5/5 format tests, and
+  live server HTML with 24 dialog triggers and zero preloaded embeds. Not
+  verified: an actual pointer/Escape interaction (no browser is available in
+  this environment), `npm run verify`, and a visual review.
+
 ## 2026-11-02 — Signal video details and on-site discussion
 
 - **FID-2026-1102-092 — medium — A YouTube Signal item now shows its full

@@ -3,6 +3,25 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-02 — Signal video details and on-site discussion
+
+- **FID-2026-1102-092 — medium — A YouTube Signal item now shows its full
+  description, views, likes, star rating, and YouTube comment count, with an
+  authenticated on-site discussion.** The YouTube parser now reads
+  `media:group` instead of the empty entry root; ingest enriches likes and the
+  comment count from `videos?part=statistics` in one bounded call per 50 items
+  when `YOUTUBE_API_KEY` is set, and a failed call keeps the feed metrics and
+  the source cycle. The detail page gains a back button, a description/details
+  sidebar, and a discussion with a 12-per-hour per-customer ceiling behind the
+  existing customer session. Fixed the duplicate `13%` col key warning on the
+  public catalog. Verified: lint 0 warnings, typecheck 0, quality PASS (513
+  files), build exit 0, 22 focused content tests, a disposable PGlite app that
+  rendered every sidebar marker, signup 201, authenticated comment POST 200,
+  and the restarted local server returning 200 with zero schema errors.
+  Existing items backfill on the next source Fetch. Not verified: `npm run
+  verify`, a browser visual review, and a live YouTube Data API call (the merge
+  and failure paths use injected fetch fixtures).
+
 ## 2026-11-02 — Free AI Signal merged with model coverage and purchase paths
 
 - **FID-2026-1102-088 / 089 / 090 / 091 — high — The gateway now has a public

@@ -24,6 +24,10 @@ type CoverageRow = {
   thumbnail_url: string | null;
   video_id: string | null;
   external_id: string | null;
+  view_count: number | string;
+  like_count: number | string;
+  youtube_comment_count: number | string;
+  rating: number | string | null;
   tags_json: string;
   relation: ContentRelation;
   reason: string;
@@ -55,6 +59,17 @@ function coverageRowToItem(row: CoverageRow): CoverageItem {
     videoId: row.video_id,
     externalId: row.external_id,
     tags,
+    metrics: {
+      views: Number(row.view_count) || 0,
+      likes: Number(row.like_count) || 0,
+      youtubeComments: Number(row.youtube_comment_count) || 0,
+      rating:
+        row.rating === null
+          ? null
+          : Number(row.rating) > 0
+            ? Math.min(5, Number(row.rating))
+            : null,
+    },
     relation: row.relation,
     reason: row.reason,
     confidence: row.confidence,
@@ -179,6 +194,7 @@ export async function listContentForModel(
       `SELECT i.id, i.source_id, s.label AS source_label, i.kind, i.title,
               i.url, i.excerpt, i.body_html, i.author, i.published_at,
               i.fetched_at, i.thumbnail_url, i.video_id, i.external_id,
+              i.view_count, i.like_count, i.youtube_comment_count, i.rating,
               COALESCE(
                 (SELECT json_agg(t.tag ORDER BY t.tag)
                    FROM content.item_tags t WHERE t.item_id = i.id),

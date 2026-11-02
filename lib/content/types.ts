@@ -38,6 +38,18 @@ export type SourceConfig = {
   channelId?: string;
 };
 
+/**
+ * Upstream engagement, when the source publishes it. YouTube feeds carry views
+ * and a star average; the Data API adds likes and the YouTube comment count.
+ * A zero is "not reported", never an asserted zero, so the UI omits it.
+ */
+export type ContentMetrics = {
+  views: number;
+  likes: number;
+  youtubeComments: number;
+  rating: number | null;
+};
+
 export type ContentItem = {
   id: string;
   sourceId: string;
@@ -54,6 +66,14 @@ export type ContentItem = {
   videoId: string | null;
   externalId: string | null;
   tags: string[];
+  metrics: ContentMetrics;
+};
+
+export type ContentComment = {
+  id: string;
+  authorName: string;
+  body: string;
+  createdAt: string;
 };
 
 export type ContentModelLink = {
@@ -111,6 +131,7 @@ export type ParsedItem = {
   thumbnailUrl: string | null;
   videoId: string | null;
   tags: string[];
+  metrics?: ContentMetrics;
 };
 
 export type FetchCycle = {

@@ -1,0 +1,72 @@
+import { customerError, requireCustomerApi } from "@/lib/customer-auth";
+import { CONTENT_LIMITS, contentEnabled } from "@/lib/content/policy";
+import {
+  addComment,
+  CommentRateLimitError,
+} from "@/lib/content/store/comments";
+import { getItem } from "@/lib/content/store/items";
+import { readJsonObject, requestBodyError } from "@/lib/request-limits";
+import { getDatabase } from "@/lib/storage/runtime";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+/**
+ * Posts a comment on a Signal item (FID-2026-1102-092).
+ *
+ * Authenticated, same-origin, bounded, and stored as plain text. Rendering in
+ * React escapes it; nothing here permits markup.
+ */
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  if (!contentEnabled()) return customerError(404, "Signal is not enabled.");
+
+  const customer = await requireCustomerApi(request);
+
+  if (customer instanceof Response) return customer;
+
+  let body: Record<string, unknown>;
+
+  try {
+    body = await readJsonObject(request);
+  } catch (error) {
+    return requestBodyError(error);
+  }
+
+  const text =
+    typeof body.body === "string"
+      ? body.body.replace(/\r\n/g, "\n").trim()
+      : "";
+
+  if (!text) return customerError(400, "Write a comment first.");
+
+  if (text.length > CONTENT_LIMITS.commentMaxChars) {
+    return customerError(
+      400,
+      `Comments are limited to ${CONTENT_LIMITS.commentMaxChars} characters.`,
+    );
+  }
+
+  const itemId = (await params).id;
+  const db = await getDatabase();
+  const item = await getItem(db, itemId);
+
+  if (!item) return customerError(404, "That item does not exist.");
+
+  try {
+    const comment = await addComment(db, customer.id, item.id, text);
+
+    return Response.json(
+      { comment },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (error) {
+    if (error instanceof CommentRateLimitError) {
+      return customerError(429, error.message);
+    }
+
+    return customerError(500, "Could not save that comment.");
+  }
+}

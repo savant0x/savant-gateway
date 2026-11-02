@@ -217,8 +217,10 @@ export function ModelCatalogTable({
         >
           <table className="data-table catalog-table">
             <colgroup>
-              {columns.map((width) => (
-                <col key={width} style={{ width }} />
+              {/* Widths repeat by design (two 13% columns); the index is the
+                  stable identity for a static colgroup. */}
+              {columns.map((width, index) => (
+                <col key={index} style={{ width }} />
               ))}
             </colgroup>
             <thead>

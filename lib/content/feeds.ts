@@ -11,57 +11,25 @@
  */
 
 import type { ContentKind, ParsedItem } from "./types.ts";
+import type { ParseOptions } from "./feed-xml.ts";
 
 import { XMLParser } from "fast-xml-parser";
-import sanitizeHtml from "sanitize-html";
 
 import { CONTENT_LIMITS } from "./policy.ts";
-import { normalizeTags } from "./taxonomy.ts";
 import { resolveFeedUrl } from "./url.ts";
+import { entryFromYouTube } from "./feed-youtube.ts";
+import {
+  asArray,
+  cleanBody,
+  entryLink,
+  entryTags,
+  firstText,
+  mediaUrl,
+  publishedAt,
+  stripHtml,
+} from "./feed-xml.ts";
 
-const ALLOWED_TAGS = [
-  "p",
-  "br",
-  "strong",
-  "b",
-  "em",
-  "i",
-  "u",
-  "s",
-  "ul",
-  "ol",
-  "li",
-  "blockquote",
-  "code",
-  "pre",
-  "a",
-  "img",
-  "h2",
-  "h3",
-  "h4",
-  "figure",
-  "figcaption",
-  "hr",
-];
-
-const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
-  allowedTags: ALLOWED_TAGS,
-  allowedAttributes: {
-    a: ["href", "title"],
-    img: ["src", "alt", "loading"],
-  },
-  allowedSchemes: ["http", "https", "mailto"],
-  transformTags: {
-    a: (tagName, attribs) => ({
-      tagName,
-      attribs: { ...attribs, rel: "noreferrer noopener" },
-    }),
-    img: (tagName, attribs) => ({
-      tagName,
-      attribs: { ...attribs, loading: "lazy" },
-    }),
-  },
-};
+export type { ParseOptions } from "./feed-xml.ts";
 
 const parser = new XMLParser({
   ignoreAttributes: false,
@@ -71,117 +39,6 @@ const parser = new XMLParser({
   trimValues: true,
   parseTagValue: false,
 });
-
-function asArray(value: unknown): unknown[] {
-  if (value === undefined || value === null) return [];
-
-  return Array.isArray(value) ? value : [value];
-}
-
-function textOf(value: unknown): string {
-  if (typeof value === "string") return value.trim();
-  if (typeof value === "number" || typeof value === "boolean")
-    return String(value);
-
-  if (Array.isArray(value)) {
-    return value
-      .map((entry) => textOf(entry))
-      .filter(Boolean)
-      .join(" ")
-      .trim();
-  }
-
-  if (value && typeof value === "object") {
-    const record = value as Record<string, unknown>;
-
-    if (typeof record.__cdata === "string") return record.__cdata.trim();
-    if (typeof record["#text"] === "string") return record["#text"].trim();
-
-    return "";
-  }
-
-  return "";
-}
-
-function firstText(...values: unknown[]): string {
-  for (const value of values) {
-    const text = textOf(value);
-
-    if (text) return text;
-  }
-
-  return "";
-}
-
-function attr(value: unknown, name: string): string {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return "";
-
-  const found = (value as Record<string, unknown>)[`@_${name}`];
-
-  return typeof found === "string" ? found.trim() : "";
-}
-
-function entryLink(entry: Record<string, unknown>): string {
-  for (const candidate of asArray(entry.link)) {
-    if (typeof candidate === "string" && candidate.trim()) return candidate;
-    if (!candidate || typeof candidate !== "object") continue;
-
-    const record = candidate as Record<string, unknown>;
-    const rel = attr(record, "rel");
-
-    if (!rel || rel === "alternate") {
-      const href = attr(record, "href");
-
-      if (href) return href;
-    }
-  }
-
-  return firstText(entry.id, entry.guid);
-}
-
-function mediaUrl(entry: Record<string, unknown>): string | null {
-  for (const key of ["media:thumbnail", "media:content", "enclosure"]) {
-    for (const candidate of asArray(entry[key])) {
-      const url = attr(candidate, "url");
-
-      if (url) return url;
-    }
-  }
-
-  return null;
-}
-
-function entryTags(entry: Record<string, unknown>, extra: string[]): string[] {
-  const categories: unknown[] = [];
-
-  for (const key of ["category", "media:keywords"]) {
-    for (const candidate of asArray(entry[key])) {
-      if (typeof candidate === "string") {
-        categories.push(candidate);
-      } else if (candidate && typeof candidate === "object") {
-        const record = candidate as Record<string, unknown>;
-
-        categories.push(attr(record, "term"), textOf(record));
-      }
-    }
-  }
-
-  return normalizeTags([...extra, ...categories]);
-}
-
-function stripHtml(value: string): string {
-  return sanitizeHtml(value, { allowedTags: [], allowedAttributes: {} })
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function cleanBody(value: string): string | null {
-  const clean = sanitizeHtml(value, SANITIZE_OPTIONS).trim();
-
-  if (!clean) return null;
-
-  return clean.slice(0, CONTENT_LIMITS.maxBodyChars);
-}
 
 function inferKind(
   sourceKind: "rss" | "youtube",
@@ -200,16 +57,6 @@ function inferKind(
   }
 
   return "article";
-}
-
-function publishedAt(value: unknown, fallback: string): string {
-  const text = textOf(value);
-
-  if (!text) return fallback;
-
-  const date = new Date(text);
-
-  return Number.isNaN(date.getTime()) ? fallback : date.toISOString();
 }
 
 function entryFromRss(
@@ -270,53 +117,6 @@ function entryFromRss(
     tags,
   };
 }
-
-function entryFromYouTube(
-  entry: Record<string, unknown>,
-  options: ParseOptions,
-  now: string,
-): ParsedItem | null {
-  const title = firstText(entry.title).slice(0, CONTENT_LIMITS.maxTitleChars);
-  const videoId = firstText(entry["yt:videoId"]);
-  const rawLink =
-    entryLink(entry) ||
-    (videoId ? `https://www.youtube.com/watch?v=${videoId}` : "");
-  const url = rawLink ? resolveFeedUrl(rawLink, options.baseUrl) : null;
-
-  if (!title || !url) return null;
-
-  const rawBody = firstText(entry.content, entry.summary);
-  const excerpt = stripHtml(rawBody).slice(0, CONTENT_LIMITS.maxExcerptChars);
-  const thumbnail = mediaUrl(entry);
-  const author =
-    firstText(entry.author).slice(0, CONTENT_LIMITS.maxAuthorChars) || null;
-
-  return {
-    externalId: videoId || firstText(entry.id) || null,
-    kind: "video",
-    title,
-    url,
-    excerpt,
-    bodyHtml: cleanBody(rawBody),
-    author,
-    publishedAt: publishedAt(firstText(entry.published, entry.updated), now),
-    thumbnailUrl: thumbnail
-      ? resolveFeedUrl(thumbnail, options.baseUrl)
-      : videoId
-        ? `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg`
-        : null,
-    videoId: videoId || null,
-    tags: entryTags(entry, options.tags),
-  };
-}
-
-export type ParseOptions = {
-  baseUrl: string;
-  sourceKind: "rss" | "youtube";
-  tags: string[];
-  maxItems?: number;
-  now?: string;
-};
 
 /**
  * Parses an RSS 2.0, Atom, or YouTube Atom document. Malformed XML returns an

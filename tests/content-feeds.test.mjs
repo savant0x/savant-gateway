@@ -53,7 +53,13 @@ test("Atom video entries map to a video with a thumbnail fallback", () => {
       <author><name>Channel</name></author>
       <yt:videoId>abc123</yt:videoId>
       <media:group xmlns:media="http://search.yahoo.com/mrss/">
-        <media:description>Hands-on walkthrough</media:description>
+        <media:description>Hands-on walkthrough
+
+Second paragraph &lt;not markup&gt;</media:description>
+        <media:community>
+          <media:starRating average="4.8" count="120" />
+          <media:statistics views="15400" />
+        </media:community>
       </media:group>
     </entry>
   </feed>`;
@@ -69,6 +75,44 @@ test("Atom video entries map to a video with a thumbnail fallback", () => {
   assert.equal(item.videoId, "abc123");
   assert.equal(item.thumbnailUrl, "https://i.ytimg.com/vi/abc123/hqdefault.jpg");
   assert.equal(item.url, "https://www.youtube.com/watch?v=abc123");
+  assert.match(item.excerpt, /Hands-on walkthrough/);
+  assert.match(item.bodyHtml, /<p>Hands-on walkthrough<\/p>/);
+  assert.match(item.bodyHtml, /Second paragraph/);
+  assert.doesNotMatch(item.bodyHtml, /<not markup>/);
+  assert.deepEqual(item.metrics, {
+    views: 15400,
+    likes: 0,
+    youtubeComments: 0,
+    rating: 4.8,
+  });
+});
+
+test("YouTube descriptions cannot inject markup", () => {
+  const atom = `<?xml version="1.0"?>
+  <feed xmlns="http://www.w3.org/2005/Atom" xmlns:yt="http://www.youtube.com/xml/schemas/2015"
+        xmlns:media="http://search.yahoo.com/mrss/">
+    <entry>
+      <title>Unsafe description</title>
+      <link rel="alternate" href="https://www.youtube.com/watch?v=evil" />
+      <published>2026-11-01T09:00:00Z</published>
+      <yt:videoId>evil</yt:videoId>
+      <media:group>
+        <media:description><![CDATA[Hello <script>alert(1)</script>
+
+<img src=x onerror=alert(2)>]]></media:description>
+      </media:group>
+    </entry>
+  </feed>`;
+
+  const [item] = parseFeed(atom, {
+    baseUrl: "https://www.youtube.com/feeds/videos.xml?channel_id=UC123",
+    sourceKind: "youtube",
+    tags: [],
+    now: "2026-11-02T00:00:00.000Z",
+  });
+
+  assert.doesNotMatch(item.bodyHtml, /<script|<img|onerror/i);
+  assert.match(item.bodyHtml, /<p>Hello<\/p>/);
 });
 
 test("malformed and empty documents return an empty list", () => {

@@ -29,8 +29,26 @@ export type ItemRow = {
   thumbnail_url: string | null;
   video_id: string | null;
   external_id: string | null;
+  view_count: number | string;
+  like_count: number | string;
+  youtube_comment_count: number | string;
+  rating: number | string | null;
   tags_json: string;
 };
+
+function toCount(value: number | string | null): number {
+  const number = Number(value ?? 0);
+
+  return Number.isFinite(number) && number > 0 ? number : 0;
+}
+
+function toRating(value: number | string | null): number | null {
+  if (value === null) return null;
+
+  const rating = Number(value);
+
+  return Number.isFinite(rating) && rating > 0 ? Math.min(5, rating) : null;
+}
 
 function toItem(row: ItemRow): ContentItem {
   let tags: string[] = [];
@@ -59,6 +77,12 @@ function toItem(row: ItemRow): ContentItem {
     videoId: row.video_id,
     externalId: row.external_id,
     tags,
+    metrics: {
+      views: toCount(row.view_count),
+      likes: toCount(row.like_count),
+      youtubeComments: toCount(row.youtube_comment_count),
+      rating: toRating(row.rating),
+    },
   };
 }
 
@@ -66,6 +90,7 @@ const ITEM_COLUMNS = `
   i.id, i.source_id, s.label AS source_label, i.kind, i.title, i.url,
   i.excerpt, i.body_html, i.author, i.published_at, i.fetched_at,
   i.thumbnail_url, i.video_id, i.external_id,
+  i.view_count, i.like_count, i.youtube_comment_count, i.rating,
   COALESCE(
     (SELECT json_agg(t.tag ORDER BY t.tag)
        FROM content.item_tags t WHERE t.item_id = i.id),
@@ -297,8 +322,9 @@ export async function upsertItem(
       `INSERT INTO content.items
         (id, source_id, kind, title, url, excerpt, body_html, author,
          published_at, fetched_at, thumbnail_url, video_id, external_id,
+         view_count, like_count, youtube_comment_count, rating,
          content_hash, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT (url) DO UPDATE SET
          kind = EXCLUDED.kind,
          title = EXCLUDED.title,
@@ -310,6 +336,10 @@ export async function upsertItem(
          thumbnail_url = EXCLUDED.thumbnail_url,
          video_id = EXCLUDED.video_id,
          external_id = EXCLUDED.external_id,
+         view_count = EXCLUDED.view_count,
+         like_count = EXCLUDED.like_count,
+         youtube_comment_count = EXCLUDED.youtube_comment_count,
+         rating = EXCLUDED.rating,
          content_hash = EXCLUDED.content_hash,
          updated_at = EXCLUDED.updated_at
        RETURNING id`,
@@ -328,6 +358,10 @@ export async function upsertItem(
       item.thumbnailUrl,
       item.videoId,
       item.externalId,
+      item.metrics?.views ?? 0,
+      item.metrics?.likes ?? 0,
+      item.metrics?.youtubeComments ?? 0,
+      item.metrics?.rating ?? null,
       contentHash(item),
       now,
       now,

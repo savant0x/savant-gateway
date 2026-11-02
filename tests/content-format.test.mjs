@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   contentDate,
+  formatCount,
   kindLabel,
   purchaseCta,
   relationLabel,
@@ -32,6 +33,13 @@ test("dates are stable in UTC and malformed values do not throw", () => {
   assert.equal(contentDate("2026-11-01T23:30:00.000Z"), "Nov 1, 2026");
   assert.equal(contentDate("not-a-date"), "Undated");
   assert.equal(contentDate(null), "Undated");
+});
+
+test("counts are compact and an unreported zero stays zero", () => {
+  assert.equal(formatCount(0), "0");
+  assert.equal(formatCount(999), "999");
+  assert.equal(formatCount(15400), "15.4K");
+  assert.equal(formatCount(Number.NaN), "0");
 });
 
 test("labels and excerpts stay presentation-only", () => {

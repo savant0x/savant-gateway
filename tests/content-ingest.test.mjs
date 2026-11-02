@@ -7,6 +7,7 @@ import { getSource } from "../lib/content/store/sources.ts";
 import {
   createSource,
   listContentForModel,
+  listItems,
 } from "../lib/content/store.ts";
 import { createStorageDatabase } from "../lib/storage/database.ts";
 
@@ -22,6 +23,27 @@ const FEED = `<?xml version="1.0"?>
     <category>OpenAI</category>
   </item>
 </channel></rss>`;
+
+const YOUTUBE_FEED = `<?xml version="1.0"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:yt="http://www.youtube.com/xml/schemas/2015"
+      xmlns:media="http://search.yahoo.com/mrss/">
+  <entry>
+    <title>GPT-6 Luna benchmark walkthrough</title>
+    <link rel="alternate" href="https://www.youtube.com/watch?v=vid123" />
+    <published>2026-11-02T09:00:00Z</published>
+    <author><name>Channel</name></author>
+    <yt:videoId>vid123</yt:videoId>
+    <media:group>
+      <media:description><![CDATA[Line one.
+
+Second paragraph.]]></media:description>
+      <media:community>
+        <media:starRating average="4.5" count="20" />
+        <media:statistics views="1000" />
+      </media:community>
+    </media:group>
+  </entry>
+</feed>`;
 
 async function seedModel(db) {
   await db
@@ -93,6 +115,109 @@ test("ingestion stores the item, tag, cycle, and reviewed model link", async () 
     assert.equal(refreshed.status, "active");
     assert.equal(refreshed.failureStreak, 0);
     assert.equal(refreshed.lastFetchedAt, "2026-11-02T12:00:00.000Z");
+  } finally {
+    await db.close();
+  }
+});
+
+test("YouTube ingestion merges Data API likes and comment counts", async () => {
+  const db = await createStorageDatabase({ env: {} });
+
+  try {
+    const source = await createSource(db, {
+      kind: "youtube",
+      label: "Channel",
+      url: "https://www.youtube.com/channel/UCabcdefghijklmnopqrstuv",
+      config: { tags: [], channelId: "UCabcdefghijklmnopqrstuv" },
+      enabled: true,
+      fetchIntervalMinutes: 60,
+      maxItems: 5,
+    });
+    const calls = [];
+
+    const result = await ingestSource(db, source, {
+      apiKey: "test-key",
+      fetchText: async (url) => {
+        calls.push(url);
+
+        if (url.startsWith("https://www.googleapis.com/youtube/v3/videos")) {
+          return JSON.stringify({
+            items: [
+              {
+                id: "vid123",
+                statistics: {
+                  viewCount: "12345",
+                  likeCount: "678",
+                  commentCount: "90",
+                },
+              },
+            ],
+          });
+        }
+
+        return YOUTUBE_FEED;
+      },
+      now: () => "2026-11-02T12:00:00.000Z",
+      models: [],
+    });
+
+    assert.equal(result.ok, true);
+    assert.ok(calls.some((url) => url.includes("part=statistics")));
+
+    const page = await listItems(db, { sourceId: source.id });
+    const item = page.items[0];
+
+    assert.equal(item.videoId, "vid123");
+    assert.match(item.bodyHtml, /<p>Line one\.<\/p>/);
+    assert.match(item.bodyHtml, /<p>Second paragraph\.<\/p>/);
+    assert.deepEqual(item.metrics, {
+      views: 12345,
+      likes: 678,
+      youtubeComments: 90,
+      rating: 4.5,
+    });
+  } finally {
+    await db.close();
+  }
+});
+
+test("a failed statistics call keeps the feed metrics and the cycle", async () => {
+  const db = await createStorageDatabase({ env: {} });
+
+  try {
+    const source = await createSource(db, {
+      kind: "youtube",
+      label: "Channel",
+      url: "https://www.youtube.com/channel/UCabcdefghijklmnopqrstuv",
+      config: { tags: [], channelId: "UCabcdefghijklmnopqrstuv" },
+      enabled: true,
+      fetchIntervalMinutes: 60,
+      maxItems: 5,
+    });
+
+    const result = await ingestSource(db, source, {
+      apiKey: "test-key",
+      fetchText: async (url) => {
+        if (url.startsWith("https://www.googleapis.com/youtube/v3/videos")) {
+          throw new Error("quota exhausted");
+        }
+
+        return YOUTUBE_FEED;
+      },
+      now: () => "2026-11-02T12:00:00.000Z",
+      models: [],
+    });
+
+    assert.equal(result.ok, true);
+
+    const item = (await listItems(db, { sourceId: source.id })).items[0];
+
+    assert.deepEqual(item.metrics, {
+      views: 1000,
+      likes: 0,
+      youtubeComments: 0,
+      rating: 4.5,
+    });
   } finally {
     await db.close();
   }

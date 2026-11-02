@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import type { ContentComment } from "@/lib/content/types";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { ContentCard } from "@/components/content/content-card";
+import { CommentSection } from "@/components/content/comment-section";
+import { ContentDetailAside } from "@/components/content/content-detail-aside";
 import { ContentDisabled } from "@/components/content/content-disabled";
 import { ModelModule } from "@/components/content/model-module";
 import { SaveButton } from "@/components/content/save-button";
@@ -11,6 +13,7 @@ import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
 import { contentDate, kindLabel } from "@/lib/content/format";
 import { contentEnabled } from "@/lib/content/policy";
+import { countComments, listComments } from "@/lib/content/store/comments";
 import { listLinksForItem } from "@/lib/content/store/links";
 import { getItem, listRelatedItems } from "@/lib/content/store/items";
 import { isSaved } from "@/lib/content/store/engagement";
@@ -62,12 +65,24 @@ export default async function SignalDetailPage({ params }: PageProps) {
 
   if (!item) notFound();
 
+  let comments: ContentComment[] = [];
+  let commentCount = 0;
+
   const [links, catalog, related, saved] = await Promise.all([
     listLinksForItem(db, item.id),
     getCatalogData(),
     listRelatedItems(db, item.id, item.tags, 3),
     customer ? isSaved(db, customer.id, item.id) : Promise.resolve(false),
   ]);
+
+  try {
+    [comments, commentCount] = await Promise.all([
+      listComments(db, item.id),
+      countComments(db, item.id),
+    ]);
+  } catch {
+    // A discussion read must not hide the item or the purchase path.
+  }
 
   const modelsById = new Map(catalog.models.map((model) => [model.id, model]));
   const linkedModels = links
@@ -77,6 +92,7 @@ export default async function SignalDetailPage({ params }: PageProps) {
       return model ? { model, reason: link.reason } : null;
     })
     .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+  const isVideo = item.kind === "video";
 
   return (
     <div className="site-shell">
@@ -84,13 +100,15 @@ export default async function SignalDetailPage({ params }: PageProps) {
 
       <main>
         <section className="border-b border-white/10">
-          <div className="mx-auto w-full max-w-[80rem] px-4 py-10 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-[80rem] px-4 py-8 sm:px-6 lg:px-8">
             <Link
-              className="text-xs font-medium uppercase tracking-[0.16em] text-cyan-300 underline-offset-4 hover:underline"
-              href="/signal"
+              className="inline-flex items-center gap-2 rounded-full border border-black/10 px-3 py-1.5 text-xs font-medium text-muted underline-offset-4 hover:border-accent/40 hover:text-foreground dark:border-white/10"
+              href={isVideo ? "/signal?kind=video" : "/signal"}
             >
-              ← Signal
+              <span aria-hidden>←</span>
+              {isVideo ? "Back to videos" : "Back to Signal"}
             </Link>
+
             <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted">
@@ -139,76 +157,46 @@ export default async function SignalDetailPage({ params }: PageProps) {
             {item.videoId ? (
               <div className="aspect-video overflow-hidden rounded-xl border border-black/10 bg-black dark:border-white/10">
                 <iframe
+                  key={item.videoId}
                   allowFullScreen
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   className="h-full w-full"
+                  referrerPolicy="strict-origin-when-cross-origin"
                   src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(
                     item.videoId,
-                  )}`}
+                  )}?rel=0&modestbranding=1`}
                   title={item.title}
                 />
               </div>
             ) : null}
 
-            <article className="rounded-xl border border-black/10 bg-surface p-5 dark:border-white/10">
-              {item.bodyHtml ? (
-                <div
-                  dangerouslySetInnerHTML={{ __html: item.bodyHtml }}
-                  className="signal-body text-sm leading-7 text-foreground/90"
-                />
-              ) : (
-                <p className="text-sm leading-7 text-muted">
-                  {item.excerpt ||
-                    "This source did not publish a body excerpt."}
-                </p>
-              )}
-
-              <div className="mt-6 border-t border-black/10 pt-4 text-xs text-muted dark:border-white/10">
-                <a
-                  className="text-accent underline-offset-4 hover:underline"
-                  href={item.url}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  Read the original at {item.sourceLabel} ↗
-                </a>
-                <p className="mt-2">
-                  This is free third-party content. Savant Gateway does not sell
-                  it and is not responsible for its claims.
-                </p>
-              </div>
-            </article>
+            {!isVideo ? (
+              <article className="rounded-xl border border-black/10 bg-surface p-5 dark:border-white/10">
+                {item.bodyHtml ? (
+                  <div
+                    dangerouslySetInnerHTML={{ __html: item.bodyHtml }}
+                    className="signal-body text-sm leading-7 text-foreground/90"
+                  />
+                ) : (
+                  <p className="text-sm leading-7 text-muted">
+                    {item.excerpt ||
+                      "This source did not publish a body excerpt."}
+                  </p>
+                )}
+              </article>
+            ) : null}
 
             <ModelModule models={linkedModels} signedIn={Boolean(customer)} />
+
+            <CommentSection
+              comments={comments}
+              count={commentCount}
+              itemId={item.id}
+              signedIn={Boolean(customer)}
+            />
           </div>
 
-          <aside className="space-y-4">
-            <div className="rounded-xl border border-black/10 bg-surface p-5 text-xs leading-5 text-muted dark:border-white/10">
-              <p className="text-sm font-semibold text-foreground">
-                Why this is here
-              </p>
-              <p className="mt-2">
-                Items are ingested from operator-selected RSS and YouTube
-                sources. A model link appears only when the title or an exact
-                publisher tag names the model; the reason is shown above.
-              </p>
-              <Link
-                className="mt-3 inline-block text-accent underline-offset-4 hover:underline"
-                href="/signal/briefing"
-              >
-                Build a model briefing
-              </Link>
-            </div>
-
-            {related.length > 0 ? (
-              <div className="space-y-3">
-                <h2 className="text-sm font-semibold">Related reading</h2>
-                {related.map((entry) => (
-                  <ContentCard key={entry.id} compact item={entry} />
-                ))}
-              </div>
-            ) : null}
-          </aside>
+          <ContentDetailAside item={item} related={related} />
         </section>
       </main>
 

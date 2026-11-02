@@ -73,6 +73,15 @@ export function purchaseCta(
     : { label: "Create an account", href: "/signup" };
 }
 
+export function formatCount(value: number): string {
+  if (!Number.isFinite(value) || value <= 0) return "0";
+
+  return new Intl.NumberFormat("en", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
 export function shortExcerpt(value: string, max = 180): string {
   const clean = value.replace(/\s+/g, " ").trim();
 

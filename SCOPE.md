@@ -2235,6 +2235,18 @@ FIDs so each slice can converge and be verified on its own.
   a real session cookie (all 200). Not run and not claimed: `npm run verify`
   (which adds the HTTP and recovery suites), a real publisher feed, and a
   browser visual review. The four FIDs are closed and archived.
+- [x] **C6 — Video detail parity and discussion (FID-092).** Resumed after the
+  operator reported that a YouTube item had no description, views, rating, or
+  sidebar and no comment section, and that the public catalog threw a
+  duplicate `13%` key warning. The YouTube parser now reads `media:group`;
+  ingest merges Data API likes and comment counts without failing the cycle;
+  the detail page has a back button, description/details sidebar, and an
+  authenticated 12-per-hour comment thread; the colgroup is index-keyed.
+  Verified: lint 0 warnings, typecheck 0, quality PASS (513 files), build 0,
+  22 focused content tests, a disposable PGlite app with comment POST 200 and
+  every sidebar marker, and the restarted local server at 200 with no schema
+  errors. Existing items backfill on the next source Fetch. Not verified:
+  `npm run verify`, a browser visual review, and a live YouTube Data API call.
 
 Non-goals recorded so they are not mistaken for missing work: no paid content,
 no content entitlement, no separate content database, no copy of the reference

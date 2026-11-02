@@ -119,5 +119,30 @@ export async function contentSchema(db: PostgresDatabase) {
     );
     CREATE INDEX IF NOT EXISTS content_saved_items_user_idx
       ON content.saved_items(user_id, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS content.comments (
+      id TEXT PRIMARY KEY,
+      item_id TEXT NOT NULL REFERENCES content.items(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      body TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS content_comments_item_idx
+      ON content.comments(item_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS content_comments_user_idx
+      ON content.comments(user_id, created_at DESC);
+  `);
+
+  // Upstream engagement arrived after the first content release. The feed gives
+  // views and a star average; the Data API adds likes and the YouTube comment
+  // count. Additive so existing items keep their zeros until the next fetch.
+  // The identifiers are literals in this file, not caller input, which is why
+  // this is written directly rather than through ensureColumn (public schema).
+  await db.exec(`
+    ALTER TABLE IF EXISTS content.items
+      ADD COLUMN IF NOT EXISTS view_count BIGINT NOT NULL DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS like_count BIGINT NOT NULL DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS youtube_comment_count BIGINT NOT NULL DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS rating DOUBLE PRECISION;
   `);
 }

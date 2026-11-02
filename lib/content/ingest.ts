@@ -122,6 +122,80 @@ async function sourceFeedUrl(
   return { url, baseUrl: url };
 }
 
+type YouTubeStatistics = {
+  viewCount?: string;
+  likeCount?: string;
+  commentCount?: string;
+};
+
+function countOf(value: string | undefined): number | null {
+  if (!value) return null;
+
+  const number = Number(value);
+
+  return Number.isFinite(number) && number >= 0 ? number : null;
+}
+
+/**
+ * The channel feed reports views and a star average but never likes or the
+ * comment count. The Data API fills those in, one bounded call per 50 items.
+ * A failure is absorbed: the feed values stay, the cycle is still a success,
+ * because optional engagement must not disable a healthy source.
+ */
+async function enrichYouTubeMetrics(
+  items: ParsedItem[],
+  fetchText: FetchText,
+  apiKey: string | null,
+): Promise<void> {
+  if (!apiKey || items.length === 0) return;
+
+  const byVideoId = new Map<string, ParsedItem>();
+
+  for (const item of items) {
+    if (item.videoId) byVideoId.set(item.videoId, item);
+  }
+
+  const ids = Array.from(byVideoId.keys());
+
+  for (let offset = 0; offset < ids.length; offset += 50) {
+    try {
+      const endpoint = new URL("https://www.googleapis.com/youtube/v3/videos");
+
+      endpoint.searchParams.set("part", "statistics");
+      endpoint.searchParams.set("id", ids.slice(offset, offset + 50).join(","));
+      endpoint.searchParams.set("key", apiKey);
+
+      const body = await fetchText(endpoint.toString());
+      const parsed = JSON.parse(body) as {
+        items?: Array<{ id?: string; statistics?: YouTubeStatistics }>;
+      };
+
+      for (const row of parsed.items ?? []) {
+        const item = row.id ? byVideoId.get(row.id) : undefined;
+
+        if (!item) continue;
+
+        const current = item.metrics ?? {
+          views: 0,
+          likes: 0,
+          youtubeComments: 0,
+          rating: null,
+        };
+
+        item.metrics = {
+          views: countOf(row.statistics?.viewCount) ?? current.views,
+          likes: countOf(row.statistics?.likeCount) ?? current.likes,
+          youtubeComments:
+            countOf(row.statistics?.commentCount) ?? current.youtubeComments,
+          rating: current.rating,
+        };
+      }
+    } catch {
+      // Optional metadata. Keep the feed-reported values.
+    }
+  }
+}
+
 async function fetchSourceItems(
   source: ContentSource,
   deps: IngestDeps,
@@ -130,14 +204,19 @@ async function fetchSourceItems(
   const apiKey = deps.apiKey === undefined ? youtubeApiKey() : deps.apiKey;
   const feed = await sourceFeedUrl(source, fetchText, apiKey);
   const xml = await fetchText(feed.url);
-
-  return parseFeed(xml, {
+  const items = parseFeed(xml, {
     baseUrl: feed.baseUrl,
     sourceKind: source.kind,
     tags: source.config.tags,
     maxItems: source.maxItems,
     now: deps.now?.(),
   });
+
+  if (source.kind === "youtube") {
+    await enrichYouTubeMetrics(items, fetchText, apiKey);
+  }
+
+  return items;
 }
 
 export async function ingestSource(

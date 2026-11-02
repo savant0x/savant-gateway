@@ -42,4 +42,7 @@ export const CONTENT_LIMITS = {
   briefingDays: 7,
   savedLimit: 50,
   watchLimit: 30,
+  commentMaxChars: 2_000,
+  commentsPerHour: 12,
+  commentPageSize: 50,
 } as const;

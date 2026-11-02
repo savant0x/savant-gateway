@@ -3,13 +3,17 @@ import test from "node:test";
 
 import { createStorageDatabase } from "../lib/storage/database.ts";
 import {
+  addComment,
   briefingForUser,
+  CommentRateLimitError,
   contentStats,
+  countComments,
   createSource,
   deleteSource,
   getItem,
   isSaved,
   isWatching,
+  listComments,
   listContentForModel,
   listItems,
   listSavedItems,
@@ -80,12 +84,27 @@ test("content store keeps sources, items, links, and retention isolated", async 
         thumbnailUrl: null,
         videoId: null,
         tags: ["openai", "gpt-6-luna"],
+        metrics: {
+          views: 1200,
+          likes: 42,
+          youtubeComments: 7,
+          rating: 4.6,
+        },
       },
       "2026-11-02T11:00:00.000Z",
     );
 
     assert.match(itemId, /^itm_/);
-    assert.equal((await getItem(db, itemId)).title, "GPT-6 Luna launch notes");
+
+    const stored = await getItem(db, itemId);
+
+    assert.equal(stored.title, "GPT-6 Luna launch notes");
+    assert.deepEqual(stored.metrics, {
+      views: 1200,
+      likes: 42,
+      youtubeComments: 7,
+      rating: 4.6,
+    });
     assert.deepEqual((await listTags(db)).map((tag) => tag.slug), [
       "gpt-6-luna",
       "openai",
@@ -128,6 +147,40 @@ test("content store keeps sources, items, links, and retention isolated", async 
     assert.equal(await setSaved(db, "user_dev", itemId, true), true);
     assert.equal(await isSaved(db, "user_dev", itemId), true);
     assert.equal((await listSavedItems(db, "user_dev")).total, 1);
+
+    const comment = await addComment(
+      db,
+      "user_dev",
+      itemId,
+      "First take.",
+      "2026-11-02T12:00:00.000Z",
+    );
+
+    assert.equal(comment.authorName, "Local Developer");
+    assert.equal(await countComments(db, itemId), 1);
+    assert.equal((await listComments(db, itemId))[0].body, "First take.");
+
+    for (let index = 1; index < 12; index += 1) {
+      await addComment(
+        db,
+        "user_dev",
+        itemId,
+        `Comment ${index}`,
+        "2026-11-02T12:30:00.000Z",
+      );
+    }
+
+    await assert.rejects(
+      () =>
+        addComment(
+          db,
+          "user_dev",
+          itemId,
+          "Too many.",
+          "2026-11-02T12:45:00.000Z",
+        ),
+      CommentRateLimitError,
+    );
 
     assert.equal(await setWatch(db, "user_dev", MODEL_ID, false), false);
     assert.equal(await isWatching(db, "user_dev", MODEL_ID), false);

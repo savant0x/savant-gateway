@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-10-31",
+  "updated": "2026-11-02",
   "policy": "Archived implementations do not claim live acceptance. These are observation, operator-input or revisit items linked to archived records; they do not hold implementation closure.",
   "items": [
     {
@@ -88,10 +88,10 @@
       "id": "FID-2026-1030-058-LIVE",
       "fid": "FID-2026-1030-058",
       "state": "blocked",
-      "title": "Operator RPO/RTO and first production-volume restore",
-      "detail": "The backup/restore code and a disposable drill are verified. No recovery-point or restore-time target is set, and no timed restore has run on the actual Fly volume. On 2026-10-31 the authenticated Fly CLI (v0.5.1) could not list apps: `fly apps list` exited 1 with 'trial has ended, please add a credit card'. No app, volume or machine exists, so the timed restore could not start.",
-      "evidence": "dev/fids/archive/FID-2026-1030-058-database-backup-and-restore.md; docs/deployment-runbook.md#backup-and-restore; 2026-10-31 flyctl observation: apps list exit 1, no app/volume",
-      "next_action": "Enable the Fly account payment method and provision the app/volume under FID-2026-1030-067/062. Then set the backup interval and restore target, pull a backup off the volume with its sidecar, run the timed restore, confirm /api/ready and /admin/reconciliation, and record the receipt."
+      "title": "Operator RPO/RTO and first hosted PostgreSQL restore",
+      "detail": "The PostgreSQL backup/restore code and a disposable drill are verified (12/12 on 2026-11-02). No recovery-point or restore-time target is set, and no timed restore has run against the production-equivalent Neon Launch database. The 2026-10-31 Fly observation (apps list exit 1, no app/volume) still explains why no hosted target exists. The SQLite Fly-volume restore described in the archived FID is historical after the 2026-11-01 storage cutover.",
+      "evidence": "dev/fids/archive/FID-2026-1030-058-database-backup-and-restore.md; dev/fids/archive/FID-2026-1031-086-storage-cutover-and-dev-data-migration.md; docs/deployment-runbook.md#backup-and-restore; npm run test:recovery (2026-11-02 PASS, 12/12)",
+      "next_action": "Provision the Neon Launch project and the Fly app under FID-2026-1030-062/067, confirm the retention window, set the backup interval and restore target, run a timed restore of the production-equivalent PostgreSQL database, confirm /api/ready and /admin/reconciliation, and record the receipt."
     },
     {
       "id": "FID-2026-1030-049-LIVE",
@@ -142,10 +142,9 @@
       "id": "FID-2026-1030-060-LIVE",
       "fid": "FID-2026-1030-060",
       "state": "blocked",
-      "title": "Operator-approved production envelope, real provider and Fly-volume acceptance",
-      "detail": "The 2026-10-31 run measured the production artifact on a disposable SQLite file and local provider fixture: 123/123 checks, 229.84 sustained rps, p95 137.53 ms, 186.7 MB peak RSS, 310 committed settlements and zero unresolved/ledger differences. The envelope in config/load-envelope.json has no dated approval; no real provider was called, no spend occurred, ENOSPC and 120 s/300 s deadline waits were not reproduced, and no hosted proxy or Fly volume was used. 160.89 rps is candidate-only.",
-      "evidence": "dev/audits/2026-10-31-load-acceptance.json; docs/load-acceptance.md; config/load-envelope.json; dev/fids/archive/FID-2026-1030-060-load-and-resilience-acceptance.md",
-      "next_action": "After 062/067 approval, date the operator traffic/spend envelope, run `npm run test:load:accept` on the production Fly machine against a funded authorized provider budget, then repeat with the hosted proxy and production-sized dataset; record ENOSPC/deadline behavior and publish only the approved cap."
+      "title": "Operator-approved production envelope, real provider and PostgreSQL acceptance",
+      "detail": "The 2026-10-31 run measured the production artifact on a disposable SQLite file and local provider fixture: 123/123 checks, 229.84 sustained rps, p95 137.53 ms, 186.7 MB peak RSS, 310 committed settlements and zero unresolved/ledger differences. The envelope in config/load-envelope.json has no dated approval, and the measurement predates the 2026-11-01 PostgreSQL cutover; FID-062 item 5 requires a rerun. No real provider was called, no spend occurred, ENOSPC and 120 s/300 s deadline waits were not reproduced, and no hosted proxy was used. 160.89 rps is candidate-only. The runner itself is not ported: scripts/load-acceptance.mjs still boots a SQLite DB_PATH workspace and scripts/load/faults.mjs imports better-sqlite3, so a PostgreSQL rerun first requires porting the harness.",
+      "next_action": "After 062/067 approval, date the operator traffic/spend envelope, run `npm run test:load:accept` against the PostgreSQL production-equivalent host and a funded authorized provider budget, then repeat with the hosted proxy and production-sized dataset; record ENOSPC/deadline behavior and publish only the approved cap."
     },
     {
       "id": "FID-2026-1031-078-LIVE",
@@ -178,10 +177,10 @@
       "id": "FID-2026-1031-085-PORT",
       "fid": "FID-2026-1031-085",
       "state": "watch",
-      "title": "Postgres port is planned but not implemented",
-      "detail": "The operator ruled on 2026-10-31 that production accounting will not run on one SQLite file on one volume. FID-085 is converged and supersedes docs/hosting-decision.md for the data layer; FID-066's libSQL target is retired because libSQL is also single-writer. No code changed: better-sqlite3 is still the only data layer, so the deployed topology and the startup gate still require one process on one local volume. Admission remains process-local, which is correct only while that is true.",
-      "evidence": "dev/fids/FID-2026-1031-085-postgres-production-storage.md; docs/hosting-decision.md; SCOPE.md (2026-10-31 storage ruling)",
-      "next_action": "Run step 0 against a Neon Launch database and record the output in the FID: two-connection settlement serialization, conditional update rejection, named ON CONFLICT targets, timestamptz ordering, BIGINT micros fidelity, statement timeout. Do not port a call site until the double-spend test passes."
+      "title": "PostgreSQL port landed; hosted Neon acceptance remains",
+      "detail": "FID-085 and FID-086 are archived with 2026-11-01 closure bodies. The application resolves one PostgreSQL handle through lib/storage/runtime.ts; lib/db.ts and lib/store/* are deleted, better-sqlite3 is a devDependency for the one-way importer only, and npm run storage:check reports one storage engine. FID-066's libSQL target is retired. The remaining live obligations are a Neon Launch project, a hosted restore rehearsal and a PostgreSQL load rerun, which are tracked under FID-062 items 3, 5 and 7 and FID-058-LIVE/FID-060-LIVE.",
+      "evidence": "dev/fids/archive/FID-2026-1031-085-postgres-production-storage.md; dev/fids/archive/FID-2026-1031-086-storage-cutover-and-dev-data-migration.md; lib/storage/runtime.ts; npm run storage:check (2026-11-02 PASS)",
+      "next_action": "Provision the Neon Launch project, confirm its retention window, run a hosted restore/rollback rehearsal and rerun the load envelope against PostgreSQL; record each dated receipt under FID-062 before approval."
     }
   ]
 }

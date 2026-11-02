@@ -15,8 +15,9 @@ against, not automatically today's behavior.
 | Know what is verified and what is blocked | [project-status.md](project-status.md) |
 | See the path to launch | [launch-plan.md](launch-plan.md) |
 | Answer the open launch decisions | [launch-decision-form.md](launch-decision-form.md) |
-| Deploy, back up, restore and roll back | [deployment-runbook.md](deployment-runbook.md) |
-| Understand the hosting decision | [hosting-decision.md](hosting-decision.md) |
+| Deploy on Vercel with PostgreSQL | [../README.md](../README.md#deploying-on-vercel) |
+| Read the superseded SQLite/Fly runbook | [deployment-runbook.md](deployment-runbook.md) |
+| Understand the earlier hosting decision | [hosting-decision.md](hosting-decision.md) |
 | Handle a support or deletion request | [support-runbook.md](support-runbook.md) |
 | Configure alerts, pause admission and respond to incidents | [operations-runbook.md](operations-runbook.md) |
 | Measure capacity and rehearse load/failure recovery | [load-acceptance.md](load-acceptance.md) |
@@ -55,12 +56,12 @@ same answer data the page renders.
   `/docs/start`; this file is the operator and contributor path.
 - [operator-first-run.md](operator-first-run.md) — provider, catalog, credit,
   reconciliation, support and policy tasks.
-- [deployment-runbook.md](deployment-runbook.md) — runtime contract, Fly
-  procedure, health checks, backup/restore, RPO/RTO and rollback.
+- [deployment-runbook.md](deployment-runbook.md) — historical SQLite/Fly
+  runbook, superseded 2026-11-02 by Vercel + PostgreSQL.
 - [troubleshooting.md](troubleshooting.md) — empty catalog, config codes, Stripe
   503, gate prerequisites, native SQLite and Fly CLI failures.
-- [hosting-decision.md](hosting-decision.md) — one persistent Node process on a
-  local volume; the Vercel/libSQL path is dormant.
+- [hosting-decision.md](hosting-decision.md) — historical hosting decision
+  record from before the PostgreSQL cutover.
 - [support-runbook.md](support-runbook.md) — support queue and manual deletion.
 - [operations-runbook.md](operations-runbook.md) — scheduled monitor, alert
   webhook and signature, incident dedup/retry, and pause/drain/provider controls.
@@ -75,8 +76,9 @@ same answer data the page renders.
   optional. Proposal only; no application code.
 - [research/aggronation-sources.md](research/aggronation-sources.md) — the
   sources recoverable from the retired aggroNATION repository, mapped to
-  Savant's RSS/YouTube kinds with live parser probes, and the separate list of
-  YouTube channels that need an old Supabase export.
+  Savant's RSS, YouTube, HuggingFace, and Trendshift kinds with live parser
+  probes, the one-click preset path, optional GitHub repo enrichment, and the
+  separate list of YouTube channels that need an old Supabase export.
 - [load-acceptance.md](load-acceptance.md) — bounded load/fault gate, candidate
   envelope, measured throughput/latency/resources, reconciliation and the
   operator-approval boundary.

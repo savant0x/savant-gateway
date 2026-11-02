@@ -1,10 +1,15 @@
-# Deployment runbook (prepared, not executed)
+# Deployment runbook (historical — SQLite/Fly)
+
+> **Superseded 2026-11-02.** Production storage is now networked PostgreSQL and
+the deployment path is Vercel; see the "Deploying on Vercel" section in the
+[root README](../README.md). This file is retained as the record of the earlier
+single-process SQLite/Fly topology. Do not follow its `DB_PATH`, Fly volume or
+SQLite backup procedure on the current tree.
 
 Status: the artifact, environment inventory, health endpoints, storage and
-shutdown behavior described here are implemented and verified locally. **No
-deployment, hosting provisioning, DNS change, secret injection or release has
-been executed.** Deployment requires explicit operator approval and the operator
-inputs listed in "Missing operator inputs" below.
+shutdown behavior described here were implemented and verified locally against
+the superseded topology. **No Fly deployment, volume provisioning, DNS change,
+secret injection or release was executed.**
 
 Since FID-2026-1030-067 the host is chosen — one persistent process on a local
 volume, per [hosting-decision.md](hosting-decision.md) — and the packaging

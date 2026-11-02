@@ -1,5 +1,19 @@
 # SCOPE.md — Gateway Project Review
 
+## Current Session — 2026-11-02 (no-agent-attribution enforcement retrofit: 108)
+
+Operator request: create and converge a FID for strengthening the gateway's
+no-coding-agent-attribution enforcement using Savant-Code's design as a
+reference. This session creates the FID only; no implementation files are
+authorized or modified.
+
+- [x] **A1 — Create and converge the design FID.**
+  `dev/fids/FID-2026-1102-108-no-agent-attribution-enforcement-retrofit.md`
+  records the current gateway implementation, the verified gap against
+  Savant-Code, the native retrofit design, required tests and gates, and the
+  implementation boundary. No package, script, hook, CI, test, or application
+  source was changed.
+
 Session: ECHO v0.1.2 single-agent | 2026-10-29 | Session autonomy level: 3
 
 ## Current Session — 2026-11-01 (model identity verification: 087)

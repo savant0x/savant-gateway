@@ -65,24 +65,25 @@ operator authority. This planning change edits documentation only.
 ### Approach and child register
 
 Each link below names a plan after the document audit. A `closed` link records
-committed implementation; the rest remain converged and unimplemented. All rows
-require completion evidence; a disabled offering requires a tested safety branch
-rather than disappearing work.
+committed implementation. Every child is now archived (044 `verified` with a
+2026-11-01 closure body, the other seventeen `closed`). All rows require
+completion evidence; a disabled offering requires a tested safety branch rather
+than disappearing work.
 
 | Child | Responsibility | Depends on |
 | --- | --- | --- |
-| [044](archive/FID-2026-1030-044-offering-and-economics.md) | Offering, verified rates and upstream permission | none |
+| [044](archive/FID-2026-1030-044-offering-and-economics.md) | Offering, verified rates and upstream permission — archived 2026-11-01; four offering questions answered, policy publication and funded paid-call observation open | none |
 | [045](archive/FID-2026-1030-045-email-and-account-recovery.md) | Email ownership and account recovery - closed `871f19e`; live sender/inbox acceptance tracked | 044 |
 | [046](archive/FID-2026-1030-046-abuse-and-request-limits.md) | Abuse, key and resource bounds — closed `bb925af`; hosted ingress acceptance tracked | 044 |
 | [047](archive/FID-2026-1030-047-security-and-account-isolation.md) | Auth, isolation, boundaries and redaction — closed `2ef2d74`; ingress pinning in 057 | none |
-| [048](archive/FID-2026-1030-048-shared-provider-admission.md) | Provider-wide RPM/concurrency | 044 |
-| [049](archive/FID-2026-1030-049-quota-and-free-access.md) | Quota refresh, reset, allocation/trial safety — closed `b8a1a50`; live reset acceptance tracked | 044,045,048 |
-| [050](archive/FID-2026-1030-050-usage-and-billing-fidelity.md) | Actual usage/cost and charge rules | 044 |
-| [051](archive/FID-2026-1030-051-durable-settlement-recovery.md) | Durable accounting and crash recovery | 050 |
-| [052](archive/FID-2026-1030-052-credit-reconciliation-and-adjustments.md) | Reconciliation and corrections | 044,050,051 |
-| [053](archive/FID-2026-1030-053-payments-and-webhook-reliability.md) | Payments, webhook atomicity and fraud | 044,047,052 |
-| [054](archive/FID-2026-1030-054-subscription-launch-safety.md) | Subscription lifecycle/no-sales enforcement | 044,048,049,050,051,053 |
-| [055](archive/FID-2026-1030-055-provider-and-catalog-integrity.md) | Provider sync, catalog and benchmarks | 044,047 |
+| [048](archive/FID-2026-1030-048-shared-provider-admission.md) | Provider-wide RPM/concurrency — closed (archived) | 044 |
+| [049](archive/FID-2026-1030-049-quota-and-free-access.md) | Quota refresh, reset, allocation/trial safety — closed; closure record cites `d31d9e0`, `b8a1a50` and `057f6c2`; live reset acceptance tracked | 044,045,048 |
+| [050](archive/FID-2026-1030-050-usage-and-billing-fidelity.md) | Actual usage/cost and charge rules — closed (archived) | 044 |
+| [051](archive/FID-2026-1030-051-durable-settlement-recovery.md) | Durable accounting and crash recovery — closed (archived) | 050 |
+| [052](archive/FID-2026-1030-052-credit-reconciliation-and-adjustments.md) | Reconciliation and corrections — closed (archived) | 044,050,051 |
+| [053](archive/FID-2026-1030-053-payments-and-webhook-reliability.md) | Payments, webhook atomicity and fraud — closed (archived) | 044,047,052 |
+| [054](archive/FID-2026-1030-054-subscription-launch-safety.md) | Subscription lifecycle/no-sales enforcement — closed (archived) | 044,048,049,050,051,053 |
+| [055](archive/FID-2026-1030-055-provider-and-catalog-integrity.md) | Provider sync, catalog and benchmarks — closed (archived) | 044,047 |
 | [056](archive/FID-2026-1030-056-customer-experience-and-api-docs.md) | Honest accessible UI and real client docs — closed `1f6fb2f`; 132-page matrix verified, real payment tracked | 044,045,046,047,049,050,052,053,054,055,061 |
 | [057](archive/FID-2026-1030-057-production-deployment-readiness.md) | Secure persistent production runtime — closed `b9764fe`; hosted ingress/SIGTERM tracked | 044,047,048 |
 | [058](archive/FID-2026-1030-058-database-backup-and-restore.md) | Migration, backup and restore — closed `2dc005e`; live RPO/RTO and real-volume restore tracked | 051,057 |
@@ -161,18 +162,23 @@ observed; all twenty slots are allocated, so new findings extend the owning chil
 or follow committed closure before another FID is allocated. Final passes are
 recorded in `dev/audits/2026-10-30-launch-fid-perfection-loop.md`.
 
-Converged launch plan; no child implementation or release is completed. Master closure
-requires every child outcome and the final launch decision/evidence. Children
+Converged launch plan; every child is archived with committed implementation,
+but no real acceptance or release is completed. Master closure requires every
+child outcome and the final launch decision/evidence. Children
 with archived implementation must retain links to separate real acceptance
 receipts where observation is still required. A closed code FID is not launch approval.
 FID-060's local load/fault implementation is closed against `8c10a07`; the
 operator-approved envelope, real provider budget, Fly volume/ENOSPC and hosted
 proxy receipt remain `FID-2026-1030-060-LIVE`.
 
-**Cutover review 2026-11-01.** FID-085/086 are closed: the application runs on
-one PostgreSQL handle, `npm run verify` is green (749 tests, HTTP 750 + trial,
-recovery 12/12) and the storage contract gate is green. That removes the storage
-blocker from launch, but it does not approve launch. The remaining blockers are
+**Cutover review 2026-11-01.** FID-085/086 are archived with 2026-11-01 closure
+bodies; their `Status:` field remains `verified`, which FID-086 records as the
+intended state for a verified implementation. The application runs on
+one PostgreSQL handle, the storage contract gate is green (`npm run
+storage:check`), and the recorded 2026-11-01 verify receipt is 749 tests (748
+pass, 1 skipped), HTTP 750 + trial and recovery 12/12. That receipt assumed the default
+`PAID_KEY_RPM`; see the 2026-11-02 correction below. The cutover removes the
+storage blocker from launch, but it does not approve launch. The remaining blockers are
 owned as follows: FID-044's four offering questions are answered (free share on
 `allow_free` only; $50 reserve / $50 alert / $25 hard stop; no-refund text
 approved for `v1.2`; rate card and 2.5× markup confirmed), leaving only policy
@@ -180,14 +186,45 @@ publication and a funded paid-call observation; FID-062 has no real hosted
 payment/webhook/funded-inference, restore/rollback, delivered-alert or 24h/7d
 observation receipt, and the FID-060 load targets are accepted but not
 re-measured against PostgreSQL; FID-068 remains blocked on chain/token
-confirmation, an xpub, an RPC endpoint and a screening ruling, and is deferred
-behind the NOWPayments lane. The accepted launch envelope is $25/day paid
+confirmation, an xpub, an RPC endpoint and a screening ruling; the operator
+selected the NOWPayments hosted lane for launch in the 2026-11-01 decision form
+(§1.5), so the direct lane is not a launch path. The accepted launch envelope is $25/day paid
 upstream spend, 8 concurrent customers and a 25-customer cohort; the provider's
 recommended 30-day 200 RPM subscription ($100 list / $80 welcome) is 3.33 rps,
 so the 20 rps target is a gateway-capability target only and is not available as
 launch capacity; the $15 / 30 RPM Boost is the fallback. `v1.2`
 terms/privacy/refunds must be published before NOWPayments can be served. The operator recorded **GO for the internal acceptance run and
 NO-GO for public launch** in the launch decision form.
+
+**Status correction 2026-11-02.** Ground-truth audit at `2a28552`:
+- The child register above was stale: 044 and 048–055 were already archived
+  implementations, not unimplemented plans. The rows now say so.
+- `npm run verify` was re-run. At the time of the gate repair the unit suite ran
+  750 (749 pass, 1 skipped) with the USDC spike regression test; after the
+  `lib/crypto` extraction it runs 766 (765 pass, 1 skipped), including 16
+  direct mechanism tests. The recovery drill reproduces 12/12. The HTTP suite
+  failed the paid-account-limit check (`expected 429, got 402`) because
+  `next start` loaded a non-default `PAID_KEY_RPM` from `.env.local`;
+  `PAID_KEY_RPM=60 npm run test:http` passed. `scripts/http-suite.mjs` now pins
+  `PAID_KEY_RPM=60`, and a full `npm run verify` rerun on 2026-11-02 exits 0
+  without a shell override. One later run hit the same timing-sensitive check
+  once; FID-062 records the detail. The receipt is against the working tree at
+  `2a28552` plus the uncommitted dependency, gate and `lib/crypto` changes; no
+  commit was created in this pass. This repairs the gate; it does not change the
+  launch decision.
+- FID-068's step-0 spike did not reproduce because its three dependencies were
+  undeclared. They are declared now, the spike passes 6/6, and
+  `tests/usdc-receive-spike.test.mjs` keeps both the declaration and the six
+  checks under `npm test`. The pure helpers moved into `lib/crypto/derive.ts`
+  and `lib/crypto/transfer.ts` with `tests/crypto-receive.test.mjs` (16 direct
+  cases), the three packages moved to runtime dependencies, and FID-068 step 4
+  is now `partial`; the receipt is in FID-068.
+- A 2026-11-02 FID-062 item 2 prerequisite check found the serving upstream
+  wallet at `$0` on the free 15 RPM plan; no paid call was dispatched. The
+  public origin, hosted database and alert destination are also unset, and the
+  load runner is still SQLite-only. No acceptance step could run; the detail is
+  in FID-062.
+Launch remains no-go; no acceptance or release obligation is discharged.
 
 ## Lessons Learned
 

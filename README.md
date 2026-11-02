@@ -2,32 +2,32 @@
 <!-- markdownlint-disable MD033 -->
 <div align="center">
 
-<img src="public/images/banner.png" alt="Savant Gateway — one OpenAI-compatible API, with the repository structure, current stack and launch status" width="850" />
+<img src="public/images/banner.png" alt="Savant Gateway — an OpenAI-compatible inference gateway with a free AI content surface" width="850" />
 
-**An independent inference gateway that puts a priced, accountable product layer
-in front of one or more upstream providers.**
+**An independent inference gateway with a priced, accountable product layer,
+plus Signal: a free AI content surface that links every story to the models it
+names.**
 
 One OpenAI-compatible endpoint over OpenAI Chat Completions and Anthropic
-Messages, prepaid credit with a real ledger, account-owned keys, and an operator
-console that never confuses upstream cost with revenue.
+Messages, prepaid credit and subscriptions, account-owned keys, an operator
+console that keeps cost and revenue separate, and a public content reader built
+around the same catalog.
 
-[![Next.js](https://img.shields.io/badge/Next.js-16.4.3-%23000000?style=flat-square&logo=nextdotjs&logoColor=%2300fbff)](https://nextjs.org/)[![React](https://img.shields.io/badge/React-19.3.0-%23000000?style=flat-square&logo=react&logoColor=%2300fbff)](https://react.dev/)[![HeroUI](https://img.shields.io/badge/HeroUI-3.2.7-%23000000?style=flat-square&logo=github&logoColor=%2300fbff)](https://www.heroui.com/)[![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-%23000000?style=flat-square&logo=typescript&logoColor=%2300fbff)](https://www.typescriptlang.org/)[![SQLite](https://img.shields.io/badge/SQLite-better--sqlite3_13-%23000000?style=flat-square&logo=sqlite&logoColor=%2300fbff)](https://github.com/WiseLibs/better-sqlite3)[![ECHO](https://img.shields.io/badge/ECHO-v0.1.2_single--agent-%23000000?style=flat-square&logo=github&logoColor=%2300fbff)](dev/echo-v0.1.2-single-agent.md)[![License](https://img.shields.io/badge/License-Apache_2.0-%23000000?style=flat-square&logo=apache&logoColor=%2300fbff)](LICENSE)[![Status](https://img.shields.io/badge/Status-pre--launch-%2300fbff?style=flat-square&logo=github&logoColor=%2300fbff)](docs/project-status.md)
+[![Next.js](https://img.shields.io/badge/Next.js-16.4.3-%23000000?style=flat-square&logo=nextdotjs&logoColor=%2300fbff)](https://nextjs.org/)[![React](https://img.shields.io/badge/React-19.3.0-%23000000?style=flat-square&logo=react&logoColor=%2300fbff)](https://react.dev/)[![HeroUI](https://img.shields.io/badge/HeroUI-3.2.7-%23000000?style=flat-square&logo=github&logoColor=%2300fbff)](https://www.heroui.com/)[![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-%23000000?style=flat-square&logo=typescript&logoColor=%2300fbff)](https://www.typescriptlang.org/)[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-pg_8-%23000000?style=flat-square&logo=postgresql&logoColor=%2300fbff)](https://www.postgresql.org/)[![ECHO](https://img.shields.io/badge/ECHO-v0.1.2_single--agent-%23000000?style=flat-square&logo=github&logoColor=%2300fbff)](dev/echo-v0.1.2-single-agent.md)[![License](https://img.shields.io/badge/License-Apache_2.0-%23000000?style=flat-square&logo=apache&logoColor=%2300fbff)](LICENSE)[![Status](https://img.shields.io/badge/Status-pre--launch-%2300fbff?style=flat-square&logo=github&logoColor=%2300fbff)](docs/project-status.md)
 
 </div>
 
-> **Pre-launch software, published in the open.** This repository is step 1 of a
-> multi-step build. Nothing is deployed, no domain is attached, and no plan is
-> sold. Subscriptions are implemented behind an enforced no-sales state, the
-> selected host is one persistent process on a local SQLite volume (see
-> [docs/hosting-decision.md](docs/hosting-decision.md)), and the customer policies
-> are published but not counsel-reviewed. Every claim below describes code in
-> this tree; where something is unverified it is named as a limitation rather
-> than a capability. [docs/launch-plan.md](docs/launch-plan.md) holds the gates
-> that stand between here and service.
+> **Pre-launch software, published in the open.** The gateway, billing ledger,
+> customer accounts, subscriptions, operator console, model identity checks and
+> Signal content surface are implemented in this tree. No live card payment,
+> funded paid inference, legal review or final offering is claimed. Every claim
+> below describes code that exists; limitations are named rather than hidden.
+> [docs/project-status.md](docs/project-status.md) holds the current evidence
+> boundaries.
 
 ---
 
-## Get Started in 30 Seconds
+## Get Started
 
 ```bash
 git clone https://github.com/savant0x/savant-gateway.git
@@ -36,8 +36,17 @@ npm install
 cp .env.example .env.local
 ```
 
-Set three values in `.env.local` — an upstream key, an admin password of 12+
-characters, and a 32+ character session secret:
+For local development, leave `DATABASE_URL` blank. The app starts an embedded
+PostgreSQL engine (PGlite) in `data/pg`; this is a real PostgreSQL dialect, not
+SQLite. Set an upstream key and the two operator values:
+
+```bash
+PROVIDER_KEY=...
+ADMIN_PASSWORD=...          # 12+ characters
+ADMIN_SESSION_SECRET=...    # 32+ characters
+```
+
+Generate the session secret:
 
 ```bash
 node -e "console.log(require('node:crypto').randomBytes(24).toString('base64url'))"
@@ -47,102 +56,42 @@ node -e "console.log(require('node:crypto').randomBytes(24).toString('base64url'
 npm run dev
 ```
 
-The full first-run path, including provider sync and the first request, is in
-[docs/getting-started.md](docs/getting-started.md).
+Open `http://localhost:3000`, sign in at `/admin/login`, go to **Admin →
+Providers**, and press **Sync**. Until a sync completes, `/models` is empty and
+`/v1/models` returns nothing — an empty catalog is the honest state, not a bug.
+
+The full first-run path is in [docs/getting-started.md](docs/getting-started.md).
 
 ### Environment
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `PROVIDER_KEY` | Yes | Default upstream credential. Server-only. |
+| `DATABASE_URL` | Production | Networked `postgres://` or `postgresql://` URL. The server refuses to start in production without it. Use the provider's pooled URL on Vercel. |
+| `PG_LOCAL_PATH` | No | Local PGlite directory when `DATABASE_URL` is blank. Defaults to `data/pg`. |
+| `NEXT_PUBLIC_SITE_URL` | Production | Canonical origin for metadata, sitemap/robots, cookies and Stripe redirects. Must be `https://` and non-loopback. |
+| `ADMIN_PASSWORD` | Production | 12+ characters; enables `/admin`. |
+| `ADMIN_SESSION_SECRET` | Production | 32+ characters; signs the admin cookie. |
+| `PROVIDER_KEY` | Gateway | Default upstream credential. Server-only. |
 | `COMMANDCODE_API_KEY`, `APIXOAI_API_KEY` | Optional | Further upstreams. Provider rows store the variable *name*, never the value. |
-| `ADMIN_PASSWORD` | For `/admin` | 12+ characters, compared in constant time. |
-| `ADMIN_SESSION_SECRET` | For `/admin` | 32+ characters, signs the admin cookie. |
-| `NEXT_PUBLIC_SITE_URL` | Production | Canonical origin for metadata, sitemap/robots and Stripe redirects; also passed as a Docker build argument for static social images. |
-| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | For billing | Absent, checkout returns `503`; nothing else invents credit. |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | For cards | Absent, card checkout returns `503`; nothing invents credit. |
 | `STRIPE_EXPECTED_LIVEMODE` | Recommended | A delivery whose livemode disagrees is quarantined without credit. |
-| `PLAN_SALES_ENABLED` | Launch switch | `false` by default: plans stay out of the catalog, checkouts are refused, publishing for purchase is blocked. |
-| `TRIAL_ENABLED` | Launch switch | `false` by default; a trial grant needs a token budget and explicit model pairs. |
-| `ARTIFICIAL_ANALYSIS_API_KEY` | Optional | Adds the benchmark column; blank hides it and changes nothing else. |
-| `DB_PATH` | No | SQLite file, defaults to `./data/gateway.db`. |
+| `NOWPAYMENTS_TOPUPS_ENABLED` | For crypto | Default `false`. Credentials alone never enable the lane. |
+| `NOWPAYMENTS_API_KEY`, `NOWPAYMENTS_IPN_SECRET` | For crypto | NOWPayments credentials. `NOWPAYMENTS_SANDBOX=true` targets the sandbox. |
+| `PLAN_SALES_ENABLED` | Launch switch | `false` by default: plans stay out of the catalog and checkouts are refused. |
+| `TRIAL_ENABLED` | Launch switch | `false` by default; a trial grant also needs a budget and explicit model pairs. |
+| `CONTENT_ENABLED` | No | Signal is on unless this is `false`. |
+| `CONTENT_INGEST_ENABLED` | Scheduled ingestion | `false` by default. Gates the cron route, not an explicit admin fetch. |
+| `CONTENT_CRON_SECRET` | Cron | Bearer/`x-content-secret` value for `/api/cron/content`. |
+| `YOUTUBE_API_KEY` | Optional | Adds likes and YouTube comment counts. Channel ids and `@handles` work without it. |
+| `GITHUB_TOKEN` | Optional | Raises the public GitHub rate limit for repository facts and READMEs. |
+| `GATEWAY_DISPOSABLE_START` | Tests only | Never set on a real deployment. `/api/ready` reports `mode: "disposable"` when set. |
 
-[`.env.example`](.env.example) documents the free-pool allocation, RPM and
-concurrency ceilings, provider floor, and staleness windows.
-
-### Deploying
-
-This gateway is one process writing one SQLite file, and it is meant to be
-hosted that way: WAL mode requires every reader and writer on the same host and
-filesystem. `Dockerfile`, `.dockerignore` and `fly.toml` package that as a single
-machine with a persistent volume, a readiness check on `/api/ready`, and no
-autoscaling. [docs/deployment-runbook.md](docs/deployment-runbook.md) is the
-procedure and the environment inventory; [docs/hosting-decision.md](docs/hosting-decision.md)
-records why a serverless or multi-replica host is rejected. Nothing here is
-deployed yet, and the image has not been built.
-
-Open `http://localhost:3000`, then sync a provider so the catalog is populated:
-sign in at `/admin/login`, go to **Admin → Providers**, and press **Sync**. Until
-a sync completes, `/models` is empty and `/v1/models` returns nothing — an empty
-catalog is the honest state, not a bug.
-
-Then mint a key on `/account`, or in development use the operator console at
-`/dashboard`, and call the gateway:
-
-```bash
-curl http://localhost:3000/v1/models -H "Authorization: Bearer sk-..."
-
-curl http://localhost:3000/v1/chat/completions \
-  -H "Authorization: Bearer sk-..." \
-  -H "Content-Type: application/json" \
-  -d '{"model":"<id from /v1/models>","messages":[{"role":"user","content":"ping"}]}'
-```
-
-`/signup` creates a customer account, which requires accepting the current
-policies; `/account` is where a customer sees balance, plan, keys, usage and
-ledger. In a production build `/dashboard` redirects to `/admin/login`; the
-development loopback bypass is disabled. See [SECURITY.md](SECURITY.md).
+[`.env.example`](.env.example) is the complete inventory, including free-pool,
+rate, operations, email, promo, benchmark and backup settings.
 
 ---
 
-## Overview
-
-Savant Gateway is a Next.js application, not a proxy script. It owns the
-commercial surface — catalog, prices, credit, keys, ledger, entitlements,
-support — and speaks whatever protocol each registered upstream actually
-implements.
-
-```
-caller ──► account key ──► model ──► billing path ──► provider ──► settlement
-```
-
-The design constraint throughout: **three numbers that must never be confused.**
-Upstream cost, our sell price, and charged revenue live in separate columns, so
-margin, breakage and refunds stay auditable instead of being inferred from one
-"revenue" field.
-
-The whole project ships under [ECHO Protocol v0.1.2](dev/echo-v0.1.2-single-agent.md)
-— FID-bound work, a Perfection Loop before code, and a verification receipt
-recorded in [CHANGELOG.md](CHANGELOG.md) that separates what was run from what
-was not.
-
----
-
-## Key Technologies
-
-| Layer | Tech | Version |
-| --- | --- | --- |
-| Framework | Next.js App Router, route handlers | 16.4.3 |
-| UI | React + HeroUI, Tailwind CSS 4 | 19.3.0, 3.2.7, 4.3.3 |
-| Language | TypeScript (`strict`) | 5.9.3 |
-| Runtime | Node | `>=22.18.0` |
-| Storage | SQLite via `better-sqlite3`, one persistent volume | 13.0.3 |
-| Payments | Stripe Checkout, Subscriptions, Billing Portal | SDK 23.0.1 |
-| Icons | Font Awesome Free | ^6.7.2 |
-| Package manager | npm | lockfile committed |
-
----
-
-## Features
+## What It Does
 
 ### Gateway
 
@@ -161,68 +110,113 @@ was not.
   never empty another's catalog.
 - **Truthful model states.** A model that vanishes upstream becomes
   `in_catalog = 0` rather than a deletion, keeping its prices, usage and history.
+- **Provider-scoped pricing.** The operator sets sell prices in USD per 1M
+  tokens with markup; free groups stay zero-priced and manual group assignments
+  survive a sync.
 
 ### Billing and credit
 
-- **Integer micro-dollars everywhere.** `1_000_000 = $1.00`; prices are edited in
-  USD per 1M tokens, with cost, sell price, margin and blended profit derived,
-  never stored redundantly.
+- **Integer micro-dollars everywhere.** `1_000_000 = $1.00`; cost, sell price,
+  margin and blended profit are derived, never stored redundantly.
 - **Hold, then settle.** A paid call reserves an estimated hold; one transaction
   on completion, failure or stream close releases the hold, debits the actual
-  charge, and writes revenue plus upstream cost. A hold is admission control, not
-  a ceiling — an over-run debits and can leave a balance negative, and the next
-  call is refused with `402`.
+  charge, and writes revenue plus upstream cost. An over-run can leave a balance
+  negative and the next call is refused with `402`.
 - **Durable settlement.** Interrupted settlement is recoverable from the open
-  hold rather than lost, and reconciliation surfaces drift to an operator instead
-  of silently correcting balances.
-- **Top-ups credit only from a signed webhook.** `success_url` grants nothing;
-  `topups.provider_ref` is unique; a replayed event is a `200` no-op. With Stripe
-  unconfigured, checkout returns `503` and there is no synthetic credit path.
+  hold rather than lost; reconciliation surfaces drift to an operator.
+- **Webhook-confirmed top-ups.** Stripe card top-ups credit only from a signed
+  webhook; `success_url` grants nothing. NOWPayments crypto top-ups are isolated
+  behind their own credentials and switch.
 - **Idempotent billing events.** Subscriptions and invoices are claimed by Stripe
-  event id, so a retried invoice activates once and never re-opens a period, and
-  a delivery whose livemode disagrees with the declared environment is
+  event id, so a retried invoice activates once and a livemode mismatch is
   quarantined instead of credited.
+- **Promo credit behind a switch.** Redeeming a code grants prepaid dollar
+  credit once through the same ledger; the weighted-token free pool is separate.
+- **Free, subscription and paid tiers** driven by a model group's billing mode,
+  including a per-user daily free allowance, provider floor admission, and
+  explicit `block`-or-`credit` overage policy.
 
-### Accounts and access
+### Accounts, plans and operator controls
 
 - **Customer accounts** with scrypt password hashes and server-side sessions:
   only a SHA-256 hash of the opaque session token is stored, and sign-out revokes
   it server-side.
 - **Account-owned API keys**, stored only as SHA-256 hashes, listed masked, and
-  revocable; every account route is scoped by session user, so one customer
-  cannot read or revoke another's key.
-- **Free, subscription and paid tiers** driven by a model group's billing mode,
-  including per-user daily free allowance, provider remaining-floor admission,
-  and explicit `block`-or-`credit` overage policy.
+  revocable; every account route is scoped by session user.
 - **Subscription snapshots.** Activation copies the plan's models, allowance and
   overage policy onto the subscription, so editing a plan later cannot rewrite a
   purchase that already happened.
-- **Enforced no-sales launch state.** Plan authoring, entitlement math and Stripe
-  lifecycle code all exist behind `PLAN_SALES_ENABLED`, which is off: plans stay
-  out of the public catalog, new checkouts are refused, and a plan cannot be
-  published for purchase. Existing grants, invoices and the customer portal keep
-  working, so the switch closes the storefront rather than the billing code.
+- **Operator console** for overview, customers, catalog, groups, plans,
+  subscriptions, providers, pricing, analytics, reconciliation, support,
+  operations, content and identity.
+- **Policy versions.** `/terms`, `/privacy`, `/refunds` and `/acceptable-use`
+  publish the current version; every published version remains at
+  `/legal/<version>/<slug>`, and signup records acceptance.
+- **Operations.** Durable incidents, bounded rules, a signed alert webhook with
+  retry/backoff, and pause/drain controls.
 
-### Operator surfaces
+### Signal — the content surface
 
-- Revenue, cost, margin, blended profit and token analytics over 7/30/90 days.
-- Inline pricing with markup, per-row manual override, and bulk repricing.
-- Provider registry with credential-variable names (never values), capability
-  flags, connection test and scoped sync.
-- Catalog, groups, plans, subscribers, credit grants, reconciliation, support
-  queue, and benchmark comparison.
-- **Benchmark integrity.** Published benchmark figures are parsed from named
-  sources with provenance; missing data stays absent rather than being estimated,
-  and a partial or impossible record is rejected rather than displayed.
+Signal is free AI news, papers, repositories, discussions and videos. It is not
+sold, and every item links back to its publisher. The catalog link is the
+purchase path: each story shows the models it names with live prices.
 
-### Customer experience
+- **Four source kinds.** RSS/Atom feeds, YouTube channels, HuggingFace Daily
+  Papers, and Trendshift's repository listing. Sources are operator-managed from
+  **Admin → Content**; five consecutive failures disable a source, while
+  ingestion never throws into a page render.
+- **Recoverable presets.** The six committed aggroNATION rows, four inferred
+  canonical feeds, and the two YouTube handles recovered from the retired site
+  can be added in one click. Seeding is idempotent on URL and never edits an
+  existing source.
+- **Full-text reader.** When a feed carries only a link, a metadata template or
+  a short blurb, the first detail view fetches the publisher page, extracts the
+  article region, sanitizes it, stores it, and later views do not refetch.
+  Hacker News `Article URL:` templates never become the body.
+- **Honest publisher limits.** FT and other publishers that return HTTP 403 are
+  named as blocked and keep their excerpt plus an outbound original link. The
+  gateway does not proxy around paywalls or access controls.
+- **Repository cards and READMEs.** Open Source Projects and Trendshift items
+  resolve GitHub facts from the URL, an `owner/repo` title, or a link in the feed
+  body. Stars, forks, language, license, topics, homepage and the rendered README
+  are stored in `github_json`; the README is sanitized, and relative images and
+  links resolve to GitHub. Missing facts are repaired once on the first detail
+  view.
+- **Video pages and modal.** A video thumbnail opens the YouTube player in a
+  modal, and the detail page has the player, description, views, likes, rating,
+  YouTube comment count, source facts and related reading.
+- **Community and discovery.** Public comments on each item, saved items for
+  signed-in customers, a UTC-day digest, a dated digest archive, a model
+  briefing, topic pages, search and pagination.
+- **Model linking.** Automatic links require an exact title or publisher tag
+  alias; an operator can override or dismiss them. Editing a link is permanent
+  across re-fetches.
+- **Bounded ingestion.** 15-second timeout, 2 MiB response ceiling, per-source
+  item cap and a cycle record that closes with counts or an error.
+
+### Model identity checks
+
+The identity surface is deliberately advisory, not a “genuine model” badge.
+
+- **A fixed battery** exercises protocol shape, determinism, response
+  distributions, canary leakage, exact-answer canaries, context retrieval, tool
+  conformance, stream integrity and optional logprobs.
+- **Scoped states** distinguish `consistent`, `self_consistent`, `baseline`,
+  `inconclusive`, `divergent_review`, `mismatch_confirmed`, `stale`, `unsupported`
+  and `error`. A result has a scope, a date and an expiry.
+- **Operator runs** are recorded in the admin identity console with evidence,
+  verdicts, references, cost estimates and gates. Public pages publish the
+  method and corrections; they do not claim physical weight authenticity.
+- **No blocked billing path.** Identity work reads projections and never sits in
+  admission, holds, settlement or credit.
+
+### Catalog and benchmarks
 
 - Public catalog, docs, plans and comparison pages rendered from live state.
-- Versioned policies at `/terms`, `/privacy`, `/refunds`, `/acceptable-use`, with
-  every published version permanently reachable at `/legal/<version>/<slug>`.
-- Version-keyed policy acceptance: signup refuses an account without it, existing
-  accounts are asked on `/account`, and accepting a new version preserves the old
-  record.
+- Stored Artificial Analysis benchmarks with admin sync controls and provenance.
+- Searchable, sortable, paginated catalog with sell prices and group labels.
+- Brand images and per-page social cards generated from the content they
+  describe.
 
 ---
 
@@ -231,131 +225,78 @@ was not.
 | Route | Access | Purpose |
 | --- | --- | --- |
 | `/` | Public | Landing page with live catalog counts and a request sample. |
-| `/models` | Public | Searchable, sortable, paginated catalog with sell prices. |
+| `/models`, `/models/[...id]` | Public | Searchable catalog and individual model pages. |
 | `/compare` | Public | Benchmark comparison with provenance. |
-| `/docs` | Public | API reference: auth, payload, catalog vocabulary, errors. |
-| `/docs/start` | Public | Newcomer guide: account, model choice, first request, first bill. |
-| `/docs/faq` | Public | Grouped FAQ for access, billing, errors, privacy and support. |
-| `/sitemap.xml` | Public | Canonical public URLs for crawlers. |
-| `/robots.txt` | Public | Crawl policy and sitemap pointer. |
-| `/plans` | Public | Active plans, inclusions and allowance — while sales are closed. |
-| `/terms`, `/privacy`, `/refunds`, `/acceptable-use` | Public | Current published policy versions. |
-| `/legal/<version>/<slug>` | Public | Every published policy version, permanently. |
+| `/docs`, `/docs/start`, `/docs/faq` | Public | API reference, newcomer guide and FAQ. |
+| `/plans` | Public | Active plans and inclusions while sales are closed. |
+| `/signal`, `/signal/[id]` | Public | Signal feed and reader. |
+| `/signal/digest`, `/signal/digest/[date]` | Public | Today's digest and the dated archive. |
+| `/signal/briefing` | Public | Model briefing built from recent content. |
+| `/signal/saved` | Customer | Saved items. |
+| `/signal/topics/[tag]` | Public | Topic listing. |
+| `/identity` | Public | Identity methodology, states and corrections. |
+| `/account` | Customer | Balance, plan, keys, usage, ledger, policies, support. |
+| `/signup`, `/login`, `/recover` | Public | Account creation, sign-in and recovery. |
 | `/support` | Public / customer | Support entry point and queue. |
-| `/signup`, `/login` | Public | Customer account creation and sign-in. |
-| `/account` | Customer session | Balance, plan, top-ups, keys, usage, ledger, acceptance. |
-| `/dashboard` | Operator console | Provider, catalog, local-tenant keys, tester, usage. |
-| `/admin/*` | Admin session | Overview, customers, catalog, groups, plans, subscriptions, providers, pricing, analytics, reconciliation, support. |
+| `/admin/*` | Admin | Full operator control plane, including content and identity. |
 | `/v1/*` | Consumer key | The OpenAI-compatible gateway. |
+| `/api/health`, `/api/ready` | Public probe | Liveness and truthful readiness. |
 
-45 API route handlers and 31 pages back these surfaces, plus the generated
-`sitemap.xml` and `robots.txt`. Those two routes render per request from
-`NEXT_PUBLIC_SITE_URL`, so the canonical origin is the deployed one rather than
-the build machine's. Static pages resolve their social image URLs at build time,
-so the Docker build passes the same origin as a build argument. The FAQ's FAQPage
-JSON-LD is generated from the answers it renders and carries no build-time
-absolute URL. Customer pages and the operator console are strictly separate
-namespaces, and every operator page and API sends `Cache-Control: no-store` with
-`noindex`.
-
-<details>
-<summary><strong>API surface</strong> — 45 handlers</summary>
-
-**Gateway**
-
-| Method | Path | Auth |
-| --- | --- | --- |
-| `POST` | `/v1/chat/completions` | Consumer key |
-| `GET` | `/v1/models` | Consumer key |
-
-**Customer**
-
-| Method | Path | Auth |
-| --- | --- | --- |
-| `POST` | `/api/auth/signup` | Public, same-origin |
-| `POST` | `/api/auth/login` | Public, same-origin |
-| `POST` | `/api/auth/logout` | Session |
-| `GET` | `/api/auth/me` | Session |
-| `GET` `POST` | `/api/account/keys` | Session, same-origin for mutations |
-| `DELETE` | `/api/account/keys/:id` | Session, same-origin |
-| `POST` | `/api/account/topup` | Session, same-origin |
-| `GET` `POST` | `/api/account/subscription` | Session, same-origin for mutations |
-| `POST` | `/api/account/subscription/cancel` `resume` `portal` | Session, same-origin |
-| `GET` `POST` | `/api/account/policies` | Session |
-| `GET` `POST` | `/api/account/support` | Session |
-| `GET` | `/api/account/trial` | Session |
-| `GET` | `/api/plans` | Public |
-| `POST` | `/api/webhooks/stripe` | Stripe signature |
-| `GET` | `/api/health`, `/api/ready` | Public probe |
-
-**Operator** — all require an admin session in production.
-
-| Area | Paths |
-| --- | --- |
-| Session | `/api/admin/session` |
-| Catalog | `/api/admin/models`, `/api/admin/pricing`, `/api/admin/groups` |
-| Providers | `/api/admin/providers`, `/:slug`, `/:slug/test`, `/:slug/sync`, `/sync` |
-| Plans | `/api/admin/plans` |
-| Subscriptions | `/api/admin/subscriptions` |
-| Money | `/api/admin/credit`, `/api/admin/adjustments`, `/api/admin/reconciliation`, `/api/admin/settlements`, `/api/admin/payments` |
-| Runtime | `/api/admin/gateway`, `/api/provider/runtime`, `/api/provider/sync` |
-| Integrity | `/api/admin/benchmarks`, `/api/admin/support` |
-| Console | `/api/keys`, `/api/models`, `/api/usage` (loopback in development only) |
-
-</details>
+46 page routes and 63 route handlers back these surfaces, plus generated
+`sitemap.xml`, `robots.txt`, social cards and the web manifest. The sitemap and
+robots routes read `NEXT_PUBLIC_SITE_URL` per request, so the canonical origin is
+the deployed one.
 
 ---
 
-## How it works
+## Deploying on Vercel
 
-```text
-browser / SDK
-   │  Authorization: Bearer sk-…
-   ▼
-POST /v1/chat/completions
-   │  hash key → active key + active user
-   │  resolve model → provider + protocol + active + in catalog
-   │  past-due plan? → 402 before any billing path
-   │  covered by the active plan snapshot?
-   │     yes → allowance fits → reserve subscription hold
-   │           exhausted → block (402) or credit overage (hold + markup)
-   │     no  → free pool? yes → allowance + provider floor
-   │                      no  → priced? → reserve credit hold
-   ▼
-upstream (the model's provider)
-   │  openai:    POST /chat/completions, Bearer <credential variable>
-   │  anthropic: POST /messages, x-api-key <credential variable>
-   ▼
-stream or JSON back to the caller
-   │
-   ▼
-one transaction: release hold, debit actual charge,
-write usage_events with revenue and upstream cost
-```
+Vercel can host the application because production storage is PostgreSQL, not a
+local file. The local PGlite engine is for development only; `instrumentation.ts`
+refuses a production start without a networked `DATABASE_URL`.
 
-### Catalog vocabulary
+1. **Create a PostgreSQL database.** Neon is a good fit: use its pooled
+   connection string. Any standard PostgreSQL 15+ provider works. Apply the
+   additive migrations by starting the app once with the URL set.
+2. **Add the production environment.** At minimum:
 
-Three words that must not be collapsed:
+   ```bash
+   vercel env add DATABASE_URL production
+   vercel env add NEXT_PUBLIC_SITE_URL production   # https://savant-gateway.vercel.app
+   vercel env add ADMIN_PASSWORD production
+   vercel env add ADMIN_SESSION_SECRET production
+   ```
 
-- **Provider** — an upstream account row: base URL, wire protocol, credential
-  *variable name*, static headers, capabilities. The value never enters SQLite,
-  a response, a log or the browser.
-- **Family** — the model line (GPT, Claude, DeepSeek, Gemini, GLM, Kimi, Grok…).
-- **Group** — a billing tier with a stable slug, editable label, billing mode
-  (`free`, `paid`, `subscription`) and ordered membership. Groups are operator
-  data; manual assignment survives a sync.
+   Add the provider key and any payment/content keys you use. Use the pooled
+   database URL so serverless instances do not exhaust connections.
+3. **Deploy.**
 
-### Money
+   ```bash
+   vercel --prod
+   ```
 
-```text
-auto sell price   = ceil(cost × (1 + markup))
-input margin      = (sell_in  − cost_in)  ÷ sell_in
-output margin     = (sell_out − cost_out) ÷ sell_out
-blended profit    = (sell_in + sell_out) − (cost_in + cost_out)
-```
+4. **Verify readiness.**
 
-Default markup is 30%. Rows in a free group are always zero-priced; move a row to
-a paid or subscription group and set a price to charge for it.
+   ```bash
+   curl -fsS https://<domain>/api/ready
+   ```
+
+   It must return `200` with `checks.configuration: "ok"` and
+   `checks.storage: "ok"`. A missing or invalid value fails at startup with
+   issue codes such as `db_missing`, `origin_missing` or `admin_unconfigured`.
+   `/api/health` is liveness only; `/api/ready` is the truthful probe.
+
+The build logs may show two npm warnings on Vercel: an unknown `cache-dir` env
+config and install scripts for `better-sqlite3`/`unrs-resolver`. Neither is a
+build failure. A deployment that returns 500 on every route is normally the
+startup gate rejecting a missing `DATABASE_URL`, not a compile error.
+
+`GATEWAY_DISPOSABLE_START` and `NEXT_MANUAL_SIG_HANDLE` must never be set on
+production. The first is for disposable test suites; the second disables drain.
+
+The older [deployment runbook](docs/deployment-runbook.md) describes the
+superseded single-process SQLite/Fly topology. The current storage contract is
+PostgreSQL, and the README above is the Vercel path.
 
 ---
 
@@ -363,138 +304,97 @@ a paid or subscription group and set a price to charge for it.
 
 ```bash
 npm run check             # eslint + tsc --noEmit
+npm run storage:check     # store/dialect contract
 npm run config:check      # validator; PASS (non-production) outside production
-npm run config:check:prod # operator gate; enforces the deployment inventory
+npm run config:check:prod # operator gate; enforces the production inventory
 npm test                  # node --test "tests/*.test.mjs"
 npm run quality           # 400-line file ceiling
 npm run build             # next build
-npm run test:http         # HTTP suites against a disposable database,
-                          # including a per-page social metadata audit
-npm run test:recovery     # backup, restore and reconciliation drill
+npm run test:http         # HTTP suites against a disposable database
+npm run test:recovery     # backup/restore/reconciliation drill
 
 npm run verify            # all of the above except config:check:prod
 ```
 
-`config:check` reports `PASS (non-production)` when `NODE_ENV` is not
-`production`; `config:check:prod` is the operator gate that enforces the
-production inventory. The pre-push hook runs the attribution guard plus the
-local gate set (`npm run verify`) and fails closed. CI runs the same set on
-every push and pull request, and a separate workflow rejects coding-agent
-attribution anywhere in commit history.
+The pre-push hook runs the attribution guard plus `npm run verify` and fails
+closed. CI runs the same set on every push and pull request; a separate workflow
+rejects coding-agent attribution anywhere in commit history.
 
-**Last full receipt (current tree):** `npm run verify` exit 0 — 326 unit tests
-passing, 496 HTTP checks, trial HTTP suite PASS, quality PASS (307 files), clean
-production build, recovery drill PASS. Archived receipts and their exact counts
-are in [CHANGELOG.md](CHANGELOG.md); each one names what was exercised and what
-was not.
-
-**Known unexercised paths**, recorded rather than claimed: no live Stripe card
-payment, no Stripe-delivered recurring invoice, no funded paid-upstream
-completion, and no hosted deployment. Signed webhook crediting and subscription
-activation are tested locally against disposable databases.
+The current unit suite is 824 tests (823 passing, 1 skipped) on this tree. The
+full HTTP/recovery receipt is recorded in [CHANGELOG.md](CHANGELOG.md); run
+`npm run verify` before publishing a release rather than treating an earlier
+receipt as current.
 
 ---
 
 ## Repository
 
 ```text
-app/                 pages and route handlers (31 pages, 45 APIs)
-components/          landing, catalog, account, admin, legal, ui
-lib/                 gateway, settlement, pricing, plans, providers, store/
-content/legal/       published policy text, one directory per version
-docs/                launch plan, policies, database options, runbooks
-dev/                 FIDs, audits, session summaries, protocol
-tests/               Node test-runner suites
-scripts/             quality, attribution, HTTP, config and image gates
-public/images/       every brand image, one directory (see below)
+app/                    pages and route handlers
+  signal/                public content feed, reader, digest, briefing, saved
+  identity/              public identity methodology
+  admin/(panel)/         operator console, including content and identity
+  api/                   customer, admin, content, cron, webhooks, gateway
+components/              landing, catalog, account, admin, content, identity, legal
+lib/content/             sources, feeds, reader, GitHub README, digest, store/
+lib/identity/            battery, fingerprints, runs, verdicts, public projection
+lib/storage/             PostgreSQL adapter, migrations, store modules
+lib/                     gateway, settlement, pricing, plans, providers
+content/legal/           published policy text, one directory per version
+docs/                    launch plan, policies, runbooks, research
+dev/                     FIDs, audits, session summaries, protocol
+tests/                   Node test-runner suites
+scripts/                 quality, attribution, HTTP, config, backup and import gates
+public/images/           brand images at fixed names
 ```
 
-### Brand images
-
-All artwork lives in [`public/images/`](public/images/) at fixed names, and
-[`config/images.ts`](config/images.ts) is the single list the metadata, the web
-manifest and the components read. Replacing a file at the same name needs no
-code change; only a new aspect ratio needs the size beside it updated.
-
-| File | Used for |
-| --- | --- |
-| `banner.png` | This README's hero, 1700×949. Not used by the app's UI. |
-| `og.png` | Site-wide social preview, 1200×630. Rendered from `og.svg` by `npm run images`. |
-| `favicon.ico`, `favicon-16x16.png`, `favicon-32x32.png` | Browser icons. |
-| `apple-touch-icon.png`, `icon-192.png`, `icon-512.png` | Home-screen and install icons. |
-| `logo.png`, `logo-32.png` | Brand mark in the header, auth and console screens. |
-| `bg-pattern.webp` | Page background texture. |
-
-`npm run images` rasterises the SVG sources in that directory; `sharp` comes
-with Next's image pipeline, so it adds no dependency.
-
-The catalog, API reference, newcomer guide and FAQ override that card with one
-generated from their own content by `next/og` — `/models` counts what the
-catalog currently holds, and the documentation pages state the surface they
-document. Each lives beside its page as `opengraph-image.tsx` and shares one
-layout in [`lib/social-card.tsx`](lib/social-card.tsx). A page with no card of
-its own keeps the site-wide `og.png`.
+Reference copies of other projects live under `resources/`; they are ignored and
+never imported from.
 
 ---
 
-## Governance
+## Current Limits
 
-Single-agent repository. The governing contract is
-[dev/echo-v0.1.2-single-agent.md](dev/echo-v0.1.2-single-agent.md), reached
-through [ECHO-single-agent.md](ECHO-single-agent.md). Non-trivial work starts
-with a FID in [`dev/fids/`](dev/fids/) and a Perfection Loop before code; closed
-work carries a receipt. `SCOPE.md` records every scope decision in order.
-
-Start with [docs/project-status.md](docs/project-status.md) for where the project
-actually stands, then [docs/launch-plan.md](docs/launch-plan.md) for the phases
-and gates.
-
----
-
-## Current limits
-
-- **Not deployed.** The selected topology is one Fly Machine with one persistent
-  SQLite volume; the container has not been built, no app or volume exists, and
-  the first live restore has not run. See
-  [docs/deployment-runbook.md](docs/deployment-runbook.md).
-- **Not selling.** Plans are authored and enforced but checkout is refused for
-  every plan until sales are deliberately opened. Plan pricing is undecided.
-- **Unfunded billing paths.** No real card payment, recurring invoice, or refund
-  automation has run. Refunds are manual Stripe dashboard actions; there is no
-  refund writer.
-- **No email.** Verification, password reset and notification email are not
-  implemented; support replies live in the authenticated queue.
-- **Not a registered entity.** The operator is not a separate legal entity, has
-  no registered office, and the published policies say so. No counsel review.
-- **Rate limiting is in-memory.** Signup, login, top-up and admin attempts use
-  fixed windows that reset on restart; there is no distributed limiter.
-- **No failover.** Each model has exactly one provider; a failed provider fails
+- **Pre-launch.** The Vercel project is linked, but production requires the
+  `DATABASE_URL` and operator values above. A deployment without them refuses to
+  start by design.
+- **No live payment acceptance.** No real card payment, funded paid inference,
+  recurring invoice or crypto settlement is claimed. Stripe and NOWPayments
+  paths are tested against disposable/local fixtures.
+- **No legal review.** The operator is not a separate legal entity; the published
+  policies say so.
+- **No email delivery by default.** Verification and recovery routes exist only
+  when an email transport is configured.
+- **Rate limiting is in-memory.** On serverless, each instance has its own
+  buckets; the database ledger remains authoritative for money, but admission is
+  approximate under concurrency.
+- **No provider failover.** Each model has one provider; a failed provider fails
   its own models rather than rerouting.
-- **One plan per customer.** No stacking, proration, tax calculation, or dunning
-  beyond what Stripe performs.
+- **Content is third-party and free.** Publishers control access. A blocked
+  publisher keeps its excerpt and outbound link; the gateway does not bypass a
+  paywall.
+- **One plan per customer.** No stacking, proration, tax calculation or dunning
+  beyond Stripe's own lifecycle.
 - **English only**, with US processing disclosed in the privacy policy.
 
 ---
 
 ## Documentation
 
-Customer-facing documentation is served by the app at `/docs` (API reference),
-`/docs/start` (newcomer guide) and `/docs/faq` (grouped FAQ).
-
 | Document | What it answers |
 | --- | --- |
-| [docs/README.md](docs/README.md) | Documentation index with current, historical and research labels. |
 | [docs/project-status.md](docs/project-status.md) | Verified state, evidence boundaries, launch gates. |
-| [docs/launch-plan.md](docs/launch-plan.md) | Phase-by-phase path to service, with owners and receipts. |
 | [docs/getting-started.md](docs/getting-started.md) | Local setup, first provider sync, first request. |
 | [docs/operator-first-run.md](docs/operator-first-run.md) | Operator console first-run checklist and safety rails. |
-| [docs/deployment-runbook.md](docs/deployment-runbook.md) | Deployment, backup, restore, RPO/RTO and rollback. |
-| [docs/troubleshooting.md](docs/troubleshooting.md) | Common local, config, gate and Fly failures. |
-| [docs/hosting-decision.md](docs/hosting-decision.md) | Why one persistent Fly process is the selected topology. |
-| [docs/database-options.md](docs/database-options.md) | Historical remote-database research; superseded 2026-10-30. |
-| [docs/policies/README.md](docs/policies/README.md) | Policy versions, acceptance, versioning rule, known gaps. |
-| [docs/support-runbook.md](docs/support-runbook.md) | Support queue operation and open operator decisions. |
+| [docs/deployment-runbook.md](docs/deployment-runbook.md) | Historical Fly/SQLite runbook; superseded by the Vercel/PostgreSQL path above. |
+| [docs/hosting-decision.md](docs/hosting-decision.md) | Historical hosting decision record. |
+| [docs/troubleshooting.md](docs/troubleshooting.md) | Common local, config, gate and deployment failures. |
+| [docs/research/aggronation-sources.md](docs/research/aggronation-sources.md) | Recovered content sources and their live parser probes. |
+| [docs/research/fingerprint.md](docs/research/fingerprint.md) | Model identity research and the statistical evidence boundary. |
 | [SECURITY.md](SECURITY.md) | Threat model, session and key handling, origin checks. |
+
+The app also serves customer-facing documentation at `/docs`, `/docs/start` and
+`/docs/faq`.
 
 ---
 
@@ -502,7 +402,5 @@ Customer-facing documentation is served by the app at `/docs` (API reference),
 
 Apache License 2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
 
-The license changed from MIT to Apache 2.0 to match the rest of the Savant
-project family. Apache 2.0 adds an explicit patent grant and requires that
-attribution notices travel with redistributions; the HeroUI template portions
-described in [NOTICE](NOTICE) remain under their original MIT terms.
+The HeroUI template portions described in [NOTICE](NOTICE) remain under their
+original MIT terms.

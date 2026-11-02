@@ -28,8 +28,9 @@ the Perfection Loop. The operator is the approval boundary.
 - **Next.js 16** App Router + route handlers (Turbopack)
 - **HeroUI v3** with Tailwind CSS 4
 - **Font Awesome Free** for icons
-- **SQLite** via `better-sqlite3`, one process on one persistent volume
-- **TypeScript** strict, Node `>=22.18.0`
+- **PostgreSQL** via `pg`, with PGlite for local development; one application
+  process
+- **TypeScript** strict, Node `22.x`
 - **npm** for installs and gates
 
 ## Domain Vocabulary
@@ -94,7 +95,7 @@ npm run test:http    # HTTP suites against a disposable database
 npm run test:recovery # backup/restore drill against disposable databases
 npm run test:load    # bounded load/fault measurement (explicit release gate)
 npm run test:load:accept # same run, refuses without operator approval
-npm run verify       # check + config + test + quality + build + HTTP + recovery
+npm run verify       # check + storage + config + test + quality + build + HTTP + recovery
 ```
 
 The pre-push hook runs the attribution guard, lint, typecheck, config check,
@@ -112,8 +113,9 @@ noted:
 - Function length 50, line length 100, complexity 10, params 4, comment density
   0.33, nesting 3 — review criteria.
 - Zero lint errors and zero lint warnings.
-- No duplicated lookup or formatting helpers; use `lib/store/*`,
-  `components/dashboard/*`, and `components/admin/*`.
+- No duplicated lookup or formatting helpers; use `lib/store.ts`,
+  `lib/store-facade/*`, `lib/storage/*`, `components/dashboard/*`, and
+  `components/admin/*`.
 
 ## Layout
 
@@ -123,8 +125,8 @@ app/                    landing (/), public catalog (/models), customer auth,
 app/admin/(panel)/      authenticated overview, customers, catalog, groups,
                         providers, pricing, analytics
 app/api/auth/           signup, login, logout, me
-app/api/account/        scoped keys and Stripe checkout
-app/api/webhooks/       signature-verified Stripe fulfillment
+app/api/account/        scoped keys, Stripe and NOWPayments checkout
+app/api/webhooks/       signature-verified Stripe and NOWPayments fulfillment
 app/api/admin/          session, catalog, provider registry, pricing, credit
 components/landing/     public landing sections
 components/catalog/     public full-catalog table
@@ -144,11 +146,13 @@ lib/password.ts         scrypt hashing and constant-time verification
 lib/customer-session.ts opaque session tokens and cookie options
 lib/customer-auth.ts    customer guards and cookie handling
 lib/stripe.ts           Stripe configuration and checkout client
+lib/nowpayments.ts      NOWPayments policy, invoice and IPN verification
 lib/topup-amount.ts     exact top-up amount parsing
 lib/admin-session.ts    session token signing and password verification
 lib/admin-auth.ts       server-side admin guards and cookie handling
-lib/store/              split persistence modules
-lib/db.ts               SQLite bootstrap and additive migrations
+lib/store.ts            persistence façade over the PostgreSQL handle
+lib/store-facade/       per-surface async bindings used by routes and pages
+lib/storage/            PostgreSQL handle, pool, schema, ledger and migrations
 assets/                 source logos and favicons; public copies live in public/
 tests/                  Node test-runner suites
 scripts/                quality and attribution gates

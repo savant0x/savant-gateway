@@ -27,12 +27,43 @@ export const KIND_ICONS: Record<ContentKind, string> = {
   discussion: "fa-comments",
 };
 
+export const KIND_PILL_STYLES: Record<ContentKind, string> = {
+  article: "border-cyan-300/30 bg-cyan-300/10 text-cyan-200",
+  video: "border-rose-300/30 bg-rose-300/10 text-rose-200",
+  paper: "border-violet-300/30 bg-violet-300/10 text-violet-200",
+  repo: "border-emerald-300/30 bg-emerald-300/10 text-emerald-200",
+  discussion: "border-amber-300/30 bg-amber-300/10 text-amber-200",
+};
+
+const TAG_PILL_STYLES = [
+  "border-cyan-300/30 bg-cyan-300/10 text-cyan-200",
+  "border-fuchsia-300/30 bg-fuchsia-300/10 text-fuchsia-200",
+  "border-violet-300/30 bg-violet-300/10 text-violet-200",
+  "border-amber-300/30 bg-amber-300/10 text-amber-200",
+  "border-emerald-300/30 bg-emerald-300/10 text-emerald-200",
+] as const;
+
 export function relationLabel(relation: ContentRelation): string {
   return RELATION_LABELS[relation];
 }
 
 export function kindLabel(kind: ContentKind): string {
   return KIND_LABELS[kind];
+}
+
+export function kindPillClass(kind: ContentKind): string {
+  return KIND_PILL_STYLES[kind];
+}
+
+/** Stable topic colors keep a tag's visual identity across Signal surfaces. */
+export function tagPillClass(tag: string): string {
+  let hash = 0;
+
+  for (const character of tag) {
+    hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+  }
+
+  return TAG_PILL_STYLES[hash % TAG_PILL_STYLES.length];
 }
 
 /** Stable UTC display; a feed date must not shift by the server timezone. */

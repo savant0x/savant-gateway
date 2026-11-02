@@ -5,18 +5,12 @@ import Link from "next/link";
 import { ContentMedia } from "@/components/content/content-media";
 import {
   contentDate,
+  kindPillClass,
   formatCount,
   kindLabel,
   shortExcerpt,
+  tagPillClass,
 } from "@/lib/content/format";
-
-const KIND_STYLES: Record<ContentItem["kind"], string> = {
-  article: "bg-cyan-300/10 text-cyan-200",
-  video: "bg-rose-300/10 text-rose-200",
-  paper: "bg-violet-300/10 text-violet-200",
-  repo: "bg-emerald-300/10 text-emerald-200",
-  discussion: "bg-amber-300/10 text-amber-200",
-};
 
 export function ContentCard({
   item,
@@ -27,9 +21,10 @@ export function ContentCard({
 }) {
   return (
     <article className="group flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-black/10 bg-surface transition-colors hover:border-accent/40 dark:border-white/10">
-      {!compact && (item.thumbnailUrl || item.videoId || item.github) ? (
+      {!compact ? (
         <ContentMedia
           itemId={item.id}
+          sourceLabel={item.sourceLabel}
           thumbnailUrl={item.thumbnailUrl ?? item.github?.ogImageUrl ?? null}
           title={item.title}
           videoId={item.videoId}
@@ -38,7 +33,7 @@ export function ContentCard({
       <div className="flex min-h-0 flex-1 flex-col p-4">
         <div className="flex flex-wrap items-center gap-2 text-[11px]">
           <span
-            className={`rounded-full px-2 py-0.5 font-medium ${KIND_STYLES[item.kind]}`}
+            className={`rounded-full border px-2 py-0.5 font-medium ${kindPillClass(item.kind)}`}
           >
             {kindLabel(item.kind)}
           </span>
@@ -76,10 +71,10 @@ export function ContentCard({
             {item.tags.slice(0, 3).map((tag) => (
               <Link
                 key={tag}
-                className="rounded-full border border-black/10 px-2 py-0.5 text-[10px] text-muted hover:border-accent/40 hover:text-foreground dark:border-white/10"
+                className={`rounded-full border px-2 py-0.5 text-[10px] transition-colors hover:brightness-125 ${tagPillClass(tag)}`}
                 href={`/signal/topics/${encodeURIComponent(tag)}`}
               >
-                {tag}
+                #{tag}
               </Link>
             ))}
           </div>

@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
+import fallbackImage from "@/assets/thumb.jpg";
 import { videoEmbedUrl } from "@/lib/content/format";
+
+const SIGNAL_FALLBACK_IMAGE = fallbackImage.src;
 
 /**
  * Card media (FID-2026-1102-093).
@@ -19,11 +22,13 @@ export function ContentMedia({
   title,
   videoId,
   thumbnailUrl,
+  sourceLabel,
 }: {
   itemId: string;
   title: string;
   videoId: string | null;
   thumbnailUrl: string | null;
+  sourceLabel: string;
 }) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -60,22 +65,22 @@ export function ContentMedia({
     };
   }, [close, open]);
 
+  const imageUrl = thumbnailUrl || SIGNAL_FALLBACK_IMAGE;
   const media = (
     <span
       aria-hidden
       className="relative block h-36 w-full overflow-hidden bg-neutral-900"
-      style={
-        thumbnailUrl
-          ? {
-              backgroundImage: `url(${thumbnailUrl})`,
-              backgroundPosition: "center",
-              backgroundSize: "cover",
-            }
-          : undefined
-      }
+      style={{
+        backgroundImage: `url(${imageUrl})`,
+        backgroundPosition: "center",
+        backgroundSize: "cover",
+      }}
     >
-      {!thumbnailUrl ? (
-        <span className="absolute inset-0 bg-gradient-to-br from-cyan-400/20 via-neutral-900 to-rose-400/20" />
+      <span className="absolute inset-0 bg-black/10 transition-colors group-hover:bg-black/25" />
+      {sourceLabel ? (
+        <span className="absolute left-2.5 top-2.5 z-10 max-w-[75%] truncate rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-white/90 backdrop-blur-sm">
+          {sourceLabel}
+        </span>
       ) : null}
       {videoId ? (
         <span className="absolute inset-0 flex items-center justify-center bg-black/20 transition-colors group-hover:bg-black/35">

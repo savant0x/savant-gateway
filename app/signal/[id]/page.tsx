@@ -13,7 +13,13 @@ import { SaveButton } from "@/components/content/save-button";
 import { ShareButton } from "@/components/content/share-button";
 import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
-import { contentDate, kindLabel, videoEmbedUrl } from "@/lib/content/format";
+import {
+  contentDate,
+  kindPillClass,
+  kindLabel,
+  tagPillClass,
+  videoEmbedUrl,
+} from "@/lib/content/format";
 import { contentEnabled } from "@/lib/content/policy";
 import { ensureArticleBody } from "@/lib/content/reader";
 import { ensureGithubRepo } from "@/lib/content/repo-reader";
@@ -120,7 +126,9 @@ export default async function SignalDetailPage({ params }: PageProps) {
             <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted">
-                  <span className="rounded-full bg-cyan-300/10 px-2 py-0.5 text-cyan-200">
+                  <span
+                    className={`rounded-full border px-2 py-0.5 ${kindPillClass(item.kind)}`}
+                  >
                     {kindLabel(item.kind)}
                   </span>
                   <span>{item.sourceLabel}</span>
@@ -152,10 +160,10 @@ export default async function SignalDetailPage({ params }: PageProps) {
                 {item.tags.map((tag) => (
                   <Link
                     key={tag}
-                    className="rounded-full border border-black/10 px-2 py-0.5 text-[11px] text-muted hover:border-accent/40 hover:text-foreground dark:border-white/10"
+                    className={`rounded-full border px-2 py-0.5 text-[11px] transition-colors hover:brightness-125 ${tagPillClass(tag)}`}
                     href={`/signal/topics/${encodeURIComponent(tag)}`}
                   >
-                    {tag}
+                    #{tag}
                   </Link>
                 ))}
               </div>

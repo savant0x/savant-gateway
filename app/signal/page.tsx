@@ -7,9 +7,8 @@ import { ContentCard } from "@/components/content/content-card";
 import { ContentDisabled } from "@/components/content/content-disabled";
 import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
-import { kindLabel } from "@/lib/content/format";
+import { kindLabel, tagPillClass } from "@/lib/content/format";
 import { contentEnabled } from "@/lib/content/policy";
-import { tagLabel } from "@/lib/content/taxonomy";
 import { listItems, listTags } from "@/lib/content/store/items";
 import { CONTENT_KINDS } from "@/lib/content/types";
 import { getDatabase } from "@/lib/storage/runtime";
@@ -221,24 +220,20 @@ export default async function SignalPage({
                   <Link
                     key={entry.slug}
                     aria-current={active ? "page" : undefined}
-                    className={`rounded-full border px-2 py-0.5 text-[11px] ${
-                      active
-                        ? "border-cyan-300/40 bg-cyan-300/10 text-cyan-100"
-                        : "border-black/10 text-muted hover:text-foreground dark:border-white/10"
-                    }`}
+                    className={`rounded-full border px-2 py-0.5 text-[11px] transition-[filter,box-shadow] hover:brightness-125 ${tagPillClass(entry.slug)} ${active ? "ring-1 ring-cyan-200/70" : ""}`}
                     href={queryHref(kind, entry.slug, 1, search)}
                   >
-                    {entry.label} · {entry.count}
+                    #{entry.slug} · {entry.count}
                   </Link>
                 );
               })}
               {tag && !tags.slice(0, 12).some((entry) => entry.slug === tag) ? (
                 <Link
                   aria-current="page"
-                  className="rounded-full border border-cyan-300/40 bg-cyan-300/10 px-2 py-0.5 text-[11px] text-cyan-100"
+                  className={`rounded-full border px-2 py-0.5 text-[11px] ring-1 ring-cyan-200/70 ${tagPillClass(tag)}`}
                   href={queryHref(kind, tag, 1, search)}
                 >
-                  {tagLabel(tag)}
+                  #{tag}
                 </Link>
               ) : null}
               {tag ? (

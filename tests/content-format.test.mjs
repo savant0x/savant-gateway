@@ -3,11 +3,13 @@ import test from "node:test";
 
 import {
   contentDate,
+  kindPillClass,
   formatCount,
   kindLabel,
   purchaseCta,
   relationLabel,
   shortExcerpt,
+  tagPillClass,
   videoEmbedUrl,
 } from "../lib/content/format.ts";
 
@@ -61,4 +63,10 @@ test("labels and excerpts stay presentation-only", () => {
   assert.equal(kindLabel("repo"), "Repository");
   assert.equal(shortExcerpt("  a   b  ", 20), "a b");
   assert.equal(shortExcerpt("abcdefghij", 5), "abcd…");
+});
+
+test("Signal kind and topic pills use stable visual classes", () => {
+  assert.match(kindPillClass("discussion"), /amber-300/);
+  assert.equal(tagPillClass("ai-agents"), tagPillClass("ai-agents"));
+  assert.match(tagPillClass("ai-agents"), /border-/);
 });

@@ -17,6 +17,7 @@ type CoverageRow = {
   kind: CoverageItem["kind"];
   title: string;
   url: string;
+  external_url: string | null;
   excerpt: string;
   body_html: string | null;
   author: string | null;
@@ -52,6 +53,7 @@ function coverageRowToItem(row: CoverageRow): CoverageItem {
     kind: row.kind,
     title: row.title,
     url: row.url,
+    externalUrl: row.external_url,
     excerpt: row.excerpt,
     bodyHtml: row.body_html,
     author: row.author,
@@ -195,7 +197,8 @@ export async function listContentForModel(
   const rows = await db
     .prepare(
       `SELECT i.id, i.source_id, s.label AS source_label, i.kind, i.title,
-              i.url, i.excerpt, i.body_html, i.author, i.published_at,
+              i.url, i.external_url, i.excerpt, i.body_html, i.author,
+              i.published_at,
               i.fetched_at, i.thumbnail_url, i.video_id, i.external_id,
               i.view_count, i.like_count, i.youtube_comment_count, i.rating,
               i.github_json,

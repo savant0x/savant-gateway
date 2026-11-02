@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { ContentCard } from "@/components/content/content-card";
 import { contentDate, formatCount } from "@/lib/content/format";
+import { isHackerNewsDiscussionUrl } from "@/lib/content/hackernews";
 
 /**
  * The watch-page details column (FID-2026-1102-092).
@@ -21,6 +22,15 @@ export function ContentDetailAside({
   const metrics = item.metrics;
   const isVideo = item.kind === "video";
   const isRepo = item.kind === "repo";
+  const discussionUrl = isHackerNewsDiscussionUrl(item.url) ? item.url : null;
+  const publisherUrl =
+    item.externalUrl && item.externalUrl !== item.url ? item.externalUrl : null;
+  const primaryUrl = publisherUrl ?? item.url;
+  const primaryLabel = isVideo
+    ? "Watch on YouTube"
+    : publisherUrl
+      ? "Read the publisher"
+      : "Read the original";
   const facts: Array<{ label: string; value: string }> = [
     { label: "Source", value: item.sourceLabel },
   ];
@@ -100,14 +110,26 @@ export function ContentDetailAside({
           ))}
         </dl>
 
-        <a
-          className="mt-3 inline-block text-xs text-accent underline-offset-4 hover:underline"
-          href={item.url}
-          rel="noreferrer"
-          target="_blank"
-        >
-          {isVideo ? "Watch on YouTube" : "Read the original"} ↗
-        </a>
+        {discussionUrl ? (
+          <a
+            className="mt-3 block text-xs text-accent underline-offset-4 hover:underline"
+            href={discussionUrl}
+            rel="noreferrer"
+            target="_blank"
+          >
+            Discuss on Hacker News ↗
+          </a>
+        ) : null}
+        {discussionUrl && !publisherUrl ? null : (
+          <a
+            className="mt-3 block text-xs text-accent underline-offset-4 hover:underline"
+            href={primaryUrl}
+            rel="noreferrer"
+            target="_blank"
+          >
+            {primaryLabel} ↗
+          </a>
+        )}
         <p className="mt-2 text-[11px] leading-5 text-muted">
           This is free third-party content. Savant Gateway does not sell it and
           is not responsible for its claims.
@@ -119,11 +141,13 @@ export function ContentDetailAside({
           Why this is here
         </p>
         <p className="mt-2">
-          Items are ingested from operator-selected RSS and YouTube sources.
-          Views and the star rating come from the source feed; likes and the
-          YouTube comment count come from the YouTube Data API when a key is
-          configured. A model link appears only when the title or an exact
-          publisher tag names the model.
+          Items are ingested from operator-selected RSS, YouTube, HuggingFace,
+          Trendshift, and Hacker News sources. Hacker News threads are filtered
+          locally by topic and keep their publisher link when one exists. Views
+          and the star rating come from the source feed; likes and the YouTube
+          comment count come from the YouTube Data API when a key is configured.
+          A model link appears only when the title or an exact publisher tag
+          names the model.
         </p>
         <Link
           className="mt-3 inline-block text-accent underline-offset-4 hover:underline"

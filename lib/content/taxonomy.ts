@@ -102,6 +102,51 @@ export function parseTagInput(value: string): string[] {
   return normalizeTags(value.split(/[,\n]/));
 }
 
+const MAX_FILTER_TERMS = 24;
+const MAX_FILTER_TERM_LENGTH = 60;
+
+/**
+ * Filter terms are phrases, not tags: keep their spaces so a boundary-aware
+ * matcher can look for "large language model" as one phrase. Quotes are
+ * stripped because an operator may paste a quoted list.
+ */
+export function normalizeFilterTerms(
+  values: unknown,
+  limit = MAX_FILTER_TERMS,
+): string[] {
+  const candidates =
+    typeof values === "string"
+      ? values.split(/[,\n]/)
+      : Array.isArray(values)
+        ? values
+        : [];
+  const seen = new Set<string>();
+
+  for (const value of candidates) {
+    if (typeof value !== "string") continue;
+
+    const term = value
+      .trim()
+      .replace(/^["']+|["']+$/g, "")
+      .replace(/\s+/g, " ")
+      .toLowerCase()
+      .slice(0, MAX_FILTER_TERM_LENGTH)
+      .trim();
+
+    if (!term || seen.has(term)) continue;
+
+    seen.add(term);
+
+    if (seen.size >= Math.max(1, limit)) break;
+  }
+
+  return Array.from(seen);
+}
+
+export function parseFilterTermInput(value: string): string[] {
+  return normalizeFilterTerms(value);
+}
+
 /** Source config arrives as JSON text; tolerate old or malformed rows. */
 export function parseSourceConfig(value: unknown): SourceConfig {
   if (typeof value !== "string") return { tags: [] };
@@ -113,17 +158,29 @@ export function parseSourceConfig(value: unknown): SourceConfig {
       typeof parsed.channelId === "string" && parsed.channelId.trim()
         ? parsed.channelId.trim()
         : undefined;
+    const includeTerms = normalizeFilterTerms(parsed.includeTerms);
+    const excludeTerms = normalizeFilterTerms(parsed.excludeTerms);
 
-    return channelId ? { tags, channelId } : { tags };
+    return {
+      tags,
+      ...(channelId ? { channelId } : {}),
+      ...(includeTerms.length > 0 ? { includeTerms } : {}),
+      ...(excludeTerms.length > 0 ? { excludeTerms } : {}),
+    };
   } catch {
     return { tags: [] };
   }
 }
 
 export function serializeSourceConfig(config: SourceConfig): string {
+  const includeTerms = normalizeFilterTerms(config.includeTerms);
+  const excludeTerms = normalizeFilterTerms(config.excludeTerms);
+
   return JSON.stringify({
     tags: normalizeTags(config.tags),
     ...(config.channelId ? { channelId: config.channelId } : {}),
+    ...(includeTerms.length > 0 ? { includeTerms } : {}),
+    ...(excludeTerms.length > 0 ? { excludeTerms } : {}),
   });
 }
 

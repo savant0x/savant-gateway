@@ -68,6 +68,16 @@ export const CONTENT_SOURCE_PRESETS: SourcePreset[] = [
     note: "Public JSON endpoint; no key required.",
   },
   {
+    kind: "hackernews",
+    label: "Hacker News (AI filtered)",
+    url: "https://hacker-news.firebaseio.com/v0/topstories.json",
+    config: { tags: [] },
+    enabled: true,
+    fetchIntervalMinutes: 60,
+    maxItems: 20,
+    note: "Public v0 ranked list; only AI/agent stories pass the local filter.",
+  },
+  {
     kind: "trendshift",
     label: "Trendshift",
     url: "https://trendshift.io/?sort=views",

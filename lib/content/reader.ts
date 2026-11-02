@@ -17,6 +17,7 @@ import {
   isMetadataTemplate,
   plainTextOf,
 } from "./article.ts";
+import { isHackerNewsDiscussionUrl } from "./hackernews.ts";
 import { saveItemBody } from "./store/items.ts";
 
 export const ARTICLE_FLOOR = 200;
@@ -41,6 +42,21 @@ export function bodyNeedsFetch(item: ContentItem): boolean {
   return (
     text.length === 0 || isMetadataTemplate(text) || text.length < ARTICLE_FLOOR
   );
+}
+
+/**
+ * The page the reader may extract. A Hacker News thread is identity, not an
+ * article: only its linked publisher page is eligible. An HN story without one
+ * (Ask HN, Show HN text posts) stays on the gateway excerpt and is never
+ * scraped from the thread.
+ */
+export function readerTarget(item: ContentItem): string | null {
+  const external =
+    item.externalUrl && item.externalUrl !== item.url ? item.externalUrl : null;
+
+  if (isHackerNewsDiscussionUrl(item.url)) return external;
+
+  return item.url;
 }
 
 type Failure = { until: number; message: string };
@@ -121,6 +137,14 @@ export async function ensureArticleBody(
     };
   }
 
+  const target = readerTarget(item);
+
+  if (!target) {
+    const html = usableFeedBody(item);
+
+    return { html, source: html ? "feed" : "none", error: null };
+  }
+
   const recent = failed.get(item.id);
 
   if (recent && recent.until > Date.now()) {
@@ -131,7 +155,7 @@ export async function ensureArticleBody(
   const now = deps.now ?? (() => new Date().toISOString());
 
   try {
-    const page = await fetchPage(item.url);
+    const page = await fetchPage(target);
 
     if (!page.sufficient || !page.html.trim()) {
       const message = "The source page did not expose enough readable text.";

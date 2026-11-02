@@ -226,6 +226,8 @@ function contentHash(item: ParsedItem) {
     .update(
       JSON.stringify([
         item.title,
+        item.url,
+        item.externalUrl ?? null,
         item.excerpt,
         item.bodyHtml,
         item.author,
@@ -251,14 +253,15 @@ export async function upsertItem(
   const rows = await db
     .prepare(
       `INSERT INTO content.items
-        (id, source_id, kind, title, url, excerpt, body_html, author,
-         published_at, fetched_at, thumbnail_url, video_id, external_id,
+        (id, source_id, kind, title, url, external_url, excerpt, body_html,
+         author, published_at, fetched_at, thumbnail_url, video_id, external_id,
          view_count, like_count, youtube_comment_count, rating, github_json,
          content_hash, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT (url) DO UPDATE SET
          kind = EXCLUDED.kind,
          title = EXCLUDED.title,
+         external_url = EXCLUDED.external_url,
          excerpt = EXCLUDED.excerpt,
          body_html = COALESCE(EXCLUDED.body_html, content.items.body_html),
          author = EXCLUDED.author,
@@ -282,6 +285,7 @@ export async function upsertItem(
       item.kind,
       item.title,
       item.url,
+      item.externalUrl ?? null,
       item.excerpt,
       item.bodyHtml,
       item.author,

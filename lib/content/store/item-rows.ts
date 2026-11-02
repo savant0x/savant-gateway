@@ -11,6 +11,7 @@ export type ItemRow = {
   kind: ContentKind;
   title: string;
   url: string;
+  external_url: string | null;
   excerpt: string;
   body_html: string | null;
   author: string | null;
@@ -61,6 +62,7 @@ export function toItem(row: ItemRow): ContentItem {
     kind: row.kind,
     title: row.title,
     url: row.url,
+    externalUrl: row.external_url,
     excerpt,
     bodyHtml: row.body_html,
     author: row.author,
@@ -100,7 +102,7 @@ export function githubJson(repo: GitHubRepo | null | undefined): string | null {
 
 export const ITEM_COLUMNS = `
   i.id, i.source_id, s.label AS source_label, i.kind, i.title, i.url,
-  i.excerpt, i.body_html, i.author, i.published_at, i.fetched_at,
+  i.external_url, i.excerpt, i.body_html, i.author, i.published_at, i.fetched_at,
   i.thumbnail_url, i.video_id, i.external_id,
   i.view_count, i.like_count, i.youtube_comment_count, i.rating, i.github_json,
   COALESCE(

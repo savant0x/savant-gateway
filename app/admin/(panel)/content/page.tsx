@@ -77,11 +77,12 @@ export default async function AdminContentPage() {
             Content sources
           </h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
-            RSS, YouTube, HuggingFace Daily Papers, and Trendshift sources
-            become public Signal items. Ingestion is bounded to 15 seconds, 2
-            MiB, and the per-source item cap; five consecutive failures disable
-            a source. Model links are automatic only on an exact title or tag
-            alias, and an operator can override or dismiss them.
+            RSS, YouTube, HuggingFace Daily Papers, Trendshift, and Hacker News
+            sources become public Signal items. Ingestion is bounded to 15
+            seconds, 2 MiB, and the per-source item cap; five consecutive
+            failures disable a source. Hacker News is filtered to AI/agent
+            stories locally. Model links are automatic only on an exact title or
+            tag alias, and an operator can override or dismiss them.
           </p>
         </div>
         <Link

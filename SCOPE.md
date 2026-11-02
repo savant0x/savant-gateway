@@ -1,5 +1,36 @@
 # SCOPE.md — Gateway Project Review
 
+## Current Session — 2026-11-02 (filtered Hacker News source design: 110)
+
+Operator request: review `resources/API-master` and create and converge a FID
+for an optional Hacker News content source that stores only AI, agent, model,
+and adjacent technology stories. The design pass was followed by implementation
+in the same session. Existing working-tree edits to `package.json`,
+`package-lock.json`, and `components/navbar.tsx` are preserved and are not part
+of this work.
+
+- [x] **HN1 — Review the source and the current content pipeline.** Read the
+  complete API README and license, inspected the source registry, parser,
+  ingestion, storage, reader, and Signal surfaces, and probed the live JSON
+  endpoints. `maxitem`, `topstories`, `newstories`, `updates`, and one item
+  returned HTTP 200; the source directory contains documentation and a license,
+  not an installable runtime package.
+- [x] **HN2 — Create and converge the design FID.**
+  `dev/fids/FID-2026-1102-110-hackernews-ai-filtered-source.md` records the
+  adapter, deterministic topic filter, URL/deduplication contract, safety and
+  attribution requirements, tests, gates, and production call graph. The FID
+  remains a design record until implementation is separately authorized.
+- [x] **HN3 — Run the Perfection Loop and present the converged record.** The FID
+  includes RED, GREEN, AUDIT, ADVERSARIAL, missed-question, and final
+  convergence evidence.
+- [x] **HN4 — Implement the source and verify it.** The `hackernews` kind,
+  bounded adapter, deterministic include/exclude filter, canonical discussion
+  URL plus optional publisher URL, admin stream/filter controls, preset, reader
+  target selection, and two labelled detail links are wired. Dedicated parser,
+  filter, storage, ingestion, bound, and reader tests were added. `npm run
+  verify` exit 0: 841 tests (840 pass, 1 skipped), quality PASS (533 files),
+  build 0, 750 HTTP checks plus trial PASS, recovery PASS.
+
 ## Current Session — 2026-11-02 (no-agent-attribution enforcement retrofit: 108)
 
 Operator request: create and converge a FID for strengthening the gateway's

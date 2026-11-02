@@ -15,6 +15,7 @@ export const SOURCE_KINDS = [
   "youtube",
   "huggingface",
   "trendshift",
+  "hackernews",
 ] as const;
 
 export type SourceKind = (typeof SOURCE_KINDS)[number];
@@ -41,6 +42,10 @@ export type ContentSource = {
 export type SourceConfig = {
   tags: string[];
   channelId?: string;
+  /** Extra Hacker News include terms; the built-in AI vocabulary still applies. */
+  includeTerms?: string[];
+  /** Hacker News terms that veto a match even when an include term is present. */
+  excludeTerms?: string[];
 };
 
 /**
@@ -80,7 +85,10 @@ export type ContentItem = {
   sourceLabel: string;
   kind: ContentKind;
   title: string;
+  /** Discussion/identity URL. For Hacker News this is the item thread. */
   url: string;
+  /** Publisher URL when the source reports one separately from its identity. */
+  externalUrl: string | null;
   excerpt: string;
   bodyHtml: string | null;
   author: string | null;
@@ -149,6 +157,7 @@ export type ParsedItem = {
   kind: ContentKind;
   title: string;
   url: string;
+  externalUrl?: string | null;
   excerpt: string;
   bodyHtml: string | null;
   author: string | null;

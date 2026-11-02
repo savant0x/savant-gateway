@@ -20,7 +20,8 @@ export async function contentSchema(db: PostgresDatabase) {
     CREATE TABLE IF NOT EXISTS content.sources (
       id TEXT PRIMARY KEY,
       kind TEXT NOT NULL
-        CHECK (kind IN ('rss', 'youtube', 'huggingface', 'trendshift')),
+        CHECK (kind IN ('rss', 'youtube', 'huggingface', 'trendshift',
+                        'hackernews')),
       label TEXT NOT NULL,
       url TEXT NOT NULL,
       config_json TEXT NOT NULL DEFAULT '{}',
@@ -45,6 +46,7 @@ export async function contentSchema(db: PostgresDatabase) {
         CHECK (kind IN ('article', 'video', 'paper', 'repo', 'discussion')),
       title TEXT NOT NULL,
       url TEXT NOT NULL,
+      external_url TEXT,
       excerpt TEXT NOT NULL DEFAULT '',
       body_html TEXT,
       author TEXT,
@@ -146,7 +148,8 @@ export async function contentSchema(db: PostgresDatabase) {
       ADD COLUMN IF NOT EXISTS like_count BIGINT NOT NULL DEFAULT 0,
       ADD COLUMN IF NOT EXISTS youtube_comment_count BIGINT NOT NULL DEFAULT 0,
       ADD COLUMN IF NOT EXISTS rating DOUBLE PRECISION,
-      ADD COLUMN IF NOT EXISTS github_json TEXT;
+      ADD COLUMN IF NOT EXISTS github_json TEXT,
+      ADD COLUMN IF NOT EXISTS external_url TEXT;
 
     -- Postgres auto-named the original inline check sources_kind_check in
     -- databases created before the content schema was qualified. A migration
@@ -159,6 +162,7 @@ export async function contentSchema(db: PostgresDatabase) {
       DROP CONSTRAINT IF EXISTS content_sources_kind_check;
     ALTER TABLE IF EXISTS content.sources
       ADD CONSTRAINT content_sources_kind_check
-      CHECK (kind IN ('rss', 'youtube', 'huggingface', 'trendshift'));
+      CHECK (kind IN ('rss', 'youtube', 'huggingface', 'trendshift',
+                      'hackernews'));
   `);
 }

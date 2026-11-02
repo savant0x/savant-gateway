@@ -23,6 +23,7 @@ import {
 } from "./feeds.ts";
 import { plainTextBody } from "./feed-xml.ts";
 import { fetchGithubRepo, repoSlugForItem } from "./github.ts";
+import { fetchHackerNewsItems } from "./hackernews.ts";
 import {
   HUGGINGFACE_DAILY_PAPERS_URL,
   parseDailyPapers,
@@ -287,6 +288,10 @@ async function fetchSourceItems(
     await enrichGithub(items, deps);
 
     return items;
+  }
+
+  if (source.kind === "hackernews") {
+    return fetchHackerNewsItems(source, { fetchText, now: deps.now?.() });
   }
 
   const apiKey = deps.apiKey === undefined ? youtubeApiKey() : deps.apiKey;

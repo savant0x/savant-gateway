@@ -8,13 +8,18 @@ import type {
 
 import { randomUUID } from "node:crypto";
 
+import { normalizeHackerNewsUrl } from "../hackernews-config.ts";
 import {
   clampIntervalMinutes,
   clampMaxItems,
   FETCH_POLICY,
   validatePublicHttpUrl,
 } from "../url.ts";
-import { parseSourceConfig, serializeSourceConfig } from "../taxonomy.ts";
+import {
+  normalizeFilterTerms,
+  parseSourceConfig,
+  serializeSourceConfig,
+} from "../taxonomy.ts";
 
 type SourceRow = {
   id: string;
@@ -112,13 +117,33 @@ function cleanInput(input: SourceInput): SourceInput {
 
   if (!policy.ok) throw new Error(policy.error);
 
+  const hackerNewsUrl =
+    input.kind === "hackernews" ? normalizeHackerNewsUrl(input.url) : null;
+
+  if (input.kind === "hackernews" && !hackerNewsUrl) {
+    throw new Error("Hacker News sources must use a known v0 ranked-list URL.");
+  }
+
+  const includeTerms =
+    input.kind === "hackernews"
+      ? normalizeFilterTerms(input.config.includeTerms)
+      : [];
+  const excludeTerms =
+    input.kind === "hackernews"
+      ? normalizeFilterTerms(input.config.excludeTerms)
+      : [];
+
   return {
     kind: input.kind,
     label: input.label.trim().slice(0, 120),
-    url: policy.url.toString(),
+    url: hackerNewsUrl ?? policy.url.toString(),
     config: {
       tags: input.config.tags,
-      ...(input.config.channelId ? { channelId: input.config.channelId } : {}),
+      ...(input.config.channelId && input.kind === "youtube"
+        ? { channelId: input.config.channelId }
+        : {}),
+      ...(includeTerms.length > 0 ? { includeTerms } : {}),
+      ...(excludeTerms.length > 0 ? { excludeTerms } : {}),
     },
     enabled: input.enabled,
     fetchIntervalMinutes: clampIntervalMinutes(input.fetchIntervalMinutes),

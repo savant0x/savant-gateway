@@ -3,6 +3,25 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-02 — AI-filtered Hacker News content source
+
+- **FID-2026-1102-110 — medium — operators can register Hacker News as a
+  content source and receive only AI/agent stories from a bounded ranked-list
+  window.** The new `hackernews` kind accepts the public v0 top/new/best/Ask/Show
+  lists only; any other host, path, query, or item URL is refused before a
+  request. Stories keep the discussion URL as identity and the publisher URL as
+  separate metadata, so repeated submissions are not merged and the reader
+  never scrapes the thread. A deterministic, boundary-aware include vocabulary
+  plus operator exclusions decides admission without a model call; a healthy
+  zero-match window is a successful cycle, while a malformed root or a fully
+  failed detail window fails visibly. The admin form selects a stream and
+  exposes extra include/exclude terms, the preset adds the filtered top stream,
+  and the detail aside labels the Hacker News discussion and publisher links
+  separately. Verified: `npm run verify` exit 0 — 841 tests (840 pass, 1
+  skipped), quality PASS (533 files), build 0, 750 HTTP checks plus trial PASS,
+  recovery drill PASS; lint zero warnings and typecheck 0 separately. Not
+  verified: browser pointer/visual review and a live 40-item ingestion run.
+
 ## 2026-11-02 — PostgreSQL pooler-safe session timeouts
 
 - **FID-2026-1102-109 — high — production now connects through Neon's pooled

@@ -1,7 +1,7 @@
 import type { SourceInput } from "./store/sources.ts";
 import type { SourceKind } from "./types.ts";
 
-import { parseTagInput } from "./taxonomy.ts";
+import { parseFilterTermInput, parseTagInput } from "./taxonomy.ts";
 import { SOURCE_KINDS } from "./types.ts";
 import { clampIntervalMinutes, clampMaxItems } from "./url.ts";
 
@@ -38,6 +38,8 @@ export function parseSourceBody(
 
   const tags = parseTagInput(stringField(body, "tags"));
   const channelId = stringField(body, "channelId");
+  const includeTerms = parseFilterTermInput(stringField(body, "includeTerms"));
+  const excludeTerms = parseFilterTermInput(stringField(body, "excludeTerms"));
   const enabled = body.enabled !== false;
 
   return {
@@ -49,6 +51,8 @@ export function parseSourceBody(
       config: {
         tags,
         ...(channelId ? { channelId } : {}),
+        ...(includeTerms.length > 0 ? { includeTerms } : {}),
+        ...(excludeTerms.length > 0 ? { excludeTerms } : {}),
       },
       enabled,
       fetchIntervalMinutes: clampIntervalMinutes(body.fetchIntervalMinutes),

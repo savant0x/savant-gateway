@@ -9,7 +9,11 @@ import {
   plainTextOf,
 } from "../lib/content/article.ts";
 import { ingestSource } from "../lib/content/ingest.ts";
-import { bodyNeedsFetch, ensureArticleBody } from "../lib/content/reader.ts";
+import {
+  bodyNeedsFetch,
+  ensureArticleBody,
+  readerTarget,
+} from "../lib/content/reader.ts";
 import { createSource } from "../lib/content/store.ts";
 import { getItem, listItems } from "../lib/content/store/items.ts";
 import { createStorageDatabase } from "../lib/storage/database.ts";
@@ -53,6 +57,7 @@ function contentItem(overrides = {}) {
     kind: "article",
     title: "Test",
     url: "https://example.com/story",
+    externalUrl: null,
     excerpt: "",
     bodyHtml: null,
     author: null,
@@ -224,6 +229,61 @@ test("an unusable feed body is scraped once and persisted", async () => {
     const afterRefresh = await getItem(db, parsed.id);
 
     assert.equal(afterRefresh.bodyHtml, SCRAPED_BODY);
+  } finally {
+    await db.close();
+  }
+});
+
+test("an HN thread is identity, never the page the reader extracts", async () => {
+  const db = await createStorageDatabase({ env: {} });
+
+  try {
+    const linked = contentItem({
+      id: "itm_hn_linked",
+      kind: "discussion",
+      url: "https://news.ycombinator.com/item?id=41",
+      externalUrl: "https://example.com/publisher-story",
+      bodyHtml: "<p>Short preview.</p>",
+    });
+    const calls = [];
+
+    assert.equal(readerTarget(linked), "https://example.com/publisher-story");
+
+    const reader = await ensureArticleBody(db, linked, {
+      fetchPage: async (url) => {
+        calls.push(url);
+
+        return {
+          html: SCRAPED_BODY,
+          sufficient: true,
+          textLength: plainTextOf(SCRAPED_BODY).length,
+          sourceTitle: "Publisher",
+        };
+      },
+    });
+
+    assert.equal(reader.source, "scrape");
+    assert.deepEqual(calls, ["https://example.com/publisher-story"]);
+
+    const threadOnly = contentItem({
+      id: "itm_hn_thread",
+      kind: "discussion",
+      url: "https://news.ycombinator.com/item?id=42",
+      externalUrl: null,
+      bodyHtml: null,
+    });
+
+    assert.equal(readerTarget(threadOnly), null);
+
+    const untouched = await ensureArticleBody(db, threadOnly, {
+      fetchPage: async () => {
+        throw new Error("the thread must not be scraped");
+      },
+    });
+
+    assert.equal(untouched.source, "none");
+    assert.equal(untouched.html, null);
+    assert.equal(untouched.error, null);
   } finally {
     await db.close();
   }

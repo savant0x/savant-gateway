@@ -40,9 +40,9 @@ export function ContentSourcePresets() {
       <div>
         <p className="text-sm font-semibold">Start from the old source list</p>
         <p className="mt-1 text-xs leading-5 text-muted">
-          Adds the six committed aggroNATION rows, four inferred canonical
-          feeds, and the two YouTube handles recovered from the old local
-          volume. Existing URLs are never modified.
+          Adds the committed aggroNATION rows, the inferred canonical feeds, the
+          YouTube handles recovered from the old local volume, and the
+          AI-filtered Hacker News stream. Existing URLs are never modified.
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-2">

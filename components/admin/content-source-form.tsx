@@ -5,12 +5,22 @@ import type { SourceKind } from "@/lib/content/types";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import {
+  HACKERNEWS_STREAM_LABELS,
+  HACKERNEWS_STREAMS,
+  hackerNewsStreamUrl,
+  type HackerNewsStream,
+} from "@/lib/content/hackernews-config";
+
 type FormState = {
   kind: SourceKind;
   label: string;
   url: string;
   tags: string;
   channelId: string;
+  includeTerms: string;
+  excludeTerms: string;
+  hnStream: HackerNewsStream;
   fetchIntervalMinutes: string;
   maxItems: string;
   enabled: boolean;
@@ -22,6 +32,9 @@ const INITIAL: FormState = {
   url: "",
   tags: "",
   channelId: "",
+  includeTerms: "",
+  excludeTerms: "",
+  hnStream: "top",
   fetchIntervalMinutes: "60",
   maxItems: "20",
   enabled: true,
@@ -32,6 +45,7 @@ const KIND_URLS: Record<FormState["kind"], string> = {
   youtube: "",
   huggingface: "https://huggingface.co/api/daily_papers",
   trendshift: "https://trendshift.io/?sort=views",
+  hackernews: hackerNewsStreamUrl("top"),
 };
 
 const KIND_HINTS: Record<FormState["kind"], string> = {
@@ -39,6 +53,8 @@ const KIND_HINTS: Record<FormState["kind"], string> = {
   youtube: "YouTube channel; the channel feed is fetched server-side.",
   huggingface: "HuggingFace Daily Papers; the public JSON endpoint is fetched.",
   trendshift: "Trendshift listing; the public page is parsed for repos.",
+  hackernews:
+    "Ranked Hacker News list; a bounded window is filtered locally by AI/agent terms.",
 };
 
 const INPUT =
@@ -65,7 +81,11 @@ export function ContentSourceForm() {
       const response = await fetch("/api/admin/content/sources", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          includeTerms: form.kind === "hackernews" ? form.includeTerms : "",
+          excludeTerms: form.kind === "hackernews" ? form.excludeTerms : "",
+        }),
       });
       const body = (await response.json()) as { error?: string };
 
@@ -119,7 +139,10 @@ export function ContentSourceForm() {
               setForm((current) => ({
                 ...current,
                 kind,
-                url: KIND_URLS[kind],
+                url:
+                  kind === "hackernews"
+                    ? hackerNewsStreamUrl(current.hnStream)
+                    : KIND_URLS[kind],
                 channelId: kind === "youtube" ? current.channelId : "",
               }));
             }}
@@ -128,6 +151,7 @@ export function ContentSourceForm() {
             <option value="youtube">YouTube channel</option>
             <option value="huggingface">HuggingFace Daily Papers</option>
             <option value="trendshift">Trendshift listing</option>
+            <option value="hackernews">Hacker News (AI filtered)</option>
           </select>
         </label>
         <label className="text-xs text-muted sm:col-span-2">
@@ -150,31 +174,81 @@ export function ContentSourceForm() {
             onChange={(event) => update("tags", event.target.value)}
           />
         </label>
-        <label className="text-xs text-muted sm:col-span-2 lg:col-span-3">
-          {form.kind === "youtube"
-            ? "Channel URL or channel id"
-            : form.kind === "huggingface"
-              ? "Daily-papers API URL"
-              : form.kind === "trendshift"
-                ? "Trendshift listing URL"
-                : "Feed URL"}
-          <input
-            required
-            className={`${INPUT} mt-1`}
-            placeholder={
-              form.kind === "youtube"
-                ? "https://www.youtube.com/@channel"
-                : form.kind === "huggingface"
-                  ? "https://huggingface.co/api/daily_papers"
-                  : form.kind === "trendshift"
-                    ? "https://trendshift.io/?sort=views"
-                    : "https://example.com/feed.xml"
-            }
-            type="url"
-            value={form.url}
-            onChange={(event) => update("url", event.target.value)}
-          />
-        </label>
+        {form.kind === "hackernews" ? (
+          <label className="text-xs text-muted sm:col-span-2 lg:col-span-3">
+            Ranked stream
+            <select
+              className={`${INPUT} mt-1`}
+              value={form.hnStream}
+              onChange={(event) => {
+                const hnStream = event.target.value as HackerNewsStream;
+
+                setForm((current) => ({
+                  ...current,
+                  hnStream,
+                  url: hackerNewsStreamUrl(hnStream),
+                }));
+              }}
+            >
+              {HACKERNEWS_STREAMS.map((stream) => (
+                <option key={stream} value={stream}>
+                  {HACKERNEWS_STREAM_LABELS[stream]}
+                </option>
+              ))}
+            </select>
+            <span className="mt-1 block text-[11px] text-muted">
+              {form.url}
+            </span>
+          </label>
+        ) : (
+          <label className="text-xs text-muted sm:col-span-2 lg:col-span-3">
+            {form.kind === "youtube"
+              ? "Channel URL or channel id"
+              : form.kind === "huggingface"
+                ? "Daily-papers API URL"
+                : form.kind === "trendshift"
+                  ? "Trendshift listing URL"
+                  : "Feed URL"}
+            <input
+              required
+              className={`${INPUT} mt-1`}
+              placeholder={
+                form.kind === "youtube"
+                  ? "https://www.youtube.com/@channel"
+                  : form.kind === "huggingface"
+                    ? "https://huggingface.co/api/daily_papers"
+                    : form.kind === "trendshift"
+                      ? "https://trendshift.io/?sort=views"
+                      : "https://example.com/feed.xml"
+              }
+              type="url"
+              value={form.url}
+              onChange={(event) => update("url", event.target.value)}
+            />
+          </label>
+        )}
+        {form.kind === "hackernews" ? (
+          <>
+            <label className="text-xs text-muted sm:col-span-2">
+              Extra include terms (optional)
+              <input
+                className={`${INPUT} mt-1`}
+                placeholder="world model, voice cloning"
+                value={form.includeTerms}
+                onChange={(event) => update("includeTerms", event.target.value)}
+              />
+            </label>
+            <label className="text-xs text-muted">
+              Exclude terms (optional)
+              <input
+                className={`${INPUT} mt-1`}
+                placeholder="hiring, sale"
+                value={form.excludeTerms}
+                onChange={(event) => update("excludeTerms", event.target.value)}
+              />
+            </label>
+          </>
+        ) : null}
         {form.kind === "youtube" ? (
           <label className="text-xs text-muted">
             Channel id (optional)

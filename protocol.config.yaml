@@ -45,6 +45,7 @@ commands:
   config_check_prod: 'npm run config:check:prod'
   lint: 'npm run lint'
   quality: 'npm run quality'
+  attribution: 'npm run attribution'
   verify: 'npm run verify'
   dev: 'npm run dev'
 
@@ -112,3 +113,6 @@ attribution:
     - '.githooks/commit-msg'
     - '.githooks/pre-push'
     - '.github/workflows/attribution-guard.yml'
+    - 'scripts/attribution-guard.mjs'
+    - 'scripts/attribution-document-guard.mjs'
+    - 'tests/attribution-guard.test.mjs'

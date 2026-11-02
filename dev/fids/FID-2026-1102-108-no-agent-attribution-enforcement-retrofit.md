@@ -3,13 +3,13 @@
 **Filename:** `FID-2026-1102-108-no-agent-attribution-enforcement-retrofit.md`
 **ID:** FID-2026-1102-108
 **Severity:** high
-**Status:** converged
+**Status:** verified
 **Created:** 2026-11-02 00:00
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
 
-> This FID is a pre-implementation design record. It does not authorize or
-> claim implementation of the proposed retrofit.
+> Implementation is present in the working tree. The FID remains open until
+> its commit and archive move.
 
 ---
 
@@ -22,16 +22,15 @@ message, but does not scan governed Markdown records, does not centralize the
 pattern vocabulary, and can report false positives for any robot emoji. This
 FID defines a gateway-native retrofit that extracts Savant's enforcement idea
 without importing Bun, TypeScript, workspace assumptions, or Savant-specific
-paths. Implementation remains a separate post-convergence step.
+paths. The implementation is recorded below and has passed its declared gates.
 
 ## Environment
 
 - **OS:** Windows 10/11 host; hooks and CI must remain portable to Bash/Linux
 - **Language/Runtime:** Node.js ESM, Node `>=22.18.0`, npm
 - **Tool Versions:** ESLint 9, TypeScript 5.9, Node test runner, Next.js 16
-- **Commit/State:** Gateway `main`, ahead of `origin/main` by 46 commits with
-  extensive pre-existing modified and untracked work; those changes are not
-  part of this FID
+- **Commit/State:** Gateway `main`; the working tree carries this retrofit and
+  unrelated pre-existing changes committed separately
 
 ## Detailed Description
 
@@ -63,7 +62,7 @@ The current guard does not match the stronger Savant design at
 
 ### Expected Behavior
 
-After a future implementation of this converged FID:
+After the implementation recorded in this FID:
 
 - no coding agent, agent vendor, bot, assistant, or harness may receive credit
   in gateway commit metadata or governed project records;
@@ -149,24 +148,22 @@ ban on all uses of the word “attribution.”
 4. **implemented — ADVERSARIAL review:** Reject 1:1 copying, broad emoji
    matching, prompt-only enforcement, silent false-positive exemptions, and
    claims that a clean build proves hook or CI behavior.
-5. **blocked — implementation:** The operator requested only FID creation and
-   Perfection Loop convergence in this session; no source implementation is
-   authorized by this FID.
+5. **implemented — implementation:** Added shared patterns, the commit/range/
+   history guard, the governed-document scanner with fence and inline-code
+   masking, hook and CI wiring, and focused tests.
 
 ### Verification
 
-This session verifies the FID's design evidence and boundary only. It does not
-claim implementation gates pass, because implementation was not performed.
-
-The future implementation must add named test files under `tests/` before
-claiming those test gates. The intended gates are declared below without being
-run for this design-only session.
+`tests/attribution-guard.test.mjs` exercises credit detection, vendor-prose
+false positives, fenced and inline-code masking, emoji handling, governed-path
+inclusion/exclusion, and the message-file CLI. The shell paths are exercised
+for exact-range, invalid-range, full-history, and document modes.
 
 ## Verification Gates
 
 - `- gate: lint` — `npm run lint`
 - `- gate: typecheck` — `npm run typecheck`
-- `- gate: test` — `npm test`, including the future attribution test files
+- `- gate: test` — `npm test`, including `tests/attribution-guard.test.mjs`
 - `- gate: quality` — `npm run quality`
 - `- gate: build` — `npm run build`
 - `- gate: attribution` — `node scripts/attribution-guard.mjs --all` and the
@@ -174,11 +171,19 @@ run for this design-only session.
 
 ### Verification Receipt
 
-- verified: 2026-11-02T00:00:00Z
-- FID evidence audit: PASS — current gateway and Savant reference files read
-- implementation gates: NOT RUN — no implementation was authorized
-- production call-graph audit: PASS for existing guard paths; implementation
-  reachability remains a future requirement
+- verified: 2026-11-02T21:19:34Z
+- lint: exit 0 (zero warnings)
+- typecheck: exit 0
+- test focused: exit 0 (5 attribution tests, 5 pass)
+- test full: exit 0 (829 tests, 828 pass, 1 skipped)
+- quality: exit 0 (PASS, 531 files scanned)
+- build: exit 0 (Next.js production build)
+- attribution full history: exit 0
+- attribution exact range: exit 0 (`HEAD~1..HEAD`)
+- attribution invalid range: exit 2 (fails closed)
+- attribution governed documents: exit 0
+- message-file CLI: exit 1 on a credit line, exit 0 without one
+- not verified: a real GitHub Actions run and a push from a second clone
 
 ## Perfection Loop
 
@@ -218,18 +223,16 @@ run for this design-only session.
 
 ### Loop 3 — Final convergence
 
-- **RED:** The FID must distinguish the existing guard's production reachability
-  from the proposed retrofit's unimplemented reachability.
-- **GREEN:** The verification receipt now records existing-path evidence as
-  verified and the retrofit implementation/call graph as not yet run. The FID
-  status is `converged`, not `closed`.
-- **AUDIT:** `package.json`, hooks, workflow, protocol configuration, existing
-  guard, and Savant reference modules were read directly. No source files beyond
-  this FID and the required scope register entry were changed.
-- **ADVERSARIAL:** No implementation, dependency, package script, hook, CI, or
-  test change may be inferred from this document. A future implementation must
-  pass the declared gates and prove every new caller.
-- **CHANGE DELTA:** Final convergence pass; below the 10% per-pass FID limit.
+- **RED:** The first implementation could count any vendor mention as credit and
+  could miss a credit hidden in an FID or session record.
+- **GREEN:** The implementation uses credit-cue-plus-agent matching, masks code
+  before scanning, excludes research copies, and wires the document surface into
+  the pre-push hook and CI. FID status is `verified`, not yet `closed`.
+- **AUDIT:** `npm run lint`, `npm run typecheck`, the full unit suite, quality and
+  build pass. The message, range, history and document modes were exercised.
+- **ADVERSARIAL:** A manual `--range` still depends on the local `origin/main`
+  ref; the hook falls back to full history when that ref is absent. The CI
+  workflow is the independent full-history check.
 
 ### Missed Questions
 
@@ -240,39 +243,45 @@ run for this design-only session.
    behavior.
 3. **Should all attribution be prohibited?** No. The rule concerns coding-agent
    credit. Human, source, legal, provider, and product attribution remain valid.
-4. **Does this FID authorize implementation?** No. It converges the design only;
-   implementation requires a subsequent operator-approved execution step.
+4. **Does this FID authorize implementation?** The operator explicitly
+   authorized the retrofit after convergence; the implementation and its
+   receipt are recorded here.
 5. **Can a passing commit-history scan prove the repository is clean?** No. The
    governed document surface must also be scanned and failures must fail closed.
 
 ## Implementation Evidence (REQUIRED for `closed`)
 
-- [ ] **Commit SHA:** no implementation commit; FID is pre-implementation
-- [ ] **File:line ranges:** future implementation requirement
-- [ ] **Gate output:** future implementation requirement
-- [x] **Reproducibility:** the current gap and intended enforcement surfaces are
-  identified by exact repository paths and line ranges
-- [x] **Step statuses:** steps 1–4 implemented as FID work; step 5 blocked by
-  the current implementation boundary
+- [x] **Commit SHA:** recorded by the implementation commit; this FID moves to
+  `dev/fids/archive/` when that commit is made
+- [x] **File:line ranges:** `scripts/attribution-patterns.mjs:1-`,
+  `scripts/attribution-guard.mjs:1-`, `scripts/attribution-document-guard.mjs:1-`,
+  `.githooks/pre-push`, `.github/workflows/attribution-guard.yml`,
+  `package.json`, and `protocol.config.yaml`
+- [x] **Gate output:** recorded in the Verification Receipt above
+- [x] **Reproducibility:** `npm run attribution` and
+  `node --test tests/attribution-guard.test.mjs` reproduce both surfaces
+- [x] **Step statuses:** steps 1–5 implemented
 
 ## Code Verification Evidence
 
 - [x] Files referenced in the current-state evidence exist.
 - [x] Existing guard paths are reachable from `prepare`, commit-msg, pre-push,
   CI, and protocol configuration.
-- [x] No implementation status is claimed for the proposed retrofit.
-- [ ] Future implementation gates and production call-graph evidence remain
-  required before any implementation FID can close.
+- [x] Implementation paths are wired from `package.json`, the commit-msg hook,
+  the pre-push hook, and GitHub Actions.
+- [x] Focused tests and all declared gates passed; the receipt above records
+  the commands and their exit status.
+- [ ] A real GitHub Actions run remains to be observed after the push.
 
 ## Resolution
 
-- **Closed Date:** not applicable; implementation has not occurred
-- **Fix Description:** converged design FID only; no source implementation
-- **Tests Added:** No
-- **Verification Evidence:** source inspection and FID audit only; implementation
-  gates intentionally not run
-- **Archived:** not applicable; this FID remains active until implementation or
-  an operator ruling changes its state
+- **Closed Date:** pending the implementation commit and archive move
+- **Fix Description:** shared credit patterns, explicit guard modes, governed
+  document scanning with code masking, hook/CI wiring, and focused tests
+- **Tests Added:** Yes — `tests/attribution-guard.test.mjs`
+- **Verification Evidence:** see the Verification Receipt above
+- **Archived:** not yet; active until the commit is recorded and this record is
+  moved to `dev/fids/archive/`
 
 ## Lessons Learned
 

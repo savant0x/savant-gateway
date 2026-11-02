@@ -21,7 +21,12 @@ run_gate() {
   fi
 }
 
-run_gate "attribution guard" node scripts/attribution-guard.mjs
+if git rev-parse --verify --quiet origin/main >/dev/null 2>&1; then
+  run_gate "attribution guard" node scripts/attribution-guard.mjs --range origin/main..HEAD
+else
+  run_gate "attribution guard" node scripts/attribution-guard.mjs --all
+fi
+run_gate "attribution documents" node scripts/attribution-document-guard.mjs
 run_gate "lint" npm run lint
 run_gate "typecheck" npm run typecheck
 run_gate "config check" npm run config:check

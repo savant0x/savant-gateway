@@ -30,6 +30,7 @@
 		"probe:speed": "node --env-file=.env.local scripts/upstream-speed-probe.mjs",
 		"images": "node scripts/render-images.mjs",
 		"quality": "node scripts/quality-report.mjs",
+		"attribution": "node scripts/attribution-guard.mjs --all && node scripts/attribution-document-guard.mjs",
 		"storage:check": "node scripts/storage-contract-check.mjs",
 		"business-model": "node scripts/business-model.mjs",
 		"verify": "npm run check && npm run storage:check && npm run config:check && npm run test && npm run quality && npm run build && npm run test:http && npm run test:recovery",

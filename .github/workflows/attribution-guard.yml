@@ -20,4 +20,6 @@ jobs:
         with:
           node-version: 24
 
-      - run: node scripts/attribution-guard.mjs
+      - run: node scripts/attribution-guard.mjs --all
+      - run: node scripts/attribution-document-guard.mjs
+      - run: node --test tests/attribution-guard.test.mjs

@@ -19,7 +19,8 @@ export async function contentSchema(db: PostgresDatabase) {
 
     CREATE TABLE IF NOT EXISTS content.sources (
       id TEXT PRIMARY KEY,
-      kind TEXT NOT NULL CHECK (kind IN ('rss', 'youtube')),
+      kind TEXT NOT NULL
+        CHECK (kind IN ('rss', 'youtube', 'huggingface', 'trendshift')),
       label TEXT NOT NULL,
       url TEXT NOT NULL,
       config_json TEXT NOT NULL DEFAULT '{}',
@@ -52,6 +53,7 @@ export async function contentSchema(db: PostgresDatabase) {
       thumbnail_url TEXT,
       video_id TEXT,
       external_id TEXT,
+      github_json TEXT,
       content_hash TEXT NOT NULL,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
@@ -143,6 +145,20 @@ export async function contentSchema(db: PostgresDatabase) {
       ADD COLUMN IF NOT EXISTS view_count BIGINT NOT NULL DEFAULT 0,
       ADD COLUMN IF NOT EXISTS like_count BIGINT NOT NULL DEFAULT 0,
       ADD COLUMN IF NOT EXISTS youtube_comment_count BIGINT NOT NULL DEFAULT 0,
-      ADD COLUMN IF NOT EXISTS rating DOUBLE PRECISION;
+      ADD COLUMN IF NOT EXISTS rating DOUBLE PRECISION,
+      ADD COLUMN IF NOT EXISTS github_json TEXT;
+
+    -- Postgres auto-named the original inline check sources_kind_check in
+    -- databases created before the content schema was qualified. A migration
+    -- that drops only the qualified name leaves the old two-kind constraint in
+    -- place, so new kinds are rejected even though a new check exists. Drop
+    -- both names before adding the current one. This is idempotent.
+    ALTER TABLE IF EXISTS content.sources
+      DROP CONSTRAINT IF EXISTS sources_kind_check;
+    ALTER TABLE IF EXISTS content.sources
+      DROP CONSTRAINT IF EXISTS content_sources_kind_check;
+    ALTER TABLE IF EXISTS content.sources
+      ADD CONSTRAINT content_sources_kind_check
+      CHECK (kind IN ('rss', 'youtube', 'huggingface', 'trendshift'));
   `);
 }

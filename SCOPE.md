@@ -2242,10 +2242,10 @@ FIDs so each slice can converge and be verified on its own.
   ingest merges Data API likes and comment counts without failing the cycle;
   the detail page has a back button, description/details sidebar, and an
   authenticated 12-per-hour comment thread; the colgroup is index-keyed.
-  Verified: lint 0 warnings, typecheck 0, quality PASS (513 files), build 0,
-  22 focused content tests, a disposable PGlite app with comment POST 200 and
-  every sidebar marker, and the restarted local server at 200 with no schema
-  errors. Existing items backfill on the next source Fetch. Not verified:
+  Verified (`87cd398`): lint 0 warnings, typecheck 0, quality PASS (513
+  files), build 0, 22 focused content tests, a disposable PGlite app with
+  comment POST 200 and every sidebar marker, and the restarted local server at
+  200 with no schema errors. Existing items backfill on the next source Fetch. Not verified:
   `npm run verify`, a browser visual review, and a live YouTube Data API call.
 
 Non-goals recorded so they are not mistaken for missing work: no paid content,

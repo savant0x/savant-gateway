@@ -14,10 +14,11 @@ distinguish verified behavior from unverified claims.
   the source cycle. The detail page gains a back button, a description/details
   sidebar, and a discussion with a 12-per-hour per-customer ceiling behind the
   existing customer session. Fixed the duplicate `13%` col key warning on the
-  public catalog. Verified: lint 0 warnings, typecheck 0, quality PASS (513
-  files), build exit 0, 22 focused content tests, a disposable PGlite app that
-  rendered every sidebar marker, signup 201, authenticated comment POST 200,
-  and the restarted local server returning 200 with zero schema errors.
+  public catalog. Verified: commit `87cd398`, lint 0 warnings, typecheck 0,
+  quality PASS (513 files), build exit 0, 22 focused content tests, a
+  disposable PGlite app that rendered every sidebar marker, signup 201,
+  authenticated comment POST 200, and the restarted local server returning 200
+  with zero schema errors.
   Existing items backfill on the next source Fetch. Not verified: `npm run
   verify`, a browser visual review, and a live YouTube Data API call (the merge
   and failure paths use injected fetch fixtures).

@@ -3,6 +3,24 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-02 — Admin fetch-all and stable Signal topics
+
+- **FID-2026-1102-113 — low — the admin content page can now refresh every
+  enabled source in one action.** The control walks the sources sequentially
+  through the existing single-source endpoint, shows `Fetching n of m`, skips
+  disabled sources, and isolates a failure so the remaining sources still run.
+  An empty or non-JSON gateway response is reported by HTTP status instead of
+  throwing `Unexpected end of JSON input`. Verified: `npm run verify` exit 0 —
+  847 tests (846 pass, 1 skipped), quality PASS (535 files), build 0, 750 HTTP
+  checks plus trial PASS, recovery PASS; focused fetch-all 5/5; lint zero
+  warnings and typecheck 0. Not verified: browser pointer/visual review.
+- **FID-2026-1102-114 — low — selecting a Signal topic no longer moves the
+  topics row.** The visible twelve keep their order and counts, the selected
+  topic is highlighted in place, an out-of-list topic is appended rather than
+  prepended, and a separate “Clear topic ×” link clears the filter. Verified by
+  the same `npm run verify` run. No automated UI test was added; visual review
+  remains outstanding.
+
 ## 2026-11-02 — Signal legacy content-schema repair
 
 - **FID-2026-1102-111 — medium —** `/signal` now survives an existing content

@@ -214,26 +214,41 @@ export default async function SignalPage({
               <span className="text-[11px] uppercase tracking-[0.12em] text-muted">
                 Topics
               </span>
-              {tag ? (
-                <Link
-                  className="rounded-full border border-cyan-300/40 bg-cyan-300/10 px-2 py-0.5 text-[11px] text-cyan-100"
-                  href={queryHref(kind, undefined, 1, search)}
-                >
-                  {tagLabel(tag)} ×
-                </Link>
-              ) : null}
-              {tags
-                .filter((entry) => entry.slug !== tag)
-                .slice(0, 12)
-                .map((entry) => (
+              {tags.slice(0, 12).map((entry) => {
+                const active = entry.slug === tag;
+
+                return (
                   <Link
                     key={entry.slug}
-                    className="rounded-full border border-black/10 px-2 py-0.5 text-[11px] text-muted hover:text-foreground dark:border-white/10"
+                    aria-current={active ? "page" : undefined}
+                    className={`rounded-full border px-2 py-0.5 text-[11px] ${
+                      active
+                        ? "border-cyan-300/40 bg-cyan-300/10 text-cyan-100"
+                        : "border-black/10 text-muted hover:text-foreground dark:border-white/10"
+                    }`}
                     href={queryHref(kind, entry.slug, 1, search)}
                   >
                     {entry.label} · {entry.count}
                   </Link>
-                ))}
+                );
+              })}
+              {tag && !tags.slice(0, 12).some((entry) => entry.slug === tag) ? (
+                <Link
+                  aria-current="page"
+                  className="rounded-full border border-cyan-300/40 bg-cyan-300/10 px-2 py-0.5 text-[11px] text-cyan-100"
+                  href={queryHref(kind, tag, 1, search)}
+                >
+                  {tagLabel(tag)}
+                </Link>
+              ) : null}
+              {tag ? (
+                <Link
+                  className="rounded-full border border-black/10 px-2 py-0.5 text-[11px] text-muted hover:text-foreground dark:border-white/10"
+                  href={queryHref(kind, undefined, 1, search)}
+                >
+                  Clear topic ×
+                </Link>
+              ) : null}
             </div>
           ) : null}
 

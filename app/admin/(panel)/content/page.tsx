@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ContentLinkActions } from "@/components/admin/content-link-actions";
 import { ContentLinkForm } from "@/components/admin/content-link-form";
 import { ContentSourceActions } from "@/components/admin/content-source-actions";
+import { ContentSourceFetchAll } from "@/components/admin/content-source-fetch-all";
 import { ContentSourceForm } from "@/components/admin/content-source-form";
 import { ContentSourcePresets } from "@/components/admin/content-source-presets";
 import { contentDate } from "@/lib/content/format";
@@ -115,6 +116,8 @@ export default async function AdminContentPage() {
           <ContentSourcePresets />
 
           <ContentSourceForm />
+
+          <ContentSourceFetchAll sources={sources} />
 
           <section className="scroll-shell rounded-xl border border-black/10 dark:border-white/10">
             <table className="data-table">

@@ -69,6 +69,11 @@ try {
       // observable here instead of being papered over by a default that
       // production does not set (FID-069). A current upstream rpm still wins.
       PROVIDER_SHARED_RPM: "",
+      // The paid-account-limit check assumes a 60 RPM ceiling: 60 unfunded
+      // probes consume the bucket and the 61st request must be 429. `next
+      // start` also loads `.env.local`, so an operator override would change
+      // this gate's meaning. Pin the value at spawn so the check is hermetic.
+      PAID_KEY_RPM: "60",
       TRIAL_ENABLED: "false",
       PROMO_CODES_ENABLED: "true",
       ADMIN_SESSION_SECRET: ADMIN_SECRET,

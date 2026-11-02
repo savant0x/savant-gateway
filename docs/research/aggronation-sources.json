@@ -1,0 +1,143 @@
+{
+  "generatedAt": "2026-11-02",
+  "source": "resources/aggroNATION-main/scripts/register-operator-sources.ts",
+  "probeMethod": "Live fetch through lib/content/feeds.ts parseFeed on 2026-11-02, maxItems 20. Production caps maxItems at 50.",
+  "savant": {
+    "supportedKinds": ["rss", "youtube"],
+    "defaults": {
+      "enabled": true,
+      "fetchIntervalMinutes": 60,
+      "maxItems": 50
+    }
+  },
+  "operatorRegistered": [
+    {
+      "label": "Hacker News",
+      "oldType": "rss",
+      "kind": "rss",
+      "url": "https://hnrss.org/frontpage",
+      "config": { "tags": [] },
+      "enabled": true,
+      "fetchIntervalMinutes": 60,
+      "maxItems": 50,
+      "supported": true,
+      "probe": "HTTP 200, 20 parsed items, kind=article"
+    },
+    {
+      "label": "HuggingFace Daily Papers",
+      "oldType": "huggingface",
+      "kind": null,
+      "url": "https://huggingface.co/papers",
+      "config": { "tags": [] },
+      "supported": false,
+      "reason": "Old fetcher consumed https://huggingface.co/api/daily_papers JSON. Savant has no HuggingFace fetcher; the site URL is not an RSS feed."
+    },
+    {
+      "label": "Open Source Projects",
+      "oldType": "opensource",
+      "kind": "rss",
+      "url": "https://www.opensourceprojects.dev/rss",
+      "config": { "tags": ["repository"] },
+      "enabled": true,
+      "fetchIntervalMinutes": 60,
+      "maxItems": 50,
+      "supported": true,
+      "probe": "HTTP 200, 12 parsed items, kind=repo with the repository tag",
+      "note": "The repository tag makes Savant classify items as repositories; the old GitHub star enrichment is not ported."
+    },
+    {
+      "label": "Trendshift",
+      "oldType": "trendshift",
+      "kind": null,
+      "url": "https://trendshift.io/?sort=views",
+      "config": { "tags": [] },
+      "supported": false,
+      "reason": "Trendshift publishes no RSS/Atom feed. The old site used an HTML scraper; Savant does not."
+    },
+    {
+      "label": "r/AI_Agents",
+      "oldType": "reddit",
+      "kind": "rss",
+      "url": "https://www.reddit.com/r/AI_Agents/hot.rss",
+      "config": { "tags": [] },
+      "enabled": true,
+      "fetchIntervalMinutes": 60,
+      "maxItems": 50,
+      "supported": true,
+      "probe": "HTTP 200, 20 parsed items, kind=discussion",
+      "note": "Atom feed; Reddit returns 429 intermittently."
+    },
+    {
+      "label": "r/singularity",
+      "oldType": "reddit",
+      "kind": "rss",
+      "url": "https://www.reddit.com/r/singularity/hot.rss",
+      "config": { "tags": [] },
+      "enabled": true,
+      "fetchIntervalMinutes": 60,
+      "maxItems": 50,
+      "supported": true,
+      "probe": "HTTP 429 at extraction time; retry before adding.",
+      "note": "Atom feed; the old site also saw intermittent Reddit 429s."
+    }
+  ],
+  "evidencedFeeds": [
+    {
+      "label": "OpenAI News",
+      "kind": "rss",
+      "url": "https://openai.com/news/rss.xml",
+      "config": { "tags": [] },
+      "enabled": true,
+      "fetchIntervalMinutes": 60,
+      "maxItems": 50,
+      "probe": "HTTP 200, 20 parsed items, kind=article",
+      "note": "Inferred from the old source badge 'OpenAI'/'OpenAI News' and the admin form hint. The old registered URL was not committed. openai.com/blog/rss.xml redirects here; add one, not both."
+    },
+    {
+      "label": "HF Blog",
+      "kind": "rss",
+      "url": "https://huggingface.co/blog/feed.xml",
+      "config": { "tags": [] },
+      "enabled": true,
+      "fetchIntervalMinutes": 60,
+      "maxItems": 50,
+      "probe": "HTTP 200, 20 parsed items, kind=article",
+      "note": "Inferred from the old source badge 'HF Blog'; the old registered URL was not committed."
+    },
+    {
+      "label": "arXiv cs.AI",
+      "kind": "rss",
+      "url": "https://rss.arxiv.org/rss/cs.AI",
+      "config": { "tags": [] },
+      "enabled": true,
+      "fetchIntervalMinutes": 60,
+      "maxItems": 50,
+      "probe": "HTTP 200, 20 parsed items, kind=paper",
+      "note": "Inferred from the old source badge 'arXiv cs.AI'. Use the rss.arxiv.org host: the arxiv.org path redirects and can return an empty channel snapshot."
+    },
+    {
+      "label": "Google AI Blog",
+      "kind": "rss",
+      "url": "https://blog.google/technology/ai/rss/",
+      "config": { "tags": [] },
+      "enabled": true,
+      "fetchIntervalMinutes": 60,
+      "maxItems": 50,
+      "probe": "HTTP 200, 20 parsed items, kind=paper (heuristic title/tag match)",
+      "note": "Inferred from the old source badge 'Google AI Blog'; redirects to /innovation-and-ai/technology/ai/rss/."
+    }
+  ],
+  "youtubeChannels": {
+    "oldType": "youtube",
+    "reportedCount": "13 (audit 2026-09-04); 14 in a later CHANGELOG entry",
+    "recovered": [],
+    "status": "not recoverable from the repository; rows lived in the retired Supabase project",
+    "onlyCommittedIdentifier": {
+      "handle": "@TwoMinutePapers",
+      "channelId": "UCbfYPyITQ-7l4upoX8nvctg",
+      "evidence": "FID-2026-0903-003 live-fetch verification, not proof of operator membership"
+    },
+    "alreadyInSavant": ["WorldofAI", "airevolutionx"],
+    "recoveryQuery": "select type, name, url, config from sources where archived = false order by type, name;"
+  }
+}

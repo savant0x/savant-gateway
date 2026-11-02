@@ -73,9 +73,16 @@ same answer data the page renders.
   Gemini research report, and the operator-scoped AIO architecture and build
   path: admin-run, advisory, free-pool first, API-only, user-funded runs
   optional. Proposal only; no application code.
+- [research/aggronation-sources.md](research/aggronation-sources.md) — the
+  sources recoverable from the retired aggroNATION repository, mapped to
+  Savant's RSS/YouTube kinds with live parser probes, and the separate list of
+  YouTube channels that need an old Supabase export.
 - [load-acceptance.md](load-acceptance.md) — bounded load/fault gate, candidate
   envelope, measured throughput/latency/resources, reconciliation and the
   operator-approval boundary.
+- [upstream-speed-probe.md](upstream-speed-probe.md) — one-day real-upstream
+  TTFT, throughput and 429 measurement, the first free-pool snapshot, and the
+  funded paid-comparison blocker.
 - [policies/README.md](policies/README.md) — policy versions `v1.1` (current) and
   `v1` (superseded, still readable).
 - [echo-protocol.md](echo-protocol.md) — short orientation to the governing

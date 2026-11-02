@@ -3,13 +3,13 @@
 **Filename:** `FID-2026-1102-108-no-agent-attribution-enforcement-retrofit.md`
 **ID:** FID-2026-1102-108
 **Severity:** high
-**Status:** verified
+**Status:** closed
 **Created:** 2026-11-02 00:00
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
 
-> Implementation is present in the working tree. The FID remains open until
-> its commit and archive move.
+> Implementation is commit `2296f38`, pushed to `main`, and verified by the
+> repository's GitHub Actions attribution run. The record is archived.
 
 ---
 
@@ -183,7 +183,8 @@ for exact-range, invalid-range, full-history, and document modes.
 - attribution invalid range: exit 2 (fails closed)
 - attribution governed documents: exit 0
 - message-file CLI: exit 1 on a credit line, exit 0 without one
-- not verified: a real GitHub Actions run and a push from a second clone
+- GitHub Actions attribution-guard run 41527812676 (commit `2296f38`): PASS
+- not verified: a push from a second clone
 
 ## Perfection Loop
 
@@ -227,7 +228,7 @@ for exact-range, invalid-range, full-history, and document modes.
   could miss a credit hidden in an FID or session record.
 - **GREEN:** The implementation uses credit-cue-plus-agent matching, masks code
   before scanning, excludes research copies, and wires the document surface into
-  the pre-push hook and CI. FID status is `verified`, not yet `closed`.
+  the pre-push hook and CI. FID status is `closed`.
 - **AUDIT:** `npm run lint`, `npm run typecheck`, the full unit suite, quality and
   build pass. The message, range, history and document modes were exercised.
 - **ADVERSARIAL:** A manual `--range` still depends on the local `origin/main`
@@ -251,8 +252,7 @@ for exact-range, invalid-range, full-history, and document modes.
 
 ## Implementation Evidence (REQUIRED for `closed`)
 
-- [x] **Commit SHA:** recorded by the implementation commit; this FID moves to
-  `dev/fids/archive/` when that commit is made
+- [x] **Commit SHA:** `2296f38`
 - [x] **File:line ranges:** `scripts/attribution-patterns.mjs:1-`,
   `scripts/attribution-guard.mjs:1-`, `scripts/attribution-document-guard.mjs:1-`,
   `.githooks/pre-push`, `.github/workflows/attribution-guard.yml`,
@@ -271,17 +271,18 @@ for exact-range, invalid-range, full-history, and document modes.
   the pre-push hook, and GitHub Actions.
 - [x] Focused tests and all declared gates passed; the receipt above records
   the commands and their exit status.
-- [ ] A real GitHub Actions run remains to be observed after the push.
+- [x] GitHub Actions attribution-guard run 41527812676 succeeded on `main`;
+  the subsequent push run 41531832334 also succeeded.
 
 ## Resolution
 
-- **Closed Date:** pending the implementation commit and archive move
+- **Closed Date:** 2026-11-02T21:55Z
 - **Fix Description:** shared credit patterns, explicit guard modes, governed
   document scanning with code masking, hook/CI wiring, and focused tests
 - **Tests Added:** Yes — `tests/attribution-guard.test.mjs`
-- **Verification Evidence:** see the Verification Receipt above
-- **Archived:** not yet; active until the commit is recorded and this record is
-  moved to `dev/fids/archive/`
+- **Verification Evidence:** see the Verification Receipt above; GitHub Actions
+  run 41527812676 passed
+- **Archived:** yes; moved to `dev/fids/archive/` in the closure commit
 
 ## Lessons Learned
 

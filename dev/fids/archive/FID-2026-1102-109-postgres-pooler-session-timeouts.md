@@ -3,14 +3,14 @@
 **Filename:** `FID-2026-1102-109-postgres-pooler-session-timeouts.md`
 **ID:** FID-2026-1102-109
 **Severity:** high
-**Status:** verified
+**Status:** closed
 **Created:** 2026-11-02 16:35
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
 
-> This FID records the production failure and the converged fix. Implementation
-> and its receipt follow in this record; the FID is not closed until the commit
-> and archive move exist.
+> This FID records the production failure, the fix, its local gates and the live
+> receipt. Implementation is commit `acc09cc`; the record is archived after that
+> commit.
 
 ---
 
@@ -113,7 +113,8 @@ can overtake the settings. Keep the defaults and the connection cap unchanged.
 4. **implemented — ADVERSARIAL:** The fake pool proves shape and ordering, not a
    real pooler handshake. The live `/api/ready` and `/models` remain the
    production receipt after the deploy.
-5. **pending — DEPLOY:** Commit, push, redeploy, and record the live response.
+5. **implemented — DEPLOY:** Commit `acc09cc`, push, Vercel deployment
+   `https://savant-gateway-52h5nszrh-savantai.vercel.app`, and live checks pass.
 
 ### Verification
 
@@ -147,7 +148,12 @@ that `options` is absent. The live deployment must then return 200 from
   and a local double, and no real provider or paid model is called. The
   paid-limit fixture now probes until its own bucket refuses instead of assuming
   a fixed 61st request lands inside one refill window.
-- live: pending the deploy of this commit
+- live: 2026-11-02T21:49Z, deployment
+  `https://savant-gateway-52h5nszrh-savantai.vercel.app`
+  - `/` 200, `/models` 200, `/signal` 200
+  - `/api/health` 200 `{"status":"alive"}`
+  - `/api/ready` 200 `{"status":"ready","checks":{"configuration":"ok","storage":"ok"},"mode":"durable","admission":"open"}`
+- GitHub Actions `attribution-guard` run 41531832334: success
 
 ## Perfection Loop
 
@@ -186,21 +192,22 @@ that `options` is absent. The live deployment must then return 200 from
 
 ## Implementation Evidence
 
-- [ ] **Commit SHA:** pending; recorded when the implementation commit exists
+- [x] **Commit SHA:** `acc09cc`
 - [x] **File:line ranges:** `lib/storage/pg-pool.ts:1-`,
   `tests/db-adapter.test.mjs`, `scripts/trial-http-suite.mjs`
 - [x] **Gate output:** recorded in the Verification Receipt above
 - [x] **Reproducibility:** the live `08P01` log and the pool source identify the
   same startup parameter
-- [x] **Step statuses:** steps 1–4 implemented; step 5 pending deploy
+- [x] **Step statuses:** steps 1–5 implemented and deployed
 
 ## Resolution
 
-- **Closed Date:** pending the implementation commit and archive move
+- **Closed Date:** 2026-11-02T21:55Z
 - **Fix Description:** apply session budgets through pg's `onConnect` hook
 - **Tests Added:** regression coverage in `tests/db-adapter.test.mjs`; the
   trial HTTP fixture pins `FREE_SHARED_RPM` and asserts both competing refusals
   without a second trial or credit spend; the paid-limit fixture probes until
   its own bucket refuses
-- **Verification Evidence:** local gates pass; production receipt pending deploy
-- **Archived:** not yet
+- **Verification Evidence:** local gates pass; live deployment and readiness
+  receipt recorded above
+- **Archived:** yes; moved to `dev/fids/archive/` in the closure commit

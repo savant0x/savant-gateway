@@ -15,8 +15,22 @@ distinguish verified behavior from unverified claims.
   (828 pass, 1 skipped), quality PASS (531 files), build 0, and both disposable
   HTTP suites pass against local fixtures (`free/mock` and `mock-paid` are
   doubles; no real paid provider is called). The paid-limit probe now waits for
-  its own bucket to refuse instead of depending on a one-second window. Live
-  receipt pending the deployment of this commit.
+  its own bucket to refuse instead of depending on a one-second window. Live:
+  deployment `https://savant-gateway-52h5nszrh-savantai.vercel.app`; `/`,
+  `/models`, `/signal`, `/api/health` and `/api/ready` return 200, and readiness
+  reports `configuration ok`, `storage ok`, `mode durable`, `admission open`.
+  GitHub Actions attribution-guard run 41531832334 passed.
+
+## 2026-11-02 — No-agent-attribution enforcement across governed records
+
+- **FID-2026-1102-108 — high — the repository now scans commit metadata and
+  governed Markdown records for coding-agent credit.** Shared credit patterns,
+  an explicit commit/range/history/document CLI, fenced and inline-code masking,
+  governed-path selection, and focused tests are wired into the commit hook,
+  pre-push hook, GitHub Actions, and `npm run attribution`. Verified: lint 0
+  warnings, typecheck 0, focused tests 5/5, full suite 829 tests (828 pass, 1
+  skipped), quality PASS (531 files), build 0; GitHub Actions run 41527812676
+  passed. Commit `2296f38`. Not verified: a push from a second clone.
 
 ## 2026-11-02 — Signal repository READMEs and precise article failures
 

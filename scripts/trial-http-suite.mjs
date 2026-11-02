@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 
 import {
-  checkEqual,  checkProviderDouble, createTempWorkspace, request, reservePort,
+  check, checkEqual, checkProviderDouble, createTempWorkspace, request, reservePort,
   startNextServer, stopNextServer, waitForServer, cookieValue,
 } from "./http-suite/harness.mjs";
 import {
@@ -81,6 +81,9 @@ const server = startNextServer({
   databaseUrl: databaseServer.connectionString,
   env: {
     PROVIDER_SHARED_RPM: "9000",
+    // Pin the free admission bucket: this suite proves trial reservation, not
+    // the global free RPM guard, and `next start` also loads `.env.local`.
+    FREE_SHARED_RPM: "9000",
     TRIAL_ENABLED: "true", TRIAL_WEIGHTED_TOKENS: "300",
     TRIAL_GATEWAY_GRANT_BUDGET: "10000",
     TRIAL_MODEL_PAIRS: '{"free/mock":"mock-paid"}',
@@ -204,8 +207,24 @@ try {
     chat(customerC, { max_tokens: 120 }),
   ]);
 
-  checkEqual("concurrent calls admit only one trial", concurrent.filter((r) => r.status === 200).length, 1);
-  checkEqual("competing calls require credit", concurrent.filter((r) => r.status === 402).length, 2);
+  const concurrentStatuses = concurrent.map((r) => r.status).sort();
+
+  checkEqual("concurrent calls admit only one trial", concurrentStatuses.filter((status) => status === 200).length, 1);
+  // A concurrent provider-capacity check legitimately refuses with 429; a
+  // customer already out of trial without credit gets 402. Both are refusals,
+  // and neither may create a second trial or spend credit.
+  check(
+    "competing calls are refused without another trial",
+    concurrentStatuses.filter((status) => status === 402 || status === 429).length === 2,
+    `statuses ${concurrentStatuses.join(", ")}; ${concurrent
+      .map((r) => `${r.status}:${r.json?.error?.code ?? r.json?.error?.type ?? "unknown"}:${r.json?.error?.message ?? ""}`)
+      .join(" | ")}`,
+  );
+  checkEqual(
+    "competing calls do not spend credit",
+    (await db.prepare("SELECT credit_micros::int AS credit_micros FROM users WHERE id = ?").get(customerC.userId)).credit_micros,
+    0,
+  );
   checkEqual("customer receives exactly one grant", (await db.prepare("SELECT COUNT(*)::int AS total FROM trial_grants WHERE user_id = ?").get(customerC.userId)).total, 1);
   await db.prepare("UPDATE models SET status = 'disabled' WHERE id = 'mock-paid'").run();
   checkEqual("disabled paid pair stops conversion", (await chat(customerA)).status, 503);

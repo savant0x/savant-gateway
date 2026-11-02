@@ -64,17 +64,25 @@ export async function runRequestLimitChecks({ baseUrl, db, mock, adminPassword }
   checkEqual("concurrent excess key creation is refused", attempts.filter((r) => r.status === 429).length, 3);
   checkEqual("key ceiling is persisted", (await db.prepare("SELECT COUNT(*)::int AS n FROM api_keys WHERE user_id = ? AND status = 'active'").get(id)).n, 10);
   const anotherSecret = attempts.find((response) => response.status === 201).json.secret;
-  for (let index = 0; index < 60; index++) {
-    const refused = await request(baseUrl, "/v1/chat/completions", {
+  // Probe until the shared account bucket refuses. A fixed 61st request can
+  // cross a one-second refill boundary and receive a credit refusal instead of
+  // the rate refusal this check is about; the bucket still has to refuse.
+  let limited;
+
+  for (let index = 0; index < 120 && !limited; index++) {
+    const probe = await request(baseUrl, "/v1/chat/completions", {
       method: "POST", headers: { authorization: `Bearer ${index % 2 ? secret : anotherSecret}` }, body: valid,
     });
-    checkEqual("unfunded capacity probe creates no charge", refused.status, 402);
+
+    if (probe.status === 429) {
+      limited = probe;
+    } else {
+      checkEqual("unfunded capacity probe creates no charge", probe.status, 402);
+    }
   }
-  const multiplied = await request(baseUrl, "/v1/chat/completions", {
-    method: "POST", headers: { authorization: `Bearer ${anotherSecret}` }, body: valid,
-  });
-  checkEqual("paid account limit holds across different keys", multiplied.status, 429);
-  checkEqual("account refusal names paid rate scope", multiplied.headers.get("x-ratelimit-scope"), "paid");
+
+  check("paid account limit holds across different keys", limited !== undefined);
+  checkEqual("account refusal names paid rate scope", limited?.headers.get("x-ratelimit-scope"), "paid");
   checkEqual("capacity probes create no upstream spend", mock.state.calls, before);
   await db.prepare("UPDATE api_keys SET status = 'revoked' WHERE user_id = ?").run(id);
   for (let index = 0; index < 10; index++) {

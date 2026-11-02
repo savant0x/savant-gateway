@@ -3,6 +3,21 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-02 — PostgreSQL pooler-safe session timeouts
+
+- **FID-2026-1102-109 — high — production now connects through Neon's pooled
+  endpoint instead of failing every database-backed route.** The pool no longer
+  sends `statement_timeout` and `idle_in_transaction_session_timeout` in libpq's
+  startup `options`; Neon's PgBouncer rejects that packet with `08P01`. pg-pool
+  applies both `SET` statements through an async `onConnect` hook, which
+  completes before a client is handed to a caller. Verified locally: focused
+  adapter tests 15/15, lint zero warnings, typecheck 0, full suite 829 tests
+  (828 pass, 1 skipped), quality PASS (531 files), build 0, and both disposable
+  HTTP suites pass against local fixtures (`free/mock` and `mock-paid` are
+  doubles; no real paid provider is called). The paid-limit probe now waits for
+  its own bucket to refuse instead of depending on a one-second window. Live
+  receipt pending the deployment of this commit.
+
 ## 2026-11-02 — Signal repository READMEs and precise article failures
 
 - **FID-2026-1102-107 — medium — repository pages now render the GitHub

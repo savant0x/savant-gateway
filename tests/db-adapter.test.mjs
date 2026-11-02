@@ -284,7 +284,8 @@ test("a failed initialization fails closed for every later call", async () => {
   );
 });
 
-test("pool options carry the session timeouts and connection cap", () => {
+test("pool options apply the session timeouts after connect", async () => {
+  const queries = [];
   const options = buildPoolOptions({
     connectionString: "postgres://example.test/gateway",
     maxConnections: 4,
@@ -295,6 +296,21 @@ test("pool options carry the session timeouts and connection cap", () => {
   assert.equal(options.connectionString, "postgres://example.test/gateway");
   assert.equal(options.max, 4);
   assert.equal(options.application_name, "savant-gateway");
-  assert.match(options.options, /statement_timeout=12000/);
-  assert.match(options.options, /idle_in_transaction_session_timeout=45000/);
+  assert.equal(
+    "options" in options,
+    false,
+    "a startup options packet is rejected by Neon's pooled endpoint",
+  );
+
+  await options.onConnect({
+    async query(sql) {
+      queries.push(sql);
+
+      return EMPTY;
+    },
+  });
+
+  assert.deepEqual(queries, [
+    "SET statement_timeout = 12000; SET idle_in_transaction_session_timeout = 45000",
+  ]);
 });

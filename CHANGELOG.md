@@ -3,6 +3,17 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-02 — Signal legacy content-schema repair
+
+- **FID-2026-1102-111 — medium —** `/signal` now survives an existing content
+  database whose `external_url` column was absent. The regression drops the
+  column, proves the legacy read fails, reruns the real additive migration, and
+  proves the Signal read works. Restarting the local process applied the same
+  migration to the cached development database: `/signal` returned HTTP 200 with
+  no storage or missing-column error. Verified: `npm run verify` exit 0, full
+  suite 842 tests (841 pass, 1 skipped), quality PASS (533 files), build 0,
+  HTTP and recovery suites PASS.
+
 ## 2026-11-02 — AI-filtered Hacker News content source
 
 - **FID-2026-1102-110 — medium — operators can register Hacker News as a

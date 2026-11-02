@@ -199,6 +199,32 @@ test("the kind migration removes the legacy two-kind constraint", async () => {
   }
 });
 
+test("the content migration repairs an existing table before Signal reads it", async () => {
+  const db = await createStorageDatabase({ env: {} });
+
+  try {
+    await db.exec("ALTER TABLE content.items DROP COLUMN external_url");
+    await assert.rejects(() => listItems(db), /external_url/);
+
+    await contentSchema(db);
+
+    const column = await db
+      .prepare(
+        `SELECT COUNT(*) AS present
+           FROM information_schema.columns
+          WHERE table_schema = 'content'
+            AND table_name = 'items'
+            AND column_name = 'external_url'`,
+      )
+      .get();
+
+    assert.equal(Number(column?.present), 1);
+    assert.deepEqual(await listItems(db), { items: [], total: 0 });
+  } finally {
+    await db.close();
+  }
+});
+
 test("preset seeding adds each source once and keeps operator edits", async () => {
   const db = await createStorageDatabase({ env: {} });
 

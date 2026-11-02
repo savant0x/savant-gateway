@@ -1,5 +1,25 @@
 # SCOPE.md — Gateway Project Review
 
+## Current Session — 2026-11-02 (Signal legacy-schema repair: 111)
+
+Operator report: `/signal` renders `Content storage is unavailable: column
+ i.external_url does not exist` after the Hacker News content integration. The
+ current dev server has a storage handle created before the additive
+ `external_url` migration was loaded; the exact failure reproduces until the
+ migration is run again. This item covers the regression proof and local runtime
+ repair. Existing working-tree Speed Insights edits to `app/layout.tsx`,
+ `package.json`, and `package-lock.json` are preserved and are not part of this
+ FID.
+
+- [x] **S1 — Present and converge the repair FID.**
+  `dev/fids/FID-2026-1102-111-signal-legacy-schema-repair.md` records the
+  observed route failure, the schema/runtime call graph, the additive repair,
+  and the verification receipt contract.
+- [x] **S2 — Implement and verify the repair.** Added the existing-database
+  migration regression test, restarted the local server so its cached handle ran
+  the migration, and verified `/signal` returns HTTP 200 without the
+  missing-column error. The full repository verification also passes.
+
 ## Current Session — 2026-11-02 (filtered Hacker News source design: 110)
 
 Operator request: review `resources/API-master` and create and converge a FID

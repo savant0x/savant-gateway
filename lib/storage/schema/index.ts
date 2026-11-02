@@ -2,6 +2,7 @@ import type { PostgresDatabase } from "../pg-adapter.ts";
 
 import { billingSchema } from "./billing.ts";
 import { catalogSchema } from "./catalog.ts";
+import { contentSchema } from "./content.ts";
 import { coreSchema } from "./core.ts";
 import { customerSchema } from "./customers.ts";
 import { identitySchema } from "./identity.ts";
@@ -23,6 +24,7 @@ export async function applySchema(db: PostgresDatabase) {
   await catalogSchema(db);
   await billingSchema(db);
   await identitySchema(db);
+  await contentSchema(db);
   await seedDevelopmentUser(db);
 }
 

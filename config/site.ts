@@ -17,6 +17,7 @@ export const siteConfig = {
   url: siteUrl,
   navItems: [
     { label: "Models & pricing", href: "/models" },
+    { label: "Signal", href: "/signal" },
     { label: "Compare", href: "/compare" },
     { label: "Docs", href: "/docs" },
     { label: "FAQ", href: "/docs/faq" },

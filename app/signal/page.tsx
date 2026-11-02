@@ -1,0 +1,251 @@
+import type { Metadata } from "next";
+import type { ContentKind } from "@/lib/content/types";
+
+import Link from "next/link";
+
+import { ContentCard } from "@/components/content/content-card";
+import { ContentDisabled } from "@/components/content/content-disabled";
+import { SiteFooter } from "@/components/landing/site-footer";
+import { SiteHeader } from "@/components/landing/site-header";
+import { kindLabel } from "@/lib/content/format";
+import { contentEnabled } from "@/lib/content/policy";
+import { tagLabel } from "@/lib/content/taxonomy";
+import { listItems, listTags } from "@/lib/content/store/items";
+import { CONTENT_KINDS } from "@/lib/content/types";
+import { getDatabase } from "@/lib/storage/runtime";
+
+export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Signal — AI news, videos, papers, and discussions",
+  description:
+    "Free AI discovery from selected RSS and YouTube sources, linked to the models it discusses and the gateway's live prices.",
+};
+
+type Search = {
+  kind?: string;
+  tag?: string;
+  page?: string;
+};
+
+function queryHref(
+  kind: string | undefined,
+  tag: string | undefined,
+  page = 1,
+) {
+  const params = new URLSearchParams();
+
+  if (kind) params.set("kind", kind);
+  if (tag) params.set("tag", tag);
+  if (page > 1) params.set("page", String(page));
+
+  const query = params.toString();
+
+  return query ? `/signal?${query}` : "/signal";
+}
+
+export default async function SignalPage({
+  searchParams,
+}: {
+  searchParams: Promise<Search>;
+}) {
+  if (!contentEnabled()) {
+    return (
+      <div className="site-shell">
+        <SiteHeader />
+        <main>
+          <ContentDisabled />
+        </main>
+        <SiteFooter />
+      </div>
+    );
+  }
+
+  const params = await searchParams;
+  const kind = CONTENT_KINDS.includes(params.kind as ContentKind)
+    ? (params.kind as ContentKind)
+    : undefined;
+  const tag = params.tag?.trim() || undefined;
+  const page = Math.max(1, Math.min(200, Number(params.page) || 1));
+  const pageSize = 24;
+
+  let pageData: Awaited<ReturnType<typeof listItems>> = {
+    items: [],
+    total: 0,
+  };
+  let tags: Awaited<ReturnType<typeof listTags>> = [];
+  let error: string | null = null;
+
+  try {
+    const db = await getDatabase();
+
+    [pageData, tags] = await Promise.all([
+      listItems(db, {
+        kind,
+        tag,
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
+      }),
+      listTags(db, 24),
+    ]);
+  } catch (caught) {
+    error =
+      caught instanceof Error ? caught.message : "Storage is unavailable.";
+  }
+
+  const pageCount = Math.max(1, Math.ceil(pageData.total / pageSize));
+  const filters = [
+    { key: undefined, label: "All" },
+    ...CONTENT_KINDS.map((entry) => ({ key: entry, label: kindLabel(entry) })),
+  ];
+
+  return (
+    <div className="site-shell">
+      <SiteHeader />
+
+      <main>
+        <section className="hero-glow border-b border-white/10">
+          <div className="mx-auto w-full max-w-[80rem] px-4 py-14 sm:px-6 lg:px-8">
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-cyan-300">
+              Signal
+            </p>
+            <div className="mt-3 flex flex-wrap items-end justify-between gap-5">
+              <div>
+                <h1 className="max-w-3xl text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">
+                  Follow the models, not the feed.
+                </h1>
+                <p className="mt-3 max-w-2xl text-sm leading-7 text-muted">
+                  Free articles, videos, papers, repositories, and discussions
+                  from selected sources. Each piece links to the models it
+                  names, with the gateway&apos;s live prices and one purchase
+                  path.
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-surface/70 px-4 py-3 text-xs text-muted">
+                <p className="text-2xl font-semibold text-foreground">
+                  {pageData.total}
+                </p>
+                <p>published pieces</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto w-full max-w-[80rem] px-4 py-8 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <nav aria-label="Content kinds" className="flex flex-wrap gap-1.5">
+              {filters.map((filter) => {
+                const active = filter.key === kind;
+
+                return (
+                  <Link
+                    key={filter.label}
+                    aria-current={active ? "page" : undefined}
+                    className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
+                      active
+                        ? "border-cyan-300/40 bg-cyan-300/10 text-cyan-100"
+                        : "border-black/10 text-muted hover:text-foreground dark:border-white/10"
+                    }`}
+                    href={queryHref(filter.key, tag)}
+                  >
+                    {filter.label}
+                  </Link>
+                );
+              })}
+            </nav>
+            <Link
+              className="text-xs text-accent hover:underline"
+              href="/signal/briefing"
+            >
+              Your briefing →
+            </Link>
+          </div>
+
+          {tags.length > 0 ? (
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] uppercase tracking-[0.12em] text-muted">
+                Topics
+              </span>
+              {tag ? (
+                <Link
+                  className="rounded-full border border-cyan-300/40 bg-cyan-300/10 px-2 py-0.5 text-[11px] text-cyan-100"
+                  href={queryHref(kind, undefined)}
+                >
+                  {tagLabel(tag)} ×
+                </Link>
+              ) : null}
+              {tags
+                .filter((entry) => entry.slug !== tag)
+                .slice(0, 12)
+                .map((entry) => (
+                  <Link
+                    key={entry.slug}
+                    className="rounded-full border border-black/10 px-2 py-0.5 text-[11px] text-muted hover:text-foreground dark:border-white/10"
+                    href={queryHref(kind, entry.slug)}
+                  >
+                    {entry.label} · {entry.count}
+                  </Link>
+                ))}
+            </div>
+          ) : null}
+
+          {error ? (
+            <p className="mt-8 rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-danger">
+              Content storage is unavailable: {error}
+            </p>
+          ) : pageData.items.length === 0 ? (
+            <div className="mt-8 rounded-xl border border-dashed border-black/15 p-8 text-center dark:border-white/15">
+              <p className="text-sm font-medium">No stories yet.</p>
+              <p className="mx-auto mt-2 max-w-md text-xs leading-5 text-muted">
+                The hub is enabled, but no source has produced an item. An
+                operator can add an RSS or YouTube source in Admin → Content and
+                press Fetch.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {pageData.items.map((item) => (
+                <ContentCard key={item.id} item={item} />
+              ))}
+            </div>
+          )}
+
+          {pageCount > 1 ? (
+            <nav
+              aria-label="Signal pagination"
+              className="mt-8 flex items-center justify-between gap-3 text-xs"
+            >
+              <Link
+                aria-disabled={page <= 1}
+                className={
+                  page <= 1
+                    ? "pointer-events-none text-muted/40"
+                    : "text-accent hover:underline"
+                }
+                href={queryHref(kind, tag, Math.max(1, page - 1))}
+              >
+                ← Newer
+              </Link>
+              <span className="text-muted">
+                Page {page} of {pageCount}
+              </span>
+              <Link
+                aria-disabled={page >= pageCount}
+                className={
+                  page >= pageCount
+                    ? "pointer-events-none text-muted/40"
+                    : "text-accent hover:underline"
+                }
+                href={queryHref(kind, tag, Math.min(pageCount, page + 1))}
+              >
+                Older →
+              </Link>
+            </nav>
+          ) : null}
+        </section>
+      </main>
+
+      <SiteFooter />
+    </div>
+  );
+}

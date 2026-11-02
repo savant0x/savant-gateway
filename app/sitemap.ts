@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 const PUBLIC_PAGES = [
   "",
   "/models",
+  "/signal",
   "/compare",
   "/docs",
   "/docs/start",

@@ -1,14 +1,20 @@
 import type { Metadata } from "next";
 import type { IdentityPublishedView } from "@/lib/identity/types";
+import type { Coverage } from "@/lib/content/types";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { CoveragePanel } from "@/components/content/coverage-panel";
 import { IdentityPanel } from "@/components/identity/identity-panel";
 import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
 import { AccessChip } from "@/components/dashboard/chips";
 import { formatPricePer1M } from "@/components/dashboard/format";
+import { contentEnabled } from "@/lib/content/policy";
+import { isWatching } from "@/lib/content/store/engagement";
+import { listContentForModel } from "@/lib/content/store/links";
+import { getCustomerSession } from "@/lib/customer-auth";
 import { readPublishedIdentity } from "@/lib/identity/reads";
 import { getCatalogData } from "@/lib/store";
 import { getDatabase } from "@/lib/storage/runtime";
@@ -56,6 +62,10 @@ export default async function ModelDetailPage({ params }: PageProps) {
 
   let identity: IdentityPublishedView | null = null;
   let unavailable = false;
+  let coverage: Coverage | null = null;
+  let watching = false;
+  const showContent = contentEnabled();
+  const customer = await getCustomerSession().catch(() => null);
 
   try {
     const db = await getDatabase();
@@ -63,6 +73,17 @@ export default async function ModelDetailPage({ params }: PageProps) {
     identity = await readPublishedIdentity(db, model.id);
   } catch {
     unavailable = true;
+  }
+
+  if (showContent) {
+    try {
+      const db = await getDatabase();
+
+      coverage = await listContentForModel(db, model.id, 6);
+      watching = customer ? await isWatching(db, customer.id, model.id) : false;
+    } catch {
+      coverage = null;
+    }
   }
 
   const inputPrice = formatPricePer1M(model.inputPricePer1M);
@@ -160,6 +181,15 @@ export default async function ModelDetailPage({ params }: PageProps) {
                 </li>
               </ul>
             </div>
+
+            {showContent && coverage ? (
+              <CoveragePanel
+                coverage={coverage}
+                model={model}
+                signedIn={Boolean(customer)}
+                watching={watching}
+              />
+            ) : null}
 
             <IdentityPanel unavailable={unavailable} view={identity} />
           </div>

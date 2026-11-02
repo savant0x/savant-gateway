@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1102-111-signal-legacy-schema-repair.md`
 **ID:** FID-2026-1102-111
 **Severity:** medium
-**Status:** verified
+**Status:** closed
 **Created:** 2026-11-02 17:53
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -236,7 +236,7 @@ per-request migration or a second schema implementation.
 
 ## Implementation Evidence
 
-- [ ] **Commit SHA:** pending implementation commit
+- [x] **Commit SHA:** `f43fe27`
 - [x] **File:line ranges:** `tests/content-sources.test.mjs:202-226` covers the
   legacy-column failure, additive migration, information-schema assertion, and
   successful Signal read.
@@ -248,14 +248,14 @@ per-request migration or a second schema implementation.
 
 ## Resolution
 
-- **Closed Date:** pending commit and archive
+- **Closed Date:** 2026-11-02 18:04
 - **Fix Description:** Added legacy-schema migration coverage and restarted the
   stale local process so the existing additive migration repairs `external_url`.
 - **Tests Added:** Yes — existing-database content migration regression in
   `tests/content-sources.test.mjs`.
 - **Verification Evidence:** Receipt above; `/signal` returned HTTP 200 without
   the reported error after restart.
-- **Archived:** pending
+- **Archived:** 2026-11-02 18:04
 
 ## Lessons Learned
 

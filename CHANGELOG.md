@@ -11,9 +11,10 @@ distinguish verified behavior from unverified claims.
   backdrop dismissal, focus return, body scroll lock, and a “Full page” link.
   Article thumbnails still navigate to the detail page, and a malformed video
   id cannot become an iframe source. A video with no thumbnail renders a
-  gradient play placeholder instead of a dead area. Verified: lint 0 warnings,
-  typecheck 0, quality PASS (514 files), build exit 0, 5/5 format tests, and
-  live server HTML with 24 dialog triggers and zero preloaded embeds. Not
+  gradient play placeholder instead of a dead area. Verified (`a7498a1`):
+  lint 0 warnings, typecheck 0, quality PASS (514 files), build exit 0, 5/5
+  format tests, and live server HTML with 24 dialog triggers and zero
+  preloaded embeds. Not
   verified: an actual pointer/Escape interaction (no browser is available in
   this environment), `npm run verify`, and a visual review.
 

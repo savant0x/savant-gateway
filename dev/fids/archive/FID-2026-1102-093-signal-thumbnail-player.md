@@ -3,10 +3,12 @@
 **Filename:** `FID-2026-1102-093-signal-thumbnail-player.md`
 **ID:** FID-2026-1102-093
 **Severity:** medium
-**Status:** verified
+**Status:** closed
 **Created:** 2026-11-02 19:20
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
+
+**Commit/State:** `a7498a1` (implementation), `main`
 
 ---
 
@@ -159,13 +161,13 @@ while open, so the hub does not pay for 24 iframes.
 
 ## Resolution
 
-- **Closed Date:** pending local commit
+- **Closed Date:** 2026-11-02
 - **Fix Description:** video thumbnails open a portal modal player; article
   thumbnails link to the detail page; malformed video ids fall back safely.
 - **Tests Added:** `videoEmbedUrl` valid/invalid/autoplay coverage in
   `tests/content-format.test.mjs`.
-- **Verification Evidence:** the receipt above.
-- **Archived:** pending local commit.
+- **Verification Evidence:** the receipt above; commit `a7498a1`.
+- **Archived:** `dev/fids/archive/FID-2026-1102-093-signal-thumbnail-player.md`.
 
 ## Lessons Learned
 

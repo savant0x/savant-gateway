@@ -2251,9 +2251,9 @@ FIDs so each slice can converge and be verified on its own.
   and saved pages open a portal modal player from the thumbnail, with autoplay,
   Escape/backdrop/close dismissal, focus return, and a full-page link. Article
   thumbnails link to the detail page; a malformed video id cannot become an
-  iframe source. Verified: lint 0 warnings, typecheck 0, quality PASS (514
-  files), build 0, 5/5 format tests, and live server HTML with 24 dialog
-  triggers and zero preloaded embeds. Not verified: an actual pointer/Escape
+  iframe source. Verified (`a7498a1`): lint 0 warnings, typecheck 0, quality
+  PASS (514 files), build 0, 5/5 format tests, and live server HTML with 24
+  dialog triggers and zero preloaded embeds. Not verified: an actual pointer/Escape
   interaction (no browser available), `npm run verify`, and a visual review.
 
 Non-goals recorded so they are not mistaken for missing work: no paid content,

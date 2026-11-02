@@ -20,6 +20,7 @@ export function ContentDetailAside({
 }) {
   const metrics = item.metrics;
   const isVideo = item.kind === "video";
+  const isRepo = item.kind === "repo";
   const facts: Array<{ label: string; value: string }> = [
     { label: "Source", value: item.sourceLabel },
   ];
@@ -31,11 +32,25 @@ export function ContentDetailAside({
   facts.push({ label: "Published", value: contentDate(item.publishedAt) });
 
   if (metrics.views > 0) {
-    facts.push({ label: "Views", value: formatCount(metrics.views) });
+    facts.push({
+      label: isRepo ? "Trendshift views" : "Views",
+      value: formatCount(metrics.views),
+    });
   }
 
   if (metrics.likes > 0) {
-    facts.push({ label: "Likes", value: formatCount(metrics.likes) });
+    facts.push({
+      label: isRepo ? "Bookmarks" : "Likes",
+      value: formatCount(metrics.likes),
+    });
+  }
+
+  if (item.github) {
+    facts.push({
+      label: "GitHub stars",
+      value: formatCount(item.github.stars),
+    });
+    facts.push({ label: "Forks", value: formatCount(item.github.forks) });
   }
 
   if (metrics.rating !== null) {

@@ -2,6 +2,7 @@ import type { SourceInput } from "./store/sources.ts";
 import type { SourceKind } from "./types.ts";
 
 import { parseTagInput } from "./taxonomy.ts";
+import { SOURCE_KINDS } from "./types.ts";
 import { clampIntervalMinutes, clampMaxItems } from "./url.ts";
 
 export type SourceBodyResult =
@@ -19,8 +20,11 @@ export function parseSourceBody(
 ): SourceBodyResult {
   const kind = stringField(body, "kind");
 
-  if (kind !== "rss" && kind !== "youtube") {
-    return { ok: false, error: "kind must be rss or youtube." };
+  if (!SOURCE_KINDS.includes(kind as SourceKind)) {
+    return {
+      ok: false,
+      error: `kind must be one of ${SOURCE_KINDS.join(", ")}.`,
+    };
   }
 
   const label = stringField(body, "label");

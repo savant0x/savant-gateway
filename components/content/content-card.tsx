@@ -3,7 +3,12 @@ import type { ContentItem } from "@/lib/content/types";
 import Link from "next/link";
 
 import { ContentMedia } from "@/components/content/content-media";
-import { contentDate, kindLabel, shortExcerpt } from "@/lib/content/format";
+import {
+  contentDate,
+  formatCount,
+  kindLabel,
+  shortExcerpt,
+} from "@/lib/content/format";
 
 const KIND_STYLES: Record<ContentItem["kind"], string> = {
   article: "bg-cyan-300/10 text-cyan-200",
@@ -22,10 +27,10 @@ export function ContentCard({
 }) {
   return (
     <article className="group flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-black/10 bg-surface transition-colors hover:border-accent/40 dark:border-white/10">
-      {!compact && (item.thumbnailUrl || item.videoId) ? (
+      {!compact && (item.thumbnailUrl || item.videoId || item.github) ? (
         <ContentMedia
           itemId={item.id}
-          thumbnailUrl={item.thumbnailUrl}
+          thumbnailUrl={item.thumbnailUrl ?? item.github?.ogImageUrl ?? null}
           title={item.title}
           videoId={item.videoId}
         />
@@ -52,6 +57,18 @@ export function ContentCard({
           <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted">
             {shortExcerpt(item.excerpt, 180)}
           </p>
+        ) : null}
+
+        {item.kind === "repo" && item.github ? (
+          <div className="mt-2 flex flex-wrap items-center gap-3 font-mono text-[11px] text-muted">
+            <span title={`${item.github.stars.toLocaleString("en")} stars`}>
+              ★ {formatCount(item.github.stars)}
+            </span>
+            <span title={`${item.github.forks.toLocaleString("en")} forks`}>
+              ⑂ {formatCount(item.github.forks)}
+            </span>
+            {item.github.language ? <span>{item.github.language}</span> : null}
+          </div>
         ) : null}
 
         {item.tags.length > 0 ? (

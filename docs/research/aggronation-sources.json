@@ -3,7 +3,7 @@
   "source": "resources/aggroNATION-main/scripts/register-operator-sources.ts",
   "probeMethod": "Live fetch through lib/content/feeds.ts parseFeed on 2026-11-02, maxItems 20. Production caps maxItems at 50.",
   "savant": {
-    "supportedKinds": ["rss", "youtube"],
+    "supportedKinds": ["rss", "youtube", "huggingface", "trendshift"],
     "defaults": {
       "enabled": true,
       "fetchIntervalMinutes": 60,
@@ -26,11 +26,15 @@
     {
       "label": "HuggingFace Daily Papers",
       "oldType": "huggingface",
-      "kind": null,
-      "url": "https://huggingface.co/papers",
+      "kind": "huggingface",
+      "url": "https://huggingface.co/api/daily_papers",
+      "committedUrl": "https://huggingface.co/papers",
       "config": { "tags": [] },
-      "supported": false,
-      "reason": "Old fetcher consumed https://huggingface.co/api/daily_papers JSON. Savant has no HuggingFace fetcher; the site URL is not an RSS feed."
+      "enabled": true,
+      "fetchIntervalMinutes": 60,
+      "maxItems": 50,
+      "supported": true,
+      "probe": "Public JSON array; parsed by lib/content/huggingface.ts. No key required."
     },
     {
       "label": "Open Source Projects",
@@ -43,16 +47,19 @@
       "maxItems": 50,
       "supported": true,
       "probe": "HTTP 200, 12 parsed items, kind=repo with the repository tag",
-      "note": "The repository tag makes Savant classify items as repositories; the old GitHub star enrichment is not ported."
+      "note": "The repository tag makes Savant classify items as repositories; GitHub star enrichment runs when GITHUB_TOKEN is set."
     },
     {
       "label": "Trendshift",
       "oldType": "trendshift",
-      "kind": null,
+      "kind": "trendshift",
       "url": "https://trendshift.io/?sort=views",
       "config": { "tags": [] },
-      "supported": false,
-      "reason": "Trendshift publishes no RSS/Atom feed. The old site used an HTML scraper; Savant does not."
+      "enabled": true,
+      "fetchIntervalMinutes": 60,
+      "maxItems": 50,
+      "supported": true,
+      "probe": "Listing HTML is parsed for repository anchors by lib/content/trendshift.ts. No feed and no key."
     },
     {
       "label": "r/AI_Agents",

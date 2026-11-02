@@ -5,6 +5,7 @@ import type {
   ContentPage,
   ContentSource,
   ContentTag,
+  GitHubRepo,
   LinkableModel,
   ParsedItem,
 } from "../types.ts";
@@ -14,89 +15,7 @@ import { createHash } from "node:crypto";
 import { CONTENT_LIMITS } from "../policy.ts";
 import { normalizeTags, tagLabel } from "../taxonomy.ts";
 
-export type ItemRow = {
-  id: string;
-  source_id: string;
-  source_label: string;
-  kind: ContentKind;
-  title: string;
-  url: string;
-  excerpt: string;
-  body_html: string | null;
-  author: string | null;
-  published_at: string;
-  fetched_at: string;
-  thumbnail_url: string | null;
-  video_id: string | null;
-  external_id: string | null;
-  view_count: number | string;
-  like_count: number | string;
-  youtube_comment_count: number | string;
-  rating: number | string | null;
-  tags_json: string;
-};
-
-function toCount(value: number | string | null): number {
-  const number = Number(value ?? 0);
-
-  return Number.isFinite(number) && number > 0 ? number : 0;
-}
-
-function toRating(value: number | string | null): number | null {
-  if (value === null) return null;
-
-  const rating = Number(value);
-
-  return Number.isFinite(rating) && rating > 0 ? Math.min(5, rating) : null;
-}
-
-function toItem(row: ItemRow): ContentItem {
-  let tags: string[] = [];
-
-  try {
-    const parsed = JSON.parse(row.tags_json) as unknown;
-
-    tags = normalizeTags(parsed);
-  } catch {
-    tags = [];
-  }
-
-  return {
-    id: row.id,
-    sourceId: row.source_id,
-    sourceLabel: row.source_label,
-    kind: row.kind,
-    title: row.title,
-    url: row.url,
-    excerpt: row.excerpt,
-    bodyHtml: row.body_html,
-    author: row.author,
-    publishedAt: row.published_at,
-    fetchedAt: row.fetched_at,
-    thumbnailUrl: row.thumbnail_url,
-    videoId: row.video_id,
-    externalId: row.external_id,
-    tags,
-    metrics: {
-      views: toCount(row.view_count),
-      likes: toCount(row.like_count),
-      youtubeComments: toCount(row.youtube_comment_count),
-      rating: toRating(row.rating),
-    },
-  };
-}
-
-const ITEM_COLUMNS = `
-  i.id, i.source_id, s.label AS source_label, i.kind, i.title, i.url,
-  i.excerpt, i.body_html, i.author, i.published_at, i.fetched_at,
-  i.thumbnail_url, i.video_id, i.external_id,
-  i.view_count, i.like_count, i.youtube_comment_count, i.rating,
-  COALESCE(
-    (SELECT json_agg(t.tag ORDER BY t.tag)
-       FROM content.item_tags t WHERE t.item_id = i.id),
-    '[]'::json
-  )::text AS tags_json
-`;
+import { githubJson, ITEM_COLUMNS, type ItemRow, toItem } from "./item-rows.ts";
 
 export type ItemQuery = {
   kind?: ContentKind;
@@ -105,6 +24,8 @@ export type ItemQuery = {
   sourceId?: string;
   savedByUserId?: string;
   search?: string;
+  since?: string;
+  until?: string;
   limit?: number;
   offset?: number;
 };
@@ -149,6 +70,16 @@ function itemWhere(query: ItemQuery) {
   if (query.search) {
     clauses.push("(i.title ILIKE ? OR i.excerpt ILIKE ?)");
     args.push(`%${query.search}%`, `%${query.search}%`);
+  }
+
+  if (query.since) {
+    clauses.push("i.published_at >= ?");
+    args.push(query.since);
+  }
+
+  if (query.until) {
+    clauses.push("i.published_at < ?");
+    args.push(query.until);
   }
 
   return {
@@ -322,14 +253,14 @@ export async function upsertItem(
       `INSERT INTO content.items
         (id, source_id, kind, title, url, excerpt, body_html, author,
          published_at, fetched_at, thumbnail_url, video_id, external_id,
-         view_count, like_count, youtube_comment_count, rating,
+         view_count, like_count, youtube_comment_count, rating, github_json,
          content_hash, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT (url) DO UPDATE SET
          kind = EXCLUDED.kind,
          title = EXCLUDED.title,
          excerpt = EXCLUDED.excerpt,
-         body_html = EXCLUDED.body_html,
+         body_html = COALESCE(EXCLUDED.body_html, content.items.body_html),
          author = EXCLUDED.author,
          published_at = EXCLUDED.published_at,
          fetched_at = EXCLUDED.fetched_at,
@@ -340,6 +271,7 @@ export async function upsertItem(
          like_count = EXCLUDED.like_count,
          youtube_comment_count = EXCLUDED.youtube_comment_count,
          rating = EXCLUDED.rating,
+         github_json = COALESCE(EXCLUDED.github_json, content.items.github_json),
          content_hash = EXCLUDED.content_hash,
          updated_at = EXCLUDED.updated_at
        RETURNING id`,
@@ -362,6 +294,7 @@ export async function upsertItem(
       item.metrics?.likes ?? 0,
       item.metrics?.youtubeComments ?? 0,
       item.metrics?.rating ?? null,
+      githubJson(item.github),
       contentHash(item),
       now,
       now,
@@ -384,6 +317,34 @@ export async function upsertItem(
   }
 
   return itemId;
+}
+
+/** Persists a lazily fetched reader body so later views never refetch it. */
+export async function saveItemBody(
+  db: PostgresDatabase,
+  itemId: string,
+  bodyHtml: string,
+  now = new Date().toISOString(),
+): Promise<void> {
+  await db
+    .prepare(
+      "UPDATE content.items SET body_html = ?, updated_at = ? WHERE id = ?",
+    )
+    .run(bodyHtml, now, itemId);
+}
+
+/** Persists lazily resolved repository facts and README for a legacy row. */
+export async function saveItemGithub(
+  db: PostgresDatabase,
+  itemId: string,
+  repo: GitHubRepo,
+  now = new Date().toISOString(),
+): Promise<void> {
+  await db
+    .prepare(
+      "UPDATE content.items SET github_json = ?, updated_at = ? WHERE id = ?",
+    )
+    .run(githubJson(repo), now, itemId);
 }
 
 export async function countItems(db: PostgresDatabase): Promise<number> {

@@ -8,11 +8,15 @@ import { CommentSection } from "@/components/content/comment-section";
 import { ContentDetailAside } from "@/components/content/content-detail-aside";
 import { ContentDisabled } from "@/components/content/content-disabled";
 import { ModelModule } from "@/components/content/model-module";
+import { RepoPanel } from "@/components/content/repo-panel";
 import { SaveButton } from "@/components/content/save-button";
+import { ShareButton } from "@/components/content/share-button";
 import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
 import { contentDate, kindLabel, videoEmbedUrl } from "@/lib/content/format";
 import { contentEnabled } from "@/lib/content/policy";
+import { ensureArticleBody } from "@/lib/content/reader";
+import { ensureGithubRepo } from "@/lib/content/repo-reader";
 import { countComments, listComments } from "@/lib/content/store/comments";
 import { listLinksForItem } from "@/lib/content/store/links";
 import { getItem, listRelatedItems } from "@/lib/content/store/items";
@@ -65,10 +69,13 @@ export default async function SignalDetailPage({ params }: PageProps) {
 
   if (!item) notFound();
 
+  const reader =
+    item.kind === "repo" ? null : await ensureArticleBody(db, item);
   let comments: ContentComment[] = [];
   let commentCount = 0;
 
-  const [links, catalog, related, saved] = await Promise.all([
+  const [repo, links, catalog, related, saved] = await Promise.all([
+    ensureGithubRepo(db, item),
     listLinksForItem(db, item.id),
     getCatalogData(),
     listRelatedItems(db, item.id, item.tags, 3),
@@ -130,11 +137,14 @@ export default async function SignalDetailPage({ params }: PageProps) {
                   {item.title}
                 </h1>
               </div>
-              <SaveButton
-                itemId={item.id}
-                saved={saved}
-                signedIn={Boolean(customer)}
-              />
+              <div className="flex flex-wrap items-center gap-2">
+                <ShareButton title={item.title} />
+                <SaveButton
+                  itemId={item.id}
+                  saved={saved}
+                  signedIn={Boolean(customer)}
+                />
+              </div>
             </div>
 
             {item.tags.length > 0 ? (
@@ -168,11 +178,13 @@ export default async function SignalDetailPage({ params }: PageProps) {
               </div>
             ) : null}
 
-            {!isVideo ? (
+            {repo ? <RepoPanel repo={repo} /> : null}
+
+            {!isVideo && reader ? (
               <article className="rounded-xl border border-black/10 bg-surface p-5 dark:border-white/10">
-                {item.bodyHtml ? (
+                {reader.html ? (
                   <div
-                    dangerouslySetInnerHTML={{ __html: item.bodyHtml }}
+                    dangerouslySetInnerHTML={{ __html: reader.html }}
                     className="signal-body text-sm leading-7 text-foreground/90"
                   />
                 ) : (
@@ -181,6 +193,24 @@ export default async function SignalDetailPage({ params }: PageProps) {
                       "This source did not publish a body excerpt."}
                   </p>
                 )}
+
+                {reader.error ? (
+                  <p
+                    className="mt-4 rounded-lg border border-dashed border-black/15 px-3 py-2 text-xs leading-5 text-muted dark:border-white/15"
+                    role="status"
+                  >
+                    {reader.html
+                      ? `The full article could not be loaded (${reader.error}). Showing the publisher's feed preview.`
+                      : `The full article could not be loaded (${reader.error}). ${item.excerpt ? "Showing the publisher's excerpt." : "The publisher did not syndicate a body."}`}
+                  </p>
+                ) : null}
+
+                {!reader.error && reader.source === "scrape" ? (
+                  <p className="mt-4 text-[11px] text-muted">
+                    Body fetched from the publisher&apos;s page and sanitized
+                    for on-site reading.
+                  </p>
+                ) : null}
               </article>
             ) : null}
 
@@ -194,7 +224,10 @@ export default async function SignalDetailPage({ params }: PageProps) {
             />
           </div>
 
-          <ContentDetailAside item={item} related={related} />
+          <ContentDetailAside
+            item={repo ? { ...item, github: repo } : item}
+            related={related}
+          />
         </section>
       </main>
 

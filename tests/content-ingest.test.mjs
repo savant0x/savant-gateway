@@ -181,6 +181,56 @@ test("YouTube ingestion merges Data API likes and comment counts", async () => {
   }
 });
 
+test("a YouTube handle resolves without a Data API key", async () => {
+  const db = await createStorageDatabase({ env: {} });
+
+  try {
+    const source = await createSource(db, {
+      kind: "youtube",
+      label: "@handle",
+      url: "https://www.youtube.com/@handle",
+      config: { tags: [], channelId: "@handle" },
+      enabled: true,
+      fetchIntervalMinutes: 60,
+      maxItems: 5,
+    });
+    const calls = [];
+
+    const result = await ingestSource(db, source, {
+      apiKey: null,
+      fetchText: async (url) => {
+        calls.push(url);
+
+        if (url === "https://www.youtube.com/@handle") {
+          return '<meta content="https://www.youtube.com/channel/UCabcdefghijklmnopqrstuv">';
+        }
+
+        return YOUTUBE_FEED;
+      },
+      now: () => "2026-11-02T12:00:00.000Z",
+      models: [],
+    });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.itemsUpserted, 1);
+    assert.ok(calls.includes("https://www.youtube.com/@handle"));
+    assert.ok(
+      calls.some((url) =>
+        url.startsWith(
+          "https://www.youtube.com/feeds/videos.xml?channel_id=UCabcdefghijklmnopqrstuv",
+        ),
+      ),
+    );
+    assert.ok(!calls.some((url) => url.startsWith("https://www.googleapis.com")));
+
+    const item = (await listItems(db, { sourceId: source.id })).items[0];
+
+    assert.equal(item.videoId, "vid123");
+  } finally {
+    await db.close();
+  }
+});
+
 test("a failed statistics call keeps the feed metrics and the cycle", async () => {
   const db = await createStorageDatabase({ env: {} });
 

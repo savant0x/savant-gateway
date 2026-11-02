@@ -18,6 +18,12 @@ export function youtubeApiKey(
   return env.YOUTUBE_API_KEY?.trim() || null;
 }
 
+export function githubToken(
+  env: Record<string, string | undefined> = process.env,
+): string | null {
+  return env.GITHUB_TOKEN?.trim() || null;
+}
+
 export function contentCronSecret(
   env: Record<string, string | undefined> = process.env,
 ): string | null {

@@ -15,6 +15,7 @@ import type { ParseOptions } from "./feed-xml.ts";
 
 import { XMLParser } from "fast-xml-parser";
 
+import { isMetadataTemplate } from "./article.ts";
 import { CONTENT_LIMITS } from "./policy.ts";
 import { resolveFeedUrl } from "./url.ts";
 import { entryFromYouTube } from "./feed-youtube.ts";
@@ -82,10 +83,13 @@ function entryFromRss(
     entry["content:encoded"],
     entry.content,
   );
-  const excerpt = stripHtml(excerptSource).slice(
-    0,
-    CONTENT_LIMITS.maxExcerptChars,
-  );
+  const plainBody = stripHtml(rawBody);
+  const metadataTemplate = isMetadataTemplate(plainBody);
+  const excerpt =
+    (metadataTemplate ? "" : stripHtml(excerptSource)).slice(
+      0,
+      CONTENT_LIMITS.maxExcerptChars,
+    ) || title;
   const tags = entryTags(entry, options.tags);
   const host = new URL(options.baseUrl).hostname;
   const author =
@@ -101,7 +105,7 @@ function entryFromRss(
     title,
     url,
     excerpt,
-    bodyHtml: cleanBody(rawBody),
+    bodyHtml: metadataTemplate ? null : cleanBody(rawBody),
     author,
     publishedAt: publishedAt(
       firstText(
@@ -180,6 +184,27 @@ export function youtubeChannelId(raw: string): string | null {
   } catch {
     return value.startsWith("@") ? value : null;
   }
+}
+
+/**
+ * Reads the canonical channel id out of a public channel page. YouTube exposes
+ * it in the page's structured data, which lets a handle work without a Data API
+ * key; the old site required a key and lost channels that only had handles.
+ */
+export function youtubeChannelIdFromPage(html: string): string | null {
+  const patterns = [
+    /"channelId":"(UC[A-Za-z0-9_-]{20,})"/,
+    /"externalId":"(UC[A-Za-z0-9_-]{20,})"/,
+    /\/channel\/(UC[A-Za-z0-9_-]{20,})/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+
+    if (match) return match[1];
+  }
+
+  return null;
 }
 
 export function youtubeFeedUrl(channelId: string): string {

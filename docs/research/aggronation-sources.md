@@ -17,15 +17,15 @@ operator-requested registrations, idempotent on URL.
 | Old label | Old type | Committed URL | Savant kind | Live parser probe |
 |---|---|---|---|---|
 | Hacker News | `rss` | `https://hnrss.org/frontpage` | `rss` | 20 items, `article` |
-| HuggingFace Daily Papers | `huggingface` | `https://huggingface.co/papers` | — | **Unsupported**: old fetcher read `https://huggingface.co/api/daily_papers` JSON; Savant has no HuggingFace fetcher |
+| HuggingFace Daily Papers | `huggingface` | `https://huggingface.co/papers` (fetches `/api/daily_papers`) | `huggingface` | Public JSON array parsed by `lib/content/huggingface.ts`; no key |
 | Open Source Projects | `opensource` | `https://www.opensourceprojects.dev/rss` | `rss` | 12 items, `repo` with tag `repository` |
-| Trendshift | `trendshift` | `https://trendshift.io/?sort=views` | — | **Unsupported**: HTML scraper; the site publishes no feed |
+| Trendshift | `trendshift` | `https://trendshift.io/?sort=views` | `trendshift` | Listing HTML parsed by `lib/content/trendshift.ts`; no key |
 | r/AI_Agents | `reddit` | `https://www.reddit.com/r/AI_Agents/hot.rss` | `rss` | 20 items, `discussion`; Reddit rate-limits |
 | r/singularity | `reddit` | `https://www.reddit.com/r/singularity/hot.rss` | `rss` | HTTP 429 at extraction time; retry later |
 
-The four `rss`-compatible rows can be created in **Admin → Content** today.
-HuggingFace and Trendshift need a new fetcher before they can be represented
-honestly; do not register them as RSS.
+All six rows can be created in **Admin → Content** today, or in one action with
+**Add recommended sources**. HuggingFace and Trendshift use their own kinds;
+do not register them as RSS.
 
 ## 2. Source names evidenced in FIDs, URLs not committed
 
@@ -84,14 +84,17 @@ mapped to Savant `youtube` sources. A `UC…` channel id works without
 
 ## 4. Import notes
 
-- Savant supports only `kind: "rss"` and `kind: "youtube"`. The old
-  `reddit`, `huggingface`, `trendshift`, and `opensource` types do not exist.
+- Savant supports `kind: "rss"`, `"youtube"`, `"huggingface"`, and
+  `"trendshift"`. The old `reddit` and `opensource` types are still represented
+  as `rss`; they are feed dialects, not separate kinds.
 - Reddit feeds are ordinary Atom and work as `rss`, but Reddit returns 429
   intermittently. Ingestion records the failure and retries on the next fetch.
 - Open Source Projects is an RSS feed. Add the tag `repository` so Savant's
   `inferKind` classifies its items as repositories rather than articles.
-- Old HuggingFace items came from a JSON API and old Trendshift items from an
-  HTML scraper. Neither can be imported as an RSS source without a new fetcher.
+- HuggingFace uses the public daily-papers JSON API; Trendshift parses its
+  listing HTML. Both are first-class kinds now, and neither needs a key.
+- `GITHUB_TOKEN` is optional. When set, repo items are enriched with stars,
+  forks, language, topics, license, and an OG image at fetch time.
 - The old X/Twitter sources are deliberately excluded: X support was removed
   from the old site, and its free read tier no longer exists.
 

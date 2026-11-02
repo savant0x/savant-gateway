@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { parseFeed, youtubeChannelId } from "../lib/content/feeds.ts";
+import {
+  parseFeed,
+  youtubeChannelId,
+  youtubeChannelIdFromPage,
+} from "../lib/content/feeds.ts";
 
 const RSS = `<?xml version="1.0"?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"
@@ -41,6 +45,28 @@ test("RSS items normalize, resolve relative links, and sanitize HTML", () => {
   assert.match(item.bodyHtml, /<p>Full body/);
   assert.match(item.excerpt, /Hello world/);
   assert.doesNotMatch(item.excerpt, /script/);
+});
+
+test("aggregator metadata templates never become the body or excerpt", () => {
+  const xml = `<rss><channel><item>
+    <title>Oracle files to sell stock</title>
+    <link>https://example.com/oracle</link>
+    <description><![CDATA[Article URL: https://example.com/oracle
+Comments URL: https://news.ycombinator.com/item?id=1
+Points: 11
+# Comments: 0]]></description>
+  </item></channel></rss>`;
+
+  const [item] = parseFeed(xml, {
+    baseUrl: "https://hnrss.org/frontpage",
+    sourceKind: "rss",
+    tags: ["discussion"],
+    now: "2026-11-02T00:00:00.000Z",
+  });
+
+  assert.equal(item.bodyHtml, null);
+  assert.equal(item.excerpt, "Oracle files to sell stock");
+  assert.doesNotMatch(item.excerpt, /Article URL/);
 });
 
 test("Atom video entries map to a video with a thumbnail fallback", () => {
@@ -156,4 +182,16 @@ test("YouTube channel ids and handles are recognized", () => {
   );
   assert.equal(youtubeChannelId("https://www.youtube.com/@savant"), "@savant");
   assert.equal(youtubeChannelId("@savant"), "@savant");
+});
+
+test("a public channel page exposes the id behind a handle", () => {
+  const html = `<html><head><meta property="og:url"
+    content="https://www.youtube.com/channel/UCabcdefghijklmnopqrstuv"></head>
+    <script>window.__data = {"channelId":"UCabcdefghijklmnopqrstuv"};</script>`;
+
+  assert.equal(
+    youtubeChannelIdFromPage(html),
+    "UCabcdefghijklmnopqrstuv",
+  );
+  assert.equal(youtubeChannelIdFromPage("<html>no channel</html>"), null);
 });

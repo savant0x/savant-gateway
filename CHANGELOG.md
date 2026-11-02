@@ -3,6 +3,79 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-02 — Signal repository READMEs and precise article failures
+
+- **FID-2026-1102-107 — medium — repository pages now render the GitHub
+  README as content, and legacy repository rows repair their facts on first
+  view.** `github_json` carries a sanitized `readmeHtml`; the first detail view
+  fetches missing stars, forks, description, and README once and persists them.
+  README relative images resolve to raw GitHub URLs and links to the repository;
+  scripts, iframes, event handlers, and `javascript:` links are removed.
+  Repository cards and the detail aside show stars, forks, and language, and
+  repository pages no longer run the article scraper. A publisher that refuses
+  automated reading now reports the HTTP status instead of "could not be
+  reached"; no paywall is bypassed. Verified: lint 0 warnings, typecheck 0, full
+  `npm test` 824 tests (823 pass, 1 skipped), 24 focused README/article/source
+  tests, quality PASS (531 files), build exit 0. Live: a repository page renders
+  its README and 32.6K stars / 1.6K forks; the repository list shows the same
+  stats; a CNBC article still renders its body; the FT Anthropic page reports
+  HTTP 403. Not verified: browser pointer/visual review and `npm run verify`
+  HTTP/recovery suites.
+
+## 2026-11-02 — Signal reader parity: source content and repository cards
+
+- **FID-2026-1102-106 — medium — Signal detail pages now render the
+  publisher's article when the feed carried only a link, a metadata template,
+  or a short preview.** The reader keeps a usable feed body, otherwise fetches
+  the source page once, extracts JSON-LD or the main semantic region, resolves
+  image URLs, sanitizes the result, and persists it so later views do not
+  refetch. Hacker News metadata templates (`Article URL:` / `Comments URL:` /
+  `Points:`) never become the body or excerpt, including legacy rows read from
+  storage. Repository enrichment now works without `GITHUB_TOKEN` and finds the
+  slug from the item URL, a `owner/repo` title, or a GitHub link in the feed
+  body. Repository pages show the full card: description, stars, forks,
+  language, license, topics, homepage, and last push. A failed scrape keeps the
+  feed preview with an honest note; a failed GitHub lookup keeps previously
+  stored facts instead of blanking them. A YouTube handle now resolves through
+  the public channel page when `YOUTUBE_API_KEY` is absent, so the two handles
+  recovered from the old volume are seedable presets again. Verified: lint 0
+  warnings, typecheck 0, full `npm test` 817 tests (816 pass, 1 skipped), 13
+  focused feed/ingestion tests, quality PASS (529 files), build exit 0, live
+  checks of 276 stored items, 17/17 enriched repositories, a CNBC article body,
+  a paper body, a repository card, and 3 live `@airevolutionx` items ingested
+  with no API key. The local PGlite volume was rebuilt from `data/gateway.db`
+  after its checkpoint failed; the ten non-video presets were reseeded and
+  fetched. Not verified: a browser visual/pointer review and `npm run verify`
+  HTTP/recovery suites; the running local volume has not been reseeded with the
+  two recovered YouTube handles (`r/singularity` returned 429).
+
+## 2026-11-02 — Signal sources, search, digest, share, and recoverable presets
+
+- **FID-2026-1102-094 / 095 / 096 / 097 / 098 / 099 / 103 — medium — Signal
+  now ingests HuggingFace Daily Papers and Trendshift, enriches repository
+  items with GitHub facts, searches titles and excerpts, publishes a UTC-day
+  digest, shares items, and can seed the recoverable aggroNATION sources in one
+  action.** `GITHUB_TOKEN` is optional: with it, repo cards and the detail aside
+  show stars, forks, language, topics, license, and the GitHub OG image; without
+  it, repo items still ingest unenriched. A missing token or a failed lookup
+  never fails a source. The admin seed adds the six committed rows plus four
+  inferred canonical feeds and is idempotent on URL; `npm run seed:content`
+  exposes the same helper outside the UI. Search is title/excerpt `ILIKE`, not
+  semantic retrieval; the digest is chronological, not an AI summary.
+  Verified: lint 0 warnings, typecheck 0, quality PASS (525 files), build exit
+  0, full `npm test` 806 tests (805 pass, 1 skipped), and 40 focused content
+  tests. A live first fetch stored 276 items across nine sources and the hub
+  reports 306 total (30 pre-existing videos); `/signal`, a detail page,
+  `/signal/digest`, a dated digest, and search all return 200. The same run
+  exposed and fixed a legacy `sources_kind_check` constraint that would have
+  rejected HuggingFace sources on upgraded databases; the regression is covered
+  by the content-source suite. `r/singularity` returned 429, and the two
+  YouTube handles need `YOUTUBE_API_KEY` before they can resolve. Not verified:
+  live GitHub enrichment (no `GITHUB_TOKEN`), a browser share/dialog review, and
+  the full `npm run verify` HTTP/recovery suites. The remaining content gaps
+  are recorded as open FIDs: 100 reactions/replies, 101 rising/movers, 102
+  command palette, 104 public source status, and 105 source editing.
+
 ## 2026-11-02 — Signal video thumbnails open the player in a modal
 
 - **FID-2026-1102-093 — medium — Clicking a video thumbnail on Signal now

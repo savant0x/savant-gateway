@@ -10,7 +10,12 @@ export const CONTENT_KINDS = [
 
 export type ContentKind = (typeof CONTENT_KINDS)[number];
 
-export const SOURCE_KINDS = ["rss", "youtube"] as const;
+export const SOURCE_KINDS = [
+  "rss",
+  "youtube",
+  "huggingface",
+  "trendshift",
+] as const;
 
 export type SourceKind = (typeof SOURCE_KINDS)[number];
 
@@ -50,6 +55,25 @@ export type ContentMetrics = {
   rating: number | null;
 };
 
+/**
+ * GitHub facts denormalized at fetch time (FID-2026-1102-096). A render never
+ * calls GitHub; a missing token leaves this null rather than guessing.
+ */
+export type GitHubRepo = {
+  slug: string;
+  description: string | null;
+  stars: number;
+  forks: number;
+  language: string | null;
+  topics: string[];
+  license: string | null;
+  homepage: string | null;
+  pushedAt: string | null;
+  ogImageUrl: string;
+  /** Sanitized GitHub README, or "" when the repository publishes none. */
+  readmeHtml: string | null;
+};
+
 export type ContentItem = {
   id: string;
   sourceId: string;
@@ -67,6 +91,7 @@ export type ContentItem = {
   externalId: string | null;
   tags: string[];
   metrics: ContentMetrics;
+  github: GitHubRepo | null;
 };
 
 export type ContentComment = {
@@ -132,6 +157,7 @@ export type ParsedItem = {
   videoId: string | null;
   tags: string[];
   metrics?: ContentMetrics;
+  github?: GitHubRepo | null;
 };
 
 export type FetchCycle = {

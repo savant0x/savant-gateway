@@ -8,11 +8,29 @@
  */
 
 import type { PostgresDatabase } from "../storage/pg-adapter.ts";
-import type { ContentSource, LinkableModel, ParsedItem } from "./types.ts";
+import type {
+  ContentSource,
+  GitHubRepo,
+  LinkableModel,
+  ParsedItem,
+} from "./types.ts";
 
-import { parseFeed, youtubeChannelId, youtubeFeedUrl } from "./feeds.ts";
+import {
+  parseFeed,
+  youtubeChannelId,
+  youtubeChannelIdFromPage,
+  youtubeFeedUrl,
+} from "./feeds.ts";
+import { plainTextBody } from "./feed-xml.ts";
+import { fetchGithubRepo, repoSlugForItem } from "./github.ts";
+import {
+  HUGGINGFACE_DAILY_PAPERS_URL,
+  parseDailyPapers,
+} from "./huggingface.ts";
 import { suggestModelLinks } from "./linking.ts";
-import { youtubeApiKey } from "./policy.ts";
+import { CONTENT_LIMITS, youtubeApiKey } from "./policy.ts";
+import { normalizeTags } from "./taxonomy.ts";
+import { parseTrendshiftListing } from "./trendshift.ts";
 import {
   listDueSources,
   recordSourceFailure,
@@ -30,6 +48,7 @@ export type IngestDeps = {
   now?: () => string;
   models?: LinkableModel[];
   apiKey?: string | null;
+  fetchGithub?: (slug: string) => Promise<GitHubRepo | null>;
 };
 
 export type IngestResult = {
@@ -85,9 +104,16 @@ async function resolveChannelId(
   if (!channel.startsWith("@")) return channel;
 
   if (!apiKey) {
-    throw new FetchError(
-      "A YouTube handle needs YOUTUBE_API_KEY; use a UC… channel id instead.",
-    );
+    const page = await fetchText(`https://www.youtube.com/${channel}`);
+    const id = youtubeChannelIdFromPage(page);
+
+    if (!id) {
+      throw new FetchError(
+        "YouTube did not expose a channel id for that handle; use a UC… channel id or set YOUTUBE_API_KEY.",
+      );
+    }
+
+    return id;
   }
 
   const endpoint = new URL("https://www.googleapis.com/youtube/v3/channels");
@@ -196,11 +222,73 @@ async function enrichYouTubeMetrics(
   }
 }
 
+/**
+ * Repo facts are optional. The public API works without a token; a failed or
+ * rate-limited lookup leaves the item without GitHub data and never fails the
+ * source. The slug may come from the item URL, a `owner/repo` title, or a link
+ * in the feed body. Results are cached by slug within one cycle.
+ */
+async function enrichGithub(
+  items: ParsedItem[],
+  deps: IngestDeps,
+): Promise<void> {
+  const fetcher = deps.fetchGithub ?? fetchGithubRepo;
+  const cache = new Map<string, GitHubRepo | null>();
+
+  for (const item of items) {
+    if (item.kind !== "repo") continue;
+
+    const slug = repoSlugForItem(item);
+
+    if (!slug) continue;
+
+    if (!cache.has(slug)) {
+      cache.set(slug, await fetcher(slug).catch(() => null));
+    }
+
+    const repo = cache.get(slug) ?? null;
+
+    item.github = repo;
+
+    if (!repo) continue;
+
+    if (repo.description) {
+      item.excerpt = repo.description.slice(0, CONTENT_LIMITS.maxExcerptChars);
+    }
+
+    if (!item.bodyHtml && repo.description) {
+      item.bodyHtml = plainTextBody(repo.description);
+    }
+
+    item.thumbnailUrl ??= repo.ogImageUrl;
+    item.tags = normalizeTags([...item.tags, ...repo.topics]);
+  }
+}
+
 async function fetchSourceItems(
   source: ContentSource,
   deps: IngestDeps,
 ): Promise<ParsedItem[]> {
   const fetchText = deps.fetchText ?? defaultFetchText;
+
+  if (source.kind === "huggingface") {
+    const body = await fetchText(HUGGINGFACE_DAILY_PAPERS_URL);
+    const items = parseDailyPapers(body, source.maxItems);
+
+    await enrichGithub(items, deps);
+
+    return items;
+  }
+
+  if (source.kind === "trendshift") {
+    const html = await fetchText(source.url);
+    const items = parseTrendshiftListing(html, source.maxItems, deps.now?.());
+
+    await enrichGithub(items, deps);
+
+    return items;
+  }
+
   const apiKey = deps.apiKey === undefined ? youtubeApiKey() : deps.apiKey;
   const feed = await sourceFeedUrl(source, fetchText, apiKey);
   const xml = await fetchText(feed.url);
@@ -215,6 +303,8 @@ async function fetchSourceItems(
   if (source.kind === "youtube") {
     await enrichYouTubeMetrics(items, fetchText, apiKey);
   }
+
+  await enrichGithub(items, deps);
 
   return items;
 }

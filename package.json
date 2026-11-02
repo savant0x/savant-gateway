@@ -6,7 +6,7 @@
 	"private": true,
 	"license": "Apache-2.0",
 	"engines": {
-		"node": ">=22.18.0"
+		"node": "22.x"
 	},
 	"scripts": {
 		"dev": "next dev",
@@ -25,6 +25,7 @@
 		"db:backup": "node scripts/db-backup.mjs",
 		"db:restore": "node scripts/db-restore.mjs",
 		"db:import": "node scripts/sqlite-import.mjs",
+		"seed:content": "node scripts/seed-content-sources.mjs",
 		"operations:monitor": "node scripts/operations-monitor.mjs",
 		"probe:speed": "node --env-file=.env.local scripts/upstream-speed-probe.mjs",
 		"images": "node scripts/render-images.mjs",

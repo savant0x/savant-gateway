@@ -6,6 +6,7 @@ import type {
   LinkSuggestion,
 } from "../types.ts";
 
+import { parseGithubJson } from "../github.ts";
 import { CONTENT_RELATIONS } from "../types.ts";
 import { normalizeTags } from "../taxonomy.ts";
 
@@ -28,6 +29,7 @@ type CoverageRow = {
   like_count: number | string;
   youtube_comment_count: number | string;
   rating: number | string | null;
+  github_json: string | null;
   tags_json: string;
   relation: ContentRelation;
   reason: string;
@@ -70,6 +72,7 @@ function coverageRowToItem(row: CoverageRow): CoverageItem {
             ? Math.min(5, Number(row.rating))
             : null,
     },
+    github: parseGithubJson(row.github_json),
     relation: row.relation,
     reason: row.reason,
     confidence: row.confidence,
@@ -195,6 +198,7 @@ export async function listContentForModel(
               i.url, i.excerpt, i.body_html, i.author, i.published_at,
               i.fetched_at, i.thumbnail_url, i.video_id, i.external_id,
               i.view_count, i.like_count, i.youtube_comment_count, i.rating,
+              i.github_json,
               COALESCE(
                 (SELECT json_agg(t.tag ORDER BY t.tag)
                    FROM content.item_tags t WHERE t.item_id = i.id),

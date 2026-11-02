@@ -25,6 +25,7 @@ export const metadata: Metadata = {
 type Search = {
   kind?: string;
   tag?: string;
+  q?: string;
   page?: string;
 };
 
@@ -32,11 +33,13 @@ function queryHref(
   kind: string | undefined,
   tag: string | undefined,
   page = 1,
+  search?: string,
 ) {
   const params = new URLSearchParams();
 
   if (kind) params.set("kind", kind);
   if (tag) params.set("tag", tag);
+  if (search) params.set("q", search);
   if (page > 1) params.set("page", String(page));
 
   const query = params.toString();
@@ -66,6 +69,7 @@ export default async function SignalPage({
     ? (params.kind as ContentKind)
     : undefined;
   const tag = params.tag?.trim() || undefined;
+  const search = params.q?.trim().slice(0, 120) || undefined;
   const page = Math.max(1, Math.min(200, Number(params.page) || 1));
   const pageSize = 24;
 
@@ -83,6 +87,7 @@ export default async function SignalPage({
       listItems(db, {
         kind,
         tag,
+        search,
         limit: pageSize,
         offset: (page - 1) * pageSize,
       }),
@@ -132,6 +137,41 @@ export default async function SignalPage({
         </section>
 
         <section className="mx-auto w-full max-w-[80rem] px-4 py-8 sm:px-6 lg:px-8">
+          <form
+            action="/signal"
+            className="mb-4 flex flex-wrap items-center gap-2"
+            method="get"
+          >
+            {kind ? <input name="kind" type="hidden" value={kind} /> : null}
+            {tag ? <input name="tag" type="hidden" value={tag} /> : null}
+            <label className="sr-only" htmlFor="signal-search">
+              Search Signal
+            </label>
+            <input
+              className="min-w-0 flex-1 rounded-lg border border-black/10 bg-background px-3 py-2 text-sm outline-none focus:border-accent dark:border-white/10"
+              defaultValue={search}
+              id="signal-search"
+              maxLength={120}
+              name="q"
+              placeholder="Search titles and excerpts"
+              type="search"
+            />
+            <button
+              className="rounded-lg bg-foreground px-3 py-2 text-xs font-medium text-background transition-opacity hover:opacity-90"
+              type="submit"
+            >
+              Search
+            </button>
+            {search ? (
+              <Link
+                className="text-xs text-muted hover:text-foreground"
+                href={queryHref(kind, tag)}
+              >
+                Clear
+              </Link>
+            ) : null}
+          </form>
+
           <div className="flex flex-wrap items-center justify-between gap-3">
             <nav aria-label="Content kinds" className="flex flex-wrap gap-1.5">
               {filters.map((filter) => {
@@ -146,19 +186,27 @@ export default async function SignalPage({
                         ? "border-cyan-300/40 bg-cyan-300/10 text-cyan-100"
                         : "border-black/10 text-muted hover:text-foreground dark:border-white/10"
                     }`}
-                    href={queryHref(filter.key, tag)}
+                    href={queryHref(filter.key, tag, 1, search)}
                   >
                     {filter.label}
                   </Link>
                 );
               })}
             </nav>
-            <Link
-              className="text-xs text-accent hover:underline"
-              href="/signal/briefing"
-            >
-              Your briefing →
-            </Link>
+            <div className="flex flex-wrap items-center gap-4">
+              <Link
+                className="text-xs text-accent hover:underline"
+                href="/signal/digest"
+              >
+                Today&apos;s digest →
+              </Link>
+              <Link
+                className="text-xs text-accent hover:underline"
+                href="/signal/briefing"
+              >
+                Your briefing →
+              </Link>
+            </div>
           </div>
 
           {tags.length > 0 ? (
@@ -169,7 +217,7 @@ export default async function SignalPage({
               {tag ? (
                 <Link
                   className="rounded-full border border-cyan-300/40 bg-cyan-300/10 px-2 py-0.5 text-[11px] text-cyan-100"
-                  href={queryHref(kind, undefined)}
+                  href={queryHref(kind, undefined, 1, search)}
                 >
                   {tagLabel(tag)} ×
                 </Link>
@@ -181,7 +229,7 @@ export default async function SignalPage({
                   <Link
                     key={entry.slug}
                     className="rounded-full border border-black/10 px-2 py-0.5 text-[11px] text-muted hover:text-foreground dark:border-white/10"
-                    href={queryHref(kind, entry.slug)}
+                    href={queryHref(kind, entry.slug, 1, search)}
                   >
                     {entry.label} · {entry.count}
                   </Link>
@@ -195,11 +243,13 @@ export default async function SignalPage({
             </p>
           ) : pageData.items.length === 0 ? (
             <div className="mt-8 rounded-xl border border-dashed border-black/15 p-8 text-center dark:border-white/15">
-              <p className="text-sm font-medium">No stories yet.</p>
+              <p className="text-sm font-medium">
+                {search ? `No pieces match “${search}”.` : "No stories yet."}
+              </p>
               <p className="mx-auto mt-2 max-w-md text-xs leading-5 text-muted">
-                The hub is enabled, but no source has produced an item. An
-                operator can add an RSS or YouTube source in Admin → Content and
-                press Fetch.
+                {search
+                  ? "Search looks at the title and excerpt only. Try a shorter term, or clear the search to browse everything."
+                  : "The hub is enabled, but no source has produced an item. An operator can add a source in Admin → Content and press Fetch."}
               </p>
             </div>
           ) : (
@@ -222,7 +272,7 @@ export default async function SignalPage({
                     ? "pointer-events-none text-muted/40"
                     : "text-accent hover:underline"
                 }
-                href={queryHref(kind, tag, Math.max(1, page - 1))}
+                href={queryHref(kind, tag, Math.max(1, page - 1), search)}
               >
                 ← Newer
               </Link>
@@ -236,7 +286,12 @@ export default async function SignalPage({
                     ? "pointer-events-none text-muted/40"
                     : "text-accent hover:underline"
                 }
-                href={queryHref(kind, tag, Math.min(pageCount, page + 1))}
+                href={queryHref(
+                  kind,
+                  tag,
+                  Math.min(pageCount, page + 1),
+                  search,
+                )}
               >
                 Older →
               </Link>

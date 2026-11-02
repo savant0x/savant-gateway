@@ -1,10 +1,12 @@
 "use client";
 
+import type { SourceKind } from "@/lib/content/types";
+
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 type FormState = {
-  kind: "rss" | "youtube";
+  kind: SourceKind;
   label: string;
   url: string;
   tags: string;
@@ -23,6 +25,20 @@ const INITIAL: FormState = {
   fetchIntervalMinutes: "60",
   maxItems: "20",
   enabled: true,
+};
+
+const KIND_URLS: Record<FormState["kind"], string> = {
+  rss: "",
+  youtube: "",
+  huggingface: "https://huggingface.co/api/daily_papers",
+  trendshift: "https://trendshift.io/?sort=views",
+};
+
+const KIND_HINTS: Record<FormState["kind"], string> = {
+  rss: "Free RSS or Atom feed.",
+  youtube: "YouTube channel; the channel feed is fetched server-side.",
+  huggingface: "HuggingFace Daily Papers; the public JSON endpoint is fetched.",
+  trendshift: "Trendshift listing; the public page is parsed for repos.",
 };
 
 const INPUT =
@@ -76,8 +92,9 @@ export function ContentSourceForm() {
         <div>
           <h2 className="text-sm font-semibold">Add a source</h2>
           <p className="mt-1 text-xs leading-5 text-muted">
-            Free RSS or YouTube feeds only. The source URL is fetched by the
-            server, so loopback and private addresses are refused.
+            {KIND_HINTS[form.kind]} The source URL is fetched by the server, so
+            loopback and private addresses are refused. GitHub repo facts need
+            GITHUB_TOKEN; without it repos still ingest, unenriched.
           </p>
         </div>
         <label className="flex items-center gap-2 text-xs text-muted">
@@ -96,12 +113,21 @@ export function ContentSourceForm() {
           <select
             className={`${INPUT} mt-1`}
             value={form.kind}
-            onChange={(event) =>
-              update("kind", event.target.value as FormState["kind"])
-            }
+            onChange={(event) => {
+              const kind = event.target.value as FormState["kind"];
+
+              setForm((current) => ({
+                ...current,
+                kind,
+                url: KIND_URLS[kind],
+                channelId: kind === "youtube" ? current.channelId : "",
+              }));
+            }}
           >
             <option value="rss">RSS / Atom</option>
             <option value="youtube">YouTube channel</option>
+            <option value="huggingface">HuggingFace Daily Papers</option>
+            <option value="trendshift">Trendshift listing</option>
           </select>
         </label>
         <label className="text-xs text-muted sm:col-span-2">
@@ -125,14 +151,24 @@ export function ContentSourceForm() {
           />
         </label>
         <label className="text-xs text-muted sm:col-span-2 lg:col-span-3">
-          {form.kind === "youtube" ? "Channel URL or channel id" : "Feed URL"}
+          {form.kind === "youtube"
+            ? "Channel URL or channel id"
+            : form.kind === "huggingface"
+              ? "Daily-papers API URL"
+              : form.kind === "trendshift"
+                ? "Trendshift listing URL"
+                : "Feed URL"}
           <input
             required
             className={`${INPUT} mt-1`}
             placeholder={
               form.kind === "youtube"
                 ? "https://www.youtube.com/@channel"
-                : "https://example.com/feed.xml"
+                : form.kind === "huggingface"
+                  ? "https://huggingface.co/api/daily_papers"
+                  : form.kind === "trendshift"
+                    ? "https://trendshift.io/?sort=views"
+                    : "https://example.com/feed.xml"
             }
             type="url"
             value={form.url}

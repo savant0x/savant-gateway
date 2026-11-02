@@ -3,6 +3,30 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-02 — Free AI Signal merged with model coverage and purchase paths
+
+- **FID-2026-1102-088 / 089 / 090 / 091 — high — The gateway now has a public
+  content surface tied to the model catalog, while content remains completely
+  separate from billing and routing.** A new `content` PostgreSQL namespace
+  stores operator-selected RSS/YouTube sources, normalized items, canonical
+  tags, fetch cycles, reviewed model links, and signed-in watch/save state.
+  Ingestion is bounded to 15 seconds, 2 MiB, the per-source item cap, and a
+  five-failure disable rule; HTML is sanitized. Model links are written only
+  on an exact title or publisher-tag alias, never a bare family name, and show
+  the reason they matched. `/signal` is the single public hub, with detail and
+  topic pages and one `ModelModule` that uses the catalog's live sell price and
+  the existing signup/account/plans CTA. Model pages gain a Coverage section;
+  signed-in customers can follow a model, save an item, and read a seven-day
+  model-aware briefing. `CONTENT_ENABLED=false` disables the public surface.
+  Verified: commit `81a40eb`, lint 0 warnings, typecheck 0, quality PASS (506
+  files), build 0, full `npm test` 789 tests (788 pass, 1 skipped), 23 focused
+  content tests, and a disposable PGlite run that rendered the empty and seeded
+  hub/detail/topic/model pages and exercised authenticated watch/save/briefing/
+  saved requests with a real session cookie (all 200). Not verified: a real
+  publisher feed, the full `npm run verify` HTTP/recovery suites, and a browser
+  visual review. The reference site's paid-content question does not apply:
+  all content is free; the only purchase is inference.
+
 ## 2026-11-01 — PostgreSQL storage cutover completed
 
 - **FID-2026-1031-086 / FID-2026-1031-085 — critical — The running application

@@ -194,8 +194,12 @@ spend and messaging boundaries remain binding; no missing evidence is invented.
   `FID-2026-1030-056-LIVE`.
 - [ ] **C7 — FID-2026-1030-044 and FID-2026-1030-068:** commercial and USDC
   implementation; chain/token, xpub, RPC and screening inputs requested.
-- [ ] **C8 — FID-2026-1030-066:** reconcile the retained port plan with the
-  recorded decision to keep one persistent SQLite host; ruling requested.
+- [x] **C8 — FID-2026-1030-066 / FID-2026-1031-085/086:** reconcile the
+  retained port plan with the storage ruling. On 2026-10-31 the operator ruled
+  that production accounting will not run on one SQLite file; FID-066 is
+  superseded, and the PostgreSQL port landed under FID-085/086 (`723ac1f`).
+  `npm run storage:check` exits 0 with zero SQLite importers, and `npm run
+  verify` exits 0 on 2026-11-02.
 - [ ] **C9 — FID-2026-1030-043 and FID-2026-1030-062:** complete master
   evidence and real acceptance, retaining the explicit release boundary.
 - [x] **C10 — FID-2026-1031-075:** crypto-only launch gate. `CARD_TOPUPS_ENABLED`
@@ -2193,4 +2197,46 @@ monthly cost, not on that figure.
   adapter, no migration port, no double-spend proof, no `DATABASE_URL`
   contract, no cutover. Free plan is scoped to development and preview only,
   and the 30-day retention claim in `content/legal/` still depends on
-  snapshots plus off-site dumps rather than native PITR.
+  snapshots plus off-site dumps rather than native PITR. **Later (2026-11-02):**
+  the cutover landed under FID-086 (`723ac1f`); this entry records the
+  2026-10-31 state only. See C8.
+
+## Current Session — 2026-11-02 (content-to-commerce merge: 088–091)
+
+Operator request: review `resources/aggroNATION-main` in full and merge its free
+AI content discovery into the gateway so a reader can follow a model from an
+article and then buy inference without leaving the site. The operator confirmed
+the content is all free RSS/YouTube material, nothing is sold from it, and the
+value is the merged attention-to-purchase surface. The build is split into four
+FIDs so each slice can converge and be verified on its own.
+
+- [x] **C1 — Content foundation (FID-088).** Isolated `content` PostgreSQL
+  namespace, operator source registry for RSS/YouTube, bounded fetch with
+  timeout and size ceiling, sanitized HTML, normalized tags, fetch-cycle
+  receipts, cron secret, and failure-streak disablement. No public pages.
+  `81a40eb`.
+- [x] **C2 — Model graph (FID-089).** Deterministic alias matching from content
+  to public model ids, confidence and relation labels, operator manual links
+  and dismissals, and a reviewed coverage read. Precision over recall; no
+  bare-family links. `81a40eb`.
+- [x] **C3 — Public surface (FID-090).** One `/signal` hub with kind filters and
+  topic pages, a detail page with a “Models in this piece” module, and a
+  Coverage section on the model page. Every CTA uses the existing
+  signup/account/plans purchase path. `CONTENT_ENABLED=false` disables it.
+  `81a40eb`.
+- [x] **C4 — Retention (FID-091).** Watch a model, save an item, and a
+  model-aware briefing for signed-in customers. Pull-only; no email, no public
+  engagement counters, no ranking claim. `81a40eb`.
+- [x] **C5 — Verification.** Lint 0 warnings, typecheck exit 0, quality PASS
+  (506 files), build exit 0, full `npm test` 789 tests (788 pass, 1 skipped),
+  and the focused content suites 23/23. A disposable PGlite run rendered the
+  empty hub, a stored item on the hub/detail/topic pages, the model module and
+  Coverage section, and authenticated watch/save/briefing/saved requests with
+  a real session cookie (all 200). Not run and not claimed: `npm run verify`
+  (which adds the HTTP and recovery suites), a real publisher feed, and a
+  browser visual review. The four FIDs are closed and archived.
+
+Non-goals recorded so they are not mistaken for missing work: no paid content,
+no content entitlement, no separate content database, no copy of the reference
+neon skin, no engagement ranking presented as model quality, and no automatic
+email delivery.

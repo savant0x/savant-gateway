@@ -29,9 +29,9 @@ export function CommentSection({
       </div>
 
       <p className="mt-2 text-xs leading-5 text-muted">
-        This discussion is ours, not the publisher&apos;s. It is visible to
-        signed-in customers; the source&apos;s own comment count, when reported,
-        appears in the details panel.
+        This discussion is ours, not the publisher&apos;s. The thread is
+        public. Sign in to post; the source&apos;s own comment count, when
+        reported, appears in the details panel.
       </p>
 
       {signedIn ? (

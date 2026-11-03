@@ -8,6 +8,7 @@ import {
   decideFreeAdmission,
   estimateWeightedTokens,
   nextUtcReset,
+  rawTokensForWeight,
   readFreePoolConfig,
   secondsUntilReset,
 } from "../lib/free-pool.ts";
@@ -77,6 +78,14 @@ test("weighted estimates apply the provider model weight", () => {
   assert.equal(estimateWeightedTokens(1_000, 4_000, 3), 15_000);
   assert.equal(estimateWeightedTokens(1_000, 4_000, 0), 5_000);
   assert.equal(estimateWeightedTokens(0, 0, 1), 1);
+});
+
+test("a weighted balance converts back to raw tokens for display", () => {
+  assert.equal(rawTokensForWeight(15_000, 3), 5_000);
+  assert.equal(rawTokensForWeight(4_999, 3), 1_666);
+  assert.equal(rawTokensForWeight(1_000, 0), 1_000);
+  assert.equal(rawTokensForWeight(0, 3), 0);
+  assert.equal(rawTokensForWeight(Number.NaN, 3), 0);
 });
 
 test("admission allows a request inside the daily allowance", () => {

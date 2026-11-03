@@ -3,6 +3,22 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — Free model pages explain the allocation
+
+- **FID-2026-1103-147 — medium — a free SKU detail page did not state the
+  customer's allocation.** `app/models/[...id]/page.tsx` now loads the
+  customer's daily summary or one-time trial balance only for free SKUs and
+  renders a free-allocation panel. The panel shows available, allocated/granted,
+  used and in-flight weighted tokens, plus the raw-token equivalent at the
+  model's weight. Signed-out visitors get the rules and a sign-in path; a
+  missing observation, no active key, no grant or a storage failure renders an
+  honest state instead of a zero balance. The panel includes a mode-aware FAQ
+  and a copyable `curl` walkthrough using the SKU's public id. Daily copy
+  distinguishes the free-pool path from plan overage; lifetime copy discloses
+  the configured paired-credit fallback. A pure `rawTokensForWeight` helper is
+  covered by `tests/free-pool.test.mjs`. Verified: focused tests 14/14,
+  typecheck, quality (400-line ceiling) and production build all exit 0.
+
 ## 2026-11-03 — FID closure: trial fixture verified in CI
 
 - **FID-2026-1103-146 — closed and archived.** GitHub Actions run `41718858061`

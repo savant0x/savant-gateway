@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import type { IdentityPublishedView } from "@/lib/identity/types";
 import type { Coverage } from "@/lib/content/types";
+import type { DailyTrialSummary } from "@/lib/storage/store/daily-trial";
+import type { TrialBalance } from "@/lib/storage/ledger/trials";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { FreeAllocationPanel } from "@/components/catalog/free-allocation-panel";
 import { CoveragePanel } from "@/components/content/coverage-panel";
 import { IdentityPanel } from "@/components/identity/identity-panel";
 import { SiteFooter } from "@/components/landing/site-footer";
@@ -17,8 +20,10 @@ import { isWatching } from "@/lib/content/store/engagement";
 import { listContentForModel } from "@/lib/content/store/links";
 import { getCustomerSession } from "@/lib/customer-auth";
 import { readPublishedIdentity } from "@/lib/identity/reads";
-import { getCatalogData } from "@/lib/store";
+import { getCatalogData, getDailyTrialSummary } from "@/lib/store";
+import { trialBalance } from "@/lib/storage/ledger/trials";
 import { getDatabase } from "@/lib/storage/runtime";
+import { readTrialConfig } from "@/lib/trials";
 
 export const dynamic = "force-dynamic";
 
@@ -67,8 +72,29 @@ export default async function ModelDetailPage({ params }: PageProps) {
   let unavailable = false;
   let coverage: Coverage | null = null;
   let watching = false;
+  let dailyAllocation: DailyTrialSummary | null = null;
+  let lifetimeAllocation: TrialBalance | null = null;
+  let allocationUnavailable = false;
   const showContent = contentEnabled();
   const customer = await getCustomerSession().catch(() => null);
+  const trialConfig = readTrialConfig();
+  const allocationMode = trialConfig.enabled ? "lifetime" : "daily";
+
+  if (model.access === "free" && customer) {
+    try {
+      if (trialConfig.enabled) {
+        lifetimeAllocation = await trialBalance(
+          await getDatabase(),
+          customer.id,
+          new Date().toISOString(),
+        );
+      } else {
+        dailyAllocation = await getDailyTrialSummary(customer.id);
+      }
+    } catch {
+      allocationUnavailable = true;
+    }
+  }
 
   try {
     const db = await getDatabase();
@@ -140,12 +166,23 @@ export default async function ModelDetailPage({ params }: PageProps) {
               </dl>
               <p className="mt-4 text-xs leading-5 text-muted">
                 {model.access === "free"
-                  ? "Free-pool access depends on shared upstream capacity and is metered by the token weight shown above."
+                  ? "This SKU has no per-token dollar charge. Its free allocation, reset, FAQ and first-call walkthrough are below."
                   : model.access === "subscription"
                     ? "This model requires an active subscription whose plan includes its group."
                     : "Paid usage is settled from prepaid credit at the listed rate."}
               </p>
             </div>
+
+            {model.access === "free" ? (
+              <FreeAllocationPanel
+                daily={dailyAllocation}
+                lifetime={lifetimeAllocation}
+                mode={allocationMode}
+                model={model}
+                signedIn={Boolean(customer)}
+                unavailable={allocationUnavailable}
+              />
+            ) : null}
 
             <div className="rounded-xl border border-black/10 bg-surface p-5 dark:border-white/10">
               <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-muted">

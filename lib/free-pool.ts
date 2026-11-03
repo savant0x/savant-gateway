@@ -76,6 +76,24 @@ export function estimateWeightedTokens(
   return Math.max(1, raw * weight);
 }
 
+/**
+ * Display inverse of `estimateWeightedTokens`: how many raw input-plus-output
+ * tokens a weighted balance covers on a model with this weight. The effective
+ * weight is the same one admission uses, so a zero or malformed weight cannot
+ * produce a division by zero or an inflated balance.
+ */
+export function rawTokensForWeight(
+  weightedTokens: number,
+  tokenWeight: number,
+) {
+  const weighted = Number.isFinite(weightedTokens)
+    ? Math.max(0, Math.floor(weightedTokens))
+    : 0;
+  const weight = Math.max(1, Math.floor(tokenWeight) || 1);
+
+  return Math.floor(weighted / weight);
+}
+
 export function nextUtcReset(now = Date.now()) {
   const date = new Date(now);
 

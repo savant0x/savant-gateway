@@ -11,8 +11,9 @@ distinguish verified behavior from unverified claims.
   on boot. The seed now belongs to the embedded storage mode: PGlite seeds,
   PostgreSQL does not, and direct `migrateDatabase` callers keep the historical
   default for tests. The production `user_dev` row was deleted; a fresh local
-  boot against Supabase leaves zero matching rows. Focused storage tests 9/9,
-  typecheck 0, lint 0 warnings, quality PASS.
+  boot against Supabase leaves zero matching rows. Schema and storage tests
+  17/17; full `npm run verify` 904 tests (903 pass, 1 skipped, 0 fail), build,
+  HTTP and recovery PASS. Commits `d6a3987` and `be7622e`.
 - **Production storage moved to Supabase.** The full schema was applied, Vercel
   production uses the project's pooled `DATABASE_URL`, and `/api/ready` reports
   `storage: "ok"`. The direct `db.<ref>.supabase.co` host is IPv6-only and is

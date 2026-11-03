@@ -36,9 +36,13 @@ tied to the embedded storage engine, not to the process's mode label.
 ## Verification Gates
 
 - `node --test tests/storage-handle.test.mjs` — 9/9
+- `node --test tests/schema-postgres.test.mjs tests/storage-handle.test.mjs` —
+  17/17
 - `npm run typecheck`
 - `npm run lint`
 - `npm run quality`
+- `npm run verify` — 904 tests, 903 pass, 1 skipped, 0 fail; build, HTTP and
+  recovery drill PASS
 
 ## Perfection Loop
 
@@ -72,7 +76,12 @@ tied to the embedded storage engine, not to the process's mode label.
 
 - **Convergence Date:** 2026-11-03
 - **Implementation:** complete. The production `user_dev` row was deleted and a
-  fresh local boot against Supabase left zero matching rows.
-- **Evidence:** focused storage tests 9/9; typecheck 0; `/signal` served 474
-  items from the real database after the restart; `user_dev` count 0.
-- **Archived:** no; awaiting a commit that closes the record.
+  fresh local boot against Supabase left zero matching rows. The seed remains
+  inside the single migration transaction; the storage mode decides whether it
+  runs.
+- **Evidence:** schema and storage tests 17/17; full `npm run verify` 904 tests
+  (903 pass, 1 skipped, 0 fail), build, HTTP and recovery all PASS; `/signal`
+  served 474 items from the real database after the restart; `user_dev` count 0.
+- **Commits:** `d6a3987` (seed isolation) and `be7622e` (transaction-preserving
+  correction).
+- **Archived:** yes.

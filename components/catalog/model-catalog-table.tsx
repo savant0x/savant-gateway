@@ -24,6 +24,7 @@ import {
 } from "@/lib/catalog-sort";
 import { catalogSkuRows } from "@/lib/catalog-skus";
 import { Pagination } from "@/components/ui/pagination";
+import { StatePanel } from "@/components/ui/state-panel";
 
 export function ModelCatalogTable({
   models,
@@ -209,9 +210,27 @@ export function ModelCatalogTable({
       />
 
       {rows.length === 0 ? (
-        <div className="brand-canvas px-6 py-16 text-center text-sm text-muted">
-          No models match this filter. Try another search or check back later.
-        </div>
+        <StatePanel
+          action={
+            <button
+              className="rounded-lg border border-black/10 px-3 py-1.5 text-xs font-medium hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
+              type="button"
+              onClick={() =>
+                resetPage(() => {
+                  setQuery("");
+                  setFamily("all");
+                  setGroup("all");
+                })
+              }
+            >
+              Clear filters
+            </button>
+          }
+          className="m-6 text-center"
+          description="No model matches the current search, family, or group filters. Clear the filters to see the full catalog."
+          state="empty"
+          title="No models match this filter."
+        />
       ) : (
         <div
           aria-label="Model catalog"

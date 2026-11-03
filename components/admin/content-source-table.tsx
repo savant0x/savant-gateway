@@ -8,6 +8,39 @@ import { ContentSourceActions } from "./content-source-actions";
 import { ContentSourceForm } from "./content-source-form";
 
 import { contentDate } from "@/lib/content/format";
+import { sourceGuidance } from "@/lib/content/source-guidance";
+
+function SourceStatusCell({ source }: { source: ContentSource }) {
+  const guidance = sourceGuidance(source);
+
+  return (
+    <>
+      <span
+        className={`rounded-full px-2 py-0.5 text-[11px] ${
+          source.enabled
+            ? "bg-success/10 text-success"
+            : "bg-danger/10 text-danger"
+        }`}
+      >
+        {source.enabled ? source.status : "disabled"}
+      </span>
+      <p className="mt-1 max-w-[24rem] text-[11px] text-muted">
+        {guidance.hint}
+      </p>
+      <p className="mt-1 max-w-[24rem] text-[11px] text-foreground">
+        {guidance.action}
+      </p>
+      {source.lastError ? (
+        <details className="mt-1 max-w-[24rem] text-[11px]">
+          <summary className="cursor-pointer text-muted">
+            Last error detail
+          </summary>
+          <p className="mt-1 break-words text-danger">{source.lastError}</p>
+        </details>
+      ) : null}
+    </>
+  );
+}
 
 export function ContentSourceTable({ sources }: { sources: ContentSource[] }) {
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -50,20 +83,7 @@ export function ContentSourceTable({ sources }: { sources: ContentSource[] }) {
                       : "—"}
                   </td>
                   <td>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[11px] ${
-                        source.enabled
-                          ? "bg-success/10 text-success"
-                          : "bg-danger/10 text-danger"
-                      }`}
-                    >
-                      {source.enabled ? source.status : "disabled"}
-                    </span>
-                    {source.lastError ? (
-                      <p className="mt-1 max-w-[20rem] text-[11px] text-danger">
-                        {source.lastError}
-                      </p>
-                    ) : null}
+                    <SourceStatusCell source={source} />
                   </td>
                   <td className="text-xs">
                     {source.lastFetchedAt

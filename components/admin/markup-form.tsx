@@ -4,6 +4,8 @@ import { Button, Card, Input, Spinner } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { adminLoginHref } from "@/lib/admin-return";
+
 export function MarkupForm({ markupBps }: { markupBps: number }) {
   const router = useRouter();
   const [percent, setPercent] = useState((markupBps / 100).toString());
@@ -38,7 +40,11 @@ export function MarkupForm({ markupBps }: { markupBps: number }) {
       } | null;
 
       if (response.status === 401) {
-        router.replace("/admin/login");
+        router.replace(
+          adminLoginHref(
+            `${window.location.pathname}${window.location.search}`,
+          ),
+        );
 
         return;
       }

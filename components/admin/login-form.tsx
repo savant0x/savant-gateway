@@ -4,7 +4,7 @@ import { Button, Input, Spinner } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function LoginForm() {
+export function LoginForm({ returnTo }: { returnTo: string | null }) {
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -31,7 +31,7 @@ export function LoginForm() {
         );
       }
 
-      router.replace("/admin");
+      router.replace(returnTo ?? "/admin");
       router.refresh();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not sign in.");

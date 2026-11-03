@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { formatMicros, formatNumber } from "@/components/dashboard/format";
+import { adminLoginHref } from "@/lib/admin-return";
 
 type ModelOption = {
   id: string;
@@ -144,7 +145,11 @@ export function IdentityConsole({
         .catch(() => ({}))) as CreateResponse;
 
       if (response.status === 401) {
-        router.replace("/admin/login");
+        router.replace(
+          adminLoginHref(
+            `${window.location.pathname}${window.location.search}`,
+          ),
+        );
 
         return;
       }

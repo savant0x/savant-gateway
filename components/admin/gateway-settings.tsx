@@ -6,6 +6,8 @@ import { Button, Card, Input, Spinner } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { adminLoginHref } from "@/lib/admin-return";
+
 export type AllocationSummaryPayload = {
   day: string;
   enabled: boolean;
@@ -73,7 +75,11 @@ export function GatewaySettings({
       } | null;
 
       if (response.status === 401) {
-        router.replace("/admin/login");
+        router.replace(
+          adminLoginHref(
+            `${window.location.pathname}${window.location.search}`,
+          ),
+        );
 
         return;
       }

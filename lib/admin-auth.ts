@@ -2,9 +2,10 @@ import "server-only";
 
 import type { NextResponse } from "next/server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { adminLoginHref } from "./admin-return";
 import {
   ADMIN_COOKIE,
   isSameOriginRequest,
@@ -55,7 +56,11 @@ export async function getAdminSession(): Promise<boolean> {
 }
 
 export async function requireAdminPage() {
-  if (!(await getAdminSession())) redirect("/admin/login");
+  if (await getAdminSession()) return;
+
+  const current = (await headers()).get("x-admin-path");
+
+  redirect(adminLoginHref(current, "session"));
 }
 
 export async function guardAdminApi(request: Request) {

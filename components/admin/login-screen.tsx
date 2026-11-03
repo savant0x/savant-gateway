@@ -1,3 +1,5 @@
+import type { AdminDiagnostics } from "@/lib/admin-diagnostics";
+
 import { Card } from "@heroui/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,12 +12,68 @@ import { siteConfig } from "@/config/site";
 const GENERATE_SECRET =
   "node -e \"console.log(require('node:crypto').randomBytes(24).toString('base64url'))\"";
 
+function bandLabel(band: AdminDiagnostics["password"]) {
+  if (band === "valid") return "valid";
+  if (band === "too_short") return "present, below minimum";
+
+  return "missing";
+}
+
+function Diagnostics({ data }: { data: AdminDiagnostics }) {
+  return (
+    <details className="mt-4 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs text-muted">
+      <summary className="cursor-pointer select-none font-medium text-foreground">
+        Environment diagnostics
+      </summary>
+      <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5">
+        <dt>Runtime</dt>
+        <dd className="mono text-foreground">{data.runtime}</dd>
+        <dt>Password</dt>
+        <dd className="mono text-foreground">{bandLabel(data.password)}</dd>
+        <dt>Session secret</dt>
+        <dd className="mono text-foreground">
+          {bandLabel(data.sessionSecret)}
+        </dd>
+        <dt>Public origin</dt>
+        <dd className="mono break-all text-foreground">
+          {data.origin ?? "not configured"}
+          {data.origin && !data.originValid ? " (invalid)" : ""}
+        </dd>
+        <dt>Production config</dt>
+        <dd className="mono text-foreground">
+          {data.productionConfigValid === null
+            ? "not evaluated outside production"
+            : data.productionConfigValid
+              ? "valid"
+              : "invalid"}
+        </dd>
+      </dl>
+      {data.issueCodes.length > 0 ? (
+        <p className="mt-2 break-words text-warning">
+          Issues: {data.issueCodes.join(", ")}
+        </p>
+      ) : null}
+      {data.reason ? <p className="mt-2">{data.reason}</p> : null}
+      <p className="mt-2">
+        Values and derived secrets are never shown. Lengths are reported only as
+        valid, too short, or missing.
+      </p>
+    </details>
+  );
+}
+
 export function LoginScreen({
   configured,
+  diagnostics,
+  notice,
   reason,
+  returnTo,
 }: {
   configured: boolean;
+  diagnostics: AdminDiagnostics;
+  notice: boolean;
   reason: string | null;
+  returnTo: string | null;
 }) {
   return (
     <div className="auth-surface flex min-h-screen flex-col text-foreground">
@@ -71,13 +129,15 @@ export function LoginScreen({
             <Card.Title>Sign in</Card.Title>
             <Card.Description>
               {configured
-                ? "Use the password from .env.local."
+                ? notice
+                  ? "Your admin session is missing or has ended. Sign in to continue."
+                  : "Use the password from .env.local."
                 : "Admin access is not configured on this server."}
             </Card.Description>
           </Card.Header>
           <Card.Content className="space-y-4">
             {configured ? (
-              <LoginForm />
+              <LoginForm returnTo={returnTo} />
             ) : (
               <div className="space-y-3 text-sm">
                 <p className="rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-warning">
@@ -102,6 +162,9 @@ ADMIN_SESSION_SECRET=<32+ characters>`}</code>
               </div>
             )}
           </Card.Content>
+          <Card.Footer className="block">
+            <Diagnostics data={diagnostics} />
+          </Card.Footer>
         </Card>
       </main>
     </div>

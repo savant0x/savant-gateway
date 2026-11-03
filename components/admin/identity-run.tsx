@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { responseError } from "@/components/dashboard/format";
+import { adminLoginHref } from "@/lib/admin-return";
 
 type Action = "start" | "publish" | "unpublish" | "cancel" | "confirm_mismatch";
 
@@ -53,7 +54,11 @@ export function IdentityRun({
       });
 
       if (response.status === 401) {
-        router.replace("/admin/login");
+        router.replace(
+          adminLoginHref(
+            `${window.location.pathname}${window.location.search}`,
+          ),
+        );
 
         return;
       }

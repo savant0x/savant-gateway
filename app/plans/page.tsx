@@ -6,6 +6,7 @@ import { primaryCta, secondaryCta } from "@/components/landing/cta";
 import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
 import { PlanGrid } from "@/components/plans/plan-grid";
+import { StatePanel } from "@/components/ui/state-panel";
 import { getCustomerSession } from "@/lib/customer-auth";
 import { customerSubscriptionSummary, listSellablePlans } from "@/lib/store";
 
@@ -64,14 +65,16 @@ export default async function PlansPage() {
 
         <section className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           {plans.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-sm text-muted">
-              <p className="font-medium text-foreground">
-                Plans are not available yet.
-              </p>
-              <p className="mt-2 leading-6">
-                Check the model catalog for available usage-based options.
-              </p>
-            </div>
+            <StatePanel
+              action={
+                <Link className={secondaryCta} href="/models">
+                  Browse usage-based models
+                </Link>
+              }
+              description="No active plan is on sale. Usage-based credit remains available from the model catalog."
+              state="empty"
+              title="Plans are not available yet."
+            />
           ) : (
             <PlanGrid
               activePlanSlug={activePlanSlug}

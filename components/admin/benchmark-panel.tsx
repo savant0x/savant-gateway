@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { LocalTime } from "@/components/local-time";
+import { adminLoginHref } from "@/lib/admin-return";
 
 type Outcome = {
   status?: string;
@@ -61,7 +62,11 @@ export function BenchmarkPanel({ status }: { status: BenchmarkStatus }) {
         .catch(() => null)) as Outcome | null;
 
       if (response.status === 401) {
-        router.replace("/admin/login");
+        router.replace(
+          adminLoginHref(
+            `${window.location.pathname}${window.location.search}`,
+          ),
+        );
 
         return;
       }

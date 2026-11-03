@@ -1,6 +1,7 @@
 import type { AnalyticsPlan } from "@/lib/types";
 
 import { formatMicros, formatNumber } from "@/components/dashboard/format";
+import { StatePanel } from "@/components/ui/state-panel";
 
 const INTERVAL_LABELS: Record<AnalyticsPlan["interval"], string> = {
   month: "Monthly",
@@ -19,11 +20,12 @@ export function AnalyticsPlans({ plans }: { plans: AnalyticsPlan[] }) {
       </div>
 
       {plans.length === 0 ? (
-        <p className="p-6 text-sm text-muted">
-          No paid plan invoices or live subscriptions yet. Create a plan and
-          grant or sell a subscription; this table reads the same invoice rows
-          the Stripe webhook writes.
-        </p>
+        <StatePanel
+          className="m-5"
+          description="No paid plan invoice or live subscription exists yet. Create a plan and grant or sell a subscription; this table reads the same invoice rows the Stripe webhook writes."
+          state="empty"
+          title="No plan revenue yet."
+        />
       ) : (
         <div className="scroll-shell">
           <table className="data-table">

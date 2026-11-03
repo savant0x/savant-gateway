@@ -17,6 +17,7 @@ import {
   responseError,
 } from "@/components/dashboard/format";
 import { LocalTime } from "@/components/local-time";
+import { adminLoginHref } from "@/lib/admin-return";
 
 function statusColor(status: SubscriptionSummary["status"]) {
   if (status === "active") return "success" as const;
@@ -64,7 +65,11 @@ export function SubscriptionsPanel({
       });
 
       if (response.status === 401) {
-        router.replace("/admin/login");
+        router.replace(
+          adminLoginHref(
+            `${window.location.pathname}${window.location.search}`,
+          ),
+        );
 
         return;
       }

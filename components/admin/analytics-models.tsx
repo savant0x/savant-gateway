@@ -7,6 +7,7 @@ import {
   formatNumber,
   formatSignedMicros,
 } from "@/components/dashboard/format";
+import { StatePanel } from "@/components/ui/state-panel";
 
 function marginPercent(row: AnalyticsModel) {
   if (row.chargedMicros <= 0) return null;
@@ -28,10 +29,12 @@ export function AnalyticsModels({ models }: { models: AnalyticsModel[] }) {
       </div>
 
       {models.length === 0 ? (
-        <p className="p-6 text-sm text-muted">
-          No usage rows in this range. Run a call from the console or send one
-          through the API.
-        </p>
+        <StatePanel
+          className="m-5"
+          description="No usage row settled in this range. Run a call from the console or send one through the API; the table fills from settled usage only."
+          state="empty"
+          title="No model usage in this range."
+        />
       ) : (
         <div className="scroll-shell">
           <table className="data-table">

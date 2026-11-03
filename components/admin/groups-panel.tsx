@@ -12,6 +12,7 @@ import {
   type GroupDraft,
 } from "@/components/admin/group-fields";
 import { responseError } from "@/components/dashboard/format";
+import { adminLoginHref } from "@/lib/admin-return";
 
 function modeColor(mode: ModelAccess) {
   if (mode === "free") return "success" as const;
@@ -60,7 +61,11 @@ export function GroupsPanel({ groups }: { groups: ModelGroupSummary[] }) {
       });
 
       if (response.status === 401) {
-        router.replace("/admin/login");
+        router.replace(
+          adminLoginHref(
+            `${window.location.pathname}${window.location.search}`,
+          ),
+        );
 
         return false;
       }

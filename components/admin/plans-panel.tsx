@@ -23,6 +23,7 @@ import {
   formatRatePercent,
   responseError,
 } from "@/components/dashboard/format";
+import { adminLoginHref } from "@/lib/admin-return";
 import { intervalLabel } from "@/lib/plan-lifecycle";
 
 function statusColor(status: PlanSummary["status"]) {
@@ -88,7 +89,11 @@ export function PlansPanel({
       });
 
       if (response.status === 401) {
-        router.replace("/admin/login");
+        router.replace(
+          adminLoginHref(
+            `${window.location.pathname}${window.location.search}`,
+          ),
+        );
 
         return false;
       }

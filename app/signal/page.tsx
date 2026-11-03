@@ -5,12 +5,19 @@ import Link from "next/link";
 
 import { ContentCard } from "@/components/content/content-card";
 import { ContentDisabled } from "@/components/content/content-disabled";
+import { StatePanel } from "@/components/ui/state-panel";
 import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
 import { kindLabel, tagPillClass } from "@/lib/content/format";
 import { contentEnabled } from "@/lib/content/policy";
 import { cachedPublicRead } from "@/lib/content/public-cache";
+import {
+  publicHubEmptyExplanation,
+  publicSourceAge,
+  summarizePublicSources,
+} from "@/lib/content/source-guidance";
 import { listItems, listTags } from "@/lib/content/store/items";
+import { listPublicSources } from "@/lib/content/store/sources";
 import { CONTENT_KINDS } from "@/lib/content/types";
 import { getDatabase } from "@/lib/storage/runtime";
 
@@ -79,6 +86,7 @@ export default async function SignalPage({
     total: 0,
   };
   let tags: Awaited<ReturnType<typeof listTags>> = [];
+  let sources: Awaited<ReturnType<typeof listPublicSources>> = [];
   let error: string | null = null;
 
   try {
@@ -98,12 +106,16 @@ export default async function SignalPage({
       ),
       cachedPublicRead("signal:tags:24", () => listTags(db, 24)),
     ]);
-  } catch (caught) {
-    error =
-      caught instanceof Error ? caught.message : "Storage is unavailable.";
+    sources = await cachedPublicRead("signal:hub:sources", () =>
+      listPublicSources(db),
+    ).catch(() => []);
+  } catch {
+    error = "Content is temporarily unavailable.";
   }
 
   const pageCount = Math.max(1, Math.ceil(pageData.total / pageSize));
+  const sourceSummary = summarizePublicSources(sources);
+  const emptyExplanation = publicHubEmptyExplanation(sources);
   const filters = [
     { key: undefined, label: "All" },
     ...CONTENT_KINDS.map((entry) => ({ key: entry, label: kindLabel(entry) })),
@@ -142,6 +154,37 @@ export default async function SignalPage({
         </section>
 
         <section className="mx-auto w-full max-w-[80rem] px-4 py-8 sm:px-6 lg:px-8">
+          {sources.length > 0 ? (
+            <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-black/10 bg-surface px-4 py-2.5 text-[11px] text-muted dark:border-white/10">
+              <span className="font-medium text-foreground">
+                {sourceSummary.current} of {sourceSummary.total} sources current
+              </span>
+              {sourceSummary.delayed > 0 ? (
+                <span>{sourceSummary.delayed} delayed</span>
+              ) : null}
+              {sourceSummary.attention > 0 ? (
+                <span className="text-danger">
+                  {sourceSummary.attention} need attention
+                </span>
+              ) : null}
+              {sourceSummary.paused > 0 ? (
+                <span>{sourceSummary.paused} paused</span>
+              ) : null}
+              <span>
+                last success:{" "}
+                {sourceSummary.lastSuccessAt
+                  ? publicSourceAge(sourceSummary.lastSuccessAt)
+                  : "never"}
+              </span>
+              <Link
+                className="ml-auto text-accent hover:underline"
+                href="/signal/status"
+              >
+                Source status →
+              </Link>
+            </div>
+          ) : null}
+
           <form
             action="/signal"
             className="mb-4 flex flex-wrap items-center gap-2"
@@ -266,33 +309,33 @@ export default async function SignalPage({
           ) : null}
 
           {error ? (
-            <p className="mt-8 rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-danger">
-              Content storage is unavailable: {error}
-            </p>
+            <StatePanel
+              className="mt-8"
+              description="The Signal store could not be read. Available content is not being replaced with an empty success; try again shortly."
+              state="unavailable"
+              title="Signal is temporarily unavailable."
+            />
           ) : pageData.items.length === 0 ? (
-            <div className="mt-8 rounded-xl border border-dashed border-black/15 p-8 text-center dark:border-white/15">
-              <p className="text-sm font-medium">
-                {search ? `No pieces match “${search}”.` : "No stories yet."}
-              </p>
-              <p className="mx-auto mt-2 max-w-md text-xs leading-5 text-muted">
-                {search ? (
-                  "Search looks at the title and excerpt only. Try a shorter term, or clear the search to browse everything."
-                ) : (
-                  <>
-                    The hub is enabled, but no source has produced an item. An
-                    operator can add a source in Admin → Content and press
-                    Fetch. Check{" "}
-                    <Link
-                      className="text-accent hover:underline"
-                      href="/signal/status"
-                    >
-                      source status
-                    </Link>{" "}
-                    to see which feeds are current.
-                  </>
-                )}
-              </p>
-            </div>
+            <StatePanel
+              action={
+                <Link
+                  className="text-xs text-accent hover:underline"
+                  href="/signal/status"
+                >
+                  Open source status →
+                </Link>
+              }
+              className="mt-8 text-center"
+              description={
+                search
+                  ? "Search looks at the title and excerpt only. Try a shorter term, or clear the search to browse everything."
+                  : emptyExplanation.body
+              }
+              state="empty"
+              title={
+                search ? `No pieces match “${search}”.` : emptyExplanation.title
+              }
+            />
           ) : (
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {pageData.items.map((item) => (

@@ -6,9 +6,11 @@ import { notFound } from "next/navigation";
 
 import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
+import { StatePanel } from "@/components/ui/state-panel";
 import { contentDate } from "@/lib/content/format";
 import { contentEnabled } from "@/lib/content/policy";
 import { cachedPublicRead } from "@/lib/content/public-cache";
+import { publicSourceAge } from "@/lib/content/source-guidance";
 import {
   PUBLIC_SOURCE_KIND_LABELS,
   publicSourceState,
@@ -46,9 +48,8 @@ export default async function SignalStatusPage() {
     sources = await cachedPublicRead("signal:status:sources", () =>
       listPublicSources(db),
     );
-  } catch (caught) {
-    error =
-      caught instanceof Error ? caught.message : "Storage is unavailable.";
+  } catch {
+    error = "Content is temporarily unavailable.";
   }
 
   const now = new Date();
@@ -84,17 +85,17 @@ export default async function SignalStatusPage() {
 
         <section className="mx-auto w-full max-w-[80rem] px-4 py-8 sm:px-6 lg:px-8">
           {error ? (
-            <p className="rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-danger">
-              Content storage is unavailable: {error}
-            </p>
+            <StatePanel
+              description="The source projection could not be read. This page will not claim the sources are healthy or absent."
+              state="unavailable"
+              title="Source status is temporarily unavailable."
+            />
           ) : sources.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-black/15 p-8 text-center dark:border-white/15">
-              <p className="text-sm font-medium">No sources are configured.</p>
-              <p className="mx-auto mt-2 max-w-md text-xs leading-5 text-muted">
-                The Signal surface is enabled but has no feeds yet. An operator
-                can add one in Admin → Content.
-              </p>
-            </div>
+            <StatePanel
+              description="The Signal surface is enabled but has no feeds yet. An operator can add one in Admin → Content."
+              state="empty"
+              title="No sources are configured."
+            />
           ) : (
             <ul className="space-y-2">
               {sources.map((source) => {
@@ -113,7 +114,7 @@ export default async function SignalStatusPage() {
                         {PUBLIC_SOURCE_KIND_LABELS[source.kind]} · every{" "}
                         {source.fetchIntervalMinutes} min · last success:{" "}
                         {source.lastFetchedAt
-                          ? contentDate(source.lastFetchedAt)
+                          ? `${contentDate(source.lastFetchedAt)} (${publicSourceAge(source.lastFetchedAt, now)})`
                           : "never"}
                       </p>
                     </div>

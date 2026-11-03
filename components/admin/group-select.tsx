@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { responseError } from "@/components/dashboard/format";
+import { adminLoginHref } from "@/lib/admin-return";
 
 export function GroupSelect({
   modelId,
@@ -36,7 +37,11 @@ export function GroupSelect({
       });
 
       if (response.status === 401) {
-        router.replace("/admin/login");
+        router.replace(
+          adminLoginHref(
+            `${window.location.pathname}${window.location.search}`,
+          ),
+        );
 
         return;
       }

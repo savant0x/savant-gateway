@@ -6,6 +6,7 @@ import { AnalyticsChart } from "@/components/admin/analytics-chart";
 import { AnalyticsModels } from "@/components/admin/analytics-models";
 import { AnalyticsPlans } from "@/components/admin/analytics-plans";
 import { StatCard } from "@/components/dashboard/chips";
+import { StatePanel } from "@/components/ui/state-panel";
 import {
   formatCompact,
   formatMarginPercent,
@@ -154,12 +155,11 @@ export default async function AdminAnalyticsPage({
       </section>
 
       {totals.requests === 0 && totals.planRevenueMicros === 0 ? (
-        <p className="rounded-2xl border border-dashed border-black/15 bg-surface p-5 text-sm text-muted dark:border-white/15">
-          <i aria-hidden className="fa-solid fa-circle-info mr-2 text-accent" />
-          No settled usage or paid plan invoices in this range. Sync the
-          provider, fund the tenant, and run a request, or wait for a
-          subscription invoice to be paid.
-        </p>
+        <StatePanel
+          description="No settled usage or paid plan invoices landed in this range. Sync a provider, fund the tenant, and run a request, or wait for a subscription invoice to be paid."
+          state="empty"
+          title="No settled money in this range."
+        />
       ) : null}
 
       <AnalyticsChart series={data.series} />

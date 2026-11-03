@@ -16,6 +16,7 @@ import {
 import { StatusChip } from "@/components/dashboard/chips";
 import { formatNumber, responseError } from "@/components/dashboard/format";
 import { LocalTime } from "@/components/local-time";
+import { adminLoginHref } from "@/lib/admin-return";
 
 export function AdminProvidersPanel({
   providers,
@@ -36,7 +37,11 @@ export function AdminProvidersPanel({
       body: payload ? JSON.stringify(payload) : undefined,
     });
 
-    if (response.status === 401) router.replace("/admin/login");
+    if (response.status === 401) {
+      router.replace(
+        adminLoginHref(`${window.location.pathname}${window.location.search}`),
+      );
+    }
 
     if (!response.ok) throw new Error(await responseError(response));
 

@@ -123,11 +123,13 @@ Open items, each requiring a dated receipt before approval:
    local recovery drill is not a hosted restore.
 4. Delivered operational alert to a real operator destination, plus first-payment,
    first UTC reset, 24h and 7d observations.
-5. FID-060 load envelope re-measured against PostgreSQL and operator-approved;
-   the targets are accepted, but the current measurements remain SQLite-era and
-   the envelope remains `candidate`. The recommended 200 RPM plan (3.33 rps)
-   still makes the 20 rps target unreachable, so the rerun must state both the
-   gateway ceiling and the provider ceiling.
+5. FID-060 load envelope re-measured against PostgreSQL and operator-approved.
+   The gate is PostgreSQL-native (FID-148, closed), but its 2026-11-03 run
+   completed every workload and failed five candidate targets: 4.76 admitted
+   rps against 20, steady p95 1,974 ms against 1,500 ms, ramp p95 2,211 ms and
+   two mixed-billing 503s. The envelope remains `candidate`. The recommended 200
+   RPM plan (3.33 rps) still makes the 20 rps target unreachable, so the rerun
+   must state both the gateway ceiling and the provider ceiling.
 6. `v1.2` terms, privacy and refunds published. `v1.1` still names Stripe and
    cannot be the served text for a NOWPayments launch.
 7. Hosted restore rehearsal on Neon Launch with the confirmed retention window,
@@ -175,10 +177,11 @@ The same check confirmed the remaining external inputs are absent:
 `NOWPAYMENTS_TOPUPS_ENABLED`, `APP_URL` / `NEXT_PUBLIC_SITE_URL` and
 `DATABASE_URL` are unset. A live invoice would therefore have no reachable IPN
 callback, and there is no hosted restore or Neon measurement target. The
-PostgreSQL load rerun (item 5) is also blocked on tooling, not only on the host:
-`scripts/load-acceptance.mjs` still boots a SQLite `DB_PATH` workspace and
-`scripts/load/faults.mjs` imports `better-sqlite3`, so a run through it would not
-produce a PostgreSQL receipt. Launch remains no-go and no item is discharged.
+PostgreSQL load rerun (item 5) was also blocked on tooling at that time, not only
+on the host: `scripts/load-acceptance.mjs` then booted a SQLite `DB_PATH`
+workspace and `scripts/load/faults.mjs` imported `better-sqlite3`, so a run
+through it would not produce a PostgreSQL receipt; FID-148 has since replaced
+both. Launch remains no-go and no item is discharged.
 
 **Queue audit 2026-11-03.** Content work landed at `7a2020d` (FIDs 100–102, 104
 and 105) and was verified with the focused suites, `npm test` 874 (873 pass, 1
@@ -200,6 +203,15 @@ envelope was not re-measured against PostgreSQL and `v1.2` was not published.
 Items 1–8 therefore remain open exactly as recorded. The README and `/docs`
 state that the Vercel deployment is healthy; deployment is not acceptance, and
 no item above is discharged.
+
+**Load rerun 2026-11-03.** Item 5's tooling blocker is cleared by FID-148. The
+gate ran against an isolated database in the configured Supabase cluster
+(PostgreSQL 17.11, pooler port 6543), completed every workload and reconciled
+with 0 unresolved settlements and `integrity: ok`, but failed five candidate
+targets: ramp p95 2,211 ms, steady 4.76 admitted rps, steady p95 1,974 ms / p99
+2,240 ms, and two mixed-billing 503s. The isolated database was dropped in
+`finally`; the production `postgres` database was never reset. Item 5 therefore
+stays open with a real PostgreSQL result, and the envelope stays `candidate`.
 
 ## Lessons Learned
 

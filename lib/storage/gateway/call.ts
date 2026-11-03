@@ -1,7 +1,11 @@
 import type { CreditHold } from "../store/credit.ts";
 import type { FreePoolReservation } from "../../projections.ts";
-import type { SubscriptionCallContext } from "./settle.ts";
-import type { GatewaySettlementContext } from "./settle.ts";
+import type {
+  GatewaySettlementContext,
+  SubscriptionCallContext,
+} from "./settle.ts";
+
+import { randomUUID } from "node:crypto";
 
 import {
   DEFAULT_OUTPUT_BUDGET,
@@ -314,7 +318,7 @@ export async function handleChatCompletions(request: Request) {
       outputBudget,
     });
 
-    const context: GatewaySettlementContext = {
+    const context: GatewaySettlementContext & { requestId: string } = {
       auth,
       model: settleModel,
       hold,
@@ -323,6 +327,7 @@ export async function handleChatCompletions(request: Request) {
       settlementId,
       startedAt: Date.now(),
       promptTokens,
+      requestId: randomUUID(),
     };
 
     let upstream: Response;

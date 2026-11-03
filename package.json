@@ -19,6 +19,7 @@
 		"config:check:prod": "node scripts/production-config-check.mjs --production",
 		"test": "node --test \"tests/*.test.mjs\"",
 		"test:http": "node scripts/http-suite.mjs && node scripts/trial-http-suite.mjs",
+		"test:postgres": "node scripts/postgres-concurrency-proof.mjs",
 		"test:recovery": "node scripts/db-recovery-drill.mjs",
 		"test:load": "node scripts/load-acceptance.mjs",
 		"test:load:accept": "node scripts/load-acceptance.mjs --require-approval",
@@ -33,7 +34,8 @@
 		"attribution": "node scripts/attribution-guard.mjs --all && node scripts/attribution-document-guard.mjs",
 		"storage:check": "node scripts/storage-contract-check.mjs",
 		"business-model": "node scripts/business-model.mjs",
-		"verify": "npm run check && npm run storage:check && npm run config:check && npm run test && npm run quality && npm run build && npm run test:http && npm run test:recovery",
+		"receipt:deploy": "node scripts/deployment-receipt.mjs --json",
+		"verify": "node scripts/verify.mjs",
 		"prepare": "node scripts/prepare.mjs"
 	},
 	"dependencies": {

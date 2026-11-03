@@ -8,6 +8,14 @@ import {
 } from "../../request-limits.ts";
 import { streamDeltaChars } from "../../gateway-usage.ts";
 import {
+  classifyStreamCancellation,
+  createStreamTelemetryEvent,
+  defaultStreamTelemetrySink,
+  type StreamCancellationCause,
+  type StreamCancellationPhase,
+  type StreamTelemetrySink,
+} from "../../stream-telemetry.ts";
+import {
   estimatedUsage,
   mergeProviderUsage,
   readProviderUsage,
@@ -40,6 +48,10 @@ import { settleCall, type GatewaySettlementContext } from "./settle.ts";
 
 export type StreamingGatewayContext = GatewaySettlementContext & {
   releaseAdmission?: (() => void) | null;
+  /** Internal identifier for correlation; never derived from customer input. */
+  requestId?: string;
+  /** Test seam; production uses the redacted console sink. */
+  onStreamEvent?: StreamTelemetrySink;
 };
 
 export function streamCompletion(
@@ -63,6 +75,22 @@ export function streamCompletion(
 
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
+  const report = (
+    cause: StreamCancellationCause,
+    phase: StreamCancellationPhase,
+  ) => {
+    const sink = context.onStreamEvent ?? defaultStreamTelemetrySink;
+
+    sink(
+      createStreamTelemetryEvent({
+        requestId: context.requestId ?? "unassigned",
+        provider: context.model.upstreamSlug,
+        model: context.model.id,
+        phase,
+        cause,
+      }),
+    );
+  };
   let buffer = "";
   let usage: ProviderUsage | null = null;
   let outputChars = 0;
@@ -195,7 +223,14 @@ export function streamCompletion(
           throw new Error("Provider stream ended without a completion marker.");
         }
 
-        await finish("ok");
+        try {
+          await finish("ok");
+        } catch (error) {
+          report("unexpected", "settle");
+          controller.error(error);
+
+          return;
+        }
 
         // Completion is acknowledged only after the accounting transaction.
         if (terminalLine !== null) {
@@ -203,16 +238,22 @@ export function streamCompletion(
         }
 
         controller.close();
-      } catch {
-        void reader.cancel().catch(() => {
-          // eslint-disable-next-line no-console
-          console.error("[gateway.stream] Upstream cancellation failed.");
+      } catch (error) {
+        report(classifyStreamCancellation(error, "upstream_abort"), "read");
+
+        void reader.cancel().catch((cancellationError) => {
+          const cause = classifyStreamCancellation(
+            cancellationError,
+            "upstream_abort",
+          );
+
+          if (cause !== "already_closed") report(cause, "cancel");
         });
 
         try {
           await finish("error", "Provider stream interrupted.");
-        } catch (error) {
-          controller.error(error);
+        } catch (settlementError) {
+          controller.error(settlementError);
 
           return;
         }
@@ -221,9 +262,12 @@ export function streamCompletion(
       }
     },
     async cancel(reason) {
-      const cancellation = reader.cancel(reason).catch(() => {
-        // eslint-disable-next-line no-console
-        console.error("[gateway.stream] Upstream cancellation failed.");
+      report("client_abort", "cancel");
+
+      const cancellation = reader.cancel(reason).catch((error) => {
+        const cause = classifyStreamCancellation(error, "upstream_abort");
+
+        if (cause !== "already_closed") report(cause, "cancel");
       });
 
       await finish("cancelled", "Client disconnected");

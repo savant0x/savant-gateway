@@ -446,6 +446,7 @@ test("a stream settles on completion and bills the provider's usage", async () =
 test("a stream that ends without a terminator settles as an error", async () => {
   const db = await fixture();
   const encoder = new TextEncoder();
+  const events = [];
 
   try {
     const settlementId = await admit(db);
@@ -462,7 +463,14 @@ test("a stream that ends without a terminator settles as an error", async () => 
       }),
       { status: 200 },
     );
-    const response = streamCompletion(db, upstream, context(settlementId));
+    const response = streamCompletion(
+      db,
+      upstream,
+      context(settlementId, {
+        requestId: "req_truncated",
+        onStreamEvent: (event) => events.push(event),
+      }),
+    );
 
     await assert.rejects(() => response.text());
 
@@ -482,6 +490,84 @@ test("a stream that ends without a terminator settles as an error", async () => 
       "committed",
       "the failure is recorded, not left admitted",
     );
+    assert.equal(events.length, 1);
+    assert.equal(events[0].cause, "unexpected");
+    assert.equal(events[0].phase, "read");
+    assert.equal(events[0].requestId, "req_truncated");
+    assert.equal(JSON.stringify(events[0]).includes("par"), false);
+  } finally {
+    await db.close();
+  }
+});
+
+test("a client disconnect is one informational event and still settles", async () => {
+  const db = await fixture();
+  const encoder = new TextEncoder();
+  const events = [];
+  let announce = () => undefined;
+  const observed = new Promise((resolve) => {
+    announce = resolve;
+  });
+
+  try {
+    const settlementId = await admit(db);
+    const upstream = new Response(
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue(
+            encoder.encode(
+              `data: {"choices":[{"delta":{"content":"first"}}]}\n\n`,
+            ),
+          );
+        },
+      }),
+      { status: 200 },
+    );
+    const response = streamCompletion(
+      db,
+      upstream,
+      context(settlementId, {
+        requestId: "req_client_cancel",
+        onStreamEvent: (event) => {
+          events.push(event);
+          announce();
+        },
+      }),
+    );
+    const reader = response.body.getReader();
+
+    await reader.read();
+    await reader.cancel("client closed the tab");
+    await observed;
+
+    let settlement;
+
+    for (let attempt = 0; attempt < 50; attempt += 1) {
+      settlement = await db
+        .prepare("SELECT status FROM settlements WHERE id = ?")
+        .get(settlementId);
+
+      if (settlement.status === "committed") break;
+
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+
+    assert.equal(settlement.status, "committed");
+    assert.equal(events.length, 1);
+    assert.equal(events[0].cause, "client_abort");
+    assert.equal(events[0].phase, "cancel");
+    assert.equal(events[0].expected, true);
+    assert.equal(events[0].level, "info");
+    assert.equal(
+      Object.keys(events[0]).some((key) => /prompt|key|header/i.test(key)),
+      false,
+    );
+
+    const usage = await db
+      .prepare("SELECT status FROM usage_events WHERE user_id = ?")
+      .get(USER);
+
+    assert.equal(usage.status, "cancelled");
   } finally {
     await db.close();
   }

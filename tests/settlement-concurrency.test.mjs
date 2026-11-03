@@ -7,7 +7,7 @@ import { debitCredit } from "../lib/storage/ledger/settlements.ts";
 import { createPostgresPool } from "../lib/storage/pg-pool.ts";
 import { migrateDatabase } from "../lib/storage/schema/index.ts";
 
-const DATABASE_URL = process.env.DATABASE_URL?.trim();
+const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL?.trim();
 
 /**
  * The double-spend proof this port exists for.
@@ -16,29 +16,30 @@ const DATABASE_URL = process.env.DATABASE_URL?.trim();
  * so it can show that the guard rejects a second debit, but it cannot show two
  * clients racing. Proving that needs two real connections against one database.
  *
- * Without `DATABASE_URL` this test is **skipped, not passed**: the guard's shape
- * is covered in `tests/ledger-postgres.test.mjs`, and the race is proven only
- * here. Point `DATABASE_URL` at a disposable database (a Neon Free project is
- * enough) and this runs for real.
+ * Without `TEST_DATABASE_URL` this test is **skipped, not passed**: the guard's
+ * shape is covered in `tests/ledger-postgres.test.mjs`, and the race is proven
+ * only here. The mandatory `npm run test:postgres` gate supplies a disposable
+ * URL (or starts one) and fails rather than skipping when neither exists.
  *
- * The test migrates the target and creates its own account, then deletes it, so
- * it is safe on a shared development database and must never be pointed at
- * production.
+ * The explicit TEST_ name keeps application `DATABASE_URL` from accidentally
+ * aiming this destructive proof at a real database. The test migrates the
+ * target and creates its own account, then deletes it, but it still must never
+ * be pointed at production.
  */
 test("two connections cannot debit one balance twice", async (context) => {
-  if (!DATABASE_URL) {
+  if (!TEST_DATABASE_URL) {
     context.skip(
-      "DATABASE_URL is not set — two-connection concurrency cannot be proven against PGlite's single connection",
+      "TEST_DATABASE_URL is not set — run npm run test:postgres for the mandatory two-connection proof",
     );
 
     return;
   }
 
   const first = createPostgresDatabase({
-    pool: createPostgresPool({ connectionString: DATABASE_URL }),
+    pool: createPostgresPool({ connectionString: TEST_DATABASE_URL }),
   });
   const second = createPostgresDatabase({
-    pool: createPostgresPool({ connectionString: DATABASE_URL }),
+    pool: createPostgresPool({ connectionString: TEST_DATABASE_URL }),
   });
   const userId = `concurrency_${randomUUID()}`;
 

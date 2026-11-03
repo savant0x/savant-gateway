@@ -32,6 +32,10 @@ commands:
   # Route-level HTTP gate. Requires a completed production build and boots
   # `next start` against a disposable database; it is not part of `npm test`.
   test_http: 'npm run test:http'
+  # Mandatory two-connection debit proof. Runs against TEST_DATABASE_URL when
+  # supplied, otherwise starts a throwaway PostgreSQL 17 container; it fails
+  # closed rather than skipping.
+  test_postgres: 'npm run test:postgres'
   # Backup/restore drill. Requires a completed production build; it boots real
   # servers on throwaway databases and proves recovery through HTTP reconciliation.
   test_recovery: 'npm run test:recovery'
@@ -46,6 +50,8 @@ commands:
   lint: 'npm run lint'
   quality: 'npm run quality'
   attribution: 'npm run attribution'
+  # Sequential gate runner. Writes `.verify/summary.json` and one raw log per
+  # gate; any failed, signaled, missing or unexpectedly skipped gate fails it.
   verify: 'npm run verify'
   dev: 'npm run dev'
 

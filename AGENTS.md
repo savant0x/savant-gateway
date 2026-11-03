@@ -92,14 +92,18 @@ npm test             # node --test tests/
 npm run quality      # 400-line file ceiling
 npm run build        # next build
 npm run test:http    # HTTP suites against a disposable database
+npm run test:postgres # mandatory two-connection debit proof on disposable PostgreSQL
 npm run test:recovery # backup/restore drill against disposable databases
 npm run test:load    # bounded load/fault measurement (explicit release gate)
 npm run test:load:accept # same run, refuses without operator approval
-npm run verify       # check + storage + config + test + quality + build + HTTP + recovery
+npm run verify       # sequential gates + .verify/summary.json + per-gate logs
 ```
 
 The pre-push hook runs the attribution guard, lint, typecheck, config check,
-tests, quality, build, both HTTP suites and the recovery drill. It fails closed.
+tests, the disposable-PostgreSQL concurrency proof, quality, build, both HTTP
+suites and the recovery drill. It fails closed. The concurrency proof uses
+`TEST_DATABASE_URL` when set, otherwise it starts a throwaway PostgreSQL 17
+container; it fails rather than skips when neither is available.
 `test:load` is an additional release measurement with a disposable fixture and
 is intentionally not part of `verify` or the pre-push hook.
 

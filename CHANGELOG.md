@@ -10,9 +10,10 @@ distinguish verified behavior from unverified claims.
   config, so `git config core.hooksPath .githooks` exited 128 before the build.
   The prepare script now skips local hook wiring when `VERCEL` or `CI` is set;
   a writable local checkout still configures the hooks and commit template. A
-  Git-connected deployment of `4b47776` reproduced the failure and the fix is
-  verified with `VERCEL=1`, `CI=1` and a plain local run, plus lint and the
-  pre-push gate.
+  Git-connected deployment of `4b47776` reproduced the failure; commit
+  `67551ea` fixed it, and Vercel deployment `savant-gateway-2r5fkmdy3` built
+  from that commit and reached Ready. `/api/ready` returns `200` with
+  `storage: "ok"`.
 
 ## 2026-11-03 — Free and paid catalog SKUs are separate products
 

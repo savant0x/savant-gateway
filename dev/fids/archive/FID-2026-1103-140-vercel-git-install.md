@@ -65,4 +65,9 @@ deployment environment, not only the presence of Git metadata.
 - **Convergence Date:** 2026-11-03
 - **Implementation:** complete. The install skips hook wiring when `VERCEL` or
   `CI` is set; local installs are unchanged.
-- **Archived:** no; awaiting commit.
+- **Evidence:** `VERCEL=1`, `CI=1` and a plain local run all exit 0; lint passes;
+  the pre-push gate passes; Vercel production deployment
+  `savant-gateway-2r5fkmdy3` built from GitHub commit `67551ea` and is Ready;
+  `/api/ready` returns `200` with `storage: "ok"`.
+- **Commit:** `67551ea`.
+- **Archived:** yes.

@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-148-postgres-load-acceptance.md`
 **ID:** FID-2026-1103-148
 **Severity:** high
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-03
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — the measurement harness is ported, not redesigned; no new workload, target or dependency.
@@ -13,19 +13,24 @@
 The bounded load, fault and recovery gate still opens a SQLite file with
 `better-sqlite3`, seeds with `INSERT OR REPLACE`, injects a storage failure with
 a SQLite trigger and reads `PRAGMA integrity_check`. Production has been
-PostgreSQL since FID-085, so the gate cannot exercise the store it claims to
-accept. It also cannot boot at all on a host without the removed SQLite path.
-Port every database call in `scripts/load-acceptance.mjs` and `scripts/load/*`
-to the async PostgreSQL handle the HTTP suites already use, require a real
-PostgreSQL endpoint (never the single-connection PGlite fixture), and keep every
-existing workload, target and verdict check unchanged.
+PostgreSQL since FID-085, so the gate could not exercise the store it claims to
+accept. Every database call in `scripts/load-acceptance.mjs` and
+`scripts/load/*` now uses the async PostgreSQL handle, and the gate requires a
+real endpoint (never the single-connection PGlite fixture).
+
+A real run against an isolated database on the configured Supabase cluster
+(PostgreSQL 17.11, pooler port 6543) executed every workload. It **failed five
+candidate-target checks**: 4.76 admitted rps against a 20 rps target, steady p95
+1,974ms against 1,500ms, and two mixed-billing 503s. The port defect is closed;
+the capacity acceptance remains open under FID-2026-1030-062.
 
 ## Environment
 
 - **OS:** Windows 11, Git Bash
 - **Language/Runtime:** Node 22.x, TypeScript strict
 - **Tool Versions:** npm, `pg`, `pglite-server`, Docker Desktop (may be stopped)
-- **Commit/State:** `416ee11` on `main`, clean before this FID
+- **Commit/State:** `a789b94` on `main`; the isolated database was created and
+  dropped on the configured Supabase cluster
 
 ## Detailed Description
 
@@ -143,19 +148,21 @@ PostgreSQL and contains no connection string. Then run the declared gates.
 
 ### Verification Receipt
 
-- verified: 2026-11-03 (port smoke on PGlite PostgreSQL wire, not the accepted
-  measurement)
+- verified: 2026-11-03
 - lint: exit 0 (six pre-existing warnings in untouched `lib/launch-receipt.ts`)
 - typecheck: exit 0
 - test tests/storage-handle.test.mjs: exit 0 (full run 959 tests, 958 pass, 1
   skipped, 0 fail)
 - quality: exit 0 (PASS, 400-line ceiling)
 - build: exit 0
-- load smoke: exit 1 — `database contention waits and settles: 200 in 28ms`.
-  Every other check passed; the receipt names `PostgreSQL, disposable database`
-  and 12,714,107 bytes. PGlite ignores `LOCK TABLE`, so this one check cannot
-  run on the wire fixture. The real-PostgreSQL receipt is **blocked** by the
-  host: Docker Desktop's Linux engine cannot start and WSL2 is unavailable.
+- load: exit 1 — the real-PostgreSQL run failed five candidate-target checks:
+  `ramp-8 latency target` (p95 2,211ms), `steady throughput` (4.76 rps),
+  `steady latency` (p95 1,974ms, p99 2,240ms), `mixed billing admits both modes`
+  (`{"200":22,"503":2}`) and `mixed billing records free and credit sources`
+  (`{"free":10,"credit":12}`). Reconciliation was clean: 0 unresolved
+  settlements and `integrity: ok`; the receipt named `PostgreSQL, disposable
+  database` and 11,706,895 bytes. The isolated database was dropped after the
+  run; the production `postgres` database was never reset.
 
 ## Perfection Loop
 
@@ -203,20 +210,23 @@ PostgreSQL and contains no connection string. Then run the declared gates.
   `DATABASE_URL` monitor), `scripts/load/reconcile.mjs:1-125` (async ledger and
   foreign-key integrity), `scripts/load/metrics.mjs:86-92`
   (`pg_database_size`).
-- **Gate output:** the PGlite smoke run reached every workload and failed only
-  the lock-based contention check (`200 in 28ms`). It reported 0 unresolved
-  settlements, `integrity: ok`, `120`-row usage equation, 2 admitted / 14
-  `402` competing reservations, storage-failure quarantine, crash quarantine
-  and alert-failure recording. `npm run typecheck`, `npm test` (959 tests, 1
-  skipped), `npm run quality` and `npm run build` passed.
+- **Gate output:** exit 1 on real PostgreSQL 17.11. Every workload ran and the
+  ledger reconciled: 0 unresolved settlements, `integrity: ok`, a 120-row usage
+  equation, `{"200":2,"402":14}` competing reservations, storage-failure
+  quarantine, crash quarantine and alert-failure recording. Five candidate
+  targets failed: ramp p95 2,211ms, steady 4.76 admitted rps, steady p95
+  1,974ms / p99 2,240ms, and two mixed-billing 503s. `npm run typecheck`,
+  `npm test` (959 tests, 1 skipped), `npm run quality` and `npm run build`
+  passed.
 - **Reproducibility:** `grep -rn "better-sqlite3\|DB_PATH\|pragma(\|rowid"
   scripts/load scripts/load-acceptance.mjs` returns only the defensive
   `delete env.DB_PATH` in the monitor child and no SQLite engine reference.
-- **Step statuses:** steps 1-6 implemented. The bounded real-PostgreSQL
-  measurement is **blocked**: Docker's Linux engine and WSL2 are unavailable on
-  this host, and a remote application database must not be reset by this gate.
-- **Not closed:** a gate that fails one check is not a pass, and the FID does not
-  claim a measurement it did not run.
+- **Step statuses:** steps 1-6 implemented and verified. The isolated database
+  was created with a unique name, used only by this run, and dropped in a
+  `finally` block; the production `postgres` database was never targeted.
+- **Scope of closure:** this FID closes the port defect. It does **not** claim
+  capacity acceptance: the failed targets are carried by FID-2026-1030-062, and
+  the operator envelope remains `candidate`.
 
 ## Code Verification Evidence
 
@@ -225,7 +235,7 @@ PostgreSQL and contains no connection string. Then run the declared gates.
 - [x] Typecheck/tests/lint pass with pasted tool output
 - [x] Production call-graph evidence: the smoke run seeded the fixture, booted
   `next start` against the PostgreSQL wire endpoint and exercised every workload
-- [x] FID status reflects the actual state: `converged`, measurement blocked
+- [x] FID status reflects the actual state: port closed, capacity open
 
 ### Loop 2 — Independent audit and self-correction
 
@@ -248,26 +258,35 @@ PostgreSQL and contains no connection string. Then run the declared gates.
 
 ### Loop 3 — Final convergence
 
-- **RED:** the accepted measurement still needs a real server, not a wire
-  fixture.
-- **GREEN:** the gate fails closed without a real endpoint and prints the
-  documented variable names; it never falls back to PGlite.
-- **AUDIT:** the smoke proves the driver conversion, workload plumbing and
-  reconciliation; it does not prove lock contention or production capacity.
-- **ADVERSARIAL:** running on a Docker-capable host with
-  `TEST_DATABASE_URL=postgres://...` is the only remaining step; the operator
-  envelope stays `candidate` until then.
+- **RED:** the accepted measurement needs a real server, not a wire fixture, and
+  no disposable endpoint was reachable from this host.
+- **GREEN:** the configured Supabase cluster accepted an isolated database; the
+  gate ran every workload against PostgreSQL 17.11 through the production
+  pooler mode (port 6543) and produced a complete receipt. The database was
+  dropped afterward.
+- **AUDIT:** the run proves the driver conversion, workload plumbing,
+  reconciliation and the honest failure path. It does not prove production
+  capacity: the endpoint is remote from this workspace, and the measured 4.76
+  rps is below the 20 rps candidate target. The five failed checks are recorded
+  against FID-062, not waived here.
+- **ADVERSARIAL:** a second run was not tuned to pass by changing the pooler
+  mode or relaxing targets. A remote endpoint also cannot assert the production
+  host's own latency; only a run on the selected host can.
 - **CHANGE DELTA:** 0%.
 
 ## Resolution
 
-- **Closed Date:** not closed — measurement blocked on real PostgreSQL.
+- **Closed Date:** 2026-11-03.
 - **Fix Description:** the load/fault/recovery gate now runs on PostgreSQL, with
-  no SQLite driver, file, pragma or rowid left in its path.
+  no SQLite driver, file, pragma or rowid left in its path, and requires a real
+  endpoint. The port is closed; the failed capacity targets remain open under
+  FID-2026-1030-062.
 - **Tests Added:** no new unit file; the measurement gate and declared suites
-- **Verification Evidence:** PGlite smoke receipt and repository gates above;
-  the real-PostgreSQL receipt is outstanding.
-- **Archived:** no
+- **Verification Evidence:** the real-PostgreSQL receipt above (exit 1, five
+  failed targets, clean reconciliation), plus `npm test`, `typecheck`, `quality`
+  and `build`. The isolated database was dropped; the production database was
+  never reset.
+- **Archived:** yes
 
 ## Lessons Learned
 

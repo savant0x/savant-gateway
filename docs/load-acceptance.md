@@ -1,15 +1,20 @@
 # Load, capacity and resilience acceptance
 
-Status: implemented and measured locally on 2026-10-31 against the production
-build at commit `8c10a07`. The run is a **candidate envelope measurement**, not
-accepted production capacity. No dated operator approval exists, no real
-provider was called and no hosted proxy or production volume was exercised.
-Those remain `FID-2026-1030-060-LIVE`.
+Status: the gate has been ported to PostgreSQL (FID-148). The 2026-10-31 run
+below is a **historical SQLite-era candidate measurement** and is superseded. The
+first real-PostgreSQL run on 2026-11-03 (isolated database in the configured
+Supabase cluster, PostgreSQL 17.11, pooler port 6543) completed every workload
+and reconciled cleanly, but failed five candidate targets: 4.76 admitted rps
+against 20, steady p95 1,974 ms against 1,500 ms, ramp p95 2,211 ms, and two
+mixed-billing 503s. No capacity is approved, no dated operator approval exists,
+no real provider was called and no hosted proxy or production volume was
+exercised. Those remain `FID-2026-1030-060-LIVE`.
 
-The machine-readable receipt is
+The machine-readable SQLite-era receipt is
 [`dev/audits/2026-10-31-load-acceptance.json`](../dev/audits/2026-10-31-load-acceptance.json).
 It contains all 123 checks, status counts, percentiles, reconciliation and the
-limitations list. This page is the operator-readable summary.
+limitations list. This page is the operator-readable summary; the PostgreSQL
+result is recorded in FID-148 and the CHANGELOG.
 
 ## Gate
 
@@ -36,7 +41,7 @@ run before the first request; it never becomes "unlimited".
 
 ## Environment and budget
 
-| Item | Measured run |
+| Item | 2026-10-31 SQLite-era run |
 | --- | --- |
 | Commit | `8c10a07` |
 | Artifact | production `next build`, started with `next start` |
@@ -182,7 +187,8 @@ A run fails, and the candidate envelope is not accepted, on any of:
 - a dispatch without a committed settlement or explicit quarantine;
 - a committed settlement without one usage row, or a ledger/held difference;
 - negative fixture credit (outside a deliberately measured overrun case);
-- a SQLite integrity failure;
+- a PostgreSQL integrity failure (an unvalidated foreign key or a
+  reconciliation mismatch);
 - an unexpected status, a 5xx under steady/ramp/mixed, or a refusal without
   `Retry-After`/provider scope where applicable;
 - steady admission below 99%, sustained throughput below 20 rps, p95 above
@@ -197,7 +203,7 @@ A run fails, and the candidate envelope is not accepted, on any of:
 ## Boundaries
 
 Local evidence covers the real production route handlers, the real gateway
-admission/settlement code, real SQLite transactions, real SSE relay and real
+admission/settlement code, real PostgreSQL transactions, real SSE relay and real
 process restart. It does **not** cover:
 
 - a real upstream provider, its 15 RPM/account behavior, real latency or spend;

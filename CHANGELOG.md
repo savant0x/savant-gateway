@@ -5,8 +5,8 @@ distinguish verified behavior from unverified claims.
 
 ## 2026-11-03 — Load gate ported to PostgreSQL
 
-- **FID-2026-1103-148 — high — the bounded load/fault gate now runs on the
-  production store; its real-PostgreSQL receipt is blocked on this host.**
+- **FID-2026-1103-148 — high — closed: the bounded load/fault gate now runs on
+  the production store, and its first real-PostgreSQL run is recorded.**
   `scripts/load-acceptance.mjs` now accepts `LOAD_TEST_DATABASE_URL` or
   `TEST_DATABASE_URL`, otherwise starts the disposable `postgres:17-alpine`
   container, and never falls back to PGlite. `next start` boots with
@@ -22,9 +22,13 @@ distinguish verified behavior from unverified claims.
   A PGlite wire smoke exercised every workload and failed only the lock-based
   contention check, which PGlite ignores; it reported `{"200":2,"402":14}`
   reservations, 0 unresolved settlements, `integrity: ok` and a PostgreSQL
-  receipt. Docker's Linux engine and WSL2 are unavailable here, so the accepted
-  real-PostgreSQL measurement remains outstanding and the envelope stays
-  `candidate`.
+  receipt. The real run then used an isolated database on the configured
+  Supabase cluster (PostgreSQL 17.11, pooler port 6543): every workload ran and
+  reconciliation was clean, but five candidate targets failed — 4.76 admitted
+  rps against 20, steady p95 1,974ms against 1,500ms, ramp p95 2,211ms, and two
+  mixed-billing 503s. The isolated database was dropped in `finally`; the
+  production `postgres` database was never reset. The port is closed; capacity
+  acceptance and the `candidate` envelope remain open under FID-2026-1030-062.
 
 ## 2026-11-03 — FID closure: free allocation page verified
 

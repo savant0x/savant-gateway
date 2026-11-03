@@ -161,22 +161,24 @@ not run cron.
 
 ## Capacity and failure acceptance
 
-`npm run test:load` boots the production artifact against a disposable SQLite
-file and a local provider fixture, then measures ramp, steady, burst, mixed
-billing, streams, cancellations, key churn, competing reservations, provider
-faults, quota reset, database contention, alert failure, drain, process crash
-and a durable storage-write failure. It reconciles dispatch, settlement, usage,
-ledger and holds independently and writes the full receipt to
-`dev/audits/2026-10-31-load-acceptance.json` when given `--json`.
+`npm run test:load` boots the production artifact against an isolated PostgreSQL
+database (from `LOAD_TEST_DATABASE_URL` or `TEST_DATABASE_URL`, otherwise a
+disposable `postgres:17-alpine` container) and a local provider fixture. It
+measures ramp, steady, burst, mixed billing, streams, cancellations, key churn,
+competing reservations, provider faults, quota reset, database contention, alert
+failure, drain, process crash and a durable storage-write failure. It reconciles
+dispatch, settlement, usage, ledger and holds independently and writes the full
+receipt when given `--json`.
 
-The 2026-10-31 run measured 229.84 sustained admitted rps at p95 137.53 ms,
-186.7 MB peak RSS and a 5.1 MB database, with zero unresolved admissions and
-zero ledger/held differences. The candidate safe cap is 160.89 rps at 30%
-headroom. **That is a local fixture measurement, not approved production
-capacity.** `npm run test:load:accept` exits 2 until the operator dates an
-approval in `config/load-envelope.json`. Read
-[load-acceptance.md](load-acceptance.md) for the full table, no-go conditions and
-the real-upstream/Fly-volume gaps.
+The 2026-10-31 SQLite-era run reported 229.84 sustained admitted rps at p95
+137.53 ms and a candidate 160.89 rps cap. Those numbers are historical and do
+not describe the PostgreSQL deployment. The first real-PostgreSQL run on
+2026-11-03 completed every workload and reconciled cleanly but failed five
+candidate targets (4.76 admitted rps, steady p95 1,974ms and two mixed-billing
+503s), so no capacity is approved. `npm run test:load:accept` exits 2 until the
+operator dates an approval in `config/load-envelope.json`. Read
+[load-acceptance.md](load-acceptance.md) for the historical table, no-go
+conditions and the real-upstream/production-host gaps.
 
 ## Health and readiness
 

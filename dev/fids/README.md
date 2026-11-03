@@ -28,6 +28,7 @@ working set; each FID owns its own status, evidence and resolution.
 [145](archive/FID-2026-1103-145-push-with-disposable-postgres.md),
 [146](archive/FID-2026-1103-146-trial-fixture-requires-real-postgres.md),
 [147](archive/FID-2026-1103-147-free-model-allocation-guide.md),
+[148](archive/FID-2026-1103-148-postgres-load-acceptance.md),
 [142](archive/FID-2026-1103-142-ci-typecheck-typegen.md),
 [143](archive/FID-2026-1103-143-deterministic-paid-limit-probe.md),
 [144](archive/FID-2026-1103-144-trial-suite-real-postgres.md),
@@ -41,8 +42,10 @@ working set; each FID owns its own status, evidence and resolution.
 [135](archive/FID-2026-1103-135-current-project-index.md),
 [136](archive/FID-2026-1103-136-verification-summary.md) and
 [141](archive/FID-2026-1103-141-catalog-pricing-optimization-and-deployment-truth.md)
-are `closed` with commit, test and gate receipts. 127 stays active because the
-operator's six observations and explicit go decision do not exist yet.
+are `closed` with commit, test and gate receipts. FID-148 closes the load-gate
+port; its real-PostgreSQL run failed five candidate targets, which stay with 062.
+127 stays active because the operator's six observations and explicit go
+decision do not exist yet.
 
 `converged` means the design is ready for implementation; it does not mean code
 has landed. A FID leaves this table only when its status is `closed` or

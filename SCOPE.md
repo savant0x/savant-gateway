@@ -1,5 +1,27 @@
 # SCOPE.md — Gateway Project Review
 
+## Current Session — 2026-11-03 (separate free and paid catalog SKUs)
+
+Operator report: a model with both a free allocation and a paid counterpart
+renders as one row with both tags; the row opens only the paid detail page, so
+the free product is unnamed and unreachable from the catalog. The operator
+authorized a free version and a paid version with different SKUs or ids.
+
+- [x] **S1 — Split the row.** Catalog rows are now keyed by billing tier and
+  model identity. Free, paid and subscription are separate SKUs; same-tier
+  provider rows still merge.
+- [x] **S2 — Name the free SKU.** Free rows render `Model (Free)`; subscription
+  rows render `Model (Subscription)`; paid keeps the provider name. The stored
+  name and all existing ids are unchanged.
+- [x] **S3 — Make the detail page exact.** Every row links to its own id and
+  path. `/models/free/glm-5.3` shows free-pool copy; `/models/glm-5.3` shows
+  paid copy.
+- [x] **S4 — Agree with the API.** `/v1/models` and retrieve use the same SKU
+  name, while each id remains the request value.
+- [x] **S5 — Verify.** Focused tests 21/21; `npm run verify` 904 tests (903
+  pass, 1 skipped, 0 fail), build, HTTP and recovery PASS. FID-139 records the
+  change.
+
 ## Current Session — 2026-11-03 (production database cutover)
 
 Operator report: production still used the non-production database, and a local

@@ -26,9 +26,9 @@ export default async function Image() {
   return new ImageResponse(
     socialCard({
       eyebrow: "Model catalog",
-      title: `${formatNumber(stats.modelCount)} models. Priced apart.`,
+      title: `${formatNumber(stats.modelCount)} SKUs. Priced apart.`,
       subtitle:
-        "Input and output rates per 1M tokens, with the public list rate beside ours.",
+        "Each free, paid or subscription SKU with its rate and access path.",
       lines: [
         `${formatNumber(stats.freeModelCount)} free · ${formatNumber(stats.paidModelCount)} priced · ${formatNumber(stats.subscriptionModelCount)} subscription-only`,
         "Weighted free pool · prepaid credit · plan allowance",

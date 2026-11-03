@@ -22,7 +22,7 @@ import {
   type CatalogSortKey,
   type SortableCatalogRow,
 } from "@/lib/catalog-sort";
-import { pairCatalogModels } from "@/lib/catalog-pairs";
+import { catalogSkuRows } from "@/lib/catalog-skus";
 import { Pagination } from "@/components/ui/pagination";
 
 export function ModelCatalogTable({
@@ -47,70 +47,71 @@ export function ModelCatalogTable({
   const [direction, setDirection] = useState<CatalogSortDirection>("asc");
   const [page, setPage] = useState(1);
 
-  // A model sold twice — a free allocation and the metered id — is one row with
-  // two purchase paths, not two rows for the reader to reconcile.
-  const paired = useMemo(() => pairCatalogModels(models), [models]);
+  // One row per SKU. Free, paid and subscription are separate products with
+  // their own ids, names and detail pages; same-tier provider rows still merge.
+  const skus = useMemo(() => catalogSkuRows(models), [models]);
 
   const families = useMemo(
     () =>
-      Array.from(new Set(paired.map((row) => row.display.family))).sort(
-        (a, b) => a.localeCompare(b),
+      Array.from(new Set(skus.map((row) => row.model.family))).sort((a, b) =>
+        a.localeCompare(b),
       ),
-    [paired],
+    [skus],
   );
 
   const groups = useMemo(() => {
     const map = new Map<string, GroupOption>();
 
-    for (const row of paired) {
-      for (const variant of row.variants) {
-        map.set(variant.groupSlug, {
-          slug: variant.groupSlug,
-          label: variant.groupLabel,
-          billingMode: variant.groupBillingMode,
-        });
-      }
+    for (const row of skus) {
+      const model = row.model;
+
+      map.set(model.groupSlug, {
+        slug: model.groupSlug,
+        label: model.groupLabel,
+        billingMode: model.groupBillingMode,
+      });
     }
 
     return Array.from(map.values()).sort((left, right) =>
       left.label.localeCompare(right.label),
     );
-  }, [paired]);
+  }, [skus]);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    const rows = paired.filter((row) => {
-      if (group !== "all" && !row.variants.some((v) => v.groupSlug === group))
-        return false;
-      if (family !== "all" && row.display.family !== family) return false;
+    const rows = skus.filter((row) => {
+      const model = row.model;
+
+      if (group !== "all" && model.groupSlug !== group) return false;
+      if (family !== "all" && model.family !== family) return false;
       if (!needle) return true;
 
-      return row.variants.some(
-        (variant) =>
-          variant.id.toLowerCase().includes(needle) ||
-          variant.name.toLowerCase().includes(needle) ||
-          variant.family.toLowerCase().includes(needle) ||
-          (comparisons[variant.id]?.openRouterId ?? "")
-            .toLowerCase()
-            .includes(needle),
+      return (
+        model.id.toLowerCase().includes(needle) ||
+        row.name.toLowerCase().includes(needle) ||
+        model.name.toLowerCase().includes(needle) ||
+        model.family.toLowerCase().includes(needle) ||
+        (comparisons[model.id]?.openRouterId ?? "")
+          .toLowerCase()
+          .includes(needle)
       );
     });
 
     const decorated = rows.map((row) => ({
       row,
       sortable: {
-        id: row.primary.id,
-        name: row.display.name,
-        family: row.display.family,
-        groupLabel: row.display.groupLabel,
-        groupBillingMode: row.display.groupBillingMode,
-        tokenWeight: row.free?.tokenWeight ?? row.primary.tokenWeight,
-        supportsTools: row.variants.some((variant) => variant.supportsTools),
-        supportsVision: row.variants.some((variant) => variant.supportsVision),
-        inputPricePer1M: row.primary.inputPricePer1M,
-        outputPricePer1M: row.primary.outputPricePer1M,
-        benchmarkIndex: benchmarks[row.primary.id]?.intelligenceIndex ?? null,
-        comparisonBps: comparisons[row.primary.id]?.blendedDeltaBps ?? null,
+        id: row.model.id,
+        name: row.name,
+        family: row.model.family,
+        groupLabel: row.model.groupLabel,
+        groupBillingMode: row.model.groupBillingMode,
+        tokenWeight: row.model.tokenWeight,
+        supportsTools: row.model.supportsTools,
+        supportsVision: row.model.supportsVision,
+        inputPricePer1M: row.model.inputPricePer1M,
+        outputPricePer1M: row.model.outputPricePer1M,
+        benchmarkIndex: benchmarks[row.model.id]?.intelligenceIndex ?? null,
+        comparisonBps: comparisons[row.model.id]?.blendedDeltaBps ?? null,
       } satisfies SortableCatalogRow,
     }));
 
@@ -119,7 +120,7 @@ export function ModelCatalogTable({
     return decorated.sort((left, right) =>
       compareCatalogRows(left.sortable, right.sortable, sort, direction),
     );
-  }, [benchmarks, comparisons, direction, family, group, paired, query, sort]);
+  }, [benchmarks, comparisons, direction, family, group, query, skus, sort]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, pageCount);
@@ -129,28 +130,25 @@ export function ModelCatalogTable({
   );
 
   const matched = useMemo(
-    () =>
-      paired.filter((row) => comparisons[row.primary.id] !== undefined).length,
-    [comparisons, paired],
+    () => skus.filter((row) => comparisons[row.model.id] !== undefined).length,
+    [comparisons, skus],
   );
   const cheaperOnBlend = useMemo(
     () =>
-      paired.filter((row) => {
-        const comparison = comparisons[row.primary.id];
+      skus.filter((row) => {
+        const comparison = comparisons[row.model.id];
 
         return (
-          row.primary.access === "paid" &&
-          (comparison?.blendedDeltaBps ?? 0) < 0
+          row.model.access === "paid" && (comparison?.blendedDeltaBps ?? 0) < 0
         );
       }).length,
-    [comparisons, paired],
+    [comparisons, skus],
   );
 
-  const showComparison = comparisonAvailable(matched, paired.length);
+  const showComparison = comparisonAvailable(matched, skus.length);
   const measured = useMemo(
-    () =>
-      paired.filter((row) => benchmarks[row.primary.id] !== undefined).length,
-    [benchmarks, paired],
+    () => skus.filter((row) => benchmarks[row.model.id] !== undefined).length,
+    [benchmarks, skus],
   );
   const showBenchmarks = measured > 0;
   // Identity, then one fact per column, then the money, then the verdict.
@@ -201,7 +199,7 @@ export function ModelCatalogTable({
         group={group}
         groups={groups}
         matched={matched}
-        modelCount={paired.length}
+        modelCount={skus.length}
         query={query}
         showComparison={showComparison}
         shownCount={filtered.length}
@@ -230,7 +228,7 @@ export function ModelCatalogTable({
             </colgroup>
             <thead>
               <tr>
-                {head("Model", "model")}
+                {head("Model / SKU", "model")}
                 {head("Group", "group")}
                 {head("Weight", "weight", "text-right")}
                 {head(
@@ -257,10 +255,10 @@ export function ModelCatalogTable({
                 <CatalogRow
                   key={row.key}
                   benchmark={
-                    showBenchmarks ? benchmarks[row.primary.id] : undefined
+                    showBenchmarks ? benchmarks[row.model.id] : undefined
                   }
                   comparison={
-                    showComparison ? comparisons[row.primary.id] : undefined
+                    showComparison ? comparisons[row.model.id] : undefined
                   }
                   row={row}
                   showBenchmarks={showBenchmarks}

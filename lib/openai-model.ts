@@ -11,6 +11,7 @@ import type { ModelSummary } from "./types.ts";
 
 import { siteConfig } from "../config/site.ts";
 
+import { catalogSkuName } from "./catalog-skus.ts";
 import { extractApiKey, jsonError } from "./http.ts";
 import { authenticateApiKey } from "./store-facade/access.ts";
 import { listModels, trialOffer } from "./store-facade/catalog.ts";
@@ -21,7 +22,7 @@ export async function openAiModelObject(model: ModelSummary) {
     trial_paid_transition: await trialOffer(model.id),
     object: "model",
     owned_by: siteConfig.provider.slug,
-    name: model.name,
+    name: catalogSkuName(model),
     family: model.family,
     group: model.access,
     group_slug: model.groupSlug,

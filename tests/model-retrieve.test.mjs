@@ -45,6 +45,7 @@ test("model retrieve returns the same public object shape as the list", async ()
 
     assert.equal(object.object, "model");
     assert.equal(object.id, "free/luna-1");
+    assert.equal(object.name, "Luna 1 (Free)");
     assert.equal(object.owned_by, "savant-gateway");
     assert.equal(object.group, "free");
     assert.equal(object.group_billing_mode, "free");

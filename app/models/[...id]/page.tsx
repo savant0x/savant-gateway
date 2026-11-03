@@ -11,6 +11,7 @@ import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
 import { AccessChip } from "@/components/dashboard/chips";
 import { formatPricePer1M } from "@/components/dashboard/format";
+import { catalogSkuName } from "@/lib/catalog-skus";
 import { contentEnabled } from "@/lib/content/policy";
 import { isWatching } from "@/lib/content/store/engagement";
 import { listContentForModel } from "@/lib/content/store/links";
@@ -41,9 +42,11 @@ export async function generateMetadata({
 
   if (!model) return { title: "Model not found" };
 
+  const name = catalogSkuName(model);
+
   return {
-    title: `${model.name} — price and identity`,
-    description: `${model.name} on Savant Gateway: ${model.family}, ${model.contextWindow} context, ${model.groupLabel} access, and the latest published identity check.`,
+    title: `${name} — price and identity`,
+    description: `${name} on Savant Gateway: ${model.family}, ${model.contextWindow} context, ${model.groupLabel} access, and the latest published identity check.`,
     twitter: { card: "summary_large_image", images: [] },
   };
 }
@@ -105,7 +108,7 @@ export default async function ModelDetailPage({ params }: PageProps) {
             <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
               <div>
                 <h1 className="text-4xl font-semibold tracking-[-0.04em]">
-                  {model.name}
+                  {catalogSkuName(model)}
                 </h1>
                 <p className="mono mt-2 text-sm text-muted">{model.id}</p>
               </div>

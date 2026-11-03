@@ -10,7 +10,7 @@ import { SiteHeader } from "@/components/landing/site-header";
 import { siteConfig } from "@/config/site";
 import { artificialAnalysisConfigured } from "@/lib/artificial-analysis";
 import { ensureBenchmarksFresh } from "@/lib/benchmark-sync";
-import { pairCatalogModels, pairedCatalogCounts } from "@/lib/catalog-pairs";
+import { catalogSkuCounts, catalogSkuRows } from "@/lib/catalog-skus";
 import { getOpenRouterModels } from "@/lib/openrouter-prices";
 import {
   buildCatalogComparison,
@@ -71,9 +71,9 @@ export default async function ModelsPage() {
     benchmark.models.length > 0
       ? new Date(benchmark.fetchedAt).toISOString()
       : null;
-  // The headline counts models, not published ids: a model sold as a free
-  // allocation and a paid row is one model with two purchase paths.
-  const counts = pairedCatalogCounts(pairCatalogModels(data.models));
+  // The headline counts published SKUs: a free allocation and its paid
+  // counterpart are separate products with separate ids and detail pages.
+  const counts = catalogSkuCounts(catalogSkuRows(data.models));
 
   return (
     <div className="site-shell">
@@ -89,10 +89,10 @@ export default async function ModelsPage() {
               Find your model. Know your cost.
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-muted">
-              Compare the complete enabled catalog, with input and output rates
-              shown separately. Paid models use prepaid credit. Plan-only models
-              require a subscription that includes them, and free-pool access
-              depends on shared upstream capacity.
+              Compare every published SKU, with input and output rates shown
+              separately. A free-pool allocation and its paid counterpart are
+              listed as separate products: the free SKU draws on shared daily
+              capacity, while the paid SKU uses prepaid credit.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-2 text-xs">
@@ -108,7 +108,7 @@ export default async function ModelsPage() {
                   aria-hidden
                   className="fa-solid fa-layer-group mr-2 text-cyan-300"
                 />
-                {formatNumber(counts.models)} models
+                {formatNumber(counts.skus)} SKUs
               </span>
               <span className="rounded-full border border-white/10 canvas-surface px-3 py-1.5">
                 <i
@@ -126,7 +126,7 @@ export default async function ModelsPage() {
                   aria-hidden
                   className="fa-solid fa-key mr-2 text-amber-300"
                 />
-                {counts.subscriptionOnly} subscription-only
+                {counts.subscription} subscription-only
               </span>
             </div>
 
@@ -232,9 +232,10 @@ export default async function ModelsPage() {
                 Full catalog and price comparison
               </h2>
               <p className="mt-1 max-w-3xl text-sm text-muted">
-                Every enabled model with its billing group, weighted free-pool
+                Every published SKU with its billing group, weighted free-pool
                 cost, Savant rate, and the OpenRouter list rate where an exact
-                counterpart exists.
+                counterpart exists. Free and paid rows link to their own detail
+                pages.
               </p>
             </div>
             <span className="font-mono text-[11px] text-muted">

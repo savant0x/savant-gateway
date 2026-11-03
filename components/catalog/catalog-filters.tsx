@@ -91,7 +91,7 @@ export function CatalogFilters({
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
         <span>
           <i aria-hidden className="fa-solid fa-layer-group mr-1.5" />
-          {formatNumber(modelCount)} models · {formatNumber(shownCount)} shown
+          {formatNumber(modelCount)} SKUs · {formatNumber(shownCount)} shown
         </span>
         <span>
           {showComparison ? (

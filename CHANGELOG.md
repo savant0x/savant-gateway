@@ -3,6 +3,22 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — Free and paid catalog SKUs are separate products
+
+- **FID-2026-1103-139 — high — a paired catalog row hid the free product.** The
+  public table grouped a free allocation and its paid counterpart by model
+  identity, showed both chips, titled and priced the row from the paid variant,
+  and linked only to the paid detail page. Rows are now keyed by billing tier
+  and model identity; free, paid and subscription are separate SKUs, while
+  same-tier provider rows still merge. Free rows render `(Free)`, subscription
+  rows `(Subscription)`, and paid rows keep the provider name. Existing ids are
+  unchanged: `free/glm-5.3` and `glm-5.3` remain the request values. The detail
+  page, `/v1/models` and retrieve all use the same qualified name.
+- **Verified:** focused catalog and retrieve tests 21/21; full `npm run verify`
+  904 tests (903 pass, 1 skipped, 0 fail), build, HTTP and recovery PASS. Local
+  `/models` renders 12 free and 23 paid SKU rows; the free detail page returns
+  200 with free-pool copy and the paid page returns 200 with paid copy.
+
 ## 2026-11-03 — Production database cutover and development seed isolation
 
 - **FID-2026-1103-138 — high — a development boot could write into production.**

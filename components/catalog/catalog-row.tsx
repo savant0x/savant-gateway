@@ -1,5 +1,5 @@
 import type { BenchmarkSummary, ModelAccess } from "@/lib/types";
-import type { PairedCatalogModel } from "@/lib/catalog-pairs";
+import type { CatalogSkuRow } from "@/lib/catalog-skus";
 import type { PriceComparison } from "@/lib/price-comparison";
 
 import Link from "next/link";
@@ -13,7 +13,7 @@ import {
 } from "./catalog-cells";
 
 import { AccessChip } from "@/components/dashboard/chips";
-import { catalogAccessPaths } from "@/lib/catalog-pairs";
+import { catalogAccessPath } from "@/lib/catalog-skus";
 import { formatPricePer1M } from "@/components/dashboard/format";
 
 const PATH_ICON: Record<ModelAccess, string> = {
@@ -27,9 +27,10 @@ function modelHref(id: string) {
 }
 
 /**
- * One table row for one model. A model sold twice — a free allocation and the
- * metered id — lists both access chips and both purchase paths, because the
- * customer is choosing a way to pay, not a different model.
+ * One table row for one SKU. The free allocation, the metered id and a
+ * subscription row are separate products, so each row carries exactly one
+ * access chip, one price and one detail link. Pairing them would hide the free
+ * detail page behind the paid variant.
  */
 export function CatalogRow({
   row,
@@ -38,17 +39,14 @@ export function CatalogRow({
   showBenchmarks,
   showComparison,
 }: {
-  row: PairedCatalogModel;
+  row: CatalogSkuRow;
   benchmark?: BenchmarkSummary;
   comparison?: PriceComparison;
   showBenchmarks: boolean;
   showComparison: boolean;
 }) {
-  const model = row.primary;
-  const weight = row.free?.tokenWeight ?? model.tokenWeight;
-  const supportsTools = row.variants.some((variant) => variant.supportsTools);
-  const supportsVision = row.variants.some((variant) => variant.supportsVision);
-  const paths = catalogAccessPaths(row);
+  const model = row.model;
+  const path = catalogAccessPath(model);
 
   return (
     <tr>
@@ -57,51 +55,39 @@ export function CatalogRow({
           className="block truncate font-medium underline-offset-4 hover:underline"
           href={modelHref(model.id)}
         >
-          {row.display.name}
+          {row.name}
         </Link>
-        <div
-          className="catalog-sub mono"
-          title={row.variants.map((v) => v.id).join(" · ")}
-        >
-          {row.display.family} · {row.display.contextWindow}
-          {row.variants.map((variant) => (
-            <span key={variant.id}>
-              {" · "}
-              <Link
-                className="hover:text-accent hover:underline"
-                href={modelHref(variant.id)}
-              >
-                {variant.id}
-              </Link>
-            </span>
-          ))}
+        <div className="catalog-sub mono" title={model.id}>
+          {model.family} · {model.contextWindow} ·{" "}
+          <Link
+            className="hover:text-accent hover:underline"
+            href={modelHref(model.id)}
+          >
+            {model.id}
+          </Link>
         </div>
       </td>
       <td className="whitespace-nowrap">
-        <span className="inline-flex flex-wrap items-center gap-1">
-          {row.variants.map((variant) => (
-            <AccessChip key={variant.id} model={variant} />
-          ))}
-        </span>
+        <AccessChip model={model} />
       </td>
       <td className="catalog-rate text-right">
-        {weight > 0 ? (
-          <span title="Free-pool token weight">{weight}×</span>
+        {model.tokenWeight > 0 ? (
+          <span title="Free-pool token weight">{model.tokenWeight}×</span>
         ) : (
           <span className="text-muted">—</span>
         )}
       </td>
       <td className="catalog-col-features whitespace-nowrap text-center">
-        {supportsTools || supportsVision ? (
+        {model.supportsTools || model.supportsVision ? (
           <span className="inline-flex items-center gap-2">
-            {supportsTools ? (
+            {model.supportsTools ? (
               <i
                 aria-hidden
                 className="fa-solid fa-wrench text-[10px] text-muted"
                 title="Supports tools"
               />
             ) : null}
-            {supportsVision ? (
+            {model.supportsVision ? (
               <i
                 aria-hidden
                 className="fa-solid fa-eye text-[10px] text-muted"
@@ -133,11 +119,6 @@ export function CatalogRow({
             output={model.outputPricePer1M}
           />
         </span>
-        {row.free && row.paid ? (
-          <span className="block text-[10px] text-muted">
-            or free tier, {row.free.tokenWeight}× weighted
-          </span>
-        ) : null}
       </td>
       {showComparison ? (
         <td className="catalog-rate text-right">
@@ -153,9 +134,9 @@ export function CatalogRow({
               {formatDelta(comparison.blendedDeltaBps)}
             </span>
           ) : comparison?.blendedDeltaBps != null ? (
-            // Included models are 100 % cheaper than the public list by
-            // definition. Muted text, not a badge: eleven identical green
-            // badges would shout.
+            // A free or plan row is 100% cheaper than the public list by
+            // definition. Muted text, not a badge: every included SKU would
+            // otherwise shout the same green number.
             <span
               className="text-muted"
               title={`Included in ${model.access === "free" ? "the free pool" : "a plan"}; ${comparison.openRouterId} lists ${formatPricePer1M(
@@ -170,22 +151,17 @@ export function CatalogRow({
         </td>
       ) : null}
       <td className="whitespace-nowrap text-right">
-        <span className="inline-flex flex-col items-end gap-1">
-          {paths.map((path) => (
-            <Link
-              key={path.access}
-              className="text-[11px] text-accent underline-offset-4 hover:underline"
-              href={path.href}
-              title={path.detail}
-            >
-              <i
-                aria-hidden
-                className={`fa-solid ${PATH_ICON[path.access]} mr-1`}
-              />
-              {path.label}
-            </Link>
-          ))}
-        </span>
+        <Link
+          className="text-[11px] text-accent underline-offset-4 hover:underline"
+          href={path.href}
+          title={path.detail}
+        >
+          <i
+            aria-hidden
+            className={`fa-solid ${PATH_ICON[path.access]} mr-1`}
+          />
+          {path.label}
+        </Link>
       </td>
     </tr>
   );

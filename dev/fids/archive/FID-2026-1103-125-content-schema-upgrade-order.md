@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-125-content-schema-upgrade-order.md`
 **ID:** FID-2026-1103-125
 **Severity:** critical
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-03 12:10
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -135,10 +135,41 @@ Implementation pass 2026-11-03: see Loop 2 and the closure receipt.
    the build never opens one. Local development uses PGlite and production
    requires `DATABASE_URL` at runtime.
 
+### Loop 2 — implementation
+
+- **GREEN:** The parent index now lives in the additive branch, immediately
+  after `ALTER TABLE content.comments ADD COLUMN IF NOT EXISTS parent_id`.
+  `tests/content-schema-upgrade.test.mjs` builds the pre-reply schema and runs
+  `contentSchema` against it.
+- **AUDIT:** A fresh database still gets the inline column and the later index
+  in one migration. The old-schema test also asserts `items_skipped`,
+  `comment_count`, the generic `comments` metric column, the removal of
+  `youtube_comments`, and that a reply with a parent can be stored.
+- **ADVERSARIAL:** Running the migration twice remains safe because both the
+  column and the index use `IF NOT EXISTS`. The failure had been masked by every
+  storage test starting from a fresh database; the regression test now owns the
+  upgrade path.
+- **VERIFICATION:** Focused upgrade/comments/store tests 6/6; full `npm test`
+  903 tests (902 pass, 1 skipped); lint 0 warnings, typecheck 0, quality PASS
+  (570 files), `npm run build` 0. The real local PGlite database at `data/pg`
+  was migrated and inspected: `comments.parent_id`, `fetch_cycles.items_skipped`,
+  `items.comment_count` and `metric_snapshots.comments` exist and
+  `content_comments_parent_idx` is present. `GET /signal` and
+  `GET /signal/itm_a90db0a0d563007555784dda` both return 200. Commit `a193a8d`.
+
 ## Resolution
 
-- **Closed Date:** not closed
-- **Fix Description:** pending implementation
-- **Tests Added:** No
-- **Verification Evidence:** None
-- **Archived:** not archived
+- **Closed Date:** 2026-11-03
+- **Fix Description:** create the comment parent index after the additive
+  `parent_id` column so an existing content schema can upgrade on boot
+- **Tests Added:** Yes — `tests/content-schema-upgrade.test.mjs`
+- **Verification Evidence:** focused 6/6; full suite 903 (902 pass, 1 skipped);
+  lint, typecheck, quality and build all exit 0; real `data/pg` upgrade and
+  HTTP 200 on the affected pages; commit `a193a8d`
+- **Archived:** 2026-11-03 — moved to `dev/fids/archive/`.
+
+## Lessons Learned
+
+A migration is only proven by the upgrade path, not the fresh path. Every
+storage test created the current schema directly, so the one database that
+mattered — the one already carrying data — was the only one not exercised.

@@ -3,6 +3,29 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — Existing content schemas upgrade on boot
+
+- **FID-2026-1103-125 — critical — a pre-reply database could not start the
+  application.** The content schema created `content_comments_parent_idx` in
+  the table-creation script, before the additive `ADD COLUMN parent_id` that
+  upgrades an existing `content.comments` table. On a database created before
+  replies, `CREATE TABLE IF NOT EXISTS` was a no-op and the index failed with
+  `column "parent_id" does not exist`, aborting the migration and caching a
+  rejected storage promise; every database-backed page then returned 500 until
+  a restart. The index now runs after the column. A new regression test builds
+  the old schema, upgrades it, and asserts the reply column, the parent index,
+  `items_skipped`, `comment_count` and the generic metric `comments` column.
+  Verified against the real local PGlite database at `data/pg`: the columns and
+  index exist, and `/signal` plus the affected item page return 200. Focused
+  6/6; `npm test` 903 (902 pass, 1 skipped); lint 0 warnings, typecheck 0,
+  quality PASS (570 files), build 0. Commit `a193a8d`.
+- **The build intentionally opens no database.** `next build` renders only
+  routes that do not read storage; database-backed pages are dynamic and open
+  the database at request time. Local development uses PGlite (`data/pg`) when
+  `DATABASE_URL` is blank; a production runtime still refuses to start without
+  a networked `DATABASE_URL`. No ISR page is configured, so the build gate does
+  not need a database and cannot freeze build-time rows.
+
 ## 2026-11-03 — Source integrity, moderation, distribution and model retrieve
 
 - **FID-2026-1103-119 — high — source-native engagement metrics.** Hacker News

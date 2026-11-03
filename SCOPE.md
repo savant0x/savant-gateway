@@ -1,5 +1,29 @@
 # SCOPE.md — Gateway Project Review
 
+## Current Session — 2026-11-03 (existing database startup repair)
+
+Operator report: the dev server fails every database-backed page with
+`column "parent_id" does not exist`, and the operator asked why the build runs
+without a database despite the complete storage system. FID-125 records the
+critical migration-order defect. No provider, payment, deployment or retention
+deletion is authorized.
+
+- [x] **F1 — Reproduce and locate.** The failure is the create-script index on
+  `content.comments(parent_id)` running before the additive `ADD COLUMN` on an
+  existing database. The whole migration aborts and the rejected storage
+  promise is cached.
+- [x] **F2 — Move the index and pin the upgrade path.**
+  `tests/content-schema-upgrade.test.mjs` builds the pre-reply schema and runs
+  the real migration, asserting the reply column, parent index, skipped-cycle
+  column, generic metric column and a stored reply.
+- [x] **F3 — Verify the real database.** `data/pg` was migrated and inspected;
+  `/signal` and the reported item page return 200. Full suite 903 (902 pass, 1
+  skipped); lint, typecheck, quality and build all pass. Commit `a193a8d`.
+- [x] **F4 — Clarify the build/database contract.** The build opens no
+  database by design; runtime storage is PGlite locally or `DATABASE_URL` in
+  production. No ISR page is configured, so a build without a database is
+  neither missing storage nor a production fallback.
+
 ## Current Session — 2026-11-03 (source integrity, moderation, distribution)
 
 Operator request: "p0; fix it… p1; fix this properly, p2; port, add the extra

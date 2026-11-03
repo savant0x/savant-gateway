@@ -18,13 +18,23 @@ import { identitySchema } from "./identity.ts";
  * run is idempotent: a second boot changes nothing, which is what lets the
  * migration be re-run safely on every start.
  */
-export async function applySchema(db: PostgresDatabase) {
+export async function applySchema(
+  db: PostgresDatabase,
+  options: { seedDevelopmentUser?: boolean } = {},
+) {
   await coreSchema(db);
   await customerSchema(db);
   await catalogSchema(db);
   await billingSchema(db);
   await identitySchema(db);
   await contentSchema(db);
+
+  // The seed belongs to the embedded engine, not to "not production". A dev
+  // server pointed at a networked database is still a real database, and
+  // writing `dev@local` into it would put a development account in operator
+  // data. It runs inside the migration transaction, so the seed and the DDL
+  // cannot disagree about whether the migration succeeded.
+  if (options.seedDevelopmentUser !== false) await seedDevelopmentUser(db);
 }
 
 /**
@@ -42,15 +52,8 @@ export async function migrateDatabase(
   await db.ready();
 
   await db.transaction(async () => {
-    await applySchema(db);
+    await applySchema(db, options);
   })();
-
-  // The seed belongs to the embedded engine, not to "not production". A dev
-  // server pointed at a networked database is still a real database, and
-  // writing `dev@local` into it would put a development account in operator
-  // data. The caller that owns the storage mode decides; direct callers keep
-  // the historical default for tests and local PGlite.
-  if (options.seedDevelopmentUser !== false) await seedDevelopmentUser(db);
 }
 
 /**

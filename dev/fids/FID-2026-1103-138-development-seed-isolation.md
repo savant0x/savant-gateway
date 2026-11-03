@@ -24,15 +24,13 @@ tied to the embedded storage engine, not to the process's mode label.
 
 ## Proposed Solution
 
-1. **implemented:** remove the seed from `applySchema`; schema application stays
-   a pure DDL operation.
-2. **implemented:** let `migrateDatabase` accept an explicit
+1. **implemented:** let `applySchema` and `migrateDatabase` accept an explicit
    `seedDevelopmentUser` decision, defaulting to the historical behaviour for
-   direct callers and tests.
-3. **implemented:** have `createStorageDatabase` pass
+   direct callers and tests. The seed stays inside the migration transaction.
+2. **implemented:** have `createStorageDatabase` pass
    `seedDevelopmentUser: mode === "local"`, so PGlite seeds and any networked
    PostgreSQL URL does not, regardless of `NODE_ENV`.
-4. **implemented:** add a regression test proving a networked-mode migration
+3. **implemented:** add a regression test proving a networked-mode migration
    leaves no `user_dev` row.
 
 ## Verification Gates
@@ -51,7 +49,7 @@ tied to the embedded storage engine, not to the process's mode label.
   dev server even when the database is production.
 - **GREEN:** the seed is now decided by the storage mode. `createStorageDatabase`
   is the only place that knows whether the pool is embedded or networked, and it
-  passes that fact to the migration.
+  passes that fact through the migration transaction.
 - **AUDIT:** traced every `migrateDatabase` and `applySchema` caller. Tests call
   `migrateDatabase(db)` directly and keep the existing seed; the runtime calls
   `createStorageDatabase`, which now suppresses it for PostgreSQL.

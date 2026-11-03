@@ -3,6 +3,17 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — Git-connected Vercel installs no longer fail on Git hooks
+
+- **FID-2026-1103-140 — critical — a Git-triggered Vercel build failed at
+  install.** Vercel's Git checkout has a `.git` directory but cannot write Git
+  config, so `git config core.hooksPath .githooks` exited 128 before the build.
+  The prepare script now skips local hook wiring when `VERCEL` or `CI` is set;
+  a writable local checkout still configures the hooks and commit template. A
+  Git-connected deployment of `4b47776` reproduced the failure and the fix is
+  verified with `VERCEL=1`, `CI=1` and a plain local run, plus lint and the
+  pre-push gate.
+
 ## 2026-11-03 — Free and paid catalog SKUs are separate products
 
 - **FID-2026-1103-139 — high — a paired catalog row hid the free product.** The

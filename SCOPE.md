@@ -1,5 +1,18 @@
 # SCOPE.md — Gateway Project Review
 
+## Current Session — 2026-11-03 (Vercel Git install)
+
+Operator report: Vercel serves from GitHub, but pushes had not been reaching the
+repository. After the push, the Git-triggered build failed during install.
+
+- [x] **V1 — Reproduce.** The deployment log for GitHub commit `4b47776` shows
+  `git config core.hooksPath .githooks` exiting 128 inside `scripts/prepare.mjs`.
+- [x] **V2 — Separate deployment from local checkout.** A Vercel Git clone has
+  `.git` but is not writable. The prepare script now skips hook wiring when
+  `VERCEL` or `CI` is set, while a local checkout still wires both hooks.
+- [x] **V3 — Verify.** `VERCEL=1`, `CI=1` and a plain local run all exit 0;
+  lint passes. FID-140 records the repair.
+
 ## Current Session — 2026-11-03 (separate free and paid catalog SKUs)
 
 Operator report: a model with both a free allocation and a paid counterpart

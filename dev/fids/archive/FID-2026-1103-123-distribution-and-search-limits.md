@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-123-distribution-and-search-limits.md`
 **ID:** FID-2026-1103-123
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-03 10:40
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -139,10 +139,48 @@ Implementation pass 2026-11-03: see Loop 2 and the closure receipt.
 4. What burst is allowed? → 30 requests per minute per client, matching a human
    palette and rejecting scripted hammering without blocking normal use.
 
+### Loop 2 — implementation
+
+- **GREEN:** `/signal/digest/feed.xml` builds RSS 2.0 from the same digest window
+  as the HTML page, defaulting to 14 days and accepting `days=1..30`.
+  `/signal/[id]/opengraph-image.tsx` renders a 1200×630 card from the item's
+  public fields. `/api/content/status/badge.json` returns a shields.io payload
+  with `Access-Control-Allow-Origin: *` from the public source projection.
+  `/api/content/search` allows a 15-request burst and 30 requests/minute per
+  client, returning 429 with `Retry-After`; the key map is capped at 5,000 and
+  idle keys are evicted only when the map is full. Session-free reads are
+  memoized for 60 seconds in `lib/content/public-cache.ts`.
+- **AUDIT:** The feed escapes every publisher string, uses the Signal detail URL
+  rather than the external publisher URL, and omits an unparseable date. The
+  badge names counts, never a private error. The limiter reuses the existing
+  token bucket and trusts the configured proxy header first.
+- **ADVERSARIAL — ISR was rejected by the build gate.** `revalidate = 60` made
+  Next prerender `/signal/digest` during `npm run build`, which failed because
+  the build runs without `DATABASE_URL`. Keeping the pages dynamic and memoizing
+  the read is the build-safe equivalent: no page pretends a database the build
+  does not have, and repeated requests still stop re-querying Postgres. The
+  trade-off is a process-local cache that restarts empty, which is acceptable
+  for a one-process deployment.
+- **VERIFICATION:** `node --test tests/content-distribution.test.mjs` 4/4,
+  `tests/content-search.test.mjs` 4/4, `tests/content-public-cache.test.mjs`
+  3/3. Full suite 902 (901 pass, 1 skipped); lint, typecheck, quality PASS (570
+  files), `npm run build` 0 with the feed, badge and item-card routes listed.
+  Commit `d07e039`.
+
 ## Resolution
 
-- **Closed Date:** not closed
-- **Fix Description:** pending implementation
-- **Tests Added:** No
-- **Verification Evidence:** None
-- **Archived:** not archived
+- **Closed Date:** 2026-11-03
+- **Fix Description:** RSS digest feed, per-item social card, status badge,
+  bounded search limiter and a 60-second public read memo (ISR rejected by the
+  no-database build)
+- **Tests Added:** Yes — `tests/content-distribution.test.mjs`,
+  `tests/content-public-cache.test.mjs`, updated `tests/content-search.test.mjs`
+- **Verification Evidence:** focused 11/11; `npm test` 902 (901 pass, 1 skipped);
+  lint, typecheck, quality and build all exit 0; commit `d07e039`
+- **Archived:** 2026-11-03 — moved to `dev/fids/archive/`.
+
+## Lessons Learned
+
+A caching directive is not portable without knowing how the artifact is built.
+The build gate's missing database is a real constraint, and a bounded read memo
+satisfies the load goal without turning a green build into a broken one.

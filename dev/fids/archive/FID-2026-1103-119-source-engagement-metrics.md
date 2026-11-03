@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-119-source-engagement-metrics.md`
 **ID:** FID-2026-1103-119
 **Severity:** high
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-03 10:20
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -143,10 +143,39 @@ Implementation pass 2026-11-03: see Loop 2 and the closure receipt.
 4. Does momentum still treat absence as zero? → No. An unreported metric is not
    written, so the existing snapshot semantics are unchanged.
 
+### Loop 2 — implementation
+
+- **GREEN:** `ContentMetrics.comments` replaces `youtubeComments`. Hacker News
+  maps `score` to `likes` and `descendants` to `comments`; HuggingFace maps
+  `upvotes` to `likes`; YouTube writes its comment count into the generic
+  column. `content.metric_snapshots.youtube_comments` and
+  `content.items.youtube_comment_count` are renamed additively when the old
+  names exist.
+- **AUDIT:** `writeMetricSnapshot` and `listMomentum` read the new names; the
+  migration only renames when the target does not already exist, so a partially
+  migrated database is not overwritten. Malformed or missing counts remain
+  absent rather than becoming zero observations.
+- **ADVERSARIAL:** A HN story without `descendants` still records its points;
+  a HF paper with a non-finite upvote records no like. This prevents a missing
+  metric from outranking a genuine zero.
+- **VERIFICATION:** `node --test tests/content-metrics.test.mjs` 3/3,
+  `tests/content-momentum.test.mjs` 3/3, `tests/content-store.test.mjs` 3/3.
+  Full `npm test` 902 tests (901 pass, 1 skipped). Lint 0 warnings, typecheck 0,
+  quality PASS (570 files), `npm run build` 0. Commit `d07e039`.
+
 ## Resolution
 
-- **Closed Date:** not closed
-- **Fix Description:** pending implementation
-- **Tests Added:** No
-- **Verification Evidence:** None
-- **Archived:** not archived
+- **Closed Date:** 2026-11-03
+- **Fix Description:** source-native HN/HF metrics with generic comment columns
+  and a data-preserving migration
+- **Tests Added:** Yes — `tests/content-metrics.test.mjs`, updated
+  `tests/content-momentum.test.mjs` and `tests/content-store.test.mjs`
+- **Verification Evidence:** focused 9/9; `npm test` 902 (901 pass, 1 skipped);
+  lint, typecheck, quality and build all exit 0; commit `d07e039`
+- **Archived:** 2026-11-03 — moved to `dev/fids/archive/`.
+
+## Lessons Learned
+
+A metric shape named after its first source becomes a lie when the second
+source arrives. The generic column plus the forward-only rename keeps existing
+YouTube data and avoids inventing a second snapshot format.

@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-122-comment-moderation-and-content-observability.md`
 **ID:** FID-2026-1103-122
 **Severity:** high
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-03 10:35
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -143,10 +143,44 @@ Implementation pass 2026-11-03: see Loop 2 and the closure receipt.
    items and comments.
 4. Does a skipped count change the source health? → No. Only a failed cycle does.
 
+### Loop 2 — implementation
+
+- **GREEN:** `deleteComment(db, id, actor)` accepts `{ userId }` or
+  `{ operator: true }` and returns false for a missing or foreign row.
+  `listComments` takes a viewer and returns a computed `canDelete`, never a user
+  id. The customer DELETE route and the admin DELETE route
+  (`/api/admin/content/comments/[id]`) are live; the detail page renders an
+  author-only delete button and the admin content page renders recent comments
+  with an operator delete action. `contentStats` adds reactions, comments and
+  saves. `fetch_cycles.items_skipped` records entries the parser dropped.
+- **AUDIT:** The operator check is the admin route guard, not the button. The
+  store still refuses a foreign `userId` if a route is wrong. The foreign-key
+  cascade removes replies. `knowledge.md` states that items are retained
+  indefinitely and only snapshots prune.
+- **ADVERSARIAL:** A replay delete returns false and the route answers 404. A
+  comment on another item cannot become a parent because the parent lookup is
+  item-scoped. The moderation panel is authenticated and reads the admin
+  projection only.
+- **VERIFICATION:** `node --test tests/content-comments.test.mjs` 2/2,
+  `tests/content-store.test.mjs` 3/3, `tests/content-ingest.test.mjs` 7/7. Full
+  suite 902 (901 pass, 1 skipped); lint, typecheck, quality and build 0. Commit
+  `d07e039`. The DELETE handlers were compiled and typechecked; no route-level
+  HTTP suite was added for them.
+
 ## Resolution
 
-- **Closed Date:** not closed
-- **Fix Description:** pending implementation
-- **Tests Added:** No
-- **Verification Evidence:** None
-- **Archived:** not archived
+- **Closed Date:** 2026-11-03
+- **Fix Description:** actor-scoped comment deletion, operator moderation,
+  engagement totals and skipped-entry cycle accounting
+- **Tests Added:** Yes — updated `tests/content-comments.test.mjs`,
+  `tests/content-store.test.mjs` and `tests/content-ingest.test.mjs`
+- **Verification Evidence:** focused 12/12; `npm test` 902 (901 pass, 1 skipped);
+  lint, typecheck, quality and build all exit 0; commit `d07e039`
+- **Archived:** 2026-11-03 — moved to `dev/fids/archive/`.
+
+## Lessons Learned
+
+A public write surface is incomplete without its removal path. Putting the
+actor into the store signature made both the author and operator rules testable
+without trusting either route, and a computed `canDelete` kept user ids out of
+the public payload.

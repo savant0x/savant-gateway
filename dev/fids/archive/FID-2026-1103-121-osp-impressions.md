@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-121-osp-impressions.md`
 **ID:** FID-2026-1103-121
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-03 10:30
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -123,10 +123,34 @@ Implementation pass 2026-11-03: see Loop 2 and the closure receipt.
    URLs, and at most once per source cycle.
 3. Does a page failure fail the source? → No. It is optional enrichment.
 
+### Loop 2 — implementation
+
+- **GREEN:** `lib/content/osp-impressions.ts` exports `isOspPostUrl`,
+  `parseOspImpressions` and `enrichOspImpressions(items, fetchText, maxPages)`.
+  `ingestSource` calls it only when the parsed set contains OSP post URLs.
+- **AUDIT:** Only `https://www.opensourceprojects.dev/post/...` is eligible; the
+  listing and its client API are never fetched. The marker parser requires a
+  finite non-negative integer. Existing metrics are preserved and the page cap
+  is 24 with four workers.
+- **ADVERSARIAL:** A page that drops the marker leaves views unreported rather
+  than zero. One failing page does not fail the cycle because enrichment is
+  isolated per request and optional to the feed parse.
+- **VERIFICATION:** `node --test tests/content-osp.test.mjs` 4/4 and
+  `tests/content-ingest.test.mjs` 7/7. Full suite 902 (901 pass, 1 skipped);
+  lint, typecheck, quality and build 0. Commit `d07e039`.
+
 ## Resolution
 
-- **Closed Date:** not closed
-- **Fix Description:** pending implementation
-- **Tests Added:** No
-- **Verification Evidence:** None
-- **Archived:** not archived
+- **Closed Date:** 2026-11-03
+- **Fix Description:** bounded OSP post-page impression enrichment feeding the
+  existing views metric
+- **Tests Added:** Yes — `tests/content-osp.test.mjs` plus the ingestion case
+- **Verification Evidence:** focused 11/11; `npm test` 902 (901 pass, 1 skipped);
+  lint, typecheck, quality and build all exit 0; commit `d07e039`
+- **Archived:** 2026-11-03 — moved to `dev/fids/archive/`.
+
+## Lessons Learned
+
+Optional enrichment must not be able to turn a healthy feed into a failed cycle.
+Keeping the parser pure and the worker pool bounded made both the no-network
+test and the honest "unreported" state possible.

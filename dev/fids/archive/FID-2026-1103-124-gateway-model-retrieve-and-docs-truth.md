@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-124-gateway-model-retrieve-and-docs-truth.md`
 **ID:** FID-2026-1103-124
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-03 10:45
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -131,15 +131,47 @@ Implementation pass 2026-11-03: see Loop 2 and the closure receipt.
 1. Should unsupported fields be rejected instead of ignored? → That is a
    behaviour change with client breakage; this FID documents the current truth.
    A later FID can add an explicit 400 behind a compatibility switch.
-2. Does the retrieve route need auth? → No; the list is public and already
-   exposes only published rows.
+2. Does the retrieve route need auth? → **Corrected during implementation:**
+   the list is not public. `/v1/models` requires a Bearer or x-api-key and
+   authenticates the key, so the retrieve route uses the same guard. Returning
+   an unauthenticated model object would have widened the surface beyond the
+   list it mirrors.
 3. Should project-status be rewritten? → No. Its dated receipts are historical;
    a banner and current pointer preserve that record honestly.
 
+### Loop 2 — implementation
+
+- **GREEN:** `lib/openai-model.ts` holds the one model projection, the API-key
+  guard, the published-row lookup and the `model_not_found` response. The list
+  and catch-all retrieve routes both use it. `GET /v1/models/{id}` accepts a
+  literal or encoded `provider/model` id and returns the same object shape.
+- **AUDIT:** `findPublishedModel` scans `listModels()`, so disabled rows,
+  unpublished rows and models behind a disabled provider are unreachable by id.
+  `jsonError` gained an optional `code` parameter; existing callers keep the
+  null code they had. The docs now state the per-protocol field behaviour read
+  from the adapters rather than the old "forwarded unchanged" claim.
+- **ADVERSARIAL:** The FID's original no-auth answer was wrong; the shared guard
+  keeps the retrieve surface no wider than the list. The Anthropic path still
+  ignores `response_format` and the other fields in the table; the docs say so
+  instead of implying an emulation that does not exist.
+- **VERIFICATION:** `node --test tests/model-retrieve.test.mjs` 3/3. Full suite
+  902 (901 pass, 1 skipped); lint, typecheck, quality PASS (570 files),
+  `npm run build` 0 with `/v1/models/[...id]` and all docs pages compiled.
+  Commit `d07e039`.
+
 ## Resolution
 
-- **Closed Date:** not closed
-- **Fix Description:** pending implementation
-- **Tests Added:** No
-- **Verification Evidence:** None
-- **Archived:** not archived
+- **Closed Date:** 2026-11-03
+- **Fix Description:** authenticated OpenAI-compatible model retrieve plus
+  truthful adapter and layout documentation
+- **Tests Added:** Yes — `tests/model-retrieve.test.mjs`
+- **Verification Evidence:** 3/3 focused; `npm test` 902 (901 pass, 1 skipped);
+  lint, typecheck, quality and build all exit 0; commit `d07e039`
+- **Archived:** 2026-11-03 — moved to `dev/fids/archive/`.
+
+## Lessons Learned
+
+A design question answered from memory rather than from the route is a defect
+in the FID. The list required a key all along, so the retrieve route inherited
+that requirement; recording the correction is more useful than quietly shipping
+a wider surface.

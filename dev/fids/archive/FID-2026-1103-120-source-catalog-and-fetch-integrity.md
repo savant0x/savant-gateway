@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-120-source-catalog-and-fetch-integrity.md`
 **ID:** FID-2026-1103-120
 **Severity:** high
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-03 10:25
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -153,10 +153,44 @@ Implementation pass 2026-11-03: see Loop 2 and the closure receipt.
 4. What happens after a restart? → The cache is empty, no validators are sent,
    and the first fetch is a full 200. Correctness never depends on the cache.
 
+### Loop 2 — implementation
+
+- **GREEN:** `reddit` is a first-class source kind with
+  `normalizeRedditUrl` canonicalizing a subreddit page or `reddit.com/r/x` to
+  the official `hot.rss` feed. `SourceConfigError` marks invalid HN, Reddit,
+  YouTube and preset input; `recordSourceFailure` takes a kind and only advances
+  the failure streak for fetch-class errors. `createConditionalFetcher` sends
+  ETag/Last-Modified, reuses a bounded body on 304, and refuses a 304 without a
+  cached body. The dead `@savant` and Reddit presets are gone; the verified
+  Lobsters, Simon Willison, Latent Space, Import AI and arXiv cs.LG/cs.CL feeds
+  are present.
+- **AUDIT:** The Reddit rewrite happens at the same validation boundary as the
+  Hacker News rewrite, so a pasted subreddit page cannot reach storage as HTML.
+  The failure split is enforced in SQL by the caller-provided kind. The
+  conditional cache is keyed by canonical URL and capped at 64 entries.
+- **ADVERSARIAL:** A 304 after a process restart has no body and fails the
+  cycle instead of reporting an empty success. A 403 remains a fetch failure
+  and can disable a source, which is the honest outcome for a blocked host.
+- **VERIFICATION:** `node --test tests/content-sources.test.mjs` 15/15,
+  `tests/content-ingest.test.mjs` 7/7, `tests/content-fetch-all.test.mjs` 5/5,
+  `tests/content-feeds.test.mjs` 9/9,
+  `tests/content-fetch-conditional.test.mjs` 3/3. Full suite 902 (901 pass, 1
+  skipped); lint, typecheck, quality and build 0. Commit `d07e039`.
+
 ## Resolution
 
-- **Closed Date:** not closed
-- **Fix Description:** pending implementation
-- **Tests Added:** No
-- **Verification Evidence:** None
-- **Archived:** not archived
+- **Closed Date:** 2026-11-03
+- **Fix Description:** Reddit source kind, config-vs-fetch failure classes,
+  conditional feed transport, dead presets removed and six verified feeds added
+- **Tests Added:** Yes — `tests/content-fetch-conditional.test.mjs`, updated
+  source/ingest/feed/fetch-all suites
+- **Verification Evidence:** focused 39/39; `npm test` 902 (901 pass, 1 skipped);
+  lint, typecheck, quality and build all exit 0; commit `d07e039`
+- **Archived:** 2026-11-03 — moved to `dev/fids/archive/`.
+
+## Lessons Learned
+
+A preset is executable configuration: a dead URL burns retries and looks like a
+code failure. Normalizing the operator's input at the same boundary as Hacker
+News closes the trap, and separating configuration errors from fetch failures
+keeps a typo from silently disabling a source.

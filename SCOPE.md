@@ -10,6 +10,35 @@ impressions, 122 moderation/observability, 123 distribution/caching/search
 limits, and 124 model retrieve/docs truth. No provider, payment, deployment or
 retention deletion is authorized.
 
+- [x] **F1 — FID-119 source-native metrics.** HN score/descendants and HF
+  upvotes now write `likes`/`comments` through generic columns; the YouTube
+  comment columns were renamed with a data-preserving migration. Evidence:
+  metrics 3/3, momentum 3/3, store 3/3.
+- [x] **F2 — FID-120 source catalog and fetch integrity.** `@savant` and the
+  dead Reddit presets are gone; Reddit URLs canonicalize to the official hot
+  feed; configuration errors no longer advance the disable streak; conditional
+  ETag/Last-Modified fetches reuse a 64-entry bounded cache. Evidence: sources
+  15/15, ingest 7/7, feeds 9/9, fetch-all 5/5, conditional 3/3.
+- [x] **F3 — FID-121 OSP impressions.** OSP post pages are scraped only at the
+  allowed path, at most 24 per cycle and four at a time, and a missing marker
+  stays unreported. Evidence: OSP 4/4, ingest 7/7.
+- [x] **F4 — FID-122 moderation and observability.** Authors and operators can
+  delete comments through scoped store calls; the admin page shows reaction,
+  comment and save totals; cycles record skipped entries; retention is
+  documented. Evidence: comments 2/2, store 3/3, ingest 7/7.
+- [x] **F5 — FID-123 distribution, caching and search limits.** RSS digest feed,
+  per-item OG card, shields badge, 30/min search limiter with a 15 burst, and a
+  bounded 60-second public read memo. Segment ISR was rejected because the build
+  runs without a database; the failure and replacement are recorded in the FID.
+  Evidence: distribution 4/4, search 4/4, public cache 3/3.
+- [x] **F6 — FID-124 model retrieve and docs truth.** Authenticated
+  `GET /v1/models/{id}` shares the list projection, 404s as `model_not_found`,
+  and the docs now state the per-protocol field contract and current layout.
+  Evidence: retrieve 3/3; `/v1/models/[...id]` in the build manifest.
+- [x] **F7 — Closure.** Commit `d07e039`; full `npm test` 902 tests (901 pass,
+  1 skipped); lint 0 warnings, typecheck 0, quality PASS (570 files), build 0.
+  Six records closed and archived.
+
 ## Current Session — 2026-11-03 (complete open FIDs: 100–105, launch blockers 043/062/068)
 
 Operator request: "complete all open fids, post perfection loop." Automation

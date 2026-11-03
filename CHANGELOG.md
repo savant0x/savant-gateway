@@ -3,6 +3,65 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — Source integrity, moderation, distribution and model retrieve
+
+- **FID-2026-1103-119 — high — source-native engagement metrics.** Hacker News
+  now stores its points as `likes` and `descendants` as `comments`;
+  HuggingFace daily papers store `upvotes` as `likes`; YouTube keeps its
+  comment count. The two YouTube-specific comment columns were renamed
+  additively to `comment_count` and `comments`, preserving existing data. A
+  missing count remains unreported instead of becoming a zero observation.
+  Verified: metrics 3/3, momentum 3/3, store 3/3.
+- **FID-2026-1103-120 — high — source catalog and fetch integrity.** The dead
+  `@savant` YouTube handle and two blocked Reddit presets are removed. Reddit is
+  a first-class source kind whose URL canonicalizes to the official `hot.rss`
+  feed. Configuration mistakes record a visible error without advancing the
+  five-failure disable streak; only fetch failures do. The feed transport sends
+  ETag/Last-Modified and reuses a bounded 64-entry body cache on 304, failing
+  honestly when a 304 has no cached body. Six newly verified feeds are presets
+  (Lobsters, Simon Willison, Latent Space, Import AI, arXiv cs.LG, arXiv cs.CL).
+  Verified: sources 15/15, ingest 7/7, feeds 9/9, fetch-all 5/5, conditional
+  3/3.
+- **FID-2026-1103-121 — medium — OSP impressions.** `opensourceprojects.dev`
+  post pages are enriched only at the allowed `/post/` path, at most 24 pages
+  per cycle and four at a time. A parseable "Impressions N" becomes the views
+  metric; a missing marker stays unreported and one failed page does not fail
+  the cycle. Verified: OSP 4/4, ingest 7/7.
+- **FID-2026-1103-122 — high — comment moderation and observability.** A
+  customer can delete their own comment and an operator can delete any comment
+  through an authenticated admin route; replies cascade and a foreign or
+  missing id answers 404. The public comment model exposes only a computed
+  `canDelete`, never a user id. The admin content page now shows reaction,
+  comment and save totals, and fetch cycles record how many raw entries the
+  parser skipped. Items remain retained indefinitely; only metric snapshots
+  prune. Verified: comments 2/2, store 3/3, ingest 7/7. The DELETE routes were
+  compiled and typechecked, not exercised by a route-level HTTP suite.
+- **FID-2026-1103-123 — medium — Signal distribution and search limits.**
+  `/signal/digest/feed.xml` serves RSS 2.0 for the newest 1–30 digest days
+  (default 14); a Signal item now has a 1200×630 Open Graph card; and
+  `/api/content/status/badge.json` serves a CORS-enabled shields payload from
+  the public source projection. Public search allows a 15-request burst and 30
+  requests/minute per client, returning 429 with `Retry-After`, with a bounded
+  5,000-key map. Session-free Signal reads are memoized for 60 seconds.
+  Segment ISR was attempted and rejected: `npm run build` prerendered the
+  digest page and failed without `DATABASE_URL`, so pages stay dynamic and the
+  read memo provides the load reduction. Verified: distribution 4/4, search
+  4/4, public cache 3/3.
+- **FID-2026-1103-124 — medium — OpenAI model retrieve and documentation
+  truth.** `GET /v1/models/{id}` returns the same authenticated model object as
+  the list, or 404 with `code: "model_not_found"`. The list and retrieve routes
+  share one projection and one credential guard; only published rows behind an
+  enabled provider resolve. The API reference now documents per-protocol field
+  handling (including the Anthropic path's ignored `response_format`, `seed`,
+  `logprobs`, `n` and penalty fields), the retrieve endpoint, and the current
+  gateway module layout. `docs/project-status.md` is marked superseded with a
+  pointer to the changelog and FID ledger. Verified: retrieve 3/3.
+- **Ledger closure.** Commit `d07e039`; full `npm test` 902 tests (901 pass, 1
+  skipped); lint 0 warnings, typecheck 0, quality PASS (570 files), `npm run
+  build` 0 with the feed, badge, item-card and retrieve routes listed. The six
+  FIDs are closed and archived. Not verified: the HTTP suites were not rerun for
+  this change.
+
 ## 2026-11-03 — Signal engagement, rankings, search and source tools
 
 - **FID-2026-1102-100 — medium — reactions and one-level replies.** Signed-in

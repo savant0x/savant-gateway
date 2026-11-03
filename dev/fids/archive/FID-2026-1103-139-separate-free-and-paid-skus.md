@@ -116,4 +116,5 @@ chip, prices from `row.primary` (paid first), and links to `row.primary.id`.
   904 tests (903 pass, 1 skipped, 0 fail), build, HTTP and recovery PASS. Local
   `/models` shows 12 free and 23 paid rows; `/models/free/glm-5.3` returns 200
   with free-pool copy; `/models/glm-5.3` returns 200 with paid copy.
-- **Archived:** no; awaiting commit.
+- **Commit:** `59dce6d`.
+- **Archived:** yes.

@@ -17,7 +17,8 @@ distinguish verified behavior from unverified claims.
 - **Verified:** focused catalog and retrieve tests 21/21; full `npm run verify`
   904 tests (903 pass, 1 skipped, 0 fail), build, HTTP and recovery PASS. Local
   `/models` renders 12 free and 23 paid SKU rows; the free detail page returns
-  200 with free-pool copy and the paid page returns 200 with paid copy.
+  200 with free-pool copy and the paid page returns 200 with paid copy. Commit
+  `59dce6d`.
 
 ## 2026-11-03 — Production database cutover and development seed isolation
 

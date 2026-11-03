@@ -137,8 +137,10 @@ export async function contentSchema(db: PostgresDatabase) {
       ON content.comments(item_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS content_comments_user_idx
       ON content.comments(user_id, created_at DESC);
-    CREATE INDEX IF NOT EXISTS content_comments_parent_idx
-      ON content.comments(parent_id, created_at ASC);
+    -- The parent index is created after the ADD COLUMN below. On an existing
+    -- database this CREATE TABLE is a no-op and parent_id does not exist yet,
+    -- so indexing it here aborted the whole migration before it could upgrade
+    -- the table.
 
     CREATE TABLE IF NOT EXISTS content.reactions (
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,

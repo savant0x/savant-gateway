@@ -3,6 +3,22 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — Trial fixture requires real PostgreSQL
+
+- **FID-2026-1103-146 — high — the trial suite could still fall back to
+  PGlite.** FID-144 supplied a real endpoint when configured, but an unset
+  `HTTP_TEST_DATABASE_URL` silently selected the single-connection PGlite wire
+  fixture, so the three-way concurrent trial check could exercise the wrong
+  transaction semantics. The trial suite now passes `requireReal`: it uses
+  `HTTP_TEST_DATABASE_URL` or `TEST_DATABASE_URL` when set, otherwise starts a
+  disposable `postgres:17-alpine` container, and fails closed when neither is
+  available. The main HTTP suite keeps its Docker-free PGlite default. The
+  trial suite's database handle, Next server and mock upstream are now closed
+  from one `finally` block. Verified locally: trial `all checks PASS` with
+  either variable, main suite `750 checks PASS` on PGlite, and the
+  no-endpoint/no-Docker run exited 1 with the named real-PostgreSQL message.
+  CI receipt is recorded after the push.
+
 ## 2026-11-03 — FID closure: push script verified
 
 - **FID-2026-1103-145 — closed and archived.** GitHub Actions run `41711787351`

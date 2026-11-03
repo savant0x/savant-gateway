@@ -147,10 +147,12 @@ The PostgreSQL concurrency proof is mandatory and never silently skips. Set
 `TEST_DATABASE_URL` to a disposable database, or leave it unset and keep Docker
 running so the gate can start a throwaway `postgres:17-alpine` container.
 
-The HTTP suites use a PGlite wire fixture by default. Set
-`HTTP_TEST_DATABASE_URL` to a disposable PostgreSQL URL when the run needs real
-concurrent transactions (CI does this). The pre-push hook and `npm run verify`
-fall back to `TEST_DATABASE_URL`, so one disposable endpoint covers both the
-concurrency proof and the HTTP suites. The suites drop and recreate the `public` and
+The main HTTP suite uses a PGlite wire fixture by default. The trial suite
+requires real PostgreSQL because it proves concurrent trial admission: it uses
+`HTTP_TEST_DATABASE_URL` (or the shared `TEST_DATABASE_URL`) when set, otherwise
+it starts a disposable `postgres:17-alpine` container and fails closed when
+Docker is unavailable. The pre-push hook and `npm run verify` fall back to
+`TEST_DATABASE_URL`, so one disposable endpoint covers both the concurrency
+proof and the HTTP suites. The suites drop and recreate the `public` and
 `content` schemas, and they refuse an endpoint equal to `DATABASE_URL`; never
 point either variable at production.

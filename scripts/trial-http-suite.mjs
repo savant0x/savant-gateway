@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 
 import {
-  check, checkEqual, checkProviderDouble, createTempWorkspace, request, reservePort,
+  check, checkEqual, checkProviderDouble, request, reservePort,
   startNextServer, stopNextServer, waitForServer, cookieValue,
 } from "./http-suite/harness.mjs";
 import {
@@ -11,9 +11,7 @@ import {
 } from "./http-suite/db.mjs";
 import { seedCatalog } from "./http-suite/seed.mjs";
 
-const workspace = await createTempWorkspace();
 const port = await reservePort();
-const databasePort = await reservePort();
 const baseUrl = `http://127.0.0.1:${port}`;
 let calls = 0;
 let serving = "";
@@ -72,36 +70,41 @@ const mock = createServer((req, res) => {
 
 await new Promise((resolve) => mock.listen(0, "127.0.0.1", resolve));
 const upstreamUrl = `http://127.0.0.1:${mock.address().port}`;
-const databaseServer = await startDatabaseServer({
-  directory: workspace.databaseDirectory,
-  port: databasePort,
-  connectionString: process.env.HTTP_TEST_DATABASE_URL?.trim(),
-});
-const server = startNextServer({
-  repo: process.cwd(), port,
-  databaseUrl: databaseServer.connectionString,
-  env: {
-    PROVIDER_SHARED_RPM: "9000",
-    // Pin the free admission bucket: this suite proves trial reservation, not
-    // the global free RPM guard, and `next start` also loads `.env.local`.
-    FREE_SHARED_RPM: "9000",
-    TRIAL_ENABLED: "true", TRIAL_WEIGHTED_TOKENS: "300",
-    TRIAL_GATEWAY_GRANT_BUDGET: "10000",
-    TRIAL_MODEL_PAIRS: '{"free/mock":"mock-paid"}',
-    HTTP_SUITE_PROVIDER_KEY: "trial-test-key",
-    PROVIDER_KEY: "", COMMANDCODE_API_KEY: "",
-    // Disposable production start against a throwaway database: the validator
-    // requires the explicit opt-in plus the admin configuration it still checks.
-    GATEWAY_DISPOSABLE_START: "yes",
-    ADMIN_PASSWORD: "trial-suite-admin-password",
-    ADMIN_SESSION_SECRET: "trial-suite-admin-secret-0123456789abcdef",
-    STRIPE_SECRET_KEY: "", STRIPE_WEBHOOK_SECRET: "",
-    EMAIL_TRANSPORT: "", RESEND_API_KEY: "", EMAIL_FROM: "",
-  },
-});
-let db;
+let db = null;
+let server = null;
+let databaseServer = null;
 
 try {
+  // The concurrent trial check needs real transaction semantics. Use the
+  // configured endpoint or start a disposable container; never the PGlite wire.
+  databaseServer = await startDatabaseServer({
+    connectionString:
+      process.env.HTTP_TEST_DATABASE_URL?.trim() ||
+      process.env.TEST_DATABASE_URL?.trim(),
+    requireReal: true,
+  });
+  server = startNextServer({
+    repo: process.cwd(), port,
+    databaseUrl: databaseServer.connectionString,
+    env: {
+      PROVIDER_SHARED_RPM: "9000",
+      // Pin the free admission bucket: this suite proves trial reservation, not
+      // the global free RPM guard, and `next start` also loads `.env.local`.
+      FREE_SHARED_RPM: "9000",
+      TRIAL_ENABLED: "true", TRIAL_WEIGHTED_TOKENS: "300",
+      TRIAL_GATEWAY_GRANT_BUDGET: "10000",
+      TRIAL_MODEL_PAIRS: '{"free/mock":"mock-paid"}',
+      HTTP_SUITE_PROVIDER_KEY: "trial-test-key",
+      PROVIDER_KEY: "", COMMANDCODE_API_KEY: "",
+      // Disposable production start against a throwaway database: the validator
+      // requires the explicit opt-in plus the admin configuration it still checks.
+      GATEWAY_DISPOSABLE_START: "yes",
+      ADMIN_PASSWORD: "trial-suite-admin-password",
+      ADMIN_SESSION_SECRET: "trial-suite-admin-secret-0123456789abcdef",
+      STRIPE_SECRET_KEY: "", STRIPE_WEBHOOK_SECRET: "",
+      EMAIL_TRANSPORT: "", RESEND_API_KEY: "", EMAIL_FROM: "",
+    },
+  });
   await waitForServer({ baseUrl, ...server });
   db = await openDatabase(databaseServer.connectionString);
   await waitForSchema(db);
@@ -236,10 +239,14 @@ try {
   checkEqual("pool depletion stops trial", (await chat(customerD)).status, 429);
   checkEqual("capacity failure does not issue a grant", (await db.prepare("SELECT COUNT(*)::int AS total FROM trial_grants WHERE user_id = ?").get(customerD.userId)).total, 0);
   console.log("trial-http-suite: all checks PASS");
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  console.error(`trial-http-suite FAIL: ${message}`);
+  process.exitCode = 1;
 } finally {
   await db?.close();
-  await stopNextServer(server.child);
-  await databaseServer.close();
+  if (server) await stopNextServer(server.child);
+  await databaseServer?.close();
   await new Promise((resolve) => mock.close(resolve));
-  await workspace.remove();
 }

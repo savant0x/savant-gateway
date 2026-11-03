@@ -73,7 +73,7 @@ function startContainer(name, port) {
     "--publish",
     `127.0.0.1:${port}:5432`,
     DISPOSABLE_POSTGRES_IMAGE,
-  ]);
+  ], { timeout: 120_000 });
 
   if (result.error) {
     throw new Error(`docker run failed: ${result.error.message}`);

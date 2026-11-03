@@ -3,6 +3,7 @@ import { createServer } from "pglite-server";
 import pg from "pg";
 
 import { renamePlaceholders } from "../../lib/storage/pg-adapter.ts";
+import { startDisposablePostgres } from "../disposable-postgres.mjs";
 
 /**
  * The HTTP suites' disposable database (FID-086, D-5; FID-144).
@@ -12,7 +13,9 @@ import { renamePlaceholders } from "../../lib/storage/pg-adapter.ts";
  * default PGlite is exposed over a loopback wire server, which keeps the gate
  * on the same dialect and parser production uses without requiring a Docker
  * daemon or a system PostgreSQL install. Set `HTTP_TEST_DATABASE_URL` when the
- * run needs real concurrent transactions; CI does.
+ * run needs real concurrent transactions; CI does. A caller that cannot accept
+ * PGlite's single connection passes `requireReal`, which uses the supplied URL
+ * or starts a disposable container and fails closed when neither is available.
  *
  * The handle below is intentionally small. It offers the three calls the seed
  * and checks use (`prepare`, `query`, `exec`) and rewrites the SQLite dialect
@@ -77,12 +80,43 @@ async function resetExternalDatabase(connectionString) {
   }
 }
 
-export async function startDatabaseServer({ directory, port, connectionString }) {
+export async function startDatabaseServer({
+  directory,
+  port,
+  connectionString,
+  requireReal = false,
+}) {
   if (connectionString) {
     await resetExternalDatabase(connectionString);
     console.log("http-suite: using HTTP_TEST_DATABASE_URL (real PostgreSQL)");
 
     return { connectionString, async close() {} };
+  }
+
+  if (requireReal) {
+    let disposable;
+
+    try {
+      disposable = await startDisposablePostgres();
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+
+      throw new Error(
+        "this suite requires real PostgreSQL; set HTTP_TEST_DATABASE_URL " +
+          `(or TEST_DATABASE_URL) to a disposable endpoint or start Docker (${detail})`,
+      );
+    }
+
+    console.log(
+      `http-suite: starting disposable ${disposable.image} on port ${disposable.port}`,
+    );
+
+    return {
+      connectionString: disposable.connectionString,
+      async close() {
+        disposable.close();
+      },
+    };
   }
 
   const pglite = directory

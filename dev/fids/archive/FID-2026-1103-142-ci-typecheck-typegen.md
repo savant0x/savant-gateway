@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-142-ci-typecheck-typegen.md`
 **ID:** FID-2026-1103-142
 **Severity:** high
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-03
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — one command in the existing gate, no new dependency.
@@ -71,17 +71,18 @@ already generated the file.
 
 ## Implementation Evidence
 
-- **Commit SHA:** this commit (the first commit after `c889d83`).
+- **Commit SHA:** `b6604af` (the first commit after `c889d83`).
 - **Implementation:** `package.json` → `"typecheck": "next typegen && tsc --noEmit"`.
 - **Local receipt:** removed `next-env.d.ts`, ran `npm run typecheck`; output
   `Generating route types... ✓ Types generated successfully` and exit 0.
-- **CI receipt:** pending the push that carries this commit. The prior run
-  `41696668303` failed at the typecheck step as quoted above.
-- **Archived:** no; closes after the CI run on this commit is green.
+- **CI receipt:** GitHub Actions run `41706820863` (`ci`) passed every gate on
+  `b5afbe5`, which contains this fix. The prior run `41696668303` failed at the
+  typecheck step as quoted above.
+- **Archived:** yes — moved to `dev/fids/archive/` after the green workflow.
 
 ## Resolution
 
 - **Convergence Date:** 2026-11-03
 - **Fix Description:** the typecheck gate generates Next's declarations before
   invoking tsc, so a clean checkout no longer fails on a tracked asset import.
-- **Archived:** no.
+- **Archived:** yes — `dev/fids/archive/FID-2026-1103-142-ci-typecheck-typegen.md`.

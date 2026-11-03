@@ -20,14 +20,14 @@ working set; each FID owns its own status, evidence and resolution.
 | [062](FID-2026-1030-062-launch-acceptance-and-rollout.md) | Real launch acceptance, controlled rollout and rollback | converged | Discharge the dated external receipt items 1–8; launch remains no-go. |
 | [068](FID-2026-1030-068-usdc-receive-lane.md) | Direct-to-wallet USDC receive lane | fixed | Operator inputs still gate the receive lane; re-read the record before acting. |
 | [127](FID-2026-1103-127-real-launch-acceptance-receipt.md) | Real launch acceptance receipt | fixed | Operator records the six observations and a go pinned to the release SHA, then runs `npm run receipt:launch`. |
-| [142](FID-2026-1103-142-ci-typecheck-typegen.md) | CI typecheck generates Next types first | fixed | Green `ci` run on the fix commit, then archive. |
-| [143](FID-2026-1103-143-deterministic-paid-limit-probe.md) | Deterministic paid account-limit probe | fixed | Green `ci` run on the fix commit, then archive. |
-| [144](FID-2026-1103-144-trial-suite-real-postgres.md) | Trial HTTP suite on real PostgreSQL | fixed | Green `ci` run on the fix commit, then archive. |
 | [137](FID-2026-1103-137-product-hardening-and-install-order-master.md) | Product hardening and install-order master | converged | Closes only after 126 and 127 have their required evidence. |
 
 ### Closed in the 2026-11-03 hardening pass
 
 [126](archive/FID-2026-1103-126-production-concurrency-proof.md),
+[142](archive/FID-2026-1103-142-ci-typecheck-typegen.md),
+[143](archive/FID-2026-1103-143-deterministic-paid-limit-probe.md),
+[144](archive/FID-2026-1103-144-trial-suite-real-postgres.md),
 [128](archive/FID-2026-1103-128-admin-session-continuity.md),
 [129](archive/FID-2026-1103-129-content-freshness-and-source-guidance.md),
 [130](archive/FID-2026-1103-130-durable-feed-validators.md),

@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-144-trial-suite-real-postgres.md`
 **ID:** FID-2026-1103-144
 **Severity:** high
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-03
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — one opt-in endpoint in the existing HTTP fixture, no production code.
@@ -76,13 +76,15 @@ it was written to exercise.
 
 ## Implementation Evidence
 
-- **Commit SHA:** this commit (the first commit after `b6604af`).
+- **Commit SHA:** `b5afbe5`.
 - **Local receipt:** with `HTTP_TEST_DATABASE_URL` pointing at disposable
   PostgreSQL 18.6 on loopback, `npm run test:http` completed both suites:
   main `750 checks PASS`, trial `all checks PASS`, including
   `competing calls are refused without another trial PASS`.
-- **CI receipt:** pending the push that carries this commit.
-- **Archived:** no; closes after the CI run is green.
+- **CI receipt:** GitHub Actions run `41706820863` (`ci`) passed every gate on
+  `b5afbe5`; the HTTP step ran against the PostgreSQL service and the trial
+  suite passed its concurrent check.
+- **Archived:** yes — moved to `dev/fids/archive/` after the green workflow.
 
 ## Resolution
 
@@ -90,4 +92,4 @@ it was written to exercise.
 - **Fix Description:** the trial suite can run on a real PostgreSQL endpoint,
   CI uses one, and the concurrent trial check now exercises real transaction
   semantics instead of a single-connection fixture.
-- **Archived:** no.
+- **Archived:** yes — `dev/fids/archive/FID-2026-1103-144-trial-suite-real-postgres.md`.

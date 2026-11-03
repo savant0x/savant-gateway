@@ -3,6 +3,15 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — FID closure: CI gate repairs verified
+
+- **FID-2026-1103-142, 143 and 144 — closed and archived.** GitHub Actions run
+  `41706820863` (`ci`) passed every gate on `b5afbe5`: typecheck now generates
+  Next declarations first, the paid-limit probe exhausts the shared bucket in
+  three-way batches, and both HTTP suites ran against the PostgreSQL service so
+  the trial suite's concurrent check exercised real transaction semantics.
+  The records moved to `dev/fids/archive/` with commit, local and CI receipts.
+
 ## 2026-11-03 — Trial HTTP suite runs on real PostgreSQL in CI
 
 - **FID-2026-1103-144 — high — the trial suite's concurrent check failed on a
@@ -15,12 +24,12 @@ distinguish verified behavior from unverified claims.
   so the trial suite exercises real transaction semantics. The pre-push hook and
   `npm run verify` fall back to `TEST_DATABASE_URL`, so a run that already
   supplied the disposable concurrency endpoint gives the HTTP suites the same
-  transactions.
-  The gate refuses a URL equal to `DATABASE_URL`; it is deliberately destructive
-  to the configured disposable database. Local receipt: `npm run test:http` against disposable
-  PostgreSQL 18.6 on loopback — main `750 checks PASS`, trial `all checks
-  PASS`, including `competing calls are refused without another trial PASS`.
-  CI receipt is recorded after the push.
+  transactions. The gate refuses a URL equal to `DATABASE_URL`; it is
+  deliberately destructive to the configured disposable database. Local
+  receipt: `npm run test:http` against disposable PostgreSQL 18.6 on loopback —
+  main `750 checks PASS`, trial `all checks PASS`, including `competing calls
+  are refused without another trial PASS`. CI run `41706820863` passed every
+  gate on `b5afbe5`.
 
 ## 2026-11-03 — Paid-limit gate probes with a deterministic burst
 
@@ -34,7 +43,7 @@ distinguish verified behavior from unverified claims.
   gate, and raising the gate did not make the burst reach the customer scope, so
   the probe was reshaped rather than the admission path widened. Local `npm run
   test:http` reports 750 checks PASS and the refusal names the `paid` scope.
-  Commit follows `b6604af`; CI receipt is recorded after the push.
+  Commit `b5afbe5`; CI run `41706820863` passed every gate.
 
 ## 2026-11-03 — CI typecheck generates Next declarations first
 
@@ -45,7 +54,8 @@ distinguish verified behavior from unverified claims.
   runs `next typegen` before `tsc --noEmit`, which recreates the image and route
   declarations. Local check from a tree with the file removed exits 0. Commit
   `c889d83` was pushed and reached the remote; its CI run `41696668303` recorded
-  the failure. The fix's CI receipt is recorded after the next push.
+  the failure. CI run `41706820863` passed every gate on `b5afbe5`, which
+  contains the fix.
 
 ## 2026-11-03 — Current status index and launch receipt validator
 

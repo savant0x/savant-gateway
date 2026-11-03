@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-143-deterministic-paid-limit-probe.md`
 **ID:** FID-2026-1103-143
 **Severity:** high
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-03
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — test-hermetic change only, no production behavior.
@@ -67,12 +67,13 @@ was reshaped instead of widening the provider gate.
 
 ## Implementation Evidence
 
-- **Commit SHA:** this commit (the first commit after `b6604af`).
-- **Local receipt:** `npm run test:http` → `paid account limit holds across
-  different keys PASS`, `account refusal names paid rate scope PASS`, 750 checks
-  PASS, trial suite PASS.
-- **CI receipt:** pending the push that carries this commit.
-- **Archived:** no; closes after the CI run is green.
+- **Commit SHA:** `b5afbe5`.
+- **Local receipt:** `npm run test:http` against disposable PostgreSQL 18.6 on
+  loopback → `paid account limit holds across different keys PASS`, `account
+  refusal names paid rate scope PASS`, 750 checks PASS, trial suite PASS.
+- **CI receipt:** GitHub Actions run `41706820863` (`ci`) passed every gate on
+  `b5afbe5`, including `npm run test:http` against the PostgreSQL service.
+- **Archived:** yes — moved to `dev/fids/archive/` after the green workflow.
 
 ## Resolution
 
@@ -80,4 +81,4 @@ was reshaped instead of widening the provider gate.
 - **Fix Description:** the HTTP gate now proves the shared paid bucket with
   bounded three-way batches and observes the customer scope without changing
   the provider concurrency gate.
-- **Archived:** no.
+- **Archived:** yes — `dev/fids/archive/FID-2026-1103-143-deterministic-paid-limit-probe.md`.

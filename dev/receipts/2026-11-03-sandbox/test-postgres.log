@@ -1,0 +1,13 @@
+postgres-concurrency: using postgresql://***:***@aws-0-us-east-1.pooler.supabase.com:6543/gateway_verify_1793749080666?sslmode=no-verify
+✔ two connections cannot debit one balance twice (4227.7129ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4391.9086
+postgres-concurrency: PASS — two connections cannot double-debit
+npm notice run savant-gateway@0.1.0 test:postgres
+npm notice run node scripts/postgres-concurrency-proof.mjs

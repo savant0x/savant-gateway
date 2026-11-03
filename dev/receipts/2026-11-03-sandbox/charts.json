@@ -1,0 +1,405 @@
+{
+  "report": "sandbox-pricing-chart-receipt",
+  "schema": 1,
+  "generatedAt": "2026-11-03T23:37:23.861Z",
+  "source": "synthetic-sandbox",
+  "database": {
+    "host": "aws-0-us-east-1.pooler.supabase.com",
+    "name": "gateway_chart_1793749036008"
+  },
+  "dataset": {
+    "models": 3,
+    "paidModels": 2,
+    "usageEvents": 2,
+    "pricingDecisions": 2
+  },
+  "charts": {
+    "marginBuckets": [
+      {
+        "label": "Below 0%",
+        "count": 0,
+        "negative": true
+      },
+      {
+        "label": "0–10%",
+        "count": 0,
+        "negative": false
+      },
+      {
+        "label": "10–20%",
+        "count": 0,
+        "negative": false
+      },
+      {
+        "label": "20–30%",
+        "count": 1,
+        "negative": false
+      },
+      {
+        "label": "30–40%",
+        "count": 0,
+        "negative": false
+      },
+      {
+        "label": "40%+",
+        "count": 1,
+        "negative": false
+      }
+    ],
+    "priceHistory": [
+      {
+        "date": "2026-11-03",
+        "averageInputMicros": 1250000,
+        "averageOutputMicros": 2500000,
+        "changes": 2
+      }
+    ],
+    "routeMix": [
+      {
+        "provider": "savant",
+        "models": 3,
+        "served": 3
+      }
+    ],
+    "analytics": {
+      "rangeDays": 30,
+      "totals": {
+        "requests": 2,
+        "okRequests": 2,
+        "errorRequests": 0,
+        "inputTokens": 42000,
+        "outputTokens": 23000,
+        "chargedMicros": 114400,
+        "planRevenueMicros": 0,
+        "totalRevenueMicros": 114400,
+        "paidInvoiceCount": 0,
+        "costMicros": 35200,
+        "marginMicros": 79200,
+        "totalMarginMicros": 79200,
+        "activeSubscribers": 0,
+        "pastDueSubscribers": 0,
+        "cancelingSubscribers": 0,
+        "manualSubscribers": 0,
+        "mrrMicros": 0,
+        "averageLatencyMs": 0,
+        "maxLatencyMs": 0,
+        "errorRateBps": 0
+      },
+      "series": [
+        {
+          "date": "2026-10-05",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-06",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-07",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-08",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-09",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-10",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-11",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-12",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-13",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-14",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-15",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-16",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-17",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-18",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-19",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-20",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-21",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-22",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-23",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-24",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-25",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-26",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-27",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-28",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-29",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-30",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-10-31",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-11-01",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-11-02",
+          "requests": 0,
+          "tokens": 0,
+          "chargedMicros": 0,
+          "planRevenueMicros": 0,
+          "costMicros": 0
+        },
+        {
+          "date": "2026-11-03",
+          "requests": 2,
+          "tokens": 65000,
+          "chargedMicros": 114400,
+          "planRevenueMicros": 0,
+          "costMicros": 35200
+        }
+      ],
+      "models": [
+        {
+          "modelId": "sandbox-chart-paid",
+          "modelName": "Sandbox Paid",
+          "family": "Sandbox",
+          "requests": 2,
+          "tokens": 65000,
+          "chargedMicros": 114400,
+          "costMicros": 35200
+        }
+      ]
+    }
+  },
+  "emptyBehavior": {
+    "marginBucketCountsSum": 0,
+    "priceHistoryPoints": 0,
+    "note": "Empty inputs render an explicit empty state; they are not a zero-profit line."
+  },
+  "reconciliation": {
+    "exact": true,
+    "checks": [
+      {
+        "name": "usage rows exist",
+        "expected": "> 0",
+        "observed": 2,
+        "pass": true
+      },
+      {
+        "name": "usage charged equals analytics total",
+        "expected": 114400,
+        "observed": 114400,
+        "pass": true
+      },
+      {
+        "name": "usage cost equals analytics total",
+        "expected": 35200,
+        "observed": 35200,
+        "pass": true
+      },
+      {
+        "name": "daily series charged equals totals",
+        "expected": 114400,
+        "observed": 114400,
+        "pass": true
+      },
+      {
+        "name": "daily series cost equals totals",
+        "expected": 35200,
+        "observed": 35200,
+        "pass": true
+      },
+      {
+        "name": "price approvals equal price-history changes",
+        "expected": 2,
+        "observed": 2,
+        "pass": true
+      },
+      {
+        "name": "unused model is absent, not zero-profit",
+        "expected": true,
+        "observed": true,
+        "pass": true
+      }
+    ],
+    "usageChargedMicros": 114400,
+    "usageCostMicros": 35200,
+    "seriesChargedMicros": 114400,
+    "seriesCostMicros": 35200
+  },
+  "limitations": [
+    "All usage and price decisions are synthetic sandbox observations.",
+    "No real payment, funding, provider call, or customer traffic occurred.",
+    "The receipt is generated from a disposable database that the runner drops.",
+    "The static HTML is a receipt view of the same chart series; the production React charts are compiled by the build gate."
+  ]
+}

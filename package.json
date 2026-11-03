@@ -36,6 +36,7 @@
 		"storage:check": "node scripts/storage-contract-check.mjs",
 		"business-model": "node scripts/business-model.mjs",
 		"receipt:deploy": "node scripts/deployment-receipt.mjs --json",
+		"report:pricing": "node scripts/sandbox-pricing-report.mjs",
 		"receipt:launch": "node scripts/launch-receipt.mjs",
 		"verify": "node scripts/verify.mjs",
 		"prepare": "node scripts/prepare.mjs"

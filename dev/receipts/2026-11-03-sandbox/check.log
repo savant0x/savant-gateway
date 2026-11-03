@@ -1,0 +1,20 @@
+
+C:\Users\spenc\dev\gateway\lib\launch-receipt.ts
+  176:5   warning  Expected blank line before this statement                                                                                                                                      padding-line-between-statements
+  209:5   warning  Expected blank line before this statement                                                                                                                                      padding-line-between-statements
+  215:35  warning  Insert `⏎···`                                                                                                                                                                  prettier/prettier
+  216:39  warning  Insert `⏎···`                                                                                                                                                                  prettier/prettier
+  217:37  warning  Insert `⏎···`                                                                                                                                                                  prettier/prettier
+  260:13  warning  Replace `·...base,·status:·"leaked",·reasons:·["receipt·contains·a·secret"]` with `⏎······...base,⏎······status:·"leaked",⏎······reasons:·["receipt·contains·a·secret"],⏎···`  prettier/prettier
+
+✖ 6 problems (0 errors, 6 warnings)
+  0 errors and 6 warnings potentially fixable with the `--fix` option.
+
+Generating route types...
+✓ Types generated successfully
+npm notice run savant-gateway@0.1.0 check
+npm notice run npm run lint && npm run typecheck
+npm notice run savant-gateway@0.1.0 lint
+npm notice run eslint .
+npm notice run savant-gateway@0.1.0 typecheck
+npm notice run next typegen && tsc --noEmit

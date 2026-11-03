@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Sandbox chart receipt</title>
+<style>
+body{font:14px/1.5 system-ui,sans-serif;margin:2rem;max-width:72rem;color:#111}
+h1{font-size:1.5rem}h2{font-size:1.05rem;margin-top:2rem}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.card{border:1px solid #ddd;border-radius:.6rem;padding:1rem}
+.bar{margin:.5rem 0}.bar-head{display:flex;justify-content:space-between;font-size:.8rem}
+.track{height:.5rem;background:#eee;border-radius:1rem;overflow:hidden}
+.fill{height:100%;background:#0891b2}.fill.cost{background:#64748b}
+table{border-collapse:collapse;width:100%;font-size:.8rem}td,th{border-top:1px solid #ddd;padding:.3rem;text-align:left}
+.mono{font-family:ui-monospace,monospace}.muted{color:#666}
+</style></head><body>
+<h1>Sandbox pricing and analytics chart receipt</h1>
+<p class="muted">Synthetic observations only. No real payment, funding, or customer traffic. Generated 2026-11-03T23:37:23.861Z from a disposable database.</p>
+<div class="grid">
+<div class="card"><h2>Margin distribution</h2><p class="muted">Paid catalog rows by blended margin, 1M in + 1M out.</p>
+<div class="bar"><div class="bar-head"><span>Below 0%</span><span>0 rows</span></div><div class="track"><div class="fill" style="width:2%"></div></div></div><div class="bar"><div class="bar-head"><span>0–10%</span><span>0 rows</span></div><div class="track"><div class="fill" style="width:2%"></div></div></div><div class="bar"><div class="bar-head"><span>10–20%</span><span>0 rows</span></div><div class="track"><div class="fill" style="width:2%"></div></div></div><div class="bar"><div class="bar-head"><span>20–30%</span><span>1 rows</span></div><div class="track"><div class="fill" style="width:100%"></div></div></div><div class="bar"><div class="bar-head"><span>30–40%</span><span>0 rows</span></div><div class="track"><div class="fill" style="width:2%"></div></div></div><div class="bar"><div class="bar-head"><span>40%+</span><span>1 rows</span></div><div class="track"><div class="fill" style="width:100%"></div></div></div></div>
+<div class="card"><h2>Approved price history</h2><p class="muted">Average approved input price per UTC day; one point per day with an approval.</p>
+<div class="bar"><div class="bar-head"><span>2026-11-03</span><span>$1.25 · 2 changes</span></div><div class="track"><div class="fill" style="width:100%"></div></div></div></div>
+<div class="card"><h2>Serving route mix</h2><p class="muted">Catalog rows per provider; served counts rows whose own provider is published.</p>
+<div class="bar"><div class="bar-head"><span>savant</span><span>3/3 serving</span></div><div class="track"><div class="fill" style="width:100%"></div></div></div></div>
+<div class="card"><h2>Daily money, 30 days</h2><p class="muted">Credit revenue (cyan), plan revenue (green), upstream cost (slate). Zero days are explicit, not missing.</p>
+<div class="bar"><div class="bar-head"><span>2026-10-28</span><span>$0 credit · $0 cost</span></div><div class="track"><div class="fill" style="width:2%"></div></div></div><div class="bar"><div class="bar-head"><span>2026-10-29</span><span>$0 credit · $0 cost</span></div><div class="track"><div class="fill" style="width:2%"></div></div></div><div class="bar"><div class="bar-head"><span>2026-10-30</span><span>$0 credit · $0 cost</span></div><div class="track"><div class="fill" style="width:2%"></div></div></div><div class="bar"><div class="bar-head"><span>2026-10-31</span><span>$0 credit · $0 cost</span></div><div class="track"><div class="fill" style="width:2%"></div></div></div><div class="bar"><div class="bar-head"><span>2026-11-01</span><span>$0 credit · $0 cost</span></div><div class="track"><div class="fill" style="width:2%"></div></div></div><div class="bar"><div class="bar-head"><span>2026-11-02</span><span>$0 credit · $0 cost</span></div><div class="track"><div class="fill" style="width:2%"></div></div></div><div class="bar"><div class="bar-head"><span>2026-11-03</span><span>$0.11 credit · $0.04 cost</span></div><div class="track"><div class="fill" style="width:100%"></div></div></div></div>
+</div>
+<h2>Reconciliation</h2>
+<table><thead><tr><th>Check</th><th>Expected</th><th>Observed</th><th>Result</th></tr></thead><tbody>
+<tr><td>usage rows exist</td><td class="mono">&gt; 0</td><td class="mono">2</td><td>pass</td></tr><tr><td>usage charged equals analytics total</td><td class="mono">114400</td><td class="mono">114400</td><td>pass</td></tr><tr><td>usage cost equals analytics total</td><td class="mono">35200</td><td class="mono">35200</td><td>pass</td></tr><tr><td>daily series charged equals totals</td><td class="mono">114400</td><td class="mono">114400</td><td>pass</td></tr><tr><td>daily series cost equals totals</td><td class="mono">35200</td><td class="mono">35200</td><td>pass</td></tr><tr><td>price approvals equal price-history changes</td><td class="mono">2</td><td class="mono">2</td><td>pass</td></tr><tr><td>unused model is absent, not zero-profit</td><td class="mono">true</td><td class="mono">true</td><td>pass</td></tr>
+</tbody></table>
+<h2>Limitations</h2><ul><li>All usage and price decisions are synthetic sandbox observations.</li><li>No real payment, funding, provider call, or customer traffic occurred.</li><li>The receipt is generated from a disposable database that the runner drops.</li><li>The static HTML is a receipt view of the same chart series; the production React charts are compiled by the build gate.</li></ul>
+</body></html>

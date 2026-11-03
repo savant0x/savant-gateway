@@ -1,0 +1,135 @@
+{
+  "schema": 1,
+  "status": "pass",
+  "startedAt": "2026-11-03T23:38:06.846Z",
+  "finishedAt": "2026-11-03T23:42:30.571Z",
+  "durationMs": 263725,
+  "gates": [
+    {
+      "name": "check",
+      "command": "npm.cmd run check",
+      "status": "pass",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 12333,
+      "tests": null,
+      "log": ".verify/check.log",
+      "error": null
+    },
+    {
+      "name": "storage:check",
+      "command": "npm.cmd run storage:check",
+      "status": "pass",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 339,
+      "tests": null,
+      "log": ".verify/storage:check.log",
+      "error": null
+    },
+    {
+      "name": "config:check",
+      "command": "npm.cmd run config:check",
+      "status": "pass",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 311,
+      "tests": null,
+      "log": ".verify/config:check.log",
+      "error": null
+    },
+    {
+      "name": "test",
+      "command": "npm.cmd run test",
+      "status": "pass",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 72684,
+      "tests": {
+        "total": 969,
+        "pass": 969,
+        "fail": 0,
+        "skipped": 0,
+        "cancelled": 0
+      },
+      "log": ".verify/test.log",
+      "error": null
+    },
+    {
+      "name": "test:postgres",
+      "command": "npm.cmd run test:postgres",
+      "status": "pass",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 4685,
+      "tests": {
+        "total": 1,
+        "pass": 1,
+        "fail": 0,
+        "skipped": 0,
+        "cancelled": 0
+      },
+      "log": ".verify/test:postgres.log",
+      "error": null
+    },
+    {
+      "name": "quality",
+      "command": "npm.cmd run quality",
+      "status": "pass",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 488,
+      "tests": null,
+      "log": ".verify/quality.log",
+      "error": null
+    },
+    {
+      "name": "build",
+      "command": "npm.cmd run build",
+      "status": "pass",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 12836,
+      "tests": null,
+      "log": ".verify/build.log",
+      "error": null
+    },
+    {
+      "name": "test:http",
+      "command": "npm.cmd run test:http",
+      "status": "pass",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 149339,
+      "tests": null,
+      "log": ".verify/test:http.log",
+      "error": null
+    },
+    {
+      "name": "test:recovery",
+      "command": "npm.cmd run test:recovery",
+      "status": "pass",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 10205,
+      "tests": null,
+      "log": ".verify/test:recovery.log",
+      "error": null
+    },
+    {
+      "name": "deployment:receipt",
+      "command": "npm.cmd run receipt:deploy",
+      "status": "pass",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 497,
+      "tests": null,
+      "log": ".verify/deployment:receipt.log",
+      "error": null
+    }
+  ],
+  "missingGates": [],
+  "failedGates": [],
+  "skippedGates": [],
+  "logsDir": ".verify/summary.json"
+}

@@ -1,0 +1,2126 @@
+
+verify >>> check (npm.cmd run check)
+
+C:\Users\spenc\dev\gateway\lib\launch-receipt.ts
+  176:5   warning  Expected blank line before this statement                                                                                                                                      padding-line-between-statements
+  209:5   warning  Expected blank line before this statement                                                                                                                                      padding-line-between-statements
+  215:35  warning  Insert `⏎···`                                                                                                                                                                  prettier/prettier
+  216:39  warning  Insert `⏎···`                                                                                                                                                                  prettier/prettier
+  217:37  warning  Insert `⏎···`                                                                                                                                                                  prettier/prettier
+  260:13  warning  Replace `·...base,·status:·"leaked",·reasons:·["receipt·contains·a·secret"]` with `⏎······...base,⏎······status:·"leaked",⏎······reasons:·["receipt·contains·a·secret"],⏎···`  prettier/prettier
+
+✖ 6 problems (0 errors, 6 warnings)
+  0 errors and 6 warnings potentially fixable with the `--fix` option.
+
+Generating route types...
+✓ Types generated successfully
+npm notice run savant-gateway@0.1.0 check
+npm notice run npm run lint && npm run typecheck
+npm notice run savant-gateway@0.1.0 lint
+npm notice run eslint .
+npm notice run savant-gateway@0.1.0 typecheck
+npm notice run next typegen && tsc --noEmit
+
+verify >>> storage:check (npm.cmd run storage:check)
+storage contract (FID-2026-1031-086)
+  sqlite handle importers under app/, lib/: 0
+  lib/store modules with inline statements: 0
+  legacy statements: 0
+
+PASS — one storage engine, resolved at lib/storage/runtime.ts
+npm notice run savant-gateway@0.1.0 storage:check
+npm notice run node scripts/storage-contract-check.mjs
+
+verify >>> config:check (npm.cmd run config:check)
+config-check: PASS (non-production)
+npm notice run savant-gateway@0.1.0 config:check
+npm notice run node scripts/production-config-check.mjs
+
+verify >>> test (npm.cmd run test)
+✔ tokens are hashed, purpose bound, delivered before use and consumed once (7.875ms)
+✔ resend invalidates earlier tokens even when delivery finishes out of order (1.9371ms)
+✔ expiry, current email, suspension and failed delivery all refuse ownership (3.2278ms)
+✔ password reset atomically revokes sessions, keys and outstanding actions (1.3813ms)
+✔ a failed reset transaction rolls back consumption and every access change (2.2264ms)
+✔ two independent processes can consume one action only once (265.1312ms)
+✔ email is explicit opt-in with canonical origin and a pinned production endpoint (0.5237ms)
+✔ email transport uses fragment links, bounded retries and a stable idempotency key (22.1132ms)
+✔ permanent delivery refusal is not retried or presented as success (0.5928ms)
+✔ activity events are appended and read newest first with bounded limits (6.5784ms)
+✔ metadata rejects unknown keys, secret-shaped keys, and non-scalars (0.6024ms)
+✔ a failed best-effort insert leaves no partial row (0.6668ms)
+✔ the declared activity vocabulary covers every emitted kind (0.1415ms)
+✔ missing credentials are reported without a value (1.1283ms)
+✔ short values report a band, never the value or its exact length (0.2639ms)
+✔ valid production credentials and origin are reported as state only (0.184ms)
+✔ an origin with credentials is normalized before display (0.149ms)
+✔ quoted or whitespace values are reported, not trimmed into validity (0.165ms)
+✔ surrounding whitespace is flagged without claiming a shorter value (0.1404ms)
+✔ database reachability is reported only when probed (0.1681ms)
+✔ the limiter allows attempts until the threshold (0.863ms)
+✔ the window expires and a success clears failures (0.1552ms)
+✔ a safe admin path and query round-trip (1.6851ms)
+✔ external, protocol-relative and malformed targets are rejected (0.2524ms)
+✔ login href carries only a validated destination (0.5436ms)
+✔ admin config requires both credentials (0.9265ms)
+✔ session token round-trips and carries an expiry (1.2934ms)
+✔ a tampered token or wrong secret fails (0.2774ms)
+✔ rotating the password invalidates existing sessions (0.2221ms)
+✔ a token minted far in the future is rejected (0.1894ms)
+✔ password verification is exact and rejects empty input (0.2774ms)
+✔ cookie options are hardened (0.2227ms)
+✔ origin checks compare the request host (24.9512ms)
+✔ defaults describe a 20M daily pool with a 90% allocation (1.1999ms)
+✔ environment values are parsed and bounded (0.3397ms)
+✔ an even split divides the allocatable pool across accounts (0.1701ms)
+✔ a late account can only take what is still unallocated (0.1143ms)
+✔ remaining allocation never goes negative (0.1974ms)
+✔ only active accounts holding an active key count (6.0673ms)
+✔ a returning allocation respects a lowered observed pool and resets by day (2.0008ms)
+✔ daily trial capacity excludes externally consumed upstream tokens (0.1798ms)
+✔ suspended accounts release unspent allocation for the active user base (1.852ms)
+✔ a joining account rebalances an unspent allocation (1.3774ms)
+✔ rebalancing never cuts below recorded usage and holds (1.3018ms)
+✔ a third activated account rebalances without overselling the day (1.3509ms)
+✔ summary reports pool, allocations, usage and holds (1.5487ms)
+✔ the per-account cap lowers a share and zero disables it (0.1181ms)
+✔ a missing or malformed cap is treated as disabled, not as zero allowance (0.1317ms)
+✔ the cap applies to the fixed fallback allowance when allocation is off (0.1129ms)
+✔ the summary reports the even share next to the capped allowance (1.0106ms)
+✔ the environment default caps every account at 100k weighted tokens (0.1335ms)
+✔ the ported report equals the live report across every range (3833.4964ms)
+✔ both reports agree on the values the operator actually reads (3042.638ms)
+✔ an empty database produces the same empty report (2505.2464ms)
+✔ analytics keeps credit and plan revenue separate and derives MRR (9.521ms)
+✔ analytics returns zeros and no plan rows on an empty database (2.5471ms)
+✔ analytics range normalization keeps only supported windows (0.1746ms)
+✔ OpenAI request bodies translate to Anthropic Messages (2.1244ms)
+✔ Anthropic responses translate to Chat Completions (0.3738ms)
+✔ Anthropic streams become OpenAI chunks with usage and DONE (29.1078ms)
+✔ a truncated stream still closes with a finish chunk and DONE (0.5361ms)
+✔ Anthropic stream errors become an OpenAI error event (0.3702ms)
+✔ credit lines are detected and ordinary vendor prose is not (2.9713ms)
+✔ fenced and inline code do not become attribution findings (0.5356ms)
+✔ robot emoji needs a credit cue (0.182ms)
+✔ governed documents are scanned and research copies are excluded (8.1428ms)
+✔ the message-file CLI fails closed on a credit line (274.649ms)
+✔ ids normalise across the free prefix, dots, spaces and underscores (1.2057ms)
+✔ parsing keeps measurements, drops records that say nothing (0.4842ms)
+✔ a numeric index version keeps its major.minor form (0.2659ms)
+✔ a non-payload body parses as empty rather than throwing (1.886ms)
+✔ matching prefers an exact slug, then a name (0.7505ms)
+✔ a build date is not part of the identity (0.152ms)
+✔ a dated id with no published base model still matches nothing (0.2621ms)
+✔ a display name still matches when the id does not (0.2438ms)
+✔ a shared display name is settled by the creator, not by order (0.4122ms)
+✔ an unmeasured model is absent, not zero (0.2829ms)
+✔ the sanity gate refuses a payload that collapsed (0.2892ms)
+✔ a first sync has no previous totals to compare against (0.1019ms)
+✔ catalog counts each group and averages only priced rows (1.5427ms)
+✔ gross margin is measured on revenue, not on cost (0.193ms)
+✔ a catalog with no priced rows reports null instead of zero (0.1931ms)
+✔ free pool splits the share and prices a month of it (0.2423ms)
+✔ free pool clamps a share above 100% and tolerates missing prices (0.2057ms)
+✔ pivot reports only rows an alternative sells cheaper (0.8624ms)
+✔ pivot ignores a zero-cost current row instead of reporting an infinite saving (0.1343ms)
+✔ a cached value is served until its ttl expires (1.8287ms)
+✔ clear drops the value immediately (0.3798ms)
+✔ a zero ttl never serves a stale read (0.2096ms)
+✔ interleaved admission never exceeds the serving concurrency (2.9907ms)
+✔ a concurrency refusal does not spend the RPM allowance it cannot use (0.2803ms)
+✔ one serving account shares capacity across registry aliases and keys (0.2278ms)
+✔ release is idempotent and can never mint a negative in-flight count (0.1768ms)
+✔ an unknown ceiling cannot be converted into a slot by retrying (0.2369ms)
+✔ card top-ups are off when the flag is unset (0.9334ms)
+✔ card top-ups stay off for an explicit false (0.1562ms)
+✔ only an affirmative flag enables card sales (0.1331ms)
+✔ payment credentials alone never enable card sales (0.0999ms)
+✔ the shared projection computes margins and the labelled scenario (2.0718ms)
+✔ free and subscription rows never acquire a per-token price (0.2495ms)
+✔ unknown cost and a stale manual cost are separate warnings (0.4017ms)
+✔ an unpriced paid row and a negative margin are visible (0.3078ms)
+✔ a custom scenario uses the same integer math (0.166ms)
+✔ a valid model list is read in source order (1.3918ms)
+✔ pagination metadata is reported, not guessed (0.157ms)
+✔ an explicit empty list is a verified empty catalog (0.8344ms)
+✔ a non-object or non-list body is refused (0.5151ms)
+✔ entries without usable ids are dropped (0.174ms)
+✔ a non-empty page with no usable ids fails instead of delisting (0.2204ms)
+✔ an unpriced import starts disabled and a priced or free one is active (0.1319ms)
+✔ a sync deduplicates repeated upstream ids (17.305ms)
+✔ a free allocation and its paid counterpart are separate SKUs (2.3598ms)
+✔ same-tier provider rows still merge into one SKU (0.2231ms)
+✔ a free-only model still names its own SKU (0.2047ms)
+✔ a plan-only model is qualified and links to plans (0.1459ms)
+✔ a paid SKU links to credit, never to the free console (0.1714ms)
+✔ different models never become variants of each other (0.2514ms)
+✔ counts follow SKU rows, not model identity (0.2442ms)
+✔ the visible name is the qualification, not a stored rename (1.0034ms)
+✔ model sorts by name in both directions with a family tiebreak (12.3819ms)
+✔ group sorts by its label (0.1493ms)
+✔ weight sorts heavy first by default and missing weight last (0.2412ms)
+✔ features sorts by how many capabilities a row has (0.1632ms)
+✔ benchmark sorts high first and never treats unmeasured as zero (0.1871ms)
+✔ price sorts cheap first and breaks a tie on the output rate (0.194ms)
+✔ comparison sorts the biggest saving first with unmatched rows last (0.1241ms)
+✔ a full tie falls back to the name so the order is stable (0.1241ms)
+✔ sorting does not mutate the input array (0.1681ms)
+✔ a comparator is consistent in both argument orders (0.2228ms)
+✔ resolves both sides from ids (1.1255ms)
+✔ an unknown id falls back instead of failing the page (0.1304ms)
+✔ no ids at all gives the first two catalog rows (0.2019ms)
+✔ comparing a model with itself moves the right side (0.188ms)
+✔ the default pair prefers priced rows over free ones (0.1961ms)
+✔ an explicit free model still gets a priced counterpart (0.2585ms)
+✔ one model is not a comparison (0.1426ms)
+✔ lower is better, and equal or missing values mark nothing (0.1851ms)
+✔ higher is better for quality and speed scores (0.1635ms)
+✔ a side only matches its own winner (0.2214ms)
+✔ article extraction keeps the body and removes unsafe markup (7.3989ms)
+✔ the metadata template guard catches only the full label shape (0.3195ms)
+✔ a feed body is fetched only when it is missing, templated, or too short (0.4924ms)
+✔ article fetches honor the public URL policy (0.8803ms)
+✔ a publisher block is reported as a block, not an unreachable page (4493.2355ms)
+✔ an unusable feed body is scraped once and persisted (2495.8064ms)
+✔ an HN thread is identity, never the page the reader extracts (2681.8173ms)
+✔ comments support one reply level and reject deeper or foreign parents (4006.7149ms)
+✔ only the author or an operator can delete a comment, and replies cascade (2677.1258ms)
+✔ digest days are UTC calendar days (1.4887ms)
+✔ digest windows cover exactly one UTC day (0.8187ms)
+✔ recent digest days are newest first and bounded (0.2749ms)
+✔ feed days default and stay inside the published window (1.4698ms)
+✔ digest feed escapes publisher text and points at the Signal item (1.7677ms)
+✔ digest feed omits an invalid publication date instead of inventing one (0.2389ms)
+✔ status badge reports the public projection, never a private reason (0.9711ms)
+✔ RSS items normalize, resolve relative links, and sanitize HTML (46.8972ms)
+✔ aggregator metadata templates never become the body or excerpt (0.7636ms)
+✔ Atom video entries map to a video with a thumbnail fallback (1.2703ms)
+✔ YouTube descriptions cannot inject markup (0.7118ms)
+✔ malformed and empty documents return an empty list (0.2024ms)
+✔ relative links that fail the URL policy are dropped (0.2443ms)
+✔ YouTube channel ids and handles are recognized (0.2856ms)
+✔ a public channel page exposes the id behind a handle (0.2128ms)
+✔ a dropped feed entry is counted instead of vanishing (0.5308ms)
+✔ fetch all targets keep order and exclude disabled sources (1.4309ms)
+✔ fetch all runs sequentially and one failure does not stop the rest (0.4491ms)
+✔ fetch all summary counts stored items and the first failure (0.2857ms)
+✔ an empty or non-JSON response is reported by status, not a parse error (82.7259ms)
+✔ a valid single-source response is read from the results array (0.3607ms)
+✔ a changed feed stores validators and a 304 reuses the cached body (29.7639ms)
+✔ a 304 without a cached body is an error, not an empty feed (0.5537ms)
+✔ the cache is bounded and an HTTP failure is surfaced (0.9765ms)
+✔ purchase CTA uses the existing route for every access state (3.0575ms)
+✔ dates are stable in UTC and malformed values do not throw (28.8508ms)
+✔ counts are compact and an unreported zero stays zero (16.1648ms)
+✔ video embeds validate the id and add autoplay only on request (9.0573ms)
+✔ labels and excerpts stay presentation-only (0.4217ms)
+✔ Signal kind and topic pills use stable visual classes (0.2822ms)
+✔ freshness age is human-readable and never claims a future age (1.0497ms)
+✔ the public summary counts each state and the latest success (0.3324ms)
+✔ failure classes are typed and do not echo the raw message (0.8251ms)
+✔ paused, delayed and never-fetched sources get distinct actions (0.2477ms)
+✔ the hub empty state reflects configured, paused, attention and current sources (0.286ms)
+✔ only the public v0 ranked-list endpoints are eligible (1.2006ms)
+✔ the stream list validates its root and drops duplicate or bad ids (1.0993ms)
+✔ only live stories with a title and time become HN items (7.2038ms)
+✔ the publisher link must be public and must not be the HN thread (1.0544ms)
+✔ the filter accepts title matches and rejects unrelated substrings (109.8483ms)
+✔ a body-only term needs a second field, and an exclusion vetoes (1.3044ms)
+✔ source creation canonicalizes the stream and keeps filter terms (3992.8713ms)
+✔ HN ingestion stores discussion identity beside the publisher URL (2941.8833ms)
+✔ a healthy zero-match window is a successful empty cycle (2696.0882ms)
+✔ a malformed root or a fully failed detail window fails the cycle (2489.0207ms)
+✔ the candidate detail window is bounded before any item read (2.1336ms)
+✔ ingestion stores the item, tag, cycle, and reviewed model link (4412.1668ms)
+✔ YouTube ingestion merges Data API likes and comment counts (2940.4754ms)
+✔ a parsed cycle records dropped entries (3082.5349ms)
+✔ a configuration failure stays visible without disabling the source (2510.2226ms)
+✔ a YouTube handle resolves without a Data API key (2817.857ms)
+✔ a failed statistics call keeps the feed metrics and the cycle (2509.2451ms)
+✔ a failing source records the error and disables after five attempts (2214.1504ms)
+✔ aliases require a version token and dedupe (1.668ms)
+✔ title punctuation variants match the same model (0.6763ms)
+✔ a bare family or a longer sibling does not match (0.6822ms)
+✔ an exact publisher tag matches at lower confidence than a title (0.3916ms)
+✔ one article can link several models (12.0168ms)
+✔ relation inference follows kind before keywords (0.1397ms)
+✔ Hacker News keeps points and comment counts instead of dropping them (3.4031ms)
+✔ HuggingFace daily papers map upvotes and ignore malformed counts (0.5103ms)
+✔ snapshots store a source-neutral comment column and rank likes (5007.5456ms)
+✔ momentum math names one metric and keeps zero distinct from absent (0.8166ms)
+✔ rising keeps gains and movers ranks absolute change (11.1472ms)
+✔ snapshots, half-open windows, first-snapshot exclusion, and retention (4592.7265ms)
+✔ only OSP post pages are eligible (0.8801ms)
+✔ the impressions marker parses without script text (0.5657ms)
+✔ enrichment is bounded, isolated and preserves other metrics (0.434ms)
+✔ ingestion stores impressions for an OSP feed item (4684.5638ms)
+✔ public reads share one load and reuse the memoized value (1.483ms)
+✔ a failed load is not memoized (0.4212ms)
+✔ the key map is bounded (4.6236ms)
+✔ a reaction is one current choice per customer and aggregates honestly (4562.7267ms)
+✔ reaction toggles are bounded by the shared hourly write ceiling (2828.9628ms)
+✔ README sanitization resolves repository paths and removes active content (4.3828ms)
+✔ README extraction takes the rendered markdown body, not the page chrome (0.2941ms)
+✔ README fetch uses GitHub's rendered HTML media type (21.9174ms)
+✔ a missing README is cached as an empty string (0.3458ms)
+✔ github_json round-trips the README field (0.6117ms)
+✔ a legacy repository row is repaired once and persisted (4587.6963ms)
+✔ an old content schema upgrades before the parent index is built (4260.734ms)
+✔ search limiter allows one burst, refuses the next request, and refills (1.4855ms)
+✔ search client identity reads only the configured trusted header (22.2954ms)
+✔ search rejects short, empty, and overlong queries and trims whitespace (0.2051ms)
+✔ search caps items, models and topics and excludes unpublished rows (5141.8438ms)
+✔ HuggingFace daily papers parse into stable paper items (5.2681ms)
+✔ HuggingFace rejects a malformed body instead of returning empty (0.512ms)
+✔ Trendshift listing yields repos with counts, tags, and GitHub identity (28.7699ms)
+✔ Trendshift refuses to call a zero-row parse healthy (0.1999ms)
+✔ repo slug discovery uses the URL, title, or feed body (0.406ms)
+✔ GitHub reads work without a token and never send an empty bearer (49.4133ms)
+✔ GitHub URLs normalize and repo JSON survives a round trip (0.5389ms)
+✔ the kind migration removes the legacy two-kind constraint (5001.1858ms)
+✔ the content migration repairs an existing table before Signal reads it (2177.9071ms)
+✔ preset seeding adds each source once and keeps operator edits (2749.0733ms)
+✔ dead presets are gone and the verified feeds are present (1.3118ms)
+✔ Reddit URLs canonicalize to the official hot feed (2439.8919ms)
+✔ ingestion fetches HuggingFace papers without a feed request (2485.0006ms)
+✔ ingestion enriches an Open Source Projects item from its body link (2915.8791ms)
+✔ ingestion enriches a repo item when GitHub data is available (2221.0581ms)
+✔ public source state has tested disabled, failure, delay, and current boundaries (0.9026ms)
+✔ the public projection never selects the URL, config, or last_error (5546.0462ms)
+✔ content store keeps sources, items, links, and retention isolated (4447.1735ms)
+✔ editing a source touches only that row and refuses an invalid URL (2476.7988ms)
+✔ source creation refuses loopback and private destinations (2774.3862ms)
+✔ publisher variants collapse to one canonical slug (0.9494ms)
+✔ model-like tags keep dots and plus signs (0.1559ms)
+✔ tag lists dedupe, drop empty values, and respect the cap (0.8099ms)
+✔ source config survives malformed JSON and round-trips (0.3757ms)
+✔ tag labels are display-only and do not re-alias (0.1896ms)
+✔ banner text is trimmed and control characters are dropped (0.8685ms)
+✔ banner validation rejects non-strings and overlong text (25.6009ms)
+✔ an enabled banner is one leading system message (0.2853ms)
+✔ a balance that equals its ledger reconciles without correction (5.3128ms)
+✔ a legacy gap is reported and only an explicit baseline resolves it (16.1592ms)
+✔ a refund appends once per reference (5.6076ms)
+✔ the same reference with different terms is a conflict (1.8065ms)
+✔ a refund cannot exceed the balance and partial refunds are allowed (1.3019ms)
+✔ an overdrawn account stays visible and cannot be pushed further down (1.3747ms)
+✔ invalid references and amounts are refused before any write (0.9682ms)
+✔ reports include usage debits, paid top-ups and reserved money (1.34ms)
+✔ a reservation inside the available balance records a hold (2988.1661ms)
+✔ a reservation beyond the available balance is refused and writes nothing (2916.9596ms)
+✔ a balance cannot be reserved twice past its available amount (2331.7469ms)
+✔ available credit still excludes an existing hold (2407.2824ms)
+✔ a release frees exactly the hold and happens once (2459.8979ms)
+✔ an expired hold quarantines and keeps its capacity reserved (2621.4001ms)
+✔ a hold that has not expired is left alone (2390.5409ms)
+✔ seed derivation matches the published Hardhat vector (13.5485ms)
+✔ the seed is deterministic and rejects empty or short input (2.5229ms)
+✔ an xpub alone derives the same addresses as the account (16.8354ms)
+✔ a private extended key is refused where an xpub is required (1.7409ms)
+✔ an unparseable xpub is reported, not silently derived (0.2857ms)
+✔ addresses are stable and unique per index (84.6639ms)
+✔ out-of-range derivation indexes are rejected (0.4141ms)
+✔ only compressed public keys are accepted (1.199ms)
+✔ the Transfer topic is computed, not trusted (0.2258ms)
+✔ a Transfer log decodes to the exact integer amount (0.4951ms)
+✔ a transfer is ours only when it pays our address (0.2505ms)
+✔ malformed Transfer logs are rejected and never counted as ours (0.3381ms)
+✔ credit is gated on confirmation depth, with inclusion as the first (0.1679ms)
+✔ a zero, fractional or missing depth is rejected (0.2519ms)
+✔ payment keys are stable and distinct across log and chain (0.2293ms)
+✔ malformed payment identities are rejected (0.2823ms)
+✔ every supported request kind is accepted (1.0857ms)
+✔ every kind has a customer-facing label (0.1959ms)
+✔ a valid request is trimmed and keeps its line breaks (0.1471ms)
+✔ unknown kinds and malformed bodies are refused (0.1496ms)
+✔ short and oversized fields are refused (0.1653ms)
+✔ a message may be exactly at the bounds (0.143ms)
+✔ NUL bytes cannot reach storage (0.1438ms)
+✔ resolution notes are bounded and optional (0.1544ms)
+✔ session tokens are 32 random bytes in base64url (1.0919ms)
+✔ token shape validation rejects malformed values (0.1732ms)
+✔ only the token hash is deterministic (0.5707ms)
+✔ session cookies are HttpOnly, SameSite lax, and scoped to the site (0.1476ms)
+✔ email normalization trims and lowercases (1.1975ms)
+✔ names collapse whitespace and reject non-strings (0.2362ms)
+✔ email validation rejects empty, malformed, and overlong values (0.3844ms)
+✔ name validation bounds the value (0.1447ms)
+✔ new passwords enforce the minimum length (0.1975ms)
+✔ a dump restores every row, every checksum and a spendable balance (6377.9734ms)
+✔ a tampered dump is refused and the target keeps its rows (6083.301ms)
+✔ a dump whose ledger disagrees with the balances is never written (2401.2083ms)
+✔ restore refuses a populated target unless forced, and a short table (5688.9408ms)
+✔ a restored payment event rejects a replay (4963.4189ms)
+✔ placeholders are renumbered to positional parameters (1.2613ms)
+✔ question marks in literals, identifiers, comments and dollar quotes are kept (0.187ms)
+✔ get returns the first row and undefined when the result is empty (3.8109ms)
+✔ all returns every row and an empty array for no rows (0.2625ms)
+✔ run reports affected rows and falls back to zero (0.5047ms)
+✔ exec sends a multi-statement script with no parameters (0.3899ms)
+✔ a transaction runs on one leased client and commits there (0.624ms)
+✔ immediate keeps the write-transaction call shape (0.423ms)
+✔ a throwing transaction rolls back and still releases (12.0383ms)
+✔ a nested transaction uses a savepoint and releases it (22.7029ms)
+✔ a failed nested transaction rolls back to its savepoint only (1.4786ms)
+✔ concurrent transactions lease separate clients (5.5709ms)
+✔ initialization is lazy and single-flight (0.5637ms)
+✔ a failed initialization fails closed for every later call (0.2876ms)
+✔ pool options apply the session timeouts after connect (0.2225ms)
+✔ runtime commit, branch and repository are reported without secrets (10.6125ms)
+✔ a malformed commit or origin is absent, not guessed (0.4685ms)
+✔ free-pool defaults are positive and configurable (1.6482ms)
+✔ free-pool config rejects non-positive and non-integer overrides (0.1395ms)
+✔ weighted estimates apply the provider model weight (0.1556ms)
+✔ a weighted balance converts back to raw tokens for display (0.1565ms)
+✔ admission allows a request inside the daily allowance (0.2949ms)
+✔ in-flight reservations count toward the daily allowance (21.5238ms)
+✔ an allowance boundary is inclusive (0.282ms)
+✔ the provider-remaining floor blocks free calls (0.239ms)
+✔ a provider that disallows free calls blocks admission (0.2513ms)
+✔ unknown upstream quota fails closed before allowance reservation (0.2462ms)
+✔ explicit unlimited quota still requires provider permission (0.1605ms)
+✔ a reservation cannot cross the provider safety floor (0.2466ms)
+✔ a low provider pool raises the alert flag but still admits (0.1624ms)
+✔ reset helpers point at the next UTC midnight (0.108ms)
+✔ an admitted, streamed call settles and the database reconciles (3730.5422ms)
+[gateway.stream] {"event":"stream.cancel","requestId":"unassigned","provider":"savant","model":"m1","phase":"read","cause":"unexpected","expected":false,"level":"warn"}
+[gateway.stream] {"event":"stream.cancel","requestId":"unassigned","provider":"savant","model":"m1","phase":"cancel","cause":"unexpected","expected":false,"level":"warn"}
+✔ a stream that fails mid-flight still reconciles (2514.1473ms)
+✔ a credit settlement debits once and keeps the ledger reconciled (3866.7839ms)
+✔ a replayed settlement writes nothing and debits nothing (2600.1013ms)
+✔ a free reservation settles its weighted usage and charges nothing (2597.8955ms)
+✔ an included subscription call moves the hold into used and bills nothing (2645.0483ms)
+✔ a stream settles on completion and bills the provider's usage (2505.8602ms)
+✔ a stream that ends without a terminator settles as an error (2376.3702ms)
+✔ a client disconnect is one informational event and still settles (2284.5548ms)
+✔ an empty estimated usage is not fabricated into a charge (2554.5626ms)
+✔ JSON roots distinguish objects from null, arrays and primitives (2.7097ms)
+✔ extractApiKey accepts a bearer token (37.0473ms)
+✔ extractApiKey accepts x-api-key (0.4594ms)
+✔ extractApiKey prefers a bearer token (2.9534ms)
+✔ extractApiKey returns null without a key (0.4595ms)
+✔ sanitizeError logs the detail and returns only the generic message (3.9969ms)
+✔ sanitizeError handles non-Error throws without exposing them (1.0077ms)
+✔ a thrown provider error yields a generic 502 body (6.1831ms)
+✔ isLocalRequest accepts loopback hostnames (0.6256ms)
+✔ isLocalRequest rejects non-loopback and lookalike hosts (0.3334ms)
+✔ a baseline estimates 232 requests after the 20% retry headroom (1.6282ms)
+✔ a verify run with a reference and a control adds the control arm (0.1791ms)
+✔ a verify run without a reference is priced as a baseline (0.1539ms)
+✔ a verify run with a reference but no control prices no control arm (0.1438ms)
+✔ cost, weighted tokens, and minutes follow the sealed formulas (0.1597ms)
+✔ per-model and per-batch caps refuse instead of warning (0.2456ms)
+✔ quota refusal keeps the 2x headroom and allows an exact match (0.2108ms)
+✔ an unknown quota is allowed and labelled unknown (0.1221ms)
+✔ sumEstimates adds totals, concatenates refusals, and merges mode (0.2433ms)
+✔ readIdentityCaps applies defaults, clamps, and the enabled switch (0.5316ms)
+✔ OpenAI non-stream maps content, usage and sends a guarded request (41.0873ms)
+✔ Anthropic non-stream translates the request and normalizes the response (1.2949ms)
+✔ a retryable 429 is retried and reports both attempts (1.2748ms)
+✔ a 401 aborts immediately with an auth error (2.0175ms)
+✔ a non-retryable 400 is returned as a shape result (0.6291ms)
+✔ stream evidence counts the terminal and data after it (1.0449ms)
+✔ the limiter spaces two requests at the configured rpm (1.3461ms)
+✔ canonicalJson sorts keys recursively and keeps arrays ordered (1.3351ms)
+✔ sha256Hex matches the known digest for abc (0.6608ms)
+✔ buildProtocol is stable for one sealedAt and changes with the seal time (4.649ms)
+✔ verifyProtocol accepts a fresh record and rejects every changed field (17.7768ms)
+✔ referenceContentHash covers identity fields and counts (0.6272ms)
+✔ normalizeResponse collapses whitespace and ignores case nowhere (0.7028ms)
+✔ responseExcerpt is short, redacted, and printable (2.852ms)
+✔ ngramContainment measures observed overlap only (0.4502ms)
+✔ answerMatches ignores quotes, a trailing period, and case (0.4044ms)
+✔ isRefusal recognizes the refusal patterns and nothing else (0.581ms)
+✔ modalToken returns the most frequent token with insertion-order ties (0.2514ms)
+✔ parseContextWindow accepts the catalog display forms (0.2923ms)
+✔ contextDepths caps at the sealed ladder and never exceeds the window (0.2675ms)
+✔ a baseline run stores the fingerprint reference and a baseline verdict (3899.8155ms)
+✔ a same-route verify reaches self_consistent against its own baseline (3448.6716ms)
+✔ a second-provider reference plus a discriminative control reaches consistent (3419.7757ms)
+✔ a target that separates from the reference lands in divergent_review (2792.3854ms)
+✔ a shape failure fails the run before the probe gates run (2516.2376ms)
+✔ a 401 aborts immediately and records an error verdict (2648.6925ms)
+✔ a cancellation request between gates marks the run cancelled (2344.0434ms)
+✔ exceeding the request cap fails the run instead of truncating it (2363.5019ms)
+✔ a second executeRun on the same row does not re-run it (2365.537ms)
+✔ distribution normalizes counts and applies additive smoothing (24.9638ms)
+✔ totalCount sums every bucket (0.341ms)
+✔ JSD is zero for identical distributions and one bit for disjoint ones (1.1891ms)
+✔ JSD is symmetric, bounded, and smoothing changes an uneven comparison (0.2233ms)
+✔ mean and quantile handle empty and interpolated inputs (0.2103ms)
+✔ mulberry32 is deterministic for a seed and differs across seeds (0.1599ms)
+✔ bootstrapMeanCi is seeded, ordered, and null for an empty input (0.5994ms)
+✔ Wilson interval stays inside 0..1 and narrows with more samples (0.2341ms)
+✔ splitHalfQ95 is deterministic, bounded, and zero for one bucket (2.4143ms)
+✔ the migration creates all seven identity tables (3752.5898ms)
+✔ the protocol seals once and a second ensure does not replace it (2381.5858ms)
+✔ a run needs a protocol row; one active run per target; a completed run frees it (2423.7743ms)
+✔ duplicate sample ids are ignored and counted once (2573.9199ms)
+✔ reference selection ignores expired rows, rejects a tampered hash, and prefers another provider (2369.6831ms)
+✔ publish, unpublish, and confirm write corrections and never publish a confirmation (2209.3164ms)
+✔ the ladder starts at baseline or unsupported without a reference (2.3662ms)
+✔ a failed shape stops the ladder with an error verdict (0.1961ms)
+✔ an unstable route is inconclusive even when the fingerprint diverges (0.2145ms)
+✔ a divergent fingerprint goes to operator review, not a finding (0.1839ms)
+✔ too few comparable cells is inconclusive with that reason (0.1836ms)
+✔ a same-provider reference can only reach self-consistent (0.1535ms)
+✔ a second-provider reference needs a present, discriminative control (0.2148ms)
+✔ every status summary avoids the prohibited public words (0.2661ms)
+✔ publishedView renders finding copy without leaking internals (0.747ms)
+✔ not-tested and inconclusive findings carry honest copy (0.2785ms)
+✔ applyPublicationTtl expires consistency claims only (0.2519ms)
+✔ publicIdentityView applies the TTL before rendering the panel (0.4697ms)
+✔ a complete pass tied to HEAD passes (2.9593ms)
+✔ a missing or malformed item keeps the receipt incomplete (1.9215ms)
+✔ a failed item or a no-go decision blocks the receipt (10.24ms)
+✔ an approval pinned to another commit is stale (0.346ms)
+✔ a secret rejects the receipt and the report names only the path (0.3664ms)
+✔ known environment values are detected without prefix heuristics (0.2253ms)
+✔ an unsupported schema is invalid rather than pass (0.2671ms)
+✔ the migration parses and executes on a real PostgreSQL engine (3619.7492ms)
+✔ a settlement admits once and commits once (2557.8612ms)
+✔ an unknown settlement cannot be claimed (2998.0847ms)
+✔ quarantine keeps credit reserved until an audited release (2412.0267ms)
+✔ subscription and free quarantine hold their own capacity (2257.1726ms)
+✔ quarantine is idempotent for the same reservation (2338.5193ms)
+✔ a balance cannot be debited twice past zero (2539.324ms)
+✔ a rolled-back debit leaves the balance untouched (2357.1186ms)
+✔ micro amounts round-trip through BIGINT without narrowing (2232.0448ms)
+✔ an event is claimed once and answered as in-flight while recent (2416.0805ms)
+✔ a stale claim can be retried after a crash (2273.4887ms)
+✔ a processed event is terminal (2279.4505ms)
+✔ a failed handler keeps evidence and is retried immediately (2393.8416ms)
+✔ a quarantined event is never reclaimed (2670.7958ms)
+✔ the configured environment binds accepted events (2441.3503ms)
+✔ an undeclared environment records the mode without enforcing it (2951.5011ms)
+✔ the operator view lists durable state (2947.1386ms)
+✔ validator measurement shows the local cache removes repeat downloads (1.799ms)
+✔ validator measurement reports restart downloads without inventing savings (0.1986ms)
+✔ a corpus above the threshold asks for an index even when fast (0.298ms)
+✔ a slow p95 asks for an index and percentiles are nearest-rank (0.2001ms)
+✔ a complete card produces no issues (2.4718ms)
+✔ a page with no metadata at all is reported for every missing key (0.4098ms)
+✔ a relative og:image is rejected because crawlers need an absolute url (0.305ms)
+✔ an og:image pointing at the site root is rejected (0.3748ms)
+✔ a missing og:image reports that key and skips the url rules (0.4493ms)
+✔ dimensions are required so a platform can reserve space (0.233ms)
+✔ a small twitter card is reported rather than accepted (0.306ms)
+✔ a page with no title tag is reported (0.1759ms)
+✔ the parser keys by property or name, decodes entities, and keeps the first tag (0.2668ms)
+✔ family inference strips the free group prefix (1.0286ms)
+✔ family inference labels unknown families instead of returning a group (0.1819ms)
+✔ a group sentinel never becomes a family (0.1842ms)
+✔ a real upstream family label is preserved (0.1324ms)
+✔ system groups cover free, paid, and subscription with fixed modes (6.9913ms)
+✔ group creation normalizes a valid custom group (0.5049ms)
+✔ group creation rejects reserved slugs and invalid fields (0.9518ms)
+✔ slug rules accept lowercase dashed identifiers (0.18ms)
+✔ group updates accept every system slug and required fields (0.2155ms)
+✔ a free group zeroes both prices and other groups preserve them (15.8ms)
+✔ the group billing mode wins over the provider-derived fallback (9.9633ms)
+✔ provider flags only decide the default group (0.5827ms)
+✔ system groups are protected and custom groups can be deleted (0.5218ms)
+✔ reassignment requires a different existing destination (1.0338ms)
+✔ the group prefix and separators fold to one identity (1.3143ms)
+✔ release stamps and backups are not part of the identity (0.3917ms)
+✔ different models never share an identity (0.3316ms)
+✔ a version number is kept, only a build stamp is dropped (0.3616ms)
+✔ a free allocation and its paid id are different route groups (0.2078ms)
+✔ the same tier still merges across providers (0.142ms)
+✔ a missing stored group falls back to the canonical key (0.1892ms)
+✔ namespaced ids are recognised only for their own provider (0.1643ms)
+✔ model retrieve returns the same public object shape as the list (3466.9628ms)
+✔ model retrieve resolves only published rows and 404s otherwise (2446.2752ms)
+✔ model endpoints require a credential before any catalog read (2731.2877ms)
+✔ the cheaper provider serves while the published id stays stable (12.6899ms)
+✔ a costlier newcomer never replaces the incumbent (0.1822ms)
+✔ the blend weighs three input tokens to one output token (0.1044ms)
+✔ an unknown cost is never servable even when it looks free (0.117ms)
+✔ an unpriced non-free row is not servable (0.1453ms)
+✔ a disabled published row hides the whole group (0.134ms)
+✔ a disabled provider route is skipped (0.1568ms)
+✔ a model that only a secondary provider sells publishes its own id (0.1264ms)
+✔ an equal price is settled by provider order, never by id order alone (0.2238ms)
+✔ an empty group has nothing to publish or serve (0.9863ms)
+✔ token cost equals exact integer arithmetic across the whole domain (1.4293ms)
+✔ a product past 2^53 still rounds exactly instead of drifting a micro (0.1757ms)
+✔ token cost never goes negative and normalizes junk input (0.1259ms)
+✔ the sell price is the exact markup rounded up, never below cost (5.6592ms)
+✔ a hold covers the charge when the estimate is the actual usage (0.2808ms)
+✔ a settled charge writes a ledger row whose balance reconciles (0.2516ms)
+✔ a charge past the balance is recorded as a negative balance, not clamped (0.1623ms)
+✔ micros render exactly, with two decimals as the floor (0.5963ms)
+✔ top-up amounts convert to micros exactly and never to a fraction of a cent (0.424ms)
+✔ a plan price is a whole number of cents or rejected (0.7707ms)
+✔ every two-decimal plan price converts without a cent drifting (1.0611ms)
+✔ overage markup rounds only where it has to and never turns negative (0.2075ms)
+✔ revenue helpers do not invent money (0.2025ms)
+✔ catalog prices survive the round trip through micros (0.1747ms)
+✔ crypto top-ups are off when the flag is unset (1.1173ms)
+✔ crypto top-ups stay off for an explicit false (0.1248ms)
+✔ only an affirmative flag enables crypto sales (0.1327ms)
+✔ payment credentials alone never enable crypto sales (0.1054ms)
+✔ config requires both the API key and the IPN secret (0.1607ms)
+✔ the base URL picks live unless the sandbox flag is affirmative (0.1251ms)
+✔ sortObjectDeep sorts keys at every nesting level (0.8863ms)
+✔ the IPN signature is order-independent and verified in constant time (0.7606ms)
+✔ IPN verification rejects tampering, wrong secrets and bad shapes (0.3922ms)
+✔ the invoice client sends the API key header and fixed-rate body (0.6647ms)
+✔ the invoice client keeps a string id and normalizes a numeric one (0.229ms)
+✔ the invoice client maps upstream failures and bad shapes to errors (0.6053ms)
+✔ parseIpnPayment normalizes numeric ids and string amounts (0.253ms)
+✔ parseIpnPayment rejects payloads missing a required field (0.1259ms)
+✔ IPN statuses classify into settled, non-final and final-fail (0.1467ms)
+✔ an open condition alerts once and a repeat only refreshes it (3233.724ms)
+✔ a resolved condition that returns is a new alert (3115.6177ms)
+✔ warning to critical queues one escalation and resets the budget (2376.1415ms)
+✔ conditions that disappear are resolved, and acknowledgement is one-way (2427.6276ms)
+✔ a failing webhook backs off, then stops and stays visible (2302.2923ms)
+✔ an unconfigured transport records the incident and sends nothing (2394.879ms)
+✔ the snapshot counts traffic, money and quota age without inventing health (2353.2158ms)
+✔ admission control refuses an unexplained pause and persists atomically (2328.1773ms)
+✔ the store monitor observes the volume and records what it cannot deliver (2397.8095ms)
+✔ threshold parsing falls back from malformed values instead of disabling guards (1.0689ms)
+✔ snapshot reports no traffic separately and reads durable state (16.1503ms)
+✔ rule evaluation distinguishes quiet traffic from healthy uptime (0.6983ms)
+✔ rule evaluation covers settlements, payments, quota and storage (0.4761ms)
+✔ incident fingerprints deduplicate and a resolution reopens deliberately (6.911ms)
+✔ missing fingerprints are resolved and stale rows stay visible (1.8882ms)
+✔ a tick opens one incident, delivers once and sends one recovery (5.0343ms)
+✔ delivery failures retry with backoff and stop at the attempt ceiling (3.5126ms)
+✔ unconfigured delivery is recorded without sending or burning attempts (1.5525ms)
+✔ transport config refuses insecure destinations and short secrets (0.3631ms)
+✔ webhook delivery signs the body and keeps the URL out of stored errors (108.8148ms)
+✔ a failed delivery records a redacted error rather than the webhook URL (29.09ms)
+✔ a scrypt hash verifies the original password (126.0021ms)
+✔ each hash uses a fresh salt (321.7201ms)
+✔ a wrong password or missing hash fails (94.9755ms)
+✔ a malformed or unsupported hash fails closed (0.2308ms)
+✔ overlong passwords are rejected on both paths (116.1495ms)
+✔ an event is claimed once and answered as in-flight while recent (8.7654ms)
+✔ a stale claim can be retried after a crash (1.2842ms)
+✔ a processed event is terminal (0.8691ms)
+✔ a failed handler keeps evidence and is retried immediately (1.7304ms)
+✔ a quarantined event is never reclaimed (1.1227ms)
+✔ the configured environment binds accepted events (0.9172ms)
+✔ an undeclared environment records the mode without enforcing it (0.7872ms)
+✔ the operator view lists durable state (0.9454ms)
+✔ the payment-claim composite index exists and does not duplicate (31.2427ms)
+✔ the analytics range uses the created_at index (34.5473ms)
+✔ provider-scoped usage uses created_at and claims use the composite (40.8719ms)
+✔ plan validation accepts a complete USD plan (2.7448ms)
+✔ plan validation rejects reserved slugs, bad prices, and bad inclusions (0.4442ms)
+✔ draft plans may have a zero price (0.5215ms)
+✔ entitlements expand groups plus explicit models without duplicates (0.3782ms)
+✔ allowance math excludes used and held reservations (0.4693ms)
+✔ exhausted block plans block and credit plans fall through (2.7243ms)
+✔ overage markup applies to sell prices and weighted tokens respect a floor (0.2248ms)
+✔ snapshots copy purchased values (0.2429ms)
+✔ calendar intervals clamp month ends (7.0647ms)
+✔ Stripe status maps to local lifecycle and expired access (0.3141ms)
+✔ Stripe snapshots never invent a billing period (0.2915ms)
+✔ every published policy has text with no unreplaced placeholder (4.9845ms)
+✔ the published text carries the decided positions (0.9621ms)
+✔ the version, dates and operator identity agree (2.1852ms)
+✔ routes are stable for the current version and permanent for older ones (0.2399ms)
+✔ v1.1 corrects tax and entity disclosure without rewriting v1 (1.4976ms)
+✔ only the documented markdown is interpreted (0.4243ms)
+✔ inline links, code and emphasis parse without losing text (0.2401ms)
+✔ per-token strings become USD per 1M and variants are skipped (1.8797ms)
+✔ the free pool prefix is not part of the match key (0.2561ms)
+✔ only an exact slug matches, never a revision guess (22.7732ms)
+✔ delta basis points are negative when Savant is cheaper (0.2674ms)
+✔ a matched comparison carries both deltas (0.3313ms)
+✔ the blend weighs three prompt tokens to one completion token (0.1864ms)
+✔ a flat rate against an asymmetric list reads dearer on input and cheaper on blend (0.4171ms)
+✔ summary ignores missing deltas and reports the median (0.5033ms)
+✔ summary is empty rather than zero when nothing is comparable (2.0405ms)
+✔ summary rounds an even-length median instead of picking a side (0.3189ms)
+✔ a recommendation rounds up to the requested margin (1.981ms)
+✔ free, subscription, unknown and stale costs are ineligible (0.3627ms)
+✔ an invalid target margin and the price ceiling refuse approval (0.2904ms)
+✔ cent rounding and the minimum publishable price are explicit (0.3322ms)
+✔ a large price move is a warning, not a silent approval (3.0129ms)
+✔ margin buckets count paid catalog rows and keep negatives apart (1.4947ms)
+✔ price history is one averaged point per UTC day (13.6152ms)
+✔ route mix counts catalog rows and the rows that serve (0.8655ms)
+✔ an approval writes the price and its audit row together (3149.5743ms)
+✔ a plain price edit can be audited, and a free row cannot (2900.7558ms)
+✔ decision reads are bounded and can be scoped to one model (2310.9904ms)
+✔ free and subscription rows are classified without a per-token price (4.1331ms)
+✔ unknown and stale costs are blocked from recommendation (0.6851ms)
+✔ a route takeover is visible and does not invent a second provider (0.494ms)
+✔ a manual price is always review-required, even when unchanged (0.3675ms)
+✔ a negative current margin is review-required, not safe (0.35ms)
+✔ zero upstream cost keeps the paid row reviewable and flags it (0.3311ms)
+✔ a price above the configured ceiling is blocked (0.3787ms)
+✔ modeled totals exclude free, subscription, and unknown-cost rows (0.3405ms)
+✔ rows sort by risk and the review queue ranks by impact (0.6137ms)
+✔ out-of-catalog rows are excluded unless the report asks for them (0.3877ms)
+✔ prices round-trip between dollars per 1M and micros (0.9711ms)
+✔ default markup prices cost above zero and leaves free rows at zero (0.2178ms)
+✔ markup clamping is bounded and falls back to the default (0.172ms)
+✔ margin handles free, zero-cost, and below-cost rows (0.1325ms)
+✔ blended profit covers 1M input plus 1M output (0.1554ms)
+✔ token cost and holds use per-million micros (0.1796ms)
+✔ token estimation uses four characters per token (0.2854ms)
+✔ output budgets come from either token field (0.1732ms)
+✔ price inputs reject negatives and out-of-range values (0.2195ms)
+✔ average margin ignores unpriced rows (0.3019ms)
+✔ non-production environments are not held to the durable contract (1.0858ms)
+✔ a valid production configuration validates with a normalised origin and absolute database (0.4876ms)
+✔ a localhost origin is rejected in production (0.5505ms)
+✔ a database that cannot keep balances is rejected in production (0.3832ms)
+✔ the admin console requires its configured credentials in production (0.2327ms)
+✔ a second application process multiplies admission and is rejected (0.2485ms)
+✔ a manual signal handler forfeits the drain contract and is rejected (0.2384ms)
+✔ a disposable start must be an exact, deliberate opt-in (0.24ms)
+✔ readiness reports every dead combination truthfully (1.1374ms)
+✔ the operator gate fails with codes and never with secret values (275.2223ms)
+✔ the operator gate passes both a durable and an explicit disposable runtime (642.4769ms)
+✔ a promo is created once with a hashed code and a visible prefix (3196.662ms)
+✔ invalid amounts, slots, windows and codes are refused before any write (2494.9188ms)
+✔ a redemption credits the balance, the ledger and the activity log (2278.0752ms)
+✔ a customer cannot redeem the same code twice (2255.1952ms)
+✔ the last available slot cannot be sold twice (2664.0213ms)
+✔ a code that is early or expired grants nothing (2551.5168ms)
+✔ a disabled policy, unknown customer and paused code are refused (2257.1211ms)
+✔ the promo lane is off unless the flag is explicitly true (5.109ms)
+✔ a code is normalized, hashed at rest, and shown once (6.4401ms)
+✔ a valid code credits the ledger once and refuses a repeat (9.5706ms)
+✔ the redemption cap holds across distinct customers (2.7628ms)
+✔ a paused, not-started, expired, or disabled code grants nothing (3.2992ms)
+✔ creation rejects invalid amounts, caps, windows, and duplicate codes (1.25ms)
+✔ registry aliases on one origin and credential share a serving account (1.0441ms)
+✔ an unusable origin or credential name has no admission identity (0.1851ms)
+✔ a current upstream ceiling wins over the configured fallback (0.2158ms)
+✔ admission configuration defaults and refuses malformed values (0.7558ms)
+✔ one account ceiling binds every billing mode and key (0.4342ms)
+✔ concurrency is capped and released exactly once (0.2174ms)
+✔ an unknown ceiling refuses before dispatch instead of assuming headroom (0.2219ms)
+✔ a configured ceiling binds when upstream reports none (1.1616ms)
+✔ the snapshot reports real in-flight and token state (0.221ms)
+✔ each provider reports its own contribution and serving count (8.1734ms)
+✔ an unpriced or unknown-cost row is counted but not priced (0.8949ms)
+✔ a provider with no synced models still appears with zeros (0.7952ms)
+✔ the catalog projection is cached and cleared per handle (6164.7168ms)
+✔ only stale, enabled and credentialed providers are refreshed (2339.3036ms)
+✔ a failing provider does not stop the others (2036.8324ms)
+✔ an interval of zero disables the automatic refresh (2534.7042ms)
+✔ a landed refresh invalidates the catalog cache (2317.3482ms)
+✔ the landing read starts a refresh without waiting for it (2301.1229ms)
+✔ a runtime lease is exclusive and expires (3847.3153ms)
+✔ completion writes the observation only for the lease that owns it (2525.6412ms)
+✔ overlapping checks share one upstream read (2207.5538ms)
+✔ a failed quota read is recorded, not thrown (2127.8911ms)
+✔ a disabled or unconfigured provider is not checked (2662.5637ms)
+✔ a sync imports the catalog and preserves the provider scope (2305.0618ms)
+✔ an unconfigured provider syncs nothing and says why (2489.4998ms)
+✔ a malformed catalog is refused before anything is written (2563.2732ms)
+✔ one failing provider does not stop the others (2343.5537ms)
+✔ the sync interval defaults to six hours and 0 disables it (0.9331ms)
+✔ a malformed interval keeps the default instead of stopping sync (0.2117ms)
+✔ a catalog older than the interval is due (0.799ms)
+✔ a provider that never synced is due (0.1373ms)
+✔ disabled or unconfigured providers are never due (0.1306ms)
+✔ a disabled interval reports nothing due (0.0939ms)
+✔ the public scope withholds paid rows without a sell price (0.1698ms)
+✔ the public scope withholds stale manual costs with a 30-day default (0.1185ms)
+✔ provider input normalizes and accepts a valid registry row (2.0208ms)
+✔ provider input rejects unsafe slugs, kinds, URLs, and key names (0.3653ms)
+✔ provider input rejects non-string header values (0.2844ms)
+✔ normalizeBaseUrl removes trailing slashes (0.1786ms)
+✔ public model ids are scoped for non-default providers (0.2118ms)
+✔ protocol routing follows provider kind and supported endpoints (0.3307ms)
+✔ a dual-format provider authenticates both wire formats (0.2369ms)
+✔ single-format providers send only their own credential (0.1769ms)
+✔ key configuration reads only the named environment variable (1.8438ms)
+✔ quota parser preserves the observed 0 used / 20M remaining reset (7.0724ms)
+✔ numeric unknowns never become fabricated zero observations (0.6381ms)
+✔ partial, unsafe and inconsistent finite quota is rejected (0.3148ms)
+✔ unlimited is explicit, not a truthy string or missing finite quota (0.2446ms)
+✔ stale, failed, pending and future observations are not current (2.2009ms)
+✔ crossing a daily reset never invents a fresh 20M pool (0.2793ms)
+✔ additive quota migration preserves legacy counters without certifying them (12.6307ms)
+✔ leases fence concurrent, expired and superseded writers (4.7021ms)
+✔ failed quota check clears success without advancing catalog clock (3.8122ms)
+✔ accounting conserves overlapping completions and live holds by provider (3.2719ms)
+✔ a fresh bucket admits its whole capacity, then refuses (1.1948ms)
+✔ tokens refill at the configured rate and never exceed capacity (0.1799ms)
+✔ a clock moving backwards refills nothing and rebases the bucket (0.1518ms)
+✔ retry-after seconds are never below one (0.1434ms)
+✔ a fresh bucket starts full so the first burst is never throttled (0.7809ms)
+✔ limits default under the upstream ceiling and read overrides (0.2375ms)
+✔ malformed limits fall back instead of disabling the control (0.1773ms)
+✔ free traffic shares one bucket across every key (0.2785ms)
+✔ paid keys are isolated from each other and from the free bucket (0.2846ms)
+✔ a paid key recovers its allowance over the minute (1.0742ms)
+✔ an adjustment appends a ledger entry and moves the balance (3227.2957ms)
+✔ a repeated reference is a no-op, not a second credit (2241.6965ms)
+✔ a reference reused for a different amount is a conflict (2408.6381ms)
+✔ a refund cannot exceed the current balance (2637.3875ms)
+✔ a debit correction cannot push the account below zero (2222.0054ms)
+✔ invalid amounts and references are refused before any write (2368.5247ms)
+✔ the balance equation reports a balanced account (2002.355ms)
+✔ the latest baseline is the one the equation uses (2426.8486ms)
+✔ an unbalanced account is reported rather than repaired (2170.3625ms)
+✔ bounded JSON rejects every non-object root and malformed UTF-8 (42.1486ms)
+✔ byte limits count chunked UTF-8 and do not trust Content-Length (1.8389ms)
+✔ slow body times out even if cancellation never resolves (57.6265ms)
+✔ JSON depth and node count are bounded independently of bytes (5.2237ms)
+✔ all completion aliases are checked before defaults (0.3804ms)
+✔ message/tool counts and invalid message roots are refused (0.2131ms)
+✔ forged forwarded headers cannot create a new client identity (6.7791ms)
+✔ limiter saturation refuses new identities without evicting existing limits (0.373ms)
+✔ paid keys belonging to one account cannot multiply dispatch capacity (0.4407ms)
+✔ monthly plans keep their snapshot price (1.5791ms)
+✔ yearly plans normalize to a monthly run-rate (0.1692ms)
+✔ non-positive and non-finite prices produce zero MRR (0.2121ms)
+✔ gross margin is revenue minus cost in basis points (0.2317ms)
+✔ gross margin is undefined without a positive revenue base (0.3059ms)
+✔ a catalogue elected before the tier-scoped rule is repaired on boot (2789.9583ms)
+✔ the withheld paid row is published again, next to its free counterpart (2382.7927ms)
+✔ the repair is version-stamped and does not run on every boot (2376.2492ms)
+✔ the cheaper provider serves and the stable id reprices from its cost (17.9424ms)
+✔ a manual sell price is never rewritten by a takeover (2.6643ms)
+✔ a disabled published row hides the group instead of promoting a route (1.262ms)
+✔ a disabled provider is skipped by the ranking (1.2067ms)
+✔ a model only the new provider sells becomes its own published row (1.3214ms)
+✔ a free-pool row keeps its tier and the paid row stays published (1.7594ms)
+✔ a free allocation and its paid counterpart publish side by side (1.5108ms)
+✔ ensureColumn adds a missing column exactly once (10.5836ms)
+✔ ensureColumn tolerates another process winning the add race (0.403ms)
+✔ the Apixo key migration renames only the shipped legacy value (2.8271ms)
+✔ ensureColumn still surfaces unrelated migration failures (0.4443ms)
+✔ the Postgres schema creates every table its modules declare (18.4368ms)
+✔ the generated DDL contains no SQLite-only syntax (4.7783ms)
+✔ money and token columns are BIGINT, not int4 (1.9079ms)
+✔ the migration runs inside one transaction on one lease (1.4773ms)
+✔ a second run issues the same statements, so the migration is idempotent (4.1881ms)
+✔ providers and system groups are seeded once with ON CONFLICT DO NOTHING (1.0838ms)
+✔ the developer account is seeded outside production and not inside it (3.6448ms)
+✔ ensureColumn adds a column atomically and validates its identifiers (0.6533ms)
+✔ configured secrets are name-scoped, long enough, and longest first (1.4324ms)
+✔ redaction removes configured values and token-shaped text (0.6406ms)
+✔ redaction leaves ordinary diagnostics intact (0.1625ms)
+✔ sanitizeError never logs a configured canary or returns it (1.6991ms)
+✔ a provider error body is redacted before any caller can store it (46.8365ms)
+✔ provider errors are bounded and fall back to the status (2.0027ms)
+✔ provider base URLs reject embedded credentials (0.5221ms)
+✔ a spoofed forwarded host cannot make a foreign origin same-origin (1.71ms)
+✔ two connections cannot debit one balance twice (4756.0755ms)
+✔ a settlement admits once and commits once (8.1935ms)
+✔ an unknown settlement cannot be claimed (12.4132ms)
+✔ quarantine keeps credit reserved until an audited release (3.0543ms)
+✔ subscription and free quarantine hold their own capacity (1.4744ms)
+✔ quarantine is idempotent for the same reservation (0.7695ms)
+✔ configuration imports with equal counts and unchanged source bytes (3187.833ms)
+✔ customer rows import only on request, with balances recomputed (2663.8684ms)
+✔ a balance that the ledger cannot reconstruct aborts the whole import (2718.5062ms)
+✔ a target that already holds customers is refused (2398.1272ms)
+✔ a source column the target lacks is named, not dropped (2589.6572ms)
+✔ empty, disabled, unavailable and loading have distinct labels (0.6748ms)
+✔ the storage contract is green: one engine and no SQLite importers (319.0868ms)
+✔ mode is postgres only when DATABASE_URL is set (1.1523ms)
+✔ the handle migrates before it serves a query (3142.6731ms)
+✔ migrating an already-migrated database changes nothing (2332.395ms)
+✔ a networked database never receives the local development account (2321.1251ms)
+✔ a reservation round trip runs through the runtime handle (2212.2201ms)
+✔ a reservation over the available balance is refused, not clamped (2337.7219ms)
+✔ an expired hold moves to quarantine and stays reserved (2407.4575ms)
+✔ a handle built without an injected pool uses the local engine (2465.0983ms)
+✔ an injected pool becomes the handle's only connection (2849.2174ms)
+✔ the cheapest servable provider takes over serving (3201.3599ms)
+✔ the admin catalog carries every provider route for a group (2332.2414ms)
+✔ activating a row with no known cost is refused (2240.2228ms)
+✔ a free row cannot be given a sell price (2536.0328ms)
+✔ applying a markup reprices auto rows and zeroes free rows (2279.7428ms)
+✔ a sync preserves a manual sell price (2533.147ms)
+✔ a row that vanished upstream is delisted, not deleted (2972.5327ms)
+✔ a sync only delists its own provider (2599.9441ms)
+✔ an ambiguous upstream id is not resolved (2596.8118ms)
+✔ usage reads are newest first and carry numbers (2694.9526ms)
+✔ a sync invalidates the published catalog cache (2377.9648ms)
+✔ an even split follows the active account count (3223.2522ms)
+✔ a grant is never lowered below committed usage (2548.5106ms)
+✔ an ineligible account's grant is withdrawn (2478.6483ms)
+✔ the summary reports allocations, usage and live holds (2123.2826ms)
+✔ saved settings outrank the environment defaults (2553.1634ms)
+✔ an unobserved provider reports no allocatable capacity (2688.0198ms)
+✔ a daily trial summary refuses to invent available credits (2677.6588ms)
+✔ admission is refused while the provider has no current observation (2545.6772ms)
+✔ an elapsed reservation becomes quarantine, even on a refused call (2380.3259ms)
+✔ settlement releases the hold and records the actual usage (3123.0206ms)
+✔ the report counts only the requested window and fills quiet days (3089.2461ms)
+✔ models are ranked by charge and an unknown model is named honestly (2284.6016ms)
+✔ plan revenue comes from paid usd invoices, MRR from live prices (2780.1935ms)
+✔ subscriber counts are current while revenue is windowed (2552.4273ms)
+✔ a lease is exclusive until its owner releases it (2943.9456ms)
+✔ a completed sync is reported, and a failed one keeps its error (2585.1933ms)
+✔ writing benchmarks freshens matches and marks the rest stale (2330.4606ms)
+✔ the admin epoch increments and reports the value it produced (2901.7474ms)
+✔ a paid row with no sell price is withheld, and published once priced (2808.3161ms)
+✔ a free row publishes without any sell price (2539.1635ms)
+✔ a stale manual cost withholds the row; a fresh one admits it (2456.1743ms)
+✔ a hidden group is withheld (2942.6945ms)
+✔ a subscription row needs an active plan that covers it (2629.2319ms)
+✔ a non-primary route row is withheld from the published catalog (2535.8374ms)
+✔ a disabled provider takes its catalog with it (2402.1521ms)
+✔ a delisted or disabled row is withheld (2846.1524ms)
+✔ the cache serves the same read until it is cleared (2349.8672ms)
+✔ two handles do not share a catalog cache (3823.5133ms)
+✔ a top-up credits once, and the ledger records the balance it produced (3096.2899ms)
+✔ a top-up whose amount disagrees with the payment is refused untouched (2655.7861ms)
+✔ a failed top-up cannot be fulfilled afterwards (2608.6819ms)
+✔ a customer can hold at most ten active keys (2747.1853ms)
+✔ a session resolves until it is revoked (2234.4732ms)
+✔ customer signup and lookup are case-insensitive on email (2375.6495ms)
+✔ a manual grant entitles the plan's models and opens one period (3273.749ms)
+✔ a second active subscription is refused with 409 (2412.2672ms)
+✔ extending moves the period forward and leaves exactly one open (2224.7628ms)
+✔ refresh restores the plan's entitlements the subscription lost (1724.3832ms)
+✔ cancellation is flagged, and revocation cancels immediately (1533.7825ms)
+✔ the account read model reports usage, keys and purchased credit (1317.1855ms)
+✔ catalog façade answers from the bound database (3184.9354ms)
+✔ reporting façade answers from the bound database (3341.6493ms)
+✔ an unbound façade never returns undefined (68.2692ms)
+✔ an explicit binding is used (0.2633ms)
+✔ a bound function receives the handle and keeps its arguments (0.2749ms)
+✔ a ported function's promise is flattened once (1.0462ms)
+✔ every façade group exposes a usable surface (2.9243ms)
+✔ wrapped functions resolve against one bound handle (3305.0789ms)
+✔ the three system groups are listed in order (3554.6239ms)
+✔ a group cannot duplicate a slug or a label (2965.4824ms)
+✔ a system group keeps its billing mode (2622.9031ms)
+✔ a custom group can change its label and mode (2686.2689ms)
+✔ moving a row into a free group zeroes its sell price (2963.6588ms)
+✔ assignment refuses an unknown model or group (2285.5578ms)
+✔ system groups cannot be deleted (2262.9984ms)
+✔ a group included by a plan cannot be deleted (1771.5107ms)
+✔ deleting a group reassigns its models to the destination (1504.1114ms)
+✔ a grant raises the balance and records both ledger and activity (3138.4204ms)
+✔ a grant must be positive (3287.6894ms)
+✔ the ledger reads newest first and returns numbers, not strings (2518.2081ms)
+✔ the summary reports credit held by a live reservation (2745.6357ms)
+✔ an unknown account reads as zero rather than failing (2815.3726ms)
+✔ the default tenant is the developer account (2317.3353ms)
+✔ activity supports filtering and joins the customer email (2293.9358ms)
+✔ a best-effort activity write loses the row, not the request (1744.1417ms)
+✔ an adjustment is idempotent by reference (1521.7774ms)
+✔ a correction cannot push the balance below zero (1263.5954ms)
+✔ a baseline is recorded and listed, and reconciliation still balances (1144.6805ms)
+✔ an admitted call is recorded before it is dispatched (3863.5666ms)
+✔ a quarantined hold is released once, with a note (2731.3262ms)
+✔ an accepted policy is recorded and found (2671.9151ms)
+✔ a repeat acceptance keeps the first agreement time (2504.7717ms)
+✔ a new version requires a new acceptance (2821.7357ms)
+✔ a plan expands its included group into entitled models (3629.9438ms)
+✔ the slug and the name are both unique (2310.7512ms)
+✔ a free group cannot be sold inside a paid plan (2487.0735ms)
+✔ an unknown group or model is refused (2640.053ms)
+✔ an active plan must cover at least one model (3206.0664ms)
+✔ plans are looked up by id and by slug (2293.5466ms)
+✔ plans are listed by sort order then name (2097.2676ms)
+✔ a draft plan can be deleted, and an unknown one cannot (1738.3601ms)
+✔ the seeded registry is listed in sort order (3475.5746ms)
+✔ the summary carries a model count and a status per provider (2864.7793ms)
+✔ an unknown provider reports unconfigured, not a stale balance (2759.754ms)
+✔ enabling and disabling a provider is recorded (3131.655ms)
+✔ a provider is created, updated and deleted (2385.2326ms)
+✔ deleting a provider removes its catalog but never the default (1965.6482ms)
+✔ an unknown provider cannot be updated (1917.8352ms)
+✔ a created key authenticates and stamps its last use (4042.9619ms)
+✔ the secret is never stored in the clear (2554.8799ms)
+✔ an unknown secret authenticates as nobody (2597.4796ms)
+✔ a revoked key stops authenticating immediately (2648.6823ms)
+✔ revocation is scoped to the owner (2683.9142ms)
+✔ a suspended account cannot authenticate its own active key (2037.6539ms)
+✔ keys are listed newest first for their owner only (1867.3992ms)
+✔ the pricing summary separates priced, unpriced and free (1.3542ms)
+✔ an empty priced set matches the live helper exactly (0.2776ms)
+✔ the migration seeds the default markup (3728.1777ms)
+✔ a missing setting reads as null, not as an error (2724.8753ms)
+✔ saving a setting twice updates the row instead of adding one (2799.3316ms)
+✔ a saved markup round trips through the settings row (3263.6105ms)
+✔ a negative markup is clamped rather than accepted (2204.6518ms)
+✔ a value that is not a number falls back to the default (2277.0047ms)
+✔ an account with no subscription resolves to none (4678.0298ms)
+✔ a past-due subscription blocks before any routing (2570.9803ms)
+✔ a model the plan does not cover falls through to none (2914.1074ms)
+✔ an included call takes a hold against the period (3049.3482ms)
+✔ an exhausted allowance is refused when overage is blocked (2249.3658ms)
+✔ an exhausted allowance becomes overage when the plan allows it (2117.8229ms)
+✔ a subscription without an open period reports a 503 (1869.1496ms)
+✔ settlement moves the hold into used and frees the held amount (1351.5839ms)
+✔ the sweep expires a subscription whose period ended (1238.0651ms)
+✔ a summary composes the snapshot, the allowance and the entitlements (1140.2072ms)
+✔ a new request is open and joins its customer (3437.4688ms)
+✔ an unknown request reads as null (2553.4075ms)
+✔ a customer's own history is newest first (2708.6684ms)
+✔ the operator queue lists open requests before resolved ones (2464.7351ms)
+✔ resolving records the note and the time (2012.5585ms)
+✔ only open requests are counted (2217.5098ms)
+✔ abort, timeout, closed and unexpected errors classify apart (0.8335ms)
+✔ expected disconnects are informational and incidents are warnings (0.2475ms)
+✔ identifiers are bounded and cannot inject new lines (0.282ms)
+✔ plan sales are off when the flag is unset (1.2824ms)
+✔ only an explicit true value enables plan sales (0.2616ms)
+✔ any other explicit value keeps sales off and names the value (14.308ms)
+✔ publishing a plan is refused while sales are off (0.4283ms)
+✔ editing or archiving an already-active plan stays allowed while off (0.3316ms)
+✔ draft and archived authoring stays allowed while sales are off (0.2592ms)
+✔ enabled sales publish a plan from any prior state (0.3757ms)
+✔ top-up amounts convert to exact cents and micros (2.075ms)
+✔ top-up amounts stay inside the configured bounds (0.2034ms)
+✔ malformed amounts are rejected without floating-point rounding (0.173ms)
+✔ rejected amounts carry a readable error (0.2799ms)
+✔ an enabled pair publishes the paid model and its rates (2865.2789ms)
+✔ a disabled trial offers nothing (1886.704ms)
+✔ a model with no pair is not offered a paid route (1636.0002ms)
+✔ an unknown cost or a hidden paid row publishes no price (1286.2954ms)
+✔ a verified account receives a grant on its first reservation (2895.826ms)
+✔ an unverified account receives no grant (1965.8446ms)
+✔ a reservation beyond the remaining balance is refused (1635.555ms)
+✔ historic free-pool usage counts against the grant (1344.0543ms)
+✔ settlement records actual usage once (1138.2763ms)
+✔ a disabled trial config reserves nothing (951.1431ms)
+✔ the pool is split across activated accounts (926.4896ms)
+✔ a newcomer rebalances the unspent remainder (935.0335ms)
+✔ rebalancing never drops an account below what it already used (895.4032ms)
+✔ the summary reports the pool, the split and per-account rows (885.6165ms)
+✔ trials are off, unpaired and unbudgeted by default (1.7807ms)
+✔ disabled trial config can never issue a grant or reservation (15.4924ms)
+✔ holds share one grant and settlement is isolated and replay safe (5.5853ms)
+✔ grants do not reset at midnight or change when configuration increases (1.2906ms)
+✔ verification, gateway grant budget and historic usage constrain issuance (1.7118ms)
+✔ expired reservations release capacity but late settlement still counts once (1.7467ms)
+✔ complete usage keeps totals and provider subsets apart (1.8277ms)
+✔ a missing side is estimated, never an authoritative zero (0.2349ms)
+✔ absent and malformed counts stay absent (0.2525ms)
+✔ a subset larger than its total is not stored (0.1436ms)
+✔ split usage frames merge per component (0.1912ms)
+✔ a wholly estimated record is labelled and uses both fallbacks (0.2658ms)
+✔ Anthropic normalization counts cache tokens once and invents nothing (0.4793ms)
+✔ Anthropic stream reports only the components it received (86.6981ms)
+✔ the USDC receive spike runs with declared dependencies and six checks (533.8491ms)
+✔ Node test totals are parsed, and non-test gates report null (1.4929ms)
+✔ a skipped required gate fails even when the process exits zero (0.4439ms)
+✔ a signal or a missing exit code cannot pass (0.7427ms)
+✔ the summary names every required gate and cannot pass when zero ran (1.374ms)
+✔ a failed gate makes the run fail and is named in the summary (0.3296ms)
+ℹ tests 969
+ℹ suites 0
+ℹ pass 969
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 72390.4374
+npm notice run savant-gateway@0.1.0 test
+npm notice run node --test "tests/*.test.mjs"
+
+verify >>> test:postgres (npm.cmd run test:postgres)
+postgres-concurrency: using postgresql://***:***@aws-0-us-east-1.pooler.supabase.com:6543/gateway_verify_1793749080666?sslmode=no-verify
+✔ two connections cannot debit one balance twice (4072.2743ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4238.8566
+postgres-concurrency: PASS — two connections cannot double-debit
+npm notice run savant-gateway@0.1.0 test:postgres
+npm notice run node scripts/postgres-concurrency-proof.mjs
+
+verify >>> quality (npm.cmd run quality)
+quality: PASS (400-line ceiling, 597 files scanned)
+npm notice run savant-gateway@0.1.0 quality
+npm notice run node scripts/quality-report.mjs
+
+verify >>> build (npm.cmd run build)
+▲ Next.js 16.4.3 (Turbopack)
+- Environments: .env.local
+✓ Running next.config.mjs took 19ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 6.3s
+  Running TypeScript ...
+  Finished TypeScript in 2.8s ...
+  Collecting page data using 15 workers ...
+  Generating static pages using 15 workers (0/23) ...
+  Generating static pages using 15 workers (5/23) 
+  Generating static pages using 15 workers (11/23) 
+  Generating static pages using 15 workers (17/23) 
+✓ Generating static pages using 15 workers (23/23) in 625ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ○ /acceptable-use
+├ ƒ /account
+├ ○ /account/action
+├ ƒ /admin
+├ ƒ /admin/analytics
+├ ƒ /admin/catalog
+├ ƒ /admin/content
+├ ƒ /admin/customers
+├ ƒ /admin/diagnostics
+├ ƒ /admin/gateway
+├ ƒ /admin/groups
+├ ƒ /admin/identity
+├ ƒ /admin/identity/[id]
+├ ƒ /admin/login
+├ ƒ /admin/operations
+├ ƒ /admin/plans
+├ ƒ /admin/pricing
+├ ƒ /admin/providers
+├ ƒ /admin/reconciliation
+├ ƒ /admin/subscriptions
+├ ƒ /admin/support
+├ ƒ /api/account/allocation
+├ ƒ /api/account/content/saved
+├ ƒ /api/account/content/watch
+├ ƒ /api/account/keys
+├ ƒ /api/account/keys/[id]
+├ ƒ /api/account/policies
+├ ƒ /api/account/promos
+├ ƒ /api/account/subscription
+├ ƒ /api/account/subscription/cancel
+├ ƒ /api/account/subscription/portal
+├ ƒ /api/account/subscription/resume
+├ ƒ /api/account/support
+├ ƒ /api/account/topup
+├ ƒ /api/account/topup/crypto
+├ ƒ /api/account/trial
+├ ƒ /api/admin/activity
+├ ƒ /api/admin/adjustments
+├ ƒ /api/admin/benchmarks
+├ ƒ /api/admin/content/comments/[id]
+├ ƒ /api/admin/content/fetch
+├ ƒ /api/admin/content/links
+├ ƒ /api/admin/content/sources
+├ ƒ /api/admin/content/sources/[id]
+├ ƒ /api/admin/content/sources/seed
+├ ƒ /api/admin/credit
+├ ƒ /api/admin/gateway
+├ ƒ /api/admin/groups
+├ ƒ /api/admin/identity/runs
+├ ƒ /api/admin/identity/runs/[id]
+├ ƒ /api/admin/models
+├ ƒ /api/admin/operations
+├ ƒ /api/admin/payments
+├ ƒ /api/admin/plans
+├ ƒ /api/admin/pricing
+├ ƒ /api/admin/promos
+├ ƒ /api/admin/promos/[id]
+├ ƒ /api/admin/providers
+├ ƒ /api/admin/providers/[slug]
+├ ƒ /api/admin/providers/[slug]/sync
+├ ƒ /api/admin/providers/[slug]/test
+├ ƒ /api/admin/providers/sync
+├ ƒ /api/admin/reconciliation
+├ ƒ /api/admin/session
+├ ƒ /api/admin/settlements
+├ ƒ /api/admin/subscriptions
+├ ƒ /api/admin/support
+├ ƒ /api/auth/email/consume
+├ ƒ /api/auth/email/request
+├ ƒ /api/auth/login
+├ ƒ /api/auth/logout
+├ ƒ /api/auth/me
+├ ƒ /api/auth/signup
+├ ƒ /api/content/[id]/comments
+├ ƒ /api/content/[id]/reactions
+├ ƒ /api/content/search
+├ ƒ /api/content/status/badge.json
+├ ƒ /api/cron/content
+├ ƒ /api/health
+├ ƒ /api/keys
+├ ƒ /api/keys/[id]
+├ ƒ /api/models
+├ ƒ /api/plans
+├ ƒ /api/provider/runtime
+├ ƒ /api/provider/sync
+├ ƒ /api/ready
+├ ƒ /api/usage
+├ ƒ /api/webhooks/nowpayments
+├ ƒ /api/webhooks/stripe
+├ ƒ /compare
+├ ƒ /dashboard
+├ ○ /docs
+├ ○ /docs/faq
+├ ○ /docs/faq/opengraph-image
+├ ○ /docs/opengraph-image
+├ ○ /docs/start
+├ ○ /docs/start/opengraph-image
+├ ƒ /identity
+├ ○ /legal
+├   /legal/[version]/[slug]
+│ ├ ● /legal/v1/terms
+│ ├ ● /legal/v1/privacy
+│ ├ ● /legal/v1/refunds
+│ └ ● [+5 more paths]
+├ ƒ /login
+├ ○ /manifest.webmanifest
+├ ƒ /models
+├ ƒ /models/[...id]
+├ ƒ /models/opengraph-image
+├ ƒ /plans
+├ ○ /privacy
+├ ƒ /recover
+├ ○ /refunds
+├ ƒ /robots.txt
+├ ƒ /signal
+├ ƒ /signal/[id]
+├ ƒ /signal/[id]/opengraph-image
+├ ƒ /signal/briefing
+├ ƒ /signal/digest
+├ ƒ /signal/digest/[date]
+├ ƒ /signal/digest/feed.xml
+├ ƒ /signal/movers
+├ ƒ /signal/rising
+├ ƒ /signal/saved
+├ ƒ /signal/status
+├ ƒ /signal/topics/[tag]
+├ ƒ /signup
+├ ƒ /sitemap.xml
+├ ƒ /support
+├ ○ /terms
+├ ƒ /v1/chat/completions
+├ ƒ /v1/models
+└ ƒ /v1/models/[...id]
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+
+npm notice run savant-gateway@0.1.0 build
+npm notice run next build
+
+verify >>> test:http (npm.cmd run test:http)
+http-suite: using HTTP_TEST_DATABASE_URL (real PostgreSQL)
+http-suite: the "mock" fixture provider exists for the capability probe PASS
+http-suite: the "mock" double answers /balance, which its provider advertises PASS
+http-suite: the /balance payload satisfies the provider parser PASS
+http-suite: metadata / serves PASS
+http-suite: metadata / carries a social card PASS
+http-suite: metadata /models serves PASS
+http-suite: metadata /models carries a social card PASS
+http-suite: metadata /models generates its own card PASS
+http-suite: metadata /compare serves PASS
+http-suite: metadata /compare carries a social card PASS
+http-suite: metadata /docs serves PASS
+http-suite: metadata /docs carries a social card PASS
+http-suite: metadata /docs generates its own card PASS
+http-suite: metadata /docs/start serves PASS
+http-suite: metadata /docs/start carries a social card PASS
+http-suite: metadata /docs/start generates its own card PASS
+http-suite: metadata /docs/faq serves PASS
+http-suite: metadata /docs/faq carries a social card PASS
+http-suite: metadata /docs/faq generates its own card PASS
+http-suite: metadata /plans serves PASS
+http-suite: metadata /plans carries a social card PASS
+http-suite: metadata /signup serves PASS
+http-suite: metadata /signup carries a social card PASS
+http-suite: metadata /login serves PASS
+http-suite: metadata /login carries a social card PASS
+http-suite: metadata /support serves PASS
+http-suite: metadata /support carries a social card PASS
+http-suite: metadata /terms serves PASS
+http-suite: metadata /terms carries a social card PASS
+http-suite: metadata /privacy serves PASS
+http-suite: metadata /privacy carries a social card PASS
+http-suite: metadata /refunds serves PASS
+http-suite: metadata /refunds carries a social card PASS
+http-suite: metadata /acceptable-use serves PASS
+http-suite: metadata /acceptable-use carries a social card PASS
+http-suite: metadata /legal serves PASS
+http-suite: metadata /legal carries a social card PASS
+http-suite: metadata /legal/v1/terms serves PASS
+http-suite: metadata /legal/v1/terms carries a social card PASS
+http-suite: metadata /legal/v1.1/terms serves PASS
+http-suite: metadata /legal/v1.1/terms carries a social card PASS
+http-suite: metadata / card image serves PASS
+http-suite: metadata / card image is an image PASS
+http-suite: metadata /models card image serves PASS
+http-suite: metadata /models card image is an image PASS
+http-suite: metadata /docs card image serves PASS
+http-suite: metadata /docs card image is an image PASS
+http-suite: metadata /docs/start card image serves PASS
+http-suite: metadata /docs/start card image is an image PASS
+http-suite: metadata /docs/faq card image serves PASS
+http-suite: metadata /docs/faq card image is an image PASS
+http-suite: anonymous promo API is protected PASS
+http-suite: foreign-origin promo API is rejected PASS
+http-suite: promo admin list serves PASS
+http-suite: promo lane is enabled for the suite PASS
+http-suite: promo creation returns 201 PASS
+http-suite: promo creation returns a canonical code PASS
+http-suite: the plaintext code is not stored PASS
+http-suite: the admin list exposes only the prefix PASS
+http-suite: anonymous redemption is refused PASS
+http-suite: customer redemption returns 200 PASS
+http-suite: customer receives the promo amount PASS
+http-suite: the balance moved by the promo amount PASS
+http-suite: the ledger records a promo row PASS
+http-suite: a repeated redemption returns 409 PASS
+http-suite: a repeated redemption does not change the balance PASS
+http-suite: the concurrency probe promo is created PASS
+http-suite: concurrent redemptions admit exactly one request PASS
+http-suite: concurrent redemptions write exactly one ledger row PASS
+http-suite: a second promo is created PASS
+http-suite: a promo can be paused PASS
+http-suite: pausing reports the change PASS
+http-suite: a paused code is refused PASS
+http-suite: a paused code writes no ledger row PASS
+http-suite: activity API serves PASS
+http-suite: activity records the promo redemption PASS
+http-suite: activity does not expose the full promo code PASS
+http-suite: the account page serves for the promo customer PASS
+http-suite: the enabled promo lane renders on the account page PASS
+http-suite: policy /terms serves PASS
+http-suite: policy /terms is html PASS
+http-suite: policy /terms renders its title PASS
+http-suite: policy /terms states the effective version PASS
+http-suite: policy /terms has no unreplaced placeholder PASS
+http-suite: policy /privacy serves PASS
+http-suite: policy /privacy is html PASS
+http-suite: policy /privacy renders its title PASS
+http-suite: policy /privacy states the effective version PASS
+http-suite: policy /privacy has no unreplaced placeholder PASS
+http-suite: policy /refunds serves PASS
+http-suite: policy /refunds is html PASS
+http-suite: policy /refunds renders its title PASS
+http-suite: policy /refunds states the effective version PASS
+http-suite: policy /refunds has no unreplaced placeholder PASS
+http-suite: policy /acceptable-use serves PASS
+http-suite: policy /acceptable-use is html PASS
+http-suite: policy /acceptable-use renders its title PASS
+http-suite: policy /acceptable-use states the effective version PASS
+http-suite: policy /acceptable-use has no unreplaced placeholder PASS
+http-suite: terms name the operator and contact PASS
+http-suite: terms state the no-uptime position PASS
+http-suite: terms state that subscriptions are not for sale PASS
+http-suite: the superseded version stays reachable PASS
+http-suite: the superseded version is marked as superseded PASS
+http-suite: the current version has a permanent route too PASS
+http-suite: an unpublished policy version is not served PASS
+http-suite: legal index serves PASS
+http-suite: legal index lists every policy PASS
+http-suite: footer links every policy PASS
+http-suite: signup without acceptance is refused PASS
+http-suite: refusal tells the customer what to accept PASS
+http-suite: signup with acceptance succeeds PASS
+http-suite: signup returns a session PASS
+http-suite: signup records the accepted version PASS
+http-suite: signup records the acceptance source PASS
+http-suite: account page serves for a signed-in customer PASS
+http-suite: account page asks for the new version after an older acceptance PASS
+http-suite: cross-origin acceptance is rejected PASS
+http-suite: signed-out acceptance is rejected PASS
+http-suite: accepting an unknown version is rejected PASS
+http-suite: account acceptance is recorded PASS
+http-suite: account acceptance reports its source PASS
+http-suite: repeating acceptance is accepted PASS
+http-suite: acceptance is idempotent per version PASS
+http-suite: the earlier acceptance is kept as history PASS
+http-suite: account page stops asking once accepted PASS
+http-suite: anonymous account check is protected PASS
+http-suite: foreign origin cannot check account PASS
+http-suite: account check fetches today's upstream quota PASS
+http-suite: yesterday's 19.6M used is replaced by observed zero PASS
+http-suite: account check returns observed 20M remaining PASS
+http-suite: actual upstream reset is retained PASS
+http-suite: runtime check does not advance catalog clock PASS
+http-suite: account responses prohibit caching PASS
+http-suite: a second check reads upstream again within the same second PASS
+http-suite: a second check does not reuse cached success PASS
+http-suite: admin initial render succeeds PASS
+http-suite: admin renders exact current remaining PASS
+http-suite: admin renders observed reset and check time PASS
+http-suite: fresh free admission succeeds after yesterday exhaustion PASS
+http-suite: daily trial usage settles as weighted tokens PASS
+http-suite: daily trial does not debit dollar credit PASS
+http-suite: daily trial releases its reservation PASS
+http-suite: customer daily credits check succeeds PASS
+http-suite: daily credits enforce the actual 100k account cap PASS
+http-suite: daily credits subtract settled user usage PASS
+http-suite: customer daily credits use the upstream reset PASS
+http-suite: customer credits omit master account counters PASS
+http-suite: anonymous customer credits require a session PASS
+http-suite: foreign origins cannot read customer credits PASS
+http-suite: customer identity comes from session, not query parameters PASS
+http-suite: customer account renders daily trial credits PASS
+http-suite: customer account renders the actual allocated remainder PASS
+http-suite: daily mode writes no lifetime trial grant PASS
+http-suite: model API serves the catalog while disabled PASS
+http-suite: model API publishes no trial transitions while disabled PASS
+http-suite: customer account hides the one-time trial card PASS
+http-suite: customer account shows the daily credits card PASS
+http-suite: customer credits omit lifetime grant fields PASS
+http-suite: failed account check reports unavailable PASS
+http-suite: failed check does not expose prior remaining PASS
+http-suite: provider error cannot expose its credential PASS
+http-suite: free admission refuses unavailable upstream capacity PASS
+http-suite: unavailable capacity never reaches inference PASS
+http-suite: failed check creates no reservation PASS
+http-suite: customer credits fail closed with upstream PASS
+http-suite: customer credits never return stale availability PASS
+http-suite: failed admin render hides prior quota PASS
+http-suite: failed admin render explains unavailability PASS
+http-suite: null quota cannot become successful zero PASS
+http-suite: expired reset cannot authorize old capacity PASS
+http-suite: explicit unlimited quota is a successful current observation PASS
+http-suite: unlimited quota is not fabricated as a finite pool PASS
+http-suite: explicit unlimited capacity still enforces daily user credits PASS
+http-suite: failed balance is unavailable rather than old zero PASS
+http-suite: raw upstream remains separate from local reservations PASS
+http-suite: admission capacity subtracts outstanding reservations PASS
+http-suite: a retained hold prevents oversubscription PASS
+http-suite: concurrent account checks coalesce in-flight work PASS
+http-suite: concurrent successful checks use current quota PASS
+http-suite: catalog failure is reported independently PASS
+http-suite: catalog failure cannot erase the fresh account observation PASS
+http-suite: configuration race starts an upstream check PASS
+http-suite: provider configuration edit succeeds during a check PASS
+http-suite: configuration edit fences the late account response PASS
+http-suite: late account response cannot certify changed configuration PASS
+http-suite: changed provider recovers only after a new check PASS
+http-suite: daily credits do not bypass customer authentication PASS
+http-suite: daily allocation respects the per-account cap PASS
+http-suite: operator can inspect settlement state PASS
+http-suite: served calls carry a committed durable settlement PASS
+http-suite: an unknown quarantine is not released PASS
+http-suite: operator can inspect payment delivery PASS
+http-suite: payment events carry durable state PASS
+http-suite: operator can read reconciliation PASS
+http-suite: reconciliation exposes the ledger equation PASS
+http-suite: an audited correction appends credit PASS
+http-suite: the first correction creates one row PASS
+http-suite: a replayed reference does not create funds PASS
+http-suite: a replay leaves the balance unchanged PASS
+http-suite: a current account ceiling is observed before admission PASS
+http-suite: one call fits the observed provider ceiling PASS
+http-suite: the next call exceeds the shared provider ceiling PASS
+http-suite: provider refusal names the serving scope PASS
+http-suite: provider refusal reports the real ceiling PASS
+http-suite: provider refusal gives retry guidance PASS
+http-suite: provider refusal is a rate limit, not an auth error PASS
+http-suite: the restored ceiling is observed again PASS
+http-suite: capacity recovers from the refreshed ceiling PASS
+http-suite: a request after 60s of idleness still succeeds PASS
+http-suite: the request refreshed the stale observation itself PASS
+http-suite: limit probe creates a key PASS
+http-suite: invalid inference resources return 400 PASS
+http-suite: invalid inference resources return 400 PASS
+http-suite: invalid inference resources return 400 PASS
+http-suite: invalid inference resources return 400 PASS
+http-suite: invalid inference resources return 400 PASS
+http-suite: invalid inference resources return 400 PASS
+http-suite: oversized inference returns 413 PASS
+http-suite: invalid requests never dispatch upstream PASS
+http-suite: invalid requests never create credit holds PASS
+http-suite: invalid requests never open settlements PASS
+http-suite: /api/auth/signup rejects null safely PASS
+http-suite: /api/auth/signup bounds body bytes PASS
+http-suite: /api/auth/login rejects null safely PASS
+http-suite: /api/auth/login bounds body bytes PASS
+http-suite: /api/account/keys rejects null safely PASS
+http-suite: /api/account/keys bounds body bytes PASS
+http-suite: /api/account/support rejects null safely PASS
+http-suite: /api/account/support bounds body bytes PASS
+http-suite: /api/account/policies rejects null safely PASS
+http-suite: /api/account/policies bounds body bytes PASS
+http-suite: limit probe signs in operator PASS
+http-suite: credit operator mutation rejects null safely PASS
+http-suite: pricing operator mutation rejects null safely PASS
+http-suite: models operator mutation rejects null safely PASS
+http-suite: support operator mutation rejects null safely PASS
+http-suite: plans operator mutation rejects null safely PASS
+http-suite: groups operator mutation rejects null safely PASS
+http-suite: subscriptions operator mutation rejects null safely PASS
+http-suite: gateway operator mutation rejects null safely PASS
+http-suite: benchmarks operator mutation rejects null safely PASS
+http-suite: adjustments operator mutation rejects null safely PASS
+http-suite: settlements operator mutation rejects null safely PASS
+http-suite: reconciliation operator mutation rejects null safely PASS
+http-suite: providers operator mutation rejects null safely PASS
+http-suite: concurrent creation reaches exactly ten active keys PASS
+http-suite: concurrent excess key creation is refused PASS
+http-suite: key ceiling is persisted PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: unfunded capacity probe creates no charge PASS
+http-suite: paid account limit holds across different keys PASS
+http-suite: account refusal names paid rate scope PASS
+http-suite: capacity probes create no upstream spend PASS
+http-suite: key churn within hourly budget works PASS
+http-suite: key churn within hourly budget works PASS
+http-suite: key churn within hourly budget works PASS
+http-suite: key churn within hourly budget works PASS
+http-suite: key churn within hourly budget works PASS
+http-suite: key churn within hourly budget works PASS
+http-suite: key churn within hourly budget works PASS
+http-suite: key churn within hourly budget works PASS
+http-suite: key churn within hourly budget works PASS
+http-suite: key churn within hourly budget works PASS
+http-suite: revocation cannot bypass hourly key issuance PASS
+http-suite: key refusal has Retry-After PASS
+http-suite: recovery account signup works PASS
+http-suite: verification request requires sign in PASS
+http-suite: foreign origin cannot send account mail PASS
+http-suite: signed-in verification requests real transport PASS
+http-suite: mail link uses the canonical site origin PASS
+http-suite: mail link keeps token out of query strings PASS
+http-suite: mail transport uses an idempotency key PASS
+http-suite: request and delivery do not verify ownership PASS
+http-suite: action page is reachable without a session PASS
+http-suite: GET does not consume the action PASS
+http-suite: purpose substitution is refused PASS
+http-suite: verification consumes through production route PASS
+http-suite: verification route writes ownership PASS
+http-suite: verification replay is refused PASS
+http-suite: account renders verified state PASS
+http-suite: recovery test creates a key PASS
+http-suite: recovery response does not wait for account-specific delivery PASS
+http-suite: recovery response is enumeration-safe PASS
+http-suite: known and unknown recovery share status PASS
+http-suite: new recovery request succeeds PASS
+http-suite: superseded reset link is refused PASS
+http-suite: cross-origin consumption is refused PASS
+http-suite: reset consumes through production route PASS
+http-suite: reset revokes the old customer session PASS
+http-suite: reset revokes the old API key PASS
+http-suite: old password stops working PASS
+http-suite: new password signs in PASS
+http-suite: delivery failure does not expose account existence PASS
+http-suite: delivery failure is durably visible PASS
+http-suite: per-address request limit stays generic PASS
+http-suite: throttled recovery sends nothing PASS
+http-suite: recovery page is reachable PASS
+http-suite: recovery page explains session and key revocation PASS
+http-suite: anonymous operations API is protected PASS
+http-suite: foreign-origin operations API is rejected PASS
+http-suite: operations API returns the overview PASS
+http-suite: operations starts with admission open PASS
+http-suite: operations exposes a traffic snapshot PASS
+http-suite: operations exposes unresolved settlements PASS
+http-suite: operations exposes payment and quota state PASS
+http-suite: unconfigured alert transport is visible, not silent PASS
+http-suite: operations page renders for the operator PASS
+http-suite: operations page renders its heading PASS
+http-suite: incident acknowledgment succeeds PASS
+http-suite: incident acknowledgment is durable PASS
+http-suite: unknown incident acknowledgment is a 404 PASS
+http-suite: pause without a reason is rejected PASS
+http-suite: pause with a reason succeeds PASS
+http-suite: pause changes the admission state PASS
+http-suite: readiness stays available while paused PASS
+http-suite: readiness discloses paused admission PASS
+http-suite: paused inference returns 503 PASS
+http-suite: paused refusal names the state PASS
+http-suite: paused refusal asks for a retry PASS
+http-suite: paused refusal writes no usage PASS
+http-suite: paused refusal writes no credit hold PASS
+http-suite: drain with a reason succeeds PASS
+http-suite: drain changes the admission state PASS
+http-suite: draining inference returns 503 PASS
+http-suite: draining refusal names the state PASS
+http-suite: resume succeeds PASS
+http-suite: resume opens admission PASS
+http-suite: inference works after resume PASS
+http-suite: resumed call settles a usage row PASS
+http-suite: provider disable succeeds PASS
+http-suite: provider disable is visible PASS
+http-suite: disabled provider refuses the model PASS
+http-suite: disabled provider refusal names model availability PASS
+http-suite: provider enable succeeds PASS
+http-suite: inference works after provider enable PASS
+http-suite: manual monitor tick succeeds PASS
+http-suite: manual monitor tick returns counters PASS
+http-suite: manual tick keeps the unconfigured transport visible PASS
+http-suite: the savant allocation provider row exists PASS
+http-suite: free SKU page is published PASS
+http-suite: signed-out free page asks for sign-in instead of a balance PASS
+http-suite: signed-out free page shows no balance block PASS
+http-suite: signed-out free page withholds the daily pool size PASS
+http-suite: signed-out free page withholds the allocation bps PASS
+http-suite: keyless free page renders PASS
+http-suite: keyless free page explains the active-key requirement PASS
+http-suite: keyless free page does not show an available balance PASS
+http-suite: keyed free page renders PASS
+http-suite: keyed free page shows the available balance PASS
+http-suite: keyed free page shows the capped daily allowance PASS
+http-suite: keyed free page names the model weight PASS
+http-suite: allocation read returns 200 PASS
+http-suite: allocation read names the active mode PASS
+http-suite: allocation read returns the rendered balance PASS
+http-suite: daily allocation read makes no lifetime claim PASS
+http-suite: signed-out allocation read is refused PASS
+http-suite: stale free page still renders PASS
+http-suite: stale observation is reported instead of a zero balance PASS
+http-suite: stale free page shows no available balance block PASS
+http-suite: stale allocation read still answers PASS
+http-suite: stale allocation read reports an unavailable balance PASS
+http-suite: stale allocation read does not invent a zero PASS
+http-suite: liveness responds on production PASS
+http-suite: liveness claims only that the process can answer PASS
+http-suite: liveness is not cached PASS
+http-suite: readiness responds on production PASS
+http-suite: readiness accepts the suite's validated configuration PASS
+http-suite: readiness marks the opted-in runtime as disposable PASS
+http-suite: readiness reports its storage probe as passing PASS
+http-suite: readiness is not cached PASS
+http-suite: signup returns 201 PASS
+http-suite: signup returns the customer email PASS
+http-suite: signup returns a customer id PASS
+http-suite: signup sets a 43-character session token PASS
+http-suite: sg_session cookie is set PASS
+http-suite: sg_session is HttpOnly PASS
+http-suite: sg_session is SameSite=lax PASS
+http-suite: sg_session has Max-Age=604800 PASS
+http-suite: sg_session is Secure PASS
+http-suite: sg_session has Path=/ PASS
+http-suite: me returns 200 for a fresh signup PASS
+http-suite: me returns the signed-in email PASS
+http-suite: me starts at zero credit PASS
+http-suite: me starts with no held credit PASS
+http-suite: duplicate signup returns 409 PASS
+http-suite: duplicate signup explains the conflict PASS
+http-suite: foreign-origin signup returns 403 PASS
+http-suite: alpha key create returns 201 PASS
+http-suite: alpha key create returns a key id PASS
+http-suite: alpha key create returns a usable secret PASS
+http-suite: foreign-origin key create returns 403 PASS
+http-suite: logout returns 200 PASS
+http-suite: logout clears the session cookie PASS
+http-suite: me rejects the revoked session PASS
+http-suite: login returns 200 PASS
+http-suite: login mints a new session token PASS
+http-suite: sg_session cookie is set PASS
+http-suite: sg_session is HttpOnly PASS
+http-suite: sg_session is SameSite=lax PASS
+http-suite: sg_session has Max-Age=604800 PASS
+http-suite: sg_session is Secure PASS
+http-suite: sg_session has Path=/ PASS
+http-suite: me returns 200 after login PASS
+http-suite: card top-ups are refused while disabled PASS
+http-suite: card refusal names the disabled policy PASS
+http-suite: crypto top-ups are refused while the lane is closed PASS
+http-suite: crypto refusal names the disabled policy PASS
+http-suite: beta signup returns 201 PASS
+http-suite: beta signup sets a session token PASS
+http-suite: beta key create returns 201 PASS
+http-suite: beta key list returns 200 PASS
+http-suite: beta key list omits alpha's key PASS
+http-suite: beta key list contains beta's key PASS
+http-suite: cross-account key delete returns 404 PASS
+http-suite: alpha key list returns 200 PASS
+http-suite: alpha key survives the cross-account delete PASS
+http-suite: webhook test starts at zero credit PASS
+http-suite: signed webhook returns 200 PASS
+http-suite: signed webhook credits the top-up PASS
+http-suite: signed webhook is not a replay PASS
+http-suite: webhook credits exactly the top-up amount PASS
+http-suite: webhook leaves no held credit PASS
+http-suite: webhook marks one top-up paid PASS
+http-suite: webhook writes one ledger row PASS
+http-suite: replayed webhook returns 200 PASS
+http-suite: replayed webhook is identified as a replay PASS
+http-suite: replay does not credit again PASS
+http-suite: replay does not duplicate the top-up PASS
+http-suite: replay does not duplicate the ledger row PASS
+http-suite: invalid signature returns 400 PASS
+http-suite: invalid signature is rejected PASS
+http-suite: invalid signature does not change the balance PASS
+http-suite: amount-mismatch webhook returns 200 PASS
+http-suite: amount-mismatch webhook does not credit PASS
+http-suite: amount-mismatch top-up stays pending PASS
+http-suite: amount-mismatch leaves the balance unchanged PASS
+http-suite: paid call returns 200 PASS
+http-suite: paid call returns the upstream completion PASS
+http-suite: paid call reports prompt usage PASS
+http-suite: paid call reports completion usage PASS
+http-suite: paid call forwards the provider key PASS
+http-suite: paid call translates the public model id PASS
+http-suite: paid call keeps the requested output budget PASS
+http-suite: paid call debits the exact sell price PASS
+http-suite: paid call releases the hold PASS
+http-suite: paid call writes one usage row PASS
+http-suite: usage row records the public model PASS
+http-suite: usage row records prompt tokens PASS
+http-suite: usage row records completion tokens PASS
+http-suite: usage row records the charge PASS
+http-suite: usage row records the upstream cost PASS
+http-suite: usage row records success PASS
+http-suite: usage row bills credit PASS
+http-suite: unfunded paid call returns 402 PASS
+http-suite: unfunded paid call reports insufficient_quota PASS
+http-suite: unfunded call does not reach the provider PASS
+http-suite: unfunded call writes no usage row PASS
+http-suite: unfunded balance stays zero PASS
+http-suite: a forged IPN signature returns 400 PASS
+http-suite: a forged IPN signature changes nothing PASS
+http-suite: an unsigned IPN returns 400 PASS
+http-suite: a waiting IPN returns 200 PASS
+http-suite: a waiting IPN does not claim or credit PASS
+http-suite: a waiting IPN leaves the balance unchanged PASS
+http-suite: a signed crypto IPN returns 200 PASS
+http-suite: a finished IPN credits the top-up PASS
+http-suite: a finished IPN credits the exact amount PASS
+http-suite: a finished IPN marks the top-up paid PASS
+http-suite: a replayed IPN returns 200 PASS
+http-suite: a replayed IPN is identified as a replay PASS
+http-suite: a replayed IPN does not credit twice PASS
+http-suite: an amount-mismatch IPN returns 200 PASS
+http-suite: an amount-mismatch IPN does not credit PASS
+http-suite: an amount-mismatch IPN is quarantined PASS
+http-suite: an amount-mismatch top-up stays pending PASS
+http-suite: an amount-mismatch IPN leaves the balance unchanged PASS
+http-suite: an unknown-order IPN returns 200 PASS
+http-suite: an unknown-order IPN does not credit PASS
+http-suite: an unknown-order IPN is quarantined PASS
+http-suite: an unknown-order IPN leaves the balance unchanged PASS
+http-suite: a terminal-failure IPN returns 200 PASS
+http-suite: a terminal-failure IPN does not credit PASS
+http-suite: a terminal-failure top-up is marked failed PASS
+http-suite: a terminal-failure IPN leaves the balance unchanged PASS
+http-suite: anonymous admin page redirects PASS
+http-suite: anonymous admin page redirects to login PASS
+http-suite: wrong admin password returns 401 PASS
+http-suite: wrong admin password names its failure layer PASS
+http-suite: foreign-origin admin login returns 403 PASS
+http-suite: foreign-origin admin login names its failure layer PASS
+http-suite: admin login returns 200 PASS
+http-suite: admin login returns ok PASS
+http-suite: admin login sets a session token PASS
+http-suite: sg_admin cookie is set PASS
+http-suite: sg_admin is HttpOnly PASS
+http-suite: sg_admin is SameSite=strict PASS
+http-suite: sg_admin has Max-Age=28800 PASS
+http-suite: sg_admin is Secure PASS
+http-suite: sg_admin has Path=/ PASS
+http-suite: authenticated admin page returns 200 PASS
+http-suite: admin customer page lists the signed-up account PASS
+http-suite: admin customer page renders its heading PASS
+systems-http: root statuses [{"root":"null","completion":400,"benchmark":400},{"root":"[]","completion":400,"benchmark":400},{"root":"\"value\"","completion":400,"benchmark":400},{"root":"42","completion":400,"benchmark":400},{"root":"true","completion":400,"benchmark":400}]
+http-suite: invalid roots never dispatch upstream PASS
+http-suite: invalid roots leave accounting untouched PASS
+http-suite: normal paid SSE completes PASS
+http-suite: split UTF-8 SSE content survives relay PASS
+http-suite: paid SSE debits exact unequal rates PASS
+http-suite: paid SSE releases held credit PASS
+http-suite: paid SSE records one usage PASS
+http-suite: paid SSE records one debit PASS
+systems-http: failed settlement completed=false, hold=147, usageDelta=0
+http-suite: failed settlement rolls back the debit PASS
+http-suite: failed settlement rolls back usage PASS
+http-suite: failed settlement rolls back ledger PASS
+http-suite: failed settlement retains its reservation PASS
+http-suite: a later paid stream succeeds after storage recovers PASS
+http-suite: later request debits only once PASS
+http-suite: unresolved reservation remains visible PASS
+http-suite: completion rejects null root PASS
+http-suite: completion null uses public error shape PASS
+http-suite: benchmark refresh rejects null root PASS
+http-suite: completion rejects [] root PASS
+http-suite: completion [] uses public error shape PASS
+http-suite: benchmark refresh rejects [] root PASS
+http-suite: completion rejects "value" root PASS
+http-suite: completion "value" uses public error shape PASS
+http-suite: benchmark refresh rejects "value" root PASS
+http-suite: completion rejects 42 root PASS
+http-suite: completion 42 uses public error shape PASS
+http-suite: benchmark refresh rejects 42 root PASS
+http-suite: completion rejects true root PASS
+http-suite: completion true uses public error shape PASS
+http-suite: benchmark refresh rejects true root PASS
+http-suite: failed settlement cannot complete normally PASS
+http-suite: failed settlement never acknowledges DONE PASS
+http-suite: failed settlement emits an operator diagnostic PASS
+http-suite: settlement diagnostic excludes exception details PASS
+http-suite: client disconnect records one cancelled usage PASS
+http-suite: client disconnect settles once PASS
+http-suite: client disconnect records one ledger debit PASS
+http-suite: client disconnect releases only its own hold PASS
+http-suite: a truncated upstream stream is not acknowledged as complete PASS
+http-suite: a truncated upstream stream records one error usage PASS
+http-suite: a truncated upstream stream settles once PASS
+http-suite: a truncated upstream stream releases its hold PASS
+http-suite: production console rejects the loopback dev bypass PASS
+http-suite: production key console requires an admin session PASS
+http-suite: anonymous admin API returns 401 PASS
+http-suite: spoofed forwarded headers do not authorize the admin API PASS
+http-suite: foreign-origin admin read is rejected even with a session PASS
+http-suite: revocation probe key is created PASS
+http-suite: revocation probe key is revoked PASS
+http-suite: a revoked key is rejected PASS
+http-suite: a suspended account loses its session PASS
+http-suite: a suspended account cannot use its key PASS
+http-suite: the session recovers when the account is active again PASS
+http-suite: probe account signs up PASS
+http-suite: rotating-address login guess 1 returns 401 PASS
+http-suite: rotating-address login guess 2 returns 401 PASS
+http-suite: rotating-address login guess 3 returns 401 PASS
+http-suite: rotating-address login guess 4 returns 401 PASS
+http-suite: rotating-address login guess 5 returns 401 PASS
+http-suite: rotating-address login guess 6 returns 401 PASS
+http-suite: rotating-address login guess 7 returns 401 PASS
+http-suite: rotating-address login guess 8 returns 401 PASS
+http-suite: rotating-address login guess 9 returns 401 PASS
+http-suite: rotating-address login guess 10 returns 401 PASS
+http-suite: a rotated address cannot extend the per-account login ceiling PASS
+http-suite: the blocked login reports a retry delay PASS
+http-suite: the blocked account cannot be probed with the correct password PASS
+http-suite: an upstream failure returns 502 PASS
+http-suite: the failure body omits the provider key PASS
+http-suite: the failed call records an error row PASS
+http-suite: the durable usage error omits the provider key PASS
+http-suite: the durable usage error is redacted PASS
+http-suite: a redirecting provider is reported as a failure PASS
+http-suite: a provider redirect is not followed with the credential PASS
+http-suite: draft plans stay authorable while sales are off PASS
+http-suite: draft plan creation returns an id PASS
+http-suite: publishing a plan is refused while sales are off PASS
+http-suite: publishing refusal names the launch policy PASS
+http-suite: public plan catalog answers while sales are off PASS
+http-suite: public plan catalog publishes no active plan while sales are off PASS
+http-suite: plans page renders while sales are off PASS
+http-suite: plans page states that plans are unavailable PASS
+http-suite: plans page does not render the unpublished plan PASS
+http-suite: crafted subscription checkout is refused while sales are off PASS
+http-suite: checkout refusal names the sales policy, not Stripe PASS
+http-suite: checkout refusal happens before payment readiness PASS
+http-suite: a pre-existing checkout invoice is still accepted PASS
+http-suite: the in-flight payment activates while sales are off PASS
+http-suite: the activated subscription is active while sales are off PASS
+http-suite: manual comps still work while sales are off PASS
+http-suite: a comped subscription is active while sales are off PASS
+http-suite: existing entitlement stays visible while sales are off PASS
+http-suite: existing entitlement stays active while sales are off PASS
+http-suite: included usage still serves while sales are off PASS
+http-suite: existing entitlement bills the subscription, not credit PASS
+http-suite: included usage charges no credit while sales are off PASS
+http-suite: the seeded provider catalog has one row PASS
+http-suite: the seeded row is published PASS
+http-suite: a 200 error object is a sync failure PASS
+http-suite: a 200 error object does not delist the catalog PASS
+http-suite: a 200 error object leaves the row published PASS
+http-suite: a 200 error object does not advance the sync timestamp PASS
+http-suite: an HTML catalog page is a sync failure PASS
+http-suite: an HTML catalog page does not delist the catalog PASS
+http-suite: an HTML catalog page leaves the row published PASS
+http-suite: a valid catalog sync succeeds PASS
+http-suite: a valid catalog sync imports the model PASS
+http-suite: the catalog sync sent the provider credential PASS
+http-suite: the sync publishes exactly the source model PASS
+http-suite: the synced row carries the upstream identity PASS
+http-suite: a model absent from the source is delisted, not deleted PASS
+http-suite: a sync never publishes duplicate rows PASS
+http-suite: a paginated benchmark sync answers PASS
+http-suite: a paginated benchmark sync succeeds PASS
+http-suite: the sync follows the second page PASS
+http-suite: pagination does not truncate the candidate count PASS
+http-suite: the catalog model is matched PASS
+http-suite: the matched measurement is stored PASS
+http-suite: the stored measurement keeps its source index version PASS
+http-suite: the stored measurement keeps its own observation date PASS
+http-suite: a measured row starts fresh PASS
+http-suite: a collapsed benchmark payload fails PASS
+http-suite: the refusal names the shrink PASS
+http-suite: a refused payload leaves the measurement fresh PASS
+http-suite: the failed attempt is visible to the operator PASS
+http-suite: a sync without the model still succeeds PASS
+http-suite: a dropped model keeps its own index version PASS
+http-suite: a dropped model keeps its own observation date PASS
+http-suite: a dropped model is marked stale, not deleted PASS
+http-suite: the empty quota window is recorded PASS
+http-suite: a spent daily window refuses another sync PASS
+http-suite: a refused window makes no upstream request PASS
+http-suite: / renders for an anonymous visitor PASS
+http-suite: / declares its language PASS
+http-suite: / offers a skip link PASS
+http-suite: / has exactly one top-level heading PASS
+http-suite: /models renders for an anonymous visitor PASS
+http-suite: /models declares its language PASS
+http-suite: /models offers a skip link PASS
+http-suite: /models has exactly one top-level heading PASS
+http-suite: /plans renders for an anonymous visitor PASS
+http-suite: /plans declares its language PASS
+http-suite: /plans offers a skip link PASS
+http-suite: /plans has exactly one top-level heading PASS
+http-suite: /docs renders for an anonymous visitor PASS
+http-suite: /docs declares its language PASS
+http-suite: /docs offers a skip link PASS
+http-suite: /docs has exactly one top-level heading PASS
+http-suite: /docs/start renders for an anonymous visitor PASS
+http-suite: /docs/start declares its language PASS
+http-suite: /docs/start offers a skip link PASS
+http-suite: /docs/start has exactly one top-level heading PASS
+http-suite: /docs/faq renders for an anonymous visitor PASS
+http-suite: /docs/faq declares its language PASS
+http-suite: /docs/faq offers a skip link PASS
+http-suite: /docs/faq has exactly one top-level heading PASS
+http-suite: /support renders for an anonymous visitor PASS
+http-suite: /support declares its language PASS
+http-suite: /support offers a skip link PASS
+http-suite: /support has exactly one top-level heading PASS
+http-suite: the sitemap serves PASS
+http-suite: the sitemap is XML PASS
+http-suite: the sitemap is a urlset PASS
+http-suite: the sitemap lists the documentation PASS
+http-suite: the sitemap omits private surfaces PASS
+http-suite: robots.txt serves PASS
+http-suite: robots.txt is plain text PASS
+http-suite: robots.txt points at the sitemap PASS
+http-suite: robots.txt keeps private surfaces out PASS
+http-suite: the FAQ publishes FAQPage structured data PASS
+http-suite: the FAQ schema covers every answer PASS
+http-suite: the FAQ schema answers every question PASS
+http-suite: an unavailable plan catalog does not promise a payment flow PASS
+http-suite: an unavailable plan catalog says so PASS
+http-suite: the footer links to the support page PASS
+http-suite: the support page renders PASS
+http-suite: the support page explains that requests are account-bound PASS
+http-suite: the support page does not invent a contact address PASS
+http-suite: the API reference documents the implemented chat endpoint PASS
+http-suite: the API reference does not advertise an unimplemented Messages API PASS
+http-suite: the API reference does not advertise an unimplemented Responses API PASS
+http-suite: a signed-in account page renders PASS
+http-suite: the account page shows the credit balance PASS
+http-suite: the account page states that no plan is attached PASS
+http-suite: the account page does not link to a plan catalog that cannot sell PASS
+http-suite: the account page explains that plans are not on sale PASS
+http-suite: a payment return renders the account PASS
+http-suite: a payment return attributes credit to the signed webhook PASS
+http-suite: a payment return does not claim the balance already moved PASS
+http-suite: a subscription return attributes access to the invoice webhook PASS
+http-suite: a cancelled subscription return says nothing was charged PASS
+http-suite: support requires an account PASS
+http-suite: a foreign-origin support request is rejected PASS
+http-suite: an invalid support request is rejected PASS
+http-suite: the rejection names the field rule PASS
+http-suite: a signed-in support request is recorded PASS
+http-suite: the recorded request returns its id PASS
+http-suite: a new request starts open PASS
+http-suite: the customer sees their own request PASS
+http-suite: another account cannot see the request PASS
+http-suite: the operator queue answers PASS
+http-suite: the operator queue contains the request with its customer PASS
+http-suite: the operator sees an open count PASS
+http-suite: the operator can resolve a request PASS
+http-suite: resolving marks the request resolved PASS
+http-suite: the resolution note is stored PASS
+http-suite: the customer sees the resolved state PASS
+http-suite: the customer sees the operator note PASS
+http-suite: baseline headers reach a customer page PASS
+http-suite: responses tell browsers not to sniff content types PASS
+http-suite: responses refuse hostile framing PASS
+http-suite: responses carry a referrer policy PASS
+http-suite: readiness fails closed when storage loses a required table PASS
+http-suite: readiness names storage as the unavailable check PASS
+http-suite: degraded readiness still refuses to cache PASS
+http-suite: 802 checks PASS
+http-suite: using HTTP_TEST_DATABASE_URL (real PostgreSQL)
+http-suite: unconfigured account email refuses sending PASS
+http-suite: unconfigured email issues no action token PASS
+http-suite: recovery page discloses disabled delivery PASS
+http-suite: the "mock" fixture provider exists for the capability probe PASS
+http-suite: the "mock" double answers /balance, which its provider advertises PASS
+http-suite: the /balance payload satisfies the provider parser PASS
+http-suite: the "mock" double answers /subscription, which its provider advertises PASS
+http-suite: the /subscription payload satisfies the provider parser PASS
+http-suite: trial signup PASS
+http-suite: trial call succeeds PASS
+http-suite: trial uses free upstream PASS
+http-suite: trial settles actual weighted usage PASS
+http-suite: lifetime allocation read returns 200 PASS
+http-suite: lifetime allocation read names the mode PASS
+http-suite: lifetime allocation read makes no daily claim PASS
+http-suite: lifetime allocation read returns the granted balance PASS
+http-suite: trial does not charge credit PASS
+http-suite: lifetime mode does not also grant daily credits PASS
+http-suite: exhaustion asks for credit PASS
+http-suite: unfunded request stays local PASS
+http-suite: funded call succeeds PASS
+http-suite: funded call uses paid counterpart PASS
+http-suite: funded call debits exact unequal rates PASS
+http-suite: requested id retained PASS
+http-suite: actual upstream retained PASS
+http-suite: paid call does not renew trial PASS
+http-suite: paid credit exhaustion stops requests PASS
+http-suite: new key cannot renew trial PASS
+http-suite: model API publishes fallback output rate PASS
+http-suite: trial signup PASS
+http-suite: unavailable current capacity refuses trial PASS
+http-suite: upstream error relayed safely PASS
+http-suite: failed call releases trial hold PASS
+http-suite: trial SSE succeeds PASS
+http-suite: trial SSE forwards DONE PASS
+http-suite: trial SSE settles weighted usage PASS
+http-suite: trial signup PASS
+http-suite: concurrent calls admit only one trial PASS
+http-suite: competing calls are refused without another trial PASS
+http-suite: competing calls do not spend credit PASS
+http-suite: customer receives exactly one grant PASS
+http-suite: disabled paid pair stops conversion PASS
+http-suite: trial signup PASS
+http-suite: pool depletion stops trial PASS
+http-suite: capacity failure does not issue a grant PASS
+trial-http-suite: all checks PASS
+npm notice run savant-gateway@0.1.0 test:http
+npm notice run node scripts/http-suite.mjs && node scripts/trial-http-suite.mjs
+
+verify >>> test:recovery (npm.cmd run test:recovery)
+recovery-drill: PASS dump covers the ledger and payment tables
+recovery-drill: PASS dump verifies every balance
+recovery-drill: PASS the source database was destroyed
+recovery-drill: PASS restore reports the dumped tables
+recovery-drill: PASS restore verifies every balance
+recovery-drill: PASS the restored balance is spendable
+recovery-drill: PASS the restored ledger still reconstructs the balance
+recovery-drill: PASS unresolved settlements survive
+recovery-drill: PASS a restored payment event cannot be replayed
+recovery-drill: PASS a tampered dump is refused
+recovery-drill: PASS a refused restore leaves its target untouched
+recovery-drill: PASS a truncated table is refused
+recovery-drill: PASS (dump, restore, replay and refusals)
+npm notice run savant-gateway@0.1.0 test:recovery
+npm notice run node scripts/db-recovery-drill.mjs
+
+verify >>> deployment:receipt (npm.cmd run receipt:deploy)
+{
+  "schema": 1,
+  "generatedAt": "2026-11-03T23:42:30.546Z",
+  "git": {
+    "commit": "b2b9ef5a5f15f88e1e8710d94aea0004593ed72d",
+    "commitShort": "b2b9ef5",
+    "branch": "main",
+    "remote": "https://github.com/savant0x/savant-gateway.git",
+    "clean": false
+  },
+  "runtime": {
+    "nodeEnv": null,
+    "vercel": false,
+    "vercelEnv": null,
+    "siteOrigin": null
+  },
+  "providerKeys": {
+    "PROVIDER_KEY": false,
+    "COMMANDCODE_API_KEY": false
+  },
+  "limitations": [
+    "Key presence is the current process environment, not a Vercel deployment.",
+    "This script never reads or prints a secret value.",
+    "Use Admin -> Diagnostics on the deployed URL for hosted evidence."
+  ]
+}
+npm notice run savant-gateway@0.1.0 receipt:deploy
+npm notice run node scripts/deployment-receipt.mjs --json
+
+verify: PASS
+  PASS          check           exit 0
+  PASS          storage:check   exit 0
+  PASS          config:check    exit 0
+  PASS          test            exit 0 · 969/969 tests, 0 skipped
+  PASS          test:postgres   exit 0 · 1/1 tests, 0 skipped
+  PASS          quality         exit 0
+  PASS          build           exit 0
+  PASS          test:http       exit 0
+  PASS          test:recovery   exit 0
+  PASS          deployment:receipt exit 0
+  duration      263.7s
+  summary       .verify/summary.json
+npm notice run savant-gateway@0.1.0 verify
+npm notice run node scripts/verify.mjs
+(node:37400) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)

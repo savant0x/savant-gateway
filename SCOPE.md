@@ -11,7 +11,7 @@ uncommitted Speed Insights edits in `app/layout.tsx`, `package.json`, and
 `assets/gateway-black-banner.jpg` are preserved.
 
 - [x] **V1 — Present and converge the visual-parity FID.**
-  `dev/fids/FID-2026-1102-115-signal-visual-parity.md` records the supplied
+  `dev/fids/archive/FID-2026-1102-115-signal-visual-parity.md` records the supplied
   artwork, current Signal gaps, aggroNATION evidence, shared pill contract,
   accessibility boundary, and verification plan.
 - [x] **V2 — Implement and verify Signal visual parity.** Commit `3436a4d`
@@ -22,6 +22,14 @@ uncommitted Speed Insights edits in `app/layout.tsx`, `package.json`, and
   error. `npm run verify` exited 0 with 848 tests (847 pass, 1 skipped), quality
   PASS (535 files), build PASS, 750 HTTP checks plus trial PASS, and recovery
   PASS.
+- [x] **V3 — Audit the active FID ledger and archive references.** The seven
+  remaining active `converged` records (043, 062, 100, 101, 102, 104, 105)
+  explicitly state design-only or no-code status and remain implementation work.
+  FID-068 was corrected to `fixed` for its partial offline mechanism slice;
+  invoice, watcher, credit, UI, and operator-input steps remain blocked. FID-115
+  is closed in `dev/fids/archive/` with its CHANGELOG and session-summary entry.
+  All direct archive references in `SCOPE.md` and `CHANGELOG.md` resolve to
+  existing files; active verified records remain active implementation receipts.
 
 ## Current Session — 2026-11-02 (Signal legacy-schema repair: 111)
 
@@ -35,7 +43,7 @@ Operator report: `/signal` renders `Content storage is unavailable: column
  FID.
 
 - [x] **S1 — Present and converge the repair FID.**
-  `dev/fids/FID-2026-1102-111-signal-legacy-schema-repair.md` records the
+  `dev/fids/archive/FID-2026-1102-111-signal-legacy-schema-repair.md` records the
   observed route failure, the schema/runtime call graph, the additive repair,
   and the verification receipt contract.
 - [x] **S2 — Implement and verify the repair.** Added the existing-database
@@ -59,7 +67,7 @@ of this work.
   returned HTTP 200; the source directory contains documentation and a license,
   not an installable runtime package.
 - [x] **HN2 — Create and converge the design FID.**
-  `dev/fids/FID-2026-1102-110-hackernews-ai-filtered-source.md` records the
+  `dev/fids/archive/FID-2026-1102-110-hackernews-ai-filtered-source.md` records the
   adapter, deterministic topic filter, URL/deduplication contract, safety and
   attribution requirements, tests, gates, and production call graph. The FID
   remains a design record until implementation is separately authorized.
@@ -82,7 +90,7 @@ reference. This session creates the FID only; no implementation files are
 authorized or modified.
 
 - [x] **A1 — Create and converge the design FID.**
-  `dev/fids/FID-2026-1102-108-no-agent-attribution-enforcement-retrofit.md`
+  `dev/fids/archive/FID-2026-1102-108-no-agent-attribution-enforcement-retrofit.md`
   records the current gateway implementation, the verified gap against
   Savant-Code, the native retrofit design, required tests and gates, and the
   implementation boundary. No package, script, hook, CI, test, or application
@@ -1187,7 +1195,7 @@ surfaces, then add route-level HTTP coverage. The operator selected
 "Both, analytics first."
 
 - [x] **S24 — Analytics FID authored.**
-  `dev/fids/FID-2026-1029-011-subscription-revenue-analytics.md` is converged.
+  `dev/fids/archive/FID-2026-1029-011-subscription-revenue-analytics.md` is converged.
   It separates credit revenue from paid-invoice plan revenue, adds total
   revenue and total margin, subscriber counts, MRR, and a per-plan table, and
   leaves billing, routing, invoice recording, and Stripe handling unchanged.
@@ -1231,10 +1239,10 @@ support behind one backend.
   boundaries, reservations, the provider floor, provider block, alerts, and
   reset times; `tests/http.test.mjs` covers the sanitizer.
 - [x] **S4 — FID-009 authored.**
-  `dev/fids/FID-2026-1029-009-error-sanitization-and-free-pool-admission.md`
+  `dev/fids/archive/FID-2026-1029-009-error-sanitization-and-free-pool-admission.md`
   records the implementation and the remaining gate receipt.
 - [x] **S5 — FID-010 authored.**
-  `dev/fids/FID-2026-1029-010-multi-provider-registry.md` is converged:
+  `dev/fids/archive/FID-2026-1029-010-multi-provider-registry.md` is converged:
   provider entity, per-provider credentials, provider-scoped sync, OpenAI and
   Anthropic adapters, manual cost mapping, provider-scoped free pool, and
   admin controls. No provider code changed; implementation is B5.
@@ -1354,7 +1362,7 @@ Operator request: author FIDs that give complete control of model groups and a
 real customer subscription service, including what each plan includes and what
 it costs. This is a records-only pass; no application code changed.
 
-- [x] **G1 — Group FID authored.** `dev/fids/FID-2026-1029-007-model-group-control.md`
+- [x] **G1 — Group FID authored.** `dev/fids/archive/FID-2026-1029-007-model-group-control.md`
   is converged with a schema, API, UI, migration, test, and verification plan.
 - [x] **G2 — Group scope recorded.** The FID is registered here; implementation
   has not started and no source file changed.
@@ -2028,7 +2036,7 @@ remains the only data layer, and the Vercel deployment still fails closed on
   documented 5-second interactive-transaction window, the Turso engine split,
   and Vercel's per-instance execution model). Findings, design decisions and
   the adversarial audit are in
-  `dev/fids/FID-2026-1030-066-libsql-storage-port.md`, status `converged`.
+  `dev/fids/archive/FID-2026-1030-066-libsql-storage-port.md`, status `converged`.
 - [x] **D1a — Capability spike.** Automation level 3. Operator approved FID-066
   and asked to begin with step 0. `scripts/libsql-capability-spike.mjs` proves
   the seven capabilities the port depends on, plus result shapes, rollback and
@@ -2265,7 +2273,7 @@ provider working capital** (prepaid inference that converts to sold tokens),
 not infrastructure burn. Infrastructure is therefore judged on absolute
 monthly cost, not on that figure.
 
-- [x] **S1 — The ruling.** [FID-2026-1031-085](../dev/fids/FID-2026-1031-085-postgres-production-storage.md)
+- [x] **S1 — The ruling.** [FID-2026-1031-085](dev/fids/archive/FID-2026-1031-085-postgres-production-storage.md)
   is `converged` and supersedes the 2026-10-30 hosting decision for the data
   layer. Target: managed Postgres (Neon, Launch plan), Fly host retained. The
   libSQL plan in FID-2026-1030-066 is no longer the path because libSQL is also

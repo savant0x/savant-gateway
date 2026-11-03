@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-145-push-with-disposable-postgres.md`
 **ID:** FID-2026-1103-145
 **Severity:** medium
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-03
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — one developer command, no application behavior.
@@ -85,8 +85,9 @@ one-off embedded cluster in `.verify/` during the 2026-11-03 release work.
   returns a 500 from `docker info`. The container lifecycle is the extracted
   helper also used by `test:postgres`; the supplied-endpoint path and the full
   push flow were exercised.
-- **CI receipt:** pending the push that carries this commit.
-- **Archived:** no; closes after the CI run is green.
+- **CI receipt:** GitHub Actions run `41711787351` (`ci`) passed every gate on
+  `b89e95c`.
+- **Archived:** yes — moved to `dev/fids/archive/` after the green workflow.
 
 ## Resolution
 
@@ -94,4 +95,4 @@ one-off embedded cluster in `.verify/` during the 2026-11-03 release work.
 - **Fix Description:** `npm run push:postgres` owns a disposable PostgreSQL
   container, exports its endpoint to `git push`, and cleans up; an existing
   disposable loopback endpoint can be supplied instead.
-- **Archived:** no.
+- **Archived:** yes — `dev/fids/archive/FID-2026-1103-145-push-with-disposable-postgres.md`.

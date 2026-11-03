@@ -21,11 +21,11 @@ working set; each FID owns its own status, evidence and resolution.
 | [068](FID-2026-1030-068-usdc-receive-lane.md) | Direct-to-wallet USDC receive lane | fixed | Operator inputs still gate the receive lane; re-read the record before acting. |
 | [127](FID-2026-1103-127-real-launch-acceptance-receipt.md) | Real launch acceptance receipt | fixed | Operator records the six observations and a go pinned to the release SHA, then runs `npm run receipt:launch`. |
 | [137](FID-2026-1103-137-product-hardening-and-install-order-master.md) | Product hardening and install-order master | converged | Closes only after 126 and 127 have their required evidence. |
-| [145](FID-2026-1103-145-push-with-disposable-postgres.md) | Repeatable disposable PostgreSQL for pushes | fixed | Green `ci` run on the fix commit, then archive. |
 
 ### Closed in the 2026-11-03 hardening pass
 
 [126](archive/FID-2026-1103-126-production-concurrency-proof.md),
+[145](archive/FID-2026-1103-145-push-with-disposable-postgres.md),
 [142](archive/FID-2026-1103-142-ci-typecheck-typegen.md),
 [143](archive/FID-2026-1103-143-deterministic-paid-limit-probe.md),
 [144](archive/FID-2026-1103-144-trial-suite-real-postgres.md),

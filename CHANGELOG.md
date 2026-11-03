@@ -3,6 +3,12 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — FID closure: push script verified
+
+- **FID-2026-1103-145 — closed and archived.** GitHub Actions run `41711787351`
+  (`ci`) passed every gate on `b89e95c`. The record is in
+  `dev/fids/archive/` with its local dry-run receipt and the green workflow.
+
 ## 2026-11-03 — One-command push with disposable PostgreSQL
 
 - **FID-2026-1103-145 — medium — the push gate required manual database
@@ -20,8 +26,8 @@ distinguish verified behavior from unverified claims.
   including the two-connection proof and both HTTP suites, and the dry-run
   reported `Everything up-to-date`. The Docker-start path was not exercised
   because this machine's Docker engine returns a 500 from `docker info`; the
-  supplied-endpoint path and the full push flow were. CI receipt is recorded
-  after the push.
+  supplied-endpoint path and the full push flow were. CI run `41711787351`
+  passed every gate on `b89e95c`.
 
 ## 2026-11-03 — FID closure: CI gate repairs verified
 

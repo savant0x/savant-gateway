@@ -3,6 +3,7 @@
 **Filename:** `FID-2026-1029-031-production-truth-subscriptions.md`
 **ID:** FID-2026-1029-031
 **Severity:** high
+**Status:** closed
 **Created:** 2026-10-30 06:40
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — no new table, no new setting, no new page. Four

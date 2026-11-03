@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1102-113-content-fetch-all.md`
 **ID:** FID-2026-1102-113
 **Severity:** low
-**Status:** complete
+**Status:** closed
 **Created:** 2026-11-02
 **Automation level:** 3
 **YAGNI-Compliance:** Verified

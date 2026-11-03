@@ -3,6 +3,7 @@
 **Filename:** `FID-2026-1029-030-group-hiding.md`
 **ID:** FID-2026-1029-030
 **Severity:** low
+**Status:** closed
 **Created:** 2026-10-30 06:05
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — one column, one filter clause, one checkbox. No

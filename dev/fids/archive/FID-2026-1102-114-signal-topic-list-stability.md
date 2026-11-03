@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1102-114-signal-topic-list-stability.md`
 **ID:** FID-2026-1102-114
 **Severity:** low
-**Status:** complete
+**Status:** closed
 **Created:** 2026-11-02
 **Automation level:** 3
 **YAGNI-Compliance:** Verified

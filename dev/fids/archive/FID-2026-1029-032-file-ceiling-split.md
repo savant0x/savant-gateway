@@ -3,6 +3,7 @@
 **Filename:** `FID-2026-1029-032-file-ceiling-split.md`
 **ID:** FID-2026-1029-032
 **Severity:** low
+**Status:** closed
 **Created:** 2026-10-30 07:20
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — code moved, not rewritten. No new behavior, no new

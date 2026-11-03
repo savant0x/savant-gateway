@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1102-110-hackernews-ai-filtered-source.md`
 **ID:** FID-2026-1102-110
 **Severity:** medium
-**Status:** complete
+**Status:** closed
 **Created:** 2026-11-02 22:15
 **Automation level:** 3
 **YAGNI-Compliance:** Verified

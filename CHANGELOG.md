@@ -3,6 +3,17 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — CI typecheck generates Next declarations first
+
+- **FID-2026-1103-142 — high — GitHub Actions failed at typecheck on `c889d83`.**
+  A clean checkout has no `next-env.d.ts` because it is generated and ignored;
+  `components/content/content-media.tsx` imports a tracked JPEG, so tsc reported
+  `TS2307: Cannot find module '@/assets/thumb.jpg'`. The `typecheck` script now
+  runs `next typegen` before `tsc --noEmit`, which recreates the image and route
+  declarations. Local check from a tree with the file removed exits 0. Commit
+  `c889d83` was pushed and reached the remote; its CI run `41696668303` recorded
+  the failure. The fix's CI receipt is recorded after the next push.
+
 ## 2026-11-03 — Current status index and launch receipt validator
 
 - **FID-2026-1103-135 — low — the historical status page was still easy to

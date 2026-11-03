@@ -13,7 +13,7 @@
 		"build": "next build",
 		"start": "next start",
 		"lint": "eslint .",
-		"typecheck": "tsc --noEmit",
+		"typecheck": "next typegen && tsc --noEmit",
 		"check": "npm run lint && npm run typecheck",
 		"config:check": "node scripts/production-config-check.mjs",
 		"config:check:prod": "node scripts/production-config-check.mjs --production",

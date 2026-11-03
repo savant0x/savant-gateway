@@ -3,6 +3,27 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — Stale catalog elections repaired at boot
+
+- **FID-2026-1102-118 — high — a catalog imported before the tier-scoped route
+  groups re-elects its published rows on the first boot.** FID-116 fixed which
+  row a group elects, but every row already stored kept its old `is_primary`
+  flag until the next sync, so paid counterparts stayed imported, priced and
+  active while `/models` published only the free allocation. Measured on the
+  local PostgreSQL catalog: 89 rows, 11 free allocations; 6 of them had a
+  priced, active paid row stuck at `is_primary = 0`, leaving 49 published rows.
+  The boot repair reconciles once, records
+  `catalog.route_election_version = 2`, and the same catalog then published 62
+  rows with no withheld counterpart. Verified: focused 3/3, `npm test` 863
+  (862 pass, 1 skipped), typecheck 0, lint 0 warnings, quality PASS (538 files),
+  build 0. Not verified: the HTTP suites were not rerun for this change.
+- **Seven upstream models are free-only, not stripped.** `qwen-3.8-max`,
+  `minimax-m3.1-flash`, `glm-5.3-flashx`, `hy4`, `kimi-k2.8`, `minimax-m3` and
+  `claude-sonnet-4.6` have no paid id on either enabled provider's `/models`
+  (savant 44 ids, apixo 44 ids), so those rows offer one path. The other free
+  allocations pair with a paid row after the repair. `commandcode` was not
+  scanned because its key is not configured.
+
 ## 2026-11-03 — One catalog row per model, both purchase paths
 
 - **FID-2026-1102-117 — medium — the public catalog pairs a free allocation

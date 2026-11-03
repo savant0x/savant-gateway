@@ -4,6 +4,7 @@ import type { PostgresDatabase } from "./pg-adapter.ts";
 
 import { join } from "node:path";
 
+import { backfillRouteElection } from "./backfill.ts";
 import { createStorageDatabase, resolveStorageMode } from "./database.ts";
 
 /**
@@ -42,7 +43,7 @@ const globalStorage = globalThis as typeof globalThis & {
   [STORAGE_KEY]?: Promise<PostgresDatabase>;
 };
 
-function create(): Promise<PostgresDatabase> {
+async function create(): Promise<PostgresDatabase> {
   const mode = resolveStorageMode(process.env);
 
   if (process.env.NODE_ENV === "production" && mode !== "postgres") {
@@ -51,13 +52,21 @@ function create(): Promise<PostgresDatabase> {
     );
   }
 
-  return createStorageDatabase({
+  const database = await createStorageDatabase({
     localDirectory:
       mode === "local"
         ? (process.env.PG_LOCAL_PATH?.trim() ??
           join(process.cwd(), "data", "pg"))
         : undefined,
   });
+
+  // A catalog imported before the tier-scoped route groups keeps the old
+  // election, which hides every paid counterpart behind `is_primary = 0`.
+  // The repair is version-stamped, so this is one write on the first boot and
+  // a single read afterwards (FID-2026-1102-118).
+  await backfillRouteElection(database);
+
+  return database;
 }
 
 export function getDatabase(): Promise<PostgresDatabase> {

@@ -18,6 +18,8 @@ import {
 } from "./seed.mjs";
 import { runSystemsChecks } from "./systems-checks.mjs";
 
+import { FAQ_GROUPS } from "../../components/docs/faq-data.ts";
+
 const ALPHA = {
   email: "alpha.http-suite@example.test",
   name: "Alpha HTTP Suite",
@@ -1198,7 +1200,7 @@ async function runCustomerExperienceChecks(context, alpha, beta) {
   checkEqual(
     "the FAQ schema covers every answer",
     Array.isArray(faqSchema?.mainEntity) ? faqSchema.mainEntity.length : 0,
-    33,
+    FAQ_GROUPS.reduce((total, group) => total + group.items.length, 0),
   );
   check(
     "the FAQ schema answers every question",

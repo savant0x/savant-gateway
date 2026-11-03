@@ -24,8 +24,11 @@ distinguish verified behavior from unverified claims.
   and a copyable `curl` walkthrough using the SKU's public id. Daily copy
   distinguishes the free-pool path from plan overage; lifetime copy discloses
   the configured paired-credit fallback. A pure `rawTokensForWeight` helper is
-  covered by `tests/free-pool.test.mjs`. Verified: focused tests 14/14,
-  typecheck, quality (400-line ceiling) and production build all exit 0.
+  covered by `tests/free-pool.test.mjs`. The docs FAQ now has a dedicated Free
+  access section covering both modes, measurement, refusals and where the
+  balance lives; the HTTP gate derives its FAQ schema count from the rendered
+  data. Verified: focused tests 14/14, typecheck, quality (400-line ceiling),
+  production build and the 750-check HTTP suite all exit 0.
 
 ## 2026-11-03 — FID closure: trial fixture verified in CI
 

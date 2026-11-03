@@ -53,6 +53,24 @@ export const FAQ_GROUPS: FaqGroup[] = [
     ],
   },
   {
+    id: "free",
+    title: "Free access",
+    items: [
+      {
+        question: "How does free access work?",
+        answer:
+          "Free access is a separate catalog SKU, not a discount on a paid model: the free row has its own id and a name ending in “(Free)”. You need an account and an active scoped key to use it; in daily mode the split counts only activated accounts with an active key. When daily allocation is enabled, an activated account receives a daily share of weighted tokens that resets at 00:00 UTC and does not carry over. If the operator has enabled the one-time trial instead, the grant is a single balance that does not reset. Either way, every free model draws on that one balance at its own token weight. It is a share of shared upstream capacity, not a guaranteed quota: a missing or stale capacity observation, a provider that disallows free usage, or a pool near its safety floor makes the gateway refuse free-pool calls rather than overdraw the pool. Free-pool admission does not debit prepaid credit, but an active plan that includes the model applies its included or overage policy first, and a one-time trial can fall back to its configured paid pair when the trial cannot cover a request.",
+        link: { href: "/models", label: "Browse the free SKUs" },
+      },
+      {
+        question: "Where do I see my free balance and how do I start?",
+        answer:
+          "Open a free SKU's detail page from /models. It shows the current daily allocation or one-time trial balance, the model's weight, the raw-token equivalent, the reset or last-check context, a free-allocation FAQ and a copyable Chat Completions request. The account page shows the matching daily or one-time balance card, holds your scoped keys and usage table, and the daily card can request a fresh upstream check. Create the key on the account page first; a free model cannot be called with an inactive or missing key. If the detail page says capacity is unavailable, no new free-pool call is admitted until a fresh observation succeeds.",
+        link: { href: "/account", label: "Check your balance" },
+      },
+    ],
+  },
+  {
     id: "models",
     title: "Models and pricing",
     items: [

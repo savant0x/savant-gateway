@@ -153,7 +153,9 @@ Implementation pass 2026-11-03: see Loop 2 and the closure receipt.
 - **AUDIT:** The feed escapes every publisher string, uses the Signal detail URL
   rather than the external publisher URL, and omits an unparseable date. The
   badge names counts, never a private error. The limiter reuses the existing
-  token bucket and trusts the configured proxy header first.
+  token bucket and reads only the configured trusted ingress header. Follow-up
+  `167d806` removed a spoofable forwarded-IP fallback so a blank setting shares
+  one bucket, matching `.env.example`.
 - **ADVERSARIAL — ISR was rejected by the build gate.** `revalidate = 60` made
   Next prerender `/signal/digest` during `npm run build`, which failed because
   the build runs without `DATABASE_URL`. Keeping the pages dynamic and memoizing

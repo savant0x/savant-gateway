@@ -42,7 +42,9 @@ distinguish verified behavior from unverified claims.
   `/api/content/status/badge.json` serves a CORS-enabled shields payload from
   the public source projection. Public search allows a 15-request burst and 30
   requests/minute per client, returning 429 with `Retry-After`, with a bounded
-  5,000-key map. Session-free Signal reads are memoized for 60 seconds.
+  5,000-key map. Identity comes only from a configured trusted ingress header;
+  a blank setting shares one bucket. Follow-up `167d806` removed a spoofable
+  forwarded-IP fallback. Session-free Signal reads are memoized for 60 seconds.
   Segment ISR was attempted and rejected: `npm run build` prerendered the
   digest page and failed without `DATABASE_URL`, so pages stay dynamic and the
   read memo provides the load reduction. Verified: distribution 4/4, search

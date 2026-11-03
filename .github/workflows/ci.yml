@@ -45,4 +45,9 @@ jobs:
       - run: npm run quality
       - run: npm run build
       - run: npm run test:http
+        env:
+          # The trial suite's concurrent transactions need real PostgreSQL
+          # semantics; PGlite's single connection interleaves them. The gate
+          # resets both schemas, so it must follow the concurrency proof.
+          HTTP_TEST_DATABASE_URL: postgres://gateway:gateway_concurrency_probe@127.0.0.1:5432/gateway_concurrency
       - run: npm run test:recovery

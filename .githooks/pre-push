@@ -34,7 +34,13 @@ run_gate "tests" npm test
 run_gate "postgres concurrency proof" npm run test:postgres
 run_gate "quality" npm run quality
 run_gate "build" npm run build
-run_gate "http suite" npm run test:http
+# A disposable TEST_DATABASE_URL is the same endpoint the concurrency proof
+# already requires. Reuse it for the HTTP suites so their concurrent trial
+# check gets real transaction semantics instead of the single-connection
+# PGlite default (FID-144). An explicit HTTP_TEST_DATABASE_URL still wins.
+run_gate "http suite" env \
+  "HTTP_TEST_DATABASE_URL=${HTTP_TEST_DATABASE_URL:-${TEST_DATABASE_URL:-}}" \
+  npm run test:http
 run_gate "recovery drill" npm run test:recovery
 
 echo "pre-push: all gates passed"

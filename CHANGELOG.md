@@ -3,17 +3,38 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — Trial HTTP suite runs on real PostgreSQL in CI
+
+- **FID-2026-1103-144 — high — the trial suite's concurrent check failed on a
+  single-connection fixture.** Three simultaneous trial calls against the PGlite
+  wire server returned `200, 500, 500`; the storage errors were a fixture
+  artifact, not the trial refusal the check asserts. Both HTTP suites now accept
+  `HTTP_TEST_DATABASE_URL` and reset the `public` and `content` schemas before
+  seeding, while keeping the Docker-free PGlite default for local runs. CI sets
+  the variable to the PostgreSQL service already used by the concurrency proof,
+  so the trial suite exercises real transaction semantics. The pre-push hook and
+  `npm run verify` fall back to `TEST_DATABASE_URL`, so a run that already
+  supplied the disposable concurrency endpoint gives the HTTP suites the same
+  transactions.
+  The gate refuses a URL equal to `DATABASE_URL`; it is deliberately destructive
+  to the configured disposable database. Local receipt: `npm run test:http` against disposable
+  PostgreSQL 18.6 on loopback — main `750 checks PASS`, trial `all checks
+  PASS`, including `competing calls are refused without another trial PASS`.
+  CI receipt is recorded after the push.
+
 ## 2026-11-03 — Paid-limit gate probes with a deterministic burst
 
 - **FID-2026-1103-143 — high — CI's paid account-limit check was latency-dependent.**
   GitHub Actions run `41697724755` failed after 120 sequential probes never
-  exhausted a 60 RPM bucket that refills every second. The check now fires one
-  bounded burst of 80 requests across two keys on the same customer, so the
-  shared bucket is exhausted regardless of runner speed. The first burst attempt
-  was refused by the separate provider concurrency gate; the fixture now raises
-  only that test-only cap to 100, leaving the provider-scope checks intact.
-  Local `npm run test:http` reports 750 checks PASS and the refusal names the
-  `paid` scope. Commit follows `b6604af`; CI receipt is recorded after the push.
+  exhausted a 60 RPM bucket that refills every second. The check now fires 40
+  batches of three requests across two keys on the same customer — 120 probes,
+  double the bucket capacity — so the shared bucket is exhausted regardless of
+  runner speed. Three-way batches stay under the default four-slot provider
+  concurrency gate; an earlier single 80-request burst was refused by that
+  gate, and raising the gate did not make the burst reach the customer scope, so
+  the probe was reshaped rather than the admission path widened. Local `npm run
+  test:http` reports 750 checks PASS and the refusal names the `paid` scope.
+  Commit follows `b6604af`; CI receipt is recorded after the push.
 
 ## 2026-11-03 — CI typecheck generates Next declarations first
 

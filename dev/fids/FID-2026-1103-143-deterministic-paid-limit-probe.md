@@ -15,7 +15,9 @@ holds across different keys`. The check probed sequentially at 60 RPM. On a slow
 runner each request took about 0.75 s, while the bucket refills one token per
 second, so 120 probes never exhausted it. A first attempt to burst 80 requests
 then hit the separate provider concurrency cap (4) and observed
-`X-RateLimit-Scope: provider` instead of the customer's `paid` bucket.
+`X-RateLimit-Scope: provider` instead of the customer's `paid` bucket. Raising
+that fixture cap did not make the burst reach the customer bucket, so the probe
+was reshaped instead of widening the provider gate.
 
 ## Impact Assessment
 
@@ -26,11 +28,13 @@ then hit the separate provider concurrency cap (4) and observed
 
 ## Proposed Solution
 
-1. **implemented:** replace sequential probing with one bounded burst of 80
-   requests across two keys belonging to the same customer.
-2. **implemented:** raise the fixture's `PROVIDER_SHARED_CONCURRENCY` to 100 so
-   the burst reaches the customer bucket; the provider gate remains covered by
-   the quota checks that set `rpm: 1` and assert the provider scope.
+1. **implemented:** replace sequential probing with 40 concurrent batches of
+   three requests across two keys belonging to the same customer — 120 probes,
+   double the 60-token bucket, at three-way concurrency under the default
+   four-slot provider gate.
+2. **implemented:** leave `PROVIDER_SHARED_CONCURRENCY` at its normal fixture
+   value so the provider admission path is unchanged; the quota checks that set
+   `rpm: 1` still assert the provider scope independently.
 3. **implemented:** keep the no-charge and no-upstream-spend assertions for
    every admitted probe, and assert the refusal names the `paid` scope.
 
@@ -44,8 +48,9 @@ then hit the separate provider concurrency cap (4) and observed
 ### Loop 1 — RED/GREEN/AUDIT/ADVERSARIAL
 
 - **RED:** the sequential probe depends on request latency versus refill rate.
-- **GREEN:** a burst larger than the bucket capacity deterministically exhausts
-  the customer bucket, independent of runner speed.
+- **GREEN:** 120 probes in three-way batches exceed the bucket capacity faster
+  than it refills, independent of runner speed, while staying inside the
+  provider concurrency gate.
 - **AUDIT:** confirmed the provider concurrency gate runs before the paid bucket
   and that the quota checks cover the provider scope independently.
 - **ADVERSARIAL:** slow runner, burst scheduling, 402 versus 429, two keys on
@@ -54,10 +59,11 @@ then hit the separate provider concurrency cap (4) and observed
 
 ### Missed Questions
 
-1. **Should the burst be unbounded?** No; 80 is bounded and just above the 60
-   token capacity, with a fixture concurrency cap of 100.
-2. **Does raising provider concurrency weaken production?** No; it is set only
-   in the HTTP suite's spawned environment.
+1. **Should the burst be unbounded?** No; 120 probes are bounded at twice the
+   60-token capacity and run three at a time.
+2. **Should the fixture raise provider concurrency instead?** No; that changes
+   the admission path the gate is meant to observe. Batching keeps the default
+   provider gate in force and still spends the customer bucket.
 
 ## Implementation Evidence
 
@@ -71,6 +77,7 @@ then hit the separate provider concurrency cap (4) and observed
 ## Resolution
 
 - **Convergence Date:** 2026-11-03
-- **Fix Description:** the HTTP gate now proves the shared paid bucket with a
-  latency-independent burst and observes the customer scope.
+- **Fix Description:** the HTTP gate now proves the shared paid bucket with
+  bounded three-way batches and observes the customer scope without changing
+  the provider concurrency gate.
 - **Archived:** no.

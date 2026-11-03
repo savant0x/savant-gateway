@@ -64,23 +64,34 @@ export async function runRequestLimitChecks({ baseUrl, db, mock, adminPassword }
   checkEqual("concurrent excess key creation is refused", attempts.filter((r) => r.status === 429).length, 3);
   checkEqual("key ceiling is persisted", (await db.prepare("SELECT COUNT(*)::int AS n FROM api_keys WHERE user_id = ? AND status = 'active'").get(id)).n, 10);
   const anotherSecret = attempts.find((response) => response.status === 201).json.secret;
-  // Fire a burst larger than the 60 RPM bucket. Sequential probing is
-  // timing-dependent: a slow runner refills a token between requests, so the
-  // account can serve all 120 probes without ever exhausting the bucket. A
-  // burst of 80 requests across two keys proves the shared account limit
-  // independently of request latency. Unfunded admissions must still refuse
-  // with 402 and never dispatch upstream.
-  const probes = await Promise.all(
-    Array.from({ length: 80 }, (_, index) =>
-      request(baseUrl, "/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${index % 2 ? secret : anotherSecret}`,
-        },
-        body: valid,
+  // Exceed the 60 RPM bucket without exceeding the separate provider
+  // concurrency gate. Sequential probing is timing-dependent: a slow runner
+  // refills a token between requests, so 120 probes can all pass. A single
+  // 80-request burst instead hits provider concurrency first. Batches of three
+  // stay under the default provider cap while still spending the account
+  // bucket faster than it refills; 40 batches is double the bucket capacity.
+  // Unfunded admissions must still refuse with 402 and never dispatch
+  // upstream.
+  const probes = [];
+
+  for (let batch = 0; batch < 40; batch++) {
+    const responses = await Promise.all(
+      Array.from({ length: 3 }, (_, offset) => {
+        const index = batch * 3 + offset;
+
+        return request(baseUrl, "/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${index % 2 ? secret : anotherSecret}`,
+          },
+          body: valid,
+        });
       }),
-    ),
-  );
+    );
+
+    probes.push(...responses);
+  }
+
   const limited = probes.find((probe) => probe.status === 429);
 
   for (const probe of probes) {

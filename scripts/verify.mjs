@@ -27,13 +27,22 @@ const SUMMARY_FILE = join(LOGS_DIR, "summary.json");
 const SUMMARY_PATH = ".verify/summary.json";
 const NPM = process.platform === "win32" ? "npm.cmd" : "npm";
 
+// The HTTP suites need real transaction semantics for their concurrent trial
+// check. A disposable TEST_DATABASE_URL already satisfies the concurrency
+// proof; reuse it unless the caller named a separate HTTP endpoint (FID-144).
+const gateEnv = { ...process.env };
+
+if (!gateEnv.HTTP_TEST_DATABASE_URL?.trim() && gateEnv.TEST_DATABASE_URL?.trim()) {
+  gateEnv.HTTP_TEST_DATABASE_URL = gateEnv.TEST_DATABASE_URL;
+}
+
 function runGate(gate) {
   const startedAt = Date.now();
   const command = `${NPM} run ${gate.script}`;
   const result = spawnSync(NPM, ["run", gate.script], {
     cwd: ROOT,
     encoding: "utf8",
-    env: process.env,
+    env: gateEnv,
     maxBuffer: 64 * 1024 * 1024,
     shell: process.platform === "win32",
     stdio: ["ignore", "pipe", "pipe"],

@@ -75,6 +75,7 @@ const upstreamUrl = `http://127.0.0.1:${mock.address().port}`;
 const databaseServer = await startDatabaseServer({
   directory: workspace.databaseDirectory,
   port: databasePort,
+  connectionString: process.env.HTTP_TEST_DATABASE_URL?.trim(),
 });
 const server = startNextServer({
   repo: process.cwd(), port,

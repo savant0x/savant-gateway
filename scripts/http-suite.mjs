@@ -53,6 +53,7 @@ const email = await startEmailDouble();
 const databaseServer = await startDatabaseServer({
   directory: workspace.databaseDirectory,
   port: databasePort,
+  connectionString: process.env.HTTP_TEST_DATABASE_URL?.trim(),
 });
 let server = null;
 let database = null;
@@ -69,11 +70,10 @@ try {
       // observable here instead of being papered over by a default that
       // production does not set (FID-069). A current upstream rpm still wins.
       PROVIDER_SHARED_RPM: "",
-      // The account-limit burst deliberately exceeds the 60 RPM paid bucket.
-      // Keep the separate provider concurrency gate above the burst so the
-      // check observes the customer scope, not the serving-account slot. The
-      // provider gate itself is exercised by the quota checks (rpm: 1).
-      PROVIDER_SHARED_CONCURRENCY: "100",
+      // The account-limit probes run in batches of three so the separate
+      // provider concurrency gate (default four) stays open and the check
+      // observes the customer scope. The provider gate itself is exercised by
+      // the quota checks (rpm: 1).
       // The paid-account-limit check assumes a 60 RPM ceiling: 60 unfunded
       // probes consume the bucket and the 61st request must be 429. `next
       // start` also loads `.env.local`, so an operator override would change

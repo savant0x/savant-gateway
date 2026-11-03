@@ -5,13 +5,14 @@ import pg from "pg";
 import { renamePlaceholders } from "../../lib/storage/pg-adapter.ts";
 
 /**
- * A disposable PostgreSQL wire server for the HTTP suites (FID-086, D-5).
+ * The HTTP suites' disposable database (FID-086, D-5; FID-144).
  *
  * The application is a separate process, so an in-process PGlite handle cannot
- * back it: the suite needs a real endpoint the `pg` driver can reach. PGlite is
- * still the engine — the wire server only exposes it over loopback — which keeps
- * the gate on the same dialect and parser production uses without requiring a
- * Docker daemon or a system PostgreSQL install.
+ * back it: the suite needs a real endpoint the `pg` driver can reach. By
+ * default PGlite is exposed over a loopback wire server, which keeps the gate
+ * on the same dialect and parser production uses without requiring a Docker
+ * daemon or a system PostgreSQL install. Set `HTTP_TEST_DATABASE_URL` when the
+ * run needs real concurrent transactions; CI does.
  *
  * The handle below is intentionally small. It offers the three calls the seed
  * and checks use (`prepare`, `query`, `exec`) and rewrites the SQLite dialect
@@ -38,7 +39,52 @@ function rewrite(sql) {
   );
 }
 
-export async function startDatabaseServer({ directory, port }) {
+/**
+ * A supplied endpoint is real PostgreSQL, so transactions have real
+ * concurrency semantics. Reset both schemas first: the suite seeds fixed ids
+ * and must not inherit rows from an earlier gate. The endpoint is deliberately
+ * named HTTP_TEST_ and may never be the application DATABASE_URL.
+ */
+async function resetExternalDatabase(connectionString) {
+  const application = process.env.DATABASE_URL?.trim();
+
+  if (application && application === connectionString) {
+    throw new Error(
+      "HTTP_TEST_DATABASE_URL must not equal DATABASE_URL; use a disposable database",
+    );
+  }
+
+  let url;
+
+  try {
+    url = new URL(connectionString);
+  } catch {
+    throw new Error("HTTP_TEST_DATABASE_URL is not a valid URL");
+  }
+
+  if (url.protocol !== "postgres:" && url.protocol !== "postgresql:") {
+    throw new Error("HTTP_TEST_DATABASE_URL must be a postgres:// URL");
+  }
+
+  const pool = new pg.Pool({ connectionString, max: 1 });
+
+  try {
+    await pool.query("DROP SCHEMA IF EXISTS content CASCADE");
+    await pool.query("DROP SCHEMA IF EXISTS public CASCADE");
+    await pool.query("CREATE SCHEMA public");
+  } finally {
+    await pool.end();
+  }
+}
+
+export async function startDatabaseServer({ directory, port, connectionString }) {
+  if (connectionString) {
+    await resetExternalDatabase(connectionString);
+    console.log("http-suite: using HTTP_TEST_DATABASE_URL (real PostgreSQL)");
+
+    return { connectionString, async close() {} };
+  }
+
   const pglite = directory
     ? await PGlite.create(directory)
     : await PGlite.create();

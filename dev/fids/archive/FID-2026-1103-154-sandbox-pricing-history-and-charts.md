@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-154-sandbox-pricing-history-and-charts.md`
 **ID:** FID-2026-1103-154
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-03
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -79,11 +79,42 @@ keeping modeled scenario data separate from realized settlement data.
 
 ## Implementation Evidence
 
-- **Commit SHA:** none; planning contract only.
-- **Step statuses:** all six steps are `implemented (design)`.
-- **Archived:** no.
+- **Commit SHA:** `7e24f0e`.
+- **Files:** `scripts/sandbox-chart-receipt.mjs`, receipts at
+  `dev/receipts/2026-11-03-sandbox/charts.json`, `charts.html` and
+  `charts-run.log`.
+- **Steps 1-2 implemented:** the receipt seeds only a disposable database and
+  labels every observation `synthetic-sandbox`. Two price approvals go through
+  `setModelPricing`, so the price update and its `pricing_decisions` audit row
+  commit together; no audit table is written around the production path.
+- **Step 3 implemented:** two synthetic credit calls are admitted with
+  `openCallSettlement` and settled with `settleCall`, exercising the production
+  usage/ledger path. No provider was called and no real money moved.
+- **Step 4 implemented:** the run rendered the margin distribution, approved
+  price history, route mix and 30-day daily-money series into `charts.html` with
+  units, source, date range and explicit empty behavior. The production React
+  charts remain build-gated rather than browser-rendered.
+- **Step 5 implemented:** reconciliation is exact. 2 usage rows produced
+  $114,400 charged and $35,200 upstream cost; the analytics total and the daily
+  series both equal those integers. 2 approvals equal 2 price-history changes.
+  The unused paid model is absent from `analytics.models`, not shown as zero
+  profit. Empty margin/history inputs return zero rows and the explicit empty
+  state is recorded.
+- **Step 6 implemented:** database `gateway_chart_1793749036008` was created on
+  the configured Supabase cluster, used only for this run, and dropped in the
+  runner's `finally` block. `charts-run.log` records both the create and drop.
+- **Verification:** `charts.json` reports `reconciliation.exact: true`; full
+  `verify` passed 969/969 unit tests and `tests/pricing-chart-data.test.mjs` and
+  `tests/measurement-decisions.test.mjs` are in that run. `quality` PASS.
+- **Archived:** yes — moved to `dev/fids/archive/` after the verification commit.
 
 ## Resolution
 
-- **Convergence Date:** 2026-11-03
-- **Implementation:** not started.
+- **Closed Date:** 2026-11-03
+- **Fix Description:** a disposable-database chart receipt now populates pricing,
+  usage, cost, revenue and route series through production write paths, renders
+  them with explicit semantics, reconciles every total, and records cleanup.
+- **Verification Evidence:** `dev/receipts/2026-11-03-sandbox/charts.json`
+  (`exact: true`, seven checks), `charts.html`, `charts-run.log`, full `verify`
+  (969/969, all gates pass).
+- **Archived:** yes.

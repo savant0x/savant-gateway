@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-153-sandbox-pricing-economics-report.md`
 **ID:** FID-2026-1103-153
 **Severity:** high
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-03
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -83,11 +83,40 @@ change a price.
 
 ## Implementation Evidence
 
-- **Commit SHA:** none; planning contract only.
-- **Step statuses:** all six steps are `implemented (design)`.
-- **Archived:** no.
+- **Commit SHA:** `7e24f0e`.
+- **Files:** `lib/pricing-report.ts`, `lib/pricing-report-types.ts`,
+  `lib/pricing-report-classify.ts`, `scripts/sandbox-pricing-report.mjs`,
+  `tests/pricing-report.test.mjs`, `package.json` (`report:pricing`).
+- **Step 1-4 implemented:** the report reads the PostgreSQL catalog without a
+  migration or write, records provider `syncedAt` timestamps and the serving
+  route, and emits cost, current sell, per-direction margin, scenario profit,
+  guarded recommendation, class, blockers, warnings and explanation per row.
+- **Step 5 implemented:** `npm run report:pricing` writes the redacted JSON and
+  Markdown receipts at `dev/receipts/2026-11-03-sandbox/pricing-report.json` and
+  `pricing-report.md`. The run classified 44 rows: 11 free, 10 subscription, 23
+  safe, 0 review-required, 0 blocked. Modeled paid scenario profit was $3.33 at
+  current prices and $5.71 at the 30% target recommendation. No price, decision
+  row, provider row or catalog row was written.
+- **Step 6 implemented:** `tests/pricing-report.test.mjs` covers free,
+  subscription, stale, unknown, route takeover, manual price, zero cost,
+  negative margin, price ceiling, out-of-catalog and deterministic sort/queue
+  behavior. The named `catalog-economics`, `price-recommendation` and
+  `pricing-decisions` suites are in the full test run.
+- **Verification:** targeted report tests 10/10 pass; full `verify` 969/969 tests
+  pass, 0 skipped, exit 0; `quality` PASS. The lint gate has zero errors and the
+  six pre-existing warnings in untouched `lib/launch-receipt.ts` remain.
+- **Secret boundary:** the report records database host/name (never the
+  connection string), provider key variable names (never values or presence),
+  and no payment/provider credentials.
+- **Archived:** yes — moved to `dev/fids/archive/` after the verification commit.
 
 ## Resolution
 
-- **Convergence Date:** 2026-11-03
-- **Implementation:** not started.
+- **Closed Date:** 2026-11-03
+- **Fix Description:** a read-only sandbox economics report now reuses the shared
+  catalog projection and recommendation engine, classifies every row, and exports
+  JSON/Markdown without any auto-publish path.
+- **Verification Evidence:** `node --test tests/pricing-report.test.mjs` (10
+  pass), `npm run verify` (969/969, all ten gates pass), and the two receipts in
+  `dev/receipts/2026-11-03-sandbox/`.
+- **Archived:** yes.

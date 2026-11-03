@@ -1,0 +1,2 @@
+test: 200 {"ok":true,"slug":"savant","models":44}
+sync: 200 {"ok":true,"slug":"savant","imported":44,"free":11,"paid":23,"subscriptionOnly":10,"warnings":[],"balance":{"balanceUsd":0,"rpm":15,"rpmPlan":"free","spendLimitUsd":null,"spentUsd":0,"remainingUsd":null,"limitReached":false},"subscription":{"mode":"free","plan":"FREE","unlimited":false,"tokenLimit":20000000,"tokensUsed":541911,"tokensRemaining":19458089,"expiresAt":null,"resetsAt":"2026-11-04T00:00:00.000Z","allowed":true}}

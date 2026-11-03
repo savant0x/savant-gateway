@@ -3,6 +3,38 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — Sandbox pricing report and chart reconciliation
+
+- **FID-2026-1103-153 — high — closed: a read-only sandbox economics report now
+  classifies every catalog row.** `lib/pricing-report.ts` reuses the shared
+  `catalogEconomics` projection and guarded `recommendPrices` engine, then
+  separates rows into free, subscription, unknown, stale, blocked,
+  review-required and safe. Each row records cost, current sell, per-direction
+  margin, modeled scenario profit, serving route, cost source, price source,
+  change direction and blockers. `npm run report:pricing` exported 44 hosted
+  catalog rows (11 free, 10 subscription, 23 safe, 0 blocked) to redacted JSON
+  and Markdown. No price, decision row, provider row or catalog row was written.
+  Ten focused tests cover route takeover, manual pricing, zero cost, negative
+  margin, stale/unknown cost and the price ceiling.
+- **FID-2026-1103-154 — medium — closed: a disposable-database chart receipt
+  reconciles synthetic history exactly.** `scripts/sandbox-chart-receipt.mjs`
+  records two price approvals through `setModelPricing` and two synthetic credit
+  settlements through `settleCall`, then renders the margin distribution,
+  approved-price history, route mix and 30-day daily-money series. Two usage rows
+  produced $114,400 charged and $35,200 cost, matching both the analytics totals
+  and the daily series; the unused paid model is absent rather than zero-profit.
+  The isolated database was dropped in `finally`. The static HTML receipt names
+  its units, source, date range and empty-state behavior; the production React
+  charts remain build-gated.
+- **FID-2026-1103-155 — critical — closed: the mandatory PostgreSQL gate and
+  full verification are green on disposable PostgreSQL.** `npm run
+  test:postgres` passed the two-connection debit proof (1/1, 0 skipped) and
+  `npm run verify` passed all ten gates in 263.7s, including 969/969 unit tests,
+  HTTP, recovery, quality, build and the deployment receipt. The isolated
+  `gateway_verify_1793749080666` database was dropped with `WITH (FORCE)`; the
+  production `postgres` database was never reset. The lint gate has zero errors
+  and six pre-existing warnings in untouched `lib/launch-receipt.ts`.
+
 ## 2026-11-03 — Sandbox readiness phase contracts
 
 - **FID-2026-1103-152 through FID-2026-1103-156 — planning —** five converged

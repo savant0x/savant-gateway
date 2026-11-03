@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-156-sandbox-launch-readiness-receipt.md`
 **ID:** FID-2026-1103-156
 **Severity:** high
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-03
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -79,11 +79,38 @@ subscription sales, or production launch approval occurred.
 
 ## Implementation Evidence
 
-- **Commit SHA:** none; planning contract only.
-- **Step statuses:** all five steps are `implemented (design)`.
-- **Archived:** no.
+- **Commit SHA:** `7e24f0e` (implementation and receipts); planning contract
+  `b2b9ef5`.
+- **Step 1 implemented:** FIDs 152–155 each carry a commit, exact gate output and
+  closure evidence. No prerequisite has an unresolved technical failure.
+- **Step 2 implemented:** the receipt at
+  `dev/receipts/2026-11-03-sandbox/README.md` joins GitHub/Vercel/deployment
+  evidence, provider-key status and Test/Sync, the pricing report, the chart
+  reconciliation, the PostgreSQL proof and the recovery gate.
+- **Step 3 implemented:** limitations are explicit: synthetic sandbox traffic,
+  no real payment, no funded production inference, no live price change, no
+  production database reset, and no operator launch approval. The hosted
+  CommandCode key is missing while the provider is enabled; that is a named
+  launch blocker, not a hidden one.
+- **Step 4 implemented:** the receipt is presented to the operator and does not
+  enable sales, fund wallets, change live prices, or declare production
+  acceptance. The operator-owned FIDs 043, 062, 068 and 127 remain the launch
+  boundary.
+- **Step 5 implemented:** `README.md` names the exact next commands, evidence
+  paths, and the difference between technical readiness and launch authority.
+- **Verification:** `npm run verify` PASS (ten gates; 969/969 unit tests, 0
+  skipped; 263.7s), `npm run test:postgres` PASS (1/1), `npm run test:recovery`
+  PASS (inside verify), `npm run receipt:deploy` exit 0, hosted Diagnostics and
+  provider Test/Sync receipts present. The disposable database
+  `gateway_verify_1793749080666` was dropped in `finally`.
+- **Archived:** yes — moved to `dev/fids/archive/` after the receipt.
 
 ## Resolution
 
-- **Convergence Date:** 2026-11-03
-- **Implementation:** not started.
+- **Closed Date:** 2026-11-03
+- **Fix Description:** one redacted sandbox readiness receipt now joins the four
+  prerequisite FIDs and states exactly what was verified, what was synthetic,
+  and what remains operator-owned.
+- **Verification Evidence:** `dev/receipts/2026-11-03-sandbox/README.md` and its
+  linked receipts; full `verify` PASS; hosted deployment READY at `7e24f0e`.
+- **Archived:** yes.

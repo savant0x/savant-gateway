@@ -2,24 +2,35 @@
 
 ## Current Session — 2026-11-03 (sandbox readiness phase FIDs)
 
-Operator request: resume the five-phase sandbox/deployment plan, create a FID for
-each phase, run the Perfection Loop on each, and write a handoff for the next
-agent. This session is planning-only; no push, deployment, price change, funding,
-payment, or real-money activity occurred.
+Operator request: resume the five-phase sandbox/deployment plan and complete the
+ordered implementation behind the converged FIDs. The technical sandbox work is
+done. No real payment, funding, live price change, production database reset, or
+operator launch approval occurred.
 
-- [x] **Q1 — FID-152 hosted deployment and provider-key proof.** Converged with
-  GitHub/Vercel commit evidence, runtime key-presence checks, provider Test/Sync,
-  and redaction boundaries.
-- [x] **Q2 — FID-153 sandbox pricing economics report.** Converged with current
-  cost/sell/margin/profit fields, guarded recommendations, and no auto-publish.
-- [x] **Q3 — FID-154 sandbox pricing history and charts.** Converged with safe
-  synthetic history, scenario/realized separation, and reconciliation.
-- [x] **Q4 — FID-155 disposable PostgreSQL verification.** Converged with the
-  mandatory two-connection proof and fail-closed full verify requirements.
-- [x] **Q5 — FID-156 sandbox launch-readiness receipt.** Converged as a redacted
-  technical receipt that does not authorize launch or real-money activity.
+- [x] **Q1 — FID-152 hosted deployment and provider-key proof.** Pushed the
+  planning slice (`b2b9ef5`) and the pricing/chart implementation (`7e24f0e`)
+  through the pre-push gate; confirmed the Vercel production commit and branch,
+  ran hosted Admin Diagnostics, and tested/synced the Savant provider (44 models,
+  11 free, 23 paid, 10 subscription-only). `COMMANDCODE_API_KEY` is still missing
+  in the hosted environment while the provider remains enabled; Apixo is
+  disabled. Recorded as a launch limitation, not silently fixed.
+- [x] **Q2 — FID-153 sandbox pricing economics report.** Closed. The read-only
+  report exported 44 hosted catalog rows with cost, sell, margin, modeled
+  profit, route, recommendation and class; 23 paid rows were safe, 0 blocked.
+  No price or decision row was written. Receipts in `dev/receipts/2026-11-03-sandbox/`.
+- [x] **Q3 — FID-154 sandbox pricing history and charts.** Closed. A disposable
+  database produced two production-path approvals and two `settleCall`
+  settlements; all chart totals reconciled exactly to $114,400 charged and
+  $35,200 cost, and the database was dropped.
+- [x] **Q4 — FID-155 disposable PostgreSQL verification.** Closed.
+  `test:postgres` passed 1/1 and `verify` passed all ten gates in 263.7s with
+  969/969 unit tests; the isolated database was dropped and production was not
+  reset.
+- [x] **Q5 — FID-156 sandbox launch-readiness receipt.** The redacted receipt is
+  at `dev/receipts/2026-11-03-sandbox/README.md`. It is technical readiness, not
+  launch authorization; the operator-owned launch FIDs remain open.
 - [x] **Q6 — Handoff.** `dev/session-summaries/2026-11-03-sandbox-readiness-handoff.md`
-  contains the ordered implementation sequence, blockers, and completion rules.
+  remains the ordered sequence, now backed by implementation receipts.
 
 ## Current Session — 2026-11-03 (hardening queue closure)
 

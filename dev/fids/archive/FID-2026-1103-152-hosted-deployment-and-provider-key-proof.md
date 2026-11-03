@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-152-hosted-deployment-and-provider-key-proof.md`
 **ID:** FID-2026-1103-152
 **Severity:** critical
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-03
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -75,11 +75,50 @@ printing or copying secrets.
 
 ## Implementation Evidence
 
-- **Commit SHA:** none; planning contract only.
-- **Step statuses:** all six steps are `implemented (design)`.
-- **Archived:** no; remains active until the hosted receipt exists.
+- **Commit SHA:** planning and convergence `b2b9ef5`; implementation and chart
+  report `7e24f0e`.
+- **Step 1 implemented:** local `main` was compared with `origin/main` before each
+  push. The untracked client chat export
+  `freebuff-chat-2026-11-03T12-54-56.217Z.md` was preserved and not committed.
+- **Step 2 implemented:** both slices were pushed through the real pre-push gate
+  using a disposable database. GitHub `main` is
+  `7e24f0e152b6dbe273dec83332a1dff3d19a46d2`; the remote ref was re-read after the
+  push.
+- **Step 3 implemented:** the Vercel deployment list reported the production
+  deployment `savant-gateway-1kqrm056c-savantai.vercel.app` `READY` on branch
+  `main` at commit `7e24f0e152b6dbe273dec83332a1dff3d19a46d2`. Admin Diagnostics
+  independently reported runtime `production`, Vercel environment `production`,
+  repository `savant0x/savant-gateway`, commit `7e24f0e`, branch `main`, public
+  origin `https://savant-gateway.vercel.app`, and a successful storage read.
+- **Step 4 implemented:** hosted Diagnostics reported `PROVIDER_KEY` configured
+  for Savant, `COMMANDCODE_API_KEY` missing for the enabled CommandCode provider,
+  and Apixo disabled with its key missing. Presence only; no value is recorded.
+- **Step 5 implemented:** hosted Savant Test returned `200` with 44 models. Hosted
+  Sync returned `200`, imported 44 models (11 free, 23 paid, 10 subscription-only),
+  zero warnings, balance `$0`, 15 rpm on the `free` plan, and 19,458,089 tokens
+  remaining on the upstream free allowance.
+- **Step 6 implemented:** redacted receipts are
+  `dev/receipts/2026-11-03-sandbox/deployment.md`, `hosted-diagnostics.txt`,
+  `hosted-provider.txt`, `deployment-local.json` and `verify.log`. The local
+  receipt's own `clean: false` and provider flags are explicitly labelled as
+  local-state notes, not hosted evidence.
+- **Gates:** `npm run attribution` PASS, `npm run check` exit 0 (zero errors; six
+  pre-existing warnings in untouched `lib/launch-receipt.ts`), `npm run
+  test:http` PASS (802 main checks plus the trial suite), `npm run build` exit 0,
+  `npm run receipt:deploy` exit 0, and full `npm run verify` PASS.
+- **Open limitation:** CommandCode is enabled in Production without its key. It
+  publishes zero models and cannot serve. The operator must add the key to
+  Production and Preview and redeploy, or disable the provider; this FID did not
+  change production configuration.
+- **Archived:** yes — moved to `dev/fids/archive/` after the final receipt.
 
 ## Resolution
 
-- **Convergence Date:** 2026-11-03
-- **Implementation:** not started.
+- **Closed Date:** 2026-11-03
+- **Fix Description:** the intended commits are on GitHub and the hosted Vercel
+  production deployment was independently matched by commit, branch, runtime
+  diagnostics, provider test and provider sync, with a redacted receipt.
+- **Verification Evidence:** `deployment.md`, `hosted-diagnostics.txt`,
+  `hosted-provider.txt`, Vercel deployment `READY` at `7e24f0e`, and the full
+  `verify` receipt.
+- **Archived:** yes.

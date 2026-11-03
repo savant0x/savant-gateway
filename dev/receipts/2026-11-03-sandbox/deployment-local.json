@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "generatedAt": "2026-11-03T23:49:38.302Z",
+  "git": {
+    "commit": "7e24f0e152b6dbe273dec83332a1dff3d19a46d2",
+    "commitShort": "7e24f0e",
+    "branch": "main",
+    "remote": "https://github.com/savant0x/savant-gateway.git",
+    "clean": false
+  },
+  "runtime": {
+    "nodeEnv": null,
+    "vercel": false,
+    "vercelEnv": null,
+    "siteOrigin": null
+  },
+  "providerKeys": {
+    "PROVIDER_KEY": false,
+    "COMMANDCODE_API_KEY": false
+  },
+  "limitations": [
+    "Key presence is the current process environment, not a Vercel deployment.",
+    "This script never reads or prints a secret value.",
+    "Use Admin -> Diagnostics on the deployed URL for hosted evidence."
+  ]
+}

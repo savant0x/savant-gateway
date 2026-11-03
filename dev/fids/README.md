@@ -47,6 +47,17 @@ port; its real-PostgreSQL run failed five candidate targets, which stay with 062
 127 stays active because the operator's six observations and explicit go
 decision do not exist yet.
 
+### Closed in the 2026-11-03 sandbox readiness pass
+
+[152](archive/FID-2026-1103-152-hosted-deployment-and-provider-key-proof.md),
+[153](archive/FID-2026-1103-153-sandbox-pricing-economics-report.md),
+[154](archive/FID-2026-1103-154-sandbox-pricing-history-and-charts.md),
+[155](archive/FID-2026-1103-155-disposable-postgres-verification.md) and
+[156](archive/FID-2026-1103-156-sandbox-launch-readiness-receipt.md) are
+`closed` with commit, gate and receipt evidence. The final redacted receipt is
+`dev/receipts/2026-11-03-sandbox/README.md`. Hosted CommandCode remains enabled
+without its key, and no launch approval or real-money activity occurred.
+
 `converged` means the design is ready for implementation; it does not mean code
 has landed. A FID leaves this table only when its status is `closed` or
 `verified` and `Resolution` records the commit and gate receipt.

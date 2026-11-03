@@ -64,19 +64,27 @@ export async function runRequestLimitChecks({ baseUrl, db, mock, adminPassword }
   checkEqual("concurrent excess key creation is refused", attempts.filter((r) => r.status === 429).length, 3);
   checkEqual("key ceiling is persisted", (await db.prepare("SELECT COUNT(*)::int AS n FROM api_keys WHERE user_id = ? AND status = 'active'").get(id)).n, 10);
   const anotherSecret = attempts.find((response) => response.status === 201).json.secret;
-  // Probe until the shared account bucket refuses. A fixed 61st request can
-  // cross a one-second refill boundary and receive a credit refusal instead of
-  // the rate refusal this check is about; the bucket still has to refuse.
-  let limited;
+  // Fire a burst larger than the 60 RPM bucket. Sequential probing is
+  // timing-dependent: a slow runner refills a token between requests, so the
+  // account can serve all 120 probes without ever exhausting the bucket. A
+  // burst of 80 requests across two keys proves the shared account limit
+  // independently of request latency. Unfunded admissions must still refuse
+  // with 402 and never dispatch upstream.
+  const probes = await Promise.all(
+    Array.from({ length: 80 }, (_, index) =>
+      request(baseUrl, "/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${index % 2 ? secret : anotherSecret}`,
+        },
+        body: valid,
+      }),
+    ),
+  );
+  const limited = probes.find((probe) => probe.status === 429);
 
-  for (let index = 0; index < 120 && !limited; index++) {
-    const probe = await request(baseUrl, "/v1/chat/completions", {
-      method: "POST", headers: { authorization: `Bearer ${index % 2 ? secret : anotherSecret}` }, body: valid,
-    });
-
-    if (probe.status === 429) {
-      limited = probe;
-    } else {
+  for (const probe of probes) {
+    if (probe.status !== 429) {
       checkEqual("unfunded capacity probe creates no charge", probe.status, 402);
     }
   }

@@ -3,6 +3,18 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — Paid-limit gate probes with a deterministic burst
+
+- **FID-2026-1103-143 — high — CI's paid account-limit check was latency-dependent.**
+  GitHub Actions run `41697724755` failed after 120 sequential probes never
+  exhausted a 60 RPM bucket that refills every second. The check now fires one
+  bounded burst of 80 requests across two keys on the same customer, so the
+  shared bucket is exhausted regardless of runner speed. The first burst attempt
+  was refused by the separate provider concurrency gate; the fixture now raises
+  only that test-only cap to 100, leaving the provider-scope checks intact.
+  Local `npm run test:http` reports 750 checks PASS and the refusal names the
+  `paid` scope. Commit follows `b6604af`; CI receipt is recorded after the push.
+
 ## 2026-11-03 — CI typecheck generates Next declarations first
 
 - **FID-2026-1103-142 — high — GitHub Actions failed at typecheck on `c889d83`.**

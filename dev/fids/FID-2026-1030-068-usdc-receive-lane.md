@@ -4,7 +4,7 @@
 **ID:** FID-2026-1030-068
 **Parent:** FID-2026-1030-044
 **Severity:** high
-**Status:** converged
+**Status:** fixed
 **Created:** 2026-10-30 23:10
 **Automation level:** 2
 **YAGNI-Compliance:** Pending
@@ -267,6 +267,13 @@ now declared as exact dependencies (2.4.0; moved from devDependencies when
 The 2026-10-30 receipt is retained as historical evidence; the 2026-11-02
 receipt is the reproducible one. That receipt is against `2a28552` plus the
 uncommitted dependency and test changes; no commit was created in this pass.
+
+**Ground-truth status correction 2026-11-02.** The original `converged` metadata
+described the design before implementation. Step 0 and the pure helper slice in
+step 4 now exist and have reproducible tests, so the record is `fixed` rather
+than `converged`. This FID remains active because the invoice schema, RPC reader,
+credit transaction, UI, chain/token/xpub/RPC inputs, and screening ruling are
+not complete; it is not a working receive lane and is not closed.
 
 ## Lessons Learned
 

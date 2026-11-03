@@ -3,6 +3,7 @@ import "@/styles/globals.css";
 
 import type { Metadata, Viewport } from "next";
 
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import clsx from "clsx";
 
 import { Providers } from "./providers";
@@ -86,6 +87,7 @@ export default function RootLayout({
             {children}
           </div>
         </Providers>
+        <SpeedInsights />
       </body>
     </html>
   );

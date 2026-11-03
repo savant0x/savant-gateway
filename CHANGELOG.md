@@ -3,6 +3,19 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-02 — Signal visual parity
+
+- **FID-2026-1102-115 — medium — Signal cards now use the supplied
+  `assets/thumb.jpg` when RSS provides no image, preserve real thumbnails, and
+  show a source badge.** Kind and topic pills share stable colored classes across
+  cards, the topics row, and detail pages; topic links display `#tag` without
+  changing stored slugs or routes. Verified in commit `3436a4d`: focused format
+  tests 6/6, `npm test` 848 tests (847 pass, 1 skipped), lint and typecheck exit
+  0, quality PASS (535 files), build exit 0, `npm run verify` exit 0 with 750
+  HTTP checks plus trial PASS and recovery PASS. Live discussion list/detail
+  smoke returned HTTP 200 without storage errors and included the fallback asset,
+  source label, and colored topic markers.
+
 ## 2026-11-02 — Admin fetch-all and stable Signal topics
 
 - **FID-2026-1102-113 — low — the admin content page can now refresh every

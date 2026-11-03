@@ -1,5 +1,28 @@
 # SCOPE.md — Gateway Project Review
 
+## Current Session — 2026-11-02 (Signal visual parity: 115)
+
+Operator request: bring the Signal discussion presentation closer to the
+aggroNATION reference and use the supplied Savant artwork for content without a
+source thumbnail. The request covers the public `/signal` cards, discussion
+detail metadata, and the shared content media/pill treatment. Existing
+uncommitted Speed Insights edits in `app/layout.tsx`, `package.json`, and
+`package-lock.json`, the generated Next.js `AGENTS.md` block, and the unrelated
+`assets/gateway-black-banner.jpg` are preserved.
+
+- [x] **V1 — Present and converge the visual-parity FID.**
+  `dev/fids/FID-2026-1102-115-signal-visual-parity.md` records the supplied
+  artwork, current Signal gaps, aggroNATION evidence, shared pill contract,
+  accessibility boundary, and verification plan.
+- [x] **V2 — Implement and verify Signal visual parity.** Commit `3436a4d`
+  adds the fallback image and shared stable pill/source-badge rendering, then
+  verifies discussion cards, detail tags, and the full repository gates. Focused
+  smoke: `/signal?kind=discussion&tag=ai-agents` and a discussion detail both
+  returned 200 with fallback media, colored pills, source labels, and no storage
+  error. `npm run verify` exited 0 with 848 tests (847 pass, 1 skipped), quality
+  PASS (535 files), build PASS, 750 HTTP checks plus trial PASS, and recovery
+  PASS.
+
 ## Current Session — 2026-11-02 (Signal legacy-schema repair: 111)
 
 Operator report: `/signal` renders `Content storage is unavailable: column
@@ -258,7 +281,10 @@ spend and messaging boundaries remain binding; no missing evidence is invented.
   056 closed after a 132/132 browser matrix, with real payment acceptance as
   `FID-2026-1030-056-LIVE`.
 - [ ] **C7 — FID-2026-1030-044 and FID-2026-1030-068:** commercial and USDC
-  implementation; chain/token, xpub, RPC and screening inputs requested.
+  implementation; chain/token, xpub, RPC and screening inputs requested. FID-
+  068 is now `fixed` for its implemented offline mechanism/helper slice, with
+  the invoice, watcher, credit transaction, UI, and operator-input steps still
+  blocked; the lane is not complete or offered.
 - [x] **C8 — FID-2026-1030-066 / FID-2026-1031-085/086:** reconcile the
   retained port plan with the storage ruling. On 2026-10-31 the operator ruled
   that production accounting will not run on one SQLite file; FID-066 is

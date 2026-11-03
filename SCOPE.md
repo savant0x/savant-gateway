@@ -1,5 +1,46 @@
 # SCOPE.md — Gateway Project Review
 
+## Current Session — 2026-11-03 (production database cutover)
+
+Operator report: production still used the non-production database, and a local
+dev boot failed with `column "parent_id" does not exist`. The operator supplied
+the Supabase connection string and asked for the production cutover to be
+completed.
+
+- [x] **D1 — Schema and connection.** The full application schema was applied to
+the Supabase project. The direct `db.<ref>.supabase.co` host is IPv6-only and
+was unreachable from this workstation and Vercel, so both use the project's
+pooler endpoint.
+- [x] **D2 — Production runtime.** Vercel production now has the pooler
+`DATABASE_URL`; `/api/ready` returns `200` with `storage: "ok"` and
+`/signal` serves the real catalog.
+- [x] **D3 — Data.** 44 models and 16 content sources are loaded; every source
+was fetched, producing 474 items with zero errored sources.
+- [x] **D4 — Development boot.** Local `npm run dev` reads the same pooler and
+serves 474 items. The `parent_id` migration repair from FID-125 is in commit
+`a193a8d`.
+- [x] **D5 — Seed isolation.** A local boot against the networked database had
+inserted `user_dev` / `dev@local`; the row was deleted and FID-138 ties the seed
+to the embedded engine. A fresh boot leaves zero matching rows.
+
+## Current Session — 2026-11-03 (product hardening FID program)
+
+Operator request: turn the eleven review findings into individual FIDs, run the
+Perfection Loop on each, then create and converge a master FID that orders their
+implementation. This session creates planning records only; no application
+behavior, schema, deployment, payment, or release state changes are authorized.
+
+- [x] **H1 — Child FIDs 126–136.** Each review finding has a dedicated converged
+  FID with impact, solution steps, exact gates, call-graph audit targets,
+  adversarial questions, and no implementation claim.
+- [x] **H2 — Perfection Loop evidence.** Each child records RED, GREEN, AUDIT,
+  ADVERSARIAL, missed questions, and convergence evidence; all steps are marked
+  `implemented (design)` rather than silently left unaccounted.
+- [x] **H3 — Master FID 137.** The eleven records are sequenced with dependencies
+  and release boundaries; the real-service acceptance record is last.
+- [x] **H4 — Durable references.** The current changelog records this planning
+  pass; the active FID queue remains the source of implementation obligations.
+
 ## Current Session — 2026-11-03 (existing database startup repair)
 
 Operator report: the dev server fails every database-backed page with

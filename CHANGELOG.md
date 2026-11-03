@@ -3,6 +3,34 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — Production database cutover and development seed isolation
+
+- **FID-2026-1103-138 — high — a development boot could write into production.**
+  The migration seeded `user_dev` whenever `NODE_ENV` was not `production`, so a
+  dev server pointed at the networked Supabase database inserted a fake customer
+  on boot. The seed now belongs to the embedded storage mode: PGlite seeds,
+  PostgreSQL does not, and direct `migrateDatabase` callers keep the historical
+  default for tests. The production `user_dev` row was deleted; a fresh local
+  boot against Supabase leaves zero matching rows. Focused storage tests 9/9,
+  typecheck 0, lint 0 warnings, quality PASS.
+- **Production storage moved to Supabase.** The full schema was applied, Vercel
+  production uses the project's pooled `DATABASE_URL`, and `/api/ready` reports
+  `storage: "ok"`. The direct `db.<ref>.supabase.co` host is IPv6-only and is
+  not reachable from Vercel; the pooler is the runtime endpoint. The catalog
+  holds 44 models and 16 sources, and every source produced items: 474 total,
+  zero errored sources. Local development reads the same pooler.
+
+## 2026-11-03 — Product hardening FID program
+
+- **FID-2026-1103-126 through FID-2026-1103-136 — planning —** eleven review
+  findings now have individual converged implementation contracts covering
+  production concurrency evidence, real launch acceptance, admin continuity and
+  diagnostics, content freshness, durable validators, stream telemetry, search
+  performance, empty states, project status, and verification summaries.
+- **FID-2026-1103-137 — critical — planning —** the master FID sequences those
+  records with dependencies and makes real-service acceptance the final gate.
+  No application behavior or release state changed in this planning pass.
+
 ## 2026-11-03 — Existing content schemas upgrade on boot
 
 - **FID-2026-1103-125 — critical — a pre-reply database could not start the

@@ -29,8 +29,9 @@ authorized a free version and a paid version with different SKUs or ids.
 - [x] **S3 — Make the detail page exact.** Every row links to its own id and
   path. `/models/free/glm-5.3` shows free-pool copy; `/models/glm-5.3` shows
   paid copy.
-- [x] **S4 — Agree with the API.** `/v1/models` and retrieve use the same SKU
-  name, while each id remains the request value.
+- [x] **S4 — Agree across surfaces.** `/v1/models`, retrieve, the comparison
+  picker and comparison headings use the same SKU name, while each id remains
+  the request value.
 - [x] **S5 — Verify.** Focused tests 21/21; `npm run verify` 904 tests (903
   pass, 1 skipped, 0 fail), build, HTTP and recovery PASS. FID-139 records the
   change.

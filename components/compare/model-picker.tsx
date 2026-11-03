@@ -4,7 +4,9 @@ import type { ModelSummary } from "@/lib/types";
 
 import { useRouter } from "next/navigation";
 
-type PickableModel = Pick<ModelSummary, "id" | "name" | "family">;
+import { catalogSkuName } from "@/lib/catalog-skus";
+
+type PickableModel = Pick<ModelSummary, "id" | "name" | "family" | "access">;
 
 function Select({
   label,
@@ -41,7 +43,7 @@ function Select({
                   disabled={model.id === otherValue}
                   value={model.id}
                 >
-                  {model.name}
+                  {catalogSkuName(model)}
                 </option>
               ))}
           </optgroup>

@@ -13,6 +13,7 @@ import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
 import { artificialAnalysisConfigured } from "@/lib/artificial-analysis";
 import { ensureBenchmarksFresh } from "@/lib/benchmark-sync";
+import { catalogSkuName } from "@/lib/catalog-skus";
 import { betterSide, resolveComparePair } from "@/lib/compare";
 import { AA_ATTRIBUTION_URL } from "@/lib/benchmarks";
 import { getOpenRouterModels } from "@/lib/openrouter-prices";
@@ -68,7 +69,7 @@ function winnerName(
 ) {
   if (winner === null) return null;
 
-  return winner === "left" ? left.name : right.name;
+  return winner === "left" ? catalogSkuName(left) : catalogSkuName(right);
 }
 
 export default async function ComparePage({
@@ -116,9 +117,9 @@ export default async function ComparePage({
             {pair ? (
               <>
                 <h1 className="mt-3 max-w-6xl text-3xl font-semibold tracking-[-0.04em] text-balance sm:text-4xl">
-                  {pair.left.name}
+                  {catalogSkuName(pair.left)}
                   <span className="mx-3 text-muted">vs</span>
-                  {pair.right.name}
+                  {catalogSkuName(pair.right)}
                 </h1>
                 <p className="mt-4 max-w-2xl text-sm leading-7 text-muted">
                   One attribute per line, both models on it: our rate, the
@@ -131,6 +132,7 @@ export default async function ComparePage({
                     id: model.id,
                     name: model.name,
                     family: model.family,
+                    access: model.access,
                   }))}
                   rightId={pair.right.id}
                 />

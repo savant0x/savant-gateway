@@ -25,7 +25,8 @@ distinguish verified behavior from unverified claims.
   same-tier provider rows still merge. Free rows render `(Free)`, subscription
   rows `(Subscription)`, and paid rows keep the provider name. Existing ids are
   unchanged: `free/glm-5.3` and `glm-5.3` remain the request values. The detail
-  page, `/v1/models` and retrieve all use the same qualified name.
+  page, `/v1/models`, retrieve and the comparison picker/headings all use the
+  same qualified name.
 - **Verified:** focused catalog and retrieve tests 21/21; full `npm run verify`
   904 tests (903 pass, 1 skipped, 0 fail), build, HTTP and recovery PASS. Local
   `/models` renders 12 free and 23 paid SKU rows; the free detail page returns

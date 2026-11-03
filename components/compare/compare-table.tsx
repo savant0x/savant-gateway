@@ -4,6 +4,7 @@ import type { PriceComparison } from "@/lib/price-comparison";
 
 import { buildCompareGroups } from "./compare-rows";
 
+import { catalogSkuName } from "@/lib/catalog-skus";
 import { isBetter } from "@/lib/compare";
 
 function ValueCell({
@@ -46,13 +47,15 @@ export function CompareTable({
   comparisons: Record<string, PriceComparison>;
 }) {
   const groups = buildCompareGroups({ benchmarks, comparisons, left, right });
+  const leftName = catalogSkuName(left);
+  const rightName = catalogSkuName(right);
 
   return (
     <div className="mt-6 overflow-hidden rounded-md border border-border bg-surface">
       <div className="overflow-x-auto">
         <table className="data-table compare-table">
           <caption className="sr-only">
-            {left.name} compared with {right.name}
+            {leftName} compared with {rightName}
           </caption>
           <colgroup>
             <col style={{ width: "30%" }} />
@@ -62,8 +65,8 @@ export function CompareTable({
           <thead>
             <tr>
               <th>Attribute</th>
-              <th>{left.name}</th>
-              <th>{right.name}</th>
+              <th>{leftName}</th>
+              <th>{rightName}</th>
             </tr>
           </thead>
           {groups.map((group) => (

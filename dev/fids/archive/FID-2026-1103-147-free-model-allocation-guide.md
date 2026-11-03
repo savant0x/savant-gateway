@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-147-free-model-allocation-guide.md`
 **ID:** FID-2026-1103-147
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-03 21:30
 **Automation level:** 2
 **YAGNI-Compliance:** Verified — one detail-page panel, one pure display helper, no
@@ -171,13 +171,13 @@ or `TrialBalance`.
 
 ## Implementation Evidence
 
-- [x] **Commit SHA:** this commit (the first commit after `48158c9`); the exact
-  SHA is recorded by the closing record commit.
+- [x] **Commit SHA:** `d02ec42` — `feat(catalog): explain free allocation on
+  model pages (FID-147)`.
 - [x] **File:line ranges:**
   - `app/models/[...id]/page.tsx:75-95` — free-only allocation read with an
     isolated failure flag.
   - `app/models/[...id]/page.tsx:177-184` — panel wiring.
-  - `components/catalog/free-allocation-panel.tsx:40-120` — facts and reset
+  - `components/catalog/free-allocation-panel.tsx:50-126` — facts and reset
     rendering; `:128-199` — daily and lifetime balances; `:202-290` — signed-in,
     unavailable, no-key and unobserved states; `:294-385` — panel and CTA.
   - `components/catalog/free-allocation-guide.tsx:16-75` — mode-aware FAQ;
@@ -241,11 +241,21 @@ or `TrialBalance`.
 
 ## Resolution
 
-- **Closed Date:** pending
-- **Fix Description:** pending
-- **Tests Added:** pending
-- **Verification Evidence:** pending
-- **Archived:** pending
+- **Closed Date:** 2026-11-03 21:43
+- **Fix Description:** Free SKU detail pages now load the signed-in customer's
+  daily or one-time allocation and render a free-allocation panel with current
+  balances, raw-token equivalent, reset/check context, a mode-aware FAQ and a
+  copyable first-call walkthrough. Signed-out visitors get the rules and a
+  sign-in path; missing observations, no-key, no-grant and storage failures
+  render explicit states rather than a zero balance.
+- **Tests Added:** Yes — `tests/free-pool.test.mjs` covers the raw-token
+  conversion, including zero and malformed weights.
+- **Verification Evidence:** `d02ec42` was built with `npm run typecheck`,
+  `node --test tests/free-pool.test.mjs` (14/14), `npm run quality` and
+  `npm run build`, all exit 0. `npm run lint` exits 0; the touched files are
+  clean, with six pre-existing formatting warnings in the untouched
+  `lib/launch-receipt.ts`.
+- **Archived:** `dev/fids/archive/FID-2026-1103-147-free-model-allocation-guide.md`.
 
 ## Lessons Learned
 

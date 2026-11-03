@@ -27,6 +27,7 @@ working set; each FID owns its own status, evidence and resolution.
 [126](archive/FID-2026-1103-126-production-concurrency-proof.md),
 [145](archive/FID-2026-1103-145-push-with-disposable-postgres.md),
 [146](archive/FID-2026-1103-146-trial-fixture-requires-real-postgres.md),
+[147](archive/FID-2026-1103-147-free-model-allocation-guide.md),
 [142](archive/FID-2026-1103-142-ci-typecheck-typegen.md),
 [143](archive/FID-2026-1103-143-deterministic-paid-limit-probe.md),
 [144](archive/FID-2026-1103-144-trial-suite-real-postgres.md),

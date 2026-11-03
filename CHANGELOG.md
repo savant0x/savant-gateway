@@ -3,6 +3,14 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — FID closure: free model allocation guide verified
+
+- **FID-2026-1103-147 — closed and archived.** Commit `d02ec42` passed the
+  focused free-pool test (14/14), typecheck, the 400-line quality gate and the
+  production build. Lint exits 0; the four touched source files are clean, and
+  six pre-existing formatting warnings remain in the untouched
+  `lib/launch-receipt.ts`. The record is in `dev/fids/archive/`.
+
 ## 2026-11-03 — Free model pages explain the allocation
 
 - **FID-2026-1103-147 — medium — a free SKU detail page did not state the

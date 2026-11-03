@@ -193,7 +193,7 @@ PostgreSQL and contains no connection string. Then run the declared gates.
 
 ## Implementation Evidence (REQUIRED for `closed`)
 
-- **Commit SHA:** this implementation commit.
+- **Commit SHA:** `a789b94`.
 - **File:line ranges:** `scripts/load-acceptance.mjs:19-120,140-300`
   (disposable PostgreSQL endpoint, `DATABASE_URL` boot, async seed/reconcile and
   receipt), `scripts/load/fixture.mjs:96-233` (async fixture),

@@ -182,7 +182,7 @@ Pending implementation.
 
 ## Implementation Evidence (REQUIRED for `closed`)
 
-- **Commit SHA:** this closure commit.
+- **Commit SHA:** `a789b94`.
 - **File:line ranges:** `app/api/admin/session/route.ts:28-99` (codes and caught
   epoch read), `lib/admin-auth.ts:21-35` (code channel),
   `lib/admin-diagnostics.ts:18-105` (whitespace and database state),

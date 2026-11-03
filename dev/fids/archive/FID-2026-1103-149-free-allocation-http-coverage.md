@@ -176,7 +176,7 @@ Pending implementation.
 
 ## Implementation Evidence (REQUIRED for `closed`)
 
-- **Commit SHA:** this closure commit.
+- **Commit SHA:** `a789b94`.
 - **File:line ranges:**
   `scripts/http-suite/free-allocation-checks.mjs:1-263` (the five page states and
   the FID-150 route contract), `scripts/http-suite/seed.mjs:44-84` (the `alloc`

@@ -159,7 +159,7 @@ Pending implementation.
 
 ## Implementation Evidence (REQUIRED for `closed`)
 
-- **Commit SHA:** this closure commit.
+- **Commit SHA:** `a789b94`.
 - **File:line ranges:** `app/api/account/allocation/route.ts:1-74` (mode-aware
   read), `components/catalog/free-allocation-check.tsx:1-80` (manual control),
   `components/catalog/free-allocation-panel.tsx:14,268-276` (render),

@@ -7,8 +7,6 @@
  * process memory without limit.
  */
 
-import { isIP } from "node:net";
-
 import { clientKey } from "../customer-rate-limit.ts";
 import {
   retryAfterSeconds,
@@ -34,25 +32,16 @@ export type SearchLimitDecision = {
 };
 
 /**
- * The configured trusted proxy header wins. Without one, a forwarded address
- * is a best-effort fallback: spoofable, but only lets a caller earn its own
- * bucket, never another client's.
+ * One identity policy for every public limiter: only a configured, trusted
+ * ingress header is read. A blank setting shares one client bucket, matching
+ * `GATEWAY_TRUSTED_IP_HEADER` in `.env.example`; a spoofable header must not
+ * mint a fresh search bucket.
  */
 export function searchClientKey(
   request: Request,
   env: Record<string, string | undefined> = process.env,
 ): string {
-  const trusted = clientKey(request, env);
-
-  if (trusted !== "untrusted-client") return trusted;
-
-  const forwarded = request.headers
-    .get("x-forwarded-for")
-    ?.split(",")[0]
-    ?.trim();
-  const direct = forwarded || request.headers.get("x-real-ip")?.trim();
-
-  return direct && isIP(direct) ? direct : "unknown-client";
+  return clientKey(request, env);
 }
 
 /** Runs only when the map is full, so a normal request never scans it. */

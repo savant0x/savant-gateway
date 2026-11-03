@@ -44,18 +44,18 @@ test("search limiter allows one burst, refuses the next request, and refills", (
   resetSearchRateLimit();
 });
 
-test("search client identity follows the trusted header policy", () => {
+test("search client identity reads only the configured trusted header", () => {
   const headers = new Headers({
     "x-forwarded-for": "198.51.100.7, 10.0.0.1",
     "x-real-ip": "198.51.100.8",
   });
+  const request = new Request("https://example.com", { headers });
 
+  // Blank setting: every caller shares one bucket, so a spoofed header cannot
+  // earn a fresh allowance.
+  assert.equal(searchClientKey(request, {}), "untrusted-client");
   assert.equal(
-    searchClientKey(new Request("https://example.com", { headers }), {}),
-    "198.51.100.7",
-  );
-  assert.equal(
-    searchClientKey(new Request("https://example.com", { headers }), {
+    searchClientKey(request, {
       GATEWAY_TRUSTED_IP_HEADER: "x-real-ip",
     }),
     "198.51.100.8",
@@ -65,9 +65,9 @@ test("search client identity follows the trusted header policy", () => {
       new Request("https://example.com", {
         headers: { "x-forwarded-for": "not-an-ip" },
       }),
-      {},
+      { GATEWAY_TRUSTED_IP_HEADER: "x-real-ip" },
     ),
-    "unknown-client",
+    "untrusted-client",
   );
 });
 

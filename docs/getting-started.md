@@ -125,10 +125,18 @@ npm test             # unit tests
 npm run quality      # 400-line file ceiling
 npm run build        # production build
 npm run test:http    # builds must already exist; disposable database
+npm run test:postgres # two-connection debit proof; Docker or TEST_DATABASE_URL
 npm run test:recovery # backup/restore drill; builds must already exist
-npm run verify       # all of the above, including config:check
+npm run verify       # sequential runner; writes .verify/summary.json
 ```
 
 The pre-push hook runs the same gates plus the attribution guard and fails
 closed. CI runs the same set. `npm run verify` does not run
 `config:check:prod`; that is a deployment-time gate, not a local one.
+Every gate's raw output is kept in `.verify/<gate>.log`, and the JSON summary
+records exit codes, durations, test totals and unexpected skips. A skipped
+required gate fails the run; the summary is not a replacement for the logs.
+
+The PostgreSQL concurrency proof is mandatory and never silently skips. Set
+`TEST_DATABASE_URL` to a disposable database, or leave it unset and keep Docker
+running so the gate can start a throwaway `postgres:17-alpine` container.

@@ -48,6 +48,7 @@ export type ModelRow = {
   served_cost_input_micros: number | null;
   served_cost_output_micros: number | null;
   cost_source: "synced" | "manual" | "unknown";
+  cost_observed_at: string | null;
   context_window: string;
   token_weight: number;
   input_price_micros: number;
@@ -258,6 +259,7 @@ export function toAdminModelSummary(
     upstreamSlug: row.upstream_slug,
     protocol: row.protocol,
     costSource: row.cost_source,
+    costObservedAt: row.cost_observed_at ?? null,
     costInputPer1M: microsToPrice(costInput),
     costOutputPer1M: microsToPrice(costOutput),
     ownCostInputPer1M: microsToPrice(row.input_price_micros),

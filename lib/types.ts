@@ -65,6 +65,8 @@ export type AdminModelSummary = ModelSummary & {
   upstreamSlug: string;
   protocol: "chat" | "messages";
   costSource: "synced" | "manual" | "unknown";
+  /** When a manual cost was observed; null on synced or unknown rows. */
+  costObservedAt: string | null;
   costInputPer1M: number;
   costOutputPer1M: number;
   /** This row's own cost; the serving route may be another provider. */

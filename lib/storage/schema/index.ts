@@ -6,6 +6,7 @@ import { contentSchema } from "./content.ts";
 import { coreSchema } from "./core.ts";
 import { customerSchema } from "./customers.ts";
 import { identitySchema } from "./identity.ts";
+import { pricingSchema } from "./pricing.ts";
 
 /**
  * The additive migration for the Postgres port (FID-2026-1031-085, step 2).
@@ -25,6 +26,7 @@ export async function applySchema(
   await coreSchema(db);
   await customerSchema(db);
   await catalogSchema(db);
+  await pricingSchema(db);
   await billingSchema(db);
   await identitySchema(db);
   await contentSchema(db);

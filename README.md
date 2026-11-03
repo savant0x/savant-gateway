@@ -265,26 +265,43 @@ refuses a production start without a networked `DATABASE_URL`.
    vercel env add NEXT_PUBLIC_SITE_URL production   # https://savant-gateway.vercel.app
    vercel env add ADMIN_PASSWORD production
    vercel env add ADMIN_SESSION_SECRET production
+   vercel env add PROVIDER_KEY production
+   vercel env add COMMANDCODE_API_KEY production   # only if that provider is enabled
    ```
 
-   Add the provider key and any payment/content keys you use. Use the pooled
-   database URL so serverless instances do not exhaust connections.
-3. **Deploy.**
+   Add any payment/content keys you use. Use the pooled database URL so
+   serverless instances do not exhaust connections. The provider registry stores
+   the variable *name*, not the value: a key in local `.env.local` is not
+   deployed just because the source is. Add the same names to **Preview** as
+   well, or a preview deployment cannot reach the upstream even though the
+   production one can.
+3. **Connect Git and confirm the branch.** In Vercel → Project → Settings → Git,
+   the Production Branch must be the branch you push (`main`). A commit that is
+   only local is not a deployment. Check the deployed commit in Vercel or on
+   Admin → Diagnostics; it must match `git rev-parse HEAD` for the pushed tree.
+4. **Deploy.**
 
    ```bash
    vercel --prod
    ```
 
-4. **Verify readiness.**
+   A Git push to the Production Branch deploys automatically. Re-run the
+   deployment after changing an environment variable: an existing deployment
+   keeps the environment it was built with.
+5. **Verify readiness and runtime keys.**
 
    ```bash
    curl -fsS https://<domain>/api/ready
-   ```
-
-   It must return `200` with `checks.configuration: "ok"` and
+   ```   It must return `200` with `checks.configuration: "ok"` and
    `checks.storage: "ok"`. A missing or invalid value fails at startup with
-   issue codes such as `db_missing`, `origin_missing` or `admin_unconfigured`.
-   `/api/health` is liveness only; `/api/ready` is the truthful probe.
+   issue codes such as `db_missing`, `origin_missing` or
+   `admin_unconfigured`. `/api/health` is liveness only; `/api/ready` is the
+   truthful probe. Then open **Admin → Diagnostics** on the deployed URL: it
+   reports the running commit, branch, Vercel environment and provider-key
+   presence without showing a value. `npm run receipt:deploy` records the same
+   fields for the local checkout; comparing the two is the deployment receipt.
+   A provider key can be present locally and missing on Vercel, and a provider
+   test that passes locally proves nothing about the hosted runtime.
 
 The build logs may show two npm warnings on Vercel: an unknown `cache-dir` env
 config and install scripts for `better-sqlite3`/`unrs-resolver`. Neither is a
@@ -311,19 +328,23 @@ npm test                  # node --test "tests/*.test.mjs"
 npm run quality           # 400-line file ceiling
 npm run build             # next build
 npm run test:http         # HTTP suites against a disposable database
+npm run test:postgres     # mandatory two-connection debit proof (Docker or TEST_DATABASE_URL)
 npm run test:recovery     # backup/restore/reconciliation drill
+npm run receipt:deploy    # redacted local deployment/env-presence receipt
 
-npm run verify            # all of the above except config:check:prod
+npm run verify            # sequential runner; writes .verify/summary.json and per-gate logs
 ```
 
-The pre-push hook runs the attribution guard plus `npm run verify` and fails
+The pre-push hook runs the attribution guard plus the same gates and fails
 closed. CI runs the same set on every push and pull request; a separate workflow
 rejects coding-agent attribution anywhere in commit history.
 
-The current unit suite is 824 tests (823 passing, 1 skipped) on this tree. The
-full HTTP/recovery receipt is recorded in [CHANGELOG.md](CHANGELOG.md); run
-`npm run verify` before publishing a release rather than treating an earlier
-receipt as current.
+`verify` is fail-closed: a non-zero gate, a signal-terminated gate, a missing
+required gate or an unexpected skip fails the run even if the other gates pass.
+The raw output stays in `.verify/<gate>.log`; `.verify/summary.json` has the
+machine-readable exit codes, durations and test counts. Run `npm test` for the
+current test count rather than trusting a number in prose; the full
+HTTP/recovery receipt is recorded in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 

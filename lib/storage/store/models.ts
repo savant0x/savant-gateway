@@ -13,6 +13,7 @@ import {
 } from "../../projections.ts";
 
 import { MODEL_SELECT } from "./model-sql.ts";
+import { recordPricingDecision } from "./pricing-decisions.ts";
 import { reconcileRoutes, routesByGroup } from "./routes.ts";
 import { getMarkupBps } from "./settings.ts";
 
@@ -159,40 +160,80 @@ export async function setModelCost(
   return true;
 }
 
+/**
+ * The audit metadata for an approved price (FID-2026-1103-141). The price
+ * update and this row commit together, so a changed sell price cannot exist
+ * without the cost basis and reason that approved it.
+ */
+export type PricingApproval = {
+  actor: string;
+  reason: string;
+  modelName: string;
+  costSource: "synced" | "manual" | "unknown";
+  costInputMicros: number;
+  costOutputMicros: number;
+  targetMarginBps: number | null;
+  rounding: string | null;
+  recommendationJson: string;
+};
+
 export async function setModelPricing(
   db: PostgresDatabase,
   modelId: string,
   sellInputMicros: number,
   sellOutputMicros: number,
+  approval?: PricingApproval,
 ) {
   const row = await db
     .prepare(
-      `SELECT m.allow_free, m.token_weight, m.upstream_id, m.group_slug,
-              g.billing_mode AS group_billing_mode
-         FROM models m
-         LEFT JOIN model_groups g ON g.slug = m.group_slug
-        WHERE m.id = ?`,
+      `${MODEL_SELECT}
+       WHERE m.id = ?`,
     )
-    .get<AccessRow>(modelId);
+    .get<ModelRow>(modelId);
 
   if (!row || accessFor(row) === "free") return false;
 
-  const result = await db
-    .prepare(
-      `UPDATE models
-          SET sell_input_micros = ?, sell_output_micros = ?,
-              price_source = 'manual'
-        WHERE id = ?`,
-    )
-    .run(
-      Math.max(0, Math.round(sellInputMicros)),
-      Math.max(0, Math.round(sellOutputMicros)),
+  const afterInput = Math.max(0, Math.round(sellInputMicros));
+  const afterOutput = Math.max(0, Math.round(sellOutputMicros));
+  let updated = false;
+
+  await db.transaction(async () => {
+    const result = await db
+      .prepare(
+        `UPDATE models
+              SET sell_input_micros = ?, sell_output_micros = ?,
+                  price_source = 'manual'
+            WHERE id = ?`,
+      )
+      .run(afterInput, afterOutput, modelId);
+
+    if (result.changes === 0) return;
+
+    updated = true;
+
+    if (!approval) return;
+
+    await recordPricingDecision(db, {
       modelId,
-    );
+      modelName: approval.modelName,
+      actor: approval.actor,
+      reason: approval.reason,
+      costSource: approval.costSource,
+      costInputMicros: approval.costInputMicros,
+      costOutputMicros: approval.costOutputMicros,
+      beforeInputMicros: Number(row.sell_input_micros),
+      beforeOutputMicros: Number(row.sell_output_micros),
+      afterInputMicros: afterInput,
+      afterOutputMicros: afterOutput,
+      targetMarginBps: approval.targetMarginBps,
+      rounding: approval.rounding,
+      recommendationJson: approval.recommendationJson,
+    });
+  })();
 
-  if (result.changes > 0) await reconcileRoutes(db);
+  if (updated) await reconcileRoutes(db);
 
-  return result.changes > 0;
+  return updated;
 }
 
 export async function getModelForGateway(

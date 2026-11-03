@@ -12,6 +12,7 @@ import { PricingRow } from "./pricing-row";
 
 import { formatPricePer1M } from "@/components/dashboard/format";
 import { Pagination } from "@/components/ui/pagination";
+import { adminLoginHref } from "@/lib/admin-return";
 
 type Filter = "all" | "priced" | "unpriced" | "free";
 
@@ -124,7 +125,11 @@ export function PricingTable({
       } | null;
 
       if (response.status === 401) {
-        router.replace("/admin/login");
+        router.replace(
+          adminLoginHref(
+            `${window.location.pathname}${window.location.search}`,
+          ),
+        );
 
         return;
       }
@@ -236,16 +241,27 @@ export function PricingTable({
         ) : (
           <div className="scroll-shell max-h-[40rem]">
             <table className="data-table">
+              <caption className="sr-only">
+                Sell prices and the resulting margin for each catalogued model.
+              </caption>
               <thead>
                 <tr>
-                  <th>Model</th>
-                  <th>Family</th>
-                  <th>Group</th>
-                  <th className="text-right">Cost in / out</th>
-                  <th className="text-right">Sell in / out</th>
-                  <th className="text-right">Margin</th>
-                  <th className="text-right">Profit / 1M+1M</th>
-                  <th>Save</th>
+                  <th scope="col">Model</th>
+                  <th scope="col">Family</th>
+                  <th scope="col">Group</th>
+                  <th className="text-right" scope="col">
+                    Cost in / out
+                  </th>
+                  <th className="text-right" scope="col">
+                    Sell in / out
+                  </th>
+                  <th className="text-right" scope="col">
+                    Margin
+                  </th>
+                  <th className="text-right" scope="col">
+                    Profit / 1M+1M
+                  </th>
+                  <th scope="col">Save</th>
                 </tr>
               </thead>
               <tbody>

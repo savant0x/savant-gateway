@@ -1,16 +1,41 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
-import { readMarkupInput, readPriceInput } from "@/lib/pricing";
+import { priceToMicros, readMarkupInput, readPriceInput } from "@/lib/pricing";
+import { recommendPrices } from "@/lib/price-recommendation";
 import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 import {
   applyCatalogMarkup,
   getPricingSummary,
   listAllModels,
+  listPricingDecisions,
   saveMarkupBps,
   setModelPricing,
 } from "@/lib/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const MAX_REASON_LENGTH = 500;
+const MAX_TARGET_MARGIN_BPS = 9_900;
+
+function readReason(value: unknown) {
+  if (typeof value !== "string") return null;
+
+  const reason = value.trim().slice(0, MAX_REASON_LENGTH);
+
+  return reason.length >= 3 ? reason : null;
+}
+
+function readTargetMargin(value: unknown) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+
+  const bps = Math.round(value);
+
+  return bps >= 0 && bps <= MAX_TARGET_MARGIN_BPS ? bps : null;
+}
+
+function readRounding(value: unknown) {
+  return value === "cent" ? "cent" : "micro";
+}
 
 export async function GET(request: Request) {
   const blocked = await guardAdminApi(request);
@@ -20,7 +45,11 @@ export async function GET(request: Request) {
   const models = await listAllModels();
 
   return Response.json(
-    { models, summary: await getPricingSummary(models) },
+    {
+      models,
+      summary: await getPricingSummary(models),
+      decisions: await listPricingDecisions(100),
+    },
     { headers: NO_STORE },
   );
 }
@@ -34,6 +63,10 @@ export async function PATCH(request: Request) {
     id?: unknown;
     inputPricePer1M?: unknown;
     outputPricePer1M?: unknown;
+    mode?: unknown;
+    targetMarginBps?: unknown;
+    rounding?: unknown;
+    reason?: unknown;
   };
 
   try {
@@ -43,15 +76,8 @@ export async function PATCH(request: Request) {
   }
 
   const id = typeof body.id === "string" ? body.id : "";
-  const inputMicros = readPriceInput(body.inputPricePer1M);
-  const outputMicros = readPriceInput(body.outputPricePer1M);
 
-  if (!id || inputMicros === null || outputMicros === null) {
-    return adminError(
-      400,
-      "A model id and non-negative input/output prices (USD per 1M) are required.",
-    );
-  }
+  if (!id) return adminError(400, "A model id is required.");
 
   const model = (await listAllModels()).find((row) => row.id === id);
 
@@ -64,7 +90,97 @@ export async function PATCH(request: Request) {
     );
   }
 
-  if (!(await setModelPricing(id, inputMicros, outputMicros))) {
+  const reason = readReason(body.reason);
+  const costInputMicros = priceToMicros(model.costInputPer1M);
+  const costOutputMicros = priceToMicros(model.costOutputPer1M);
+
+  if (body.mode === "recommendation") {
+    const targetMarginBps = readTargetMargin(body.targetMarginBps);
+
+    if (targetMarginBps === null) {
+      return adminError(
+        400,
+        "targetMarginBps must be an integer between 0 and 9900.",
+      );
+    }
+
+    if (!reason) {
+      return adminError(
+        400,
+        "A reason of at least 3 characters is required to approve a recommendation.",
+      );
+    }
+
+    const recommendation = recommendPrices({
+      access: model.access,
+      costInputMicros,
+      costOutputMicros,
+      currentInputMicros: priceToMicros(model.inputPricePer1M),
+      currentOutputMicros: priceToMicros(model.outputPricePer1M),
+      costSource: model.costSource,
+      costObservedAt: model.costObservedAt,
+      targetMarginBps,
+      rounding: readRounding(body.rounding),
+    });
+
+    if (!recommendation.eligible) {
+      return adminError(409, recommendation.reason);
+    }
+
+    if (
+      !(await setModelPricing(
+        id,
+        recommendation.inputMicros,
+        recommendation.outputMicros,
+        {
+          actor: "admin-session",
+          reason,
+          modelName: model.name,
+          costSource: model.costSource,
+          costInputMicros,
+          costOutputMicros,
+          targetMarginBps,
+          rounding: recommendation.rounding,
+          recommendationJson: JSON.stringify(recommendation),
+        },
+      ))
+    ) {
+      return adminError(404, "Model not found.");
+    }
+
+    return Response.json(
+      {
+        ok: true,
+        recommendation,
+        model: (await listAllModels()).find((row) => row.id === id),
+      },
+      { headers: NO_STORE },
+    );
+  }
+
+  const inputMicros = readPriceInput(body.inputPricePer1M);
+  const outputMicros = readPriceInput(body.outputPricePer1M);
+
+  if (inputMicros === null || outputMicros === null) {
+    return adminError(
+      400,
+      "Non-negative input/output prices (USD per 1M) are required.",
+    );
+  }
+
+  if (
+    !(await setModelPricing(id, inputMicros, outputMicros, {
+      actor: "admin-session",
+      reason: reason ?? "Manual price edit.",
+      modelName: model.name,
+      costSource: model.costSource,
+      costInputMicros,
+      costOutputMicros,
+      targetMarginBps: null,
+      rounding: null,
+      recommendationJson: JSON.stringify({ mode: "manual" }),
+    }))
+  ) {
     return adminError(404, "Model not found.");
   }
 

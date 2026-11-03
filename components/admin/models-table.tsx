@@ -9,8 +9,15 @@ import { useMemo, useState } from "react";
 import { GroupSelect } from "@/components/admin/group-select";
 import { ModelCostEditor } from "@/components/admin/model-cost-editor";
 import { StatusChip } from "@/components/dashboard/chips";
-import { formatPricePer1M } from "@/components/dashboard/format";
+import {
+  formatMarginPercent,
+  formatPricePer1M,
+  formatSignedMicros,
+} from "@/components/dashboard/format";
 import { Pagination } from "@/components/ui/pagination";
+import { adminLoginHref } from "@/lib/admin-return";
+import { catalogEconomics, scenarioLabel } from "@/lib/catalog-economics";
+import { priceToMicros } from "@/lib/pricing";
 
 type Filter =
   "all" | "active" | "disabled" | "free" | "paid" | "unpriced" | "delisted";
@@ -109,7 +116,11 @@ export function AdminModelsTable({
       });
 
       if (response.status === 401) {
-        router.replace("/admin/login");
+        router.replace(
+          adminLoginHref(
+            `${window.location.pathname}${window.location.search}`,
+          ),
+        );
 
         return;
       }
@@ -151,7 +162,8 @@ export function AdminModelsTable({
               Disabled models leave the public catalog and the gateway. A
               delisted row vanished from one provider but keeps its prices and
               history. Paid rows need a known upstream cost before they can be
-              enabled.
+              enabled. Margin and profit use the serving route&apos;s cost and a
+              labelled 1M in + 1M out scenario; they are not realized revenue.
             </Card.Description>
           </div>
           <Chip color="default" size="sm" variant="soft">
@@ -216,93 +228,154 @@ export function AdminModelsTable({
         ) : (
           <div className="scroll-shell max-h-[36rem]">
             <table className="data-table">
+              <caption className="sr-only">
+                Catalog rows with upstream cost, customer sell price, and the
+                resulting margin for{" "}
+                {scenarioLabel({
+                  inputTokens: 1_000_000,
+                  outputTokens: 1_000_000,
+                })}
+                .
+              </caption>
               <thead>
                 <tr>
-                  <th>Model</th>
-                  <th>Provider</th>
-                  <th>Family</th>
-                  <th>Group</th>
-                  <th>Status</th>
-                  <th className="text-right">Sell / 1M</th>
-                  <th className="text-right">Cost / 1M</th>
-                  <th>Context</th>
-                  <th>Action</th>
+                  <th scope="col">Model</th>
+                  <th scope="col">Provider</th>
+                  <th scope="col">Family</th>
+                  <th scope="col">Group</th>
+                  <th scope="col">Status</th>
+                  <th className="text-right" scope="col">
+                    Sell / 1M
+                  </th>
+                  <th className="text-right" scope="col">
+                    Cost / 1M
+                  </th>
+                  <th className="text-right" scope="col">
+                    Margin / profit
+                  </th>
+                  <th scope="col">Context</th>
+                  <th scope="col">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map((model) => (
-                  <tr key={model.id}>
-                    <td className="max-w-[22rem]">
-                      <div className="flex items-center gap-2">
-                        <span className="truncate font-medium">
-                          {model.name}
-                        </span>
-                        {!model.inCatalog ? (
-                          <Chip color="warning" size="sm" variant="soft">
-                            delisted
-                          </Chip>
+                {rows.map((model) => {
+                  const economics = catalogEconomics({
+                    access: model.access,
+                    costInputMicros: priceToMicros(model.costInputPer1M),
+                    costOutputMicros: priceToMicros(model.costOutputPer1M),
+                    sellInputMicros: priceToMicros(model.inputPricePer1M),
+                    sellOutputMicros: priceToMicros(model.outputPricePer1M),
+                    costSource: model.costSource,
+                    costObservedAt: model.costObservedAt,
+                  });
+
+                  return (
+                    <tr key={model.id}>
+                      <td className="max-w-[22rem]">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate font-medium">
+                            {model.name}
+                          </span>
+                          {!model.inCatalog ? (
+                            <Chip color="warning" size="sm" variant="soft">
+                              delisted
+                            </Chip>
+                          ) : null}
+                        </div>
+                        <div className="mono mt-0.5 truncate text-[11px] text-muted">
+                          {model.id}
+                        </div>
+                      </td>
+                      <td className="whitespace-nowrap text-muted">
+                        {model.servedProviderSlug ?? model.upstreamSlug}
+                        {model.servedProviderSlug &&
+                        model.servedProviderSlug !== model.upstreamSlug ? (
+                          <p className="text-[11px] text-accent">
+                            cheapest of {model.routes.length}
+                          </p>
+                        ) : (
+                          <p className="text-[11px]">{model.protocol}</p>
+                        )}
+                        {model.routes.length > 1 ? (
+                          <p className="text-[11px]">
+                            {model.routes
+                              .map((route) => route.providerSlug)
+                              .join(" · ")}
+                          </p>
                         ) : null}
-                      </div>
-                      <div className="mono mt-0.5 truncate text-[11px] text-muted">
-                        {model.id}
-                      </div>
-                    </td>
-                    <td className="whitespace-nowrap text-muted">
-                      {model.servedProviderSlug ?? model.upstreamSlug}
-                      {model.servedProviderSlug &&
-                      model.servedProviderSlug !== model.upstreamSlug ? (
-                        <p className="text-[11px] text-accent">
-                          cheapest of {model.routes.length}
+                      </td>
+                      <td className="text-muted">{model.family}</td>
+                      <td>
+                        <GroupSelect
+                          groupSlug={model.groupSlug}
+                          groups={groups}
+                          modelId={model.id}
+                        />
+                        <p className="mt-1 text-[11px] text-muted">
+                          {model.access} billing · {model.groupSource}
                         </p>
-                      ) : (
-                        <p className="text-[11px]">{model.protocol}</p>
-                      )}
-                      {model.routes.length > 1 ? (
-                        <p className="text-[11px]">
-                          {model.routes
-                            .map((route) => route.providerSlug)
-                            .join(" · ")}
-                        </p>
-                      ) : null}
-                    </td>
-                    <td className="text-muted">{model.family}</td>
-                    <td>
-                      <GroupSelect
-                        groupSlug={model.groupSlug}
-                        groups={groups}
-                        modelId={model.id}
-                      />
-                      <p className="mt-1 text-[11px] text-muted">
-                        {model.access} billing · {model.groupSource}
-                      </p>
-                    </td>
-                    <td>
-                      <StatusChip status={model.status} />
-                    </td>
-                    <td className="whitespace-nowrap text-right">
-                      {price(model)}
-                    </td>
-                    <td className="text-right">
-                      <ModelCostEditor model={model} />
-                    </td>
-                    <td className="text-muted">{model.contextWindow}</td>
-                    <td>
-                      <Button
-                        isDisabled={busyId === model.id || !model.inCatalog}
-                        size="sm"
-                        variant={
-                          model.status === "active"
-                            ? "danger-soft"
-                            : "secondary"
-                        }
-                        onPress={() => toggle(model)}
-                      >
-                        {busyId === model.id ? <Spinner size="sm" /> : null}
-                        {model.status === "active" ? "Disable" : "Enable"}
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td>
+                        <StatusChip status={model.status} />
+                      </td>
+                      <td className="whitespace-nowrap text-right align-middle tabular-nums">
+                        {price(model)}
+                      </td>
+                      <td className="text-right align-middle">
+                        <ModelCostEditor model={model} />
+                      </td>
+                      <td className="whitespace-nowrap text-right align-middle tabular-nums">
+                        {model.access === "free" ? (
+                          <span className="text-success">Free group</span>
+                        ) : (
+                          <>
+                            <span>
+                              {formatMarginPercent(economics.inputMarginBps)} /{" "}
+                              {formatMarginPercent(economics.outputMarginBps)}
+                            </span>
+                            <p
+                              className={
+                                economics.blendedProfitMicros >= 0
+                                  ? "text-[11px] text-success"
+                                  : "text-[11px] text-danger"
+                              }
+                            >
+                              {formatSignedMicros(
+                                economics.blendedProfitMicros,
+                              )}
+                            </p>
+                          </>
+                        )}
+                        {economics.warnings.length > 0 ? (
+                          <p
+                            className="max-w-[14rem] text-[11px] leading-4 text-warning"
+                            title={economics.warnings.join(" ")}
+                          >
+                            {economics.warnings[0]}
+                          </p>
+                        ) : null}
+                      </td>
+                      <td className="align-middle text-muted">
+                        {model.contextWindow}
+                      </td>
+                      <td>
+                        <Button
+                          isDisabled={busyId === model.id || !model.inCatalog}
+                          size="sm"
+                          variant={
+                            model.status === "active"
+                              ? "danger-soft"
+                              : "secondary"
+                          }
+                          onPress={() => toggle(model)}
+                        >
+                          {busyId === model.id ? <Spinner size="sm" /> : null}
+                          {model.status === "active" ? "Disable" : "Enable"}
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

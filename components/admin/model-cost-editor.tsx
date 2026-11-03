@@ -6,16 +6,38 @@ import { Button, Spinner } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { PricingInputs } from "@/components/admin/pricing-inputs";
 import { formatPricePer1M, responseError } from "@/components/dashboard/format";
+import { adminLoginHref } from "@/lib/admin-return";
+import { readPriceInput } from "@/lib/pricing";
+
+function initial(value: number) {
+  return String(Number(value.toFixed(6)));
+}
 
 export function ModelCostEditor({ model }: { model: AdminModelSummary }) {
   const router = useRouter();
-  const [input, setInput] = useState(String(model.costInputPer1M));
-  const [output, setOutput] = useState(String(model.costOutputPer1M));
+  const [input, setInput] = useState(initial(model.ownCostInputPer1M));
+  const [output, setOutput] = useState(initial(model.ownCostOutputPer1M));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const parsedInput = input.trim() === "" ? Number.NaN : Number(input);
+  const parsedOutput = output.trim() === "" ? Number.NaN : Number(output);
+  const inputMicros = readPriceInput(parsedInput);
+  const outputMicros = readPriceInput(parsedOutput);
+  const invalid = inputMicros === null || outputMicros === null;
+  const dirty =
+    parsedInput !== model.ownCostInputPer1M ||
+    parsedOutput !== model.ownCostOutputPer1M;
+
   async function save() {
+    if (invalid) {
+      setError("Both costs must be non-negative numbers in USD per 1M tokens.");
+
+      return;
+    }
+
     setBusy(true);
     setError(null);
 
@@ -25,13 +47,17 @@ export function ModelCostEditor({ model }: { model: AdminModelSummary }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: model.id,
-          costInputPer1M: Number(input),
-          costOutputPer1M: Number(output),
+          costInputPer1M: parsedInput,
+          costOutputPer1M: parsedOutput,
         }),
       });
 
       if (response.status === 401) {
-        router.replace("/admin/login");
+        router.replace(
+          adminLoginHref(
+            `${window.location.pathname}${window.location.search}`,
+          ),
+        );
 
         return;
       }
@@ -57,7 +83,7 @@ export function ModelCostEditor({ model }: { model: AdminModelSummary }) {
   ) {
     return (
       <div className="min-w-[13rem] space-y-1">
-        <p className="mono text-xs">
+        <p className="mono text-xs tabular-nums">
           {formatPricePer1M(model.costInputPer1M)} /{" "}
           {formatPricePer1M(model.costOutputPer1M)}
         </p>
@@ -69,30 +95,37 @@ export function ModelCostEditor({ model }: { model: AdminModelSummary }) {
   }
 
   return (
-    <div className="min-w-[13rem] space-y-1">
-      <div className="flex items-center gap-1">
-        <input
-          aria-label={`${model.name} input cost per 1M`}
-          className="w-20 rounded-lg border border-white/10 bg-surface px-2 py-1 text-xs"
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-        />
-        <input
-          aria-label={`${model.name} output cost per 1M`}
-          className="w-20 rounded-lg border border-white/10 bg-surface px-2 py-1 text-xs"
-          value={output}
-          onChange={(event) => setOutput(event.target.value)}
-        />
-        <Button isDisabled={busy} size="sm" variant="secondary" onPress={save}>
-          {busy ? <Spinner size="sm" /> : "Save"}
+    <div className="min-w-[15rem] space-y-1.5">
+      <PricingInputs
+        compact
+        help="What the provider charges this gateway. Editing marks the cost manual; auto sell prices follow the default markup."
+        idPrefix={`cost-${model.id}`}
+        input={input}
+        inputInvalid={inputMicros === null}
+        legend="Upstream cost"
+        output={output}
+        outputInvalid={outputMicros === null}
+        onInput={setInput}
+        onOutput={setOutput}
+      />
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[11px] text-muted">
+          {model.costSource === "unknown"
+            ? "Cost unknown — set before enabling"
+            : model.costSource}
+          {model.costObservedAt
+            ? ` · observed ${new Date(model.costObservedAt).toISOString().slice(0, 10)}`
+            : ""}
+        </p>
+        <Button
+          isDisabled={busy || invalid || !dirty}
+          size="sm"
+          variant="secondary"
+          onPress={save}
+        >
+          {busy ? <Spinner size="sm" /> : "Save cost"}
         </Button>
       </div>
-      <p className="text-[11px] text-muted">
-        {model.costSource === "unknown"
-          ? "Cost unknown — set before enabling"
-          : model.costSource}
-        {model.access === "free" ? " · sell stays zero in a free group" : ""}
-      </p>
       {error ? <p className="text-[11px] text-danger">{error}</p> : null}
     </div>
   );

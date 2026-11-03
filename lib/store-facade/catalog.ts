@@ -4,6 +4,7 @@ import * as groups from "../storage/store/groups.ts";
 import * as modelSync from "../storage/store/model-sync.ts";
 import * as models from "../storage/store/models.ts";
 import * as pricing from "../storage/store/pricing.ts";
+import * as pricingDecisions from "../storage/store/pricing-decisions.ts";
 import * as providerCatalog from "../storage/store/provider-catalog.ts";
 import * as providers from "../storage/store/providers.ts";
 import * as routes from "../storage/store/routes.ts";
@@ -56,6 +57,9 @@ export const getMarkupBps = bound(settings.getMarkupBps);
 export const saveMarkupBps = bound(settings.saveMarkupBps);
 
 export const getPricingSummary = bound(pricing.getPricingSummary);
+export const listPricingDecisions = bound(
+  pricingDecisions.listPricingDecisions,
+);
 
 export const listProviderCatalogSummary = bound(
   providerCatalog.listProviderCatalogSummary,

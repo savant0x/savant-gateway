@@ -1,11 +1,12 @@
 import type { AdminModelSummary, ModelGroupSummary } from "@/lib/types";
 import type { PriceDraft } from "./pricing-draft";
 
-import { Button, Chip, Input, Spinner } from "@heroui/react";
+import { Button, Chip, Spinner } from "@heroui/react";
 
 import { parseDraftPrice } from "./pricing-draft";
 
 import { GroupSelect } from "@/components/admin/group-select";
+import { PricingInputs } from "@/components/admin/pricing-inputs";
 import {
   formatMarginPercent,
   formatPricePer1M,
@@ -83,7 +84,7 @@ export function PricingRow({
         />
         <p className="mt-1 text-[11px] text-muted">{model.access} billing</p>
       </td>
-      <td className="whitespace-nowrap text-right text-muted">
+      <td className="whitespace-nowrap text-right align-middle text-muted tabular-nums">
         {free
           ? "Free"
           : `${formatPricePer1M(model.costInputPer1M)} / ${formatPricePer1M(model.costOutputPer1M)}`}
@@ -100,29 +101,23 @@ export function PricingRow({
             ) : null}
           </div>
         ) : (
-          <div className="ml-auto flex w-[11.5rem] gap-1">
-            <Input
-              aria-label={`${model.name} sell input price`}
-              className="w-full text-right text-xs"
-              min={0}
-              step="0.000001"
-              type="number"
-              value={draft.input}
-              onChange={(event) => onChange({ input: event.target.value })}
-            />
-            <Input
-              aria-label={`${model.name} sell output price`}
-              className="w-full text-right text-xs"
-              min={0}
-              step="0.000001"
-              type="number"
-              value={draft.output}
-              onChange={(event) => onChange({ output: event.target.value })}
+          <div className="ml-auto w-[15rem]">
+            <PricingInputs
+              compact
+              help="Customer sell price. Saving marks the row manual, so a later provider sync will not overwrite it."
+              idPrefix={`sell-${model.id}`}
+              input={draft.input}
+              inputInvalid={draftIn === null}
+              legend="Sell price"
+              output={draft.output}
+              outputInvalid={draftOut === null}
+              onInput={(value) => onChange({ input: value })}
+              onOutput={(value) => onChange({ output: value })}
             />
           </div>
         )}
       </td>
-      <td className="whitespace-nowrap text-right">
+      <td className="whitespace-nowrap text-right align-middle">
         {free ? (
           "—"
         ) : (
@@ -136,7 +131,7 @@ export function PricingRow({
           </div>
         )}
       </td>
-      <td className="whitespace-nowrap text-right">
+      <td className="whitespace-nowrap text-right align-middle tabular-nums">
         <span className={profit >= 0 ? "text-success" : "text-danger"}>
           {formatSignedMicros(profit)}
         </span>

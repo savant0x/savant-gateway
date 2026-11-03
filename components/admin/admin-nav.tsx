@@ -22,6 +22,7 @@ const ITEMS = [
   { href: "/admin/gateway", icon: "fa-sliders", label: "Gateway" },
   { href: "/admin/pricing", icon: "fa-calculator", label: "Pricing" },
   { href: "/admin/analytics", icon: "fa-chart-line", label: "Analytics" },
+  { href: "/admin/diagnostics", icon: "fa-stethoscope", label: "Diagnostics" },
 ] as const;
 
 export function AdminNav() {

@@ -2,14 +2,23 @@ import type { Metadata } from "next";
 
 import { Card } from "@heroui/react";
 
+import { AnalyticsChart } from "@/components/admin/analytics-chart";
 import { MarkupForm } from "@/components/admin/markup-form";
+import { PricingChart } from "@/components/admin/pricing-chart";
+import { PricingRecommendations } from "@/components/admin/pricing-recommendations";
 import { PricingTable } from "@/components/admin/pricing-table";
 import { StatCard } from "@/components/dashboard/chips";
 import {
   formatMarginPercent,
   formatNumber,
 } from "@/components/dashboard/format";
-import { getPricingSummary, listAllModels, listModelGroups } from "@/lib/store";
+import {
+  getAnalyticsData,
+  getPricingSummary,
+  listAllModels,
+  listModelGroups,
+  listPricingDecisions,
+} from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
@@ -19,9 +28,11 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminPricingPage() {
-  const [models, groups] = await Promise.all([
+  const [models, groups, decisions, analytics] = await Promise.all([
     listAllModels(),
     listModelGroups(),
+    listPricingDecisions(200),
+    getAnalyticsData(30),
   ]);
   const data = { models, summary: await getPricingSummary(models) };
 
@@ -77,7 +88,23 @@ export default async function AdminPricingPage() {
 
       <MarkupForm markupBps={data.summary.markupBps} />
 
+      <PricingChart decisions={decisions} models={data.models} />
+
+      <PricingRecommendations models={data.models} />
+
       <PricingTable groups={groups} models={data.models} />
+
+      <div>
+        <h2 className="text-sm font-semibold">Realized economics</h2>
+        <p className="mt-1 max-w-3xl text-xs leading-5 text-muted">
+          Approved prices are the plan. This chart is the outcome: credit and
+          plan revenue against upstream cost for settled calls in the last 30
+          days. The analytics page has the full range and model breakdown.
+        </p>
+        <div className="mt-3">
+          <AnalyticsChart series={analytics.series} />
+        </div>
+      </div>
 
       <Card variant="secondary">
         <Card.Header>

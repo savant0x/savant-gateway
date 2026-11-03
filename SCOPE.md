@@ -1,5 +1,39 @@
 # SCOPE.md — Gateway Project Review
 
+## Current Session — 2026-11-03 (hardening queue closure)
+
+Operator request: complete every open FID through the Perfection Loop. The
+implementation queue is done; two evidence gates remain external or
+environment-bound, and they are left active rather than claimed.
+
+- [x] **P1 — Implement the current index.** `docs/project-status.md` is a dated
+  index; the 2026-10-31 page is preserved with a historical banner.
+- [x] **P2 — Implement the launch receipt contract.** Pure validation, a fail-closed
+  command and redaction tests exist; no receipt or operator approval was invented.
+- [x] **P3 — Close the implemented children.** FIDs 128–136 and 141 carry
+  resolution evidence and are archived; 126 and 127 remain active for their
+  missing disposable-PostgreSQL run and operator observations.
+- [x] **P4 — Verify.** check, 956 tests (955 pass, 1 skipped), quality, build,
+  HTTP 751 checks and recovery pass on the current tree. The skipped test is the
+  PostgreSQL concurrency proof, recorded as a limitation rather than a pass.
+
+## Current Session — 2026-11-03 (catalog pricing and deployment truth)
+
+Operator request: create a robust FID for catalog row usability, alignment,
+cost/profit visibility, price optimization, charts, and missing upstream provider
+keys in the hosted deployment. GitHub-to-Vercel delivery is a deployment
+dependency. This session stops after FID convergence; no application code, Git
+push, Vercel deployment, or secret handling occurs.
+
+- [x] **P1 — Baseline audit.** Read the catalog, cost editor, pricing table/row,
+  pricing math, provider registry, and current Git remote state.
+- [x] **P2 — FID-141 loop.** The FID separates catalog usability, shared pricing
+  truth, guarded optimization, charts, and hosted key deployment verification;
+  all fourteen design steps are explicitly accounted.
+- [x] **P3 — Convergence.** FID-2026-1103-141 is converged and remains active
+  because no implementation is claimed. The next step is implementation only
+  after the recorded contract is accepted.
+
 ## Current Session — 2026-11-03 (Vercel Git install)
 
 Operator report: Vercel serves from GitHub, but pushes had not been reaching the

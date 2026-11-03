@@ -13,6 +13,7 @@ against, not automatically today's behavior.
 | Operate the admin console for the first time | [operator-first-run.md](operator-first-run.md) |
 | Fix a setup, gate or deployment failure | [troubleshooting.md](troubleshooting.md) |
 | Know what is verified and what is blocked | [project-status.md](project-status.md) |
+| Record real launch acceptance | [launch-receipt.md](launch-receipt.md) |
 | See the path to launch | [launch-plan.md](launch-plan.md) |
 | Answer the open launch decisions | [launch-decision-form.md](launch-decision-form.md) |
 | Deploy on Vercel with PostgreSQL | [../README.md](../README.md#deploying-on-vercel) |
@@ -48,8 +49,10 @@ same answer data the page renders.
 
 ## Current references
 
-- [project-status.md](project-status.md) — verified state, evidence boundaries and
-  the active launch queue.
+- [project-status.md](project-status.md) — dated index of the current tree,
+  verification receipt, active queue and launch blockers.
+- [launch-receipt.md](launch-receipt.md) — the operator-authored hosted
+  acceptance receipt, its evidence fields and redaction rules.
 - [launch-plan.md](launch-plan.md) — phase-by-phase launch gates and owners.
 - [getting-started.md](getting-started.md) — install, environment, provider sync,
   first customer key and first gateway call. The customer-facing path is
@@ -96,6 +99,8 @@ same answer data the page renders.
 These are kept for the decision trail. Do not follow them as current procedure
 without checking the selected topology and open gates.
 
+- [project-status-2026-10-31.md](project-status-2026-10-31.md) — the dated
+  2026-10-31 state and receipts, superseded as the current index.
 - [database-options.md](database-options.md) — remote-database research,
   superseded 2026-10-30 by the Fly decision.
 - [launch-readiness.md](launch-readiness.md) — 2026-10-29 prerequisite inventory;

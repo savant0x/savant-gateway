@@ -3,6 +3,83 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — Current status index and launch receipt validator
+
+- **FID-2026-1103-135 — low — the historical status page was still easy to
+  mistake for the current queue.** `docs/project-status.md` is now a dated index
+  that links to the FID register, launch blockers, verification receipt and
+  operator decision form, and states what each source owns. The 2026-10-31 page
+  is preserved as `docs/project-status-2026-10-31.md` with a historical banner;
+  no receipt was rewritten.
+- **FID-2026-1103-127 — critical — the launch receipt contract is executable.**
+  `lib/launch-receipt.ts` and `scripts/launch-receipt.mjs` (7 tests) validate the
+  operator-authored receipt: six required observations, an explicit go/no-go
+  pinned to the running SHA, and secret rejection that reports only the JSON
+  path. `npm run receipt:launch` exits 1 with INCOMPLETE while no receipt exists;
+  it never creates evidence. The external observations remain open.
+- **Verified:** `npm run check`, `npm test` 956 (955 pass, 1 skipped, 0 fail),
+  quality and build pass at `d701ce6` plus this slice. The skip is the mandatory
+  two-connection PostgreSQL proof; see FID-126.
+
+## 2026-11-03 — Hardening queue implementations land
+
+- **FID-2026-1103-128 — admin session continuity.** Expired-session logins now
+  return to a safe local path; `lib/admin-return.ts` and `proxy.ts` reject
+  off-site and loop targets. Tests: `tests/admin-return.test.mjs`.
+- **FID-2026-1103-129 — content freshness and source guidance.** Readers see a
+  dated freshness note and operators get per-source guidance from
+  `lib/content/source-guidance.ts`; public and private projections stay
+  separate. Tests: `tests/content-guidance.test.mjs`.
+- **FID-2026-1103-130 — durable feed validators, measured.** The measurement in
+  `lib/content/validator-measurement.ts` shows a 95.8% validator hit rate for
+  the default workload, but a restart would receive a 304 without a body and
+  fail closed; durable bodies would hold 1.83 MiB, below the 50 MiB review
+  threshold. Decision: keep the process-local cache; no schema was added.
+- **FID-2026-1103-131 — stream cancellation telemetry.** Abort, timeout, closed
+  client and provider failure classify apart in `lib/stream-telemetry.ts`, and
+  the settlement path records the class without changing the charge. Tests:
+  `tests/stream-telemetry.test.mjs`.
+- **FID-2026-1103-132 — Signal search, measured.** The PGlite baseline
+  (`--items=5000 --queries=15`) reports p50 5.31 ms and p95 7.93 ms with a
+  sequential plan, below the 50 ms / 25,000-item thresholds. Decision: keep the
+  sequential scan; no trigram extension or migration was added.
+- **FID-2026-1103-133 — safe admin diagnostics.** The login screen reports
+  credential bands, normalized origin and production issue codes without
+  exposing a value. Tests: `tests/admin-diagnostics.test.mjs`.
+- **FID-2026-1103-134 — consistent empty states.** One `StatePanel` taxonomy
+  replaced ad-hoc empty copy across the admin and public surfaces. Tests:
+  `tests/state-panel.test.mjs`.
+- **FID-2026-1103-136 — machine-readable verification summary.** `npm run verify`
+  now runs every gate, preserves one log per gate, and fails on a missing gate,
+  a signal, a non-zero exit or an unexpected skip. `.verify/summary.json`
+  supplements the raw logs. Tests: `tests/verify-summary.test.mjs`.
+- **FID-2026-1103-141 — catalog pricing and deployment truth.** Cost and sell
+  inputs are labeled, one economics projection drives margin/profit, guarded
+  recommendations require an audited approval, pricing charts read recorded
+  decisions, and Admin → Diagnostics reports the running commit and key
+  presence without values. Tests: `tests/catalog-economics.test.mjs`,
+  `tests/price-recommendation.test.mjs`, `tests/pricing-chart-data.test.mjs`,
+  `tests/pricing-decisions.test.mjs`, `tests/deployment-diagnostics.test.mjs`,
+  `tests/measurement-decisions.test.mjs`.
+- **FID-2026-1103-126 — production concurrency gate, implemented but not run
+  locally.** `scripts/postgres-concurrency-proof.mjs` starts a disposable
+  `postgres:17-alpine` container or uses `TEST_DATABASE_URL`, and fails closed
+  when neither exists; CI declares the same gate. Docker was unavailable in
+  this session and no disposable URL was configured, so the mandatory proof is
+  still unexecuted. It remains active rather than being claimed as verified.
+- **Verified:** commits `4b57ebe`, `8bb2d20` and `d701ce6`, plus the current
+  tree: `npm run check`, `npm test` 956 (955 pass, 1 skipped, 0 fail), quality,
+  build, HTTP 751 checks and the recovery drill all pass.
+
+## 2026-11-03 — Catalog pricing and deployment-truth contract
+
+- **FID-2026-1103-141 — critical — planning —** created and converged a robust
+  contract for labeled and aligned catalog controls, shared cost/margin/profit
+  truth, explainable guarded price recommendations, approval history, charts,
+  Vercel runtime key diagnostics, and GitHub-to-Vercel deployment receipts. This
+  entry is retained as the planning record; implementation landed in the entry
+  above.
+
 ## 2026-11-03 — Git-connected Vercel installs no longer fail on Git hooks
 
 - **FID-2026-1103-140 — critical — a Git-triggered Vercel build failed at

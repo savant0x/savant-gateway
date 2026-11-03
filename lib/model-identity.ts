@@ -1,3 +1,5 @@
+import type { ModelAccess } from "./types.ts";
+
 /**
  * Provider-neutral model identity.
  *
@@ -31,6 +33,28 @@ export function canonicalModelKey(upstreamId: string) {
   while (BUILD_TAIL.test(key)) key = key.replace(BUILD_TAIL, "");
 
   return key || leaf;
+}
+
+/**
+ * The route identity of one catalog row: the model identity plus the billing
+ * tier it is sold under.
+ *
+ * A provider publishes some weights twice — a `free/` allocation with a daily
+ * weighted allowance, and the metered id billed per token. Those are two
+ * products, not two providers of one product. Folding them into one group let
+ * route planning elect a single published row, so the paid counterpart was
+ * imported and then withheld from the public catalog whenever a free allocation
+ * existed. Rows of the same tier still merge across providers, which is what
+ * keeps takeover and the stable published id working.
+ */
+export function routeGroupKey(input: {
+  routeGroup: string | null;
+  upstreamId: string;
+  billingMode: ModelAccess;
+}) {
+  const group = input.routeGroup?.trim() || canonicalModelKey(input.upstreamId);
+
+  return `${input.billingMode}:${group}`;
 }
 
 /** True when a public id carries a provider namespace (`apixo/gpt-6-astra`). */

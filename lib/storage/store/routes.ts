@@ -1,7 +1,7 @@
 import type { PostgresDatabase } from "../pg-adapter.ts";
 import type { ModelAccess } from "../../types.ts";
 
-import { canonicalModelKey } from "../../model-identity.ts";
+import { routeGroupKey } from "../../model-identity.ts";
 import { pricesForGroup } from "../../model-groups.ts";
 import { planModelRoutes, type RouteCandidate } from "../../model-routing.ts";
 import { defaultSellMicros } from "../../pricing.ts";
@@ -86,7 +86,11 @@ export async function reconcileRoutesIn(
   const groups = new Map<string, RouteRow[]>();
 
   for (const row of rows) {
-    const group = row.route_group?.trim() || canonicalModelKey(row.upstream_id);
+    const group = routeGroupKey({
+      routeGroup: row.route_group,
+      upstreamId: row.upstream_id,
+      billingMode: row.group_billing_mode,
+    });
     const members = groups.get(group);
 
     if (members) members.push(row);

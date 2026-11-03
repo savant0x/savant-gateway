@@ -1,7 +1,7 @@
 import type { DatabaseHandle } from "./schema/columns.ts";
 import type { ModelAccess, ModelRouteSummary } from "./types.ts";
 
-import { canonicalModelKey } from "./model-identity.ts";
+import { routeGroupKey } from "./model-identity.ts";
 import { pricesForGroup } from "./model-groups.ts";
 import { planModelRoutes, type RouteCandidate } from "./model-routing.ts";
 import { defaultSellMicros, microsToPrice } from "./pricing.ts";
@@ -48,12 +48,17 @@ export function routesByGroup(
     output_price_micros: number;
     is_primary: number;
     status: string;
+    group_billing_mode?: ModelAccess | null;
   }>,
 ) {
   const map = new Map<string, ModelRouteSummary[]>();
 
   for (const row of rows) {
-    const group = row.route_group ?? canonicalModelKey(row.upstream_id);
+    const group = routeGroupKey({
+      routeGroup: row.route_group,
+      upstreamId: row.upstream_id,
+      billingMode: row.group_billing_mode ?? "paid",
+    });
     const list = map.get(group) ?? [];
 
     list.push({
@@ -106,7 +111,11 @@ export function reconcileRoutesIn(database: DatabaseHandle, markupBps: number) {
   const groups = new Map<string, RouteRow[]>();
 
   for (const row of rows) {
-    const group = row.route_group?.trim() || canonicalModelKey(row.upstream_id);
+    const group = routeGroupKey({
+      routeGroup: row.route_group,
+      upstreamId: row.upstream_id,
+      billingMode: row.group_billing_mode,
+    });
     const members = groups.get(group);
 
     if (members) members.push(row);

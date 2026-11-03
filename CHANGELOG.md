@@ -3,6 +3,20 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-02 — Free allocations and their paid counterparts
+
+- **FID-2026-1102-116 — high — the paid counterpart of a free-tier model is
+  published again.** When a provider sells the same weights twice
+  (`free/glm-5.3` and `glm-5.3`), both ids shared one route group, so routing
+  elected the free row and `is_primary` withheld the metered row from `/models`.
+  Route groups are now scoped to the billing tier: the free allocation and the
+  paid row each publish, same-tier rows still merge across providers, and a
+  cheaper provider still takes over the stable published id. Stored
+  `route_group` values are unchanged, so no migration or re-sync is required.
+  Verified: focused reconcile/identity tests 15/15, `npm test` 852 tests (851
+  pass, 1 skipped), typecheck exit 0, lint exit 0, quality PASS (535 files),
+  build exit 0. Not verified: the HTTP suites were not rerun for this change.
+
 ## 2026-11-02 — Signal visual parity
 
 - **FID-2026-1102-115 — medium — Signal cards now use the supplied

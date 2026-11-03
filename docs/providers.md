@@ -34,6 +34,13 @@ upstream id (case, separators and the `family/` path folded; a release stamp
 like `-0813` or an ISO date dropped; `-backup` dropped). Rows in one group are
 the same model from different providers.
 
+A group is also scoped to its billing tier. A provider may publish the same
+weights twice — a `free/` allocation and the metered id — and those are two
+products with different admission and settlement. The free allocation and its
+paid counterpart are published side by side, each electing its own route; only
+rows of the same tier are ranked against each other, so a paid takeover never
+serves a paid call from the free pool.
+
 For each group, after every sync, cost edit, price edit, status change and
 provider enable/disable/delete:
 

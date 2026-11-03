@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   canonicalModelKey,
   isNamespacedModelId,
+  routeGroupKey,
 } from "../lib/model-identity.ts";
 
 test("the group prefix and separators fold to one identity", () => {
@@ -43,6 +44,45 @@ test("a version number is kept, only a build stamp is dropped", () => {
   assert.equal(canonicalModelKey("gpt-5.6-sol"), "gpt-5-6-sol");
   assert.equal(canonicalModelKey("mimo-v2.6-pro"), "mimo-v2-6-pro");
   assert.equal(canonicalModelKey("glm5.3"), "glm5-3");
+});
+
+test("a free allocation and its paid id are different route groups", () => {
+  const shared = { routeGroup: "glm-5-3", upstreamId: "glm-5.3" };
+
+  assert.equal(
+    routeGroupKey({ ...shared, billingMode: "free" }),
+    "free:glm-5-3",
+  );
+  assert.equal(
+    routeGroupKey({ ...shared, billingMode: "paid" }),
+    "paid:glm-5-3",
+  );
+  assert.notEqual(
+    routeGroupKey({ ...shared, billingMode: "free" }),
+    routeGroupKey({ ...shared, billingMode: "paid" }),
+  );
+});
+
+test("the same tier still merges across providers", () => {
+  const savant = routeGroupKey({
+    routeGroup: "gpt-6-astra",
+    upstreamId: "gpt-6-astra",
+    billingMode: "paid",
+  });
+  const apixo = routeGroupKey({
+    routeGroup: "gpt-6-astra",
+    upstreamId: "gpt-6-astra",
+    billingMode: "paid",
+  });
+
+  assert.equal(savant, apixo, "takeover depends on one group per tier");
+});
+
+test("a missing stored group falls back to the canonical key", () => {
+  assert.equal(
+    routeGroupKey({ routeGroup: null, upstreamId: "free/glm-5.3", billingMode: "free" }),
+    "free:glm-5-3",
+  );
 });
 
 test("namespaced ids are recognised only for their own provider", () => {

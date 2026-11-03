@@ -207,7 +207,7 @@ test("a model only the new provider sells becomes its own published row", () => 
   assert.equal(published.sell_output_micros, 250_000);
 });
 
-test("a free-pool row wins its group and stays free", () => {
+test("a free-pool row keeps its tier and the paid row stays published", () => {
   const db = database();
 
   provider(db, "savant");
@@ -240,5 +240,56 @@ test("a free-pool row wins its group and stays free", () => {
   assert.equal(published.is_primary, 1);
   assert.equal(published.served_provider_slug, "savant");
   assert.equal(published.sell_input_micros, 0);
-  assert.equal(row(db, "apixo/gpt-6-luna").is_primary, 0);
+
+  // The paid row is a different product, not a losing route: it publishes in
+  // its own tier instead of disappearing behind the free allocation.
+  const paid = row(db, "apixo/gpt-6-luna");
+
+  assert.equal(paid.is_primary, 1);
+  assert.equal(paid.served_provider_slug, "apixo");
+  assert.equal(paid.sell_input_micros, 125_000);
+});
+
+test("a free allocation and its paid counterpart publish side by side", () => {
+  const db = database();
+
+  provider(db, "savant");
+  model(db, {
+    id: "free/glm-5.3",
+    upstream_id: "free/glm-5.3",
+    route_group: "glm-5-3",
+    allow_free: 1,
+    group_slug: "free",
+    input_price_micros: 0,
+    output_price_micros: 0,
+    sell_input_micros: 0,
+    sell_output_micros: 0,
+    cost_source: "synced",
+  });
+  model(db, {
+    id: "glm-5.3",
+    upstream_id: "glm-5.3",
+    route_group: "glm-5-3",
+    group_slug: "paid",
+    input_price_micros: 400_000,
+    output_price_micros: 800_000,
+    sell_input_micros: 500_000,
+    sell_output_micros: 1_000_000,
+  });
+
+  reconcileRoutesIn(db, 2500);
+
+  const free = row(db, "free/glm-5.3");
+  const paid = row(db, "glm-5.3");
+
+  assert.equal(
+    free.is_primary,
+    1,
+    "the free allocation is its own published row",
+  );
+  assert.equal(free.sell_input_micros, 0);
+  assert.equal(paid.is_primary, 1, "the paid counterpart is published too");
+  assert.equal(paid.served_provider_slug, "savant");
+  assert.equal(paid.sell_input_micros, 500_000);
+  assert.equal(paid.sell_output_micros, 1_000_000);
 });

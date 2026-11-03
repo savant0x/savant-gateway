@@ -1,7 +1,7 @@
 import type { PostgresDatabase } from "../pg-adapter.ts";
 import type { AdminModelSummary } from "../../types.ts";
 
-import { canonicalModelKey } from "../../model-identity.ts";
+import { routeGroupKey } from "../../model-identity.ts";
 import { pricesForGroup } from "../../model-groups.ts";
 import { defaultSellMicros } from "../../pricing.ts";
 import {
@@ -59,7 +59,13 @@ export async function listAllModels(
   return rows.map((row) =>
     toAdminModelSummary(
       row,
-      routes.get(row.route_group ?? canonicalModelKey(row.upstream_id)) ?? [],
+      routes.get(
+        routeGroupKey({
+          routeGroup: row.route_group,
+          upstreamId: row.upstream_id,
+          billingMode: row.group_billing_mode ?? "paid",
+        }),
+      ) ?? [],
     ),
   );
 }

@@ -4,10 +4,10 @@ import Link from "next/link";
 
 import { ContentLinkActions } from "@/components/admin/content-link-actions";
 import { ContentLinkForm } from "@/components/admin/content-link-form";
-import { ContentSourceActions } from "@/components/admin/content-source-actions";
 import { ContentSourceFetchAll } from "@/components/admin/content-source-fetch-all";
 import { ContentSourceForm } from "@/components/admin/content-source-form";
 import { ContentSourcePresets } from "@/components/admin/content-source-presets";
+import { ContentSourceTable } from "@/components/admin/content-source-table";
 import { contentDate } from "@/lib/content/format";
 import { listRecentCycles, contentStats } from "@/lib/content/store/cycles";
 import { listItems, listLinkableModels } from "@/lib/content/store/items";
@@ -119,75 +119,7 @@ export default async function AdminContentPage() {
 
           <ContentSourceFetchAll sources={sources} />
 
-          <section className="scroll-shell rounded-xl border border-black/10 dark:border-white/10">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Source</th>
-                  <th>Kind</th>
-                  <th>Tags</th>
-                  <th>Status</th>
-                  <th>Last fetch</th>
-                  <th>Failures</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {sources.length === 0 ? (
-                  <tr>
-                    <td className="text-muted" colSpan={7}>
-                      No sources yet. Add a feed above, then press Fetch.
-                    </td>
-                  </tr>
-                ) : (
-                  sources.map((source) => (
-                    <tr key={source.id}>
-                      <td>
-                        <p className="font-medium">{source.label}</p>
-                        <p className="mono max-w-[28rem] truncate text-[11px] text-muted">
-                          {source.url}
-                        </p>
-                      </td>
-                      <td>{source.kind}</td>
-                      <td className="text-xs text-muted">
-                        {source.config.tags.length > 0
-                          ? source.config.tags.join(", ")
-                          : "—"}
-                      </td>
-                      <td>
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[11px] ${
-                            source.enabled
-                              ? "bg-success/10 text-success"
-                              : "bg-danger/10 text-danger"
-                          }`}
-                        >
-                          {source.enabled ? source.status : "disabled"}
-                        </span>
-                        {source.lastError ? (
-                          <p className="mt-1 max-w-[20rem] text-[11px] text-danger">
-                            {source.lastError}
-                          </p>
-                        ) : null}
-                      </td>
-                      <td className="text-xs">
-                        {source.lastFetchedAt
-                          ? contentDate(source.lastFetchedAt)
-                          : "Never"}
-                      </td>
-                      <td>{source.failureStreak}</td>
-                      <td>
-                        <ContentSourceActions
-                          enabled={source.enabled}
-                          id={source.id}
-                        />
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </section>
+          <ContentSourceTable sources={sources} />
 
           <div className="grid gap-6 lg:grid-cols-2">
             <section className="rounded-xl border border-black/10 bg-surface p-5 dark:border-white/10">

@@ -2,6 +2,7 @@ import { customerError, requireCustomerApi } from "@/lib/customer-auth";
 import { CONTENT_LIMITS, contentEnabled } from "@/lib/content/policy";
 import {
   addComment,
+  CommentParentError,
   CommentRateLimitError,
 } from "@/lib/content/store/comments";
 import { getItem } from "@/lib/content/store/items";
@@ -39,6 +40,12 @@ export async function POST(
     typeof body.body === "string"
       ? body.body.replace(/\r\n/g, "\n").trim()
       : "";
+  const parentId =
+    typeof body.parentId === "string" ? body.parentId.trim() || null : null;
+
+  if (body.parentId !== undefined && body.parentId !== null && !parentId) {
+    return customerError(400, "That reply target is not valid.");
+  }
 
   if (!text) return customerError(400, "Write a comment first.");
 
@@ -56,13 +63,19 @@ export async function POST(
   if (!item) return customerError(404, "That item does not exist.");
 
   try {
-    const comment = await addComment(db, customer.id, item.id, text);
+    const comment = await addComment(db, customer.id, item.id, text, {
+      parentId,
+    });
 
     return Response.json(
       { comment },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
+    if (error instanceof CommentParentError) {
+      return customerError(400, error.message);
+    }
+
     if (error instanceof CommentRateLimitError) {
       return customerError(429, error.message);
     }

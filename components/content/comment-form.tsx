@@ -5,12 +5,23 @@ import { useState } from "react";
 
 import { CONTENT_LIMITS } from "@/lib/content/policy";
 
-export function CommentForm({ itemId }: { itemId: string }) {
+export function CommentForm({
+  itemId,
+  parentId,
+  placeholder = "Add to the discussion…",
+  submitLabel = "Post comment",
+}: {
+  itemId: string;
+  parentId?: string;
+  placeholder?: string;
+  submitLabel?: string;
+}) {
   const router = useRouter();
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const limit = CONTENT_LIMITS.commentMaxChars;
+  const fieldId = `comment-${itemId}-${parentId ?? "root"}`;
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -28,7 +39,7 @@ export function CommentForm({ itemId }: { itemId: string }) {
         {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ body }),
+          body: JSON.stringify({ body, parentId: parentId ?? null }),
         },
       );
       const payload = (await response.json()) as { error?: string };
@@ -51,16 +62,16 @@ export function CommentForm({ itemId }: { itemId: string }) {
   }
 
   return (
-    <form className="mt-4" onSubmit={submit}>
-      <label className="sr-only" htmlFor={`comment-${itemId}`}>
-        Add a comment
+    <form className="mt-3" onSubmit={submit}>
+      <label className="sr-only" htmlFor={fieldId}>
+        {parentId ? "Add a reply" : "Add a comment"}
       </label>
       <textarea
         className="w-full rounded-lg border border-black/10 bg-transparent px-3 py-2 text-sm leading-6 outline-none focus:border-accent/60 dark:border-white/10"
-        id={`comment-${itemId}`}
+        id={fieldId}
         maxLength={limit}
-        placeholder="Add to the discussion…"
-        rows={3}
+        placeholder={placeholder}
+        rows={parentId ? 2 : 3}
         value={text}
         onChange={(event) => setText(event.target.value)}
       />
@@ -73,7 +84,7 @@ export function CommentForm({ itemId }: { itemId: string }) {
           disabled={busy || text.trim().length === 0}
           type="submit"
         >
-          {busy ? "Posting…" : "Post comment"}
+          {busy ? "Posting…" : submitLabel}
         </button>
       </div>
       {error ? <p className="mt-2 text-[11px] text-danger">{error}</p> : null}

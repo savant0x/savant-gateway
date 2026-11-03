@@ -3,19 +3,14 @@ import type {
   ContentItem,
   ContentKind,
   ContentPage,
-  ContentSource,
   ContentTag,
-  GitHubRepo,
   LinkableModel,
-  ParsedItem,
 } from "../types.ts";
-
-import { createHash } from "node:crypto";
 
 import { CONTENT_LIMITS } from "../policy.ts";
 import { normalizeTags, tagLabel } from "../taxonomy.ts";
 
-import { githubJson, ITEM_COLUMNS, type ItemRow, toItem } from "./item-rows.ts";
+import { ITEM_COLUMNS, type ItemRow, toItem } from "./item-rows.ts";
 
 export type ItemQuery = {
   kind?: ContentKind;
@@ -168,16 +163,21 @@ export async function listRelatedItems(
 export async function listTags(
   db: PostgresDatabase,
   limit = 30,
+  search = "",
 ): Promise<ContentTag[]> {
+  const query = search.trim();
+  const where = query ? "WHERE t.tag ILIKE ?" : "";
   const rows = await db
     .prepare(
       `SELECT t.tag, COUNT(*) AS count
          FROM content.item_tags t
+         ${where}
         GROUP BY t.tag
         ORDER BY count DESC, t.tag ASC
         LIMIT ?`,
     )
     .all<{ tag: string; count: number | string }>(
+      ...(query ? [`%${query}%`] : []),
       Math.min(100, Math.max(1, limit)),
     );
 
@@ -212,143 +212,6 @@ export async function listLinkableModels(
         upstreamId: row.upstream_id,
       })),
     );
-}
-
-function itemIdFor(sourceId: string, url: string) {
-  return `itm_${createHash("sha256")
-    .update(`${sourceId}:${url}`)
-    .digest("hex")
-    .slice(0, 24)}`;
-}
-
-function contentHash(item: ParsedItem) {
-  return createHash("sha256")
-    .update(
-      JSON.stringify([
-        item.title,
-        item.url,
-        item.externalUrl ?? null,
-        item.excerpt,
-        item.bodyHtml,
-        item.author,
-        item.publishedAt,
-        item.tags,
-      ]),
-    )
-    .digest("hex");
-}
-
-/**
- * Upserts on the canonical URL, not the source id, so the same story published
- * by two feeds produces one item. The later fetch updates the body and tags and
- * keeps the stable item id.
- */
-export async function upsertItem(
-  db: PostgresDatabase,
-  source: ContentSource,
-  item: ParsedItem,
-  now = new Date().toISOString(),
-): Promise<string> {
-  const id = itemIdFor(source.id, item.url);
-  const rows = await db
-    .prepare(
-      `INSERT INTO content.items
-        (id, source_id, kind, title, url, external_url, excerpt, body_html,
-         author, published_at, fetched_at, thumbnail_url, video_id, external_id,
-         view_count, like_count, youtube_comment_count, rating, github_json,
-         content_hash, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT (url) DO UPDATE SET
-         kind = EXCLUDED.kind,
-         title = EXCLUDED.title,
-         external_url = EXCLUDED.external_url,
-         excerpt = EXCLUDED.excerpt,
-         body_html = COALESCE(EXCLUDED.body_html, content.items.body_html),
-         author = EXCLUDED.author,
-         published_at = EXCLUDED.published_at,
-         fetched_at = EXCLUDED.fetched_at,
-         thumbnail_url = EXCLUDED.thumbnail_url,
-         video_id = EXCLUDED.video_id,
-         external_id = EXCLUDED.external_id,
-         view_count = EXCLUDED.view_count,
-         like_count = EXCLUDED.like_count,
-         youtube_comment_count = EXCLUDED.youtube_comment_count,
-         rating = EXCLUDED.rating,
-         github_json = COALESCE(EXCLUDED.github_json, content.items.github_json),
-         content_hash = EXCLUDED.content_hash,
-         updated_at = EXCLUDED.updated_at
-       RETURNING id`,
-    )
-    .all<{ id: string }>(
-      id,
-      source.id,
-      item.kind,
-      item.title,
-      item.url,
-      item.externalUrl ?? null,
-      item.excerpt,
-      item.bodyHtml,
-      item.author,
-      item.publishedAt,
-      now,
-      item.thumbnailUrl,
-      item.videoId,
-      item.externalId,
-      item.metrics?.views ?? 0,
-      item.metrics?.likes ?? 0,
-      item.metrics?.youtubeComments ?? 0,
-      item.metrics?.rating ?? null,
-      githubJson(item.github),
-      contentHash(item),
-      now,
-      now,
-    );
-
-  const itemId = rows[0]?.id ?? id;
-  const tags = normalizeTags(item.tags);
-
-  await db
-    .prepare("DELETE FROM content.item_tags WHERE item_id = ?")
-    .run(itemId);
-
-  for (const tag of tags) {
-    await db
-      .prepare(
-        `INSERT INTO content.item_tags (item_id, tag)
-         VALUES (?, ?) ON CONFLICT DO NOTHING`,
-      )
-      .run(itemId, tag);
-  }
-
-  return itemId;
-}
-
-/** Persists a lazily fetched reader body so later views never refetch it. */
-export async function saveItemBody(
-  db: PostgresDatabase,
-  itemId: string,
-  bodyHtml: string,
-  now = new Date().toISOString(),
-): Promise<void> {
-  await db
-    .prepare(
-      "UPDATE content.items SET body_html = ?, updated_at = ? WHERE id = ?",
-    )
-    .run(bodyHtml, now, itemId);
-}
-
-/** Persists lazily resolved repository facts and README for a legacy row. */
-export async function saveItemGithub(
-  db: PostgresDatabase,
-  itemId: string,
-  repo: GitHubRepo,
-  now = new Date().toISOString(),
-): Promise<void> {
-  await db
-    .prepare(
-      "UPDATE content.items SET github_json = ?, updated_at = ? WHERE id = ?",
-    )
-    .run(githubJson(repo), now, itemId);
 }
 
 export async function countItems(db: PostgresDatabase): Promise<number> {

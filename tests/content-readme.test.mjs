@@ -10,7 +10,8 @@ import {
 import { ensureGithubRepo } from "../lib/content/repo-reader.ts";
 import { createStorageDatabase } from "../lib/storage/database.ts";
 import { createSource } from "../lib/content/store/sources.ts";
-import { getItem, upsertItem } from "../lib/content/store/items.ts";
+import { getItem } from "../lib/content/store/items.ts";
+import { upsertItem } from "../lib/content/store/item-writes.ts";
 
 const README = `<h1>Router</h1>
 <p>Hello <strong>world</strong>.</p>

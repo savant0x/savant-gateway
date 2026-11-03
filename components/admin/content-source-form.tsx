@@ -1,6 +1,6 @@
 "use client";
 
-import type { SourceKind } from "@/lib/content/types";
+import type { ContentSource, SourceKind } from "@/lib/content/types";
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -8,6 +8,7 @@ import { useState } from "react";
 import {
   HACKERNEWS_STREAM_LABELS,
   HACKERNEWS_STREAMS,
+  hackerNewsStreamFromUrl,
   hackerNewsStreamUrl,
   type HackerNewsStream,
 } from "@/lib/content/hackernews-config";
@@ -48,6 +49,25 @@ const KIND_URLS: Record<FormState["kind"], string> = {
   hackernews: hackerNewsStreamUrl("top"),
 };
 
+function fromSource(source: ContentSource): FormState {
+  return {
+    kind: source.kind,
+    label: source.label,
+    url: source.url,
+    tags: source.config.tags.join(", "),
+    channelId: source.config.channelId ?? "",
+    includeTerms: source.config.includeTerms?.join(", ") ?? "",
+    excludeTerms: source.config.excludeTerms?.join(", ") ?? "",
+    hnStream:
+      source.kind === "hackernews"
+        ? (hackerNewsStreamFromUrl(source.url) ?? "top")
+        : "top",
+    fetchIntervalMinutes: String(source.fetchIntervalMinutes),
+    maxItems: String(source.maxItems),
+    enabled: source.enabled,
+  };
+}
+
 const KIND_HINTS: Record<FormState["kind"], string> = {
   rss: "Free RSS or Atom feed.",
   youtube: "YouTube channel; the channel feed is fetched server-side.",
@@ -60,12 +80,23 @@ const KIND_HINTS: Record<FormState["kind"], string> = {
 const INPUT =
   "w-full rounded-lg border border-black/10 bg-background px-3 py-2 text-sm outline-none focus:border-accent dark:border-white/10";
 
-export function ContentSourceForm() {
+export function ContentSourceForm({
+  source,
+  onDone,
+  onCancel,
+}: {
+  source?: ContentSource;
+  onDone?: () => void;
+  onCancel?: () => void;
+}) {
   const router = useRouter();
-  const [form, setForm] = useState<FormState>(INITIAL);
+  const [form, setForm] = useState<FormState>(() =>
+    source ? fromSource(source) : INITIAL,
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const editing = Boolean(source);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -78,23 +109,39 @@ export function ContentSourceForm() {
     setNotice(null);
 
     try {
-      const response = await fetch("/api/admin/content/sources", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          includeTerms: form.kind === "hackernews" ? form.includeTerms : "",
-          excludeTerms: form.kind === "hackernews" ? form.excludeTerms : "",
-        }),
-      });
+      const response = await fetch(
+        source
+          ? `/api/admin/content/sources/${encodeURIComponent(source.id)}`
+          : "/api/admin/content/sources",
+        {
+          method: source ? "PATCH" : "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            ...form,
+            includeTerms: form.kind === "hackernews" ? form.includeTerms : "",
+            excludeTerms: form.kind === "hackernews" ? form.excludeTerms : "",
+          }),
+        },
+      );
       const body = (await response.json()) as { error?: string };
 
       if (!response.ok) {
-        throw new Error(body.error ?? "The source could not be created.");
+        throw new Error(
+          body.error ??
+            (source
+              ? "The source could not be updated."
+              : "The source could not be created."),
+        );
       }
 
-      setForm(INITIAL);
-      setNotice("Source created. Fetch it to populate the hub.");
+      if (source) {
+        setNotice("Source updated.");
+        onDone?.();
+      } else {
+        setForm(INITIAL);
+        setNotice("Source created. Fetch it to populate the hub.");
+      }
+
       router.refresh();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Request failed.");
@@ -110,12 +157,21 @@ export function ContentSourceForm() {
     >
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold">Add a source</h2>
+          <h2 className="text-sm font-semibold">
+            {editing ? "Edit source" : "Add a source"}
+          </h2>
           <p className="mt-1 text-xs leading-5 text-muted">
             {KIND_HINTS[form.kind]} The source URL is fetched by the server, so
             loopback and private addresses are refused. GitHub repo facts need
             GITHUB_TOKEN; without it repos still ingest, unenriched.
           </p>
+          {editing ? (
+            <p className="mt-1 text-[11px] leading-5 text-muted">
+              Changing the URL redirects future fetches; items already stored
+              stay attached to this source. Enabling the source clears its
+              failure streak.
+            </p>
+          ) : null}
         </div>
         <label className="flex items-center gap-2 text-xs text-muted">
           <input
@@ -297,13 +353,31 @@ export function ContentSourceForm() {
         </p>
       ) : null}
 
-      <button
-        className="mt-4 rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-50"
-        disabled={busy}
-        type="submit"
-      >
-        {busy ? "Creating…" : "Create source"}
-      </button>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button
+          className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-50"
+          disabled={busy}
+          type="submit"
+        >
+          {busy
+            ? editing
+              ? "Saving…"
+              : "Creating…"
+            : editing
+              ? "Save changes"
+              : "Create source"}
+        </button>
+        {editing ? (
+          <button
+            className="rounded-lg border border-black/10 px-4 py-2 text-sm font-medium transition-colors hover:bg-black/5 disabled:opacity-50 dark:border-white/10 dark:hover:bg-white/5"
+            disabled={busy}
+            type="button"
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
+        ) : null}
+      </div>
     </form>
   );
 }

@@ -107,6 +107,30 @@ export type ContentComment = {
   authorName: string;
   body: string;
   createdAt: string;
+  /** Null for a top-level comment; one level of replies is allowed. */
+  parentId: string | null;
+};
+
+export const CONTENT_REACTIONS = ["useful", "insightful"] as const;
+
+export type ContentReaction = (typeof CONTENT_REACTIONS)[number];
+
+export type ContentReactionSummary = {
+  reaction: ContentReaction;
+  count: number;
+  mine: boolean;
+};
+
+/** Health fields safe to publish; never includes the URL, config or error. */
+export type PublicContentSource = {
+  id: string;
+  label: string;
+  kind: SourceKind;
+  enabled: boolean;
+  status: SourceStatus;
+  failureStreak: number;
+  lastFetchedAt: string | null;
+  fetchIntervalMinutes: number;
 };
 
 export type ContentModelLink = {

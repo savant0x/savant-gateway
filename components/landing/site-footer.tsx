@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { BrandMark } from "@/components/brand-mark";
+import { contentEnabled } from "@/lib/content/policy";
 
 export function SiteFooter() {
   return (
@@ -17,6 +18,9 @@ export function SiteFooter() {
             <Link href="/docs">Docs</Link>
             <Link href="/docs/faq">FAQ</Link>
             <Link href="/support">Support</Link>
+            {contentEnabled() ? (
+              <Link href="/signal/status">Signal status</Link>
+            ) : null}
             <Link href="/account">Account</Link>
             <Link href="/admin">Admin</Link>
           </nav>

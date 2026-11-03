@@ -18,15 +18,20 @@ type CommentRow = {
   author_name: string;
   body: string;
   created_at: string;
+  parent_id: string | null;
 };
 
 export class CommentRateLimitError extends Error {}
+
+/** A reply target is missing, belongs to another item, or is itself a reply. */
+export class CommentParentError extends Error {}
 
 const COMMENT_COLUMNS = `
   c.id,
   COALESCE(NULLIF(BTRIM(u.name), ''), 'Customer') AS author_name,
   c.body,
-  c.created_at
+  c.created_at,
+  c.parent_id
 `;
 
 function toComment(row: CommentRow): ContentComment {
@@ -35,7 +40,32 @@ function toComment(row: CommentRow): ContentComment {
     authorName: row.author_name,
     body: row.body,
     createdAt: row.created_at,
+    parentId: row.parent_id,
   };
+}
+
+export type CommentInput = {
+  /** Null or omitted posts a top-level comment; one reply level is allowed. */
+  parentId?: string | null;
+  now?: string;
+};
+
+async function assertReplyParent(
+  db: PostgresDatabase,
+  itemId: string,
+  parentId: string,
+): Promise<void> {
+  const parent = await db
+    .prepare("SELECT item_id, parent_id FROM content.comments WHERE id = ?")
+    .get<{ item_id: string; parent_id: string | null }>(parentId);
+
+  if (!parent || parent.item_id !== itemId) {
+    throw new CommentParentError("Reply to a comment on this item.");
+  }
+
+  if (parent.parent_id) {
+    throw new CommentParentError("Replies are limited to one level.");
+  }
 }
 
 export async function listComments(
@@ -77,8 +107,13 @@ export async function addComment(
   userId: string,
   itemId: string,
   body: string,
-  now = new Date().toISOString(),
+  input: CommentInput = {},
 ): Promise<ContentComment> {
+  const now = input.now ?? new Date().toISOString();
+  const parentId = input.parentId ?? null;
+
+  if (parentId) await assertReplyParent(db, itemId, parentId);
+
   const cutoff = new Date(
     new Date(now).getTime() - 60 * 60 * 1000,
   ).toISOString();
@@ -97,11 +132,19 @@ export async function addComment(
 
   const created = await db
     .prepare(
-      `INSERT INTO content.comments (id, item_id, user_id, body, created_at)
-       VALUES (?, ?, ?, ?, ?)
+      `INSERT INTO content.comments
+        (id, item_id, user_id, parent_id, body, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)
        RETURNING id`,
     )
-    .all<{ id: string }>(`cmt_${randomUUID()}`, itemId, userId, body, now);
+    .all<{ id: string }>(
+      `cmt_${randomUUID()}`,
+      itemId,
+      userId,
+      parentId,
+      body,
+      now,
+    );
 
   const user = await db
     .prepare("SELECT name FROM users WHERE id = ?")
@@ -112,5 +155,6 @@ export async function addComment(
     authorName: user?.name?.trim() || "Customer",
     body,
     createdAt: now,
+    parentId,
   };
 }

@@ -13,9 +13,11 @@ type Result = {
 export function ContentSourceActions({
   id,
   enabled,
+  onEdit,
 }: {
   id: string;
   enabled: boolean;
+  onEdit?: () => void;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -82,6 +84,16 @@ export function ContentSourceActions({
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
+      {onEdit ? (
+        <button
+          className="rounded-md border border-black/10 px-2 py-1 text-xs transition-colors hover:bg-black/5 disabled:opacity-50 dark:border-white/10 dark:hover:bg-white/5"
+          disabled={busy !== null}
+          type="button"
+          onClick={onEdit}
+        >
+          Edit
+        </button>
+      ) : null}
       <button
         className="rounded-md border border-black/10 px-2 py-1 text-xs transition-colors hover:bg-black/5 disabled:opacity-50 dark:border-white/10 dark:hover:bg-white/5"
         disabled={busy !== null}

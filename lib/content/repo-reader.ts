@@ -12,7 +12,7 @@ import type { ContentItem, GitHubRepo } from "./types.ts";
 
 import { fetchGithubRepo, repoSlugForItem } from "./github.ts";
 import { fetchGithubReadme } from "./github-readme.ts";
-import { saveItemGithub } from "./store/items.ts";
+import { saveItemGithub } from "./store/item-writes.ts";
 
 const FAILURE_TTL_MS = 10 * 60 * 1_000;
 

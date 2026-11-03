@@ -1,10 +1,27 @@
 import type { PostgresDatabase } from "../../storage/pg-adapter.ts";
-import type { ContentPage, CoverageItem } from "../types.ts";
+import type {
+  ContentPage,
+  ContentReaction,
+  ContentReactionSummary,
+  CoverageItem,
+} from "../types.ts";
+
+import { randomUUID } from "node:crypto";
 
 import { CONTENT_LIMITS } from "../policy.ts";
+import { CONTENT_REACTIONS } from "../types.ts";
 
 import { listContentForModel } from "./links.ts";
 import { listItems } from "./items.ts";
+
+export class ReactionRateLimitError extends Error {}
+
+export function isContentReaction(value: unknown): value is ContentReaction {
+  return (
+    typeof value === "string" &&
+    (CONTENT_REACTIONS as readonly string[]).includes(value)
+  );
+}
 
 export type BriefingGroup = {
   modelId: string;
@@ -157,6 +174,105 @@ export async function listSavedItems(
     savedByUserId: userId,
     limit: CONTENT_LIMITS.savedLimit,
   });
+}
+
+/**
+ * Reactions are aggregate public counters with one current choice per customer.
+ * The composite primary key is the idempotency rule; the event log is the
+ * write ceiling, because add/remove churn would otherwise be unbounded.
+ */
+export async function listReactionSummary(
+  db: PostgresDatabase,
+  itemId: string,
+  userId: string | null,
+): Promise<ContentReactionSummary[]> {
+  const counts = await db
+    .prepare(
+      `SELECT reaction, COUNT(*) AS total
+         FROM content.reactions
+        WHERE item_id = ?
+        GROUP BY reaction`,
+    )
+    .all<{ reaction: ContentReaction; total: number | string }>(itemId);
+  const own = userId
+    ? await db
+        .prepare(
+          `SELECT reaction FROM content.reactions
+            WHERE user_id = ? AND item_id = ?`,
+        )
+        .all<{ reaction: ContentReaction }>(userId, itemId)
+    : [];
+  const countByReaction = new Map(
+    counts.map((row) => [row.reaction, Number(row.total)]),
+  );
+  const ownReactions = new Set(own.map((row) => row.reaction));
+
+  return CONTENT_REACTIONS.map((reaction) => ({
+    reaction,
+    count: countByReaction.get(reaction) ?? 0,
+    mine: ownReactions.has(reaction),
+  }));
+}
+
+export async function setReaction(
+  db: PostgresDatabase,
+  userId: string,
+  itemId: string,
+  reaction: ContentReaction,
+  active: boolean,
+  now = new Date().toISOString(),
+): Promise<ContentReactionSummary[]> {
+  const cutoff = new Date(
+    new Date(now).getTime() - 60 * 60 * 1000,
+  ).toISOString();
+  const recent = await db
+    .prepare(
+      `SELECT COUNT(*) AS total FROM content.reaction_events
+        WHERE user_id = ? AND created_at >= ?`,
+    )
+    .get<{ total: number | string }>(userId, cutoff);
+
+  if (Number(recent?.total ?? 0) >= CONTENT_LIMITS.commentsPerHour) {
+    throw new ReactionRateLimitError(
+      `You can change reactions at most ${CONTENT_LIMITS.commentsPerHour} times an hour.`,
+    );
+  }
+
+  await db
+    .prepare(
+      `INSERT INTO content.reaction_events (id, user_id, created_at)
+       VALUES (?, ?, ?)`,
+    )
+    .run(`rev_${randomUUID()}`, userId, now);
+
+  // Keep the log bounded; a user's older events have no admission value.
+  const pruneBefore = new Date(
+    new Date(now).getTime() - 24 * 60 * 60 * 1000,
+  ).toISOString();
+
+  await db
+    .prepare(
+      "DELETE FROM content.reaction_events WHERE user_id = ? AND created_at < ?",
+    )
+    .run(userId, pruneBefore);
+
+  if (active) {
+    await db
+      .prepare(
+        `INSERT INTO content.reactions (user_id, item_id, reaction, created_at)
+         VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING`,
+      )
+      .run(userId, itemId, reaction, now);
+  } else {
+    await db
+      .prepare(
+        `DELETE FROM content.reactions
+          WHERE user_id = ? AND item_id = ? AND reaction = ?`,
+      )
+      .run(userId, itemId, reaction);
+  }
+
+  return listReactionSummary(db, itemId, userId);
 }
 
 /**

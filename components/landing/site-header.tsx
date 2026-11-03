@@ -1,6 +1,8 @@
 import Link from "next/link";
 
 import { BrandMark } from "@/components/brand-mark";
+import { CommandPalette } from "@/components/content/command-palette";
+import { contentEnabled } from "@/lib/content/policy";
 import { siteConfig } from "@/config/site";
 
 export function SiteHeader() {
@@ -16,6 +18,7 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="nav-actions">
+          {contentEnabled() ? <CommandPalette /> : null}
           <Link className="nav-utility" href="/login">
             Sign in
           </Link>

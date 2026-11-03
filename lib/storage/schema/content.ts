@@ -128,6 +128,7 @@ export async function contentSchema(db: PostgresDatabase) {
       id TEXT PRIMARY KEY,
       item_id TEXT NOT NULL REFERENCES content.items(id) ON DELETE CASCADE,
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      parent_id TEXT REFERENCES content.comments(id) ON DELETE CASCADE,
       body TEXT NOT NULL,
       created_at TEXT NOT NULL
     );
@@ -135,6 +136,42 @@ export async function contentSchema(db: PostgresDatabase) {
       ON content.comments(item_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS content_comments_user_idx
       ON content.comments(user_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS content_comments_parent_idx
+      ON content.comments(parent_id, created_at ASC);
+
+    CREATE TABLE IF NOT EXISTS content.reactions (
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      item_id TEXT NOT NULL REFERENCES content.items(id) ON DELETE CASCADE,
+      reaction TEXT NOT NULL CHECK (reaction IN ('useful', 'insightful')),
+      created_at TEXT NOT NULL,
+      PRIMARY KEY (user_id, item_id, reaction)
+    );
+    CREATE INDEX IF NOT EXISTS content_reactions_item_idx
+      ON content.reactions(item_id, reaction);
+
+    -- One row per toggle attempt. The reaction table stores current state, so
+    -- it cannot rate-limit a caller who repeatedly adds and removes the same
+    -- reaction. This bounded log is the admission record for that write path.
+    CREATE TABLE IF NOT EXISTS content.reaction_events (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS content_reaction_events_user_idx
+      ON content.reaction_events(user_id, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS content.metric_snapshots (
+      item_id TEXT NOT NULL REFERENCES content.items(id) ON DELETE CASCADE,
+      captured_at TEXT NOT NULL,
+      views BIGINT NOT NULL DEFAULT 0,
+      likes BIGINT NOT NULL DEFAULT 0,
+      youtube_comments BIGINT NOT NULL DEFAULT 0,
+      rating DOUBLE PRECISION,
+      stars BIGINT NOT NULL DEFAULT 0,
+      PRIMARY KEY (item_id, captured_at)
+    );
+    CREATE INDEX IF NOT EXISTS content_metric_snapshots_captured_idx
+      ON content.metric_snapshots(captured_at);
   `);
 
   // Upstream engagement arrived after the first content release. The feed gives
@@ -164,5 +201,13 @@ export async function contentSchema(db: PostgresDatabase) {
       ADD CONSTRAINT content_sources_kind_check
       CHECK (kind IN ('rss', 'youtube', 'huggingface', 'trendshift',
                       'hackernews'));
+
+    -- Reply support arrived after the first discussion release. The CREATE
+    -- above covers a fresh database; this branch upgrades an existing one.
+    ALTER TABLE IF EXISTS content.comments
+      ADD COLUMN IF NOT EXISTS parent_id TEXT
+      REFERENCES content.comments(id) ON DELETE CASCADE;
+    CREATE INDEX IF NOT EXISTS content_comments_parent_idx
+      ON content.comments(parent_id, created_at ASC);
   `);
 }

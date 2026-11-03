@@ -18,7 +18,7 @@ import {
   plainTextOf,
 } from "./article.ts";
 import { isHackerNewsDiscussionUrl } from "./hackernews.ts";
-import { saveItemBody } from "./store/items.ts";
+import { saveItemBody } from "./store/item-writes.ts";
 
 export const ARTICLE_FLOOR = 200;
 

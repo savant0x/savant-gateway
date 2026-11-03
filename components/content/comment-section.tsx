@@ -5,6 +5,22 @@ import Link from "next/link";
 import { CommentForm } from "@/components/content/comment-form";
 import { contentDate } from "@/lib/content/format";
 
+function CommentBody({ comment }: { comment: ContentComment }) {
+  return (
+    <div className="rounded-lg border border-black/10 px-3 py-2 dark:border-white/10">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted">
+        <span className="font-semibold text-foreground">
+          {comment.authorName}
+        </span>
+        <span>{contentDate(comment.createdAt)}</span>
+      </div>
+      <p className="mt-1 whitespace-pre-line text-sm leading-6">
+        {comment.body}
+      </p>
+    </div>
+  );
+}
+
 export function CommentSection({
   itemId,
   comments,
@@ -16,6 +32,25 @@ export function CommentSection({
   count: number;
   signedIn: boolean;
 }) {
+  const topLevel = comments.filter((comment) => !comment.parentId);
+  const topLevelIds = new Set(topLevel.map((comment) => comment.id));
+  const repliesFor = new Map<string, ContentComment[]>();
+
+  for (const comment of comments) {
+    if (!comment.parentId || !topLevelIds.has(comment.parentId)) continue;
+
+    const group = repliesFor.get(comment.parentId) ?? [];
+
+    group.push(comment);
+    repliesFor.set(comment.parentId, group);
+  }
+
+  // A reply whose parent fell outside the read limit still renders, plainly
+  // labelled, rather than disappearing from the discussion.
+  const orphanReplies = comments.filter(
+    (comment) => comment.parentId && !topLevelIds.has(comment.parentId),
+  );
+
   return (
     <section
       className="rounded-xl border border-black/10 bg-surface p-5 dark:border-white/10"
@@ -31,7 +66,7 @@ export function CommentSection({
       <p className="mt-2 text-xs leading-5 text-muted">
         This discussion is ours, not the publisher&apos;s. The thread is public.
         Sign in to post; the source&apos;s own comment count, when reported,
-        appears in the details panel.
+        appears in the details panel. One level of replies is supported.
       </p>
 
       {signedIn ? (
@@ -51,20 +86,45 @@ export function CommentSection({
         </p>
       ) : (
         <ul className="mt-5 space-y-4">
-          {comments.map((comment) => (
-            <li
-              key={comment.id}
-              className="rounded-lg border border-black/10 px-3 py-2 dark:border-white/10"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted">
-                <span className="font-semibold text-foreground">
-                  {comment.authorName}
-                </span>
-                <span>{contentDate(comment.createdAt)}</span>
-              </div>
-              <p className="mt-1 whitespace-pre-line text-sm leading-6">
-                {comment.body}
+          {topLevel.map((comment) => {
+            const replies = (repliesFor.get(comment.id) ?? []).sort((a, b) =>
+              a.createdAt.localeCompare(b.createdAt),
+            );
+
+            return (
+              <li key={comment.id}>
+                <CommentBody comment={comment} />
+                {signedIn ? (
+                  <details className="mt-2">
+                    <summary className="cursor-pointer text-[11px] text-muted underline-offset-4 hover:text-foreground hover:underline">
+                      Reply to {comment.authorName}
+                    </summary>
+                    <CommentForm
+                      itemId={itemId}
+                      parentId={comment.id}
+                      placeholder={`Reply to ${comment.authorName}…`}
+                      submitLabel="Post reply"
+                    />
+                  </details>
+                ) : null}
+                {replies.length > 0 ? (
+                  <ul className="ml-4 mt-3 space-y-3 border-l border-black/10 pl-3 dark:border-white/10">
+                    {replies.map((reply) => (
+                      <li key={reply.id}>
+                        <CommentBody comment={reply} />
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </li>
+            );
+          })}
+          {orphanReplies.map((comment) => (
+            <li key={comment.id}>
+              <p className="mb-1 text-[11px] text-muted">
+                Reply to a comment not shown on this page
               </p>
+              <CommentBody comment={comment} />
             </li>
           ))}
         </ul>

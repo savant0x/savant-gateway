@@ -205,6 +205,18 @@ export default async function SignalPage({
               >
                 Your briefing →
               </Link>
+              <Link
+                className="text-xs text-accent hover:underline"
+                href="/signal/rising"
+              >
+                Rising →
+              </Link>
+              <Link
+                className="text-xs text-accent hover:underline"
+                href="/signal/movers"
+              >
+                Top movers →
+              </Link>
             </div>
           </div>
 
@@ -257,9 +269,22 @@ export default async function SignalPage({
                 {search ? `No pieces match “${search}”.` : "No stories yet."}
               </p>
               <p className="mx-auto mt-2 max-w-md text-xs leading-5 text-muted">
-                {search
-                  ? "Search looks at the title and excerpt only. Try a shorter term, or clear the search to browse everything."
-                  : "The hub is enabled, but no source has produced an item. An operator can add a source in Admin → Content and press Fetch."}
+                {search ? (
+                  "Search looks at the title and excerpt only. Try a shorter term, or clear the search to browse everything."
+                ) : (
+                  <>
+                    The hub is enabled, but no source has produced an item. An
+                    operator can add a source in Admin → Content and press
+                    Fetch. Check{" "}
+                    <Link
+                      className="text-accent hover:underline"
+                      href="/signal/status"
+                    >
+                      source status
+                    </Link>{" "}
+                    to see which feeds are current.
+                  </>
+                )}
               </p>
             </div>
           ) : (

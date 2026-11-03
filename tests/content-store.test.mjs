@@ -11,6 +11,7 @@ import {
   createSource,
   deleteSource,
   getItem,
+  getSource,
   isSaved,
   isWatching,
   listComments,
@@ -22,6 +23,7 @@ import {
   replaceAutoLinks,
   setSaved,
   setWatch,
+  updateSource,
   upsertItem,
 } from "../lib/content/store.ts";
 
@@ -153,7 +155,7 @@ test("content store keeps sources, items, links, and retention isolated", async 
       "user_dev",
       itemId,
       "First take.",
-      "2026-11-02T12:00:00.000Z",
+      { now: "2026-11-02T12:00:00.000Z" },
     );
 
     assert.equal(comment.authorName, "Local Developer");
@@ -166,7 +168,7 @@ test("content store keeps sources, items, links, and retention isolated", async 
         "user_dev",
         itemId,
         `Comment ${index}`,
-        "2026-11-02T12:30:00.000Z",
+        { now: "2026-11-02T12:30:00.000Z" },
       );
     }
 
@@ -177,7 +179,7 @@ test("content store keeps sources, items, links, and retention isolated", async 
           "user_dev",
           itemId,
           "Too many.",
-          "2026-11-02T12:45:00.000Z",
+          { now: "2026-11-02T12:45:00.000Z" },
         ),
       CommentRateLimitError,
     );
@@ -188,6 +190,74 @@ test("content store keeps sources, items, links, and retention isolated", async 
 
     assert.equal(await deleteSource(db, source.id), true);
     assert.equal((await listItems(db)).total, 0);
+  } finally {
+    await db.close();
+  }
+});
+
+test("editing a source touches only that row and refuses an invalid URL", async () => {
+  const db = await createStorageDatabase({ env: {} });
+
+  try {
+    const first = await createSource(db, {
+      kind: "rss",
+      label: "First feed",
+      url: "https://example.com/first.xml",
+      config: { tags: ["openai"] },
+      enabled: true,
+      fetchIntervalMinutes: 60,
+      maxItems: 10,
+    });
+    const second = await createSource(db, {
+      kind: "rss",
+      label: "Second feed",
+      url: "https://example.com/second.xml",
+      config: { tags: ["luna"] },
+      enabled: true,
+      fetchIntervalMinutes: 30,
+      maxItems: 5,
+    });
+
+    const updated = await updateSource(db, first.id, {
+      kind: "rss",
+      label: "First feed renamed",
+      url: "https://example.com/first.xml",
+      config: { tags: ["openai", "agents"] },
+      enabled: true,
+      fetchIntervalMinutes: 15,
+      maxItems: 7,
+    });
+
+    assert.equal(updated.id, first.id);
+    assert.equal(updated.label, "First feed renamed");
+    assert.deepEqual(updated.config.tags, ["openai", "agents"]);
+    assert.equal(updated.fetchIntervalMinutes, 15);
+    assert.equal(updated.maxItems, 7);
+
+    const untouched = await getSource(db, second.id);
+
+    assert.equal(untouched.label, "Second feed");
+    assert.deepEqual(untouched.config.tags, ["luna"]);
+    assert.equal(untouched.fetchIntervalMinutes, 30);
+
+    await assert.rejects(
+      () =>
+        updateSource(db, first.id, {
+          kind: "rss",
+          label: "First feed renamed",
+          url: "http://127.0.0.1/feed",
+          config: { tags: ["openai"] },
+          enabled: true,
+          fetchIntervalMinutes: 15,
+          maxItems: 7,
+        }),
+      /not allowed|public|http/i,
+    );
+
+    const afterRefusal = await getSource(db, first.id);
+
+    assert.equal(afterRefusal.url, "https://example.com/first.xml");
+    assert.equal(afterRefusal.label, "First feed renamed");
   } finally {
     await db.close();
   }

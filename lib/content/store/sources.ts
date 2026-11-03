@@ -1,6 +1,7 @@
 import type { PostgresDatabase } from "../../storage/pg-adapter.ts";
 import type {
   ContentSource,
+  PublicContentSource,
   SourceConfig,
   SourceKind,
   SourceStatus,
@@ -68,6 +69,43 @@ export async function listSources(
     .all<SourceRow>();
 
   return rows.map(toSource);
+}
+
+/**
+ * Public health projection. It deliberately does not select the URL, config or
+ * `last_error`: those are operator data and upstream text is not safe copy.
+ */
+export async function listPublicSources(
+  db: PostgresDatabase,
+): Promise<PublicContentSource[]> {
+  const rows = await db
+    .prepare(
+      `SELECT id, label, kind, enabled, status, failure_streak,
+              last_fetched_at, fetch_interval_minutes
+         FROM content.sources
+        ORDER BY label ASC`,
+    )
+    .all<{
+      id: string;
+      label: string;
+      kind: SourceKind;
+      enabled: number;
+      status: SourceStatus;
+      failure_streak: number;
+      last_fetched_at: string | null;
+      fetch_interval_minutes: number;
+    }>();
+
+  return rows.map((row) => ({
+    id: row.id,
+    label: row.label,
+    kind: row.kind,
+    enabled: row.enabled === 1,
+    status: row.status,
+    failureStreak: row.failure_streak,
+    lastFetchedAt: row.last_fetched_at,
+    fetchIntervalMinutes: row.fetch_interval_minutes,
+  }));
 }
 
 export async function listDueSources(

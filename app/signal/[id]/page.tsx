@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import type { ContentComment } from "@/lib/content/types";
+import type {
+  ContentComment,
+  ContentReactionSummary,
+} from "@/lib/content/types";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -8,6 +11,7 @@ import { CommentSection } from "@/components/content/comment-section";
 import { ContentDetailAside } from "@/components/content/content-detail-aside";
 import { ContentDisabled } from "@/components/content/content-disabled";
 import { ModelModule } from "@/components/content/model-module";
+import { ReactionBar } from "@/components/content/reaction-bar";
 import { RepoPanel } from "@/components/content/repo-panel";
 import { SaveButton } from "@/components/content/save-button";
 import { ShareButton } from "@/components/content/share-button";
@@ -26,7 +30,8 @@ import { ensureGithubRepo } from "@/lib/content/repo-reader";
 import { countComments, listComments } from "@/lib/content/store/comments";
 import { listLinksForItem } from "@/lib/content/store/links";
 import { getItem, listRelatedItems } from "@/lib/content/store/items";
-import { isSaved } from "@/lib/content/store/engagement";
+import { isSaved, listReactionSummary } from "@/lib/content/store/engagement";
+import { CONTENT_REACTIONS } from "@/lib/content/types";
 import { getCustomerSession } from "@/lib/customer-auth";
 import { getCatalogData } from "@/lib/store";
 import { getDatabase } from "@/lib/storage/runtime";
@@ -79,6 +84,9 @@ export default async function SignalDetailPage({ params }: PageProps) {
     item.kind === "repo" ? null : await ensureArticleBody(db, item);
   let comments: ContentComment[] = [];
   let commentCount = 0;
+  let reactions: ContentReactionSummary[] = CONTENT_REACTIONS.map(
+    (reaction) => ({ reaction, count: 0, mine: false }),
+  );
 
   const [repo, links, catalog, related, saved] = await Promise.all([
     ensureGithubRepo(db, item),
@@ -89,9 +97,10 @@ export default async function SignalDetailPage({ params }: PageProps) {
   ]);
 
   try {
-    [comments, commentCount] = await Promise.all([
+    [comments, commentCount, reactions] = await Promise.all([
       listComments(db, item.id),
       countComments(db, item.id),
+      listReactionSummary(db, item.id, customer?.id ?? null),
     ]);
   } catch {
     // A discussion read must not hide the item or the purchase path.
@@ -223,6 +232,12 @@ export default async function SignalDetailPage({ params }: PageProps) {
             ) : null}
 
             <ModelModule models={linkedModels} signedIn={Boolean(customer)} />
+
+            <ReactionBar
+              initial={reactions}
+              itemId={item.id}
+              signedIn={Boolean(customer)}
+            />
 
             <CommentSection
               comments={comments}

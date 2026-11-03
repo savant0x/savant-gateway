@@ -1,0 +1,23 @@
+# Keep secrets, local state and non-build material out of the deployment upload.
+# Leading slashes matter: an unanchored `content` also excluded `lib/content`.
+/.git
+/.github
+/.githooks
+/.next
+/node_modules
+/data
+/coverage
+/dev
+/docs
+/tests
+/resources
+/research
+/debug
+/supabase
+*.tsbuildinfo
+npm-debug.log*
+*.pdf
+
+.env
+.env.*
+!.env.example

@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-132-search-indexing.md`
 **ID:** FID-2026-1103-132
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-03
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -57,8 +57,31 @@ latency, while preserving search semantics and the existing rate limit.
 1. **Should search become semantic?** No; this FID is lexical performance only.
 2. **Should a slow query be hidden by a larger limit?** No; limits remain fixed.
 
+## Implementation Evidence
+
+- **Commit SHA:** `d701ce6`.
+- **Implementation:** `lib/content/search-measurement.ts` owns the percentiles
+  and the 50 ms / 25,000-item decision rule;
+  `lib/content/search-benchmark-terms.ts` fixes the representative terms; and
+  `scripts/search-benchmark.mjs` seeds PGlite and times the same wildcard query
+  the hub uses.
+- **Measured baseline (2026-11-03):** 5,000 items, 15 queries, seed 767 ms,
+  p50 5.31 ms, p95 7.93 ms, max 7.93 ms, sequential plan (`Seq Scan` on
+  `items`). Decision: `keep-sequential-scan`.
+- **Why no index:** both thresholds are unmet. A trigram extension would add a
+  migration and per-ingestion write cost without a measured read gain.
+- **Tests Added:** Yes — `tests/measurement-decisions.test.mjs` covers ranking,
+  bounds, empty samples and the threshold boundary.
+- **Gate output:** check, 956 tests (955 pass, 1 skipped, 0 fail), quality,
+  build, HTTP 751 checks and recovery pass at `35c1d35`.
+- **Limitation:** the baseline is local PGlite, not the hosted PostgreSQL
+  corpus; the script names the corpus and can be re-run against a hosted
+  database, and `npm run test:load` was not re-run.
+
 ## Resolution
 
 - **Convergence Date:** 2026-11-03
-- **Implementation:** not started.
-- **Archived:** no.
+- **Closed Date:** 2026-11-03
+- **Fix Description:** measured decision to keep the sequential scan; search
+  semantics, bounds and rate limits are unchanged.
+- **Archived:** yes — `dev/fids/archive/FID-2026-1103-132-search-indexing.md`.

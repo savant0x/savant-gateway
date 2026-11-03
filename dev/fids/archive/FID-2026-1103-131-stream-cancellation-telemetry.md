@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-131-stream-cancellation-telemetry.md`
 **ID:** FID-2026-1103-131
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-03
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -57,8 +57,25 @@ failures observable without turning cancellation into a false outage.
 2. **Should logs include upstream text?** Only a bounded redacted classification,
    never raw provider text.
 
+## Implementation Evidence
+
+- **Commit SHA:** `8bb2d20`.
+- **Implementation:** `lib/stream-telemetry.ts` classifies client abort,
+  upstream abort, timeout, already-closed and unexpected errors with bounded
+  identifiers. `lib/storage/gateway/stream.ts` records the class and settlement
+  outcome; classification does not change the charge.
+- **Tests Added:** Yes — `tests/stream-telemetry.test.mjs` separates the classes
+  and asserts no prompt, key or payload data is emitted.
+- **Gate output:** `npm run check`, `npm test` 956 (955 pass, 1 skipped, 0
+  fail), quality, build, HTTP 751 checks and recovery pass at `35c1d35`.
+- **Limitation:** the skip is FID-126's PostgreSQL concurrency proof. No live
+  disconnect was observed against a hosted deployment; the behavior is covered
+  by the focused unit tests.
+
 ## Resolution
 
 - **Convergence Date:** 2026-11-03
-- **Implementation:** not started.
-- **Archived:** no.
+- **Closed Date:** 2026-11-03
+- **Fix Description:** expected disconnects are quiet; genuine provider and
+  transport failures are classified and observable without raw provider text.
+- **Archived:** yes — `dev/fids/archive/FID-2026-1103-131-stream-cancellation-telemetry.md`.

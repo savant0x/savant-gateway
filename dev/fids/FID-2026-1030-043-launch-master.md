@@ -237,6 +237,15 @@ discharged; the operator's 2026-11-01 decision remains GO for the internal
 acceptance run and NO-GO for public launch. This master therefore stays open
 and no child obligation is satisfied by this audit.
 
+**Hardening queue audit 2026-11-03.** FIDs 128–136 and 141 were implemented and
+archived with check, 956-test, quality, build, HTTP and recovery receipts;
+FIDs 126 and 127 are implemented but retain their missing evidence (a
+disposable-PostgreSQL run and an operator receipt). This work is product and
+tooling hardening. It created no payment, funded no upstream, restored no hosted
+database, delivered no alert, re-measured no PostgreSQL load envelope, published
+no `v1.2` policy and recorded no public GO. Every external obligation in this
+register and in FIDs 062/068 is unchanged, so launch remains no-go.
+
 ## Lessons Learned
 
 Make incomplete evidence visible and assign every boundary an owner; do not

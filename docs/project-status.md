@@ -54,8 +54,9 @@ behavior, not payment or launch acceptance.
 ## Recently closed
 
 FIDs 128–136, 141 and the 2026-11-02 content/catalog queue moved through the
-Perfection Loop into commits `4b57ebe`, `8bb2d20` and `d701ce6`; their closed
-records and evidence are under [`dev/fids/archive/`](../dev/fids/archive/).
+Perfection Loop into commits `4b57ebe`, `8bb2d20`, `d701ce6` and `35c1d35`;
+their closed records and evidence are under
+[`dev/fids/archive/`](../dev/fids/archive/).
 FIDs 126 and 127 remain active because their required evidence (a disposable
 PostgreSQL run and an operator receipt) does not exist yet. The dated receipts
 in [the 2026-10-31 record](project-status-2026-10-31.md) remain historical

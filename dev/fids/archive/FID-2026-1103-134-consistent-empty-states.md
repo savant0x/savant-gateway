@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-134-consistent-empty-states.md`
 **ID:** FID-2026-1103-134
 **Severity:** low
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-03
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -60,8 +60,25 @@ claiming behavior that is not available.
 2. **Should timestamps be exact?** Use appropriate relative/freshness wording;
    avoid false precision.
 
+## Implementation Evidence
+
+- **Commit SHA:** `4b57ebe`.
+- **Implementation:** `lib/surface-state.ts` defines the four labels (empty,
+  disabled, unavailable, loading) and `components/ui/state-panel.tsx` renders a
+  reason, freshness, optional action and accessible heading. The Signal hub,
+  catalog table, plans page, admin analytics and list panels call the shared
+  component instead of ad-hoc copy.
+- **Tests Added:** Yes — `tests/state-panel.test.mjs` asserts the labels remain
+  distinct.
+- **Gate output:** check, 956 tests (955 pass, 1 skipped, 0 fail), quality,
+  build, HTTP 751 checks and recovery pass at `35c1d35`.
+- **Limitation:** no browser or screen-reader interaction test was run; the
+  tests cover the state vocabulary, not rendered keyboard behavior.
+
 ## Resolution
 
 - **Convergence Date:** 2026-11-03
-- **Implementation:** not started.
-- **Archived:** no.
+- **Closed Date:** 2026-11-03
+- **Fix Description:** one actionable state pattern replaced inconsistent empty
+  branches; private failures remain private.
+- **Archived:** yes — `dev/fids/archive/FID-2026-1103-134-consistent-empty-states.md`.

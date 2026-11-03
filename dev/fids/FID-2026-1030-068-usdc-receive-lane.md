@@ -283,6 +283,14 @@ ruling) are still unset, so steps 2, 3 and 5–7 remain `blocked`, step 4 remain
 suites still pass inside the 874-test run cited above. No money path was added
 and the lane remains unoffered.
 
+**Hardening queue audit 2026-11-03.** The implemented queue (FIDs 128–136 and
+141) touches no `lib/crypto` file, schema, watcher, credit transaction or UI.
+The four operator inputs (chain and USDC contract, hardware-wallet xpub, RPC
+endpoint, screening ruling) remain unset, so steps 2, 3 and 5–7 remain
+`blocked`, step 4 remains `partial`, and step 1 remains the only implemented
+step. The operator's NOWPayments decision still makes this lane a non-launch
+path. No money path was added and the lane remains unoffered.
+
 ## Lessons Learned
 
 Writing the spike first turned a design assertion ("we can derive addresses from

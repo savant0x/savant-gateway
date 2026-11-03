@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-135-current-project-index.md`
 **ID:** FID-2026-1103-135
 **Severity:** low
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-03
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -59,8 +59,28 @@ blockers, latest verification receipt, and operator decisions.
 2. **Should the changelog become the task queue?** No; it remains a release
    history, while SCOPE/FIDs hold current work.
 
+## Implementation Evidence
+
+- **Commit SHA:** `35c1d35`.
+- **Implementation:** `docs/project-status.md` is now a dated index: truth map,
+  verification table, active queue with each open obligation, recently closed
+  records and links. The old page moved to
+  `docs/project-status-2026-10-31.md` with a historical banner; `docs/README.md`
+  distinguishes the current index from the historical record.
+- **Checks:** every linked record exists; the active queue names only 043, 062,
+  068, 126, 127 and 137; the receipt states the Docker limitation and does not
+  claim launch acceptance.
+- **Tests Added:** No; documentation-only change, verified by inspection and the
+  attribution/document gates.
+- **Gate output:** `npm run check`, 956 tests (955 pass, 1 skipped, 0 fail),
+  quality, build, HTTP 751 checks and recovery pass at `35c1d35`.
+- **Limitation:** the page is a dated index; it can lag a later record, which
+  the header states.
+
 ## Resolution
 
 - **Convergence Date:** 2026-11-03
-- **Implementation:** not started.
-- **Archived:** no.
+- **Closed Date:** 2026-11-03
+- **Fix Description:** the stale navigation role is replaced by one dated index
+  with authoritative links; historical receipts are preserved and labeled.
+- **Archived:** yes — `dev/fids/archive/FID-2026-1103-135-current-project-index.md`.

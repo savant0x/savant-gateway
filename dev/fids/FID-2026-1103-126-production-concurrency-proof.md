@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-126-production-concurrency-proof.md`
 **ID:** FID-2026-1103-126
 **Severity:** critical
-**Status:** converged
+**Status:** fixed
 **Created:** 2026-11-03
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -65,8 +65,31 @@ adapter rather than inferred from single-process tests.
 2. **Can production credentials be reused?** No; only disposable credentials
    and databases are permitted.
 
+## Implementation Evidence
+
+- **Commit SHA:** `8bb2d20`.
+- **Implementation:** `scripts/postgres-concurrency-proof.mjs` runs
+  `tests/settlement-concurrency.test.mjs` against `TEST_DATABASE_URL` or starts
+  a disposable `postgres:17-alpine` container and removes it afterwards. With
+  neither available it exits 1; it never converts the proof into a skip. The
+  script redacts the connection string in its diagnostic. `package.json` exposes
+  `npm run test:postgres`, `scripts/verify.mjs` treats the gate as one that may
+  not skip, and `.github/workflows/ci.yml` runs it with a service container.
+- **Tests Added:** Yes — the proof itself is the existing two-connection
+  settlement test; `tests/verify-summary.test.mjs` pins the no-skip rule for
+  this gate.
+- **Gate output:** NOT RUN. Docker was unavailable in this session
+  (`docker info` timed out) and no disposable `TEST_DATABASE_URL` was configured.
+  The 956-test unit run reports one skip, which is this mandatory proof. CI
+  declares the gate but the commits were not pushed, so no CI run exists yet.
+- **Why the status is fixed, not closed:** the implementation is complete and
+  fail-closed, but the financial proof itself has not executed. Archiving would
+  claim evidence that does not exist.
+
 ## Resolution
 
 - **Convergence Date:** 2026-11-03
-- **Implementation:** not started; this is a converged implementation contract.
-- **Archived:** no; remains active until implementation and verification.
+- **Implementation:** implemented at `8bb2d20`; execution pending.
+- **Next action:** run `npm run test:postgres` with Docker running or a
+  disposable PostgreSQL URL, then record the receipt and archive this FID.
+- **Archived:** no.

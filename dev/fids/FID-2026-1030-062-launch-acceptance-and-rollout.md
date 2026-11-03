@@ -191,6 +191,16 @@ database, and the absent public GO. The candidate SHA for any future acceptance
 bundle is therefore later than `2a28552` and must be pinned fresh when the
 external inputs exist.
 
+**Hardening queue audit 2026-11-03.** FIDs 128–136 and 141 were implemented and
+verified locally and archived; FID 131's cancellation telemetry and FID 127's
+receipt validator exist, but neither observes a real service. No hosted invoice
+was created or paid, no signed IPN was delivered or replayed, no upstream was
+funded, no hosted restore or rollback ran, no alert was delivered, the load
+envelope was not re-measured against PostgreSQL and `v1.2` was not published.
+Items 1–8 therefore remain open exactly as recorded. The README and `/docs`
+state that the Vercel deployment is healthy; deployment is not acceptance, and
+no item above is discharged.
+
 ## Lessons Learned
 
 Release approval and observed operational acceptance are evidence, not documentation statuses.

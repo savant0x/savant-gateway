@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-133-admin-environment-diagnostics.md`
 **ID:** FID-2026-1103-133
 **Severity:** low
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-03
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -57,8 +57,24 @@ never values or derived secrets.
 2. **Should diagnostics appear in production?** Yes, but only safe state and
    only on the login screen.
 
+## Implementation Evidence
+
+- **Commit SHA:** `4b57ebe`.
+- **Implementation:** `lib/admin-diagnostics.ts` returns configuration bands,
+  a normalized origin and production issue codes; the login screen renders the
+  state with remediation. No secret value is serialized.
+- **Tests Added:** Yes — `tests/admin-diagnostics.test.mjs` covers absent,
+  short, valid, quoted and malformed values and asserts no secret substring is
+  present in the projection.
+- **Gate output:** check, 956 tests (955 pass, 1 skipped, 0 fail), quality,
+  build, HTTP 751 checks and recovery pass at `35c1d35`.
+- **Limitation:** the projection was not rendered against the hosted
+  deployment in this session; the tests verify the server-side values only.
+
 ## Resolution
 
 - **Convergence Date:** 2026-11-03
-- **Implementation:** not started.
-- **Archived:** no.
+- **Closed Date:** 2026-11-03
+- **Fix Description:** operators can distinguish missing configuration from bad
+  input without exposing a password, secret or raw origin credentials.
+- **Archived:** yes — `dev/fids/archive/FID-2026-1103-133-admin-environment-diagnostics.md`.

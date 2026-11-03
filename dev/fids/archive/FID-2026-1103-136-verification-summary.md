@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-136-verification-summary.md`
 **ID:** FID-2026-1103-136
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-03
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -59,8 +59,27 @@ full raw output for diagnosis.
 2. **Should unavailable external services pass?** No; they must be explicit and
    fail required release gates.
 
+## Implementation Evidence
+
+- **Commit SHA:** `8bb2d20`.
+- **Implementation:** `scripts/verify-summary.mjs` owns the stable schema, gate
+  list and fail-closed derivation; `scripts/verify.mjs` runs every gate, writes
+  one raw log per gate and `.verify/summary.json`, and exits non-zero for a
+  missing gate, signal, non-zero exit or unexpected skip. `npm run verify` uses
+  the runner.
+- **Tests Added:** Yes — `tests/verify-summary.test.mjs` covers parsed totals,
+  signal/missing exits, skipped required gates, missing entries and formatting.
+- **Gate output:** check, 956 tests (955 pass, 1 skipped, 0 fail), quality,
+  build, HTTP 751 checks and recovery pass at `35c1d35`.
+- **Limitation:** the full `npm run verify` chain was not executed end-to-end in
+  this session because its mandatory `test:postgres` gate requires Docker or a
+  disposable database (FID-126). Each other gate was run individually; CI
+  declares the same chain.
+
 ## Resolution
 
 - **Convergence Date:** 2026-11-03
-- **Implementation:** not started.
-- **Archived:** no.
+- **Closed Date:** 2026-11-03
+- **Fix Description:** the release receipt is machine-readable and cannot mask a
+  skipped or missing gate; raw logs remain the diagnostic evidence.
+- **Archived:** yes — `dev/fids/archive/FID-2026-1103-136-verification-summary.md`.

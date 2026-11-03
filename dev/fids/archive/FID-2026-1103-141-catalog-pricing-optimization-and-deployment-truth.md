@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-141-catalog-pricing-optimization-and-deployment-truth.md`
 **ID:** FID-2026-1103-141
 **Severity:** critical
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-03
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -239,14 +239,41 @@ secret leakage, and unverified remote deployment are explicit rejection cases.
 - **Step statuses:** all fourteen steps are `implemented (design)`; no code is
   claimed.
 
+## Implementation Evidence
+
+- **Commit SHA:** `d701ce6`; the documentation slice for the receipt/index is
+  `35c1d35`.
+- **Catalog:** `components/admin/models-table.tsx` labels Sell and Cost per 1M,
+  uses one `catalogEconomics` projection for margin and blended profit, and
+  `components/admin/model-cost-editor.tsx` edits cost with an explicit save.
+- **Recommendations:** `lib/price-recommendation.ts` produces pure, explainable
+  drafts; `components/admin/pricing-recommendations.tsx` requires an explicit
+  approval and `lib/storage/store/pricing-decisions.ts` records the decision and
+  price history. No recommendation auto-publishes.
+- **Charts:** `lib/pricing-chart-data.ts` keeps scenario and realized series
+  apart; the pricing and analytics pages read recorded decisions and settlements.
+- **Deployment truth:** `lib/deployment-diagnostics.ts` reports the running
+  commit and provider-key presence without values; Admin → Diagnostics renders
+  it, and `scripts/deployment-receipt.mjs` is the machine-readable receipt.
+- **Tests Added:** Yes — `tests/catalog-economics.test.mjs`,
+  `tests/price-recommendation.test.mjs`, `tests/pricing-chart-data.test.mjs`,
+  `tests/pricing-decisions.test.mjs`, `tests/deployment-diagnostics.test.mjs`,
+  `tests/measurement-decisions.test.mjs`.
+- **Gate output:** check, 956 tests (955 pass, 1 skipped, 0 fail), quality,
+  build, HTTP 751 checks and recovery pass at `35c1d35`.
+- **Limitations:** no real price was changed; charts read empty history until
+  an operator records a decision; the diagnostics page reports local state and
+  does not prove the hosted runtime. The Vercel deployment at `67551ea` predates
+  this slice.
+
 ## Resolution
 
 - **Convergence Date:** 2026-11-03
-- **Fix Description:** Created and converged the catalog pricing, optimization,
-  charting, and deployment-truth implementation contract.
-- **Tests Added:** No; planning-only FID, with implementation tests specified.
-- **Verification Evidence:** baseline files read and cross-checked.
-- **Archived:** no; remains active until implementation is verified.
+- **Closed Date:** 2026-11-03
+- **Fix Description:** labeled pricing inputs, shared economics, guarded
+  recommendations, audited decisions, separate scenario/realized charts, and
+  safe deployment diagnostics.
+- **Archived:** yes — `dev/fids/archive/FID-2026-1103-141-catalog-pricing-optimization-and-deployment-truth.md`.
 
 ## Lessons Learned
 

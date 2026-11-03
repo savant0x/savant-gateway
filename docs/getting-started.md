@@ -132,7 +132,13 @@ npm run verify       # sequential runner; writes .verify/summary.json
 
 The pre-push hook runs the same gates plus the attribution guard and fails
 closed. CI runs the same set. `npm run verify` does not run
-`config:check:prod`; that is a deployment-time gate, not a local one.
+`config:check:prod`; that is a deployment-time gate, not a local one. For a
+push, `npm run push:postgres` starts a disposable `postgres:17-alpine`
+container, exports `TEST_DATABASE_URL` and `HTTP_TEST_DATABASE_URL` to
+`git push`, and stops the container afterwards. Pass push arguments after
+`--`, for example `npm run push:postgres -- origin main`. Set
+`TEST_DATABASE_URL` to reuse an existing disposable endpoint instead; a
+non-loopback endpoint is refused unless `PUSH_POSTGRES_ALLOW_REMOTE=yes` is set.
 Every gate's raw output is kept in `.verify/<gate>.log`, and the JSON summary
 records exit codes, durations, test totals and unexpected skips. A skipped
 required gate fails the run; the summary is not a replacement for the logs.

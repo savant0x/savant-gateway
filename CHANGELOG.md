@@ -3,6 +3,26 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — One-command push with disposable PostgreSQL
+
+- **FID-2026-1103-145 — medium — the push gate required manual database
+  setup.** `npm run push:postgres` now starts a throwaway
+  `postgres:17-alpine` container on a reserved loopback port, sets
+  `TEST_DATABASE_URL` and `HTTP_TEST_DATABASE_URL` for the `git push` child,
+  and stops the container in a `finally` block. Push arguments follow `--`, for
+  example `npm run push:postgres -- origin main`. An existing loopback
+  `TEST_DATABASE_URL` is reused; a non-loopback endpoint is refused unless
+  `PUSH_POSTGRES_ALLOW_REMOTE=yes` is set, and an endpoint equal to
+  `DATABASE_URL` is always refused. The container lifecycle moved to
+  `scripts/disposable-postgres.mjs` and is shared with
+  `test:postgres`. Verified with `npm run push:postgres -- --dry-run` against a
+  disposable PostgreSQL 18.6 endpoint: the pre-push hook ran every gate,
+  including the two-connection proof and both HTTP suites, and the dry-run
+  reported `Everything up-to-date`. The Docker-start path was not exercised
+  because this machine's Docker engine returns a 500 from `docker info`; the
+  supplied-endpoint path and the full push flow were. CI receipt is recorded
+  after the push.
+
 ## 2026-11-03 — FID closure: CI gate repairs verified
 
 - **FID-2026-1103-142, 143 and 144 — closed and archived.** GitHub Actions run

@@ -333,6 +333,7 @@ npm run test:recovery     # backup/restore/reconciliation drill
 npm run receipt:deploy    # redacted local deployment/env-presence receipt
 
 npm run verify            # sequential runner; writes .verify/summary.json and per-gate logs
+npm run push:postgres     # disposable PostgreSQL + TEST_DATABASE_URL for git push
 ```
 
 The pre-push hook runs the attribution guard plus the same gates and fails

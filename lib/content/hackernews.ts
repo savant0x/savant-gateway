@@ -16,6 +16,7 @@ import {
   hackerNewsStreamFromUrl,
 } from "./hackernews-config.ts";
 import { CONTENT_LIMITS } from "./policy.ts";
+import { SourceConfigError } from "./source-error.ts";
 import { normalizeTags } from "./taxonomy.ts";
 import { validatePublicHttpUrl } from "./url.ts";
 
@@ -28,6 +29,10 @@ export type HackerNewsStory = {
   bodyHtml: string | null;
   plainBody: string;
   excerpt: string;
+  /** HN points, when the item reports a usable integer. */
+  score: number | null;
+  /** HN comment count, when the item reports a usable integer. */
+  comments: number | null;
 };
 
 export type HackerNewsMatch = {
@@ -101,6 +106,12 @@ function positiveTime(value: unknown): number | null {
   return year >= 2000 && year <= 2100 ? time : null;
 }
 
+function nonNegativeInteger(value: unknown): number | null {
+  const number = typeof value === "number" ? value : Number(value);
+
+  return Number.isSafeInteger(number) && number >= 0 ? number : null;
+}
+
 function readableExternalUrl(raw: unknown): string | null {
   if (typeof raw !== "string" || !raw.trim()) return null;
 
@@ -166,6 +177,8 @@ export function parseHackerNewsStory(
     bodyHtml,
     plainBody,
     excerpt,
+    score: nonNegativeInteger(item.score),
+    comments: nonNegativeInteger(item.descendants),
   };
 }
 
@@ -243,6 +256,16 @@ function parsedItem(
     thumbnailUrl: null,
     videoId: null,
     tags: normalizeTags(["hackernews", ...source.config.tags, ...matchedTerms]),
+    ...(story.score !== null || story.comments !== null
+      ? {
+          metrics: {
+            views: 0,
+            likes: story.score ?? 0,
+            comments: story.comments ?? 0,
+            rating: null,
+          },
+        }
+      : {}),
   };
 }
 
@@ -287,7 +310,9 @@ export async function fetchHackerNewsItems(
   deps: HackerNewsFetchDeps,
 ): Promise<ParsedItem[]> {
   if (!hackerNewsStreamFromUrl(source.url)) {
-    throw new Error("Hacker News sources must use a known v0 ranked-list URL.");
+    throw new SourceConfigError(
+      "Hacker News sources must use a known v0 ranked-list URL.",
+    );
   }
 
   const ids = parseHackerNewsList(await deps.fetchText(source.url));

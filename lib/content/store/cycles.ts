@@ -11,6 +11,7 @@ type CycleRow = {
   finished_at: string | null;
   items_seen: number;
   items_upserted: number;
+  items_skipped: number;
   error: string | null;
 };
 
@@ -23,6 +24,7 @@ function toCycle(row: CycleRow): FetchCycle {
     finishedAt: row.finished_at,
     itemsSeen: row.items_seen,
     itemsUpserted: row.items_upserted,
+    itemsSkipped: row.items_skipped,
     error: row.error,
   };
 }
@@ -53,6 +55,7 @@ export async function finishCycle(
     finishedAt: string;
     itemsSeen: number;
     itemsUpserted: number;
+    itemsSkipped?: number;
     error?: string | null;
   },
 ): Promise<void> {
@@ -60,7 +63,7 @@ export async function finishCycle(
     .prepare(
       `UPDATE content.fetch_cycles
           SET status = ?, finished_at = ?, items_seen = ?, items_upserted = ?,
-              error = ?
+              items_skipped = ?, error = ?
         WHERE id = ?`,
     )
     .run(
@@ -68,6 +71,7 @@ export async function finishCycle(
       input.finishedAt,
       input.itemsSeen,
       input.itemsUpserted,
+      Math.max(0, Math.trunc(input.itemsSkipped ?? 0)),
       input.error?.slice(0, 500) ?? null,
       id,
     );
@@ -121,11 +125,27 @@ export async function contentStats(
     )
     .get<{ total: number | string }>();
 
+  const engagement = await db
+    .prepare(
+      `SELECT
+         (SELECT COUNT(*) FROM content.comments) AS comments,
+         (SELECT COUNT(*) FROM content.reactions) AS reactions,
+         (SELECT COUNT(*) FROM content.saved_items) AS saved_items`,
+    )
+    .get<{
+      comments: number | string;
+      reactions: number | string;
+      saved_items: number | string;
+    }>();
+
   return {
     sources: Number(sourceRow?.total ?? 0),
     enabledSources: Number(sourceRow?.enabled ?? 0),
     items: Number(itemRow?.total ?? 0),
     linkedItems: Number(linkRow?.total ?? 0),
+    comments: Number(engagement?.comments ?? 0),
+    reactions: Number(engagement?.reactions ?? 0),
+    savedItems: Number(engagement?.saved_items ?? 0),
     lastFetchedAt: sourceRow?.last_fetched_at ?? null,
   };
 }

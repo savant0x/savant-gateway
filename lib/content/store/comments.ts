@@ -1,5 +1,5 @@
 import type { PostgresDatabase } from "../../storage/pg-adapter.ts";
-import type { ContentComment } from "../types.ts";
+import type { AdminContentComment, ContentComment } from "../types.ts";
 
 import { randomUUID } from "node:crypto";
 
@@ -15,6 +15,7 @@ import { CONTENT_LIMITS } from "../policy.ts";
 
 type CommentRow = {
   id: string;
+  user_id: string;
   author_name: string;
   body: string;
   created_at: string;
@@ -28,19 +29,21 @@ export class CommentParentError extends Error {}
 
 const COMMENT_COLUMNS = `
   c.id,
+  c.user_id,
   COALESCE(NULLIF(BTRIM(u.name), ''), 'Customer') AS author_name,
   c.body,
   c.created_at,
   c.parent_id
 `;
 
-function toComment(row: CommentRow): ContentComment {
+function toComment(row: CommentRow, viewerId: string | null): ContentComment {
   return {
     id: row.id,
     authorName: row.author_name,
     body: row.body,
     createdAt: row.created_at,
     parentId: row.parent_id,
+    canDelete: viewerId !== null && row.user_id === viewerId,
   };
 }
 
@@ -72,6 +75,7 @@ export async function listComments(
   db: PostgresDatabase,
   itemId: string,
   limit = CONTENT_LIMITS.commentPageSize,
+  viewerId: string | null = null,
 ): Promise<ContentComment[]> {
   const rows = await db
     .prepare(
@@ -84,7 +88,66 @@ export async function listComments(
     )
     .all<CommentRow>(itemId, Math.min(100, Math.max(1, Math.trunc(limit))));
 
-  return rows.map(toComment);
+  return rows.map((row) => toComment(row, viewerId));
+}
+
+/** Author-scoped or operator deletion; replies cascade through the schema. */
+export async function deleteComment(
+  db: PostgresDatabase,
+  commentId: string,
+  actor: { userId: string; itemId: string } | { operator: true },
+): Promise<boolean> {
+  const rows =
+    "operator" in actor
+      ? await db
+          .prepare("DELETE FROM content.comments WHERE id = ? RETURNING id")
+          .all<{ id: string }>(commentId)
+      : await db
+          .prepare(
+            `DELETE FROM content.comments
+              WHERE id = ? AND user_id = ? AND item_id = ?
+              RETURNING id`,
+          )
+          .all<{ id: string }>(commentId, actor.userId, actor.itemId);
+
+  return rows.length > 0;
+}
+
+/** Operator-only list with the author identity the public model never shows. */
+export async function listRecentCommentsForOperator(
+  db: PostgresDatabase,
+  limit = 20,
+): Promise<AdminContentComment[]> {
+  const rows = await db
+    .prepare(
+      `SELECT c.id, c.item_id, i.title AS item_title, c.body, c.created_at,
+              COALESCE(NULLIF(BTRIM(u.name), ''), 'Customer') AS author_name,
+              u.email AS author_email
+         FROM content.comments c
+         JOIN users u ON u.id = c.user_id
+         JOIN content.items i ON i.id = c.item_id
+        ORDER BY c.created_at DESC, c.id DESC
+        LIMIT ?`,
+    )
+    .all<{
+      id: string;
+      item_id: string;
+      item_title: string;
+      body: string;
+      created_at: string;
+      author_name: string;
+      author_email: string | null;
+    }>(Math.min(100, Math.max(1, Math.trunc(limit))));
+
+  return rows.map((row) => ({
+    id: row.id,
+    itemId: row.item_id,
+    itemTitle: row.item_title,
+    authorName: row.author_name,
+    authorEmail: row.author_email,
+    body: row.body,
+    createdAt: row.created_at,
+  }));
 }
 
 export async function countComments(
@@ -156,5 +219,6 @@ export async function addComment(
     body,
     createdAt: now,
     parentId,
+    canDelete: true,
   };
 }

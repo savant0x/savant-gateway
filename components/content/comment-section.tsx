@@ -3,16 +3,28 @@ import type { ContentComment } from "@/lib/content/types";
 import Link from "next/link";
 
 import { CommentForm } from "@/components/content/comment-form";
+import { DeleteCommentButton } from "@/components/content/delete-comment-button";
 import { contentDate } from "@/lib/content/format";
 
-function CommentBody({ comment }: { comment: ContentComment }) {
+function CommentBody({
+  comment,
+  itemId,
+}: {
+  comment: ContentComment;
+  itemId: string;
+}) {
   return (
     <div className="rounded-lg border border-black/10 px-3 py-2 dark:border-white/10">
       <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted">
         <span className="font-semibold text-foreground">
           {comment.authorName}
         </span>
-        <span>{contentDate(comment.createdAt)}</span>
+        <span className="flex items-center gap-2">
+          <span>{contentDate(comment.createdAt)}</span>
+          {comment.canDelete ? (
+            <DeleteCommentButton commentId={comment.id} itemId={itemId} />
+          ) : null}
+        </span>
       </div>
       <p className="mt-1 whitespace-pre-line text-sm leading-6">
         {comment.body}
@@ -93,7 +105,7 @@ export function CommentSection({
 
             return (
               <li key={comment.id}>
-                <CommentBody comment={comment} />
+                <CommentBody comment={comment} itemId={itemId} />
                 {signedIn ? (
                   <details className="mt-2">
                     <summary className="cursor-pointer text-[11px] text-muted underline-offset-4 hover:text-foreground hover:underline">
@@ -111,7 +123,7 @@ export function CommentSection({
                   <ul className="ml-4 mt-3 space-y-3 border-l border-black/10 pl-3 dark:border-white/10">
                     {replies.map((reply) => (
                       <li key={reply.id}>
-                        <CommentBody comment={reply} />
+                        <CommentBody comment={reply} itemId={itemId} />
                       </li>
                     ))}
                   </ul>
@@ -124,7 +136,7 @@ export function CommentSection({
               <p className="mb-1 text-[11px] text-muted">
                 Reply to a comment not shown on this page
               </p>
-              <CommentBody comment={comment} />
+              <CommentBody comment={comment} itemId={itemId} />
             </li>
           ))}
         </ul>

@@ -67,7 +67,7 @@ function contentItem(overrides = {}) {
     videoId: null,
     externalId: null,
     tags: [],
-    metrics: { views: 0, likes: 0, youtubeComments: 0, rating: null },
+    metrics: { views: 0, likes: 0, comments: 0, rating: null },
     github: null,
     ...overrides,
   };

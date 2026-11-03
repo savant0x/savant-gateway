@@ -14,6 +14,7 @@ import {
   CONTENT_SOURCE_PRESETS,
   seedContentSources,
 } from "../lib/content/presets.ts";
+import { normalizeRedditUrl } from "../lib/content/reddit.ts";
 import { parseTrendshiftListing } from "../lib/content/trendshift.ts";
 import { createSource, listItems } from "../lib/content/store.ts";
 import { createStorageDatabase } from "../lib/storage/database.ts";
@@ -236,6 +237,71 @@ test("preset seeding adds each source once and keeps operator edits", async () =
     assert.equal(first.skipped.length, 0);
     assert.equal(second.created.length, 0);
     assert.equal(second.skipped.length, CONTENT_SOURCE_PRESETS.length);
+  } finally {
+    await db.close();
+  }
+});
+
+test("dead presets are gone and the verified feeds are present", () => {
+  const urls = CONTENT_SOURCE_PRESETS.map((preset) => preset.url);
+
+  assert.equal(urls.some((url) => url.includes("@savant")), false);
+  assert.equal(urls.some((url) => url.includes("reddit.com")), false);
+
+  for (const url of [
+    "https://lobste.rs/rss",
+    "https://simonwillison.net/atom/everything/",
+    "https://www.latent.space/feed",
+    "https://importai.substack.com/feed",
+    "https://rss.arxiv.org/rss/cs.LG",
+    "https://rss.arxiv.org/rss/cs.CL",
+  ]) {
+    assert.ok(urls.includes(url), `missing preset ${url}`);
+  }
+});
+
+test("Reddit URLs canonicalize to the official hot feed", async () => {
+  assert.equal(
+    normalizeRedditUrl("https://www.reddit.com/r/LocalLLaMA"),
+    "https://www.reddit.com/r/LocalLLaMA/hot.rss",
+  );
+  assert.equal(
+    normalizeRedditUrl("https://old.reddit.com/r/singularity/comments/abc"),
+    "https://www.reddit.com/r/singularity/hot.rss",
+  );
+  assert.equal(
+    normalizeRedditUrl("r/MachineLearning"),
+    "https://www.reddit.com/r/MachineLearning/hot.rss",
+  );
+  assert.equal(normalizeRedditUrl("https://example.com/r/not-reddit"), null);
+
+  const db = await createStorageDatabase({ env: {} });
+
+  try {
+    const source = await createSource(db, {
+      kind: "reddit",
+      label: "r/LocalLLaMA",
+      url: "https://www.reddit.com/r/LocalLLaMA",
+      config: { tags: [] },
+      enabled: true,
+      fetchIntervalMinutes: 60,
+      maxItems: 20,
+    });
+
+    assert.equal(source.url, "https://www.reddit.com/r/LocalLLaMA/hot.rss");
+
+    await assert.rejects(
+      createSource(db, {
+        kind: "reddit",
+        label: "Not a subreddit",
+        url: "https://example.com/feed.xml",
+        config: { tags: [] },
+        enabled: true,
+        fetchIntervalMinutes: 60,
+        maxItems: 20,
+      }),
+      /must name a subreddit/,
+    );
   } finally {
     await db.close();
   }

@@ -9,10 +9,12 @@ import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
 import { kindLabel, tagPillClass } from "@/lib/content/format";
 import { contentEnabled } from "@/lib/content/policy";
+import { cachedPublicRead } from "@/lib/content/public-cache";
 import { listItems, listTags } from "@/lib/content/store/items";
 import { CONTENT_KINDS } from "@/lib/content/types";
 import { getDatabase } from "@/lib/storage/runtime";
 
+/** Session-free, but the build has no database; reads are memoized for 60s. */
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
@@ -83,14 +85,18 @@ export default async function SignalPage({
     const db = await getDatabase();
 
     [pageData, tags] = await Promise.all([
-      listItems(db, {
-        kind,
-        tag,
-        search,
-        limit: pageSize,
-        offset: (page - 1) * pageSize,
-      }),
-      listTags(db, 24),
+      cachedPublicRead(
+        `signal:hub:${kind ?? ""}:${tag ?? ""}:${search ?? ""}:${page}`,
+        () =>
+          listItems(db, {
+            kind,
+            tag,
+            search,
+            limit: pageSize,
+            offset: (page - 1) * pageSize,
+          }),
+      ),
+      cachedPublicRead("signal:tags:24", () => listTags(db, 24)),
     ]);
   } catch (caught) {
     error =

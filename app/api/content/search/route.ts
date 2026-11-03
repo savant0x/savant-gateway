@@ -1,5 +1,6 @@
 import { contentEnabled } from "@/lib/content/policy";
 import { CONTENT_SEARCH_LIMITS, parseSearchQuery } from "@/lib/content/search";
+import { searchClientKey, takeSearchToken } from "@/lib/content/search-limit";
 import { listItems, listTags } from "@/lib/content/store/items";
 import { searchModels } from "@/lib/content/store/search";
 import { getDatabase } from "@/lib/storage/runtime";
@@ -19,6 +20,22 @@ export async function GET(request: Request) {
     return Response.json(
       { error: "Signal is not enabled." },
       { status: 404, headers: NO_STORE },
+    );
+  }
+
+  const limit = takeSearchToken(searchClientKey(request));
+
+  if (!limit.allowed) {
+    return Response.json(
+      { error: `Too many searches. Retry in ${limit.retryAfterSeconds}s.` },
+      {
+        status: 429,
+        headers: {
+          ...NO_STORE,
+          "Retry-After": String(limit.retryAfterSeconds),
+          "X-RateLimit-Remaining": String(limit.remaining),
+        },
+      },
     );
   }
 

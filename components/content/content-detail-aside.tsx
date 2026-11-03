@@ -6,6 +6,13 @@ import { ContentCard } from "@/components/content/content-card";
 import { contentDate, formatCount } from "@/lib/content/format";
 import { isHackerNewsDiscussionUrl } from "@/lib/content/hackernews";
 
+function describeComments(item: ContentItem): string {
+  if (item.kind === "video") return "Comments on YouTube";
+  if (isHackerNewsDiscussionUrl(item.url)) return "Hacker News comments";
+
+  return "Comments";
+}
+
 /**
  * The watch-page details column (FID-2026-1102-092).
  *
@@ -67,10 +74,10 @@ export function ContentDetailAside({
     facts.push({ label: "Rating", value: `${metrics.rating.toFixed(1)} / 5` });
   }
 
-  if (metrics.youtubeComments > 0) {
+  if (metrics.comments > 0) {
     facts.push({
-      label: "Comments on YouTube",
-      value: formatCount(metrics.youtubeComments),
+      label: describeComments(item),
+      value: formatCount(metrics.comments),
     });
   }
 
@@ -141,13 +148,14 @@ export function ContentDetailAside({
           Why this is here
         </p>
         <p className="mt-2">
-          Items are ingested from operator-selected RSS, YouTube, HuggingFace,
-          Trendshift, and Hacker News sources. Hacker News threads are filtered
-          locally by topic and keep their publisher link when one exists. Views
-          and the star rating come from the source feed; likes and the YouTube
-          comment count come from the YouTube Data API when a key is configured.
-          A model link appears only when the title or an exact publisher tag
-          names the model.
+          Items are ingested from operator-selected RSS, Reddit, YouTube,
+          HuggingFace, Trendshift, and Hacker News sources. Hacker News threads
+          are filtered locally by topic and keep their publisher link when one
+          exists. Views, likes, comment counts and the star rating come from the
+          source when it reports them; the YouTube Data API fills in likes and
+          comments when a key is configured. A missing count is not shown as
+          zero. A model link appears only when the title or an exact publisher
+          tag names the model.
         </p>
         <Link
           className="mt-3 inline-block text-accent underline-offset-4 hover:underline"

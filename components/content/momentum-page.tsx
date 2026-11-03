@@ -22,6 +22,7 @@ import {
   windowLabel,
 } from "@/lib/content/momentum";
 import { contentEnabled } from "@/lib/content/policy";
+import { cachedPublicRead } from "@/lib/content/public-cache";
 import { listMomentum } from "@/lib/content/store/momentum";
 import { getDatabase } from "@/lib/storage/runtime";
 
@@ -67,12 +68,16 @@ export async function MomentumPage({
   try {
     const db = await getDatabase();
 
-    entries = await listMomentum(db, {
-      metric,
-      windowHours: hours,
-      mode,
-      limit: 12,
-    });
+    entries = await cachedPublicRead(
+      `signal:momentum:${mode}:${metric}:${hours}`,
+      () =>
+        listMomentum(db, {
+          metric,
+          windowHours: hours,
+          mode,
+          limit: 12,
+        }),
+    );
   } catch (caught) {
     error =
       caught instanceof Error ? caught.message : "Storage is unavailable.";

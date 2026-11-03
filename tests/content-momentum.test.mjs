@@ -91,7 +91,7 @@ test("snapshots, half-open windows, first-snapshot exclusion, and retention", as
           thumbnailUrl: null,
           videoId: null,
           tags: [],
-          metrics: { views, likes: 0, youtubeComments: 0, rating: null },
+          metrics: { views, likes: 0, comments: 0, rating: null },
         },
         at,
       );

@@ -4,6 +4,7 @@ import {
   addComment,
   CommentParentError,
   CommentRateLimitError,
+  deleteComment,
 } from "@/lib/content/store/comments";
 import { getItem } from "@/lib/content/store/items";
 import { readJsonObject, requestBodyError } from "@/lib/request-limits";
@@ -82,4 +83,33 @@ export async function POST(
 
     return customerError(500, "Could not save that comment.");
   }
+}
+
+/** Deletes the caller's own comment on this item; replies cascade. */
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  if (!contentEnabled()) return customerError(404, "Signal is not enabled.");
+
+  const customer = await requireCustomerApi(request);
+
+  if (customer instanceof Response) return customer;
+
+  const commentId = new URL(request.url).searchParams.get("commentId")?.trim();
+
+  if (!commentId) return customerError(400, "A comment id is required.");
+
+  const db = await getDatabase();
+  const deleted = await deleteComment(db, commentId, {
+    userId: customer.id,
+    itemId: (await params).id,
+  });
+
+  if (!deleted) return customerError(404, "That comment does not exist.");
+
+  return Response.json(
+    { deleted: true },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }

@@ -4,8 +4,11 @@ import test from "node:test";
 import {
   addComment,
   CommentParentError,
+  contentStats,
   createSource,
+  deleteComment,
   listComments,
+  listRecentCommentsForOperator,
   upsertItem,
 } from "../lib/content/store.ts";
 import { createStorageDatabase } from "../lib/storage/database.ts";
@@ -112,6 +115,80 @@ test("comments support one reply level and reject deeper or foreign parents", as
       .get(itemId);
 
     assert.equal(Number(remaining.total), 0);
+  } finally {
+    await db.close();
+  }
+});
+
+test("only the author or an operator can delete a comment, and replies cascade", async () => {
+  const { db, itemId } = await fixture();
+
+  try {
+    await db
+      .prepare(
+        `INSERT INTO users (id, email, name, status, created_at)
+         VALUES ('user_other', 'other@example.com', 'Other Customer', 'active', ?)
+         ON CONFLICT DO NOTHING`,
+      )
+      .run("2026-11-03T09:00:00.000Z");
+
+    const parent = await addComment(
+      db,
+      "user_dev",
+      itemId,
+      "Delete me.",
+      { now: "2026-11-03T10:00:00.000Z" },
+    );
+
+    await addComment(db, "user_dev", itemId, "A reply.", {
+      parentId: parent.id,
+      now: "2026-11-03T10:01:00.000Z",
+    });
+
+    const viewerRows = await listComments(db, itemId, 50, "user_dev");
+    const otherRows = await listComments(db, itemId, 50, "user_other");
+
+    assert.equal(viewerRows.every((comment) => comment.canDelete), true);
+    assert.equal(otherRows.every((comment) => comment.canDelete), false);
+
+    const foreign = await deleteComment(db, parent.id, {
+      userId: "user_other",
+      itemId,
+    });
+
+    assert.equal(foreign, false);
+    assert.equal((await listComments(db, itemId)).length, 2);
+
+    const own = await deleteComment(db, parent.id, {
+      userId: "user_dev",
+      itemId,
+    });
+
+    assert.equal(own, true);
+    assert.equal((await listComments(db, itemId)).length, 0);
+
+    const adminComment = await addComment(
+      db,
+      "user_dev",
+      itemId,
+      "Operator removal.",
+      { now: "2026-11-03T10:02:00.000Z" },
+    );
+    const recent = await listRecentCommentsForOperator(db, 5);
+
+    assert.equal(recent[0].id, adminComment.id);
+    assert.equal(recent[0].itemTitle, "Item one");
+    assert.ok(recent[0].authorEmail);
+
+    const stats = await contentStats(db);
+
+    assert.equal(stats.comments, 1);
+
+    assert.equal(
+      await deleteComment(db, adminComment.id, { operator: true }),
+      true,
+    );
+    assert.equal((await listComments(db, itemId)).length, 0);
   } finally {
     await db.close();
   }

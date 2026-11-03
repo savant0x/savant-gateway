@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { ingestSource } from "../lib/content/ingest.ts";
-import { contentStats } from "../lib/content/store/cycles.ts";
+import {
+  contentStats,
+  listRecentCycles,
+} from "../lib/content/store/cycles.ts";
 import { getSource } from "../lib/content/store/sources.ts";
 import {
   createSource,
@@ -173,9 +176,84 @@ test("YouTube ingestion merges Data API likes and comment counts", async () => {
     assert.deepEqual(item.metrics, {
       views: 12345,
       likes: 678,
-      youtubeComments: 90,
+      comments: 90,
       rating: 4.5,
     });
+  } finally {
+    await db.close();
+  }
+});
+
+test("a parsed cycle records dropped entries", async () => {
+  const db = await createStorageDatabase({ env: {} });
+
+  try {
+    const source = await createSource(db, {
+      kind: "rss",
+      label: "Partly malformed feed",
+      url: "https://example.com/partial.xml",
+      config: { tags: [] },
+      enabled: true,
+      fetchIntervalMinutes: 60,
+      maxItems: 10,
+    });
+    const result = await ingestSource(db, source, {
+      fetchText: async () =>
+        `<?xml version="1.0"?>
+         <rss version="2.0"><channel>
+           <item><title>Valid</title><link>https://example.com/valid</link></item>
+           <item><title></title><link>https://example.com/no-title</link></item>
+         </channel></rss>`,
+      now: () => "2026-11-02T12:00:00.000Z",
+      models: [],
+    });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.itemsSeen, 1);
+    assert.equal(result.itemsSkipped, 1);
+
+    const cycles = await listRecentCycles(db, 5);
+
+    assert.equal(cycles[0].itemsSkipped, 1);
+  } finally {
+    await db.close();
+  }
+});
+
+test("a configuration failure stays visible without disabling the source", async () => {
+  const db = await createStorageDatabase({ env: {} });
+
+  try {
+    const source = await createSource(db, {
+      kind: "youtube",
+      label: "Misconfigured channel",
+      url: "https://example.com/not-a-channel",
+      config: { tags: [] },
+      enabled: true,
+      fetchIntervalMinutes: 60,
+      maxItems: 5,
+    });
+    let fetched = false;
+    const result = await ingestSource(db, source, {
+      fetchText: async () => {
+        fetched = true;
+
+        return "unexpected";
+      },
+      now: () => "2026-11-02T12:00:00.000Z",
+      models: [],
+    });
+
+    assert.equal(fetched, false);
+    assert.equal(result.ok, false);
+    assert.equal(result.failureKind, "config");
+    assert.match(result.error, /channel id or URL/);
+
+    const current = await getSource(db, source.id);
+
+    assert.equal(current.failureStreak, 0);
+    assert.equal(current.status, "error");
+    assert.equal(current.enabled, true);
   } finally {
     await db.close();
   }
@@ -265,7 +343,7 @@ test("a failed statistics call keeps the feed metrics and the cycle", async () =
     assert.deepEqual(item.metrics, {
       views: 1000,
       likes: 0,
-      youtubeComments: 0,
+      comments: 0,
       rating: 4.5,
     });
   } finally {

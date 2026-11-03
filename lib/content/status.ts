@@ -23,6 +23,7 @@ export const PUBLIC_SOURCE_STATE_LABELS: Record<PublicSourceState, string> = {
 
 export const PUBLIC_SOURCE_KIND_LABELS: Record<SourceKind, string> = {
   rss: "RSS / Atom",
+  reddit: "Reddit",
   youtube: "YouTube",
   huggingface: "HuggingFace papers",
   trendshift: "Trendshift",

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import Link from "next/link";
 
+import { ContentCommentModeration } from "@/components/admin/content-comment-moderation";
 import { ContentLinkActions } from "@/components/admin/content-link-actions";
 import { ContentLinkForm } from "@/components/admin/content-link-form";
 import { ContentSourceFetchAll } from "@/components/admin/content-source-fetch-all";
@@ -9,6 +10,7 @@ import { ContentSourceForm } from "@/components/admin/content-source-form";
 import { ContentSourcePresets } from "@/components/admin/content-source-presets";
 import { ContentSourceTable } from "@/components/admin/content-source-table";
 import { contentDate } from "@/lib/content/format";
+import { listRecentCommentsForOperator } from "@/lib/content/store/comments";
 import { listRecentCycles, contentStats } from "@/lib/content/store/cycles";
 import { listItems, listLinkableModels } from "@/lib/content/store/items";
 import { listRecentLinks } from "@/lib/content/store/links";
@@ -41,27 +43,41 @@ export default async function AdminContentPage() {
   let links: Awaited<ReturnType<typeof listRecentLinks>> = [];
   let recentItems: Awaited<ReturnType<typeof listItems>>["items"] = [];
   let models: Awaited<ReturnType<typeof listLinkableModels>> = [];
+  let recentComments: Awaited<
+    ReturnType<typeof listRecentCommentsForOperator>
+  > = [];
 
   try {
     const db = await getDatabase();
 
-    [sources, stats, cycles, links, recentItems, models] = await Promise.all([
-      listSources(db),
-      contentStats(db),
-      listRecentCycles(db, 8),
-      listRecentLinks(db, 15),
-      listItems(db, { limit: 20 }),
-      listLinkableModels(db),
-    ]).then(
-      ([sourceRows, statsRow, cycleRows, linkRows, itemPage, modelRows]) => [
-        sourceRows,
-        statsRow,
-        cycleRows,
-        linkRows,
-        itemPage.items,
-        modelRows,
-      ],
-    );
+    [sources, stats, cycles, links, recentItems, models, recentComments] =
+      await Promise.all([
+        listSources(db),
+        contentStats(db),
+        listRecentCycles(db, 8),
+        listRecentLinks(db, 15),
+        listItems(db, { limit: 20 }),
+        listLinkableModels(db),
+        listRecentCommentsForOperator(db, 12),
+      ]).then(
+        ([
+          sourceRows,
+          statsRow,
+          cycleRows,
+          linkRows,
+          itemPage,
+          modelRows,
+          commentRows,
+        ]) => [
+          sourceRows,
+          statsRow,
+          cycleRows,
+          linkRows,
+          itemPage.items,
+          modelRows,
+          commentRows,
+        ],
+      );
   } catch (caught) {
     error =
       caught instanceof Error ? caught.message : "Storage is unavailable.";
@@ -78,10 +94,11 @@ export default async function AdminContentPage() {
             Content sources
           </h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
-            RSS, YouTube, HuggingFace Daily Papers, Trendshift, and Hacker News
-            sources become public Signal items. Ingestion is bounded to 15
-            seconds, 2 MiB, and the per-source item cap; five consecutive
-            failures disable a source. Hacker News is filtered to AI/agent
+            RSS, Reddit, YouTube, HuggingFace Daily Papers, Trendshift, and
+            Hacker News sources become public Signal items. Ingestion is bounded
+            to 15 seconds, 2 MiB, and the per-source item cap; five consecutive
+            fetch failures disable a source, while a configuration mistake stays
+            visible without disabling it. Hacker News is filtered to AI/agent
             stories locally. Model links are automatic only on an exact title or
             tag alias, and an operator can override or dismiss them.
           </p>
@@ -98,11 +115,14 @@ export default async function AdminContentPage() {
         <CardError message={error} />
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Stat label="Sources" value={stats?.sources ?? 0} />
             <Stat label="Enabled" value={stats?.enabledSources ?? 0} />
             <Stat label="Items" value={stats?.items ?? 0} />
             <Stat label="Linked items" value={stats?.linkedItems ?? 0} />
+            <Stat label="Comments" value={stats?.comments ?? 0} />
+            <Stat label="Reactions" value={stats?.reactions ?? 0} />
+            <Stat label="Saved items" value={stats?.savedItems ?? 0} />
             <Stat
               label="Last fetch"
               value={
@@ -150,8 +170,11 @@ export default async function AdminContentPage() {
                         </span>
                       </span>
                       <span className="text-muted">
-                        {cycle.itemsUpserted}/{cycle.itemsSeen} ·{" "}
-                        {contentDate(cycle.startedAt)}
+                        {cycle.itemsUpserted}/{cycle.itemsSeen}
+                        {cycle.itemsSkipped > 0
+                          ? ` · ${cycle.itemsSkipped} skipped`
+                          : ""}{" "}
+                        · {contentDate(cycle.startedAt)}
                       </span>
                       {cycle.error ? (
                         <span className="basis-full text-danger">
@@ -185,6 +208,8 @@ export default async function AdminContentPage() {
               </div>
             </section>
           </div>
+
+          <ContentCommentModeration comments={recentComments} />
 
           <section className="scroll-shell rounded-xl border border-black/10 dark:border-white/10">
             <table className="data-table">

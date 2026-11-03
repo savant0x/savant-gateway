@@ -249,6 +249,16 @@ subscription_required`; a past-due plan returns `402 subscription_past_due`
   renders as a dash, never `0`; an ambiguous match is refused rather than
   guessed. Attributing the source is a licence condition, so the catalog
   footnote links to artificialanalysis.ai.
+- **Signal content is retained indefinitely; only metric snapshots prune.**
+  Items, tags, model links, saves, reactions and comments have no automatic
+  deletion (FID-2026-1103-122). Snapshot history older than 90 days is removed
+  during a successful ingestion cycle. A future retention job must preserve
+  saved items and discussion parents or document the cascade it causes.
+- **A source failure has a class.** A configuration mistake (bad subreddit,
+  unknown Hacker News list, missing channel id) records an error but never
+  advances the auto-disable streak; only a fetch/parse failure does. Reddit and
+  Hacker News URLs are canonicalized at creation, so an operator paste cannot
+  store an HTML page as a feed.
 
 ## Current layout
 

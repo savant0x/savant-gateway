@@ -12,6 +12,7 @@ export type ContentKind = (typeof CONTENT_KINDS)[number];
 
 export const SOURCE_KINDS = [
   "rss",
+  "reddit",
   "youtube",
   "huggingface",
   "trendshift",
@@ -56,7 +57,7 @@ export type SourceConfig = {
 export type ContentMetrics = {
   views: number;
   likes: number;
-  youtubeComments: number;
+  comments: number;
   rating: number | null;
 };
 
@@ -109,6 +110,19 @@ export type ContentComment = {
   createdAt: string;
   /** Null for a top-level comment; one level of replies is allowed. */
   parentId: string | null;
+  /** True only for the signed-in author of this comment. */
+  canDelete: boolean;
+};
+
+/** Operator-only moderation row; never returned by a public route. */
+export type AdminContentComment = {
+  id: string;
+  itemId: string;
+  itemTitle: string;
+  authorName: string;
+  authorEmail: string | null;
+  body: string;
+  createdAt: string;
 };
 
 export const CONTENT_REACTIONS = ["useful", "insightful"] as const;
@@ -201,6 +215,7 @@ export type FetchCycle = {
   finishedAt: string | null;
   itemsSeen: number;
   itemsUpserted: number;
+  itemsSkipped: number;
   error: string | null;
 };
 
@@ -220,6 +235,9 @@ export type ContentStats = {
   enabledSources: number;
   items: number;
   linkedItems: number;
+  comments: number;
+  reactions: number;
+  savedItems: number;
   lastFetchedAt: string | null;
 };
 

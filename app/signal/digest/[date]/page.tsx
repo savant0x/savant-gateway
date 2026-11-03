@@ -10,6 +10,7 @@ import { SiteHeader } from "@/components/landing/site-header";
 import { digestWindow } from "@/lib/content/digest";
 import { contentDate } from "@/lib/content/format";
 import { contentEnabled } from "@/lib/content/policy";
+import { cachedPublicRead } from "@/lib/content/public-cache";
 import { listItems } from "@/lib/content/store/items";
 import { getDatabase } from "@/lib/storage/runtime";
 
@@ -44,11 +45,13 @@ export default async function SignalDigestDayPage({ params }: PageProps) {
   if (!window) notFound();
 
   const db = await getDatabase();
-  const page = await listItems(db, {
-    since: window.since,
-    until: window.until,
-    limit: 48,
-  });
+  const page = await cachedPublicRead(`signal:digest:${date}:48`, () =>
+    listItems(db, {
+      since: window.since,
+      until: window.until,
+      limit: 48,
+    }),
+  );
 
   return (
     <div className="site-shell">

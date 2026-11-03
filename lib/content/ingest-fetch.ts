@@ -13,40 +13,99 @@ import {
   youtubeChannelIdFromPage,
   youtubeFeedUrl,
 } from "./feeds.ts";
+import { SourceConfigError } from "./source-error.ts";
 import { FETCH_POLICY } from "./url.ts";
 
 export type FetchText = (url: string) => Promise<string>;
 
 export class FetchError extends Error {}
 
-export async function defaultFetchText(url: string): Promise<string> {
-  const response = await fetch(url, {
-    headers: {
+export type FeedCacheEntry = {
+  body: string;
+  etag: string | null;
+  lastModified: string | null;
+};
+
+/**
+ * Conditional feed GET with a bounded in-process body cache (FID-1103-120).
+ *
+ * The cache is a bandwidth optimization, never a source of truth: an empty
+ * cache sends no validators, and a 304 without a cached body is an error rather
+ * than an empty feed. Keys are the canonical feed URL, so editing a source to a
+ * new URL starts a new entry.
+ */
+export function createConditionalFeedFetcher(
+  fetchImpl: typeof fetch = fetch,
+  cache: Map<string, FeedCacheEntry> = new Map(),
+  maxEntries = 64,
+): FetchText {
+  return async (url) => {
+    const cached = cache.get(url);
+    const headers: Record<string, string> = {
       accept:
         "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
       "user-agent": "SavantGateway/0.1 content ingestion",
-    },
-    signal: AbortSignal.timeout(FETCH_POLICY.timeoutMs),
-  });
+    };
 
-  if (!response.ok) {
-    throw new FetchError(`Upstream returned HTTP ${response.status}.`);
-  }
+    if (cached?.etag) headers["if-none-match"] = cached.etag;
+    if (cached?.lastModified)
+      headers["if-modified-since"] = cached.lastModified;
 
-  const length = Number(response.headers.get("content-length") ?? "0");
+    const response = await fetchImpl(url, {
+      headers,
+      signal: AbortSignal.timeout(FETCH_POLICY.timeoutMs),
+    });
 
-  if (length > FETCH_POLICY.maxBytes) {
-    throw new FetchError("Feed exceeds the 2 MiB response ceiling.");
-  }
+    if (response.status === 304) {
+      if (!cached) {
+        throw new FetchError("Upstream returned 304 without a cached feed.");
+      }
 
-  const text = await response.text();
+      // Refresh recency without changing the stored body.
+      cache.delete(url);
+      cache.set(url, cached);
 
-  if (text.length > FETCH_POLICY.maxBytes) {
-    throw new FetchError("Feed exceeds the 2 MiB response ceiling.");
-  }
+      return cached.body;
+    }
 
-  return text;
+    if (!response.ok) {
+      throw new FetchError(`Upstream returned HTTP ${response.status}.`);
+    }
+
+    const length = Number(response.headers.get("content-length") ?? "0");
+
+    if (length > FETCH_POLICY.maxBytes) {
+      throw new FetchError("Feed exceeds the 2 MiB response ceiling.");
+    }
+
+    const text = await response.text();
+
+    if (text.length > FETCH_POLICY.maxBytes) {
+      throw new FetchError("Feed exceeds the 2 MiB response ceiling.");
+    }
+
+    if (maxEntries > 0) {
+      cache.delete(url);
+      cache.set(url, {
+        body: text,
+        etag: response.headers.get("etag"),
+        lastModified: response.headers.get("last-modified"),
+      });
+
+      while (cache.size > maxEntries) {
+        const oldest = cache.keys().next().value;
+
+        if (oldest === undefined) break;
+
+        cache.delete(oldest);
+      }
+    }
+
+    return text;
+  };
 }
+
+export const defaultFetchText = createConditionalFeedFetcher();
 
 async function resolveChannelId(
   source: ContentSource,
@@ -57,7 +116,7 @@ async function resolveChannelId(
   const channel = youtubeChannelId(raw);
 
   if (!channel)
-    throw new FetchError("A YouTube channel id or URL is required.");
+    throw new SourceConfigError("A YouTube channel id or URL is required.");
   if (!channel.startsWith("@")) return channel;
 
   if (!apiKey) {
@@ -161,15 +220,14 @@ export async function enrichYouTubeMetrics(
         const current = item.metrics ?? {
           views: 0,
           likes: 0,
-          youtubeComments: 0,
+          comments: 0,
           rating: null,
         };
 
         item.metrics = {
           views: countOf(row.statistics?.viewCount) ?? current.views,
           likes: countOf(row.statistics?.likeCount) ?? current.likes,
-          youtubeComments:
-            countOf(row.statistics?.commentCount) ?? current.youtubeComments,
+          comments: countOf(row.statistics?.commentCount) ?? current.comments,
           rating: current.rating,
         };
       }

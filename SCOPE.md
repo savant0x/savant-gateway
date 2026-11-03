@@ -1,5 +1,15 @@
 # SCOPE.md — Gateway Project Review
 
+## Current Session — 2026-11-03 (source integrity, moderation, distribution)
+
+Operator request: "p0; fix it… p1; fix this properly, p2; port, add the extra
+feeds, p2 agree, … add the search rate limit, fix all issues mentioned w/ fid+
+perfection loop w/ the most robust solution." Six converged FIDs record the
+scope: 119 source-native metrics, 120 source catalog/fetch integrity, 121 OSP
+impressions, 122 moderation/observability, 123 distribution/caching/search
+limits, and 124 model retrieve/docs truth. No provider, payment, deployment or
+retention deletion is authorized.
+
 ## Current Session — 2026-11-03 (complete open FIDs: 100–105, launch blockers 043/062/068)
 
 Operator request: "complete all open fids, post perfection loop." Automation

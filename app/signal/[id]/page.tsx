@@ -98,7 +98,7 @@ export default async function SignalDetailPage({ params }: PageProps) {
 
   try {
     [comments, commentCount, reactions] = await Promise.all([
-      listComments(db, item.id),
+      listComments(db, item.id, undefined, customer?.id ?? null),
       countComments(db, item.id),
       listReactionSummary(db, item.id, customer?.id ?? null),
     ]);

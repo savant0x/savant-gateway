@@ -122,20 +122,30 @@ function entryFromRss(
   };
 }
 
+export type FeedParseReport = {
+  items: ParsedItem[];
+  /** Entries inspected inside the item cap that produced no usable item. */
+  skipped: number;
+};
+
 /**
  * Parses an RSS 2.0, Atom, or YouTube Atom document. Malformed XML returns an
- * empty list rather than throwing into the ingestion caller; the caller records
- * the empty cycle and the source health.
+ * empty report rather than throwing into the ingestion caller; the caller
+ * records the empty cycle and the source health. `skipped` counts only entries
+ * actually inspected inside the item cap, so an ignored tail is not a loss.
  */
-export function parseFeed(xml: string, options: ParseOptions): ParsedItem[] {
-  if (!xml.trim()) return [];
+export function parseFeedReport(
+  xml: string,
+  options: ParseOptions,
+): FeedParseReport {
+  if (!xml.trim()) return { items: [], skipped: 0 };
 
   let document: Record<string, unknown>;
 
   try {
     document = parser.parse(xml) as Record<string, unknown>;
   } catch {
-    return [];
+    return { items: [], skipped: 0 };
   }
 
   const now = options.now ?? new Date().toISOString();
@@ -151,8 +161,13 @@ export function parseFeed(xml: string, options: ParseOptions): ParsedItem[] {
     options.sourceKind === "youtube" || Boolean(feed?.["yt:channelId"]);
 
   const items: ParsedItem[] = [];
+  let seen = 0;
 
   for (const entry of entries) {
+    if (items.length >= limit) break;
+
+    seen += 1;
+
     if (!entry || typeof entry !== "object") continue;
 
     const item = isYouTube
@@ -160,10 +175,14 @@ export function parseFeed(xml: string, options: ParseOptions): ParsedItem[] {
       : entryFromRss(entry, options, now);
 
     if (item) items.push(item);
-    if (items.length >= limit) break;
   }
 
-  return items;
+  return { items, skipped: Math.max(0, seen - items.length) };
+}
+
+/** Backwards-compatible list view for callers that only need the items. */
+export function parseFeed(xml: string, options: ParseOptions): ParsedItem[] {
+  return parseFeedReport(xml, options).items;
 }
 
 /** Extracts a YouTube channel id from an id or channel URL. */

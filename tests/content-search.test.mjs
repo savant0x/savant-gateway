@@ -6,6 +6,12 @@ import {
   parseSearchQuery,
 } from "../lib/content/search.ts";
 import {
+  resetSearchRateLimit,
+  SEARCH_RATE_LIMIT,
+  searchClientKey,
+  takeSearchToken,
+} from "../lib/content/search-limit.ts";
+import {
   createSource,
   listItems,
   listTags,
@@ -13,6 +19,57 @@ import {
   upsertItem,
 } from "../lib/content/store.ts";
 import { createStorageDatabase } from "../lib/storage/database.ts";
+
+test("search limiter allows one burst, refuses the next request, and refills", () => {
+  resetSearchRateLimit();
+
+  const now = Date.parse("2026-11-03T12:00:00.000Z");
+
+  for (let index = 0; index < SEARCH_RATE_LIMIT.capacity; index += 1) {
+    assert.equal(takeSearchToken("203.0.113.9", now).allowed, true);
+  }
+
+  const refused = takeSearchToken("203.0.113.9", now);
+
+  assert.equal(refused.allowed, false);
+  assert.equal(refused.remaining, 0);
+  assert.equal(refused.retryAfterSeconds >= 1, true);
+
+  // Another client has its own bucket.
+  assert.equal(takeSearchToken("203.0.113.10", now).allowed, true);
+
+  // A full minute refills at the sustained rate, capped at the burst size.
+  assert.equal(takeSearchToken("203.0.113.9", now + 60_000).allowed, true);
+
+  resetSearchRateLimit();
+});
+
+test("search client identity follows the trusted header policy", () => {
+  const headers = new Headers({
+    "x-forwarded-for": "198.51.100.7, 10.0.0.1",
+    "x-real-ip": "198.51.100.8",
+  });
+
+  assert.equal(
+    searchClientKey(new Request("https://example.com", { headers }), {}),
+    "198.51.100.7",
+  );
+  assert.equal(
+    searchClientKey(new Request("https://example.com", { headers }), {
+      GATEWAY_TRUSTED_IP_HEADER: "x-real-ip",
+    }),
+    "198.51.100.8",
+  );
+  assert.equal(
+    searchClientKey(
+      new Request("https://example.com", {
+        headers: { "x-forwarded-for": "not-an-ip" },
+      }),
+      {},
+    ),
+    "unknown-client",
+  );
+});
 
 test("search rejects short, empty, and overlong queries and trims whitespace", () => {
   assert.equal(parseSearchQuery(null).ok, false);

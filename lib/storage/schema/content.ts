@@ -20,8 +20,8 @@ export async function contentSchema(db: PostgresDatabase) {
     CREATE TABLE IF NOT EXISTS content.sources (
       id TEXT PRIMARY KEY,
       kind TEXT NOT NULL
-        CHECK (kind IN ('rss', 'youtube', 'huggingface', 'trendshift',
-                        'hackernews')),
+        CHECK (kind IN ('rss', 'reddit', 'youtube', 'huggingface',
+                        'trendshift', 'hackernews')),
       label TEXT NOT NULL,
       url TEXT NOT NULL,
       config_json TEXT NOT NULL DEFAULT '{}',
@@ -101,6 +101,7 @@ export async function contentSchema(db: PostgresDatabase) {
       finished_at TEXT,
       items_seen INTEGER NOT NULL DEFAULT 0,
       items_upserted INTEGER NOT NULL DEFAULT 0,
+      items_skipped INTEGER NOT NULL DEFAULT 0,
       error TEXT
     );
     CREATE INDEX IF NOT EXISTS content_fetch_cycles_source_idx
@@ -165,7 +166,7 @@ export async function contentSchema(db: PostgresDatabase) {
       captured_at TEXT NOT NULL,
       views BIGINT NOT NULL DEFAULT 0,
       likes BIGINT NOT NULL DEFAULT 0,
-      youtube_comments BIGINT NOT NULL DEFAULT 0,
+      comments BIGINT NOT NULL DEFAULT 0,
       rating DOUBLE PRECISION,
       stars BIGINT NOT NULL DEFAULT 0,
       PRIMARY KEY (item_id, captured_at)
@@ -175,15 +176,28 @@ export async function contentSchema(db: PostgresDatabase) {
   `);
 
   // Upstream engagement arrived after the first content release. The feed gives
-  // views and a star average; the Data API adds likes and the YouTube comment
-  // count. Additive so existing items keep their zeros until the next fetch.
-  // The identifiers are literals in this file, not caller input, which is why
-  // this is written directly rather than through ensureColumn (public schema).
+  // views and a star average; the Data API adds likes and comments. The column
+  // names are source-neutral because Hacker News and HuggingFace now report the
+  // same metrics. Rename the legacy YouTube-named columns before the additive
+  // ALTER, so an existing database keeps its counts under the new name.
+  await renameContentColumn(
+    db,
+    "metric_snapshots",
+    "youtube_comments",
+    "comments",
+  );
+  await renameContentColumn(
+    db,
+    "items",
+    "youtube_comment_count",
+    "comment_count",
+  );
+
   await db.exec(`
     ALTER TABLE IF EXISTS content.items
       ADD COLUMN IF NOT EXISTS view_count BIGINT NOT NULL DEFAULT 0,
       ADD COLUMN IF NOT EXISTS like_count BIGINT NOT NULL DEFAULT 0,
-      ADD COLUMN IF NOT EXISTS youtube_comment_count BIGINT NOT NULL DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS comment_count BIGINT NOT NULL DEFAULT 0,
       ADD COLUMN IF NOT EXISTS rating DOUBLE PRECISION,
       ADD COLUMN IF NOT EXISTS github_json TEXT,
       ADD COLUMN IF NOT EXISTS external_url TEXT;
@@ -199,8 +213,8 @@ export async function contentSchema(db: PostgresDatabase) {
       DROP CONSTRAINT IF EXISTS content_sources_kind_check;
     ALTER TABLE IF EXISTS content.sources
       ADD CONSTRAINT content_sources_kind_check
-      CHECK (kind IN ('rss', 'youtube', 'huggingface', 'trendshift',
-                      'hackernews'));
+      CHECK (kind IN ('rss', 'reddit', 'youtube', 'huggingface',
+                      'trendshift', 'hackernews'));
 
     -- Reply support arrived after the first discussion release. The CREATE
     -- above covers a fresh database; this branch upgrades an existing one.
@@ -209,5 +223,72 @@ export async function contentSchema(db: PostgresDatabase) {
       REFERENCES content.comments(id) ON DELETE CASCADE;
     CREATE INDEX IF NOT EXISTS content_comments_parent_idx
       ON content.comments(parent_id, created_at ASC);
+
+    ALTER TABLE IF EXISTS content.metric_snapshots
+      ADD COLUMN IF NOT EXISTS comments BIGINT NOT NULL DEFAULT 0;
+
+    ALTER TABLE IF EXISTS content.fetch_cycles
+      ADD COLUMN IF NOT EXISTS items_skipped INTEGER NOT NULL DEFAULT 0;
   `);
+
+  // A partially migrated database can hold both names; never drop the legacy
+  // column silently. The current column keeps the larger observed value.
+  await backfillColumnIfBoth(
+    db,
+    "metric_snapshots",
+    "youtube_comments",
+    "comments",
+  );
+  await backfillColumnIfBoth(
+    db,
+    "items",
+    "youtube_comment_count",
+    "comment_count",
+  );
+}
+
+async function contentColumnExists(
+  db: PostgresDatabase,
+  table: string,
+  column: string,
+): Promise<boolean> {
+  const rows = await db.query<{ present: number }>(
+    `SELECT 1 AS present
+       FROM information_schema.columns
+      WHERE table_schema = 'content'
+        AND table_name = $1
+        AND column_name = $2
+      LIMIT 1`,
+    [table, column],
+  );
+
+  return rows.length > 0;
+}
+
+async function renameContentColumn(
+  db: PostgresDatabase,
+  table: string,
+  from: string,
+  to: string,
+): Promise<void> {
+  if (!(await contentColumnExists(db, table, from))) return;
+  if (await contentColumnExists(db, table, to)) return;
+
+  await db.exec(`ALTER TABLE content.${table} RENAME COLUMN ${from} TO ${to}`);
+}
+
+async function backfillColumnIfBoth(
+  db: PostgresDatabase,
+  table: string,
+  legacy: string,
+  current: string,
+): Promise<void> {
+  if (!(await contentColumnExists(db, table, legacy))) return;
+  if (!(await contentColumnExists(db, table, current))) return;
+
+  await db.exec(
+    `UPDATE content.${table}
+        SET ${current} = GREATEST(${current}, ${legacy})
+      WHERE ${current} < ${legacy}`,
+  );
 }

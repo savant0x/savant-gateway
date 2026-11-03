@@ -15,7 +15,7 @@ import type {
   ParsedItem,
 } from "./types.ts";
 
-import { parseFeed } from "./feeds.ts";
+import { parseFeedReport } from "./feeds.ts";
 import { plainTextBody } from "./feed-xml.ts";
 import {
   defaultFetchText,
@@ -30,7 +30,9 @@ import {
   parseDailyPapers,
 } from "./huggingface.ts";
 import { suggestModelLinks } from "./linking.ts";
+import { enrichOspImpressions } from "./osp-impressions.ts";
 import { CONTENT_LIMITS, youtubeApiKey } from "./policy.ts";
+import { SourceConfigError, type SourceFailureKind } from "./source-error.ts";
 import { normalizeTags } from "./taxonomy.ts";
 import { parseTrendshiftListing } from "./trendshift.ts";
 import {
@@ -57,7 +59,10 @@ export type IngestResult = {
   ok: boolean;
   itemsSeen: number;
   itemsUpserted: number;
+  itemsSkipped: number;
   error?: string;
+  /** Present on failure: a fetch error advances the streak, config does not. */
+  failureKind?: SourceFailureKind;
 };
 
 /**
@@ -106,7 +111,7 @@ async function enrichGithub(
 async function fetchSourceItems(
   source: ContentSource,
   deps: IngestDeps,
-): Promise<ParsedItem[]> {
+): Promise<{ items: ParsedItem[]; skipped: number }> {
   const fetchText = deps.fetchText ?? defaultFetchText;
 
   if (source.kind === "huggingface") {
@@ -115,7 +120,7 @@ async function fetchSourceItems(
 
     await enrichGithub(items, deps);
 
-    return items;
+    return { items, skipped: 0 };
   }
 
   if (source.kind === "trendshift") {
@@ -124,31 +129,39 @@ async function fetchSourceItems(
 
     await enrichGithub(items, deps);
 
-    return items;
+    return { items, skipped: 0 };
   }
 
   if (source.kind === "hackernews") {
-    return fetchHackerNewsItems(source, { fetchText, now: deps.now?.() });
+    return {
+      items: await fetchHackerNewsItems(source, {
+        fetchText,
+        now: deps.now?.(),
+      }),
+      skipped: 0,
+    };
   }
 
   const apiKey = deps.apiKey === undefined ? youtubeApiKey() : deps.apiKey;
   const feed = await sourceFeedUrl(source, fetchText, apiKey);
   const xml = await fetchText(feed.url);
-  const items = parseFeed(xml, {
+  const report = parseFeedReport(xml, {
     baseUrl: feed.baseUrl,
-    sourceKind: source.kind,
+    sourceKind: source.kind === "youtube" ? "youtube" : "rss",
     tags: source.config.tags,
     maxItems: source.maxItems,
     now: deps.now?.(),
   });
+  const items = report.items;
 
   if (source.kind === "youtube") {
     await enrichYouTubeMetrics(items, fetchText, apiKey);
   }
 
+  await enrichOspImpressions(items, fetchText);
   await enrichGithub(items, deps);
 
-  return items;
+  return { items, skipped: report.skipped };
 }
 
 export async function ingestSource(
@@ -161,7 +174,7 @@ export async function ingestSource(
   const cycleId = await startCycle(db, source.id, startedAt);
 
   try {
-    const items = await fetchSourceItems(source, deps);
+    const { items, skipped } = await fetchSourceItems(source, deps);
     const models = deps.models ?? (await listLinkableModels(db));
     let upserted = 0;
 
@@ -183,6 +196,7 @@ export async function ingestSource(
       finishedAt,
       itemsSeen: items.length,
       itemsUpserted: upserted,
+      itemsSkipped: skipped,
     });
     await recordSourceSuccess(db, source.id, finishedAt);
 
@@ -205,10 +219,13 @@ export async function ingestSource(
       ok: true,
       itemsSeen: items.length,
       itemsUpserted: upserted,
+      itemsSkipped: skipped,
     };
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unknown ingestion failure.";
+    const failureKind: SourceFailureKind =
+      error instanceof SourceConfigError ? "config" : "fetch";
     const finishedAt = now();
 
     await finishCycle(db, cycleId, {
@@ -216,9 +233,10 @@ export async function ingestSource(
       finishedAt,
       itemsSeen: 0,
       itemsUpserted: 0,
+      itemsSkipped: 0,
       error: message,
     });
-    await recordSourceFailure(db, source.id, finishedAt, message);
+    await recordSourceFailure(db, source.id, finishedAt, message, failureKind);
 
     return {
       sourceId: source.id,
@@ -226,7 +244,9 @@ export async function ingestSource(
       ok: false,
       itemsSeen: 0,
       itemsUpserted: 0,
+      itemsSkipped: 0,
       error: message,
+      failureKind,
     };
   }
 }

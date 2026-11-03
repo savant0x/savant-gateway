@@ -4,8 +4,10 @@ export const NAV_ITEMS = [
   { href: "#identity", label: "Vocabulary" },
   { href: "#authentication", label: "Authentication" },
   { href: "#models", label: "List models" },
+  { href: "#model-retrieve", label: "Retrieve model" },
   { href: "#model-fields", label: "Model fields" },
   { href: "#chat", label: "Chat completions" },
+  { href: "#wire-fields", label: "Wire-field support" },
   { href: "#errors", label: "Errors" },
 ] as const;
 
@@ -199,9 +201,9 @@ export const REQUEST_FIELDS = [
   },
   {
     name: "temperature, top_p, …",
-    type: "OpenAI-compatible",
+    type: "protocol-specific",
     description:
-      "Other sampling and response fields are forwarded to the provider unchanged.",
+      "Forwarded or translated per protocol. The wire-field table below lists exactly which fields each path honours.",
     example: "0.7",
   },
 ] as const;
@@ -317,6 +319,18 @@ export const MODELS_RESPONSE = `{
 
 export const MODELS_REQUEST = `curl "$GATEWAY_URL/v1/models" \\
   -H "Authorization: Bearer sk-..."`;
+
+export const MODEL_RETRIEVE_REQUEST = `curl "$GATEWAY_URL/v1/models/gpt-6.1-sol" \\
+  -H "Authorization: Bearer sk-..."`;
+
+export const MODEL_NOT_FOUND_RESPONSE = `{
+  "error": {
+    "message": "Model 'gpt-6.1-sol' not found",
+    "type": "invalid_request_error",
+    "param": null,
+    "code": "model_not_found"
+  }
+}`;
 
 export const CHAT_REQUEST = `curl "$GATEWAY_URL/v1/chat/completions" \\
   -H "Authorization: Bearer sk-..." \\

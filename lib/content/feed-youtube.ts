@@ -79,7 +79,7 @@ export function entryFromYouTube(
     metrics: {
       views: numberAttr(statistics, "views") ?? 0,
       likes: 0,
-      youtubeComments: 0,
+      comments: 0,
       rating: rating !== null && rating > 0 ? Math.min(5, rating) : null,
     },
   };

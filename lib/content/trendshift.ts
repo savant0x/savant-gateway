@@ -226,7 +226,7 @@ export function parseTrendshiftListing(
       metrics: {
         views: counts.views,
         likes: counts.bookmarks,
-        youtubeComments: 0,
+        comments: 0,
         rating: null,
       },
     });

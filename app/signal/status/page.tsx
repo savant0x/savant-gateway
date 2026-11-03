@@ -8,6 +8,7 @@ import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
 import { contentDate } from "@/lib/content/format";
 import { contentEnabled } from "@/lib/content/policy";
+import { cachedPublicRead } from "@/lib/content/public-cache";
 import {
   PUBLIC_SOURCE_KIND_LABELS,
   publicSourceState,
@@ -42,7 +43,9 @@ export default async function SignalStatusPage() {
   try {
     const db = await getDatabase();
 
-    sources = await listPublicSources(db);
+    sources = await cachedPublicRead("signal:status:sources", () =>
+      listPublicSources(db),
+    );
   } catch (caught) {
     error =
       caught instanceof Error ? caught.message : "Storage is unavailable.";

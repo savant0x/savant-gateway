@@ -9,6 +9,7 @@ import { SiteHeader } from "@/components/landing/site-header";
 import { digestDay, recentDigestDays } from "@/lib/content/digest";
 import { contentDate } from "@/lib/content/format";
 import { contentEnabled } from "@/lib/content/policy";
+import { cachedPublicRead } from "@/lib/content/public-cache";
 import { listItems } from "@/lib/content/store/items";
 import { getDatabase } from "@/lib/storage/runtime";
 
@@ -18,6 +19,9 @@ export const metadata: Metadata = {
   title: "Signal digest — the last seven days",
   description:
     "A UTC-day digest of free AI articles, videos, papers, repositories, and discussions from Signal.",
+  alternates: {
+    types: { "application/rss+xml": "/signal/digest/feed.xml" },
+  },
 };
 
 export default async function SignalDigestPage() {
@@ -35,11 +39,13 @@ export default async function SignalDigestPage() {
 
   const days = recentDigestDays(7);
   const db = await getDatabase();
-  const page = await listItems(db, {
-    since: `${days[days.length - 1]}T00:00:00.000Z`,
-    until: `${days[0]}T23:59:59.999Z`,
-    limit: 48,
-  });
+  const page = await cachedPublicRead("signal:digest:7:48", () =>
+    listItems(db, {
+      since: `${days[days.length - 1]}T00:00:00.000Z`,
+      until: `${days[0]}T23:59:59.999Z`,
+      limit: 48,
+    }),
+  );
   const groups = new Map<string, typeof page.items>();
 
   for (const item of page.items) {
@@ -73,6 +79,12 @@ export default async function SignalDigestPage() {
               The last seven UTC days of free coverage. Each item links to the
               models it names, so reading leads to a model page, not a dead end.
             </p>
+            <a
+              className="mt-3 inline-block text-xs font-medium text-accent underline-offset-4 hover:underline"
+              href="/signal/digest/feed.xml"
+            >
+              Subscribe by RSS
+            </a>
           </div>
         </section>
 

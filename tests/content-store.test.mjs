@@ -89,7 +89,7 @@ test("content store keeps sources, items, links, and retention isolated", async 
         metrics: {
           views: 1200,
           likes: 42,
-          youtubeComments: 7,
+          comments: 7,
           rating: 4.6,
         },
       },
@@ -104,7 +104,7 @@ test("content store keeps sources, items, links, and retention isolated", async 
     assert.deepEqual(stored.metrics, {
       views: 1200,
       likes: 42,
-      youtubeComments: 7,
+      comments: 7,
       rating: 4.6,
     });
     assert.deepEqual((await listTags(db)).map((tag) => tag.slug), [

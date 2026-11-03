@@ -43,6 +43,7 @@ const INITIAL: FormState = {
 
 const KIND_URLS: Record<FormState["kind"], string> = {
   rss: "",
+  reddit: "",
   youtube: "",
   huggingface: "https://huggingface.co/api/daily_papers",
   trendshift: "https://trendshift.io/?sort=views",
@@ -70,6 +71,8 @@ function fromSource(source: ContentSource): FormState {
 
 const KIND_HINTS: Record<FormState["kind"], string> = {
   rss: "Free RSS or Atom feed.",
+  reddit:
+    "Subreddit page; the official hot.rss feed is stored and fetched. Reddit blocks some datacenter ranges, so a fetch can fail without a config mistake.",
   youtube: "YouTube channel; the channel feed is fetched server-side.",
   huggingface: "HuggingFace Daily Papers; the public JSON endpoint is fetched.",
   trendshift: "Trendshift listing; the public page is parsed for repos.",
@@ -204,6 +207,7 @@ export function ContentSourceForm({
             }}
           >
             <option value="rss">RSS / Atom</option>
+            <option value="reddit">Reddit subreddit</option>
             <option value="youtube">YouTube channel</option>
             <option value="huggingface">HuggingFace Daily Papers</option>
             <option value="trendshift">Trendshift listing</option>
@@ -260,22 +264,26 @@ export function ContentSourceForm({
           <label className="text-xs text-muted sm:col-span-2 lg:col-span-3">
             {form.kind === "youtube"
               ? "Channel URL or channel id"
-              : form.kind === "huggingface"
-                ? "Daily-papers API URL"
-                : form.kind === "trendshift"
-                  ? "Trendshift listing URL"
-                  : "Feed URL"}
+              : form.kind === "reddit"
+                ? "Subreddit URL or r/name"
+                : form.kind === "huggingface"
+                  ? "Daily-papers API URL"
+                  : form.kind === "trendshift"
+                    ? "Trendshift listing URL"
+                    : "Feed URL"}
             <input
               required
               className={`${INPUT} mt-1`}
               placeholder={
                 form.kind === "youtube"
                   ? "https://www.youtube.com/@channel"
-                  : form.kind === "huggingface"
-                    ? "https://huggingface.co/api/daily_papers"
-                    : form.kind === "trendshift"
-                      ? "https://trendshift.io/?sort=views"
-                      : "https://example.com/feed.xml"
+                  : form.kind === "reddit"
+                    ? "https://www.reddit.com/r/LocalLLaMA or r/LocalLLaMA"
+                    : form.kind === "huggingface"
+                      ? "https://huggingface.co/api/daily_papers"
+                      : form.kind === "trendshift"
+                        ? "https://trendshift.io/?sort=views"
+                        : "https://example.com/feed.xml"
               }
               type="url"
               value={form.url}

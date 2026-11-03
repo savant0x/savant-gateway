@@ -262,6 +262,8 @@ const STORIES = new Map([
       title: "New AI agent runtime",
       by: "alice",
       time: TIME,
+      score: 250,
+      descendants: 40,
       url: "https://example.com/agent",
     },
   ],
@@ -284,6 +286,8 @@ const STORIES = new Map([
       title: "Show HN: tiny LLM server",
       by: "dave",
       time: TIME,
+      score: 12,
+      descendants: 3,
       text: "<p>An inference server in one file.</p>",
     },
   ],
@@ -337,6 +341,8 @@ test("HN ingestion stores discussion identity beside the publisher URL", async (
     assert.equal(linked.externalUrl, "https://example.com/agent");
     assert.equal(linked.kind, "discussion");
     assert.equal(linked.author, "alice");
+    assert.equal(linked.metrics.likes, 250);
+    assert.equal(linked.metrics.comments, 40);
     assert.equal(
       threadOnly.url,
       "https://news.ycombinator.com/item?id=104",

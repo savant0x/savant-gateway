@@ -51,6 +51,7 @@ export function jsonError(
   message: string,
   type = "invalid_request_error",
   extraHeaders: Record<string, string> = {},
+  code: string | null = null,
 ) {
   return Response.json(
     {
@@ -58,7 +59,7 @@ export function jsonError(
         message,
         type,
         param: null,
-        code: null,
+        code,
       },
     },
     { status, headers: { ...CORS_HEADERS, ...extraHeaders } },

@@ -17,7 +17,7 @@ function itemIdFor(sourceId: string, url: string) {
 type SnapshotRow = {
   views: number | string;
   likes: number | string;
-  youtube_comments: number | string;
+  comments: number | string;
   rating: number | string | null;
   stars: number | string;
 };
@@ -43,7 +43,7 @@ async function writeMetricSnapshot(
 ): Promise<void> {
   const latest = await db
     .prepare(
-      `SELECT views, likes, youtube_comments, rating, stars
+      `SELECT views, likes, comments, rating, stars
          FROM content.metric_snapshots
         WHERE item_id = ?
         ORDER BY captured_at DESC
@@ -53,7 +53,7 @@ async function writeMetricSnapshot(
   const next = {
     views: item.metrics?.views ?? 0,
     likes: item.metrics?.likes ?? 0,
-    comments: item.metrics?.youtubeComments ?? 0,
+    comments: item.metrics?.comments ?? 0,
     stars: item.github?.stars ?? 0,
     rating: item.metrics?.rating ?? null,
   };
@@ -62,7 +62,7 @@ async function writeMetricSnapshot(
     latest &&
     numberOrZero(latest.views) === next.views &&
     numberOrZero(latest.likes) === next.likes &&
-    numberOrZero(latest.youtube_comments) === next.comments &&
+    numberOrZero(latest.comments) === next.comments &&
     numberOrZero(latest.stars) === next.stars &&
     (latest.rating === null ? null : Number(latest.rating)) === next.rating
   ) {
@@ -72,7 +72,7 @@ async function writeMetricSnapshot(
   await db
     .prepare(
       `INSERT INTO content.metric_snapshots
-        (item_id, captured_at, views, likes, youtube_comments, rating, stars)
+        (item_id, captured_at, views, likes, comments, rating, stars)
        VALUES (?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT DO NOTHING`,
     )
@@ -121,7 +121,7 @@ export async function upsertItem(
       `INSERT INTO content.items
         (id, source_id, kind, title, url, external_url, excerpt, body_html,
          author, published_at, fetched_at, thumbnail_url, video_id, external_id,
-         view_count, like_count, youtube_comment_count, rating, github_json,
+         view_count, like_count, comment_count, rating, github_json,
          content_hash, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT (url) DO UPDATE SET
@@ -138,7 +138,7 @@ export async function upsertItem(
          external_id = EXCLUDED.external_id,
          view_count = EXCLUDED.view_count,
          like_count = EXCLUDED.like_count,
-         youtube_comment_count = EXCLUDED.youtube_comment_count,
+         comment_count = EXCLUDED.comment_count,
          rating = EXCLUDED.rating,
          github_json = COALESCE(EXCLUDED.github_json, content.items.github_json),
          content_hash = EXCLUDED.content_hash,
@@ -162,7 +162,7 @@ export async function upsertItem(
       item.externalId,
       item.metrics?.views ?? 0,
       item.metrics?.likes ?? 0,
-      item.metrics?.youtubeComments ?? 0,
+      item.metrics?.comments ?? 0,
       item.metrics?.rating ?? null,
       githubJson(item.github),
       contentHash(item),

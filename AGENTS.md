@@ -138,9 +138,9 @@ lib/provider.ts         compatibility re-export over lib/providers/
 lib/model-groups.ts     pure model-group validation, defaults, and price rules
 lib/schema/             provider and group schema plus migration helpers
 lib/pricing.ts          micro-dollar, markup, margin, hold, and estimate math
-lib/gateway.ts          key auth, full-catalog routing, reservation
-lib/gateway-stream.ts   streaming relay and settlement on close
-lib/gateway-settle.ts   usage parsing, cost/charge, settlement
+lib/storage/gateway/    key auth, routing, reservation, streaming relay, settlement
+lib/gateway-rate-limit.ts  admitted-call rate limiting
+lib/gateway-usage.ts    upstream usage parsing for settlement
 lib/customer.ts         customer validation
 lib/password.ts         scrypt hashing and constant-time verification
 lib/customer-session.ts opaque session tokens and cookie options

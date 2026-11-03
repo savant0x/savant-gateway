@@ -30,7 +30,7 @@ export async function pruneMetricSnapshots(
 const MOMENTUM_COLUMNS: Record<MomentumMetric, string> = {
   views: "views",
   likes: "likes",
-  comments: "youtube_comments",
+  comments: "comments",
   stars: "stars",
 };
 
@@ -72,13 +72,13 @@ export async function listMomentum(
     .prepare(
       `WITH latest AS (
          SELECT DISTINCT ON (item_id)
-                item_id, captured_at, views, likes, youtube_comments, stars
+                item_id, captured_at, views, likes, comments, stars
            FROM content.metric_snapshots
           WHERE captured_at <= ?
           ORDER BY item_id, captured_at DESC
        ), baseline AS (
          SELECT DISTINCT ON (item_id)
-                item_id, captured_at, views, likes, youtube_comments, stars
+                item_id, captured_at, views, likes, comments, stars
            FROM content.metric_snapshots
           WHERE captured_at <= ?
           ORDER BY item_id, captured_at DESC
@@ -88,11 +88,11 @@ export async function listMomentum(
               b.captured_at AS momentum_baseline_at,
               l.views AS latest_views,
               l.likes AS latest_likes,
-              l.youtube_comments AS latest_comments,
+              l.comments AS latest_comments,
               l.stars AS latest_stars,
               b.views AS baseline_views,
               b.likes AS baseline_likes,
-              b.youtube_comments AS baseline_comments,
+              b.comments AS baseline_comments,
               b.stars AS baseline_stars,
               (l.${column} - b.${column}) AS momentum_delta
          FROM latest l

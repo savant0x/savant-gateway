@@ -1,51 +1,17 @@
-import { siteConfig } from "@/config/site";
-import { CORS_HEADERS, extractApiKey, jsonError } from "@/lib/http";
-import { authenticateApiKey } from "@/lib/store-facade/access";
-import { listModels, trialOffer } from "@/lib/store-facade/catalog";
+import { CORS_HEADERS } from "@/lib/http";
+import { guardModelRead, openAiModelObject } from "@/lib/openai-model";
+import { listModels } from "@/lib/store-facade/catalog";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  const secret = extractApiKey(request);
+  const denied = await guardModelRead(request);
 
-  if (!secret) {
-    return jsonError(
-      401,
-      "Missing API key (Bearer or x-api-key)",
-      "authentication_error",
-    );
-  }
-
-  if (!(await authenticateApiKey(secret))) {
-    return jsonError(401, "Invalid API key", "authentication_error");
-  }
+  if (denied) return denied;
 
   const models = await listModels();
-  const data = await Promise.all(
-    models.map(async (model) => ({
-      id: model.id,
-      trial_paid_transition: await trialOffer(model.id),
-      object: "model",
-      owned_by: siteConfig.provider.slug,
-      name: model.name,
-      family: model.family,
-      group: model.access,
-      group_slug: model.groupSlug,
-      group_label: model.groupLabel,
-      group_billing_mode: model.groupBillingMode,
-      requires_subscription: model.requiresSubscription,
-      context_window: model.contextWindow,
-      token_weight: model.tokenWeight,
-      allow_free: model.allowFree,
-      input_price_per_1m: model.inputPricePer1M,
-      output_price_per_1m: model.outputPricePer1M,
-      currency: "usd",
-      supports_tools: model.supportsTools,
-      supports_vision: model.supportsVision,
-      health: model.health,
-    })),
-  );
+  const data = await Promise.all(models.map(openAiModelObject));
 
   return Response.json({ object: "list", data }, { headers: CORS_HEADERS });
 }

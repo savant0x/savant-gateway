@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   parseFeed,
+  parseFeedReport,
   youtubeChannelId,
   youtubeChannelIdFromPage,
 } from "../lib/content/feeds.ts";
@@ -108,7 +109,7 @@ Second paragraph &lt;not markup&gt;</media:description>
   assert.deepEqual(item.metrics, {
     views: 15400,
     likes: 0,
-    youtubeComments: 0,
+    comments: 0,
     rating: 4.8,
   });
 });
@@ -194,4 +195,23 @@ test("a public channel page exposes the id behind a handle", () => {
     "UCabcdefghijklmnopqrstuv",
   );
   assert.equal(youtubeChannelIdFromPage("<html>no channel</html>"), null);
+});
+
+test("a dropped feed entry is counted instead of vanishing", () => {
+  const report = parseFeedReport(
+    `<?xml version="1.0"?>
+     <rss version="2.0"><channel>
+       <item><title>Valid</title><link>https://example.com/valid</link></item>
+       <item><title></title><link>https://example.com/no-title</link></item>
+     </channel></rss>`,
+    { baseUrl: "https://example.com/feed.xml", sourceKind: "rss", tags: [] },
+  );
+
+  assert.equal(report.items.length, 1);
+  assert.equal(report.skipped, 1);
+  assert.equal(parseFeed("<not xml", {
+    baseUrl: "https://example.com/feed.xml",
+    sourceKind: "rss",
+    tags: [],
+  }).length, 0);
 });

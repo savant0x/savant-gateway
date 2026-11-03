@@ -23,6 +23,7 @@ type HuggingFaceEntry = {
     summary?: unknown;
     authors?: unknown;
     publishedAt?: unknown;
+    upvotes?: unknown;
   };
 };
 
@@ -83,6 +84,12 @@ export function parseDailyPapers(
       ? new Date().toISOString()
       : published.toISOString();
     const authors = authorNames(paper.authors);
+    const upvotes =
+      typeof paper.upvotes === "number" &&
+      Number.isSafeInteger(paper.upvotes) &&
+      paper.upvotes >= 0
+        ? paper.upvotes
+        : null;
 
     items.push({
       externalId: paper.id,
@@ -101,6 +108,16 @@ export function parseDailyPapers(
       thumbnailUrl: null,
       videoId: null,
       tags: ["huggingface", "daily-papers"],
+      ...(upvotes !== null
+        ? {
+            metrics: {
+              views: 0,
+              likes: upvotes,
+              comments: 0,
+              rating: null,
+            },
+          }
+        : {}),
     });
   }
 

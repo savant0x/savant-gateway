@@ -10,6 +10,8 @@ import type {
 import { randomUUID } from "node:crypto";
 
 import { normalizeHackerNewsUrl } from "../hackernews-config.ts";
+import { normalizeRedditUrl } from "../reddit.ts";
+import { SourceConfigError } from "../source-error.ts";
 import {
   clampIntervalMinutes,
   clampMaxItems,
@@ -151,15 +153,26 @@ export type SourceInput = {
 };
 
 function cleanInput(input: SourceInput): SourceInput {
-  const policy = validatePublicHttpUrl(input.url);
+  const redditUrl =
+    input.kind === "reddit" ? normalizeRedditUrl(input.url) : null;
 
-  if (!policy.ok) throw new Error(policy.error);
+  if (input.kind === "reddit" && !redditUrl) {
+    throw new SourceConfigError(
+      "Reddit sources must name a subreddit, for example https://www.reddit.com/r/LocalLLaMA or r/LocalLLaMA.",
+    );
+  }
+
+  const policy = validatePublicHttpUrl(redditUrl ?? input.url);
+
+  if (!policy.ok) throw new SourceConfigError(policy.error);
 
   const hackerNewsUrl =
     input.kind === "hackernews" ? normalizeHackerNewsUrl(input.url) : null;
 
   if (input.kind === "hackernews" && !hackerNewsUrl) {
-    throw new Error("Hacker News sources must use a known v0 ranked-list URL.");
+    throw new SourceConfigError(
+      "Hacker News sources must use a known v0 ranked-list URL.",
+    );
   }
 
   const includeTerms =
@@ -174,7 +187,7 @@ function cleanInput(input: SourceInput): SourceInput {
   return {
     kind: input.kind,
     label: input.label.trim().slice(0, 120),
-    url: hackerNewsUrl ?? policy.url.toString(),
+    url: redditUrl ?? hackerNewsUrl ?? policy.url.toString(),
     config: {
       tags: input.config.tags,
       ...(input.config.channelId && input.kind === "youtube"
@@ -324,7 +337,23 @@ export async function recordSourceFailure(
   id: string,
   failedAt: string,
   error: string,
+  kind: "fetch" | "config" = "fetch",
 ): Promise<void> {
+  if (kind === "config") {
+    // A configuration mistake stays visible but never disables the source. The
+    // operator may still be adding the credential or correcting the URL.
+    await db
+      .prepare(
+        `UPDATE content.sources
+            SET status = 'error', last_fetched_at = ?, last_error = ?,
+                updated_at = ?
+          WHERE id = ?`,
+      )
+      .run(failedAt, error.slice(0, 500), failedAt, id);
+
+    return;
+  }
+
   await db
     .prepare(
       `UPDATE content.sources

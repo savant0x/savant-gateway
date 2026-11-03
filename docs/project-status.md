@@ -1,5 +1,11 @@
 # Project status and navigation
 
+> **Superseded as the current queue (2026-11-03).** This page is a dated record
+> of the pre-launch state on 2026-10-31. Later gateway and Signal work is not
+> reflected here. For current state, read [`CHANGELOG.md`](../CHANGELOG.md) and
+> the active/archived FIDs under [`dev/fids/`](../dev/fids/). The receipts below
+> remain historical evidence; they are not a claim about today's tree.
+
 As of 2026-10-31. This is the current index; dated session receipts describe the
 tree they tested, not automatically the current working tree.
 

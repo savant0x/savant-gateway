@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { ApiCompatibility } from "./api-compatibility";
 import { DocsNav } from "./docs-nav";
 import {
   CHAT_REQUEST,
@@ -10,6 +11,8 @@ import {
   GROUPS,
   IDENTITIES,
   MODEL_FIELDS,
+  MODEL_NOT_FOUND_RESPONSE,
+  MODEL_RETRIEVE_REQUEST,
   MODELS_REQUEST,
   MODELS_RESPONSE,
   NAV_ITEMS,
@@ -262,6 +265,24 @@ export function ApiReference() {
 
             <section className="space-y-5">
               <SectionHeading
+                eyebrow="GET /v1/models/{id}"
+                id="model-retrieve"
+                title="Retrieve one published model"
+              >
+                Returns the same model object the list publishes, or a 404 with
+                code model_not_found. The id may contain a slash; encode it or
+                send the literal provider/model path. The same key is required.
+              </SectionHeading>
+
+              <CodeSample code={MODEL_RETRIEVE_REQUEST} label="Request" />
+              <CodeSample
+                code={MODEL_NOT_FOUND_RESPONSE}
+                label="404 · example"
+              />
+            </section>
+
+            <section className="space-y-5">
+              <SectionHeading
                 eyebrow="Model object"
                 id="model-fields"
                 title="Every field, and what it does not mean"
@@ -303,6 +324,8 @@ export function ApiReference() {
                 </p>
               </div>
             </section>
+
+            <ApiCompatibility />
 
             <section className="space-y-5">
               <SectionHeading

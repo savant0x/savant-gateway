@@ -8,6 +8,7 @@ import { ContentDisabled } from "@/components/content/content-disabled";
 import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
 import { contentEnabled } from "@/lib/content/policy";
+import { cachedPublicRead } from "@/lib/content/public-cache";
 import { listItems } from "@/lib/content/store/items";
 import { normalizeTag, tagLabel } from "@/lib/content/taxonomy";
 import { getDatabase } from "@/lib/storage/runtime";
@@ -44,7 +45,9 @@ export default async function SignalTopicPage({ params }: PageProps) {
   if (!tag) notFound();
 
   const db = await getDatabase();
-  const page = await listItems(db, { tag, limit: 48 });
+  const page = await cachedPublicRead(`signal:topic:${tag}`, () =>
+    listItems(db, { tag, limit: 48 }),
+  );
 
   return (
     <div className="site-shell">

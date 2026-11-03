@@ -1,5 +1,26 @@
 # SCOPE.md — Gateway Project Review
 
+## Current Session — 2026-11-03 (sandbox readiness phase FIDs)
+
+Operator request: resume the five-phase sandbox/deployment plan, create a FID for
+each phase, run the Perfection Loop on each, and write a handoff for the next
+agent. This session is planning-only; no push, deployment, price change, funding,
+payment, or real-money activity occurred.
+
+- [x] **Q1 — FID-152 hosted deployment and provider-key proof.** Converged with
+  GitHub/Vercel commit evidence, runtime key-presence checks, provider Test/Sync,
+  and redaction boundaries.
+- [x] **Q2 — FID-153 sandbox pricing economics report.** Converged with current
+  cost/sell/margin/profit fields, guarded recommendations, and no auto-publish.
+- [x] **Q3 — FID-154 sandbox pricing history and charts.** Converged with safe
+  synthetic history, scenario/realized separation, and reconciliation.
+- [x] **Q4 — FID-155 disposable PostgreSQL verification.** Converged with the
+  mandatory two-connection proof and fail-closed full verify requirements.
+- [x] **Q5 — FID-156 sandbox launch-readiness receipt.** Converged as a redacted
+  technical receipt that does not authorize launch or real-money activity.
+- [x] **Q6 — Handoff.** `dev/session-summaries/2026-11-03-sandbox-readiness-handoff.md`
+  contains the ordered implementation sequence, blockers, and completion rules.
+
 ## Current Session — 2026-11-03 (hardening queue closure)
 
 Operator request: complete every open FID through the Perfection Loop. The

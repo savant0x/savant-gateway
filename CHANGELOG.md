@@ -3,6 +3,15 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — Sandbox readiness phase contracts
+
+- **FID-2026-1103-152 through FID-2026-1103-156 — planning —** five converged
+  FIDs now define the ordered sandbox work: hosted GitHub/Vercel and provider-key
+  proof, pricing economics reporting, safe chart history, disposable PostgreSQL
+  verification, and the final redacted readiness receipt. The handoff is recorded
+  at `dev/session-summaries/2026-11-03-sandbox-readiness-handoff.md`. No push,
+  deployment, price change, funding, payment, or real-money activity occurred.
+
 ## 2026-11-03 — Load gate ported to PostgreSQL
 
 - **FID-2026-1103-148 — high — closed: the bounded load/fault gate now runs on

@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-126-production-concurrency-proof.md`
 **ID:** FID-2026-1103-126
 **Severity:** critical
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-03
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -78,18 +78,35 @@ adapter rather than inferred from single-process tests.
 - **Tests Added:** Yes — the proof itself is the existing two-connection
   settlement test; `tests/verify-summary.test.mjs` pins the no-skip rule for
   this gate.
-- **Gate output:** NOT RUN. Docker was unavailable in this session
-  (`docker info` timed out) and no disposable `TEST_DATABASE_URL` was configured.
-  The 956-test unit run reports one skip, which is this mandatory proof. CI
-  declares the gate but the commits were not pushed, so no CI run exists yet.
-- **Why the status is fixed, not closed:** the implementation is complete and
-  fail-closed, but the financial proof itself has not executed. Archiving would
-  claim evidence that does not exist.
+- **Gate output — executed 2026-11-03.** Docker's engine remained unresponsive
+  (`docker ps` timed out), so the gate ran against a disposable local
+  PostgreSQL 18.6 cluster started by `embedded-postgres@18.6.0-beta.19`
+  (windows-x64 binaries) on loopback, with a random port and a throwaway data
+  directory. The cluster was removed after the run.
+
+  ```text
+  postgres-concurrency: using postgres://***:***@127.0.0.1:55892/gateway_concurrency
+  ✔ two connections cannot debit one balance twice (343.2802ms)
+  ℹ tests 1
+  ℹ pass 1
+  ℹ fail 0
+  ℹ skipped 0
+  postgres-concurrency: PASS — two connections cannot double-debit
+  ```
+
+  This is a real two-connection race against PostgreSQL, not PGlite. The
+  disposable URL went through the same `TEST_DATABASE_URL` path the gate uses,
+  so the production adapter, pool and `SELECT … FOR UPDATE` guard were all
+  exercised. No production credential was used.
+- **Residual environment note:** CI still runs the Docker service container;
+  the local embedded cluster is not committed, so a developer without Docker
+  needs `TEST_DATABASE_URL`. The gate's fail-closed behavior is unchanged.
 
 ## Resolution
 
 - **Convergence Date:** 2026-11-03
-- **Implementation:** implemented at `8bb2d20`; execution pending.
-- **Next action:** run `npm run test:postgres` with Docker running or a
-  disposable PostgreSQL URL, then record the receipt and archive this FID.
-- **Archived:** no.
+- **Closed Date:** 2026-11-03
+- **Fix Description:** the mandatory disposable-PostgreSQL concurrency proof
+  ran green: exactly one of two racing debits committed and the balance moved
+  by one debit only.
+- **Archived:** yes — `dev/fids/archive/FID-2026-1103-126-production-concurrency-proof.md`.

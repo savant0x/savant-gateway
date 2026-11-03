@@ -28,7 +28,7 @@ documentation slice, on Windows with Node 24:
 | `npm run build` | PASS |
 | `npm run test:http` | 751 checks PASS plus the trial suite |
 | `npm run test:recovery` | PASS (dump, restore, replay and refusals) |
-| `npm run test:postgres` | **not run locally** — Docker was unavailable and no disposable `TEST_DATABASE_URL` was configured. The gate fails closed; the unit run's single skip is this proof. |
+| `npm run test:postgres` | PASS — disposable PostgreSQL 18.6 on loopback: 1/1, 0 skipped; exactly one of two racing debits committed. Plain `npm test` still skips this case when `TEST_DATABASE_URL` is unset. |
 | `npm run test:load` | not re-run; the SQLite-era measurement remains a candidate, not approved capacity. |
 
 The Vercel production deployment reached Ready on `67551ea`; `/api/ready`
@@ -43,7 +43,6 @@ acceptance: none of the external items below has been observed.
 | [043](../dev/fids/FID-2026-1030-043-launch-master.md) | converged | Launch remains **no-go**. Owns the dependency register and the operator decision. |
 | [062](../dev/fids/FID-2026-1030-062-launch-acceptance-and-rollout.md) | converged | Items 1–8: real NOWPayments invoice/signed IPN/replay refusal, funded paid inference, hosted restore, delivered alert, PostgreSQL load envelope, published `v1.2` policies, hosted restore/retention confirmation, explicit public GO. |
 | [068](../dev/fids/FID-2026-1030-068-usdc-receive-lane.md) | fixed | Direct USDC lane: chain/token contract, hardware-wallet xpub, RPC endpoint and screening ruling. Not a launch path. |
-| [126](../dev/fids/FID-2026-1103-126-production-concurrency-proof.md) | fixed | Run `npm run test:postgres` with Docker or a disposable `TEST_DATABASE_URL`; CI declares the same gate. |
 | [127](../dev/fids/FID-2026-1103-127-real-launch-acceptance-receipt.md) | fixed | `npm run receipt:launch` reports INCOMPLETE until the operator records all six observations and a go decision pinned to the release SHA. |
 | [137](../dev/fids/FID-2026-1103-137-product-hardening-and-install-order-master.md) | converged | Sequencing register; closes only after 126 and 127 have their evidence. |
 
@@ -53,11 +52,10 @@ behavior, not payment or launch acceptance.
 
 ## Recently closed
 
-FIDs 128–136, 141 and the 2026-11-02 content/catalog queue moved through the
-Perfection Loop into commits `4b57ebe`, `8bb2d20`, `d701ce6` and `35c1d35`;
+FIDs 126, 128–136, 141 and the 2026-11-02 content/catalog queue moved through
+the Perfection Loop into commits `4b57ebe`, `8bb2d20`, `d701ce6` and `35c1d35`;
 their closed records and evidence are under
-[`dev/fids/archive/`](../dev/fids/archive/).
-FIDs 126 and 127 remain active because their required evidence (a disposable
-PostgreSQL run and an operator receipt) does not exist yet. The dated receipts
+[`dev/fids/archive/`](../dev/fids/archive/). FID 127 remains active because the
+operator receipt does not exist yet. The dated receipts
 in [the 2026-10-31 record](project-status-2026-10-31.md) remain historical
 evidence and are not a claim about today's tree.

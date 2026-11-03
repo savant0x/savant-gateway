@@ -3,19 +3,20 @@
 ## Current Session — 2026-11-03 (hardening queue closure)
 
 Operator request: complete every open FID through the Perfection Loop. The
-implementation queue is done; two evidence gates remain external or
-environment-bound, and they are left active rather than claimed.
+implementation queue is done. The disposable-PostgreSQL proof now passes; the
+launch receipt remains open because its observations are operator-owned.
 
 - [x] **P1 — Implement the current index.** `docs/project-status.md` is a dated
   index; the 2026-10-31 page is preserved with a historical banner.
 - [x] **P2 — Implement the launch receipt contract.** Pure validation, a fail-closed
   command and redaction tests exist; no receipt or operator approval was invented.
-- [x] **P3 — Close the implemented children.** FIDs 128–136 and 141 carry
-  resolution evidence and are archived; 126 and 127 remain active for their
-  missing disposable-PostgreSQL run and operator observations.
+- [x] **P3 — Close the implemented children.** FIDs 126, 128–136 and 141 carry
+  resolution evidence and are archived. FID 127 remains active because its six
+  operator observations and go decision do not exist.
 - [x] **P4 — Verify.** check, 956 tests (955 pass, 1 skipped), quality, build,
-  HTTP 751 checks and recovery pass on the current tree. The skipped test is the
-  PostgreSQL concurrency proof, recorded as a limitation rather than a pass.
+  HTTP 751 checks, recovery and the separate disposable-PostgreSQL concurrency
+  gate pass (1/1, 0 skipped). The plain unit run still skips the two-connection
+  case when `TEST_DATABASE_URL` is unset; the gate is the required proof.
 
 ## Current Session — 2026-11-03 (catalog pricing and deployment truth)
 

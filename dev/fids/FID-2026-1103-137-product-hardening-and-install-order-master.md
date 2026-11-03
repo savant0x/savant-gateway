@@ -33,13 +33,10 @@ implemented child must pass its declared gates before dependent work starts.
 
 ## Implementation Status — 2026-11-03
 
-Children 128–136 and 141 are `closed` and archived with commit and gate
-receipts (`4b57ebe`, `8bb2d20`, `d701ce6`, `35c1d35`). Two rows remain open and
+Children 126, 128–136 and 141 are `closed` and archived with commit and gate
+receipts (`4b57ebe`, `8bb2d20`, `d701ce6`, `35c1d35`). One row remains open and
 this master therefore stays active:
 
-- **126 — `fixed`:** the disposable-PostgreSQL gate and CI job exist, but the
-  proof was not executed locally (Docker unavailable, no disposable URL) and the
-  commits were not pushed, so no CI run exists.
 - **127 — `fixed`:** the validator and evidence contract are implemented and
   tested; no operator observation or approval exists, and
   `npm run receipt:launch` correctly reports INCOMPLETE.
@@ -96,7 +93,7 @@ load, rollback or public-GO item.
 ## Resolution
 
 - **Convergence Date:** 2026-11-03
-- **Implementation:** sequencing executed; children 128–136 and 141 are closed
-  and archived. FIDs 126 and 127 are implemented but not verified for their
-  required evidence, so this master remains active.
+- **Implementation:** sequencing executed; children 126 and 128–136 and 141 are
+  closed and archived. FID 127 is implemented but its operator evidence does not
+  exist, so this master remains active.
 - **Archived:** no.

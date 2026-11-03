@@ -18,8 +18,9 @@ distinguish verified behavior from unverified claims.
   path. `npm run receipt:launch` exits 1 with INCOMPLETE while no receipt exists;
   it never creates evidence. The external observations remain open.
 - **Verified:** `npm run check`, `npm test` 956 (955 pass, 1 skipped, 0 fail),
-  quality and build pass at `d701ce6` plus this slice. The skip is the mandatory
-  two-connection PostgreSQL proof; see FID-126.
+  quality and build pass at `d701ce6` plus this slice. The plain unit run skips
+  the two-connection case; the separate `test:postgres` gate ran green against
+  disposable PostgreSQL (see FID-126).
 
 ## 2026-11-03 — Hardening queue implementations land
 
@@ -61,13 +62,13 @@ distinguish verified behavior from unverified claims.
   `tests/price-recommendation.test.mjs`, `tests/pricing-chart-data.test.mjs`,
   `tests/pricing-decisions.test.mjs`, `tests/deployment-diagnostics.test.mjs`,
   `tests/measurement-decisions.test.mjs`.
-- **FID-2026-1103-126 — production concurrency gate, implemented but not run
-  locally.** `scripts/postgres-concurrency-proof.mjs` starts a disposable
-  `postgres:17-alpine` container or uses `TEST_DATABASE_URL`, and fails closed
-  when neither exists; CI declares the same gate. Docker was unavailable in
-  this session and no disposable URL was configured, so the mandatory proof is
-  still unexecuted. It remains active rather than being claimed as verified.
-- **Verified:** commits `4b57ebe`, `8bb2d20` and `d701ce6`, plus the current
+- **FID-2026-1103-126 — production concurrency gate, executed green.**
+  `scripts/postgres-concurrency-proof.mjs` starts a disposable container or uses
+  `TEST_DATABASE_URL`, and fails closed when neither exists. Docker's engine was
+  unresponsive, so the gate ran against a disposable PostgreSQL 18.6 cluster on
+  loopback: two real connections raced one debit, exactly one committed, and the
+  balance moved by one debit (1/1 tests, 0 skipped). CI declares the same gate.
+- **Verified:** commits `4b57ebe`, `8bb2d20`, `d701ce6` and `35c1d35`, plus the current
   tree: `npm run check`, `npm test` 956 (955 pass, 1 skipped, 0 fail), quality,
   build, HTTP 751 checks and the recovery drill all pass.
 

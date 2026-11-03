@@ -19,12 +19,12 @@ working set; each FID owns its own status, evidence and resolution.
 | [043](FID-2026-1030-043-launch-master.md) | Master launch contract and dependency register | converged | Keep coverage, ordering and release decisions current. |
 | [062](FID-2026-1030-062-launch-acceptance-and-rollout.md) | Real launch acceptance, controlled rollout and rollback | converged | Discharge the dated external receipt items 1–8; launch remains no-go. |
 | [068](FID-2026-1030-068-usdc-receive-lane.md) | Direct-to-wallet USDC receive lane | fixed | Operator inputs still gate the receive lane; re-read the record before acting. |
-| [126](FID-2026-1103-126-production-concurrency-proof.md) | Production concurrency proof | fixed | Run `npm run test:postgres` with Docker or a disposable URL; archive on a green receipt. |
 | [127](FID-2026-1103-127-real-launch-acceptance-receipt.md) | Real launch acceptance receipt | fixed | Operator records the six observations and a go pinned to the release SHA, then runs `npm run receipt:launch`. |
 | [137](FID-2026-1103-137-product-hardening-and-install-order-master.md) | Product hardening and install-order master | converged | Closes only after 126 and 127 have their required evidence. |
 
 ### Closed in the 2026-11-03 hardening pass
 
+[126](archive/FID-2026-1103-126-production-concurrency-proof.md),
 [128](archive/FID-2026-1103-128-admin-session-continuity.md),
 [129](archive/FID-2026-1103-129-content-freshness-and-source-guidance.md),
 [130](archive/FID-2026-1103-130-durable-feed-validators.md),
@@ -35,8 +35,8 @@ working set; each FID owns its own status, evidence and resolution.
 [135](archive/FID-2026-1103-135-current-project-index.md),
 [136](archive/FID-2026-1103-136-verification-summary.md) and
 [141](archive/FID-2026-1103-141-catalog-pricing-optimization-and-deployment-truth.md)
-are `closed` with commit, test and gate receipts. 126 and 127 stay active
-because their required evidence has not been produced.
+are `closed` with commit, test and gate receipts. 127 stays active because the
+operator's six observations and explicit go decision do not exist yet.
 
 `converged` means the design is ready for implementation; it does not mean code
 has landed. A FID leaves this table only when its status is `closed` or

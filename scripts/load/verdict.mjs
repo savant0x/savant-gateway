@@ -259,7 +259,7 @@ export function evaluateVerdict(input) {
     `${reconciliation.negativeCreditUsers} account(s)`,
   );
   add(
-    "SQLite integrity check",
+    "PostgreSQL foreign-key integrity",
     reconciliation.integrity === "ok",
     String(reconciliation.integrity),
   );

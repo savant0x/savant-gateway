@@ -23,13 +23,13 @@ documentation slice, on Windows with Node 24:
 | Gate | Result |
 | --- | --- |
 | `npm run check` (lint + typecheck) | PASS |
-| `npm test` | 956 tests: 955 pass, 0 fail, 1 skipped |
+| `npm test` | 959 tests: 958 pass, 0 fail, 1 skipped |
 | `npm run quality` | PASS (400-line ceiling) |
 | `npm run build` | PASS |
-| `npm run test:http` | 751 checks PASS plus the trial suite |
+| `npm run test:http` | 776 checks PASS; the trial suite requires a real PostgreSQL endpoint |
 | `npm run test:recovery` | PASS (dump, restore, replay and refusals) |
 | `npm run test:postgres` | PASS — disposable PostgreSQL 18.6 on loopback: 1/1, 0 skipped; exactly one of two racing debits committed. Plain `npm test` still skips this case when `TEST_DATABASE_URL` is unset. |
-| `npm run test:load` | not re-run; the SQLite-era measurement remains a candidate, not approved capacity. |
+| `npm run test:load` | ported to PostgreSQL (FID-148). A PGlite wire smoke passed every workload except the lock-based contention check; the real-PostgreSQL measurement is blocked on this host (no Docker engine, no WSL2). The envelope remains a candidate, not approved capacity. |
 
 The Vercel production deployment reached Ready on `67551ea`; `/api/ready`
 reports PostgreSQL storage healthy, and the 2026-11-03 cutover receipt records
@@ -45,6 +45,7 @@ acceptance: none of the external items below has been observed.
 | [068](../dev/fids/FID-2026-1030-068-usdc-receive-lane.md) | fixed | Direct USDC lane: chain/token contract, hardware-wallet xpub, RPC endpoint and screening ruling. Not a launch path. |
 | [127](../dev/fids/FID-2026-1103-127-real-launch-acceptance-receipt.md) | fixed | `npm run receipt:launch` reports INCOMPLETE until the operator records all six observations and a go decision pinned to the release SHA. |
 | [137](../dev/fids/FID-2026-1103-137-product-hardening-and-install-order-master.md) | converged | Sequencing register; closes only after 126 and 127 have their evidence. |
+| [148](../dev/fids/FID-2026-1103-148-postgres-load-acceptance.md) | converged | Port complete. The accepted `test:load` receipt needs a Docker-capable host with `TEST_DATABASE_URL`; the smoke run leaves one lock-contention check unproven. |
 
 The free/paid SKU split, content sources, Signal engagement work and the pricing
 console are implemented and covered by the gates above. They are public product

@@ -19,6 +19,16 @@ function bandLabel(band: AdminDiagnostics["password"]) {
   return "missing";
 }
 
+function bandDetail(band: AdminDiagnostics["password"], whitespace: boolean) {
+  return `${bandLabel(band)}${whitespace ? " (surrounding whitespace)" : ""}`;
+}
+
+function databaseLabel(value: AdminDiagnostics["databaseReachable"]) {
+  if (value === null) return "not checked";
+
+  return value ? "reachable" : "unavailable";
+}
+
 function Diagnostics({ data }: { data: AdminDiagnostics }) {
   return (
     <details className="mt-4 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs text-muted">
@@ -29,10 +39,16 @@ function Diagnostics({ data }: { data: AdminDiagnostics }) {
         <dt>Runtime</dt>
         <dd className="mono text-foreground">{data.runtime}</dd>
         <dt>Password</dt>
-        <dd className="mono text-foreground">{bandLabel(data.password)}</dd>
+        <dd className="mono text-foreground">
+          {bandDetail(data.password, data.passwordWhitespace)}
+        </dd>
         <dt>Session secret</dt>
         <dd className="mono text-foreground">
-          {bandLabel(data.sessionSecret)}
+          {bandDetail(data.sessionSecret, data.sessionSecretWhitespace)}
+        </dd>
+        <dt>Database</dt>
+        <dd className="mono text-foreground">
+          {databaseLabel(data.databaseReachable)}
         </dd>
         <dt>Public origin</dt>
         <dd className="mono break-all text-foreground">
@@ -48,6 +64,19 @@ function Diagnostics({ data }: { data: AdminDiagnostics }) {
               : "invalid"}
         </dd>
       </dl>
+      {data.passwordWhitespace || data.sessionSecretWhitespace ? (
+        <p className="mt-2 break-words text-warning">
+          An admin value has leading or trailing whitespace. Remove it in the
+          host&apos;s environment settings and redeploy; a typed password cannot
+          match a value copied with a newline.
+        </p>
+      ) : null}
+      {data.databaseReachable === false ? (
+        <p className="mt-2 break-words text-warning">
+          The session epoch could not be read. Check DATABASE_URL and /api/ready
+          before rotating the password.
+        </p>
+      ) : null}
       {data.issueCodes.length > 0 ? (
         <p className="mt-2 break-words text-warning">
           Issues: {data.issueCodes.join(", ")}
@@ -64,12 +93,14 @@ function Diagnostics({ data }: { data: AdminDiagnostics }) {
 
 export function LoginScreen({
   configured,
+  databaseReachable,
   diagnostics,
   notice,
   reason,
   returnTo,
 }: {
   configured: boolean;
+  databaseReachable: boolean | null;
   diagnostics: AdminDiagnostics;
   notice: boolean;
   reason: string | null;
@@ -136,6 +167,13 @@ export function LoginScreen({
             </Card.Description>
           </Card.Header>
           <Card.Content className="space-y-4">
+            {configured && databaseReachable === false ? (
+              <p className="rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning">
+                Admin credentials are configured, but the database that holds
+                the session epoch is unreachable. Sign-in cannot issue a session
+                until `/api/ready` is healthy.
+              </p>
+            ) : null}
             {configured ? (
               <LoginForm returnTo={returnTo} />
             ) : (

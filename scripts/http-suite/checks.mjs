@@ -603,6 +603,11 @@ async function runAdminChecks(context) {
   });
 
   checkEqual("wrong admin password returns 401", wrong.status, 401);
+  checkEqual(
+    "wrong admin password names its failure layer",
+    wrong.json?.code,
+    "invalid_password",
+  );
 
   const foreign = await request(context.baseUrl, "/api/admin/session", {
     method: "POST",
@@ -611,6 +616,11 @@ async function runAdminChecks(context) {
   });
 
   checkEqual("foreign-origin admin login returns 403", foreign.status, 403);
+  checkEqual(
+    "foreign-origin admin login names its failure layer",
+    foreign.json?.code,
+    "cross_origin",
+  );
 
   const login = await request(context.baseUrl, "/api/admin/session", {
     method: "POST",

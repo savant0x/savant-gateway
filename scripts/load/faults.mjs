@@ -1,24 +1,22 @@
 import { spawn } from "node:child_process";
-import { createRequire } from "node:module";
 import { createServer } from "node:http";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
+
+import pg from "pg";
 
 import { request } from "../http-suite/harness.mjs";
 import { jsonCall, openStream, waitFor } from "./client.mjs";
 import { counts } from "./offered.mjs";
 
-const require = createRequire(import.meta.url);
-const Database = require("better-sqlite3");
-
 const PAID = "load-paid";
 
-function latestUsage(database, userId) {
+async function latestUsage(database, userId) {
   return database
     .prepare(
       `SELECT status, charged_micros, billing_source, error
        FROM usage_events WHERE user_id = ?
-       ORDER BY rowid DESC LIMIT 1`,
+       ORDER BY created_at DESC, id DESC LIMIT 1`,
     )
     .get(userId);
 }
@@ -130,7 +128,7 @@ export async function runFaultMatrix(context) {
   try {
     for (const fault of cases) {
       for (let attempt = 1; attempt <= repeats; attempt += 1) {
-        const before = counts(database);
+        const before = await counts(database);
         const mockBefore = mock.state.calls;
 
         resetInference(mock);
@@ -146,8 +144,8 @@ export async function runFaultMatrix(context) {
 
         const dispatched = mock.state.calls - mockBefore;
         const settled = await waitFor(
-          () => {
-            const current = counts(database);
+          async () => {
+            const current = await counts(database);
 
             return (
               current.usage - before.usage >= 1 &&
@@ -158,7 +156,8 @@ export async function runFaultMatrix(context) {
           },
           { timeoutMs: 8_000 },
         );
-        const usage = latestUsage(database, fixture.paid.userId);
+        const usage = await latestUsage(database, fixture.paid.userId);
+        const chargedMicros = Number(usage?.charged_micros ?? 0);
 
         results.push({
           name: fault.name,
@@ -170,10 +169,9 @@ export async function runFaultMatrix(context) {
           settled: Boolean(settled),
           usageStatus: usage?.status ?? null,
           usageOk: usage?.status === fault.expectedUsage,
-          chargedMicros: usage?.charged_micros ?? null,
-          noCharge: usage?.charged_micros === 0,
-          chargeOk:
-            fault.allowCharge === true || usage?.charged_micros === 0,
+          chargedMicros,
+          noCharge: chargedMicros === 0,
+          chargeOk: fault.allowCharge === true || chargedMicros === 0,
           completed: observation.completed ?? null,
           transportError: observation.transportError ?? null,
           latencyMs: Math.round(observation.latencyMs ?? 0),
@@ -220,7 +218,8 @@ export async function runQuotaReset(context) {
     content: "quota reset probe",
     maxTokens: 8,
   });
-  const usage = latestUsage(database, fixture.free.userId);
+  const usage = await latestUsage(database, fixture.free.userId);
+  const chargedMicros = Number(usage?.charged_micros ?? 0);
 
   return {
     label: "quota-reset",
@@ -229,30 +228,38 @@ export async function runQuotaReset(context) {
     recoveredStatus: recovered.status,
     freeCallStatus: freeCall.status,
     freeBillingSource: usage?.billing_source ?? null,
-    freeChargedMicros: usage?.charged_micros ?? null,
+    freeChargedMicros: chargedMicros,
     honest:
       current.status === 200 &&
       expired.status === 503 &&
       recovered.status === 200 &&
       freeCall.status === 200 &&
       usage?.billing_source === "free" &&
-      usage?.charged_micros === 0,
+      chargedMicros === 0,
   };
 }
 
 export async function runDatabaseContention(context) {
-  const database = new Database(context.dbPath);
+  const client = new pg.Client({
+    connectionString: context.connectionString,
+  });
 
-  database.pragma("busy_timeout = 2000");
+  await client.connect();
 
   let release;
   const released = new Promise((resolve) => {
     release = resolve;
   });
-  database.exec("BEGIN IMMEDIATE");
-  const timer = setTimeout(() => {
+
+  await client.query("BEGIN");
+  // `BEGIN IMMEDIATE` has no PostgreSQL equivalent. An exclusive lock on the
+  // row source every admitted call reads produces the same observable: the
+  // request waits for the competing writer instead of racing it.
+  await client.query("LOCK TABLE users IN ACCESS EXCLUSIVE MODE");
+
+  const timer = setTimeout(async () => {
     try {
-      database.exec("COMMIT");
+      await client.query("COMMIT");
     } catch {
       // The request path reports its own failure; the finally block releases.
     }
@@ -261,7 +268,7 @@ export async function runDatabaseContention(context) {
   }, 250);
 
   try {
-    const before = counts(context.database);
+    const before = await counts(context.database);
     const call = await jsonCall(context.baseUrl, context.fixture.paid.secret, {
       model: PAID,
       content: "contention probe",
@@ -270,8 +277,8 @@ export async function runDatabaseContention(context) {
     await released;
 
     const settled = await waitFor(
-      () => {
-        const current = counts(context.database);
+      async () => {
+        const current = await counts(context.database);
 
         return (
           current.usage - before.usage >= 1 &&
@@ -293,12 +300,12 @@ export async function runDatabaseContention(context) {
     clearTimeout(timer);
 
     try {
-      database.exec("ROLLBACK");
+      await client.query("ROLLBACK");
     } catch {
       // Already committed.
     }
 
-    database.close();
+    await client.end();
   }
 }
 
@@ -330,23 +337,23 @@ export async function runAlertFailure(context) {
   const port = address && typeof address === "object" ? address.port : 0;
   const fakeId = "stl_load_alert_fixture";
   const old = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-  const now = new Date().toISOString();
 
-  context.database
+  await context.database
     .prepare(
-      `INSERT OR REPLACE INTO settlements
+      `INSERT INTO settlements
         (id, user_id, api_key_id, model_id, provider_slug, billing_source,
          credit_hold_id, free_reservation_id, subscription_hold_id,
          estimated_micros, status, detail, created_at, settled_at)
        VALUES (?, 'load-alert-fixture', 'load-alert-key', 'load-paid', 'load',
-         'credit', NULL, NULL, NULL, 1, 'admitted', NULL, ?, NULL)`,
+         'credit', NULL, NULL, NULL, 1, 'admitted', NULL, ?, NULL)
+       ON CONFLICT (id) DO NOTHING`,
     )
     .run(fakeId, old);
 
   try {
     const env = {
       ...process.env,
-      DB_PATH: context.dbPath,
+      DATABASE_URL: context.connectionString,
       OPERATIONS_ALERT_WEBHOOK_URL: `http://127.0.0.1:${port}/load-failure`,
       OPERATIONS_ALERT_WEBHOOK_SECRET: "load-alert-secret-0123456789",
       OPERATIONS_ALERT_MAX_ATTEMPTS: "1",
@@ -356,6 +363,10 @@ export async function runAlertFailure(context) {
       NODE_ENV: "test",
       GATEWAY_DISPOSABLE_START: "yes",
     };
+
+    delete env.DB_PATH;
+    delete env.PG_LOCAL_PATH;
+
     const child = spawn(
       process.execPath,
       [join(context.repo, "scripts", "operations-monitor.mjs")],
@@ -376,7 +387,7 @@ export async function runAlertFailure(context) {
     const exitCode = await new Promise((resolve) => {
       child.once("exit", (code) => resolve(code));
     });
-    const incident = context.database
+    const incident = await context.database
       .prepare(
         `SELECT fingerprint, delivery_state, delivery_attempts,
                 last_delivery_error
@@ -400,10 +411,12 @@ export async function runAlertFailure(context) {
         exitCode === 1 &&
         received.length === 1 &&
         incident?.delivery_state === "failed" &&
-        incident?.delivery_attempts === 1,
+        Number(incident?.delivery_attempts) === 1,
     };
   } finally {
-    context.database.prepare("DELETE FROM settlements WHERE id = ?").run(fakeId);
+    await context.database
+      .prepare("DELETE FROM settlements WHERE id = ?")
+      .run(fakeId);
     await new Promise((resolve) => receiver.close(resolve));
   }
 }
@@ -431,16 +444,16 @@ export async function runDrain(context) {
       cookie: adminCookie,
       body: { action: "drain", reason: "load acceptance drain probe" },
     });
-    const beforeRefusal = counts(database);
+    const beforeRefusal = await counts(database);
     const refused = await jsonCall(context.baseUrl, fixture.paid.secret, {
       model: PAID,
       content: "drain refusal probe",
     });
-    const afterRefusal = counts(database);
+    const afterRefusal = await counts(database);
     const completed = await Promise.all(streams.map((stream) => stream.done));
     const settled = await waitFor(
-      () => {
-        const current = counts(database);
+      async () => {
+        const current = await counts(database);
 
         return current.usage - beforeRefusal.usage >= workload.streams;
       },
@@ -491,19 +504,27 @@ export async function runDrain(context) {
 export async function runStorageWriteFailure(context) {
   const { database, fixture } = context;
   const userId = fixture.paid.userId;
-  const before = database
+  const before = await database
     .prepare("SELECT credit_micros, held_micros FROM users WHERE id = ?")
     .get(userId);
-  const usageBefore = database
+  const usageBefore = await database
     .prepare("SELECT COUNT(*) AS total FROM usage_events WHERE user_id = ?")
-    .get(userId).total;
+    .get(userId);
 
   // A full volume cannot be reproduced portably on this host. Reject the exact
   // usage insert instead, which exercises the same durable-write failure path
   // without pretending the disk itself was full.
-  database.exec(`CREATE TRIGGER load_storage_failure
-    BEFORE INSERT ON usage_events
-    BEGIN SELECT RAISE(ABORT, 'injected load storage failure'); END`);
+  await database.exec(`
+    CREATE OR REPLACE FUNCTION load_storage_failure() RETURNS trigger AS $load$
+    BEGIN
+      RAISE EXCEPTION 'injected load storage failure';
+    END;
+    $load$ LANGUAGE plpgsql;
+    DROP TRIGGER IF EXISTS load_storage_failure_trigger ON usage_events;
+    CREATE TRIGGER load_storage_failure_trigger
+      BEFORE INSERT ON usage_events
+      FOR EACH ROW EXECUTE FUNCTION load_storage_failure();
+  `);
 
   let call;
 
@@ -513,24 +534,27 @@ export async function runStorageWriteFailure(context) {
       content: "storage failure probe",
     });
   } finally {
-    database.exec("DROP TRIGGER IF EXISTS load_storage_failure");
+    await database.exec(`
+      DROP TRIGGER IF EXISTS load_storage_failure_trigger ON usage_events;
+      DROP FUNCTION IF EXISTS load_storage_failure();
+    `);
   }
 
-  const admitted = database
+  const admitted = await database
     .prepare(
       `SELECT COUNT(*) AS total FROM settlements
        WHERE user_id = ? AND status = 'admitted'`,
     )
-    .get(userId).total;
-  const holds = database
+    .get(userId);
+  const holds = await database
     .prepare("SELECT COUNT(*) AS total FROM credit_holds WHERE user_id = ?")
-    .get(userId).total;
-  const usageAfterFailure = database
+    .get(userId);
+  const usageAfterFailure = await database
     .prepare("SELECT COUNT(*) AS total FROM usage_events WHERE user_id = ?")
-    .get(userId).total;
+    .get(userId);
   const past = new Date(Date.now() - 1_000).toISOString();
 
-  database
+  await database
     .prepare(
       "UPDATE credit_holds SET expires_at = ? WHERE user_id = ? AND expires_at > ?",
     )
@@ -538,43 +562,53 @@ export async function runStorageWriteFailure(context) {
   const account = await request(context.baseUrl, "/api/auth/me", {
     cookie: fixture.paid.cookie,
   });
-  const quarantined = database
+  const quarantined = await database
     .prepare(
       `SELECT COUNT(*) AS total FROM settlements
        WHERE user_id = ? AND status = 'quarantined'`,
     )
-    .get(userId).total;
-  const quarantineRows = database
+    .get(userId);
+  const quarantineRows = await database
     .prepare(
       `SELECT COUNT(*) AS total FROM quarantined_holds
        WHERE user_id = ? AND status = 'quarantined'`,
     )
-    .get(userId).total;
-  const after = database
+    .get(userId);
+  const after = await database
     .prepare("SELECT credit_micros, held_micros FROM users WHERE id = ?")
     .get(userId);
+  const admittedTotal = Number(admitted?.total ?? 0);
+  const holdTotal = Number(holds?.total ?? 0);
+  const usageBeforeTotal = Number(usageBefore?.total ?? 0);
+  const usageAfterTotal = Number(usageAfterFailure?.total ?? 0);
+  const quarantinedTotal = Number(quarantined?.total ?? 0);
+  const quarantineRowTotal = Number(quarantineRows?.total ?? 0);
+  const creditBefore = Number(before?.credit_micros ?? 0);
+  const creditAfter = Number(after?.credit_micros ?? 0);
+  const heldBefore = Number(before?.held_micros ?? 0);
+  const heldAfter = Number(after?.held_micros ?? 0);
 
   return {
     label: "storage-write-failure",
     status: call.status,
-    admitted,
-    holds,
-    usageBefore,
-    usageAfterFailure,
-    quarantined,
-    quarantineRows,
-    accountBefore: before,
-    accountAfter: after,
+    admitted: admittedTotal,
+    holds: holdTotal,
+    usageBefore: usageBeforeTotal,
+    usageAfterFailure: usageAfterTotal,
+    quarantined: quarantinedTotal,
+    quarantineRows: quarantineRowTotal,
+    accountBefore: { credit_micros: creditBefore, held_micros: heldBefore },
+    accountAfter: { credit_micros: creditAfter, held_micros: heldAfter },
     accountStatus: account.status,
     honest:
       call.status >= 500 &&
-      admitted === 1 &&
-      holds === 1 &&
-      usageAfterFailure === usageBefore &&
-      quarantined === 1 &&
-      quarantineRows === 1 &&
-      after.credit_micros === before.credit_micros &&
-      after.held_micros > before.held_micros &&
+      admittedTotal === 1 &&
+      holdTotal === 1 &&
+      usageAfterTotal === usageBeforeTotal &&
+      quarantinedTotal === 1 &&
+      quarantineRowTotal === 1 &&
+      creditAfter === creditBefore &&
+      heldAfter > heldBefore &&
       account.status === 200,
   };
 }
@@ -583,7 +617,7 @@ export async function runCrashRecovery(context) {
   const { mock, database, fixture } = context;
   const workload = context.envelope.workloads.crash;
   const userId = fixture.crash.userId;
-  const before = database
+  const before = await database
     .prepare("SELECT credit_micros, held_micros FROM users WHERE id = ?")
     .get(userId);
 
@@ -602,19 +636,19 @@ export async function runCrashRecovery(context) {
   await context.crashServer();
   await Promise.allSettled(streams.map((stream) => stream.done));
 
-  const admitted = database
+  const admitted = await database
     .prepare(
       `SELECT COUNT(*) AS total FROM settlements
        WHERE user_id = ? AND status = 'admitted'`,
     )
-    .get(userId).total;
-  const holds = database
+    .get(userId);
+  const holds = await database
     .prepare("SELECT COUNT(*) AS total FROM credit_holds WHERE user_id = ?")
-    .get(userId).total;
-  const usageBefore = database
+    .get(userId);
+  const usageBefore = await database
     .prepare("SELECT COUNT(*) AS total FROM usage_events WHERE user_id = ?")
-    .get(userId).total;
-  const afterCrash = database
+    .get(userId);
+  const afterCrash = await database
     .prepare("SELECT credit_micros, held_micros FROM users WHERE id = ?")
     .get(userId);
 
@@ -622,7 +656,7 @@ export async function runCrashRecovery(context) {
 
   const past = new Date(Date.now() - 1_000).toISOString();
 
-  database
+  await database
     .prepare(
       "UPDATE credit_holds SET expires_at = ? WHERE user_id = ? AND expires_at > ?",
     )
@@ -630,54 +664,70 @@ export async function runCrashRecovery(context) {
   const account = await request(context.baseUrl, "/api/auth/me", {
     cookie: fixture.crash.cookie,
   });
-  const quarantined = database
+  const quarantined = await database
     .prepare(
       `SELECT COUNT(*) AS total FROM settlements
        WHERE user_id = ? AND status = 'quarantined'`,
     )
-    .get(userId).total;
-  const quarantineRows = database
+    .get(userId);
+  const quarantineRows = await database
     .prepare(
-      `SELECT COUNT(*) AS total FROM quarantined_holds WHERE user_id = ?`,
+      `SELECT COUNT(*) AS total FROM quarantined_holds
+       WHERE user_id = ?`,
     )
-    .get(userId).total;
-  const afterQuarantine = database
+    .get(userId);
+  const afterQuarantine = await database
     .prepare("SELECT credit_micros, held_micros FROM users WHERE id = ?")
     .get(userId);
-  const usageAfter = database
+  const usageAfter = await database
     .prepare("SELECT COUNT(*) AS total FROM usage_events WHERE user_id = ?")
-    .get(userId).total;
+    .get(userId);
+  const admittedTotal = Number(admitted?.total ?? 0);
+  const holdTotal = Number(holds?.total ?? 0);
+  const usageBeforeTotal = Number(usageBefore?.total ?? 0);
+  const usageAfterTotal = Number(usageAfter?.total ?? 0);
+  const quarantinedTotal = Number(quarantined?.total ?? 0);
+  const quarantineRowTotal = Number(quarantineRows?.total ?? 0);
+  const creditBefore = Number(before?.credit_micros ?? 0);
+  const creditAfter = Number(afterQuarantine?.credit_micros ?? 0);
 
   resetInference(mock);
 
   return {
     label: "process-crash",
     inFlight: workload.inFlight,
-    admittedBeforeRestart: admitted,
-    holdsBeforeRestart: holds,
-    accountBeforeRestart: before,
-    accountAfterCrash: afterCrash,
-    accountAfterQuarantine: afterQuarantine,
+    admittedBeforeRestart: admittedTotal,
+    holdsBeforeRestart: holdTotal,
+    accountBeforeRestart: {
+      credit_micros: creditBefore,
+      held_micros: Number(before?.held_micros ?? 0),
+    },
+    accountAfterCrash: {
+      credit_micros: Number(afterCrash?.credit_micros ?? 0),
+      held_micros: Number(afterCrash?.held_micros ?? 0),
+    },
+    accountAfterQuarantine: {
+      credit_micros: creditAfter,
+      held_micros: Number(afterQuarantine?.held_micros ?? 0),
+    },
     accountStatus: account.status,
-    usageBefore,
-    usageAfter,
-    quarantined,
-    quarantineRows,
-    noDoubleDebit:
-      afterQuarantine.credit_micros === before.credit_micros &&
-      usageAfter === usageBefore,
+    usageBefore: usageBeforeTotal,
+    usageAfter: usageAfterTotal,
+    quarantined: quarantinedTotal,
+    quarantineRows: quarantineRowTotal,
+    noDoubleDebit: creditAfter === creditBefore && usageAfterTotal === usageBeforeTotal,
     explicitQuarantine:
-      admitted === workload.inFlight &&
-      holds === workload.inFlight &&
-      quarantined === workload.inFlight &&
-      quarantineRows === workload.inFlight &&
+      admittedTotal === workload.inFlight &&
+      holdTotal === workload.inFlight &&
+      quarantinedTotal === workload.inFlight &&
+      quarantineRowTotal === workload.inFlight &&
       account.status === 200,
     honest:
-      admitted === workload.inFlight &&
-      holds === workload.inFlight &&
-      usageBefore === 0 &&
-      usageAfter === 0 &&
-      quarantined === workload.inFlight &&
-      afterQuarantine.credit_micros === before.credit_micros,
+      admittedTotal === workload.inFlight &&
+      holdTotal === workload.inFlight &&
+      usageBeforeTotal === 0 &&
+      usageAfterTotal === 0 &&
+      quarantinedTotal === workload.inFlight &&
+      creditAfter === creditBefore,
   };
 }

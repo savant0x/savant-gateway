@@ -22,11 +22,17 @@ export type AdminDiagnostics = {
   reason: string | null;
   password: AdminCredentialBand;
   sessionSecret: AdminCredentialBand;
+  passwordWhitespace: boolean;
+  sessionSecretWhitespace: boolean;
+  /** `null` means the caller did not probe the database. */
+  databaseReachable: boolean | null;
   origin: string | null;
   originValid: boolean;
   productionConfigValid: boolean | null;
   issueCodes: string[];
 };
+
+type DiagnosticsState = { databaseReachable?: boolean | null };
 
 type Env = Readonly<Record<string, string | undefined>>;
 
@@ -34,6 +40,15 @@ function band(value: string, minimum: number): AdminCredentialBand {
   if (value.length === 0) return "missing";
 
   return value.length < minimum ? "too_short" : "valid";
+}
+
+/**
+ * A value copied from a dashboard can carry a newline or a wrapping quote. It
+ * is still a valid length, but the typed password can never match it. Report
+ * the condition; never trim it into a silent second credential.
+ */
+function hasSurroundingWhitespace(value: string) {
+  return value.length > 0 && value.trim() !== value;
 }
 
 function safeOrigin(raw: string | undefined) {
@@ -57,21 +72,26 @@ function safeOrigin(raw: string | undefined) {
   }
 }
 
-export function readAdminDiagnostics(env: Env = process.env): AdminDiagnostics {
+export function readAdminDiagnostics(
+  env: Env = process.env,
+  state: DiagnosticsState = {},
+): AdminDiagnostics {
   const config = readAdminConfig(env);
   const origin = safeOrigin(env.NEXT_PUBLIC_SITE_URL);
   const production = env.NODE_ENV === "production";
   const productionConfig = validateProductionConfig(env);
+  const password = env.ADMIN_PASSWORD ?? "";
+  const secret = env.ADMIN_SESSION_SECRET ?? "";
 
   return {
     runtime: env.NODE_ENV?.trim() || "unknown",
     configured: config.configured,
     reason: config.configured ? null : config.reason,
-    password: band(env.ADMIN_PASSWORD ?? "", ADMIN_PASSWORD_MIN_LENGTH),
-    sessionSecret: band(
-      env.ADMIN_SESSION_SECRET ?? "",
-      ADMIN_SECRET_MIN_LENGTH,
-    ),
+    password: band(password, ADMIN_PASSWORD_MIN_LENGTH),
+    sessionSecret: band(secret, ADMIN_SECRET_MIN_LENGTH),
+    passwordWhitespace: hasSurroundingWhitespace(password),
+    sessionSecretWhitespace: hasSurroundingWhitespace(secret),
+    databaseReachable: state.databaseReachable ?? null,
     origin: origin.origin,
     originValid: origin.valid,
     productionConfigValid: production ? productionConfig.ok : null,

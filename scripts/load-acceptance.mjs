@@ -28,9 +28,13 @@ import {
   startMockUpstream,
   startNextServer,
   stopNextServer,
-  waitForSchema,
   waitForServer,
 } from "./http-suite/harness.mjs";
+import {
+  openDatabase,
+  startDatabaseServer,
+  waitForSchema,
+} from "./http-suite/db.mjs";
 import { approvalProblem, loadServerEnvironment, readEnvelope } from "./load/envelope.mjs";
 import { LOAD_PROVIDER_KEY_VALUE, seedLoadFixture } from "./load/fixture.mjs";
 import { runAllWorkloads } from "./load/workloads.mjs";
@@ -81,8 +85,30 @@ const { envelope, path: envelopePath, offered } = await readEnvelope(repo);
 const approval = approvalProblem(envelope);
 const workspace = await createTempWorkspace();
 const serverPort = await reservePort();
+const databasePort = await reservePort();
+const suppliedDatabaseUrl =
+  process.env.LOAD_TEST_DATABASE_URL?.trim() ||
+  process.env.TEST_DATABASE_URL?.trim() ||
+  null;
 const mock = await startMockUpstream({ expectedKey: LOAD_PROVIDER_KEY_VALUE });
 const baseUrl = `http://127.0.0.1:${serverPort}`;
+const databaseServer = await startDatabaseServer({
+  directory: workspace.databaseDirectory,
+  port: databasePort,
+  connectionString: suppliedDatabaseUrl ?? undefined,
+  requireReal: true,
+}).catch(async (error) => {
+  const detail = error instanceof Error ? error.message : String(error);
+
+  await mock.close();
+  await workspace.remove();
+  console.error(
+    "load-acceptance FAIL: the gate requires real PostgreSQL. Set " +
+      `LOAD_TEST_DATABASE_URL or TEST_DATABASE_URL to a disposable endpoint, ` +
+      `or start Docker (${detail}).`,
+  );
+  process.exit(1);
+});
 const tomorrow = new Date();
 let server = null;
 let database = null;
@@ -99,7 +125,6 @@ function serverEnvironment() {
     ...loadServerEnvironment(envelope),
     ADMIN_PASSWORD,
     ADMIN_SESSION_SECRET: ADMIN_SECRET,
-    DB_PATH: workspace.dbPath,
     NEXT_PUBLIC_SITE_URL: baseUrl,
     LOAD_PROVIDER_KEY: LOAD_PROVIDER_KEY_VALUE,
   };
@@ -109,7 +134,7 @@ async function boot() {
   server = startNextServer({
     repo,
     port: serverPort,
-    dbPath: workspace.dbPath,
+    databaseUrl: databaseServer.connectionString,
     env: serverEnvironment(),
   });
   currentChild = server.child;
@@ -141,8 +166,9 @@ async function restartServer() {
 try {
   await boot();
 
-  database = await waitForSchema(workspace.dbPath);
-  const fixture = seedLoadFixture(database, { mockBaseUrl: mock.baseUrl });
+  database = await openDatabase(databaseServer.connectionString);
+  await waitForSchema(database);
+  const fixture = await seedLoadFixture(database, { mockBaseUrl: mock.baseUrl });
   const login = await request(baseUrl, "/api/admin/session", {
     method: "POST",
     body: { password: ADMIN_PASSWORD },
@@ -176,8 +202,8 @@ try {
 
   const context = {
     repo,
-    dbPath: workspace.dbPath,
     baseUrl,
+    connectionString: databaseServer.connectionString,
     database,
     mock,
     fixture,
@@ -200,8 +226,8 @@ try {
   sampler = null;
   peakRssMb = peakRssMb ?? rssMb(currentChild?.pid);
 
-  const reconciliation = reconcile(database);
-  const bytes = databaseBytes(workspace.dbPath);
+  const reconciliation = await reconcile(database);
+  const bytes = await databaseBytes(database);
   const results = {
     ramp: workloads.ramp,
     steady: workloads.steady,
@@ -236,8 +262,8 @@ try {
     platform: `${process.platform}/${process.arch}`,
     artifact: {
       buildId: (await readFile(buildMarker, "utf8")).trim(),
-      storage: "SQLite WAL, disposable file database",
-      databasePath: "disposable temp workspace",
+      storage: "PostgreSQL, disposable database",
+      databasePath: "disposable PostgreSQL endpoint",
       databaseBytes: bytes,
       envelope: envelopePath,
       envelopeStatus: envelope.status,
@@ -263,7 +289,7 @@ try {
     verdict,
     limitations: [
       "The upstream is a local fixture. No real provider request, account, budget or network latency is measured.",
-      "The database is a disposable local SQLite file, not the selected Fly volume or a production-sized dataset.",
+      "The database is a disposable PostgreSQL database, not the selected production host or a production-sized dataset.",
       "ENOSPC was not reproduced. A storage-write rejection was injected at the usage INSERT, which exercises the same durable rollback/quarantine path.",
       "Actual provider deadline timeouts (120s JSON, 300s stream) were not waited out; provider disconnect and truncated stream are covered.",
       "No hosted proxy, TLS ingress or CDN behavior is exercised.",
@@ -304,7 +330,8 @@ try {
   process.exitCode = 1;
 } finally {
   if (sampler) clearInterval(sampler);
-  database?.close();
+  await database?.close();
+  await databaseServer.close();
   await mock.close();
   if (server) await stopNextServer(server.child);
   await workspace.remove();

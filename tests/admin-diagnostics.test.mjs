@@ -80,6 +80,38 @@ test("quoted or whitespace values are reported, not trimmed into validity", () =
 
   assert.equal(data.password, "valid");
   assert.equal(data.sessionSecret, "valid");
+  assert.equal(data.passwordWhitespace, false);
+  assert.equal(data.sessionSecretWhitespace, true);
   assert.equal(JSON.stringify(data).includes(PASSWORD), false);
   assert.equal(JSON.stringify(data).includes(SECRET), false);
+});
+
+test("surrounding whitespace is flagged without claiming a shorter value", () => {
+  const data = readAdminDiagnostics({
+    ADMIN_PASSWORD: ` ${PASSWORD}\n`,
+    ADMIN_SESSION_SECRET: SECRET,
+  });
+
+  assert.equal(data.password, "valid");
+  assert.equal(data.passwordWhitespace, true);
+  assert.equal(data.sessionSecretWhitespace, false);
+  assert.equal(data.configured, true);
+  assert.equal(JSON.stringify(data).includes(PASSWORD), false);
+});
+
+test("database reachability is reported only when probed", () => {
+  const env = {
+    ADMIN_PASSWORD: PASSWORD,
+    ADMIN_SESSION_SECRET: SECRET,
+  };
+
+  assert.equal(readAdminDiagnostics(env).databaseReachable, null);
+  assert.equal(
+    readAdminDiagnostics(env, { databaseReachable: true }).databaseReachable,
+    true,
+  );
+  assert.equal(
+    readAdminDiagnostics(env, { databaseReachable: false }).databaseReachable,
+    false,
+  );
 });

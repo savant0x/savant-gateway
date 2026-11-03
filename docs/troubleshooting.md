@@ -60,10 +60,40 @@ the local server before running the gates.
 
 ## Admin sign-in is unavailable
 
-`/admin` needs both `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET`. If either is
-missing or short, the console is disabled rather than accepting a partial
-credential. In a production build, `/dashboard` redirects to `/admin/login`;
-the loopback development bypass is intentionally unavailable.
+`/admin` needs both `ADMIN_PASSWORD` (12+ characters) and
+`ADMIN_SESSION_SECRET` (32+ characters) in the environment that is actually
+serving the request. If either is missing or short, the console is disabled
+rather than accepting a partial credential. In a production build,
+`/dashboard` redirects to `/admin/login`; the loopback development bypass is
+intentionally unavailable.
+
+Open **Environment diagnostics** on the login screen. It reports each value as
+`missing`, `present, below minimum`, or `valid`; it never prints the value. The
+`POST /api/admin/session` response carries a `code` that names the refusing
+layer:
+
+| `code` | Meaning | Fix |
+| --- | --- | --- |
+| `admin_not_configured` | A variable is missing or short | Set both values in the served environment. |
+| `database_unavailable` | The session epoch could not be read | Fix `DATABASE_URL`; `/api/ready` must pass. |
+| `invalid_password` | The typed password did not match | Enter the exact configured value. |
+| `rate_limited` | Five failed attempts in ten minutes | Wait for the window to expire. |
+| `cross_origin` | Origin does not match the request host | Open the console on its own origin. |
+
+### Vercel specifically
+
+1. Set `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` for **Production** (and
+   Preview if you sign in there), not only Development.
+2. Remove any leading or trailing newline or quote from a pasted value. The
+   diagnostics row says `(surrounding whitespace)` when one is present; a typed
+   password can never match it.
+3. Environment changes apply to a **new deployment**. Redeploy after editing
+   them; an existing build keeps the environment it was created with.
+4. Set `DATABASE_URL` to the production PostgreSQL endpoint. The login POST
+   reads the session epoch from that database; a paused or missing Supabase
+   project returns `503 database_unavailable` rather than `invalid_password`.
+5. Confirm `/api/ready` returns 200 in the deployed environment before rotating
+   any credential.
 
 ## Checkout returns `503`
 

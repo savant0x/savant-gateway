@@ -3,6 +3,69 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — Load gate ported to PostgreSQL
+
+- **FID-2026-1103-148 — high — the bounded load/fault gate now runs on the
+  production store; its real-PostgreSQL receipt is blocked on this host.**
+  `scripts/load-acceptance.mjs` now accepts `LOAD_TEST_DATABASE_URL` or
+  `TEST_DATABASE_URL`, otherwise starts the disposable `postgres:17-alpine`
+  container, and never falls back to PGlite. `next start` boots with
+  `DATABASE_URL`; the fixture, offered workloads, reconciliation and receipt are
+  async. SQLite-specific constructs were replaced: `rowid` ordering with
+  `created_at, id`; `BEGIN IMMEDIATE` with an `ACCESS EXCLUSIVE` lock on
+  `users`; a storage failure with a `BEFORE INSERT` PL/pgSQL trigger;
+  `PRAGMA integrity_check` with an unvalidated-foreign-key count; file bytes
+  with `pg_database_size`. The alert drill passes `DATABASE_URL` to the
+  operations monitor. A port-discovered workload flaw was corrected: the
+  competing-reservation probe now clamps its concurrency to the provider
+  ceiling, so provider 429s no longer mask the credit 402s it exists to prove.
+  A PGlite wire smoke exercised every workload and failed only the lock-based
+  contention check, which PGlite ignores; it reported `{"200":2,"402":14}`
+  reservations, 0 unresolved settlements, `integrity: ok` and a PostgreSQL
+  receipt. Docker's Linux engine and WSL2 are unavailable here, so the accepted
+  real-PostgreSQL measurement remains outstanding and the envelope stays
+  `candidate`.
+
+## 2026-11-03 — FID closure: free allocation page verified
+
+- **FID-2026-1103-149 — closed and archived.** The HTTP suite now seeds an
+  `alloc` provider and the `free/mock-free` SKU and checks the page signed out,
+  with no active key, with a current observation, with a stale observation, and
+  against the allocation read route. It asserts the sign-in and key-required
+  copy, the 100,000-token capped balance, the `2×` weight sentence, the absence
+  of `Available now` in unavailable states and the absence of the pool size and
+  allocation bps in public HTML. The `savant` provider row is restored in
+  `finally`; the fixture seeds users directly because the suite's signup limiter
+  is process-wide; and the free SKU lives under its own provider so the
+  catalog-sync checks still see one row. Verified: 776 HTTP checks PASS (26
+  new), 959 unit tests (958 pass, 1 skipped), typecheck, quality and build.
+
+## 2026-11-03 — Live free-allocation check
+
+- **FID-2026-1103-150 — closed and archived.** A free SKU page now offers a
+  manual **Check now** control. `GET /api/account/allocation` reads the same
+  mode-appropriate snapshot the page renders — `trialBalance` in lifetime mode,
+  `getDailyTrialSummary` in daily mode — returns `401` when signed out and
+  `503` without inventing data. On success the control records the check time
+  and refreshes the server render; on failure the previously rendered balance
+  stays visible. Daily contract checks are in the HTTP suite (776 PASS); the
+  lifetime contract checks were added to the trial suite, which requires a real
+  PostgreSQL endpoint and was not executed locally.
+
+## 2026-11-03 — FID closure: admin login diagnosability
+
+- **FID-2026-1103-151 — closed and archived.** `POST /api/admin/session` now
+  returns named failure codes (`admin_not_configured`, `database_unavailable`,
+  `cross_origin`, `rate_limited`, `invalid_password`), and a failed session-epoch
+  read returns an actionable 503 instead of an HTML 500. The login screen probes
+  the same database read and reports reachable/unavailable; diagnostics also flag
+  surrounding whitespace in the password or secret without printing or trimming
+  the value. The troubleshooting guide now covers Vercel environment scope,
+  redeploy requirements and the `/api/ready` dependency. Verified: 15/15 focused
+  unit tests, 776 HTTP checks (including both new code assertions), 959 unit
+  tests, typecheck, quality and build. The hosted login was not observed in this
+  session.
+
 ## 2026-11-03 — FID closure: free model allocation guide verified
 
 - **FID-2026-1103-147 — closed and archived.** Commit `d02ec42` passed the

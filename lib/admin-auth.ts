@@ -28,9 +28,10 @@ export function adminError(
   status: number,
   message: string,
   headers: Record<string, string> = {},
+  code?: string,
 ) {
   return Response.json(
-    { error: message },
+    { error: message, ...(code ? { code } : {}) },
     { status, headers: { ...NO_STORE, ...headers } },
   );
 }

@@ -8,8 +8,8 @@ function hash(value) {
   return createHash("sha256").update(value).digest("hex");
 }
 
-function addUser(database, input) {
-  database
+async function addUser(database, input) {
+  await database
     .prepare(
       `INSERT INTO users
         (id, email, name, status, created_at, password_hash, credit_micros,
@@ -25,7 +25,7 @@ function addUser(database, input) {
     );
 
   if ((input.creditMicros ?? 0) > 0) {
-    database
+    await database
       .prepare(
         `INSERT INTO credit_ledger
           (id, user_id, kind, amount_micros, balance_after_micros, note,
@@ -43,7 +43,7 @@ function addUser(database, input) {
 
   const token = randomBytes(32).toString("base64url");
 
-  database
+  await database
     .prepare(
       `INSERT INTO customer_sessions
         (id, user_id, token_hash, created_at, expires_at, revoked_at)
@@ -60,11 +60,11 @@ function addUser(database, input) {
   return { token, cookie: `sg_session=${token}` };
 }
 
-function addKey(database, userId, name) {
+async function addKey(database, userId, name) {
   const secret = `sk-load-${randomBytes(24).toString("hex")}`;
   const keyId = `key_${randomUUID()}`;
 
-  database
+  await database
     .prepare(
       `INSERT INTO api_keys
         (id, user_id, name, prefix, secret_hash, status, created_at)
@@ -87,12 +87,17 @@ function addKey(database, userId, name) {
  * one provider with a published subscription quota but no published RPM, so
  * the operator envelope's configured RPM is the only serving ceiling. No real
  * provider key, host, account or spend is involved.
+ *
+ * PostgreSQL (FID-148): the same rows are written through the async handle the
+ * application uses. `DELETE` runs before the inserts, so a second run on a
+ * disposable endpoint replaces its own fixture instead of colliding with a
+ * leftover unique index.
  */
-export function seedLoadFixture(database, { mockBaseUrl }) {
-  database.prepare("DELETE FROM providers WHERE slug = 'load'").run();
-  database.prepare("DELETE FROM models WHERE id LIKE 'load-%'").run();
+export async function seedLoadFixture(database, { mockBaseUrl }) {
+  await database.prepare("DELETE FROM models WHERE id LIKE 'load-%'").run();
+  await database.prepare("DELETE FROM providers WHERE slug = 'load'").run();
 
-  database
+  await database
     .prepare(
       `INSERT INTO providers
         (slug, label, kind, base_url, key_env_var, default_headers,
@@ -115,7 +120,7 @@ export function seedLoadFixture(database, { mockBaseUrl }) {
        'manual')`,
   );
 
-  insertModel.run(
+  await insertModel.run(
     "load-paid",
     "load-upstream-paid",
     "Load Paid Model",
@@ -127,7 +132,7 @@ export function seedLoadFixture(database, { mockBaseUrl }) {
     2_000_000,
     "paid",
   );
-  insertModel.run(
+  await insertModel.run(
     "load-free",
     "load-upstream-free",
     "Load Free Model",
@@ -140,37 +145,45 @@ export function seedLoadFixture(database, { mockBaseUrl }) {
     "free",
   );
 
-  const paid = addUser(database, {
+  const paid = await addUser(database, {
     id: "load-paid-user",
     name: "Load Paid",
     creditMicros: 10_000_000,
   });
-  const free = addUser(database, {
+  const free = await addUser(database, {
     id: "load-free-user",
     name: "Load Free",
     creditMicros: 0,
   });
-  const reserved = addUser(database, {
+  const reserved = await addUser(database, {
     id: "load-reserved-user",
     name: "Load Reserved",
     creditMicros: 500,
   });
-  const crash = addUser(database, {
+  const crash = await addUser(database, {
     id: "load-crash-user",
     name: "Load Crash",
     creditMicros: 1_000_000,
   });
-  const keyChurn = addUser(database, {
+  const keyChurn = await addUser(database, {
     id: "load-keychurn-user",
     name: "Load Key Churn",
     creditMicros: 0,
   });
 
-  const paidKey = addKey(database, "load-paid-user", "load paid");
-  const freeKey = addKey(database, "load-free-user", "load free");
-  const reservedKey = addKey(database, "load-reserved-user", "load reserved");
-  const crashKey = addKey(database, "load-crash-user", "load crash");
-  const churnKey = addKey(database, "load-keychurn-user", "existing churn key");
+  const paidKey = await addKey(database, "load-paid-user", "load paid");
+  const freeKey = await addKey(database, "load-free-user", "load free");
+  const reservedKey = await addKey(
+    database,
+    "load-reserved-user",
+    "load reserved",
+  );
+  const crashKey = await addKey(database, "load-crash-user", "load crash");
+  const churnKey = await addKey(
+    database,
+    "load-keychurn-user",
+    "existing churn key",
+  );
 
   return {
     providerKey: LOAD_PROVIDER_KEY_VALUE,

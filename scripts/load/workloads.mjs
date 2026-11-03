@@ -151,6 +151,12 @@ export async function runStreams(context) {
         return stream.done;
       },
     });
+    const cancelledUsage = await context.database
+      .prepare(
+        `SELECT COUNT(*) AS total FROM usage_events
+         WHERE user_id = ? AND status = 'cancelled'`,
+      )
+      .get(context.fixture.paid.userId);
 
     return {
       long: {
@@ -164,12 +170,7 @@ export async function runStreams(context) {
         allCancelled: cancelled.observations.every(
           (row) => row.status === 200 && row.cancelled,
         ),
-        cancelledUsage: context.database
-          .prepare(
-            `SELECT COUNT(*) AS total FROM usage_events
-             WHERE user_id = ? AND status = 'cancelled'`,
-          )
-          .get(context.fixture.paid.userId).total,
+        cancelledUsage: Number(cancelledUsage?.total ?? 0),
       },
     };
   } finally {
@@ -180,7 +181,7 @@ export async function runStreams(context) {
 
 export async function runMixedBilling(context) {
   const workload = context.envelope.workloads.mixedBilling;
-  const before = context.database
+  const before = await context.database
     .prepare(
       `SELECT billing_source, COUNT(*) AS total
        FROM usage_events GROUP BY billing_source`,
@@ -204,22 +205,24 @@ export async function runMixedBilling(context) {
             maxTokens: 64,
           }),
   });
-  const after = context.database
+  const after = await context.database
     .prepare(
       `SELECT billing_source, COUNT(*) AS total
        FROM usage_events GROUP BY billing_source`,
     )
     .all();
-  const totals = new Map(after.map((row) => [row.billing_source, row.total]));
-  const previous = new Map(
-    before.map((row) => [row.billing_source, row.total]),
+  const totals = new Map(
+    after.map((row) => [row.billing_source, Number(row.total)]),
   );
-  const freeCharged = context.database
+  const previous = new Map(
+    before.map((row) => [row.billing_source, Number(row.total)]),
+  );
+  const charged = await context.database
     .prepare(
       `SELECT COALESCE(SUM(charged_micros), 0) AS total FROM usage_events
        WHERE user_id = ?`,
     )
-    .get(context.fixture.free.userId).total;
+    .get(context.fixture.free.userId);
 
   return {
     ...withoutObservations(result),
@@ -227,17 +230,25 @@ export async function runMixedBilling(context) {
       free: (totals.get("free") ?? 0) - (previous.get("free") ?? 0),
       credit: (totals.get("credit") ?? 0) - (previous.get("credit") ?? 0),
     },
-    freeChargedMicros: freeCharged,
+    freeChargedMicros: Number(charged?.total ?? 0),
   };
 }
 
 export async function runReservations(context) {
   const workload = context.envelope.workloads.reservations;
   const userId = context.fixture.reserved.userId;
+  // This workload measures competing credit reservations, not provider
+  // saturation (the burst workload owns that). Offering more concurrent calls
+  // than the provider gate admits lets provider 429s mask the 402s the check
+  // is about, so clamp to the serving ceiling.
+  const concurrency = Math.min(
+    workload.concurrency,
+    context.envelope.environment.providerConcurrency,
+  );
   const result = await runOffered(context, {
     label: "competing-reservations",
     count: workload.requests,
-    concurrency: workload.concurrency,
+    concurrency,
     expectedStatuses: [200, 402],
     task: () =>
       jsonCall(context.baseUrl, context.fixture.reserved.secret, {
@@ -249,20 +260,26 @@ export async function runReservations(context) {
         maxTokens: workload.maxTokens,
       }),
   });
-  const account = context.database
+  const account = await context.database
     .prepare("SELECT credit_micros, held_micros FROM users WHERE id = ?")
     .get(userId);
-  const holds = context.database
+  const holds = await context.database
     .prepare("SELECT COUNT(*) AS total FROM credit_holds WHERE user_id = ?")
-    .get(userId).total;
+    .get(userId);
 
   return {
     ...withoutObservations(result),
+    concurrency,
     statuses: countStatuses(result.observations),
-    account,
-    activeHolds: holds,
+    account: {
+      credit_micros: Number(account?.credit_micros ?? 0),
+      held_micros: Number(account?.held_micros ?? 0),
+    },
+    activeHolds: Number(holds?.total ?? 0),
     noOverAdmission: result.dispatched <= 2,
-    noOverdraft: account.credit_micros >= 0 && account.held_micros === 0,
+    noOverdraft:
+      Number(account?.credit_micros ?? 0) >= 0 &&
+      Number(account?.held_micros ?? 0) === 0,
   };
 }
 
@@ -303,11 +320,11 @@ export async function runKeyChurn(context) {
       return response.status;
     }),
   );
-  const active = context.database
+  const active = await context.database
     .prepare(
       "SELECT COUNT(*) AS total FROM api_keys WHERE user_id = ? AND status = 'active'",
     )
-    .get(context.fixture.keyChurn.userId).total;
+    .get(context.fixture.keyChurn.userId);
 
   return {
     label: "key-churn",
@@ -318,7 +335,7 @@ export async function runKeyChurn(context) {
       (row) => row.status !== 201 && row.status !== 429,
     ).length,
     revoked: revoked.filter((status) => status === 200).length,
-    activeAfterRevoke: active,
+    activeAfterRevoke: Number(active?.total ?? 0),
   };
 }
 

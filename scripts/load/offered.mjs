@@ -1,8 +1,8 @@
 import { waitFor } from "./client.mjs";
 import { summarize } from "./metrics.mjs";
 
-export function counts(database) {
-  const settlement = database
+export async function counts(database) {
+  const settlement = await database
     .prepare(
       `SELECT
          SUM(CASE WHEN status = 'admitted' THEN 1 ELSE 0 END) AS admitted,
@@ -11,19 +11,19 @@ export function counts(database) {
        FROM settlements`,
     )
     .get();
-  const usage = database
+  const usage = await database
     .prepare("SELECT COUNT(*) AS total FROM usage_events")
     .get();
-  const holds = database
+  const holds = await database
     .prepare("SELECT COUNT(*) AS total FROM credit_holds")
     .get();
 
   return {
-    usage: Number(usage.total),
-    admitted: Number(settlement.admitted ?? 0),
-    committed: Number(settlement.committed ?? 0),
-    quarantined: Number(settlement.quarantined ?? 0),
-    holds: Number(holds.total),
+    usage: Number(usage?.total ?? 0),
+    admitted: Number(settlement?.admitted ?? 0),
+    committed: Number(settlement?.committed ?? 0),
+    quarantined: Number(settlement?.quarantined ?? 0),
+    holds: Number(holds?.total ?? 0),
   };
 }
 
@@ -62,12 +62,12 @@ export async function runPool(count, concurrency, task) {
 /**
  * Runs one bounded offered workload and reconciles it independently of what
  * the client thought happened: dispatch comes from the fixture upstream, and
- * settlement/usage come from SQLite. A run cannot pass by refusing work or by
- * accepting it without a final ledger outcome.
+ * settlement/usage come from PostgreSQL. A run cannot pass by refusing work or
+ * by accepting it without a final ledger outcome.
  */
 export async function runOffered(context, input) {
   const { database, mock } = context;
-  const before = counts(database);
+  const before = await counts(database);
   const mockBefore = mock.state.calls;
   const startedAt = performance.now();
   const observations = await runPool(input.count, input.concurrency, input.task);
@@ -75,8 +75,8 @@ export async function runOffered(context, input) {
   const dispatched = mock.state.calls - mockBefore;
   const settled = dispatched
     ? await waitFor(
-        () => {
-          const current = counts(database);
+        async () => {
+          const current = await counts(database);
 
           return (
             current.usage - before.usage >= dispatched &&
@@ -88,7 +88,7 @@ export async function runOffered(context, input) {
         { timeoutMs: input.settleTimeoutMs ?? 10_000 },
       )
     : true;
-  const after = counts(database);
+  const after = await counts(database);
   const summary = summarize(input.label, observations, {
     expectedStatuses: input.expectedStatuses,
     allowTransportError: input.allowTransportError,

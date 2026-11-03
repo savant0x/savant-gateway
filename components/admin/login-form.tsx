@@ -9,11 +9,13 @@ export function LoginForm({ returnTo }: { returnTo: string | null }) {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [code, setCode] = useState<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
+    setCode(null);
 
     try {
       const response = await fetch("/api/admin/session", {
@@ -23,9 +25,11 @@ export function LoginForm({ returnTo }: { returnTo: string | null }) {
       });
       const payload = (await response.json().catch(() => null)) as {
         error?: string;
+        code?: string;
       } | null;
 
       if (!response.ok) {
+        setCode(payload?.code ?? null);
         throw new Error(
           payload?.error || `Sign in failed (HTTP ${response.status})`,
         );
@@ -67,6 +71,11 @@ export function LoginForm({ returnTo }: { returnTo: string | null }) {
           className="rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger"
         >
           {error}
+          {code ? (
+            <span className="mono mt-1 block text-[10px] opacity-80">
+              code: {code}
+            </span>
+          ) : null}
         </p>
       ) : null}
 

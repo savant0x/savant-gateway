@@ -165,6 +165,17 @@ try {
   checkEqual("trial call succeeds", first.status, 200);
   checkEqual("trial uses free upstream", serving, "free/mock-upstream");
   checkEqual("trial settles actual weighted usage", (await db.prepare("SELECT used_tokens::int AS used_tokens FROM trial_grants WHERE user_id = ?").get(customerA.userId)).used_tokens, 300);
+  // FID-150: the free SKU refresh route must serve the lifetime snapshot in
+  // trial mode. `/api/account/trial` cannot: it is daily-only and returns 503
+  // when the trial is enabled.
+  const lifetimeAllocation = await request(baseUrl, "/api/account/allocation", {
+    cookie: customerA.cookie,
+  });
+
+  checkEqual("lifetime allocation read returns 200", lifetimeAllocation.status, 200);
+  checkEqual("lifetime allocation read names the mode", lifetimeAllocation.json?.mode, "lifetime");
+  checkEqual("lifetime allocation read makes no daily claim", lifetimeAllocation.json?.daily, null);
+  checkEqual("lifetime allocation read returns the granted balance", lifetimeAllocation.json?.lifetime?.granted, 300);
   checkEqual("trial does not charge credit", (await db.prepare("SELECT credit_micros::int AS credit_micros FROM users WHERE id = ?").get(customerA.userId)).credit_micros, 0);
   checkEqual("lifetime mode does not also grant daily credits", (await db.prepare("SELECT COUNT(*)::int AS n FROM free_pool_allocations WHERE user_id = ?").get(customerA.userId)).n, 0);
   const before = calls;

@@ -1,5 +1,4 @@
 import { execFileSync } from "node:child_process";
-import { statSync } from "node:fs";
 
 export function percentile(values, fraction) {
   if (values.length === 0) return null;
@@ -83,16 +82,11 @@ export function rssMb(pid) {
   }
 }
 
-export function databaseBytes(path) {
-  let total = 0;
+/** The whole disposable database, as the server sees it. */
+export async function databaseBytes(database) {
+  const row = await database
+    .prepare("SELECT pg_database_size(current_database()) AS bytes")
+    .get();
 
-  for (const suffix of ["", "-wal", "-shm"]) {
-    try {
-      total += statSync(`${path}${suffix}`).size;
-    } catch {
-      // A sidecar is absent until SQLite creates it.
-    }
-  }
-
-  return total;
+  return Number(row?.bytes ?? 0);
 }

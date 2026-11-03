@@ -7,6 +7,7 @@ import { readAdminDiagnostics } from "@/lib/admin-diagnostics";
 import { getAdminSession } from "@/lib/admin-auth";
 import { safeAdminReturnTo } from "@/lib/admin-return";
 import { readAdminConfig } from "@/lib/admin-session";
+import { getAdminSessionEpoch } from "@/lib/store-facade/operations";
 
 export const dynamic = "force-dynamic";
 
@@ -31,11 +32,20 @@ export default async function AdminLoginPage({
   if (await getAdminSession()) redirect(returnTo ?? "/admin");
 
   const config = readAdminConfig();
+  // The login POST cannot issue a token without the session epoch. Probe the
+  // same read here so a database outage is visible before the operator types,
+  // instead of surfacing later as an unexplained HTTP 500 (FID-151).
+  const databaseReachable = config.configured
+    ? await getAdminSessionEpoch()
+        .then(() => true)
+        .catch(() => false)
+    : null;
 
   return (
     <LoginScreen
       configured={config.configured}
-      diagnostics={readAdminDiagnostics()}
+      databaseReachable={databaseReachable}
+      diagnostics={readAdminDiagnostics(process.env, { databaseReachable })}
       notice={params.notice === "session"}
       reason={config.configured ? null : config.reason}
       returnTo={returnTo}

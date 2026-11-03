@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 
 import Link from "next/link";
 
+import { FreeAllocationCheck } from "./free-allocation-check";
 import {
   FreeAllocationGuide,
   type FreeAllocationMode,
@@ -340,6 +341,8 @@ export function FreeAllocationPanel({
         signedIn={signedIn}
         unavailable={unavailable}
       />
+
+      {signedIn ? <FreeAllocationCheck /> : null}
 
       {showDaily && daily && daily.remainingTokens !== null ? (
         <DailyStats

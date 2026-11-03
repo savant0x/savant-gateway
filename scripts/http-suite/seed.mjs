@@ -39,6 +39,38 @@ export async function seedCatalog(database, { mockBaseUrl }) {
        ON CONFLICT (id) DO NOTHING`,
     )
     .run(now);
+
+  // The free SKU the allocation panel is checked against (FID-149). It lives
+  // under its own provider so the mock provider's catalog-sync checks still
+  // observe exactly the one row their upstream publishes.
+  await database
+    .prepare(
+      `INSERT INTO providers
+        (slug, label, kind, base_url, key_env_var, default_headers,
+         supports_balance, supports_subscription, supports_pricing,
+         enabled, sort_order, status, created_at, updated_at)
+       VALUES ('alloc', 'HTTP Suite Allocation', 'openai', ?, ?, '{}',
+         0, 0, 0, 1, 5, 'active', ?, ?)
+       ON CONFLICT (slug) DO NOTHING`,
+    )
+    .run(mockBaseUrl, PROVIDER_KEY_ENV, now, now);
+
+  await database
+    .prepare(
+      `INSERT INTO models
+        (id, upstream_id, name, provider, context_window, token_weight,
+         input_price_micros, output_price_micros, allow_free,
+         supports_tools, supports_vision, status, sort_order, synced_at,
+         upstream_slug, family, protocol, cost_source,
+         sell_input_micros, sell_output_micros, price_source, in_catalog,
+         group_slug, group_source)
+       VALUES ('free/mock-free', 'mock-upstream-free', 'HTTP Suite Free Model',
+         'Mock', '128000', 2, 0, 0, 1, 0, 0, 'active', 0, ?,
+         'alloc', 'Mock', 'chat', 'manual', 0, 0, 'manual', 1,
+         'free', 'manual')
+       ON CONFLICT (id) DO NOTHING`,
+    )
+    .run(now);
 }
 
 export async function seedPendingTopup(database, input) {

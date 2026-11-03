@@ -10,6 +10,7 @@ import { SiteHeader } from "@/components/landing/site-header";
 import { siteConfig } from "@/config/site";
 import { artificialAnalysisConfigured } from "@/lib/artificial-analysis";
 import { ensureBenchmarksFresh } from "@/lib/benchmark-sync";
+import { pairCatalogModels, pairedCatalogCounts } from "@/lib/catalog-pairs";
 import { getOpenRouterModels } from "@/lib/openrouter-prices";
 import {
   buildCatalogComparison,
@@ -70,6 +71,9 @@ export default async function ModelsPage() {
     benchmark.models.length > 0
       ? new Date(benchmark.fetchedAt).toISOString()
       : null;
+  // The headline counts models, not published ids: a model sold as a free
+  // allocation and a paid row is one model with two purchase paths.
+  const counts = pairedCatalogCounts(pairCatalogModels(data.models));
 
   return (
     <div className="site-shell">
@@ -104,25 +108,25 @@ export default async function ModelsPage() {
                   aria-hidden
                   className="fa-solid fa-layer-group mr-2 text-cyan-300"
                 />
-                {formatNumber(data.stats.modelCount)} models
+                {formatNumber(counts.models)} models
               </span>
               <span className="rounded-full border border-white/10 canvas-surface px-3 py-1.5">
                 <i
                   aria-hidden
                   className="fa-solid fa-gift mr-2 text-emerald-300"
                 />
-                {formatNumber(data.stats.freeModelCount)} free
+                {formatNumber(counts.free)} free
               </span>
               <span className="rounded-full border border-white/10 canvas-surface px-3 py-1.5">
                 <i aria-hidden className="fa-solid fa-tag mr-2 text-cyan-300" />
-                {formatNumber(data.stats.paidModelCount)} priced
+                {formatNumber(counts.paid)} priced
               </span>
               <span className="rounded-full border border-white/10 canvas-surface px-3 py-1.5">
                 <i
                   aria-hidden
                   className="fa-solid fa-key mr-2 text-amber-300"
                 />
-                {data.stats.subscriptionModelCount} subscription-only
+                {counts.subscriptionOnly} subscription-only
               </span>
             </div>
 

@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1102-116-free-and-paid-counterpart-publication.md`
 **ID:** FID-2026-1102-116
 **Severity:** high
-**Status:** verified
+**Status:** closed
 **Created:** 2026-11-02 23:40
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -133,7 +133,7 @@ key from the joined `group_billing_mode`.
 
 ### Verification Receipt
 
-- verified: 2026-11-02T23:58Z (working tree, commit and archive pending)
+- verified: 2026-11-02T23:58Z (commit `1bc8256`)
 - focused: `node --test tests/model-identity.test.mjs tests/route-reconcile.test.mjs`
   exit 1 on the first run — two expectations, corrected below — then 15/15 pass
 - test: `npm test` exit 0 — 852 tests, 851 pass, 1 skipped
@@ -182,8 +182,7 @@ key from the joined `group_billing_mode`.
 
 ### Implementation Evidence (commit pending, so this is not `closed`)
 
-- **Commit SHA:** none — the change is in the working tree and the gates ran
-  against it. Closure needs the commit plus the archive move.
+- **Commit SHA:** `1bc8256`
 - **File:line ranges:** `lib/model-identity.ts:50` (`routeGroupKey`),
   `lib/route-reconcile.ts:57,114`, `lib/storage/store/routes.ts:89`,
   `lib/storage/store/models.ts:63`, `tests/route-reconcile.test.mjs:210,253`,
@@ -196,7 +195,7 @@ key from the joined `group_billing_mode`.
 
 ## Resolution
 
-- **Closed Date:** not closed
+- **Closed Date:** 2026-11-03 00:15
 - **Fix Description:** route groups are scoped `<billingMode>:<model key>`, so a
   free allocation and its paid counterpart each elect a published row while
   same-tier rows still merge across providers.
@@ -204,7 +203,7 @@ key from the joined `group_billing_mode`.
   which replaces the assertion that encoded the defect.
 - **Verification Evidence:** focused 15/15; `npm test` 852 (851 pass, 1
   skipped); typecheck 0; lint 0; quality PASS 535 files; build 0.
-- **Archived:** not archived (commit and archive move pending)
+- **Archived:** 2026-11-03 00:15
 
 ## Lessons Learned
 

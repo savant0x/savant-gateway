@@ -3,6 +3,18 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — One catalog row per model, both purchase paths
+
+- **FID-2026-1102-117 — medium — the public catalog pairs a free allocation
+  with its paid counterpart into one row.** The row names the model once, shows
+  the metered rate, lists every published id as a link, and adds a "Get access"
+  column with one link per available path: free tier (console), prepaid credit
+  (account), and plans when a subscription covers the model. `/models` counts
+  models rather than published ids; `/v1/models` is unchanged and still returns
+  each id separately. Verified: focused pairing tests 8/8, `npm test` 860 tests
+  (859 pass, 1 skipped), typecheck 0, lint 0 warnings, quality PASS (537 files),
+  build 0. Not verified: browser visual review of the new column.
+
 ## 2026-11-02 — Free allocations and their paid counterparts
 
 - **FID-2026-1102-116 — high — the paid counterpart of a free-tier model is

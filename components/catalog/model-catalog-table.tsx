@@ -7,19 +7,12 @@ import type {
 } from "@/lib/types";
 import type { PriceComparison } from "@/lib/price-comparison";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import {
-  comparisonAvailable,
-  deltaClass,
-  formatDelta,
-  priceProvenance,
-  QualityCell,
-  RateCell,
-} from "./catalog-cells";
+import { comparisonAvailable } from "./catalog-cells";
 import { CatalogFilters, type GroupOption } from "./catalog-filters";
 import { CatalogFootnote } from "./catalog-footnote";
+import { CatalogRow } from "./catalog-row";
 import { SortableHead } from "./catalog-sort-head";
 
 import {
@@ -29,8 +22,7 @@ import {
   type CatalogSortKey,
   type SortableCatalogRow,
 } from "@/lib/catalog-sort";
-import { AccessChip } from "@/components/dashboard/chips";
-import { formatPricePer1M } from "@/components/dashboard/format";
+import { pairCatalogModels } from "@/lib/catalog-pairs";
 import { Pagination } from "@/components/ui/pagination";
 
 export function ModelCatalogTable({
@@ -55,62 +47,70 @@ export function ModelCatalogTable({
   const [direction, setDirection] = useState<CatalogSortDirection>("asc");
   const [page, setPage] = useState(1);
 
+  // A model sold twice — a free allocation and the metered id — is one row with
+  // two purchase paths, not two rows for the reader to reconcile.
+  const paired = useMemo(() => pairCatalogModels(models), [models]);
+
   const families = useMemo(
     () =>
-      Array.from(new Set(models.map((model) => model.family))).sort((a, b) =>
-        a.localeCompare(b),
+      Array.from(new Set(paired.map((row) => row.display.family))).sort(
+        (a, b) => a.localeCompare(b),
       ),
-    [models],
+    [paired],
   );
 
   const groups = useMemo(() => {
     const map = new Map<string, GroupOption>();
 
-    for (const model of models) {
-      map.set(model.groupSlug, {
-        slug: model.groupSlug,
-        label: model.groupLabel,
-        billingMode: model.groupBillingMode,
-      });
+    for (const row of paired) {
+      for (const variant of row.variants) {
+        map.set(variant.groupSlug, {
+          slug: variant.groupSlug,
+          label: variant.groupLabel,
+          billingMode: variant.groupBillingMode,
+        });
+      }
     }
 
     return Array.from(map.values()).sort((left, right) =>
       left.label.localeCompare(right.label),
     );
-  }, [models]);
+  }, [paired]);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    const rows = models.filter((model) => {
-      if (group !== "all" && model.groupSlug !== group) return false;
-      if (family !== "all" && model.family !== family) return false;
+    const rows = paired.filter((row) => {
+      if (group !== "all" && !row.variants.some((v) => v.groupSlug === group))
+        return false;
+      if (family !== "all" && row.display.family !== family) return false;
       if (!needle) return true;
 
-      return (
-        model.id.toLowerCase().includes(needle) ||
-        model.name.toLowerCase().includes(needle) ||
-        model.family.toLowerCase().includes(needle) ||
-        (comparisons[model.id]?.openRouterId ?? "")
-          .toLowerCase()
-          .includes(needle)
+      return row.variants.some(
+        (variant) =>
+          variant.id.toLowerCase().includes(needle) ||
+          variant.name.toLowerCase().includes(needle) ||
+          variant.family.toLowerCase().includes(needle) ||
+          (comparisons[variant.id]?.openRouterId ?? "")
+            .toLowerCase()
+            .includes(needle),
       );
     });
 
-    const decorated = rows.map((model) => ({
-      model,
+    const decorated = rows.map((row) => ({
+      row,
       sortable: {
-        id: model.id,
-        name: model.name,
-        family: model.family,
-        groupLabel: model.groupLabel,
-        groupBillingMode: model.groupBillingMode,
-        tokenWeight: model.tokenWeight,
-        supportsTools: model.supportsTools,
-        supportsVision: model.supportsVision,
-        inputPricePer1M: model.inputPricePer1M,
-        outputPricePer1M: model.outputPricePer1M,
-        benchmarkIndex: benchmarks[model.id]?.intelligenceIndex ?? null,
-        comparisonBps: comparisons[model.id]?.blendedDeltaBps ?? null,
+        id: row.primary.id,
+        name: row.display.name,
+        family: row.display.family,
+        groupLabel: row.display.groupLabel,
+        groupBillingMode: row.display.groupBillingMode,
+        tokenWeight: row.free?.tokenWeight ?? row.primary.tokenWeight,
+        supportsTools: row.variants.some((variant) => variant.supportsTools),
+        supportsVision: row.variants.some((variant) => variant.supportsVision),
+        inputPricePer1M: row.primary.inputPricePer1M,
+        outputPricePer1M: row.primary.outputPricePer1M,
+        benchmarkIndex: benchmarks[row.primary.id]?.intelligenceIndex ?? null,
+        comparisonBps: comparisons[row.primary.id]?.blendedDeltaBps ?? null,
       } satisfies SortableCatalogRow,
     }));
 
@@ -119,7 +119,7 @@ export function ModelCatalogTable({
     return decorated.sort((left, right) =>
       compareCatalogRows(left.sortable, right.sortable, sort, direction),
     );
-  }, [benchmarks, comparisons, direction, family, group, models, query, sort]);
+  }, [benchmarks, comparisons, direction, family, group, paired, query, sort]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, pageCount);
@@ -129,33 +129,38 @@ export function ModelCatalogTable({
   );
 
   const matched = useMemo(
-    () => models.filter((model) => comparisons[model.id] !== undefined).length,
-    [comparisons, models],
+    () =>
+      paired.filter((row) => comparisons[row.primary.id] !== undefined).length,
+    [comparisons, paired],
   );
   const cheaperOnBlend = useMemo(
     () =>
-      models.filter((model) => {
-        const row = comparisons[model.id];
+      paired.filter((row) => {
+        const comparison = comparisons[row.primary.id];
 
-        return model.access === "paid" && (row?.blendedDeltaBps ?? 0) < 0;
+        return (
+          row.primary.access === "paid" &&
+          (comparison?.blendedDeltaBps ?? 0) < 0
+        );
       }).length,
-    [comparisons, models],
+    [comparisons, paired],
   );
 
-  const showComparison = comparisonAvailable(matched, models.length);
+  const showComparison = comparisonAvailable(matched, paired.length);
   const measured = useMemo(
-    () => models.filter((model) => benchmarks[model.id] !== undefined).length,
-    [benchmarks, models],
+    () =>
+      paired.filter((row) => benchmarks[row.primary.id] !== undefined).length,
+    [benchmarks, paired],
   );
   const showBenchmarks = measured > 0;
   // Identity, then one fact per column, then the money, then the verdict.
   const columns = showComparison
     ? showBenchmarks
-      ? ["36%", "9%", "6%", "8%", "10%", "16%", "15%"]
-      : ["44%", "10%", "7%", "9%", "17%", "13%"]
+      ? ["30%", "8%", "6%", "7%", "9%", "13%", "12%", "12%"]
+      : ["36%", "9%", "7%", "8%", "15%", "12%", "13%"]
     : showBenchmarks
-      ? ["48%", "11%", "8%", "10%", "8%", "15%"]
-      : ["54%", "13%", "9%", "11%", "13%"];
+      ? ["40%", "10%", "7%", "9%", "7%", "14%", "13%"]
+      : ["46%", "12%", "8%", "9%", "12%", "13%"];
 
   function resetPage(action: () => void) {
     action();
@@ -196,7 +201,7 @@ export function ModelCatalogTable({
         group={group}
         groups={groups}
         matched={matched}
-        modelCount={models.length}
+        modelCount={paired.length}
         query={query}
         showComparison={showComparison}
         shownCount={filtered.length}
@@ -217,7 +222,7 @@ export function ModelCatalogTable({
         >
           <table className="data-table catalog-table">
             <colgroup>
-              {/* Widths repeat by design (two 13% columns); the index is the
+              {/* Widths repeat by design (two 12% columns); the index is the
                   stable identity for a static colgroup. */}
               {columns.map((width, index) => (
                 <col key={index} style={{ width }} />
@@ -244,125 +249,24 @@ export function ModelCatalogTable({
                 {showComparison
                   ? head("vs OpenRouter", "comparison", "text-right")
                   : null}
+                <th className="text-right">Get access</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ model }) => {
-                const comparison = showComparison
-                  ? comparisons[model.id]
-                  : undefined;
-
-                return (
-                  <tr key={model.id}>
-                    <td className="catalog-model">
-                      <Link
-                        className="block truncate font-medium underline-offset-4 hover:underline"
-                        href={`/models/${model.id.split("/").map(encodeURIComponent).join("/")}`}
-                      >
-                        {model.name}
-                      </Link>
-                      <div className="catalog-sub mono" title={model.id}>
-                        {model.family} · {model.contextWindow} · {model.id}
-                      </div>
-                    </td>
-                    <td className="whitespace-nowrap">
-                      <AccessChip model={model} />
-                    </td>
-                    <td className="catalog-rate text-right">
-                      {model.tokenWeight > 0 ? (
-                        <span title="Free-pool token weight">
-                          {model.tokenWeight}×
-                        </span>
-                      ) : (
-                        <span className="text-muted">—</span>
-                      )}
-                    </td>
-                    <td className="catalog-col-features whitespace-nowrap text-center">
-                      {model.supportsTools || model.supportsVision ? (
-                        <span className="inline-flex items-center gap-2">
-                          {model.supportsTools ? (
-                            <i
-                              aria-hidden
-                              className="fa-solid fa-wrench text-[10px] text-muted"
-                              title="Supports tools"
-                            />
-                          ) : null}
-                          {model.supportsVision ? (
-                            <i
-                              aria-hidden
-                              className="fa-solid fa-eye text-[10px] text-muted"
-                              title="Supports vision"
-                            />
-                          ) : null}
-                        </span>
-                      ) : (
-                        <span className="text-muted">—</span>
-                      )}
-                    </td>
-                    {showBenchmarks ? (
-                      <td className="catalog-rate text-right">
-                        <QualityCell benchmark={benchmarks[model.id]} />
-                      </td>
-                    ) : null}
-                    <td className="catalog-rate text-right">
-                      <span
-                        className="cursor-help"
-                        title={priceProvenance(
-                          {
-                            input: model.inputPricePer1M,
-                            output: model.outputPricePer1M,
-                          },
-                          model.access,
-                          comparison,
-                        )}
-                      >
-                        <RateCell
-                          access={model.access}
-                          input={model.inputPricePer1M}
-                          output={model.outputPricePer1M}
-                        />
-                      </span>
-                    </td>
-                    {showComparison ? (
-                      <>
-                        <td className="catalog-rate text-right">
-                          {model.access === "paid" &&
-                          comparison?.blendedDeltaBps != null ? (
-                            <span
-                              className={`inline-flex items-center rounded-[0.2rem] border border-border bg-surface-secondary px-2 py-0.5 text-[11px] ${deltaClass(
-                                comparison.blendedDeltaBps,
-                              )}`}
-                              title={`3 input : 1 output blend vs ${comparison.openRouterId}. Prompt tokens ${formatDelta(
-                                comparison.inputDeltaBps,
-                              )}, completion tokens ${formatDelta(
-                                comparison.outputDeltaBps,
-                              )}.`}
-                            >
-                              {formatDelta(comparison.blendedDeltaBps)}
-                            </span>
-                          ) : comparison?.blendedDeltaBps != null ? (
-                            // Included models are 100 % cheaper than the public
-                            // list by definition. Muted text, not a badge: eleven
-                            // identical green badges would shout.
-                            <span
-                              className="text-muted"
-                              title={`Included in ${model.access === "free" ? "the free pool" : "a plan"}; ${comparison.openRouterId} lists ${formatPricePer1M(
-                                comparison.inputPer1M,
-                              )} in / ${formatPricePer1M(
-                                comparison.outputPer1M,
-                              )} out per 1M.`}
-                            >
-                              {formatDelta(comparison.blendedDeltaBps)}
-                            </span>
-                          ) : (
-                            <span className="text-muted">—</span>
-                          )}
-                        </td>
-                      </>
-                    ) : null}
-                  </tr>
-                );
-              })}
+              {rows.map(({ row }) => (
+                <CatalogRow
+                  key={row.key}
+                  benchmark={
+                    showBenchmarks ? benchmarks[row.primary.id] : undefined
+                  }
+                  comparison={
+                    showComparison ? comparisons[row.primary.id] : undefined
+                  }
+                  row={row}
+                  showBenchmarks={showBenchmarks}
+                  showComparison={showComparison}
+                />
+              ))}
             </tbody>
           </table>
         </div>

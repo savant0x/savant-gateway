@@ -3,10 +3,10 @@
 **Filename:** `FID-2026-1102-104-public-source-status.md`
 **ID:** FID-2026-1102-104
 **Severity:** low
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-02 19:08
 **Automation level:** 2
-**YAGNI-Compliance:** Pending
+**YAGNI-Compliance:** Verified
 
 ---
 
@@ -105,7 +105,20 @@ older than two intervals → delayed; a just-fetched source → ok.
 
 ### Verification Receipt
 
-Not run. Status is `converged`; no code shipped.
+- closed: 2026-11-03
+- commit: `7a2020d`
+- focused: `node --test tests/content-status.test.mjs` exit 0 — 2/2
+  (state boundaries; the public projection never selects URL, config or
+  `last_error`)
+- test: `npm test` exit 0 — 874 tests, 873 pass, 1 skipped
+- typecheck: `npm run typecheck` exit 0
+- lint: `npm run lint` exit 0, zero warnings
+- quality: `npm run quality` exit 0 — PASS (400-line ceiling, 555 files)
+- build: `npm run build` exit 0 — `/signal/status` compiled
+- call graph: `/signal/status` calls `listPublicSources` in
+  `lib/content/store/sources.ts` and `publicSourceState` in
+  `lib/content/status.ts`; the hub empty state and the footer link to it
+- not run: `npm run test:http`, `npm run test:recovery`, browser review
 
 ## Perfection Loop
 
@@ -137,19 +150,49 @@ Not applicable; status is `converged`.
 
 ### Code Verification Evidence
 
-- [ ] Files referenced in Affected Components exist
-- [ ] Implementation matches the Proposed Solution
-- [ ] Typecheck/tests/lint pass with pasted tool output
-- [ ] Production call-graph evidence is present
-- [ ] FID status reflects the implementation state
+- [x] Files referenced in Affected Components exist
+- [x] Implementation matches the Proposed Solution
+- [x] Typecheck/tests/lint pass with pasted tool output (receipt above)
+- [x] Production call-graph evidence is present (page, projection, mapper)
+- [x] FID status reflects the implementation state (`closed`)
+
+### Loop 2 — Implementation convergence (2026-11-03)
+
+- **RED:** Re-read the admin content page and the source store. Confirmed the
+  only health read selects the full source row, including `last_error`, and no
+  public projection or status page exists.
+- **GREEN:** Add `listPublicSources` selecting only id, label, kind, enabled,
+  status, failure streak, interval and last fetch — never the URL, config or
+  `last_error`. Add pure `publicSourceState` with four public states: `ok`,
+  `delayed` (never fetched, or older than two intervals plus a 15-minute
+  grace), `attention` (error status or at least three failures), and `paused`
+  (disabled). `/signal/status` is read-only, returns 404 when the content
+  surface is disabled, is `noindex`, and shows a generic “needs attention”
+  label instead of upstream error text. Link it from the hub empty state and
+  the footer.
+- **AUDIT:** The projection is a separate query, not a filter of the admin row,
+  so `last_error` cannot leak by accident. Boundaries are pure and tested.
+  Disabled sources remain visible as paused.
+- **ADVERSARIAL:** A public page reveals which feeds the operator watches,
+  which published items and source labels already reveal; it does not reveal
+  internal error text, credentials or URLs. An empty source list is an honest
+  empty state. Crawlers are excluded with `robots: noindex`.
+- **CHANGE DELTA:** New implementation section, well under 10% of the record.
+- **Step statuses:** 1–5 `implemented` after verification; no deferred or
+  skipped step.
 
 ## Resolution
 
-- **Closed Date:** not closed
-- **Fix Description:** Planned; no code shipped under this FID.
-- **Tests Added:** No.
-- **Verification Evidence:** None.
-- **Archived:** not archived.
+- **Closed Date:** 2026-11-03
+- **Fix Description:** a dedicated public source projection with a tested
+  coarse state mapper, a `noindex` read-only `/signal/status` page guarded by
+  the content switch, and links from the hub empty state and footer.
+- **Tests Added:** Yes — `tests/content-status.test.mjs` (2 cases) covering
+  disabled, failure, delay and current boundaries and the selected columns.
+- **Verification Evidence:** commit `7a2020d`; focused suite 2/2;
+  `npm test` 874 (873 pass, 1 skipped); typecheck, lint, quality and build all
+  exit 0.
+- **Archived:** 2026-11-03 — moved to `dev/fids/archive/`.
 
 ## Lessons Learned
 

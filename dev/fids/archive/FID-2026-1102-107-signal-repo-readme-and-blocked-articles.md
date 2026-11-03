@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1102-107-signal-repo-readme-and-blocked-articles.md`
 **ID:** FID-2026-1102-107
 **Severity:** medium
-**Status:** verified
+**Status:** closed
 **Created:** 2026-11-02 20:45
 **Automation level:** 2
 **YAGNI-Compliance:** Verified
@@ -196,5 +196,25 @@ detail pages skip the article scraper.
 
 The gates pass, the repository and article pages were checked against the
 running local database, the receipt carries real output, and `CHANGELOG.md`
-records the behavior. The FID remains open only until its commit and archive
-move.
+records the behavior. The implementation landed in commit `e8760d0`; this record
+is now closed and archived.
+
+### Implementation Evidence
+
+- **Commit SHA:** `e8760d0`.
+- **File:line ranges:** `lib/content/github-readme.ts`, `lib/content/repo-reader.ts`,
+  `lib/content/reader.ts`, `app/signal/[id]/page.tsx`, and
+  `components/content/repo-panel.tsx`.
+- **Gate output:** lint, typecheck, focused tests, full `npm test`, quality, and
+  build all pass as recorded above.
+- **Reproducibility:** `rg "ensureGithubRepo|readmeHtml|ArticleFetchError"` finds
+  the production implementation and callers.
+- **Step statuses:** all four steps implemented.
+
+## Resolution
+
+- **Closed Date:** 2026-11-03
+- **Fix Description:** Repository README repair and precise blocked-article fallback implemented.
+- **Tests Added:** Yes — README, source, and article regressions.
+- **Verification Evidence:** declared gates pass as recorded above.
+- **Archived:** 2026-11-03 — moved to `dev/fids/archive/`.

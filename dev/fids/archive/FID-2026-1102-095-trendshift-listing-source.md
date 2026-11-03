@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1102-095-trendshift-listing-source.md`
 **ID:** FID-2026-1102-095
 **Severity:** medium
-**Status:** verified
+**Status:** closed
 **Created:** 2026-11-02 18:40
 **Automation level:** 2
 **YAGNI-Compliance:** Verified
@@ -142,7 +142,7 @@ tags, GitHub canonicalization, and the zero-row error.
 
 ### Implementation Evidence
 
-- **Commit SHA:** open; not closed until committed.
+- **Commit SHA:** `e8760d0` — Signal content surface and reader batch.
 - **File:line ranges:** `lib/content/trendshift.ts`,
   `lib/content/ingest.ts` (`source.kind === "trendshift"`),
   `lib/content/types.ts`, `lib/storage/schema/content.ts`,
@@ -182,12 +182,12 @@ tags, GitHub canonicalization, and the zero-row error.
 
 ## Resolution
 
-- **Closed Date:** not closed
+- **Closed Date:** 2026-11-03
 - **Fix Description:** Trendshift is a supported repo source with an
   anchor-based parser and a fail-closed empty state.
 - **Tests Added:** Yes — `tests/content-sources.test.mjs`.
 - **Verification Evidence:** lint, typecheck, focused test pass.
-- **Archived:** not archived.
+- **Archived:** 2026-11-03 — moved to `dev/fids/archive/`.
 
 ## Lessons Learned
 

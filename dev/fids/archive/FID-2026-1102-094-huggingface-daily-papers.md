@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1102-094-huggingface-daily-papers.md`
 **ID:** FID-2026-1102-094
 **Severity:** medium
-**Status:** verified
+**Status:** closed
 **Created:** 2026-11-02 18:40
 **Automation level:** 2
 **YAGNI-Compliance:** Verified
@@ -144,7 +144,7 @@ and `npm run lint` cover the wiring.
 
 ### Implementation Evidence
 
-- **Commit SHA:** open; this FID is not closed until committed.
+- **Commit SHA:** `e8760d0` — Signal content surface and reader batch.
 - **File:line ranges:** `lib/content/huggingface.ts`,
   `lib/content/ingest.ts` (`source.kind === "huggingface"`),
   `lib/content/types.ts` (`SOURCE_KINDS`),
@@ -188,12 +188,12 @@ and `npm run lint` cover the wiring.
 
 ## Resolution
 
-- **Closed Date:** not closed
+- **Closed Date:** 2026-11-03
 - **Fix Description:** HuggingFace Daily Papers is a supported source kind with
   a pure parser and an ingestion path.
 - **Tests Added:** Yes — `tests/content-sources.test.mjs`.
 - **Verification Evidence:** lint, typecheck, and the focused test pass.
-- **Archived:** not archived; closure waits on the commit and CHANGELOG entry.
+- **Archived:** 2026-11-03 — moved to `dev/fids/archive/`.
 
 ## Lessons Learned
 

@@ -3,10 +3,10 @@
 **Filename:** `FID-2026-1102-101-signal-rising-and-movers.md`
 **ID:** FID-2026-1102-101
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-02 19:05
 **Automation level:** 2
-**YAGNI-Compliance:** Pending
+**YAGNI-Compliance:** Verified
 
 ---
 
@@ -107,7 +107,20 @@ above +10; a deleted item disappears; the window boundary is half-open.
 
 ### Verification Receipt
 
-Not run. Status is `converged`; no code shipped.
+- closed: 2026-11-03
+- commit: `7a2020d`
+- focused: `node --test tests/content-momentum.test.mjs` exit 0 — 3/3
+  (pure math and ranking, store window/retention, first-snapshot exclusion)
+- test: `npm test` exit 0 — 874 tests, 873 pass, 1 skipped
+- typecheck: `npm run typecheck` exit 0
+- lint: `npm run lint` exit 0, zero warnings
+- quality: `npm run quality` exit 0 — PASS (400-line ceiling, 555 files)
+- build: `npm run build` exit 0 — `/signal/rising` and `/signal/movers`
+  compiled as server-rendered routes
+- call graph: `MomentumPage` is used by both routes and calls `listMomentum` in
+  `lib/content/store/momentum.ts`; `upsertItem` writes snapshots through
+  `lib/content/store/item-writes.ts`; `ingestSource` prunes retention
+- not run: `npm run test:http`, `npm run test:recovery`, browser review
 
 ## Perfection Loop
 
@@ -139,19 +152,54 @@ Not applicable; status is `converged`.
 
 ### Code Verification Evidence
 
-- [ ] Files referenced in Affected Components exist
-- [ ] Implementation matches the Proposed Solution
-- [ ] Typecheck/tests/lint pass with pasted tool output
-- [ ] Production call-graph evidence is present
-- [ ] FID status reflects the implementation state
+- [x] Files referenced in Affected Components exist
+- [x] Implementation matches the Proposed Solution
+- [x] Typecheck/tests/lint pass with pasted tool output (receipt above)
+- [x] Production call-graph evidence is present (routes, page, store, ingest)
+- [x] FID status reflects the implementation state (`closed`)
+
+### Loop 2 — Implementation convergence (2026-11-03)
+
+- **RED:** Re-read `content.items`, the upsert statement, the Signal hub, and
+  the schema. Confirmed one current count per item and no snapshot table, so no
+  delta can be computed.
+- **GREEN:** Add `content.metric_snapshots` keyed by `(item_id, captured_at)`,
+  storing views, likes, YouTube comments, rating and repo stars. `upsertItem`
+  writes a snapshot only when a stored metric differs from the latest
+  snapshot. A prune removes snapshots older than 90 days during the ingestion
+  cycle; a prune failure is logged and does not turn a healthy source into an
+  error. Pure `momentumDelta` and `rankMomentum` helpers own the arithmetic and
+  ordering. The store reads the latest snapshot at or before the window start
+  and the latest snapshot overall, so a one-snapshot item has no baseline and
+  is excluded. `/signal/rising` shows positive deltas and `/signal/movers`
+  shows absolute deltas, each with an explicit metric and a named half-open
+  window. Repo stars are their own metric; no blended score and no gateway
+  traffic enters the ranking.
+- **AUDIT:** The window is half-open (`baseline <= start < latest`), ties fall
+  back to title, zero and negative values are preserved as reported, and the
+  page states that metrics come from the source. `upsertItem` writes no
+  snapshot on an unchanged fetch.
+- **ADVERSARIAL:** A deleted item disappears through the FK cascade and the
+  join; a missing metric is a zero, not an invented count; a fetch interval
+  difference cannot create a blended daily delta because the window is a named
+  duration; an empty ranking is an honest empty state.
+- **CHANGE DELTA:** New implementation section, well under 10% of the record.
+- **Step statuses:** 1–5 `implemented` after verification; no deferred or
+  skipped step.
 
 ## Resolution
 
-- **Closed Date:** not closed
-- **Fix Description:** Planned; no code shipped under this FID.
-- **Tests Added:** No.
-- **Verification Evidence:** None.
-- **Archived:** not archived.
+- **Closed Date:** 2026-11-03
+- **Fix Description:** changed-only metric snapshots with a 90-day prune,
+  half-open window deltas, per-metric rising and absolute movers rankings, and
+  two public routes that name the metric and window.
+- **Tests Added:** Yes — `tests/content-momentum.test.mjs` (3 cases) covering
+  pure math, tie ordering, first-snapshot exclusion, half-open windows and
+  retention.
+- **Verification Evidence:** commit `7a2020d`; focused suite 3/3;
+  `npm test` 874 (873 pass, 1 skipped); typecheck, lint, quality and build all
+  exit 0.
+- **Archived:** 2026-11-03 — moved to `dev/fids/archive/`.
 
 ## Lessons Learned
 

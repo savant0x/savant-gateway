@@ -3,6 +3,50 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — Signal engagement, rankings, search and source tools
+
+- **FID-2026-1102-100 — medium — reactions and one-level replies.** Signed-in
+  customers get one current reaction per item (`useful`/`insightful`) with
+  public aggregates and their own selection marked; toggles are bounded by the
+  existing hourly write ceiling through a durable event log. A comment may have
+  one level of replies; the store rejects a reply to a reply or a parent from
+  another item, and deleting a parent cascades. Signed-out readers see counts
+  and a sign-in prompt. Verified: focused 3/3, full suite 874 (873 pass, 1
+  skipped), typecheck 0, lint 0 warnings, quality PASS (555 files), build 0.
+- **FID-2026-1102-101 — medium — rising and top movers.** Each fetch stores a
+  metric snapshot only when a count changed, with a 90-day prune in the
+  ingestion cycle. `/signal/rising` ranks positive change and `/signal/movers`
+  ranks absolute change over a named 24h/72h/7d window, per metric (views,
+  likes, comments, repo stars). A first snapshot is excluded rather than ranked
+  as zero, and no blended score or gateway traffic enters the ranking. Verified
+  by the same gate run.
+- **FID-2026-1102-102 — low — command palette.** Ctrl/Cmd+K opens a native
+  dialog that searches items, models and topics through a read-only route with
+  a two-character minimum, 120-character cap and fixed row caps; requests are
+  debounced and the previous one aborted. A failed request shows an error, not
+  an empty result. Verified by the same gate run.
+- **FID-2026-1102-104 — low — public source status.** `/signal/status` lists
+  sources with a coarse `ok`/`delayed`/`attention`/`paused` state and last
+  successful fetch, from a dedicated projection that never selects the URL,
+  config or `last_error`. It is `noindex`, returns 404 when the content surface
+  is disabled, and is linked from the hub empty state and the footer.
+- **FID-2026-1102-105 — low — source editing.** The admin create form now
+  accepts an existing source, prefills it and PATCHes that row through the same
+  parser and URL policy. Each row has an Edit action that opens an inline
+  editor; Cancel changes nothing and a successful save refreshes the table.
+  A URL edit changes future fetches while stored items keep their source id,
+  and the form says so.
+
+## 2026-11-03 — FID ledger organization
+
+- **FID closure reconciliation — medium —** completed Signal/content records
+  `094–099`, `103`, `106`, and `107`, plus catalog record `117`, now carry their
+  implementation commits and are archived under `dev/fids/archive/`. Design-only
+  records `100–102` and `104–105` remained active at that date and were closed
+  by the entry above; launch/acceptance records `043`, `062`, and `068` remain
+  active because their operator evidence is not complete. No application
+  behavior changed in the ledger pass.
+
 ## 2026-11-03 — Stale catalog elections repaired at boot
 
 - **FID-2026-1102-118 — high — a catalog imported before the tier-scoped route

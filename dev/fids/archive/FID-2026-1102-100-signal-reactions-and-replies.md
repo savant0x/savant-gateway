@@ -3,10 +3,10 @@
 **Filename:** `FID-2026-1102-100-signal-reactions-and-replies.md`
 **ID:** FID-2026-1102-100
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-02 19:05
 **Automation level:** 2
-**YAGNI-Compliance:** Pending
+**YAGNI-Compliance:** Verified
 
 ---
 
@@ -114,7 +114,21 @@ existing comment rate limit still applies.
 
 ### Verification Receipt
 
-Not run. Status is `converged`; implementation has not started.
+- closed: 2026-11-03
+- commit: `7a2020d`
+- focused: `node --test tests/content-reactions.test.mjs` exit 0 — 2/2;
+  `node --test tests/content-comments.test.mjs` exit 0 — 1/1
+- test: `npm test` exit 0 — 874 tests, 873 pass, 1 skipped
+- typecheck: `npm run typecheck` exit 0
+- lint: `npm run lint` exit 0, zero warnings
+- quality: `npm run quality` exit 0 — PASS (400-line ceiling, 555 files)
+- build: `npm run build` exit 0 — `/signal/[id]`,
+  `/api/content/[id]/reactions` and `/api/content/[id]/comments` compiled
+- call graph: `ReactionBar` is rendered by `app/signal/[id]/page.tsx`;
+  the toggle route is `app/api/content/[id]/reactions/route.ts`; the reply
+  validator and cascade live in `lib/content/store/comments.ts` and
+  `lib/storage/schema/content.ts`
+- not run: `npm run test:http`, `npm run test:recovery`, browser review
 
 ## Perfection Loop
 
@@ -145,19 +159,53 @@ Not applicable; status is `converged`.
 
 ### Code Verification Evidence
 
-- [ ] Files referenced in Affected Components exist
-- [ ] Implementation matches the Proposed Solution
-- [ ] Typecheck/tests/lint pass with pasted tool output
-- [ ] Production call-graph evidence is present
-- [ ] FID status reflects the implementation state
+- [x] Files referenced in Affected Components exist
+- [x] Implementation matches the Proposed Solution
+- [x] Typecheck/tests/lint pass with pasted tool output (receipt above)
+- [x] Production call-graph evidence is present (detail page, routes, stores)
+- [x] FID status reflects the implementation state (`closed`)
+
+### Loop 2 — Implementation convergence (2026-11-03)
+
+- **RED:** Re-read the schema, comment store, route, detail page, and comment
+  components. Confirmed no `content.reactions` table, no `comments.parent_id`,
+  no toggle/reply endpoint, and no reply rendering. The only write limits are
+  the existing per-user hourly comment count and body cap.
+- **GREEN:** Add `content.reactions` with primary key
+  `(user_id, item_id, reaction)` and a two-value check (`useful`, `insightful`).
+  Add `comments.parent_id` with `ON DELETE CASCADE`. Add a bounded
+  `content.reaction_events` write log so reaction toggles reuse the comment
+  hourly ceiling instead of leaving an unbounded write path. Toggle is an
+  insert/delete and a retry cannot duplicate. Replies are validated in the
+  store against the same item and a top-level parent; a reply to a reply is
+  rejected. The detail page renders counts and the signed-in customer's own
+  choice, one level of indented replies, and a reply form only on top-level
+  comments. Signed-out readers see counts and a sign-in prompt.
+- **AUDIT:** Store-level depth validation is the enforcement point, not the
+  route alone. Cascade is schema-level. The reaction summary is computed from
+  the same rows the toggle writes. No notification, reputation, or tree depth
+  is claimed.
+- **ADVERSARIAL:** Toggle churn is bounded per customer per hour by durable
+  events; a client cannot create a third reaction kind; a parent from another
+  item cannot be attached; deleting a parent removes replies; count reads do
+  not include unpublished items.
+- **CHANGE DELTA:** New implementation section, well under 10% of the record.
+- **Step statuses:** 1–5 `implemented` after verification; no deferred or
+  skipped step.
 
 ## Resolution
 
-- **Closed Date:** not closed
-- **Fix Description:** Planned; no code shipped under this FID.
-- **Tests Added:** No.
-- **Verification Evidence:** None.
-- **Archived:** not archived.
+- **Closed Date:** 2026-11-03
+- **Fix Description:** one current reaction per customer per item with
+  `useful`/`insightful` aggregates, a durable hourly toggle ceiling, and one
+  level of replies validated in the store with a schema cascade.
+- **Tests Added:** Yes — `tests/content-reactions.test.mjs` (2 cases) and
+  `tests/content-comments.test.mjs` (1 case) plus the store assertions in
+  `tests/content-store.test.mjs`.
+- **Verification Evidence:** commit `7a2020d`; focused suites 3/3;
+  `npm test` 874 (873 pass, 1 skipped); typecheck, lint, quality and build all
+  exit 0.
+- **Archived:** 2026-11-03 — moved to `dev/fids/archive/`.
 
 ## Lessons Learned
 

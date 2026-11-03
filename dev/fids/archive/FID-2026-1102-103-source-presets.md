@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1102-103-source-presets.md`
 **ID:** FID-2026-1102-103
 **Severity:** medium
-**Status:** verified
+**Status:** closed
 **Created:** 2026-11-02 19:00
 **Automation level:** 2
 **YAGNI-Compliance:** Verified
@@ -144,7 +144,7 @@ helper, so the test covers both paths' core.
 
 ### Implementation Evidence
 
-- **Commit SHA:** open; not closed until committed.
+- **Commit SHA:** `e8760d0` — Signal content surface and reader batch.
 - **File:line ranges:** `lib/content/presets.ts`,
   `app/api/admin/content/sources/seed/route.ts`,
   `components/admin/content-source-presets.tsx`,
@@ -188,13 +188,13 @@ helper, so the test covers both paths' core.
 
 ## Resolution
 
-- **Closed Date:** not closed
+- **Closed Date:** 2026-11-03
 - **Fix Description:** Recoverable sources can be added in one action or one
   CLI command, with exact/inferred provenance in the manifest and no overwrite.
 - **Tests Added:** Yes — double-seed idempotency in
   `tests/content-sources.test.mjs`.
 - **Verification Evidence:** lint, typecheck, focused test pass.
-- **Archived:** not archived.
+- **Archived:** 2026-11-03 — moved to `dev/fids/archive/`.
 
 ## Lessons Learned
 

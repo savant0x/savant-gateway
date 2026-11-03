@@ -1,5 +1,71 @@
 # SCOPE.md — Gateway Project Review
 
+## Current Session — 2026-11-03 (complete open FIDs: 100–105, launch blockers 043/062/068)
+
+Operator request: "complete all open fids, post perfection loop." Automation
+level 3, strict, single agent. Scope interpreted and recorded before
+implementation (Law 2, Level 3 recorded presentation).
+
+The active queue held eight records. Five are design-only feature records whose
+implementation is fully specified and locally testable: FID-100 (reactions and
+threaded replies), FID-101 (rising and top movers), FID-102 (command palette),
+FID-104 (public source status), and FID-105 (source edit form). Three are
+externally gated: FID-043 (master launch register), FID-062 (real hosted
+acceptance and release), and FID-068 (USDC receive lane). Their blockers are
+operator inputs or real-service evidence, not code this session can invent.
+
+- [x] **F1 — FID-100 reactions and one-level replies.** Added
+  `content.reactions`, `comments.parent_id` with cascade, the bounded toggle
+  route, store-level reply depth validation, the reaction bar and the reply UI.
+  Evidence: commit `7a2020d`; reactions 2/2 and comments 1/1; routes and detail
+  page confirmed in the call graph; archived.
+- [x] **F2 — FID-101 rising and top movers.** Added changed-only metric
+  snapshots, the 90-day prune, pure delta/ranking helpers, and `/signal/rising`
+  plus `/signal/movers` naming one metric and window; a first snapshot has no
+  baseline and is excluded. Evidence: commit `7a2020d`; momentum 3/3; both
+  routes appear in the build manifest; archived.
+- [x] **F3 — FID-102 command palette.** Added the bounded read-only search
+  route, pure query bounds, the Ctrl/Cmd+K palette with debounce and abort, and
+  mounted it once in the public header. Evidence: commit `7a2020d`; search 2/2;
+  `/api/content/search` compiled; archived.
+- [x] **F4 — FID-104 public source status.** Added `listPublicSources` (never
+  URL, config or `last_error`), the tested coarse-state mapper, the `noindex`
+  `/signal/status` page behind the content guard, and hub/footer links.
+  Evidence: commit `7a2020d`; status 2/2; route compiled; archived.
+- [x] **F5 — FID-105 source edit form.** Reused the create form with an optional
+  source and PATCH branch, added the Edit action and inline editor, and proved
+  an edit touches only its row while an invalid URL is refused. Evidence:
+  commit `7a2020d`; store suite 3/3; archived.
+- [x] **F6 — Launch and USDC records (043, 062, 068).** Re-audited and appended a
+  dated 2026-11-03 audit to each. They stay active: 062 has none of its eight
+  external items discharged, 043 remains the open master, and 068 is still
+  step 4 `partial` on four absent operator inputs. No acceptance is invented
+  and no release is approved.
+- [x] **F7 — Ledger closure.** Commit `7a2020d` carries the five features and
+  splits `lib/content/store/items.ts` and `lib/content/ingest.ts` into read,
+  write, momentum, search and transport modules so the quality ceiling passes.
+  The five records are `closed` and archived with gate receipts; `npm test`
+  reports 874 tests (873 pass, 1 skipped), and lint, typecheck, quality and
+  build all exit 0. The CHANGELOG records the release; 043/062/068 stay open.
+
+## Current Session — 2026-11-03 (FID ledger organization)
+
+Operator request: inspect the active FID ledger, move completed implementation
+records to the archive, and preserve genuinely active design and acceptance work.
+No application behavior changes are included.
+
+- [x] **F1 — Audit active FIDs.** Read all 18 active records and verified the
+  implementation files and Git history. Completed implementation records are
+  094–099, 103, 106, 107, and 117; design/acceptance records remain active.
+- [x] **F2 — Close and archive completed records.** Updated those eleven records
+  with closed status, commit evidence, implementation evidence where required,
+  and archive dates; moved them to `dev/fids/archive/`.
+- [x] **F3 — Preserve active obligations.** FIDs 100–102, 104–105, 043, 062,
+  and 068 remain active with their current converged or blocked/partial status.
+- [x] **F4 — Reconcile durable references.** Existing CHANGELOG entries already
+  describe the completed work; this session adds the closure record below and
+  preserves the active-path references for launch and design records.
+
 ## Current Session — 2026-11-02 (Signal visual parity: 115)
 
 Operator request: bring the Signal discussion presentation closer to the

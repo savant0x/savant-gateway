@@ -3,10 +3,10 @@
 **Filename:** `FID-2026-1102-102-command-palette.md`
 **ID:** FID-2026-1102-102
 **Severity:** low
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-02 19:08
 **Automation level:** 2
-**YAGNI-Compliance:** Pending
+**YAGNI-Compliance:** Verified
 
 ---
 
@@ -107,7 +107,20 @@ check after implementation.
 
 ### Verification Receipt
 
-Not run. Status is `converged`; no code shipped.
+- closed: 2026-11-03
+- commit: `7a2020d`
+- focused: `node --test tests/content-search.test.mjs` exit 0 — 2/2
+  (pure query bounds; capped items, models and topics with unpublished rows
+  excluded)
+- test: `npm test` exit 0 — 874 tests, 873 pass, 1 skipped
+- typecheck: `npm run typecheck` exit 0
+- lint: `npm run lint` exit 0, zero warnings
+- quality: `npm run quality` exit 0 — PASS (400-line ceiling, 555 files)
+- build: `npm run build` exit 0 — `/api/content/search` compiled
+- call graph: `CommandPalette` is mounted once by
+  `components/landing/site-header.tsx`; it fetches `/api/content/search`,
+  which calls `listItems`, `listTags` and `searchModels`
+- not run: `npm run test:http`, `npm run test:recovery`, manual keyboard check
 
 ## Perfection Loop
 
@@ -137,19 +150,49 @@ Not applicable; status is `converged`.
 
 ### Code Verification Evidence
 
-- [ ] Files referenced in Affected Components exist
-- [ ] Implementation matches the Proposed Solution
-- [ ] Typecheck/tests/lint pass with pasted tool output
-- [ ] Production call-graph evidence is present
-- [ ] FID status reflects the implementation state
+- [x] Files referenced in Affected Components exist
+- [x] Implementation matches the Proposed Solution
+- [x] Typecheck/tests/lint pass with pasted tool output (receipt above)
+- [x] Production call-graph evidence is present (header, route, store lookups)
+- [x] FID status reflects the implementation state (`closed`)
+
+### Loop 2 — Implementation convergence (2026-11-03)
+
+- **RED:** Re-read the public header, the hub search form, the item query, and
+  the catalog model rows. Confirmed no search route and no client palette; the
+  only search is the server-rendered hub form over titles and excerpts.
+- **GREEN:** Add pure `parseSearchQuery` limits (two-character minimum, 120
+  maximum, trimmed), a read-only `/api/content/search` route with `no-store`,
+  five items, three models and three topics. Extend `listTags` with an optional
+  search term and add a bounded `searchModels`. Mount one client palette in the
+  public header when the content surface is enabled; it uses a native dialog,
+  Ctrl/Cmd+K, Escape, arrow navigation, Enter, a 150 ms debounce and an abort
+  for the previous request. Empty input shows nothing; a failed request shows
+  an error state rather than “no results”.
+- **AUDIT:** The route is read-only, validates `q`, selects no admin-only
+  field, and returns typed rows. The palette is mounted once, returns focus on
+  close, and is not mounted on admin pages. No client-side corpus or cache is
+  introduced.
+- **ADVERSARIAL:** The endpoint is a scraping surface, so the query and every
+  result group are capped and the payload carries only navigation fields. A
+  one-character query is rejected before a database read. A slow earlier
+  request cannot overwrite a newer result because it is aborted.
+- **CHANGE DELTA:** New implementation section, well under 10% of the record.
+- **Step statuses:** 1–5 `implemented` after verification; no deferred or
+  skipped step.
 
 ## Resolution
 
-- **Closed Date:** not closed
-- **Fix Description:** Planned; no code shipped under this FID.
-- **Tests Added:** No.
-- **Verification Evidence:** None.
-- **Archived:** not archived.
+- **Closed Date:** 2026-11-03
+- **Fix Description:** a read-only bounded search route with a two-character
+  minimum and 120-character cap, and an accessible Ctrl/Cmd+K palette with
+  debounce, abort, arrow navigation and an honest error state.
+- **Tests Added:** Yes — `tests/content-search.test.mjs` (2 cases) covering
+  parser bounds and capped, published-only results.
+- **Verification Evidence:** commit `7a2020d`; focused suite 2/2;
+  `npm test` 874 (873 pass, 1 skipped); typecheck, lint, quality and build all
+  exit 0.
+- **Archived:** 2026-11-03 — moved to `dev/fids/archive/`.
 
 ## Lessons Learned
 

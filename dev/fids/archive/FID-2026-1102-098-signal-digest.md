@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1102-098-signal-digest.md`
 **ID:** FID-2026-1102-098
 **Severity:** medium
-**Status:** verified
+**Status:** closed
 **Created:** 2026-11-02 18:55
 **Automation level:** 2
 **YAGNI-Compliance:** Verified
@@ -139,7 +139,7 @@ dates, and the bounded recent-day list. The pages use the same helpers.
 
 ### Implementation Evidence
 
-- **Commit SHA:** open; not closed until committed.
+- **Commit SHA:** `e8760d0` — Signal content surface and reader batch.
 - **File:line ranges:** `lib/content/digest.ts`, `lib/content/store/items.ts`
   (`query.since`, `query.until`), `app/signal/digest/*`,
   `app/signal/page.tsx` (digest link).
@@ -182,12 +182,12 @@ dates, and the bounded recent-day list. The pages use the same helpers.
 
 ## Resolution
 
-- **Closed Date:** not closed
+- **Closed Date:** 2026-11-03
 - **Fix Description:** Signal has a seven-day digest index and per-UTC-day
   pages, backed by a bounded date query.
 - **Tests Added:** Yes — `tests/content-digest.test.mjs`.
 - **Verification Evidence:** lint, typecheck, digest test pass.
-- **Archived:** not archived.
+- **Archived:** 2026-11-03 — moved to `dev/fids/archive/`.
 
 ## Lessons Learned
 

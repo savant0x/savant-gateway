@@ -3,10 +3,10 @@
 **Filename:** `FID-2026-1102-105-source-edit-form.md`
 **ID:** FID-2026-1102-105
 **Severity:** low
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-02 19:20
 **Automation level:** 2
-**YAGNI-Compliance:** Pending
+**YAGNI-Compliance:** Verified
 
 ---
 
@@ -106,7 +106,21 @@ implementation.
 
 ### Verification Receipt
 
-Not run. Status is `converged`; no code shipped.
+- closed: 2026-11-03
+- commit: `7a2020d`
+- focused: `node --test tests/content-store.test.mjs` exit 0 — 3/3,
+  including the case that an edit touches only its row and that an invalid
+  edit URL is refused
+- test: `npm test` exit 0 — 874 tests, 873 pass, 1 skipped
+- typecheck: `npm run typecheck` exit 0
+- lint: `npm run lint` exit 0, zero warnings
+- quality: `npm run quality` exit 0 — PASS (400-line ceiling, 555 files)
+- build: `npm run build` exit 0 — the admin content page compiled
+- call graph: `ContentSourceTable` is rendered by
+  `app/admin/(panel)/content/page.tsx`, passes `onEdit` into
+  `ContentSourceActions`, and the reused `ContentSourceForm` PATCHes
+  `/api/admin/content/sources/[id]`
+- not run: `npm run test:http`, `npm run test:recovery`, manual keyboard check
 
 ## Perfection Loop
 
@@ -139,19 +153,48 @@ Not applicable; status is `converged`.
 
 ### Code Verification Evidence
 
-- [ ] Files referenced in Affected Components exist
-- [ ] Implementation matches the Proposed Solution
-- [ ] Typecheck/tests/lint pass with pasted tool output
-- [ ] Production call-graph evidence is present
-- [ ] FID status reflects the implementation state
+- [x] Files referenced in Affected Components exist
+- [x] Implementation matches the Proposed Solution
+- [x] Typecheck/tests/lint pass with pasted tool output (receipt above)
+- [x] Production call-graph evidence is present (page, table, actions, form)
+- [x] FID status reflects the implementation state (`closed`)
+
+### Loop 2 — Implementation convergence (2026-11-03)
+
+- **RED:** Re-read the PATCH route, the create form, the row actions, and the
+  admin content page. Confirmed the API already merges a partial body through
+  `parseSourceBody` and `updateSource`, while the form always POSTs and the row
+  has no Edit control.
+- **GREEN:** Give `ContentSourceForm` an optional `ContentSource` prop. When
+  present it initializes every field from the row, sends PATCH to that row's
+  id, keeps the same parser and URL policy, and calls an `onDone` callback.
+  Move the admin source table into one client component so an Edit action can
+  open a full-width inline editor row without a modal primitive. Save refreshes
+  the table; Cancel collapses the editor and changes nothing. The form states
+  that a URL edit changes future fetches and that enabling clears the failure
+  streak.
+- **AUDIT:** There is one form and one validation path. A PATCH carries the
+  whole edited row, so a blank optional field clears it as the operator sees
+  it. The source id and stored items are unchanged.
+- **ADVERSARIAL:** A URL edit keeps old items attached by design; the copy says
+  so. A rejected URL surfaces the API error and leaves the row untouched. An
+  edit cannot touch another source because the id is the row's own.
+- **CHANGE DELTA:** New implementation section, well under 10% of the record.
+- **Step statuses:** 1–5 `implemented` after verification; no deferred or
+  skipped step.
 
 ## Resolution
 
-- **Closed Date:** not closed
-- **Fix Description:** Planned; no code shipped under this FID.
-- **Tests Added:** No.
-- **Verification Evidence:** None.
-- **Archived:** not archived.
+- **Closed Date:** 2026-11-03
+- **Fix Description:** the create form now accepts an optional source and
+  PATCHes that row through the existing parser, with an inline editor and Edit
+  action in the admin source table.
+- **Tests Added:** Yes — the update-isolation and invalid-URL cases in
+  `tests/content-store.test.mjs` plus the existing parser coverage.
+- **Verification Evidence:** commit `7a2020d`; focused suite 3/3;
+  `npm test` 874 (873 pass, 1 skipped); typecheck, lint, quality and build all
+  exit 0.
+- **Archived:** 2026-11-03 — moved to `dev/fids/archive/`.
 
 ## Lessons Learned
 

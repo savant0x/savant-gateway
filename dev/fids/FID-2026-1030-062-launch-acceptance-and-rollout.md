@@ -180,6 +180,17 @@ PostgreSQL load rerun (item 5) is also blocked on tooling, not only on the host:
 `scripts/load/faults.mjs` imports `better-sqlite3`, so a run through it would not
 produce a PostgreSQL receipt. Launch remains no-go and no item is discharged.
 
+**Queue audit 2026-11-03.** Content work landed at `7a2020d` (FIDs 100–102, 104
+and 105) and was verified with the focused suites, `npm test` 874 (873 pass, 1
+skipped), typecheck, lint, quality and build. It is public Signal behavior; no
+acceptance item above is touched. This audit did not rebuild the candidate
+artifact, contact the upstream, create an invoice, open a hosted database or
+deliver an alert, so nothing is re-observed: items 1–8 remain exactly as
+recorded, including the $0 upstream wallet, the unset production origin and
+database, and the absent public GO. The candidate SHA for any future acceptance
+bundle is therefore later than `2a28552` and must be pinned fresh when the
+external inputs exist.
+
 ## Lessons Learned
 
 Release approval and observed operational acceptance are evidence, not documentation statuses.

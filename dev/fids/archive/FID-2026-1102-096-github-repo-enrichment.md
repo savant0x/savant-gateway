@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1102-096-github-repo-enrichment.md`
 **ID:** FID-2026-1102-096
 **Severity:** medium
-**Status:** verified
+**Status:** closed
 **Created:** 2026-11-02 18:40
 **Automation level:** 2
 **YAGNI-Compliance:** Verified
@@ -144,7 +144,7 @@ the stored facts; no network call exists in a render path.
 
 ### Implementation Evidence
 
-- **Commit SHA:** open; not closed until committed.
+- **Commit SHA:** `e8760d0` — Signal content surface and reader batch.
 - **File:line ranges:** `lib/content/github.ts`,
   `lib/content/ingest.ts` (`enrichGithub`),
   `lib/content/store/items.ts` (`githubJson`, `parseGithubJson`),
@@ -185,12 +185,12 @@ the stored facts; no network call exists in a render path.
 
 ## Resolution
 
-- **Closed Date:** not closed
+- **Closed Date:** 2026-11-03
 - **Fix Description:** Repo items can carry GitHub facts, stored at fetch time
   and rendered without a live API call.
 - **Tests Added:** Yes — `tests/content-sources.test.mjs`.
 - **Verification Evidence:** lint, typecheck, focused test pass.
-- **Archived:** not archived.
+- **Archived:** 2026-11-03 — moved to `dev/fids/archive/`.
 
 ## Lessons Learned
 

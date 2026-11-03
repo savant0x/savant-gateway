@@ -275,6 +275,14 @@ than `converged`. This FID remains active because the invoice schema, RPC reader
 credit transaction, UI, chain/token/xpub/RPC inputs, and screening ruling are
 not complete; it is not a working receive lane and is not closed.
 
+**Queue audit 2026-11-03.** Commit `7a2020d` contains Signal content work only;
+it touches no `lib/crypto` file, schema, route, watcher or UI. The four operator
+inputs (chain and USDC contract, hardware-wallet xpub, RPC endpoint, screening
+ruling) are still unset, so steps 2, 3 and 5–7 remain `blocked`, step 4 remains
+`partial`, and step 1 remains the only implemented step. The focused crypto
+suites still pass inside the 874-test run cited above. No money path was added
+and the lane remains unoffered.
+
 ## Lessons Learned
 
 Writing the spike first turned a design assertion ("we can derive addresses from

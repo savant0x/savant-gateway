@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1102-106-signal-reader-content-parity.md`
 **ID:** FID-2026-1102-106
 **Severity:** medium
-**Status:** verified
+**Status:** closed
 **Created:** 2026-11-02 21:40
 **Automation level:** 2
 **YAGNI-Compliance:** Verified
@@ -232,4 +232,24 @@ The gates pass, the live pages were checked against the rebuilt local database,
 the receipt above carries real output, and `CHANGELOG.md` records the reader
 parity fix. The two recovered YouTube handles were added to the seedable preset
 list and their keyless resolution was measured against a disposable database.
-The FID remains open only until its commit and archive move.
+The implementation landed in commit `e8760d0`; this record is now closed and archived.
+
+### Implementation Evidence
+
+- **Commit SHA:** `e8760d0`.
+- **File:line ranges:** `lib/content/article.ts`, `lib/content/reader.ts`,
+  `lib/content/github.ts`, `app/signal/[id]/page.tsx`, and
+  `components/content/repo-panel.tsx`.
+- **Gate output:** lint, typecheck, focused tests, full `npm test`, quality, and
+  build all pass as recorded above.
+- **Reproducibility:** `rg "ensureArticleBody|fetchGithubRepo|RepoPanel"` finds
+  the production implementation and callers.
+- **Step statuses:** all seven steps implemented.
+
+## Resolution
+
+- **Closed Date:** 2026-11-03
+- **Fix Description:** Signal reader and repository enrichment parity implemented.
+- **Tests Added:** Yes — article, feed, ingestion, and source regressions.
+- **Verification Evidence:** declared gates pass as recorded above.
+- **Archived:** 2026-11-03 — moved to `dev/fids/archive/`.

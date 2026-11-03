@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1102-117-plural-access-catalog-row.md`
 **ID:** FID-2026-1102-117
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-03 00:20
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -145,17 +145,29 @@ Purchase paths reuse existing routes only: `/dashboard` (free tier, console),
 2. What does sorting use for a paired row? The metered rows for price and
    comparison, the free weight for weight, and the union for capabilities.
 3. Does a subscription variant pair with a paid one? Yes: both are access
-   paths of the same model, so one row offers "Buy credit" and "See plans".
+ paths of the same model, so one row offers "Buy credit" and "See plans".
+
+## Implementation Evidence
+
+- **Commit SHA:** `ed97ae5`.
+- **File:line ranges:** `lib/catalog-pairs.ts`,
+  `components/catalog/model-catalog-table.tsx`,
+  `components/catalog/catalog-row.tsx`, and `app/models/page.tsx`.
+- **Gate output:** focused test 8/8, full `npm test` 859/860, typecheck, lint,
+  quality, and build all exit 0 as recorded above.
+- **Reproducibility:** `rg "pairCatalogModels|catalogAccessPaths|pairedCatalogCounts"`
+  finds the production projection and callers.
+- **Step statuses:** all four steps implemented.
 
 ## Resolution
 
-- **Closed Date:** not closed
+- **Closed Date:** 2026-11-03
 - **Fix Description:** paired catalog rows with both purchase paths
 - **Tests Added:** Yes — `tests/catalog-pairs.test.mjs`
 - **Verification Evidence:** `node --test tests/catalog-pairs.test.mjs` 8/8;
   `npm test` 860 (859 pass, 1 skipped); typecheck, lint, quality and build all
   exit 0
-- **Archived:** not archived
+- **Archived:** 2026-11-03 — moved to `dev/fids/archive/`.
 
 ## Lessons Learned
 

@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1102-099-signal-share.md`
 **ID:** FID-2026-1102-099
 **Severity:** low
-**Status:** verified
+**Status:** closed
 **Created:** 2026-11-02 18:55
 **Automation level:** 2
 **YAGNI-Compliance:** Verified
@@ -120,7 +120,7 @@ browser API branches are small and typed; no new storage or server path exists.
 
 ### Implementation Evidence
 
-- **Commit SHA:** open; not closed until committed.
+- **Commit SHA:** `e8760d0` — Signal content surface and reader batch.
 - **File:line ranges:** `components/content/share-button.tsx`,
   `app/signal/[id]/page.tsx` (action row).
 - **Gate output:** lint and typecheck exit 0.
@@ -157,12 +157,12 @@ browser API branches are small and typed; no new storage or server path exists.
 
 ## Resolution
 
-- **Closed Date:** not closed
+- **Closed Date:** 2026-11-03
 - **Fix Description:** Signal detail pages have a native/clipboard share action.
 - **Tests Added:** No; the behavior is browser-API presentation and has no
   testable server branch. The typing gates cover the component.
 - **Verification Evidence:** lint and typecheck pass.
-- **Archived:** not archived.
+- **Archived:** 2026-11-03 — moved to `dev/fids/archive/`.
 
 ## Lessons Learned
 

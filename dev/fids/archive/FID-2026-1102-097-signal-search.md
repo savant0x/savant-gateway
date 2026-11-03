@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1102-097-signal-search.md`
 **ID:** FID-2026-1102-097
 **Severity:** medium
-**Status:** verified
+**Status:** closed
 **Created:** 2026-11-02 18:55
 **Automation level:** 2
 **YAGNI-Compliance:** Verified
@@ -131,7 +131,7 @@ summary word and zero for an absent word. The page uses the same query path.
 
 ### Implementation Evidence
 
-- **Commit SHA:** open; not closed until committed.
+- **Commit SHA:** `e8760d0` — Signal content surface and reader batch.
 - **File:line ranges:** `app/signal/page.tsx` (`Search`, `queryHref`, form,
   `listItems` call), `tests/content-sources.test.mjs`.
 - **Gate output:** focused test pass.
@@ -168,12 +168,12 @@ summary word and zero for an absent word. The page uses the same query path.
 
 ## Resolution
 
-- **Closed Date:** not closed
+- **Closed Date:** 2026-11-03
 - **Fix Description:** `/signal` has a visible search field backed by the
   existing title/excerpt query, and the query survives filter navigation.
 - **Tests Added:** Yes — search assertion in `tests/content-sources.test.mjs`.
 - **Verification Evidence:** lint, typecheck, focused test pass.
-- **Archived:** not archived.
+- **Archived:** 2026-11-03 — moved to `dev/fids/archive/`.
 
 ## Lessons Learned
 

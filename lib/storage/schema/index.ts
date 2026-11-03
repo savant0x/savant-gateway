@@ -25,7 +25,6 @@ export async function applySchema(db: PostgresDatabase) {
   await billingSchema(db);
   await identitySchema(db);
   await contentSchema(db);
-  await seedDevelopmentUser(db);
 }
 
 /**
@@ -36,12 +35,22 @@ export async function applySchema(db: PostgresDatabase) {
  * callback: that callback runs while initialization is still in flight, and
  * awaiting `ready()` from inside it would deadlock.
  */
-export async function migrateDatabase(db: PostgresDatabase) {
+export async function migrateDatabase(
+  db: PostgresDatabase,
+  options: { seedDevelopmentUser?: boolean } = {},
+) {
   await db.ready();
 
   await db.transaction(async () => {
     await applySchema(db);
   })();
+
+  // The seed belongs to the embedded engine, not to "not production". A dev
+  // server pointed at a networked database is still a real database, and
+  // writing `dev@local` into it would put a development account in operator
+  // data. The caller that owns the storage mode decides; direct callers keep
+  // the historical default for tests and local PGlite.
+  if (options.seedDevelopmentUser !== false) await seedDevelopmentUser(db);
 }
 
 /**

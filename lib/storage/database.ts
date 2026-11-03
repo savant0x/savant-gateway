@@ -132,7 +132,9 @@ export async function createStorageDatabase(
 
   const database = createPostgresDatabase({ pool });
 
-  if (!options.poolIsInjected) await migrateDatabase(database);
+  if (!options.poolIsInjected) {
+    await migrateDatabase(database, { seedDevelopmentUser: mode === "local" });
+  }
 
   return database;
 }

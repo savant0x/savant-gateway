@@ -111,6 +111,25 @@ test("migrating an already-migrated database changes nothing", async () => {
   assert.equal(Number(before.total), 2, "the seeded account plus the fixture");
 });
 
+test("a networked database never receives the local development account", async () => {
+  // Injected pool plus no automatic migration: the caller owns the migration,
+  // which is the shape the runtime uses when it knows its storage mode.
+  const { pool } = await createPgliteDatabase();
+  const db = await createStorageDatabase({
+    env: {},
+    pool,
+    poolIsInjected: true,
+  });
+
+  await migrateDatabase(db, { seedDevelopmentUser: false });
+
+  const row = await db
+    .prepare("SELECT COUNT(*) AS total FROM users WHERE id = 'user_dev'")
+    .get();
+
+  assert.equal(Number(row.total), 0);
+});
+
 test("a reservation round trip runs through the runtime handle", async () => {
   const { db } = await fixture();
   await seedUser(db, "a", 1_000);

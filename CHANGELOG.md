@@ -3,6 +3,12 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — FID closure: trial fixture verified in CI
+
+- **FID-2026-1103-146 — closed and archived.** GitHub Actions run `41718858061`
+  (`ci`) passed every gate on `b1eff9e`, including the HTTP step against the
+  PostgreSQL service. The record is in `dev/fids/archive/`.
+
 ## 2026-11-03 — Trial fixture requires real PostgreSQL
 
 - **FID-2026-1103-146 — high — the trial suite could still fall back to
@@ -17,7 +23,7 @@ distinguish verified behavior from unverified claims.
   from one `finally` block. Verified locally: trial `all checks PASS` with
   either variable, main suite `750 checks PASS` on PGlite, and the
   no-endpoint/no-Docker run exited 1 with the named real-PostgreSQL message.
-  CI receipt is recorded after the push.
+  CI run `41718858061` passed every gate on `b1eff9e`.
 
 ## 2026-11-03 — FID closure: push script verified
 

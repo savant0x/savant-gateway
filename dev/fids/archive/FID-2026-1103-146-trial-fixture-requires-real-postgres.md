@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-146-trial-fixture-requires-real-postgres.md`
 **ID:** FID-2026-1103-146
 **Severity:** high
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-03
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — one fixture flag, no application behavior.
@@ -79,8 +79,10 @@ semantics again. The trial fixture must never make that substitution.
   `competing calls are refused without another trial PASS`. The main suite
   without an endpoint ended `750 checks PASS`. With neither variable and Docker
   unavailable, the trial suite exited 1 with the named real-PostgreSQL message.
-- **CI receipt:** pending the push that carries this commit.
-- **Archived:** no; closes after the CI run is green.
+- **CI receipt:** GitHub Actions run `41718858061` (`ci`) passed every gate on
+  `b1eff9e`; the HTTP step used the PostgreSQL service and the trial suite
+  passed its concurrent check.
+- **Archived:** yes — moved to `dev/fids/archive/` after the green workflow.
 
 ## Resolution
 
@@ -88,4 +90,4 @@ semantics again. The trial fixture must never make that substitution.
 - **Fix Description:** the trial fixture now always obtains a real PostgreSQL
   endpoint, failing closed instead of silently using the single-connection
   PGlite fixture.
-- **Archived:** no.
+- **Archived:** yes — `dev/fids/archive/FID-2026-1103-146-trial-fixture-requires-real-postgres.md`.

@@ -102,6 +102,11 @@ test("unknown and stale costs are blocked from recommendation", () => {
   assert.equal(stale.eligible, false);
   assert.match(stale.explanation, /freshness window/i);
   assert.equal(report.summary.blockedRows, 2);
+  assert.equal(
+    report.summary.currentScenarioProfitMicros,
+    0,
+    "stale cost must not contribute to modeled profit",
+  );
 });
 
 test("a route takeover is visible and does not invent a second provider", () => {

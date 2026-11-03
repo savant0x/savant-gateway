@@ -175,6 +175,7 @@ export function buildPricingReport(
       row.access === "paid" &&
       row.inCatalog &&
       row.costSource !== "unknown" &&
+      row.classification !== "stale" &&
       Number.isFinite(row.current.scenarioCostMicros),
   );
   const currentScenarioProfitMicros = modeled.reduce(

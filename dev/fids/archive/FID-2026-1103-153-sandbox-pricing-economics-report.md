@@ -83,7 +83,8 @@ change a price.
 
 ## Implementation Evidence
 
-- **Commit SHA:** `7e24f0e`.
+- **Commit SHA:** `7e24f0e`; the follow-up stale-total guard is in the commit
+  that contains this record.
 - **Files:** `lib/pricing-report.ts`, `lib/pricing-report-types.ts`,
   `lib/pricing-report-classify.ts`, `scripts/sandbox-pricing-report.mjs`,
   `tests/pricing-report.test.mjs`, `package.json` (`report:pricing`).
@@ -97,6 +98,9 @@ change a price.
   safe, 0 review-required, 0 blocked. Modeled paid scenario profit was $3.33 at
   current prices and $5.71 at the 30% target recommendation. No price, decision
   row, provider row or catalog row was written.
+- **Stale-total guard:** a stale-cost row is blocked from recommendation and is
+  excluded from the modeled-profit totals, so its old cost cannot produce a
+  false profit. The focused test asserts a stale/unknown pair contributes `0`.
 - **Step 6 implemented:** `tests/pricing-report.test.mjs` covers free,
   subscription, stale, unknown, route takeover, manual price, zero cost,
   negative margin, price ceiling, out-of-catalog and deterministic sort/queue

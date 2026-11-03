@@ -15,7 +15,9 @@ distinguish verified behavior from unverified claims.
   catalog rows (11 free, 10 subscription, 23 safe, 0 blocked) to redacted JSON
   and Markdown. No price, decision row, provider row or catalog row was written.
   Ten focused tests cover route takeover, manual pricing, zero cost, negative
-  margin, stale/unknown cost and the price ceiling.
+  margin, stale/unknown cost and the price ceiling. Stale-cost rows are excluded
+  from the modeled-profit total as well as from recommendations, so an old cost
+  cannot produce a false profit.
 - **FID-2026-1103-154 — medium — closed: a disposable-database chart receipt
   reconciles synthetic history exactly.** `scripts/sandbox-chart-receipt.mjs`
   records two price approvals through `setModelPricing` and two synthetic credit

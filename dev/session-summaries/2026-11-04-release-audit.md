@@ -55,3 +55,24 @@ receipt is evidence for no-go, not a successful acceptance claim.
 FID-2026-1104-001 and FID-2026-1104-002 are closed and moved to
 `dev/fids/archive/` against `43d8758`; CHANGELOG and the FID register record the
 receipts. The five existing acceptance/coordination FIDs stay active.
+
+## Follow-up — FID slate and NOWPayments ruling (2026-11-04)
+
+After the audit gate, the remaining findings were written as converged design
+records: 003 (free-allocation refusal truth and hermetic supply), 004 (shared
+admission), 005 (capacity and pool faults), 006 (bounded transport and jobs),
+007 (provisioning TLS), 008 (runtime, gates and docs), 009 (browser receipt),
+010 (funnel events) and 011 (policy v1.2). All nine are `converged`; coding
+remains reserved to the operator's worker, so none is implemented or claimed as
+fixed. SCOPE A12 and A22 stay blocked on that handoff.
+
+The operator confirmed both live NOWPayments invoices were creation-only and
+directed that the managed service be assumed to work as wired. FID-2026-1104-012
+is archived as `closed — operator-approved non-pursuit`; SCOPE A23 carries the
+verbatim ruling. No sandbox, paid-invoice, IPN or replay receipt exists, and no
+launch acceptance is claimed.
+
+Focused lane suite passed 31/31 on 2026-11-04. Attribution guards PASS and
+`git diff --check` exits 0. The report now folds in the load-failure correction
+(three fixture-drift refusals, five capacity failures) and the observed
+20,000,000-token daily grant with 15 RPM.

@@ -21,6 +21,30 @@ working set; each FID owns its own status, evidence and resolution.
 | [068](FID-2026-1030-068-usdc-receive-lane.md) | Direct-to-wallet USDC receive lane | fixed | Operator inputs still gate the receive lane; re-read the record before acting. |
 | [127](FID-2026-1103-127-real-launch-acceptance-receipt.md) | Real launch acceptance receipt | fixed | Operator records the six observations and a go pinned to the release SHA, then runs `npm run receipt:launch`. |
 | [137](FID-2026-1103-137-product-hardening-and-install-order-master.md) | Product hardening and install-order master | converged | Closes only after 126 and 127 have their required evidence. |
+| [2026-1104-003](FID-2026-1104-003-free-allocation-refusal-truth.md) | Free-allocation refusal truth and hermetic supply | converged | Worker implements the limit-aware refusal and the effective-policy read-back, then reruns the isolated load. |
+| [2026-1104-004](FID-2026-1104-004-shared-admission-across-instances.md) | Shared admission across application instances | converged | Operator rules shared authority or single instance; worker adds the two-instance proof. |
+| [2026-1104-005](FID-2026-1104-005-capacity-envelope-and-pool-faults.md) | Accepted capacity envelope and database pool faults | converged | Worker bounds pool acquisition, discards failed-rollback clients, then remeasures. |
+| [2026-1104-006](FID-2026-1104-006-bounded-transport-and-jobs.md) | Bounded transport and durable scheduled work | converged | Worker streams with a byte cap, validates redirects and adds durable job claims. |
+| [2026-1104-007](FID-2026-1104-007-provisioning-tls-verification.md) | Verified TLS for provisioning helpers | converged | Worker restores certificate verification and adds the refusal regression. |
+| [2026-1104-008](FID-2026-1104-008-runtime-gates-and-current-docs.md) | One runtime, one gate contract and current documentation | converged | Operator picks Node 22 or 24; worker unifies the gate list and adds the repository check. |
+| [2026-1104-009](FID-2026-1104-009-browser-journey-receipt.md) | Fresh browser journey receipt | converged | Worker adds the Playwright runner and records six journeys in both themes. |
+| [2026-1104-010](FID-2026-1104-010-discovery-to-inference-events.md) | Discovery-to-inference business events | converged | Worker adds five bounded event kinds and the operator aggregate. |
+| [2026-1104-011](FID-2026-1104-011-policy-v1-2-publication.md) | Policy v1.2 for the current service surface | converged | Operator approves the recipient inventory; worker drafts v1.2 and the acceptance bump. |
+
+Finding 3 of the 2026-11-04 release audit has no new record: real payment,
+funded inference, hosted restore, delivered alert and the release decision stay
+with [127](FID-2026-1103-127-real-launch-acceptance-receipt.md),
+[043](FID-2026-1030-043-launch-master.md) and
+[062](FID-2026-1030-062-launch-acceptance-and-rollout.md).
+
+### Closed in the 2026-11-04 NOWPayments ruling
+
+[2026-1104-012](archive/FID-2026-1104-012-nowpayments-sandbox-acceptance.md)
+is `closed — operator-approved non-pursuit`, archived without commit (no code
+change). The operator confirmed both live invoices were creation-only and ruled
+that the managed service is assumed to work as wired. No sandbox, paid-invoice,
+IPN or replay receipt exists; the record states the assumption rather than
+claiming verification.
 
 ### Closed in the 2026-11-04 release audit
 

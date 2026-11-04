@@ -108,13 +108,21 @@ rps**; the $15 / 30 RPM Boost (0.5 rps) is the fallback. The purchase is not yet
 made and is separate from the $150 wallet funding. The 20 rps load target would
 require 1,200 RPM, so it remains a gateway-capability target only.
 
-Open items, each requiring a dated receipt before approval:
+Open items, each requiring a dated receipt before approval (item 1 is now
+operator-accepted as an assumption, not a receipt):
 
 1. Paid real NOWPayments invoice, provider-delivered signed IPN and replay
    refusal. One live $1.00 invoice was created on 2026-10-31 at `057f6c2`
    (id `5803921519`) but was never paid, no IPN was delivered and no replay was
    refused; that creation receipt predates this candidate and does not discharge
-   the item. Stripe cards remain gated off and are not a launch journey.
+   the item. The live account also shows invoice `6080485510` ($10.00, no order
+   id, 2026-10-31 11:55) whose origin is not recorded; it likewise does not
+   discharge the item. **Operator ruling 2026-11-04:** both invoices were
+   creation-only, the vendor sandbox track is dropped, and the operator directed
+   that the managed service be assumed to work as wired. This item is accepted
+   as an assumption, not verified; no paid invoice, provider-delivered IPN or
+   replay refusal exists. Stripe cards remain gated off and are not a launch
+   journey.
 2. Funded paid inference against a real upstream, with account/ledger/provider
    cost reconciled exactly. **Still blocked 2026-11-02:** the configured
    upstream reports `balance_usd: 0` on the free 15 RPM plan; see the

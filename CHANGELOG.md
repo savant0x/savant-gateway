@@ -22,6 +22,12 @@ distinguish verified behavior from unverified claims.
   all ten verify gates PASS: 980/980 tests, 2/2 PostgreSQL proofs and 803 HTTP
   checks plus trial PASS. Isolated load failed 8/123 checks (4.54 rps, steady
   p95 2,152.52ms and free/mixed refusals); ledger/held differences were zero.
+- **FID-2026-1104-012 — high —** the NOWPayments sandbox acceptance procedure
+  was closed without execution by operator ruling: the vendor is a managed
+  service outside our control, both live invoices were creation-only, and the
+  lane is assumed to work as wired. No sandbox, paid-invoice, IPN or replay
+  receipt exists; the archived record labels the end-to-end behavior unverified
+  rather than passed.
 
 ## 2026-11-03 — Ranked price changes, provider readiness and disposable server database
 

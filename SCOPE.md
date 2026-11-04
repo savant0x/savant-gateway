@@ -17,6 +17,63 @@ The strict single-agent type rule remains unchanged; no unknown-type exception.
   Coding is reserved to the operator's separate worker. A7 public-launch
   obligations are distinct from the current sandbox development milestone.
 
+## Session — 2026-11-04 (release audit FID slate)
+
+Operator request: write the remaining FID slate for the fourteen release-audit
+findings, batched by shared cause. Coding remains reserved to the operator's
+worker; every record is design-only and `converged`.
+
+- [x] **A13 — Shared admission (finding 1).** FID-2026-1104-004; critical;
+  shared PostgreSQL authority with an expiring lease, or an enforced
+  single-instance topology; two-instance proof required.
+- [x] **A14 — Capacity and pool faults (findings 2, 6).** FID-2026-1104-005;
+  bounded pool acquisition, error-flagged release, remeasured envelope.
+- [x] **A15 — Bounded transport and jobs (findings 5, 7, 8).** FID-2026-1104-006;
+  byte cap, redirect validation, total deadline, durable claims, bound refresh.
+- [x] **A16 — Provisioning TLS (finding 9).** FID-2026-1104-007; verification
+  restored, loopback-only exception, least-privilege disposable role.
+- [x] **A17 — Runtime, gates and docs (findings 10, 11, 14).**
+  FID-2026-1104-008; one runtime, one gate contract, executable repository check.
+- [x] **A18 — Browser receipt (finding 12).** FID-2026-1104-009; six journeys,
+  both themes, keyboard and mobile, failure-only screenshots.
+- [x] **A19 — Funnel events (finding 13).** FID-2026-1104-010; five bounded
+  event kinds on the existing activity authority.
+- [x] **A20 — Policy v1.2 (finding 4).** FID-2026-1104-011; new immutable
+  version, operator publication approval, recorded reacceptance.
+- [x] **A21 — Finding 3 ownership.** No new record: real payment, funded
+  inference, hosted restore, delivered alert and the release decision remain
+  with FID-2026-1103-127, FID-2026-1030-043 and FID-2026-1030-062.
+- [ ] **A22 — Implementation (blocked: reserved to the operator's worker).**
+  All eight records are converged; none is implemented, verified or closed.
+- [x] **A23 — NOWPayments sandbox procedure.** FID-2026-1104-012.
+  dropped::operator-approved 2026-11-04 — "These were only created" and "It's a
+  service, so just assume it works as we have it wired." The nine-step route →
+  invoice → signed IPN → credit → replay/refusal → spend procedure was defined
+  but not executed. The operator confirmed both live invoices were creation-only
+  and ruled the vendor a managed service outside our control. The lane is
+  accepted as wired, not verified end-to-end; no sandbox receipt, paid invoice,
+  delivered IPN or replay refusal exists. FID-2026-1104-012 is archived as
+  `closed — operator-approved non-pursuit`; it does not discharge
+  FID-2026-1103-127.
+
+## Session — 2026-11-04 (free-allocation refusal confirmation)
+
+Operator request: confirm the upstream free-plan supply with a read-only
+metadata call, then record the refusal and harness defect as a converged FID
+with its Perfection Loop. Coding remains reserved to the operator's worker.
+
+- [x] **A10 — Supply confirmation.** Read-only `GET /balance` and
+  `GET /subscription` at 2026-11-04T16:24:23Z against the configured provider:
+  `rpm=15`, `rpm_plan=free`, `mode=free`, `token_limit=20,000,000`,
+  `tokens_used=0`, `tokens_remaining=20,000,000`, `allowed=true`. No inference,
+  spend, credential or secret value was printed.
+- [x] **A11 — FID-2026-1104-003.** The non-trial free refusal names a disabled
+  trial, and the load harness never asserted the effective free-pool policy.
+  Design converged with RED criteria, acceptance and gates; no code was written.
+- [ ] **A12 — Implementation (blocked: reserved to the operator's worker).**
+  Limit-aware refusal builder, effective-policy read-back, refusal reasons in
+  the load JSON and observed supply fields; then rerun the isolated load.
+
 ## Current Session — 2026-11-04 (release readiness audit)
 
 Operator request: conduct a repository-wide quality, ECHO compliance and release

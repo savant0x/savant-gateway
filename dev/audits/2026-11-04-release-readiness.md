@@ -23,6 +23,85 @@ payment, release flag or recipient was changed by this audit. No deployment
 command or release approval was issued; normal repository delivery can trigger
 the existing Git-connected build.
 
+## Correction — 2026-11-04T16:24Z (load refusals and free-tier supply)
+
+The isolated load receipt recorded eight failures, three of which this report
+left open as possible product behavior. A follow-up read-only check of the
+serving upstream and the free-pool code reclassifies them as fixture accounting.
+This section corrects the reading; the dated observations above are unchanged.
+
+**Live supply, read-only, values only:**
+
+| Call | Result |
+| --- | --- |
+| `GET /balance` | 200; `rpm: 15`, `rpm_plan: "free"`, `balance_usd: 0` |
+| `GET /subscription` | 200; `mode: "free"`, `token_limit: 20,000,000`, `tokens_used: 0`, `tokens_remaining: 20,000,000`, `allowed: true` |
+
+The account holds the full 20,000,000 weighted-token daily grant and a 15 RPM
+request ceiling. They are separate axes: the grant limits weighted tokens per
+UTC day, the RPM limits requests per minute. `0/20M used` also confirms the load
+fixture never reached upstream, as designed.
+
+**The 900 was local.** The six mixed-billing 429s and the post-reset free 429
+carried `Daily trial-credit allocation reached (900 weighted tokens)` while
+`TRIAL_ENABLED=false`. That text comes from `lib/free-pool.ts:171`, the single
+formatter on the shared path; `lib/allocation.ts:174` holds the mode-correct
+wording but is not used there. The 900 is the account's allocated share:
+`floor(0.9 × 1,000) = 900` across one active account, passed in by
+`lib/storage/store/free-pool.ts` as `dailyWeightedTokens`. The load runner pins
+`FREE_POOL_ALLOCATION_ENABLED`, `FREE_ACCOUNT_DAILY_CAP`, `FREE_SHARED_RPM` and
+`PAID_KEY_RPM` (`scripts/load/envelope.mjs:153`) but neither the daily pool nor
+the allocation share, so `next start` loaded a development-scale `.env.local`
+value that the HTTP suite pins away (`scripts/http-suite.mjs:88`). A stored
+settings row can override the environment as well, so a pin alone would not
+have been proof.
+
+Reclassification of the eight failures:
+
+| Failure | Class | Cause |
+| --- | --- | --- |
+| mixed status counts `{200:18,429:6}` | fixture | 1,000-token local pool, not upstream |
+| six free rather than twelve free usage rows | fixture | the same refusal |
+| 429 on the post-reset free probe | fixture | the same exhausted free user |
+| steady 4.54 rps against 20 | capacity | database path |
+| steady p95 2,152.52ms against 1,500 | capacity | database path |
+| three ramp latency checks | capacity | database path |
+
+Five failures remain real. The same run's 300 committed settlements, zero
+ledger/held differences and zero unresolved settlements still support the
+accounting-integrity reading; they were never capacity evidence.
+
+**Supply math, not a target change.** 20M weighted tokens per day averages 231
+weighted tokens per second; 15 RPM is 21,600 requests per day. The break-even is
+20M ÷ 21,600 ≈ 926 weighted tokens per call. At weight 3 that is about 309 raw
+tokens, so for typical calls the daily grant binds just before the request
+ceiling, giving a sustained free-tier ceiling near 0.19–0.25 rps. The 20 rps
+steady target therefore measures gateway overhead under burst, not sustained
+customer capacity, and it cannot hold for a full day on this plan: 20 rps at
+about 1,200 weighted tokens per call would need ~2.07B weighted tokens per day,
+roughly 104× the grant. The target is not lowered here.
+
+Contract: [FID-2026-1104-003](../fids/FID-2026-1104-003-free-allocation-refusal-truth.md)
+(converged, design only). It requires one limit-aware refusal builder, both
+environment families pinned, the resolved policy read back after boot, refusal
+reasons recorded in the load JSON, and the observed supply declared in the
+envelope.
+
+## Correction — 2026-11-04 (NOWPayments acceptance ruling)
+
+The operator confirmed that both live NOWPayments invoices were creation-only
+("These were only created") and ruled the vendor sandbox track dropped: the
+vendor is a managed service outside the repository's control, and the lane is to
+be assumed working as wired ("It's a service, so just assume it works as we have
+it wired."). FID-2026-1104-012 is archived as `closed — operator-approved
+non-pursuit`.
+
+This changes a disposition, not the evidence. No sandbox run, paid invoice,
+provider-delivered IPN or replay refusal exists. Finding 3's payment component is
+accepted as an assumption by the operator; the remaining components (paid
+inference, hosted restore, delivered alert, drain/rollback, GO receipt) and the
+NO-GO decision are unchanged.
+
 ## Coverage and evidence standard
 
 Baseline: `d0c7861f6eff95deaaee5557fe6735a220f0673a`, Windows, Node v24.21.0,
@@ -102,7 +181,7 @@ they do not imply that unimplemented recommendations are delivered fixes.
 | Rank | Priority / evidence | Finding | Best next action / acceptance |
 | ---: | --- | --- | --- |
 | 1 | P0, source-confirmed + local probe | Provider/account limits are process-local on a product recorded as deployed to Vercel | Converge a shared admission design or explicitly select/enforce one persistent process. Race two independent application instances and prove one aggregate RPM/concurrency ceiling across free, credit and subscription calls |
-| 2 | P0, recorded + executed load failure | Real PostgreSQL capacity has no accepted envelope; the new load run also reports mixed/free-path refusals | Profile DB round trips, locks and refusal reasons, measure an isolated run on the intended topology, and have the operator accept the measured cohort/cap. Never substitute the historical SQLite throughput |
+| 2 | P0, recorded + executed load failure | Real PostgreSQL capacity has no accepted envelope; the new load run also reports mixed/free-path refusals (three of the eight are fixture drift; see the correction above) | Profile DB round trips, locks and refusal reasons, measure an isolated run on the intended topology, and have the operator accept the measured cohort/cap. Never substitute the historical SQLite throughput |
 | 3 | P0, executed refusal | Real payment, paid JSON/SSE, hosted restore, received alert, drain/rollback and GO receipt are absent | Complete FIDs 062/127 against the pinned release artifact. `npm run receipt:launch` currently exits 1 and lists all six missing observations |
 | 4 | P1, source-confirmed | Published policy remains v1.1 while the product added NOWPayments, account email, Signal saves/comments/reactions and Speed Insights | Prepare a new immutable policy version reflecting actual recipients, engagement data and retention; obtain operator publication approval and record reacceptance. Do not edit old effective text |
 | 5 | P1, source-confirmed | Feed transport reads an entire body before checking its size and follows redirects by default | Stream-count actual response bytes, cancel at the limit, and validate every redirect/resolved destination. Test dishonest Content-Length, chunked oversize, private redirects and encoded IPs |
@@ -154,7 +233,9 @@ failures, mixed status counts `{200:18,429:6}`, six free rather than twelve free
 usage rows, and a 429 on the post-reset free probe. Peak RSS was 173.6 MB.
 There were 300 committed settlements, zero admitted/unresolved settlements,
 five deliberate quarantines and zero ledger/held differences. Refusal causes
-must be investigated before attributing every failure to database latency.
+must be investigated before attributing every failure to database latency; the
+correction above resolves three of the eight as fixture accounting and leaves
+five as capacity.
 
 The pool caps each process at ten clients but sets no `connectionTimeoutMillis`
 (`lib/storage/pg-pool.ts:37`). Server-side statement timeouts start after a

@@ -3,12 +3,12 @@
  *
  * The upstream free plan permits 15 requests per minute for the whole account,
  * shared by every customer. Nothing stopped one free key from spending all of
- * it, so free traffic now draws from a single bucket that sits below that
- * ceiling, while paid traffic shares an account bucket across its keys.
+ * it, so free traffic draws from one shared bucket, while paid traffic shares a
+ * bucket per customer across their keys.
  *
- * State is per process. The gateway runs as one Node process against local
- * SQLite, which is the deployment this protects; a multi-instance deployment
- * would need the same buckets in shared storage.
+ * This module keeps bucket identity and the pure decision. The bucket state is
+ * persisted in PostgreSQL by `lib/storage/admission.ts`, so the ceiling is one
+ * aggregate number across application instances (FID-2026-1104-004).
  */
 import {
   retryAfterSeconds,
@@ -25,13 +25,23 @@ export type RateLimitConfig = {
   paidKeyRpm: number;
 };
 
-export type RateLimitDecision = {
-  allowed: boolean;
+export type CompletionBucket = {
   scope: "free" | "paid";
-  /** Sustained requests per minute for this scope. */
+  key: string;
   limit: number;
+};
+
+export type CompletionRateDecision = {
+  allowed: boolean;
   remaining: number;
   retryAfterSeconds: number;
+};
+
+export type RateLimitDecision = CompletionRateDecision & {
+  scope: "free" | "paid";
+  limit: number;
+  /** The shared store could not answer; the caller must fail closed. */
+  unavailable?: true;
 };
 
 function positiveInteger(value: unknown, fallback: number) {
@@ -63,62 +73,55 @@ export function readRateLimitConfig(
   };
 }
 
-const buckets = new Map<string, BucketState>();
-const MAX_BUCKETS = 10_000;
-
-function cleanBuckets(now: number) {
-  for (const [name, state] of Array.from(buckets)) {
-    if (now - state.updatedAt >= 60_000) buckets.delete(name);
-  }
-}
-
-function bucketConfig(rpm: number): BucketConfig {
-  // A full minute of allowance may arrive at once; it refills over the minute.
-  return { capacity: rpm, refillPerMinute: rpm };
-}
-
-export function checkCompletionRate(input: {
+/**
+ * Free traffic has one key. Paid traffic is per customer, not per key, so
+ * issuing another key cannot multiply dispatch capacity.
+ */
+export function completionBucket(input: {
   keyId: string;
   userId?: string;
   free: boolean;
-  now?: number;
   config?: RateLimitConfig;
-}): RateLimitDecision {
+}): CompletionBucket {
   const config = input.config ?? readRateLimitConfig();
-  const now = input.now ?? Date.now();
-  const scope = input.free ? "free" : "paid";
-  const rpm = input.free ? config.freeSharedRpm : config.paidKeyRpm;
-  const name = input.free
-    ? "completion:free"
-    : `completion:paid:${input.userId ?? input.keyId}`;
 
-  if (!buckets.has(name) && buckets.size >= MAX_BUCKETS) {
-    cleanBuckets(now);
-
-    if (buckets.size >= MAX_BUCKETS) {
-      return {
-        allowed: false,
-        scope,
-        limit: rpm,
-        remaining: 0,
-        retryAfterSeconds: 60,
+  return input.free
+    ? { scope: "free", key: "free", limit: config.freeSharedRpm }
+    : {
+        scope: "paid",
+        key: `paid:${input.userId ?? input.keyId}`,
+        limit: config.paidKeyRpm,
       };
-    }
-  }
-  const decision = takeToken(buckets.get(name), now, bucketConfig(rpm));
-
-  buckets.set(name, decision.state);
-
-  return {
-    allowed: decision.allowed,
-    scope,
-    limit: rpm,
-    remaining: decision.remaining,
-    retryAfterSeconds: retryAfterSeconds(decision.retryAfterMs),
-  };
 }
 
-/** Test and maintenance hook: forget every bucket. */
-export function resetCompletionRateLimits() {
-  buckets.clear();
+/**
+ * Applies one request to an observed bucket. A full minute of allowance may
+ * arrive at once; it refills over the minute.
+ */
+export function evaluateCompletionRate(input: {
+  state: BucketState | undefined;
+  now: number;
+  limit: number;
+}): { decision: CompletionRateDecision; state: BucketState } {
+  return evaluate(input.state, input.now, {
+    capacity: input.limit,
+    refillPerMinute: input.limit,
+  });
+}
+
+function evaluate(
+  state: BucketState | undefined,
+  now: number,
+  config: BucketConfig,
+) {
+  const decision = takeToken(state, now, config);
+
+  return {
+    decision: {
+      allowed: decision.allowed,
+      remaining: decision.remaining,
+      retryAfterSeconds: retryAfterSeconds(decision.retryAfterMs),
+    },
+    state: decision.state,
+  };
 }

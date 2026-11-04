@@ -28,6 +28,14 @@ distinguish verified behavior from unverified claims.
   lane is assumed to work as wired. No sandbox, paid-invoice, IPN or replay
   receipt exists; the archived record labels the end-to-end behavior unverified
   rather than passed.
+- **FID-2026-1104-004 — critical —** provider and completion admission moved
+  from per-process Maps to atomic PostgreSQL buckets and expiring leases. One
+  transaction locks the bucket, reclaims expired leases and inserts the new
+  lease; the gateway awaits the shared decision before any billing reservation.
+  Typecheck, zero-warning lint, 982/986 unit tests (4 PostgreSQL-only skips),
+  quality and build pass. The mandatory two-connection proof is blocked by the
+  local Docker engine, so the record stays open and no cross-instance ceiling is
+  claimed yet.
 
 ## 2026-11-03 — Ranked price changes, provider readiness and disposable server database
 

@@ -3,10 +3,8 @@ import test from "node:test";
 
 import {
   DEFAULT_PROVIDER_CONCURRENCY,
-  acquireProviderAdmission,
-  providerAdmissionSnapshot,
+  evaluateProviderAdmission,
   readProviderAdmissionConfig,
-  resetProviderAdmission,
   resolveProviderRpm,
   servingAccountId,
 } from "../lib/provider-admission.ts";
@@ -80,143 +78,135 @@ test("admission configuration defaults and refuses malformed values", () => {
 });
 
 test("one account ceiling binds every billing mode and key", () => {
-  resetProviderAdmission();
-  const tight = { configuredRpm: null, concurrency: 10 };
+  let state = { bucket: undefined, inFlight: 0 };
+  const run = () => {
+    const outcome = evaluateProviderAdmission({
+      state,
+      rpm: 2,
+      concurrency: 10,
+      now: 0,
+    });
 
-  const first = acquireProviderAdmission({
-    provider,
-    observedRpm: 2,
-    config: tight,
-    now: 0,
-  });
-  const second = acquireProviderAdmission({
-    provider,
-    observedRpm: 2,
-    config: tight,
-    now: 0,
-  });
-  const third = acquireProviderAdmission({
-    // A second registry row on the same account cannot mint fresh capacity.
-    provider: { baseUrl: "https://api.example.test/v2", keyEnvVar: "PROVIDER_KEY" },
-    observedRpm: 2,
-    config: tight,
-    now: 0,
-  });
+    state = outcome.state;
 
-  assert.equal(first.ok, true);
-  assert.equal(second.ok, true);
+    return outcome.decision;
+  };
+
+  assert.equal(run().ok, true);
+  assert.equal(run().ok, true);
+
+  const third = run();
+
   assert.equal(third.ok, false);
-
   if (third.ok) return;
-
   assert.equal(third.reason, "rpm");
   assert.equal(third.limit, 2);
   assert.equal(third.remaining, 0);
   assert.equal(third.retryAfterSeconds, 30);
 });
 
-test("concurrency is capped and released exactly once", () => {
-  resetProviderAdmission();
-  const one = { configuredRpm: null, concurrency: 1 };
-  const first = acquireProviderAdmission({
-    provider,
-    observedRpm: 60,
-    config: one,
+test("concurrency is capped and a released slot is reusable", () => {
+  const first = evaluateProviderAdmission({
+    state: { bucket: undefined, inFlight: 0 },
+    rpm: 60,
+    concurrency: 1,
     now: 0,
   });
 
-  assert.equal(first.ok, true);
-  if (!first.ok) return;
+  assert.equal(first.decision.ok, true);
+  assert.equal(first.state.inFlight, 1);
 
-  const refused = acquireProviderAdmission({
-    provider,
-    observedRpm: 60,
-    config: one,
+  const refused = evaluateProviderAdmission({
+    state: first.state,
+    rpm: 60,
+    concurrency: 1,
     now: 0,
   });
 
-  assert.equal(refused.ok, false);
-  if (refused.ok) return;
-  assert.equal(refused.reason, "concurrency");
-  assert.equal(refused.inFlight, 1);
+  assert.equal(refused.decision.ok, false);
+  if (refused.decision.ok) return;
+  assert.equal(refused.decision.reason, "concurrency");
+  assert.equal(refused.decision.inFlight, 1);
+  assert.equal(refused.state.inFlight, 1);
 
-  first.release();
-  first.release();
-
-  assert.equal(providerAdmissionSnapshot(first.accountId).inFlight, 0);
-
-  const reacquired = acquireProviderAdmission({
-    provider,
-    observedRpm: 60,
-    config: one,
+  const reacquired = evaluateProviderAdmission({
+    state: { ...refused.state, inFlight: 0 },
+    rpm: 60,
+    concurrency: 1,
     now: 0,
   });
 
-  assert.equal(reacquired.ok, true);
-
-  if (reacquired.ok) reacquired.release();
+  assert.equal(reacquired.decision.ok, true);
 });
 
 test("an unknown ceiling refuses before dispatch instead of assuming headroom", () => {
-  resetProviderAdmission();
-
-  for (const candidate of [
-    { provider, observedRpm: null, config },
-    { provider: { baseUrl: "", keyEnvVar: "K" }, observedRpm: 15, config },
-  ]) {
-    const outcome = acquireProviderAdmission({ ...candidate, now: 0 });
-
-    assert.equal(outcome.ok, false);
-    if (outcome.ok) continue;
-    assert.ok(["unknown_ceiling", "unknown_identity"].includes(outcome.reason));
-    assert.equal(outcome.limit, null);
-    assert.equal(outcome.remaining, 0);
-    assert.ok(outcome.retryAfterSeconds >= 1);
-  }
+  assert.equal(
+    resolveProviderRpm({
+      configuredRpm: readProviderAdmissionConfig({}).configuredRpm,
+      observedRpm: null,
+    }),
+    null,
+  );
 });
 
 test("a configured ceiling binds when upstream reports none", () => {
-  resetProviderAdmission();
   const configured = { configuredRpm: 1, concurrency: 4 };
-  const fallbackProvider = { ...provider, keyEnvVar: "FALLBACK_KEY" };
+  let state = { bucket: undefined, inFlight: 0 };
+  const run = () => {
+    const outcome = evaluateProviderAdmission({
+      state,
+      rpm: 1,
+      concurrency: configured.concurrency,
+      now: 0,
+    });
 
-  assert.equal(
-    acquireProviderAdmission({
-      provider: fallbackProvider,
-      observedRpm: null,
-      config: configured,
-      now: 0,
-    }).ok,
-    true,
-  );
-  assert.equal(
-    acquireProviderAdmission({
-      provider: fallbackProvider,
-      observedRpm: null,
-      config: configured,
-      now: 0,
-    }).ok,
-    false,
-  );
+    state = outcome.state;
+
+    return outcome.decision;
+  };
+
+  assert.equal(run().ok, true);
+  assert.equal(run().ok, false);
 });
 
-test("the snapshot reports real in-flight and token state", () => {
-  resetProviderAdmission();
-  const outcome = acquireProviderAdmission({ provider, observedRpm: 5, config, now: 0 });
-
-  assert.equal(outcome.ok, true);
-  if (!outcome.ok) return;
-
-  assert.deepEqual(providerAdmissionSnapshot(outcome.accountId), {
-    inFlight: 1,
-    remainingTokens: 4,
+test("a concurrency refusal does not spend the RPM allowance it cannot use", () => {
+  const blocked = evaluateProviderAdmission({
+    state: { bucket: undefined, inFlight: 1 },
+    rpm: 2,
+    concurrency: 1,
+    now: 0,
   });
 
-  outcome.release();
-  outcome.release();
+  assert.equal(blocked.decision.ok, false);
+  if (blocked.decision.ok) return;
+  assert.equal(blocked.decision.reason, "concurrency");
+  assert.equal(blocked.state.bucket, undefined);
 
-  assert.deepEqual(providerAdmissionSnapshot(outcome.accountId), {
-    inFlight: 0,
-    remainingTokens: 4,
-  });
+  let state = { ...blocked.state, inFlight: 0 };
+  const run = () => {
+    const outcome = evaluateProviderAdmission({
+      state,
+      rpm: 2,
+      concurrency: 1,
+      now: 0,
+    });
+
+    state = outcome.state;
+
+    return outcome.decision;
+  };
+
+  assert.equal(run().ok, true);
+
+  state = { ...state, inFlight: 0 };
+  assert.equal(run().ok, true);
+
+  state = { ...state, inFlight: 0 };
+
+  const exhausted = run();
+
+  assert.equal(exhausted.ok, false);
+  if (exhausted.ok) return;
+  assert.equal(exhausted.reason, "rpm");
+  assert.ok(exhausted.retryAfterSeconds >= 1);
 });

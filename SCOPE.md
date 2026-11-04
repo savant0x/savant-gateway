@@ -69,8 +69,9 @@ worker; every record is design-only and `converged`.
 - [x] **A21 — Finding 3 ownership.** No new record: real payment, funded
   inference, hosted restore, delivered alert and the release decision remain
   with FID-2026-1103-127, FID-2026-1030-043 and FID-2026-1030-062.
-- [ ] **A22 — Implementation (blocked: reserved to the operator's worker).**
-  All eight records are converged; none is implemented, verified or closed.
+- [ ] **A22 — Implementation.** FID-004 is implemented in A24 and remains open
+  on its two-instance proof; FIDs 005–011 remain converged and reserved to the
+  operator's worker.
 - [x] **A23 — NOWPayments sandbox procedure.** FID-2026-1104-012.
   dropped::operator-approved 2026-11-04 — "These were only created" and "It's a
   service, so just assume it works as we have it wired." The nine-step route →
@@ -81,6 +82,23 @@ worker; every record is design-only and `converged`.
   delivered IPN or replay refusal exists. FID-2026-1104-012 is archived as
   `closed — operator-approved non-pursuit`; it does not discharge
   FID-2026-1103-127.
+
+## Session — 2026-11-04 (FID-004 implementation)
+
+Operator request: "yes star the fid", starting FID-2026-1104-004 after the
+worker reservation was lifted for this record. Topology ruling: shared
+PostgreSQL authority; keep Vercel and the existing database.
+
+- [x] **A24 — Shared admission implementation.** Provider and completion state
+  moved from module Maps to `admission_buckets` and expiring `admission_leases`
+  in PostgreSQL (`lib/storage/admission.ts`, schema
+  `lib/storage/schema/admission.ts`). The gateway awaits the shared decision
+  before any billing reservation; the stream releases its lease asynchronously.
+  Typecheck, zero-warning lint, 982/986 tests, quality and build pass.
+- [ ] **A25 — Two-instance PostgreSQL proof (blocked: environment).** The
+  mandatory `npm run test:postgres` cannot run: the Docker engine returns 500
+  and `TEST_DATABASE_URL` is unset. The four PostgreSQL-only tests are skipped,
+  not passed. FID-004 stays open; no aggregate ceiling is claimed.
 
 ## Session — 2026-11-04 (free-allocation refusal confirmation)
 

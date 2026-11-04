@@ -1,5 +1,6 @@
 import type { PostgresDatabase } from "../pg-adapter.ts";
 
+import { admissionSchema } from "./admission.ts";
 import { billingSchema } from "./billing.ts";
 import { catalogSchema } from "./catalog.ts";
 import { contentSchema } from "./content.ts";
@@ -30,6 +31,7 @@ export async function applySchema(
   await billingSchema(db);
   await identitySchema(db);
   await contentSchema(db);
+  await admissionSchema(db);
 
   // The seed belongs to the embedded engine, not to "not production". A dev
   // server pointed at a networked database is still a real database, and

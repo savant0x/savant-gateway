@@ -6,18 +6,16 @@
  * serving account actually allows, and an included subscription could pass its
  * allowance while the provider refuses the call.
  *
- * This gate sits above those buckets. Every dispatch passes the same RPM and
- * concurrency ceiling for the serving upstream account, and the slot is
- * acquired before any credit, free-pool or subscription hold exists.
+ * This module keeps the pure half: identity, ceiling selection and the decision
+ * over one observed state. The state itself lives in PostgreSQL
+ * (`lib/storage/admission.ts`) so two application instances share one ceiling
+ * (FID-2026-1104-004). Keeping the arithmetic pure is what lets the unit suite
+ * test the ordering without a database.
  *
  * The identity is derived from public configuration only: the provider origin
  * and the name of the credential variable. Two registry rows that point at the
  * same origin with the same credential variable therefore share one ceiling;
  * no secret value is read, hashed or persisted.
- *
- * State is per process, matching the single-process SQLite deployment this
- * protects. A multi-instance deployment must move the same state into shared
- * storage or the ceiling multiplies by the process count (057/060).
  */
 import {
   retryAfterSeconds,
@@ -35,32 +33,48 @@ export type ProviderAdmissionConfig = {
   concurrency: number;
 };
 
-export type ProviderAdmissionOutcome =
-  | {
-      ok: true;
-      accountId: string;
-      rpm: number;
-      concurrency: number;
-      /** Idempotent: the second and later calls are no-ops. */
-      release: () => void;
-    }
-  | {
-      ok: false;
-      accountId: string | null;
-      reason: "unknown_identity" | "unknown_ceiling" | "rpm" | "concurrency";
-      /** Null when no ceiling could be trusted. */
-      limit: number | null;
-      remaining: number;
-      inFlight: number;
-      retryAfterSeconds: number;
-    };
-
-type AccountState = {
+export type ProviderAdmissionState = {
   bucket: BucketState | undefined;
   inFlight: number;
 };
 
-const accounts = new Map<string, AccountState>();
+export type ProviderAdmissionRefusalReason =
+  | "unknown_identity"
+  | "unknown_ceiling"
+  | "rpm"
+  | "concurrency"
+  | "store_unavailable";
+
+export type ProviderAdmissionRefusal = {
+  ok: false;
+  accountId: string | null;
+  reason: ProviderAdmissionRefusalReason;
+  /** Null when no ceiling could be trusted. */
+  limit: number | null;
+  remaining: number;
+  inFlight: number;
+  retryAfterSeconds: number;
+};
+
+export type ProviderAdmissionGrant = {
+  ok: true;
+  accountId: string;
+  rpm: number;
+  concurrency: number;
+  inFlight: number;
+  remaining: number;
+};
+
+export type ProviderAdmissionDecision =
+  | { ok: true; remaining: number }
+  | {
+      ok: false;
+      reason: "rpm" | "concurrency";
+      limit: number;
+      remaining: 0;
+      inFlight: number;
+      retryAfterSeconds: number;
+    };
 
 function optionalPositiveInteger(value: unknown) {
   const parsed = Number(value);
@@ -136,119 +150,58 @@ function bucketConfig(rpm: number): BucketConfig {
   return { capacity: rpm, refillPerMinute: rpm };
 }
 
-function stateFor(accountId: string) {
-  const existing = accounts.get(accountId);
-
-  if (existing) return existing;
-
-  const created: AccountState = { bucket: undefined, inFlight: 0 };
-
-  accounts.set(accountId, created);
-
-  return created;
-}
-
 /**
- * Takes one serving-account slot. The concurrency cap is checked before the
- * RPM token so a refused call never spends allowance it cannot use.
+ * Applies one request to an observed account state. The concurrency cap is
+ * checked before the RPM token so a refused call never spends allowance it
+ * cannot use. A concurrency refusal leaves the bucket untouched.
  */
-export function acquireProviderAdmission(input: {
-  provider: { baseUrl: string; keyEnvVar: string };
-  observedRpm: number | null;
-  config?: ProviderAdmissionConfig;
-  now?: number;
-}): ProviderAdmissionOutcome {
-  const config = input.config ?? readProviderAdmissionConfig();
-  const now = input.now ?? Date.now();
-  const accountId = servingAccountId(input.provider);
-  const rpm = resolveProviderRpm({
-    configuredRpm: config.configuredRpm,
-    observedRpm: input.observedRpm,
-  });
-  const concurrency = Math.max(1, Math.floor(config.concurrency));
-  const state = accountId ? stateFor(accountId) : null;
+export function evaluateProviderAdmission(input: {
+  state: ProviderAdmissionState;
+  rpm: number;
+  concurrency: number;
+  now: number;
+}): {
+  decision: ProviderAdmissionDecision;
+  state: ProviderAdmissionState;
+} {
+  const concurrency = Math.max(1, Math.floor(input.concurrency));
 
-  if (!accountId || !state) {
+  if (input.state.inFlight >= concurrency) {
     return {
-      ok: false,
-      accountId: null,
-      reason: "unknown_identity",
-      limit: null,
-      remaining: 0,
-      inFlight: 0,
-      retryAfterSeconds: 5,
+      decision: {
+        ok: false,
+        reason: "concurrency",
+        limit: concurrency,
+        remaining: 0,
+        inFlight: input.state.inFlight,
+        retryAfterSeconds: 1,
+      },
+      state: input.state,
     };
   }
 
-  if (rpm === null) {
-    return {
-      ok: false,
-      accountId,
-      reason: "unknown_ceiling",
-      limit: null,
-      remaining: 0,
-      inFlight: state.inFlight,
-      retryAfterSeconds: 5,
-    };
-  }
-
-  if (state.inFlight >= concurrency) {
-    return {
-      ok: false,
-      accountId,
-      reason: "concurrency",
-      limit: concurrency,
-      remaining: 0,
-      inFlight: state.inFlight,
-      retryAfterSeconds: 1,
-    };
-  }
-
-  const decision = takeToken(state.bucket, now, bucketConfig(rpm));
+  const decision = takeToken(
+    input.state.bucket,
+    input.now,
+    bucketConfig(input.rpm),
+  );
 
   if (!decision.allowed) {
     return {
-      ok: false,
-      accountId,
-      reason: "rpm",
-      limit: rpm,
-      remaining: 0,
-      inFlight: state.inFlight,
-      retryAfterSeconds: retryAfterSeconds(decision.retryAfterMs),
+      decision: {
+        ok: false,
+        reason: "rpm",
+        limit: input.rpm,
+        remaining: 0,
+        inFlight: input.state.inFlight,
+        retryAfterSeconds: retryAfterSeconds(decision.retryAfterMs),
+      },
+      state: { bucket: decision.state, inFlight: input.state.inFlight },
     };
   }
 
-  state.bucket = decision.state;
-  state.inFlight += 1;
-
-  let released = false;
-
   return {
-    ok: true,
-    accountId,
-    rpm,
-    concurrency,
-    release: () => {
-      if (released) return;
-
-      released = true;
-      state.inFlight = Math.max(0, state.inFlight - 1);
-    },
+    decision: { ok: true, remaining: decision.remaining },
+    state: { bucket: decision.state, inFlight: input.state.inFlight + 1 },
   };
-}
-
-/** Observable state for one serving account; never invents capacity. */
-export function providerAdmissionSnapshot(accountId: string) {
-  const state = accounts.get(accountId);
-
-  return {
-    inFlight: state?.inFlight ?? 0,
-    remainingTokens:
-      state?.bucket === undefined ? null : Math.floor(state.bucket.tokens),
-  };
-}
-
-/** Test and maintenance hook: forget every serving-account slot. */
-export function resetProviderAdmission() {
-  accounts.clear();
 }

@@ -76,3 +76,16 @@ Focused lane suite passed 31/31 on 2026-11-04. Attribution guards PASS and
 `git diff --check` exits 0. The report now folds in the load-failure correction
 (three fixture-drift refusals, five capacity failures) and the observed
 20,000,000-token daily grant with 15 RPM.
+
+## FID-2026-1104-004 implementation (2026-11-04)
+
+The operator started the shared-admission FID after lifting the worker
+reservation for this record. Provider and completion state now use PostgreSQL
+buckets with expiring leases; the production gateway awaits the shared decision
+and the stream releases its lease after settlement.
+
+Verification: typecheck, zero-warning lint, quality and build exit 0; 982/986
+tests pass, 0 fail, 4 PostgreSQL-only tests skipped. The mandatory
+`npm run test:postgres` could not run because the Docker engine returned 500 and
+`TEST_DATABASE_URL` is unset. FID-004 remains open; the two-instance proof and
+the added-latency measurement are the remaining gates.

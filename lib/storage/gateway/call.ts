@@ -20,9 +20,10 @@ import {
   readProviderUsage,
   resolveUsage,
 } from "../../usage.ts";
-import { checkCompletionRate } from "../../gateway-rate-limit.ts";
+import { takeSharedCompletionRate } from "../admission.ts";
 import {
   beginProviderAdmission,
+  completionRateError,
   providerAdmissionError,
 } from "../../gateway-provider-admission.ts";
 import { markupSellMicros, subscriptionWeightedTokens } from "../../plans.ts";
@@ -166,30 +167,17 @@ export async function handleChatCompletions(request: Request) {
     return jsonError(400, `max_tokens cannot exceed ${MAX_OUTPUT_BUDGET}.`);
   }
 
-  const rate = checkCompletionRate({
+  const rate = await takeSharedCompletionRate(db, {
     keyId: auth.keyId,
     userId: auth.userId,
     free,
   });
 
-  if (!rate.allowed) {
-    return jsonError(
-      429,
-      rate.scope === "free"
-        ? `Free traffic is limited to ${rate.limit} requests per minute across all keys. Retry in ${rate.retryAfterSeconds}s, or add credit for a dedicated limit.`
-        : `This account is limited to ${rate.limit} requests per minute across its keys. Retry in ${rate.retryAfterSeconds}s.`,
-      "rate_limit_error",
-      {
-        "Retry-After": String(rate.retryAfterSeconds),
-        "X-RateLimit-Limit": String(rate.limit),
-        "X-RateLimit-Remaining": String(rate.remaining),
-        "X-RateLimit-Scope": rate.scope,
-      },
-    );
-  }
+  if (!rate.allowed) return completionRateError(rate);
 
   const status = await ensureProviderObservation(model.upstreamSlug);
-  const admission = beginProviderAdmission({
+  const admission = await beginProviderAdmission({
+    db,
     provider,
     observedRpm: status.rpm,
   });
@@ -394,6 +382,6 @@ export async function handleChatCompletions(request: Request) {
 
     return Response.json(data, { headers: CORS_HEADERS });
   } finally {
-    slot?.release?.();
+    await slot?.release?.();
   }
 }

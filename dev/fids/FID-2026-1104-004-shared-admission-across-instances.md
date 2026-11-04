@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-004-shared-admission-across-instances.md`
 **ID:** FID-2026-1104-004
 **Severity:** critical
-**Status:** converged
+**Status:** converged — implementation landed; closure blocked on the mandatory two-connection proof
 **Created:** 2026-11-04 17:10
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -132,7 +132,14 @@ promised at convergence.
 
 ### Verification Receipt
 
-- verified: not yet — design converged, implementation pending.
+- verified: partial — 2026-11-04
+- typecheck: exit 0
+- lint: exit 0 (zero warnings)
+- test: 982 pass, 0 fail, 4 skipped (all PostgreSQL-only)
+- quality: PASS (599 files, 400-line ceiling)
+- build: exit 0
+- test:postgres: BLOCKED — Docker engine returned 500; `TEST_DATABASE_URL` unset
+- two-instance proof: not run; no aggregate-ceiling claim is made
 
 ## Perfection Loop
 
@@ -185,26 +192,55 @@ promised at convergence.
 
 ## Implementation Evidence
 
-Pending. Coding is reserved to the operator's separate worker.
+Implementation landed 2026-11-04. The mandatory two-instance PostgreSQL proof is
+still blocked, so this record is not closed and no cross-instance safety is
+claimed.
 
-- [ ] **Commit SHA:** not yet.
-- [ ] **File:line ranges:** not yet.
-- [ ] **Gate output:** not yet.
-- [ ] **Reproducibility:** RED probe defined above.
-- [ ] **Step statuses:** all design-only; none `implemented`.
+- [ ] **Commit SHA:** recorded in the follow-up receipt commit.
+- [x] **File:line ranges:**
+  - `lib/storage/schema/admission.ts:14` — `admission_buckets` and
+    `admission_leases`, additive and idempotent.
+  - `lib/storage/admission.ts:71` — `acquireSharedProviderAdmission`; one
+    transaction locks the bucket row, reclaims expired leases, inserts the new
+    lease and returns the decision.
+  - `lib/storage/admission.ts:222` — `takeSharedCompletionRate`; the same row
+    lock for one completion token.
+  - `lib/provider-admission.ts:158` — pure `evaluateProviderAdmission`, the
+    single decision implementation used by the store and the unit suite.
+  - `lib/gateway-provider-admission.ts:48` — completion and provider refusal
+    shapes; `:77` — async lease acquisition.
+  - `lib/storage/gateway/call.ts:170` — awaited shared rate limit; `:179` —
+    shared provider admission before any billing reservation.
+  - `lib/storage/gateway/stream.ts:50,144` — async lease release transferred
+    to the stream and awaited after settlement.
+- [x] **Gate output:** 2026-11-04 — `npm run typecheck` exit 0; `npm run lint`
+  exit 0, zero warnings; `npm test` 986 tests, 982 pass, 0 fail, 4 skipped
+  (all four PostgreSQL-only proofs); `npm run quality` PASS (599 files);
+  `npm run build` exit 0.
+- [x] **Reproducibility:** `grep -n acquireSharedProviderAdmission
+  lib/storage/admission.ts` and `grep -n takeSharedCompletionRate
+  lib/storage/gateway/call.ts` find the production call path.
+- [ ] **Step statuses:** 1 operator topology ruling recorded (SCOPE A24);
+  2 implemented; 3 implemented — admin login windows remain a separate
+  in-memory login surface, not a gateway bucket; 4 `blocked` — Docker engine
+  unavailable and `TEST_DATABASE_URL` unset; 5 `blocked` — cost measurement
+  needs the same real database. No step is claimed passed without its proof.
 
 ## Code Verification Evidence
 
 - [x] Referenced files exist and the call path was inspected.
 - [x] The probe result is recorded, not inferred.
-- [ ] Typecheck/tests/lint — pending implementation.
-- [x] Status reflects reality: `converged`.
+- [x] Typecheck/tests/lint — typecheck 0, lint 0, 982 pass, 0 fail.
+- [ ] Two-connection PostgreSQL proof — blocked by the environment.
+- [x] Status reflects reality: implementation landed; not closed.
 
 ## Resolution
 
 - **Convergence Date:** 2026-11-04 17:10
-- **Next action:** operator topology ruling, then the worker implements the
-  shared lease and the two-instance proof.
+- **Implementation Date:** 2026-11-04
+- **Next action:** run `npm run test:postgres` with a disposable PostgreSQL
+  endpoint, attach the two-instance result, then record step 5's added latency
+  and close the record. Do not claim a shared ceiling until that receipt exists.
 - **Archived:** no.
 
 ## Lessons Learned

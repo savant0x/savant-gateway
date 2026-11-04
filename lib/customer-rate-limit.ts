@@ -2,7 +2,12 @@ import { isIP } from "node:net";
 
 import { createRateLimiter } from "./admin-rate-limit.ts";
 
-/** Per-process fixed-window limits. SQLite deployments run one app process. */
+/**
+ * Per-process fixed-window limits for auth, support and checkout surfaces.
+ * Gateway completion and provider admission are shared in PostgreSQL
+ * (FID-2026-1104-004); these login windows are a separate failure mode and are
+ * deliberately not merged into the admission buckets.
+ */
 export const signupLimiter = createRateLimiter({
   limit: 5,
   windowMs: 60 * 60 * 1000,

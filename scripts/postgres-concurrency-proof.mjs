@@ -21,7 +21,10 @@ import {
   startDisposablePostgres,
 } from "./disposable-postgres.mjs";
 
-const TEST_FILE = "tests/settlement-concurrency.test.mjs";
+const TEST_FILES = [
+  "tests/settlement-concurrency.test.mjs",
+  "tests/admission-concurrency.test.mjs",
+];
 
 function fail(message) {
   console.error(`postgres-concurrency: FAIL — ${message}`);
@@ -29,17 +32,21 @@ function fail(message) {
 }
 
 function runProof(connectionString) {
-  const result = spawnSync(
-    process.execPath,
-    ["--test", TEST_FILE],
-    {
-      stdio: "inherit",
-      env: { ...process.env, TEST_DATABASE_URL: connectionString },
-    },
-  );
+  for (const file of TEST_FILES) {
+    const result = spawnSync(
+      process.execPath,
+      ["--test", file],
+      {
+        stdio: "inherit",
+        env: { ...process.env, TEST_DATABASE_URL: connectionString },
+      },
+    );
 
-  if (result.status !== 0) {
-    throw new Error(`concurrency proof failed with exit ${result.status ?? "signal"}`);
+    if (result.status !== 0) {
+      throw new Error(
+        `${file} failed with exit ${result.status ?? "signal"}`,
+      );
+    }
   }
 }
 
@@ -54,7 +61,9 @@ try {
     } else {
       console.log(`postgres-concurrency: using ${redactPostgresUrl(supplied)}`);
       runProof(supplied);
-      console.log("postgres-concurrency: PASS — two connections cannot double-debit");
+      console.log(
+        "postgres-concurrency: PASS — no double-debit and no doubled admission",
+      );
     }
   } else {
     disposable = await startDisposablePostgres();
@@ -62,7 +71,9 @@ try {
       `postgres-concurrency: starting disposable ${disposable.image} on port ${disposable.port}`,
     );
     runProof(disposable.connectionString);
-    console.log("postgres-concurrency: PASS — two connections cannot double-debit");
+    console.log(
+      "postgres-concurrency: PASS — no double-debit and no doubled admission",
+    );
   }
 } catch (error) {
   fail(error instanceof Error ? error.message : String(error));

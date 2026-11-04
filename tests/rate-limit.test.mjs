@@ -4,9 +4,9 @@ import test from "node:test";
 import {
   DEFAULT_FREE_SHARED_RPM,
   DEFAULT_PAID_KEY_RPM,
-  checkCompletionRate,
+  completionBucket,
+  evaluateCompletionRate,
   readRateLimitConfig,
-  resetCompletionRateLimits,
 } from "../lib/gateway-rate-limit.ts";
 import {
   freshBucket,
@@ -101,95 +101,76 @@ test("malformed limits fall back instead of disabling the control", () => {
   }
 });
 
-test("free traffic shares one bucket across every key", () => {
-  resetCompletionRateLimits();
-  const config = { freeSharedRpm: 2, paidKeyRpm: 10 };
-  const first = checkCompletionRate({
-    keyId: "key-a",
-    free: true,
-    now: 0,
-    config,
-  });
-  const second = checkCompletionRate({
-    keyId: "key-b",
-    free: true,
-    now: 0,
-    config,
-  });
-  const third = checkCompletionRate({
-    keyId: "key-c",
-    free: true,
-    now: 0,
-    config,
-  });
+test("free traffic shares one bucket identity across every key", () => {
+  assert.equal(
+    completionBucket({ keyId: "key-a", free: true }).key,
+    completionBucket({ keyId: "key-b", free: true }).key,
+  );
 
-  assert.equal(first.allowed, true);
-  assert.equal(second.allowed, true);
+  let state;
+  const run = () => {
+    const outcome = evaluateCompletionRate({ state, now: 0, limit: 2 });
+
+    state = outcome.state;
+
+    return outcome.decision;
+  };
+
+  assert.equal(run().allowed, true);
+  assert.equal(run().allowed, true);
+
+  const third = run();
+
   assert.equal(third.allowed, false);
-  assert.equal(third.scope, "free");
-  assert.equal(third.limit, 2);
   assert.equal(third.retryAfterSeconds, 30);
 });
 
-test("paid keys are isolated from each other and from the free bucket", () => {
-  resetCompletionRateLimits();
-  const config = { freeSharedRpm: 1, paidKeyRpm: 2 };
+test("paid keys are isolated by account and from the free bucket", () => {
+  const alphaA = completionBucket({ keyId: "a1", userId: "alpha", free: false });
+  const alphaB = completionBucket({ keyId: "a2", userId: "alpha", free: false });
+  const beta = completionBucket({ keyId: "b1", userId: "beta", free: false });
+  const free = completionBucket({ keyId: "a1", userId: "alpha", free: true });
 
-  assert.equal(
-    checkCompletionRate({ keyId: "key-a", free: false, now: 0, config })
-      .allowed,
-    true,
-  );
+  assert.equal(alphaA.key, alphaB.key);
+  assert.notEqual(alphaA.key, beta.key);
+  assert.notEqual(alphaA.key, free.key);
+  assert.equal(alphaA.limit, DEFAULT_PAID_KEY_RPM);
 
-  for (const keyId of ["key-a", "key-a"]) {
-    checkCompletionRate({ keyId, free: false, now: 0, config });
-  }
+  let state;
+  const run = () => {
+    const outcome = evaluateCompletionRate({ state, now: 0, limit: 1 });
 
-  const exhausted = checkCompletionRate({
-    keyId: "key-a",
-    free: false,
-    now: 0,
-    config,
-  });
-  const otherKey = checkCompletionRate({
-    keyId: "key-b",
-    free: false,
-    now: 0,
-    config,
-  });
-  const freeCall = checkCompletionRate({
-    keyId: "key-a",
-    free: true,
-    now: 0,
-    config,
-  });
+    state = outcome.state;
 
-  assert.equal(exhausted.allowed, false);
-  assert.equal(otherKey.allowed, true);
-  assert.equal(freeCall.allowed, true);
+    return outcome.decision;
+  };
+
+  assert.equal(run().allowed, true);
+  assert.equal(run().allowed, false);
 });
 
-test("a paid key recovers its allowance over the minute", () => {
-  resetCompletionRateLimits();
-  const config = { freeSharedRpm: 1, paidKeyRpm: 1 };
+test("a paid bucket recovers its allowance over the minute", () => {
+  const first = evaluateCompletionRate({
+    state: undefined,
+    now: 0,
+    limit: 1,
+  });
 
-  assert.equal(
-    checkCompletionRate({ keyId: "key-a", free: false, now: 0, config })
-      .allowed,
-    true,
-  );
-  assert.equal(
-    checkCompletionRate({ keyId: "key-a", free: false, now: 0, config })
-      .allowed,
-    false,
-  );
-  assert.equal(
-    checkCompletionRate({
-      keyId: "key-a",
-      free: false,
-      now: MINUTE,
-      config,
-    }).allowed,
-    true,
-  );
+  assert.equal(first.decision.allowed, true);
+
+  const blocked = evaluateCompletionRate({
+    state: first.state,
+    now: 0,
+    limit: 1,
+  });
+
+  assert.equal(blocked.decision.allowed, false);
+
+  const recovered = evaluateCompletionRate({
+    state: blocked.state,
+    now: MINUTE,
+    limit: 1,
+  });
+
+  assert.equal(recovered.decision.allowed, true);
 });

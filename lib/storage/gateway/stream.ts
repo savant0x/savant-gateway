@@ -47,7 +47,7 @@ import { settleCall, type GatewaySettlementContext } from "./settle.ts";
  */
 
 export type StreamingGatewayContext = GatewaySettlementContext & {
-  releaseAdmission?: (() => void) | null;
+  releaseAdmission?: (() => Promise<void>) | null;
   /** Internal identifier for correlation; never derived from customer input. */
   requestId?: string;
   /** Test seam; production uses the redacted console sink. */
@@ -64,7 +64,9 @@ export function streamCompletion(
   if (!reader) {
     void settleCall(db, context, estimatedUsage(0, 0), "error", {
       error: "Provider returned an empty stream",
-    }).finally(() => context.releaseAdmission?.());
+    }).finally(() => {
+      void context.releaseAdmission?.();
+    });
 
     return jsonError(
       502,
@@ -139,7 +141,7 @@ export function streamCompletion(
     } finally {
       // The stream owns the serving slot once the response is handed back; it
       // must not outlive the response on completion, error or cancellation.
-      releaseAdmission?.();
+      await releaseAdmission?.();
     }
   };
 

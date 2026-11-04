@@ -9,8 +9,8 @@ import {
 import { clientKey } from "../lib/customer-rate-limit.ts";
 import { createRateLimiter } from "../lib/admin-rate-limit.ts";
 import {
-  checkCompletionRate,
-  resetCompletionRateLimits,
+  completionBucket,
+  evaluateCompletionRate,
 } from "../lib/gateway-rate-limit.ts";
 
 const request = (body, headers = {}) => new Request("http://localhost/test", {
@@ -106,9 +106,21 @@ test("limiter saturation refuses new identities without evicting existing limits
 });
 
 test("paid keys belonging to one account cannot multiply dispatch capacity", () => {
-  resetCompletionRateLimits();
   const config = { freeSharedRpm: 1, paidKeyRpm: 1 };
-  const call = (userId, keyId) => checkCompletionRate({ userId, keyId, free: false, now: 0, config });
+  const states = new Map();
+  const call = (userId, keyId) => {
+    const bucket = completionBucket({ userId, keyId, free: false, config });
+    const outcome = evaluateCompletionRate({
+      state: states.get(bucket.key),
+      now: 0,
+      limit: bucket.limit,
+    });
+
+    states.set(bucket.key, outcome.state);
+
+    return outcome.decision;
+  };
+
   assert.equal(call("alpha", "a1").allowed, true);
   assert.equal(call("alpha", "a2").allowed, false);
   assert.equal(call("beta", "b1").allowed, true);

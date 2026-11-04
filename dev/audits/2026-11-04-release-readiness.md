@@ -1,5 +1,10 @@
 # Savant Gateway release readiness audit — 2026-11-04
 
+> **Read the [grounding corrections and coding handoff](2026-11-04-project-grounding-corrections.md)
+> first.** The operator clarified the current milestone, hosting, content priority
+> and strict type rule after this report. That companion supersedes conflicting
+> recommendations below. Dated test results remain unchanged.
+
 ## Decision
 
 **NO-GO for a public paid launch.** The repository has substantial accounting,

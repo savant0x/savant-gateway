@@ -1,5 +1,22 @@
 # SCOPE.md — Gateway Project Review
 
+## Audit clarification — 2026-11-04
+
+Operator ruling: "all you're doing is the audit, a worker agent will do the coding."
+Keep Vercel and the existing database; prioritize production correctness,
+NOWPayments sandbox testing without real money, and more content. No deadline.
+The strict single-agent type rule remains unchanged; no unknown-type exception.
+
+- [x] **A8 — Ground and correct the audit.** Read the operator's answers, trace
+  existing product paths, inspect configuration without values, query the local
+  configured database read-only, inspect Vercel metadata and fetch provider quota
+  metadata without inference. Results and limits are recorded in
+  `dev/audits/2026-11-04-project-grounding-corrections.md`.
+- [x] **A9 — Deliver implementation handoff.** Correct priorities and give
+  concrete acceptance criteria; retain all original findings and dated receipts.
+  Coding is reserved to the operator's separate worker. A7 public-launch
+  obligations are distinct from the current sandbox development milestone.
+
 ## Current Session — 2026-11-04 (release readiness audit)
 
 Operator request: conduct a repository-wide quality, ECHO compliance and release

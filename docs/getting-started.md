@@ -139,6 +139,14 @@ container, exports `TEST_DATABASE_URL` and `HTTP_TEST_DATABASE_URL` to
 `--`, for example `npm run push:postgres -- origin main`. Set
 `TEST_DATABASE_URL` to reuse an existing disposable endpoint instead; a
 non-loopback endpoint is refused unless `PUSH_POSTGRES_ALLOW_REMOTE=yes` is set.
+When Docker is unavailable but a managed PostgreSQL server is configured (for
+example Supabase), `npm run push:supabase` creates a uniquely named
+`gateway_push_*` database on the server named by `DATABASE_URL` (falling back
+to `DB_CONNECTION_STRING`), exports both test variables to the push, and drops
+that database afterwards. `npm run verify:supabase` runs the full `verify` gate
+against the same kind of generated endpoint. The base database is never used as
+a test target. A hard kill can leave the generated database behind; drop the
+name printed by the script if cleanup reports a failure.
 Every gate's raw output is kept in `.verify/<gate>.log`, and the JSON summary
 records exit codes, durations, test totals and unexpected skips. A skipped
 required gate fails the run; the summary is not a replacement for the logs.

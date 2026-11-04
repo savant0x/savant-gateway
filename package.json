@@ -21,6 +21,8 @@
 		"test:http": "node scripts/http-suite.mjs && node scripts/trial-http-suite.mjs",
 		"test:postgres": "node scripts/postgres-concurrency-proof.mjs",
 		"push:postgres": "node scripts/with-disposable-postgres.mjs -- git push",
+		"push:supabase": "node scripts/with-supabase-postgres.mjs -- git push",
+		"verify:supabase": "node scripts/with-supabase-postgres.mjs -- npm run verify",
 		"test:recovery": "node scripts/db-recovery-drill.mjs",
 		"test:load": "node scripts/load-acceptance.mjs",
 		"test:load:accept": "node scripts/load-acceptance.mjs --require-approval",

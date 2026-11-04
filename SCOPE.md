@@ -1,5 +1,31 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-04 (combined visual builds design)
+
+Operator request: "make the fid, run full perfection loop on it then present it".
+Automation level 3 for planning; strict; single agent. Selected sources are
+Pelican SDF and OpenRouter. The operator shelved VoxelBench.
+Source ruling 2026-11-04, verbatim: "let's remove scad, i reviewed it and it it
+very outdated, we need to remove that source".
+SCADBench removed::operator-approved 2026-11-04; no adapter or import is planned.
+This pass authors and audits the design only; implementation and publication
+are not authorized by this request.
+
+- [x] **VB1 — Ground FID-2026-1104-013.** Inspect source formats, reuse
+  evidence, catalog identity, existing model matching and public/admin paths.
+- [x] **VB2 — Converge the design.** Define source adapters, durable artifact
+  records, precise model matching, isolated viewers, public gallery/model
+  integration, operator review, acceptance proofs and declared gates; run the
+  full single-agent Perfection Loop with measured document deltas.
+- [x] **VB3 — Verify and present.** Check document structure, references,
+  registration and attribution; present the converged FID with explicit
+  implementation and source-publication boundaries. Evidence: document 12/12,
+  adversarial coverage 15/15, two unchanged final passes, static gates exit 0,
+  existing matching/SKU tests 34/34; planning session summary holds the receipt.
+- [ ] **VB4 — Implementation (blocked pending operator authorization).**
+  FID-2026-1104-013 remains design-only in this session. No application code,
+  schema, source import, paid generation or deployment is authorized here.
+
 ## Audit clarification — 2026-11-04
 
 Operator ruling: "all you're doing is the audit, a worker agent will do the coding."

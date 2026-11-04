@@ -58,6 +58,16 @@ decision do not exist yet.
 `dev/receipts/2026-11-03-sandbox/README.md`. Hosted CommandCode remains enabled
 without its key, and no launch approval or real-money activity occurred.
 
+### Closed in the 2026-11-03 pricing and provisioning pass
+
+[157](archive/FID-2026-1103-157-highest-impact-price-change-table.md),
+[158](archive/FID-2026-1103-158-provider-readiness-guard.md) and
+[159](archive/FID-2026-1103-159-disposable-supabase-push-verify.md) are `closed`
+with commit, test and gate receipts. 157 ranks modeled price changes in the
+sandbox report; 158 refuses an enabled provider without a visible key and
+reports readiness in diagnostics; 159 provisions a disposable database on the
+configured server for push and verify.
+
 `converged` means the design is ready for implementation; it does not mean code
 has landed. A FID leaves this table only when its status is `closed` or
 `verified` and `Resolution` records the commit and gate receipt.

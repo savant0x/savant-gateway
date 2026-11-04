@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-159-disposable-supabase-push-verify.md`
 **ID:** FID-2026-1103-159
 **Severity:** medium
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-03
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — one script, two npm aliases, one doc note.
@@ -162,8 +162,8 @@ hosts that already have a PostgreSQL server.
 
 ## Implementation Evidence (REQUIRED for `closed`)
 
-- [x] **Commit SHA:** the implementation commit directly preceding the closure
-  commit; the exact SHA is recorded in `Resolution` after closure.
+- [x] **Commit SHA:** `2850b63` (implementation slice); closure evidence in the
+  following commit.
 - [x] **File:line ranges:** `scripts/with-supabase-postgres.mjs:54`
   (`readLocalEnv`), `:184` (entry), `:222` (`CREATE DATABASE`), `:281`
   (`DROP DATABASE ... WITH (FORCE)`); `package.json` (`push:supabase`,
@@ -178,16 +178,19 @@ hosts that already have a PostgreSQL server.
 
 ## Resolution
 
-- **Closed Date:** pending closure commit
+- **Closed Date:** 2026-11-03
 - **Fix Description:** `scripts/with-supabase-postgres.mjs` provisions a
   uniquely named disposable database on the configured PostgreSQL server for
-  push or verify, exports both test variables, and drops only that database.
+  push or verify, exports both test variables to the child, and drops only that
+  database. `.env.local` is read without mutating the child environment.
 - **Tests Added:** no new unit file; the script is exercised by the focused and
   full runs, and the env-scope defect is covered by the existing freshness tests
   passing through the wrapper.
-- **Verification Evidence:** full `npm run verify:supabase` PASS, all ten gates,
-  976/976 tests, 0 skipped; generated database dropped.
-- **Archived:** pending closure commit
+- **Verification Evidence:** commit `2850b63`; full `npm run verify:supabase`
+  PASS, all ten gates, 976/976 tests, 0 skipped, 263.4s; generated
+  `gateway_verify_1793751488316_50524` dropped. The closure commit itself is
+  pushed through `npm run push:supabase`.
+- **Archived:** 2026-11-03 — `dev/fids/archive/FID-2026-1103-159-disposable-supabase-push-verify.md`.
 
 ## Lessons Learned
 

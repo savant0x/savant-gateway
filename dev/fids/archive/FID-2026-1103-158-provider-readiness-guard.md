@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-158-provider-readiness-guard.md`
 **ID:** FID-2026-1103-158
 **Severity:** high
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-03
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — one pure readiness rule reused by two write
@@ -165,8 +165,8 @@ consume the same states.
 
 ## Implementation Evidence (REQUIRED for `closed`)
 
-- [x] **Commit SHA:** the implementation commit directly preceding the closure
-  commit; the exact SHA is recorded in `Resolution` after closure.
+- [x] **Commit SHA:** `261ce53` (implementation slice); closure evidence in the
+  following commit.
 - [x] **File:line ranges:** `lib/providers/registry.ts:228`
   (`providerReadiness`), `:261` (`providerEnableRefusal`);
   `app/api/admin/providers/route.ts:43` and
@@ -184,15 +184,18 @@ consume the same states.
 
 ## Resolution
 
-- **Closed Date:** pending closure commit
+- **Closed Date:** 2026-11-03
 - **Fix Description:** provider saves that would leave a provider enabled without
   a key visible to the running process are refused with a named 409; diagnostics
-  reports readiness and the panel prevents the Enable action.
+  reports `ready | disabled | blocked`, names blocked variables, and the panel
+  prevents the Enable action.
 - **Tests Added:** `tests/provider-readiness.test.mjs` (readiness, refusal,
   non-leakage) and two new deployment-diagnostics assertions.
-- **Verification Evidence:** focused 8/8; full verify all ten gates PASS,
-  976/976 unit tests, HTTP suite green.
-- **Archived:** pending closure commit
+- **Verification Evidence:** commit `261ce53`; focused 8/8; full verify all ten
+  gates PASS, 976/976 unit tests, HTTP suite green. The hosted diagnostics
+  observation follows the deployment of this commit; the page remains
+  build-gated and its data path is unit-tested.
+- **Archived:** 2026-11-03 — `dev/fids/archive/FID-2026-1103-158-provider-readiness-guard.md`.
 
 ## Lessons Learned
 

@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1103-157-highest-impact-price-change-table.md`
 **ID:** FID-2026-1103-157
 **Severity:** medium
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-03
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — one ranking helper, one report section, one option.
@@ -147,8 +147,8 @@ payload gains a top-level field.
 
 ## Implementation Evidence (REQUIRED for `closed`)
 
-- [x] **Commit SHA:** the implementation commit directly preceding the closure
-  commit; the exact SHA is recorded in `Resolution` after closure.
+- [x] **Commit SHA:** `5fbc8b1` (implementation slice); closure evidence in the
+  following commit.
 - [x] **File:line ranges:** `lib/pricing-report-types.ts:35`
   (`PricingReportChange`), `:129` (`priceChanges`, schema 2);
   `lib/pricing-report.ts:220` (report projection), `:233`
@@ -164,15 +164,17 @@ payload gains a top-level field.
 
 ## Resolution
 
-- **Closed Date:** pending closure commit
+- **Closed Date:** 2026-11-03
 - **Fix Description:** the sandbox pricing report now exports and renders a
   `priceChanges` table ranked by absolute modeled profit movement, covering safe
-  and review-required rows and excluding unchanged recommendations.
+  and review-required rows and excluding unchanged recommendations. Schema 2
+  carries the projection in JSON.
 - **Tests Added:** `tests/pricing-report.test.mjs` — ranking, unchanged-row
   exclusion, ineligible-row exclusion, signed delta and limit.
-- **Verification Evidence:** focused 11/11; full verify all ten gates PASS,
-  976/976 unit tests; regenerated 44-row receipt with 10 ranked changes.
-- **Archived:** pending closure commit
+- **Verification Evidence:** commit `5fbc8b1`; focused 11/11; full verify all ten
+  gates PASS, 976/976 unit tests, 0 skipped; regenerated 44-row hosted receipt
+  with 10 ranked changes at `dev/receipts/2026-11-03-price-changes/`.
+- **Archived:** 2026-11-03 — `dev/fids/archive/FID-2026-1103-157-highest-impact-price-change-table.md`.
 
 ## Lessons Learned
 

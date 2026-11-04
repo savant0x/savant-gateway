@@ -2,6 +2,7 @@
 
 **Date:** 2026-11-03
 **FID:** FID-2026-1103-157
+**Implementation commit:** `5fbc8b1`
 **Status:** implementation evidence; report-only, no price changed
 
 The sandbox pricing report now carries a `priceChanges` projection ranked by

@@ -3,6 +3,44 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-03 — Ranked price changes, provider readiness and disposable server database
+
+- **FID-2026-1103-157 — medium — closed: the pricing report ranks modeled
+  price changes, not just review work.** `buildPricingReport` now exports a
+  schema-2 `priceChanges` projection sorted by absolute modeled profit movement,
+  and `npm run report:pricing` renders it as a dedicated Markdown table with
+  current/recommended sell prices, relative move, scenario profit before/after
+  and a signed delta. Safe rows are included because the table answers "what
+  moves the economics"; unchanged recommendations are excluded. The hosted
+  catalog snapshot produced 44 rows and 10 ranked changes, led by Claude Fable
+  5.1 at +$0.714286 per 1M-in + 1M-out row. The run wrote no price, decision,
+  provider or catalog row. Commit `5fbc8b1`; focused tests 11/11.
+- **FID-2026-1103-158 — high — closed: a provider cannot be enabled without a
+  key this runtime can see.** `providerReadiness` separates `ready`, `disabled`
+  and `blocked`; both registry write routes now answer 409 with the variable
+  name and the redeploy/disable repair path when a save would leave a provider
+  enabled without a non-blank value. Admin Diagnostics reports the state per
+  provider, names ready/disabled/blocked and lists enabled-but-unready
+  variables; the Providers panel disables Enable for a missing key. The refusal
+  never includes a value. Commit `261ce53`; focused tests 8/8, HTTP suite green.
+- **FID-2026-1103-159 — medium — closed: Docker-free push and verify provision
+  their own database on the configured server.** `npm run push:supabase` and
+  `npm run verify:supabase` create one generated `gateway_*` database on the
+  server named by `DATABASE_URL` (fallback `DB_CONNECTION_STRING`), export both
+  test variables to the child, and drop only that database. `.env.local` is read
+  without mutating the child environment, so provider keys cannot change test
+  behavior. The base database is never the test endpoint. Commit `2850b63`;
+  full `npm run verify:supabase` passed all ten gates in 263.4s with 976/976
+  unit tests and 0 skipped, and dropped `gateway_verify_1793751488316_50524`.
+  A hard kill can still leave the generated database behind; the script prints
+  its name and reports a failed cleanup instead of claiming success.
+- **Verified together:** implementation commits `5fbc8b1`, `261ce53` and
+  `2850b63`; lint exit 0 with only the six pre-existing `lib/launch-receipt.ts`
+  warnings, typecheck exit 0, quality PASS (400-line ceiling), build exit 0, and
+  full verify all ten gates PASS. The hosted Admin Diagnostics observation
+  follows the deployment of these commits; the readiness data path is unit-
+  tested and the page is build-gated.
+
 ## 2026-11-03 — Sandbox pricing report and chart reconciliation
 
 - **FID-2026-1103-153 — high — closed: a read-only sandbox economics report now

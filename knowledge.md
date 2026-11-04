@@ -329,6 +329,24 @@ subscription_required`; a past-due plan returns `402 subscription_past_due`
   `components/dashboard/*`, `components/admin/*` — UI.
 - `assets/` — source brand files; served copies live in `public/`.
 
+## Docker-free PostgreSQL gates
+
+Docker Desktop can fail before its engine starts with `Personal Virtualization
+support not detected`; that is a host/firmware setting, not a repository defect.
+Do not skip the mandatory proof. The configured server can host the disposable
+database:
+
+```bash
+node scripts/with-supabase-postgres.mjs -- npm run test:postgres
+npm run verify:supabase   # full ten-gate run on a generated database
+npm run push:supabase     # pre-push proof on a generated database
+```
+
+The wrapper creates `gateway_run_*`, `gateway_verify_*` or `gateway_push_*`
+from `DATABASE_URL` (fallback `DB_CONNECTION_STRING`), runs the child with both
+test variables, and drops only that database. Never point `TEST_DATABASE_URL`
+at the base or production database; the HTTP suites recreate schemas.
+
 ## Verification
 
 `npm run verify` is the full local gate. FID-2026-1029-006 records its

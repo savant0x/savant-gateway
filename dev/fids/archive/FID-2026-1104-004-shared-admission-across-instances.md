@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-004-shared-admission-across-instances.md`
 **ID:** FID-2026-1104-004
 **Severity:** critical
-**Status:** converged — implementation landed; closure blocked on the mandatory two-connection proof
+**Status:** closed
 **Created:** 2026-11-04 17:10
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -132,15 +132,24 @@ promised at convergence.
 
 ### Verification Receipt
 
-- verified: partial — 2026-11-04
+- verified: 2026-11-04
 - commit: `cde992c` (implementation)
 - typecheck: exit 0
 - lint: exit 0 (zero warnings)
-- test: 982 pass, 0 fail, 4 skipped (all PostgreSQL-only)
+- test: 982 pass, 0 fail, 4 skipped in plain `npm test` (PostgreSQL-only)
 - quality: PASS (599 files, 400-line ceiling)
 - build: exit 0
-- test:postgres: BLOCKED — Docker engine returned 500; `TEST_DATABASE_URL` unset
-- two-instance proof: not run; no aggregate-ceiling claim is made
+- test:postgres: PASS — 4/4, 0 skipped on a generated `gateway_run_*`
+  database on the configured Supabase server; the database was dropped
+- two-instance proof: PASS — exactly one of two connections took the last
+  provider slot and exactly one spent the last completion token
+- added cost: 100 samples each on the remote pooler — provider
+  acquire+release median 302.09ms / p95 343.20ms; completion token median
+  166.47ms / p95 186.06ms (WAN upper bound from the development machine, not
+  production-region latency)
+- envelope comparison: the recorded isolated-load p95 was 2,152.52ms; the
+  measured 343.20ms provider p95 is within that p95 but remains material, and
+  deployment-region latency should be remeasured before launch
 
 ## Perfection Loop
 
@@ -193,9 +202,9 @@ promised at convergence.
 
 ## Implementation Evidence
 
-Implementation landed 2026-11-04. The mandatory two-instance PostgreSQL proof is
-still blocked, so this record is not closed and no cross-instance safety is
-claimed.
+Implementation landed 2026-11-04. The mandatory two-instance PostgreSQL proof
+passed through a generated database on the configured Supabase server; the
+record is closed with that receipt.
 
 - [x] **Commit SHA:** `cde992cf1517aaeea5adac2e6386ba77ca7f1bc7`.
 - [x] **File:line ranges:**
@@ -221,30 +230,39 @@ claimed.
 - [x] **Reproducibility:** `grep -n acquireSharedProviderAdmission
   lib/storage/admission.ts` and `grep -n takeSharedCompletionRate
   lib/storage/gateway/call.ts` find the production call path.
-- [ ] **Step statuses:** 1 operator topology ruling recorded (SCOPE A24);
+- [x] **Step statuses:** 1 operator topology ruling recorded (SCOPE A24);
   2 implemented; 3 implemented — admin login windows remain a separate
-  in-memory login surface, not a gateway bucket; 4 `blocked` — Docker engine
-  unavailable and `TEST_DATABASE_URL` unset; 5 `blocked` — cost measurement
-  needs the same real database. No step is claimed passed without its proof.
+  in-memory login surface, not a gateway bucket; 4 `implemented` — two
+  connections, exactly one admission, 4/4 proof tests, 0 skipped; 5
+  `implemented` — the 100-sample cost is recorded in the receipt above.
 
 ## Code Verification Evidence
 
 - [x] Referenced files exist and the call path was inspected.
 - [x] The probe result is recorded, not inferred.
 - [x] Typecheck/tests/lint — typecheck 0, lint 0, 982 pass, 0 fail.
-- [ ] Two-connection PostgreSQL proof — blocked by the environment.
-- [x] Status reflects reality: implementation landed; not closed.
+- [x] Two-connection PostgreSQL proof — PASS, 4/4, 0 skipped.
+- [x] Status reflects reality: `closed`.
 
 ## Resolution
 
 - **Convergence Date:** 2026-11-04 17:10
 - **Implementation Date:** 2026-11-04
-- **Next action:** run `npm run test:postgres` with a disposable PostgreSQL
-  endpoint, attach the two-instance result, then record step 5's added latency
-  and close the record. Do not claim a shared ceiling until that receipt exists.
-- **Archived:** no.
+- **Closure Date:** 2026-11-04
+- **Implementation commit:** `cde992c`
+- **Closure commit:** this commit —
+  `docs(verification): close FID-2026-1104-004 and document Docker-free gates`
+- **Verification:** typecheck, lint, quality and build exit 0; 982/986 unit
+  tests in plain `npm test`; mandatory `test:postgres` 4/4 with 0 skipped;
+  added cost recorded in the receipt.
+- **Next action:** none; changes to the shared admission path need a new FID.
+- **Archived:** yes — moved to `dev/fids/archive/`.
 
 ## Lessons Learned
 
 A module-level counter is a per-instance promise. On a multi-instance host, an
 unenforced single-process assumption is the failure mode, not the design.
+
+The two-connection proof does not require Docker: a generated database on the
+configured server exercises the same locks and transactions, and it removes the
+host-virtualization dependency from the gate.

@@ -137,8 +137,9 @@ function stopContainer(name) {
 export async function startDisposablePostgres() {
   if (!dockerReady()) {
     throw new Error(
-      "Docker is unavailable. Start Docker or set TEST_DATABASE_URL to a " +
-        "disposable PostgreSQL endpoint.",
+      "Docker is unavailable. Start Docker, set TEST_DATABASE_URL to a " +
+        "disposable PostgreSQL endpoint, or run " +
+        "`node scripts/with-supabase-postgres.mjs -- npm run test:postgres`.",
     );
   }
 

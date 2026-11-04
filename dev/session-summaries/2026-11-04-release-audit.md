@@ -85,7 +85,9 @@ buckets with expiring leases; the production gateway awaits the shared decision
 and the stream releases its lease after settlement.
 
 Verification: typecheck, zero-warning lint, quality and build exit 0; 982/986
-tests pass, 0 fail, 4 PostgreSQL-only tests skipped. The mandatory
-`npm run test:postgres` could not run because the Docker engine returned 500 and
-`TEST_DATABASE_URL` is unset. FID-004 remains open; the two-instance proof and
-the added-latency measurement are the remaining gates.
+tests pass, 0 fail, 4 PostgreSQL-only tests skipped in the plain run. The
+mandatory `npm run test:postgres` then passed 4/4 with 0 skipped on a generated
+`gateway_run_*` database on the configured Supabase server, and the database was
+dropped. Added cost over 100 samples: provider acquire+release median 302.09ms /
+p95 343.20ms; completion token median 166.47ms / p95 186.06ms (WAN upper bound,
+not production-region latency). FID-004 is closed and archived.

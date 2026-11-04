@@ -125,7 +125,7 @@ npm test             # unit tests
 npm run quality      # 400-line file ceiling
 npm run build        # production build
 npm run test:http    # builds must already exist; disposable database
-npm run test:postgres # two-connection debit proof; Docker or TEST_DATABASE_URL
+npm run test:postgres # two-connection proof; Docker, TEST_DATABASE_URL or the wrapper
 npm run test:recovery # backup/restore drill; builds must already exist
 npm run verify       # sequential runner; writes .verify/summary.json
 ```
@@ -147,6 +147,14 @@ that database afterwards. `npm run verify:supabase` runs the full `verify` gate
 against the same kind of generated endpoint. The base database is never used as
 a test target. A hard kill can leave the generated database behind; drop the
 name printed by the script if cleanup reports a failure.
+
+If Docker Desktop cannot start at all (the host reports "Personal
+Virtualization support not detected"), run the proof alone through the same
+wrapper:
+
+```bash
+node scripts/with-supabase-postgres.mjs -- npm run test:postgres
+```
 Every gate's raw output is kept in `.verify/<gate>.log`, and the JSON summary
 records exit codes, durations, test totals and unexpected skips. A skipped
 required gate fails the run; the summary is not a replacement for the logs.

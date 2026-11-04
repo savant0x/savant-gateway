@@ -69,9 +69,8 @@ worker; every record is design-only and `converged`.
 - [x] **A21 — Finding 3 ownership.** No new record: real payment, funded
   inference, hosted restore, delivered alert and the release decision remain
   with FID-2026-1103-127, FID-2026-1030-043 and FID-2026-1030-062.
-- [ ] **A22 — Implementation.** FID-004 is implemented in A24 and remains open
-  on its two-instance proof; FIDs 005–011 remain converged and reserved to the
-  operator's worker.
+- [ ] **A22 — Implementation.** FID-004 is closed in A25; FIDs 005–011 remain
+  converged and reserved to the operator's worker.
 - [x] **A23 — NOWPayments sandbox procedure.** FID-2026-1104-012.
   dropped::operator-approved 2026-11-04 — "These were only created" and "It's a
   service, so just assume it works as we have it wired." The nine-step route →
@@ -95,10 +94,19 @@ PostgreSQL authority; keep Vercel and the existing database.
   `lib/storage/schema/admission.ts`). The gateway awaits the shared decision
   before any billing reservation; the stream releases its lease asynchronously.
   Typecheck, zero-warning lint, 982/986 tests, quality and build pass.
-- [ ] **A25 — Two-instance PostgreSQL proof (blocked: environment).** The
-  mandatory `npm run test:postgres` cannot run: the Docker engine returns 500
-  and `TEST_DATABASE_URL` is unset. The four PostgreSQL-only tests are skipped,
-  not passed. FID-004 stays open; no aggregate ceiling is claimed.
+- [x] **A25 — Two-instance PostgreSQL proof.** Passed on a generated
+  `gateway_run_*` database on the configured Supabase server: 4/4 proof tests,
+  0 skipped; exactly one of two connections took the last provider slot and the
+  last completion token. Added cost over 100 samples: provider
+  acquire+release median 302.09ms / p95 343.20ms; completion token median
+  166.47ms / p95 186.06ms. This is a WAN upper bound from the development
+  machine, not production-region latency. The recorded isolated-load p95 was
+  2,152.52ms, so the measured cost is within that envelope but material;
+  remeasure in the deployment region before launch. The database was dropped.
+- [x] **A26 — Docker-free verification runbook.** Docker Desktop cannot start
+  on this host (`Personal Virtualization support not detected`); the wrapper
+  command is now documented in troubleshooting, getting-started, CONTRIBUTING,
+  README and knowledge, and the proof error names it.
 
 ## Session — 2026-11-04 (free-allocation refusal confirmation)
 

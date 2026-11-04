@@ -338,6 +338,11 @@ npm run push:supabase     # generated database on the configured server, then gi
 npm run verify:supabase   # full verify against a generated database, then drop it
 ```
 
+When Docker cannot start (for example `Personal Virtualization support not
+detected`), run the proof or the full set through the configured server:
+`node scripts/with-supabase-postgres.mjs -- npm run test:postgres` or
+`npm run verify:supabase`. Both create a generated database and drop it.
+
 The pre-push hook runs the attribution guard plus the same gates and fails
 closed. CI runs the same set on every push and pull request; a separate workflow
 rejects coding-agent attribution anywhere in commit history.

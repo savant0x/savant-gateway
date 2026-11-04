@@ -33,6 +33,15 @@ fails closed. Before a production deployment, run
 `npm run config:check:prod`, which enforces the deployment inventory rather than
 reporting the non-production pass.
 
+If Docker cannot start (including the `Personal Virtualization support not
+detected` error), do not skip the gate. Run the full set against a generated
+database on the configured server with `npm run verify:supabase`. For the
+mandatory proof alone:
+
+```bash
+node scripts/with-supabase-postgres.mjs -- npm run test:postgres
+```
+
 ## Rules
 
 - Start non-trivial changes with a FID in `dev/fids/` using

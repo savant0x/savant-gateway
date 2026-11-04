@@ -58,6 +58,30 @@ npm run test:recovery
 set. A dev server holding the same port can also make a suite fail to start; stop
 the local server before running the gates.
 
+## Docker Desktop cannot start (`Personal Virtualization support not detected`)
+
+Docker Desktop needs hardware virtualization. When firmware or a VM has it
+disabled, the engine never starts and `npm run test:postgres` fails with
+`Docker is unavailable`. You do not need Docker for the PostgreSQL gates: use
+the configured server to create a disposable database.
+
+```bash
+# DATABASE_URL (or DB_CONNECTION_STRING) in .env.local names the server.
+node scripts/with-supabase-postgres.mjs -- npm run test:postgres
+```
+
+The wrapper creates one generated `gateway_run_<timestamp>_<pid>` database,
+sets `TEST_DATABASE_URL` and `HTTP_TEST_DATABASE_URL` for the child, and drops
+only that database afterwards. The base database is never the test target.
+The same wrapper backs `npm run verify:supabase` (the full ten-gate run) and
+`npm run push:supabase` (the pre-push proof). A hard kill can leave the
+generated database behind; the script prints its name, and a failed cleanup is
+reported rather than hidden.
+
+Do not work around this by pointing `TEST_DATABASE_URL` at the production
+database. The HTTP suites drop and recreate schemas, and they refuse an endpoint
+equal to `DATABASE_URL`.
+
 ## Admin sign-in is unavailable
 
 `/admin` needs both `ADMIN_PASSWORD` (12+ characters) and

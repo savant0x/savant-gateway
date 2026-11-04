@@ -22,7 +22,6 @@ working set; each FID owns its own status, evidence and resolution.
 | [127](FID-2026-1103-127-real-launch-acceptance-receipt.md) | Real launch acceptance receipt | fixed | Operator records the six observations and a go pinned to the release SHA, then runs `npm run receipt:launch`. |
 | [137](FID-2026-1103-137-product-hardening-and-install-order-master.md) | Product hardening and install-order master | converged | Closes only after 126 and 127 have their required evidence. |
 | [2026-1104-003](FID-2026-1104-003-free-allocation-refusal-truth.md) | Free-allocation refusal truth and hermetic supply | converged | Worker implements the limit-aware refusal and the effective-policy read-back, then reruns the isolated load. |
-| [2026-1104-004](FID-2026-1104-004-shared-admission-across-instances.md) | Shared admission across application instances | converged — implementation landed | Run `npm run test:postgres` with a disposable endpoint; attach the two-instance proof and cost measurement before closing. |
 | [2026-1104-005](FID-2026-1104-005-capacity-envelope-and-pool-faults.md) | Accepted capacity envelope and database pool faults | converged | Worker bounds pool acquisition, discards failed-rollback clients, then remeasures. |
 | [2026-1104-006](FID-2026-1104-006-bounded-transport-and-jobs.md) | Bounded transport and durable scheduled work | converged | Worker streams with a byte cap, validates redirects and adds durable job claims. |
 | [2026-1104-007](FID-2026-1104-007-provisioning-tls-verification.md) | Verified TLS for provisioning helpers | converged | Worker restores certificate verification and adds the refusal regression. |
@@ -36,6 +35,15 @@ funded inference, hosted restore, delivered alert and the release decision stay
 with [127](FID-2026-1103-127-real-launch-acceptance-receipt.md),
 [043](FID-2026-1030-043-launch-master.md) and
 [062](FID-2026-1030-062-launch-acceptance-and-rollout.md).
+
+### Closed in the 2026-11-04 shared-admission implementation
+
+[2026-1104-004](archive/FID-2026-1104-004-shared-admission-across-instances.md)
+is `closed`: provider and completion admission use atomic PostgreSQL buckets and
+expiring leases. The mandatory two-connection proof passed 4/4 with 0 skipped on
+a generated Supabase database; added cost was a provider acquire+release median
+302.09ms / p95 343.20ms and a completion token median 166.47ms / p95 186.06ms on
+the remote pooler (WAN upper bound). Docker-free runbook: SCOPE A26.
 
 ### Closed in the 2026-11-04 NOWPayments ruling
 

@@ -33,9 +33,19 @@ distinguish verified behavior from unverified claims.
   transaction locks the bucket, reclaims expired leases and inserts the new
   lease; the gateway awaits the shared decision before any billing reservation.
   Typecheck, zero-warning lint, 982/986 unit tests (4 PostgreSQL-only skips),
-  quality and build pass. The mandatory two-connection proof is blocked by the
-  local Docker engine, so the record stays open and no cross-instance ceiling is
-  claimed yet.
+  quality and build pass. The mandatory proof then passed 4/4 with 0 skipped on
+  a generated `gateway_run_*` database on the configured Supabase server:
+  exactly one of two connections took the last provider slot and the last
+  completion token, and the database was dropped. Added cost over 100 samples
+  was a provider acquire+release median 302.09ms / p95 343.20ms and a completion
+  token median 166.47ms / p95 186.06ms (WAN upper bound, not production-region
+  latency). FID-004 is closed and archived.
+- **Docker-free verification runbook —** Docker Desktop cannot start on this
+  host because virtualization is disabled. `docs/troubleshooting.md` now names
+  the exact `node scripts/with-supabase-postgres.mjs -- npm run test:postgres`
+  fallback, and getting-started, CONTRIBUTING, README and knowledge point at
+  the same wrapper. No gate was skipped; the mandatory proof ran against a
+  generated database and dropped it.
 
 ## 2026-11-03 — Ranked price changes, provider readiness and disposable server database
 

@@ -85,6 +85,16 @@ test("an approval pinned to another commit is stale", () => {
   assert.match(verdict.reasons.join(" "), /not the running commit/);
 });
 
+test("an independently stale approval cannot authorize the current pin", () => {
+  const data = receipt();
+  data.approval.sha = OTHER;
+
+  const verdict = evaluateReceipt(data, HEAD);
+
+  assert.equal(verdict.status, "stale");
+  assert.match(verdict.reasons.join(" "), /approval.sha/);
+});
+
 test("a secret rejects the receipt and the report names only the path", () => {
   const secret = "sk_live_".concat("z".repeat(24));
   const data = receipt();

@@ -212,7 +212,7 @@ export async function releaseQuarantinedHold(
       const row = await db
         .prepare(
           `SELECT kind, user_id, period_id, reserved FROM quarantined_holds
-          WHERE id = ? AND status = 'quarantined'`,
+          WHERE id = ? AND status = 'quarantined' FOR UPDATE`,
         )
         .get<{
           kind: QuarantineKind;

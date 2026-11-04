@@ -173,6 +173,7 @@ export function findSecretLeaks(
 function readItem(value: unknown, reasons: string[]): ReceiptItem | null {
   if (!isObject(value)) {
     reasons.push("is not an object");
+
     return null;
   }
 
@@ -206,15 +207,19 @@ function readApproval(
 ): ReceiptApproval | null {
   if (!isObject(value)) {
     reasons.push("approval is missing");
+
     return null;
   }
 
   if (value.decision !== "go" && value.decision !== "no-go") {
     reasons.push("approval.decision must be go or no-go");
   }
-  if (!validDate(value.decidedAt)) reasons.push("approval.decidedAt is required");
-  if (!nonEmptyString(value.operator)) reasons.push("approval.operator is required");
-  if (!nonEmptyString(value.cohort)) reasons.push("approval.cohort is required");
+  if (!validDate(value.decidedAt))
+    reasons.push("approval.decidedAt is required");
+  if (!nonEmptyString(value.operator))
+    reasons.push("approval.operator is required");
+  if (!nonEmptyString(value.cohort))
+    reasons.push("approval.cohort is required");
   if (typeof value.sha !== "string" || !/^[0-9a-f]{40}$/.test(value.sha)) {
     reasons.push("approval.sha must be the full pinned commit SHA");
   }
@@ -257,7 +262,11 @@ export function evaluateReceipt(
   };
 
   if (base.leaks.length > 0) {
-    return { ...base, status: "leaked", reasons: ["receipt contains a secret"] };
+    return {
+      ...base,
+      status: "leaked",
+      reasons: ["receipt contains a secret"],
+    };
   }
 
   if (!isObject(raw)) {
@@ -332,6 +341,16 @@ export function evaluateReceipt(
       missing,
       failed,
       reasons,
+    };
+  }
+
+  if (approval.sha !== pinnedSha) {
+    return {
+      ...base,
+      status: "stale",
+      missing,
+      failed,
+      reasons: [...reasons, "approval.sha does not match the pinned commit"],
     };
   }
 

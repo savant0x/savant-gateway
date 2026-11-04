@@ -42,11 +42,11 @@ export const VERIFY_GATES = [
   },
 ];
 
-const TEST_TOTAL = /^ℹ\s+tests\s+(\d+)\s*$/m;
-const TEST_PASS = /^ℹ\s+pass\s+(\d+)\s*$/m;
-const TEST_FAIL = /^ℹ\s+fail\s+(\d+)\s*$/m;
-const TEST_SKIPPED = /^ℹ\s+skipped\s+(\d+)\s*$/m;
-const TEST_CANCELLED = /^ℹ\s+cancelled\s+(\d+)\s*$/m;
+const TEST_TOTAL = /^(?:ℹ|#)\s+tests\s+(\d+)\s*$/m;
+const TEST_PASS = /^(?:ℹ|#)\s+pass\s+(\d+)\s*$/m;
+const TEST_FAIL = /^(?:ℹ|#)\s+fail\s+(\d+)\s*$/m;
+const TEST_SKIPPED = /^(?:ℹ|#)\s+skipped\s+(\d+)\s*$/m;
+const TEST_CANCELLED = /^(?:ℹ|#)\s+cancelled\s+(\d+)\s*$/m;
 
 function count(pattern, output) {
   const match = pattern.exec(output);
@@ -63,10 +63,10 @@ export function parseTestTotals(output) {
 
   return {
     total,
-    pass: count(TEST_PASS, text) ?? 0,
-    fail: count(TEST_FAIL, text) ?? 0,
-    skipped: count(TEST_SKIPPED, text) ?? 0,
-    cancelled: count(TEST_CANCELLED, text) ?? 0,
+    pass: count(TEST_PASS, text),
+    fail: count(TEST_FAIL, text),
+    skipped: count(TEST_SKIPPED, text),
+    cancelled: count(TEST_CANCELLED, text),
   };
 }
 
@@ -78,8 +78,21 @@ export function gateResult(input) {
   const exitCode = Number.isInteger(input.exitCode) ? input.exitCode : null;
   const signal = input.signal ?? null;
   const tests = input.output ? parseTestTotals(input.output) : null;
+  const required = VERIFY_GATES.find((gate) => gate.name === input.name);
+  const expectsTests = required?.expectsTests ?? input.expectsTests ?? false;
+  const invalidEvidence = expectsTests && (
+    tests === null ||
+    tests.total === 0 ||
+    [tests.pass, tests.fail, tests.skipped, tests.cancelled].some(
+      (value) => value === null,
+    ) ||
+    tests.fail > 0 ||
+    tests.cancelled > 0 ||
+    tests.pass + tests.fail + tests.skipped + tests.cancelled !== tests.total
+  );
   const skippedUnexpectedly =
-    input.allowSkips === false && tests !== null && tests.skipped > 0;
+    (required?.allowSkips ?? input.allowSkips) === false &&
+    tests !== null && tests.skipped > 0;
 
   let status = "pass";
 
@@ -87,6 +100,7 @@ export function gateResult(input) {
   else if (exitCode === null) status = "missing";
   else if (exitCode !== 0) status = "fail";
   else if (skippedUnexpectedly) status = "failed_skip";
+  else if (invalidEvidence) status = "failed_evidence";
 
   return {
     name: input.name,
@@ -100,11 +114,13 @@ export function gateResult(input) {
     error:
       status === "failed_skip"
         ? `${input.name} skipped ${tests.skipped} test(s); this gate cannot skip.`
-        : null,
+        : status === "failed_evidence"
+          ? `${input.name} lacks a complete, nonempty, successful test summary.`
+          : null,
   };
 }
 
-const FAILED = new Set(["fail", "signal", "missing", "failed_skip"]);
+const FAILED = new Set(["fail", "signal", "missing", "failed_skip", "failed_evidence"]);
 
 export function summarizeRun({ gates, startedAt, finishedAt, logsDir = null }) {
   const missing = VERIFY_GATES.filter(

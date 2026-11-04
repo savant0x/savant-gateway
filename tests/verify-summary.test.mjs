@@ -20,7 +20,8 @@ const OUTPUT = `✔ a test
 `;
 
 // The concurrency gate is the one suite that may not skip at all.
-const POSTGRES_OUTPUT = OUTPUT.replace("skipped 1", "skipped 0");
+const POSTGRES_OUTPUT = OUTPUT.replace("skipped 1", "skipped 0")
+  .replace("pass 11", "pass 12");
 
 function outputFor(name) {
   return name === "test:postgres" ? POSTGRES_OUTPUT : OUTPUT;
@@ -126,4 +127,32 @@ test("a failed gate makes the run fail and is named in the summary", () => {
   assert.equal(summary.status, "fail");
   assert.deepEqual(summary.failedGates, ["quality"]);
   assert.match(formatSummary(summary), /FAILED\s+quality/);
+});
+
+test("required test gates reject absent, empty and inconsistent evidence", () => {
+  for (const output of [
+    "No tests executed",
+    OUTPUT.replace("tests 12", "tests 0"),
+    OUTPUT.replace("pass 11", "pass 10"),
+    OUTPUT.replace("fail 0", "fail 1").replace("pass 11", "pass 10"),
+    OUTPUT.replace("cancelled 0", "cancelled 1").replace("pass 11", "pass 10"),
+  ]) {
+    const result = gateResult({
+      name: "test",
+      command: "fixture",
+      exitCode: 0,
+      startedAt: 0,
+      finishedAt: 1,
+      output,
+    });
+
+    assert.equal(result.status, "failed_evidence", output);
+    assert.ok(result.error);
+  }
+});
+
+test("TAP evidence is recognized when the test reporter runs without a TTY", () => {
+  const output = OUTPUT.replaceAll("ℹ ", "# ");
+
+  assert.deepEqual(parseTestTotals(output), parseTestTotals(OUTPUT));
 });

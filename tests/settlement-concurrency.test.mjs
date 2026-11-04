@@ -3,7 +3,11 @@ import { randomUUID } from "node:crypto";
 import test from "node:test";
 
 import { createPostgresDatabase } from "../lib/storage/pg-adapter.ts";
-import { debitCredit } from "../lib/storage/ledger/settlements.ts";
+import {
+  debitCredit,
+  quarantineHold,
+  releaseQuarantinedHold,
+} from "../lib/storage/ledger/settlements.ts";
 import { createPostgresPool } from "../lib/storage/pg-pool.ts";
 import { migrateDatabase } from "../lib/storage/schema/index.ts";
 
@@ -85,6 +89,90 @@ test("two connections cannot debit one balance twice", async (context) => {
       .prepare("DELETE FROM users WHERE id = ?")
       .run(userId)
       .catch(() => undefined);
+    await first.close();
+    await second.close();
+  }
+});
+
+test("two connections release one quarantine without releasing other holds", async (context) => {
+  if (!TEST_DATABASE_URL) {
+    context.skip("TEST_DATABASE_URL is required for the quarantine release race");
+
+    return;
+  }
+
+  const suffix = randomUUID().slice(0, 8);
+  const names = [`quarantine_${suffix}_a`, `quarantine_${suffix}_b`];
+  const pools = names.map((applicationName) =>
+    createPostgresPool({ connectionString: TEST_DATABASE_URL, applicationName }),
+  );
+  const first = createPostgresDatabase({ pool: pools[0] });
+  const second = createPostgresDatabase({ pool: pools[1] });
+  const userId = `release_${randomUUID()}`;
+  const holdId = `hold_${randomUUID()}`;
+  const now = new Date().toISOString();
+  let blocker;
+  let pending = [];
+
+  try {
+    await migrateDatabase(first);
+    await first.prepare(
+      `INSERT INTO users (id, email, name, status, created_at, credit_micros, held_micros)
+       VALUES (?, ?, 'Release Probe', 'active', ?, 1000, 300)`,
+    ).run(userId, `${userId}@example.test`, now);
+    await quarantineHold(first, {
+      id: holdId, kind: "credit", userId, keyId: null, modelId: null,
+      reserved: 100, createdAt: now, expiredAt: now,
+    });
+
+    blocker = await pools[0].connect();
+    await blocker.query("BEGIN");
+    await blocker.query("SELECT id FROM users WHERE id = $1 FOR UPDATE", [userId]);
+
+    pending = [first, second].map((db) =>
+      releaseQuarantinedHold(db, { id: holdId, releasedAt: now }),
+    );
+    // Attach rejection handlers before polling so a database refusal cannot
+    // become an unhandled rejection while the blocker is still held.
+    const completed = Promise.allSettled(pending);
+    const deadline = Date.now() + 8_000;
+    let waiting = 0;
+
+    while (Date.now() < deadline) {
+      const rows = await first.query(
+        `SELECT COUNT(*)::int AS total FROM pg_stat_activity
+          WHERE datname = current_database() AND wait_event_type = 'Lock'
+            AND (query LIKE '%held_micros%' OR query LIKE '%quarantined_holds%')`,
+      );
+      waiting = Number(rows[0].total);
+
+      if (waiting === 2) break;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+
+    assert.equal(waiting, 2, "both release transactions must contend before unblocking");
+    await blocker.query("ROLLBACK");
+    blocker.release();
+    blocker = null;
+
+    const results = await completed;
+    assert.ok(results.every((result) => result.status === "fulfilled"));
+    const accepted = results.filter((result) => result.value === true);
+    assert.equal(accepted.length, 1, "one quarantine may be released only once");
+    const row = await first.prepare("SELECT held_micros FROM users WHERE id = ?").get(userId);
+    assert.equal(Number(row.held_micros), 200, "unrelated held credit stays reserved");
+    assert.equal(
+      await releaseQuarantinedHold(first, { id: holdId, releasedAt: now }),
+      false,
+    );
+  } finally {
+    if (blocker) {
+      await blocker.query("ROLLBACK");
+      blocker.release();
+    }
+    await Promise.allSettled(pending);
+    await first.prepare("DELETE FROM quarantined_holds WHERE id = ?").run(holdId);
+    await first.prepare("DELETE FROM users WHERE id = ?").run(userId);
     await first.close();
     await second.close();
   }

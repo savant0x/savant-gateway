@@ -1,5 +1,33 @@
 # SCOPE.md — Gateway Project Review
 
+## Current Session — 2026-11-04 (release readiness audit)
+
+Operator request: conduct a repository-wide quality, ECHO compliance and release
+audit, report the most effective improvements, and include engagement and
+quality-of-life suggestions. Automation level 3; strict; single agent.
+
+Recorded presentation: inspect repository-wide inventories and gates, review
+critical production paths and existing acceptance obligations, and publish a
+dated evidence-backed report. Local disposable verification is authorized;
+live payment, funding, deployment, offering activation and release decisions
+remain operator boundaries. Recommendations are proposals, not implemented features.
+
+- [ ] **A1 — Quality and verification.** Run declared local gates and assess
+  security, money, storage, operations and test coverage with current evidence.
+- [ ] **A2 — ECHO compliance.** Check FID registration, identifiers, closure
+  evidence, gate wiring, attribution and current documentation consistency.
+- [ ] **A3 — Product and release report.** Publish ranked findings, release
+  conditions, creative engagement proposals, QOL improvements and clear limits.
+- [ ] **A4 — Durable evidence.** Record demonstrated gaps and their disposition,
+  preserve operator work, and commit verified audit artifacts.
+- [ ] **A5 — FID-2026-1104-001.** Repair reproduced release/verification false
+  passes, enforce zero-warning lint, reconcile records and publish the audit.
+- [ ] **A6 — FID-2026-1104-002.** Reproduce the quarantine-release race with two
+  real connections and repair it at the shared ledger authority.
+- [ ] **A7 — Existing acceptance obligations.** FID-2026-1103-127 and
+  FID-2026-1103-137 remain blocked on the operator's real observations and
+  explicit go decision; their implementation evidence is not launch approval.
+
 ## Current Session — 2026-11-03 (sandbox readiness phase FIDs)
 
 Operator request: resume the five-phase sandbox/deployment plan and complete the

@@ -64,6 +64,7 @@ function runGate(gate) {
     finishedAt,
     output,
     allowSkips: gate.allowSkips,
+    expectsTests: gate.expectsTests,
     log,
   });
 }

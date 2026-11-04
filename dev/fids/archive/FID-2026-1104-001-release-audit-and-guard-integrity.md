@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-001-release-audit-and-guard-integrity.md`
 **ID:** FID-2026-1104-001
 **Severity:** high
-**Status:** verified
+**Status:** closed
 **Created:** 2026-11-04
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -65,8 +65,8 @@ external acceptance or deployment decision changes.
    evidence limits and explicit operator-owned release conditions. Correct exact
    active-FID scope registration and missing historical commit references.
 
-Steps 1–3: implemented and verified. Step 4: report written; final load receipt
-and documentary closure follow in the audit slice.
+Steps 1–4: implemented. Report and isolated failed-load evidence are recorded
+in `dev/audits/2026-11-04-release-readiness.md`; no release is approved.
 
 ### Verification
 
@@ -129,17 +129,19 @@ summaries and TAP output; repair its existing inconsistent fixture (12 tests,
 
 `npm run verify:supabase`: exit 0, 2026-11-04T14:57:28Z, 272.1s; all ten gates
 PASS, 980/980 tests, 2/2 PostgreSQL proofs, zero skips, lint zero warnings.
-Focused guard tests: 15/15. Commit and final report closure follow verification.
+Focused guard tests: 15/15. Repair commit:
+`43d875840774e8572a9e898567009c48ed106844`.
 
 ## Code Verification Evidence
 
-The affected production files and existing test modules exist and were read.
-The probes reproduce the defects; repaired behavior is not claimed yet.
+Affected files exist; repaired behavior is proved by the 15 guard tests and
+full gate. CLI → validator and runner → summary call paths remain reachable.
 
 ## Resolution
 
-Open implementation under the converged design. Audit report is a deliverable,
-not a release authorization or a claim that every source file was read.
+- Closed/archived: 2026-11-04; repair commit `43d8758`, full gate exit 0.
+- Report is an audit deliverable, not release authorization or a whole-tree
+  manual-read claim. Isolated load failed 8/123 checks; no-go is preserved.
 
 ## Lessons Learned
 

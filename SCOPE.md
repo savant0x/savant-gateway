@@ -12,18 +12,21 @@ dated evidence-backed report. Local disposable verification is authorized;
 live payment, funding, deployment, offering activation and release decisions
 remain operator boundaries. Recommendations are proposals, not implemented features.
 
-- [ ] **A1 — Quality and verification.** Run declared local gates and assess
-  security, money, storage, operations and test coverage with current evidence.
-- [ ] **A2 — ECHO compliance.** Check FID registration, identifiers, closure
-  evidence, gate wiring, attribution and current documentation consistency.
-- [ ] **A3 — Product and release report.** Publish ranked findings, release
-  conditions, creative engagement proposals, QOL improvements and clear limits.
-- [ ] **A4 — Durable evidence.** Record demonstrated gaps and their disposition,
-  preserve operator work, and commit verified audit artifacts.
-- [ ] **A5 — FID-2026-1104-001.** Repair reproduced release/verification false
-  passes, enforce zero-warning lint, reconcile records and publish the audit.
-- [ ] **A6 — FID-2026-1104-002.** Reproduce the quarantine-release race with two
-  real connections and repair it at the shared ledger authority.
+- [x] **A1 — Quality and verification.** All ten verify gates PASS; 980/980 tests,
+  two mandatory concurrency proofs and 803 HTTP checks. Isolated load fails
+  eight of 123 checks; the report records that release blocker without waiver.
+- [x] **A2 — ECHO compliance.** Exact registration and two missing historical
+  commit references repaired; attribution passes. Literal unknown-type policy,
+  historical status forms and tooling warnings remain assessed compliance gaps.
+- [x] **A3 — Product and release report.**
+  `dev/audits/2026-11-04-release-readiness.md` ranks fourteen engineering findings,
+  six product improvements, six engagement experiments and ten QOL proposals.
+- [x] **A4 — Durable evidence.** Report and two real load receipts retained;
+  existing operator chat export untouched. Repair commit `43d8758`.
+- [x] **A5 — FID-2026-1104-001.** Guard repairs and report verified; all ten
+  gates PASS, zero lint warnings. Closure records reference `43d8758`.
+- [x] **A6 — FID-2026-1104-002.** RED accepted two releases; GREEN accepts one
+  and preserves unrelated held credit. Commit `43d8758`; 19 focused tests PASS.
 - [ ] **A7 — Existing acceptance obligations.** FID-2026-1103-127 and
   FID-2026-1103-137 remain blocked on the operator's real observations and
   explicit go decision; their implementation evidence is not launch approval.

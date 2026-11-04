@@ -1,5 +1,10 @@
 # Current project status
 
+**Newer review:** [2026-11-04 release audit](../dev/audits/2026-11-04-release-readiness.md)
+records the current quality checks, repaired guard/ledger defects, remaining
+release conditions and ranked engagement/QOL proposals. The dated tables below
+remain the 2026-11-03 index and do not supersede that audit.
+
 **Index date: 2026-11-03.** This page is a dated index, not a receipt. Each claim
 links to the record that owns it; a record can be newer than this page. The
 previous index is preserved as [the 2026-10-31 record](project-status-2026-10-31.md).

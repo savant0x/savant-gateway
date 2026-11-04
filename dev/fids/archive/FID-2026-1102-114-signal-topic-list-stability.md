@@ -99,3 +99,10 @@ out-of-list active chip only when needed, then a clear link when `tag` is set.
 - **Verification Evidence:** `npm run verify` exit 0, recorded above.
 - **Archived:** yes —
   `dev/fids/archive/FID-2026-1102-114-signal-topic-list-stability.md`
+
+## Audit supplement — 2026-11-04
+
+The historical "containing commit" reference above resolves to
+`8a45c2f83565b5cbbe7faed31df177e8b38e94e8`, verified with Git history for
+`app/signal/page.tsx`. The ordered `tags.slice(0, 12)` render, appended external
+selection and separate clear control exist. Historical gate output is unchanged.

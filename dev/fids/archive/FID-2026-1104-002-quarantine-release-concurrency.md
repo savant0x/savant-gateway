@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-002-quarantine-release-concurrency.md`
 **ID:** FID-2026-1104-002
 **Severity:** high
-**Status:** verified
+**Status:** closed
 **Created:** 2026-11-04
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -118,16 +118,19 @@ remove only fixture rows and close pools. No production schema is reset.
 
 Focused ledger/concurrency: 19/19. Full verify: exit 0, 2026-11-04T14:57:28Z,
 980/980 tests and 2/2 mandatory PostgreSQL proofs, zero skips; all ten gates
-PASS. The generated databases were dropped. Local commit follows verification.
+PASS. The generated databases were dropped. Repair commit:
+`43d875840774e8572a9e898567009c48ed106844`.
 
 ## Code Verification Evidence
 
-Referenced ledger, adapter, store and test file exist. Runtime loss remains
-unconfirmed until the regression runs.
+Ledger, adapter, store and test exist. The real-connection RED reproduced two
+accepted releases; GREEN proves one release and preserved unrelated capacity.
 
 ## Resolution
 
-Open implementation under the converged design.
+- Closed/archived: 2026-11-04; commit `43d8758`; full gate exit 0.
+- `lib/storage/ledger/settlements.ts:215` locks the row; the mandatory
+  `tests/settlement-concurrency.test.mjs` covers the production function.
 
 ## Lessons Learned
 

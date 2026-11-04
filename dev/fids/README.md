@@ -22,6 +22,15 @@ working set; each FID owns its own status, evidence and resolution.
 | [127](FID-2026-1103-127-real-launch-acceptance-receipt.md) | Real launch acceptance receipt | fixed | Operator records the six observations and a go pinned to the release SHA, then runs `npm run receipt:launch`. |
 | [137](FID-2026-1103-137-product-hardening-and-install-order-master.md) | Product hardening and install-order master | converged | Closes only after 126 and 127 have their required evidence. |
 
+### Closed in the 2026-11-04 release audit
+
+[2026-1104-001](archive/FID-2026-1104-001-release-audit-and-guard-integrity.md)
+and [2026-1104-002](archive/FID-2026-1104-002-quarantine-release-concurrency.md)
+close against repair commit `43d8758`: all ten verify gates PASS, 980/980 tests,
+2/2 mandatory PostgreSQL proofs and 803 HTTP checks plus trial PASS. The separate
+isolated load measurement fails eight targets; the
+[release report](../audits/2026-11-04-release-readiness.md) remains no-go.
+
 ### Closed in the 2026-11-03 hardening pass
 
 [126](archive/FID-2026-1103-126-production-concurrency-proof.md),

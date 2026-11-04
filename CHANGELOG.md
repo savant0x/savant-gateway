@@ -3,6 +3,26 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-04 — Release audit and verification integrity
+
+- **FID-2026-1104-001 — high —** the audit reproduced a stale approval accepted
+  by the launch receipt and required test gates accepted without test evidence.
+  The validator now compares approval and pinned commits; the verification
+  summary requires complete, consistent, nonempty successful test output in
+  spec or TAP format. Shared lint now enforces zero warnings and the six
+  formatting warnings were corrected directly. The audit also registers exact
+  active acceptance IDs and supplements two historical closure commit references.
+- **FID-2026-1104-002 — high —** two real database connections could both
+  release one quarantined hold. A row lock serializes the shared release path;
+  the mandatory PostgreSQL suite now proves both debit and quarantine-release
+  races. RED reported two accepted releases; focused GREEN passed 19/19 tests.
+- The full report is `dev/audits/2026-11-04-release-readiness.md`. Product ideas
+  are proposals; no launch approval, offering activation or real payment is
+  inferred from local verification. Both records close against `43d8758` with
+  all ten verify gates PASS: 980/980 tests, 2/2 PostgreSQL proofs and 803 HTTP
+  checks plus trial PASS. Isolated load failed 8/123 checks (4.54 rps, steady
+  p95 2,152.52ms and free/mixed refusals); ledger/held differences were zero.
+
 ## 2026-11-03 — Ranked price changes, provider readiness and disposable server database
 
 - **FID-2026-1103-157 — medium — closed: the pricing report ranks modeled

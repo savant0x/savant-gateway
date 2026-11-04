@@ -136,3 +136,10 @@ already-working single-source endpoint, showing progress and isolating failures.
   above.
 - **Archived:** yes —
   `dev/fids/archive/FID-2026-1102-113-content-fetch-all.md`
+
+## Audit supplement — 2026-11-04
+
+The historical "containing commit" reference above resolves to
+`8a45c2f83565b5cbbe7faed31df177e8b38e94e8`, verified with Git history for
+`lib/content/fetch-all.ts`. The helper, mounted control, page and five-test suite
+exist. This adds the missing explicit commit; the historical receipt is unchanged.

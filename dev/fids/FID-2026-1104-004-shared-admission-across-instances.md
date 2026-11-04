@@ -133,6 +133,7 @@ promised at convergence.
 ### Verification Receipt
 
 - verified: partial — 2026-11-04
+- commit: `cde992c` (implementation)
 - typecheck: exit 0
 - lint: exit 0 (zero warnings)
 - test: 982 pass, 0 fail, 4 skipped (all PostgreSQL-only)
@@ -196,7 +197,7 @@ Implementation landed 2026-11-04. The mandatory two-instance PostgreSQL proof is
 still blocked, so this record is not closed and no cross-instance safety is
 claimed.
 
-- [ ] **Commit SHA:** recorded in the follow-up receipt commit.
+- [x] **Commit SHA:** `cde992cf1517aaeea5adac2e6386ba77ca7f1bc7`.
 - [x] **File:line ranges:**
   - `lib/storage/schema/admission.ts:14` — `admission_buckets` and
     `admission_leases`, additive and idempotent.

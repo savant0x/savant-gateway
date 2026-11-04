@@ -94,8 +94,9 @@ export function ProviderForm({
           {editing ? `Edit ${editing}` : "Register a provider"}
         </Card.Title>
         <Card.Description>
-          A provider is enabled when its key variable is present in .env.local.
-          Leave the key out of this form; only its variable name belongs here.
+          A provider can be enabled only when its key variable is present in
+          this runtime&apos;s environment. Leave the key out of this form; only
+          its variable name belongs here.
         </Card.Description>
       </Card.Header>
       <Card.Content className="space-y-4">

@@ -1,5 +1,8 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
-import { readProviderInput } from "@/lib/providers/registry";
+import {
+  providerEnableRefusal,
+  readProviderInput,
+} from "@/lib/providers/registry";
 import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 import { deleteProvider, getProvider, updateProvider } from "@/lib/store";
 
@@ -33,6 +36,13 @@ export async function PATCH(request: Request, context: Context) {
   });
 
   if (!input.ok) return adminError(400, input.error);
+
+  // Enabling is a runtime claim: this process must see the key that would
+  // serve the call. A disabled save and a key fix remain available so an
+  // already-broken record can be repaired.
+  const refusal = providerEnableRefusal(input.value);
+
+  if (refusal) return adminError(409, refusal);
 
   const provider = await updateProvider(slug, input.value);
 

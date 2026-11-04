@@ -13,16 +13,17 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-function State({ ok, label }: { ok: boolean; label: string }) {
+function Readiness({ state }: { state: "ready" | "disabled" | "blocked" }) {
+  const className =
+    state === "ready"
+      ? "rounded-full bg-success/10 px-2 py-0.5 text-[11px] text-success"
+      : state === "blocked"
+        ? "rounded-full bg-danger/10 px-2 py-0.5 text-[11px] text-danger"
+        : "rounded-full bg-black/5 px-2 py-0.5 text-[11px] text-muted dark:bg-white/5";
+
   return (
-    <span
-      className={
-        ok
-          ? "rounded-full bg-success/10 px-2 py-0.5 text-[11px] text-success"
-          : "rounded-full bg-danger/10 px-2 py-0.5 text-[11px] text-danger"
-      }
-    >
-      {label}
+    <span className={className}>
+      {state === "blocked" ? "not ready" : state}
     </span>
   );
 }
@@ -46,9 +47,6 @@ export default async function AdminDiagnosticsPage() {
       keyEnvVar: provider.keyEnvVar,
       enabled: provider.enabled,
     })),
-  );
-  const missingEnabled = data.providerKeys.filter(
-    (provider) => provider.enabled && !provider.configured,
   );
 
   return (
@@ -76,13 +74,13 @@ export default async function AdminDiagnosticsPage() {
         </Link>
       </div>
 
-      {missingEnabled.length > 0 ? (
+      {data.enabledUnready.length > 0 ? (
         <p className="rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
-          {missingEnabled.length} enabled provider
-          {missingEnabled.length === 1 ? "" : "s"} cannot see a key:{" "}
-          {missingEnabled.map((provider) => provider.keyEnvVar).join(", ")}. Set
-          the variable in the Vercel project for the environment you are
-          viewing, then redeploy.
+          {data.enabledUnready.length} enabled provider
+          {data.enabledUnready.length === 1 ? "" : "s"} cannot see a key:{" "}
+          {data.enabledUnready.join(", ")}. The provider API refuses to save an
+          enabled provider until this runtime can see the variable. Set it in
+          the Vercel project for the environment you are viewing, then redeploy.
         </p>
       ) : null}
 
@@ -123,9 +121,10 @@ export default async function AdminDiagnosticsPage() {
         <div className="rounded-2xl border border-black/10 bg-surface p-5 dark:border-white/10">
           <h2 className="text-sm font-semibold">Provider keys</h2>
           <p className="mt-1 text-xs leading-5 text-muted">
-            Only presence is reported. The registry stores the variable name, so
-            this list is the complete set of credentials the gateway can ask
-            for.
+            Only presence is reported. Readiness is this runtime&apos;s verdict:
+            an enabled provider needs a non-blank value for the variable named
+            here. The registry stores the variable name, so this list is the
+            complete set of credentials the gateway can ask for.
           </p>
           <ul className="mt-3 space-y-2">
             {data.providerKeys.map((provider) => (
@@ -142,12 +141,13 @@ export default async function AdminDiagnosticsPage() {
                   </p>
                   <p className="mono truncate text-[11px] text-muted">
                     {provider.keyEnvVar}
+                    {provider.configured ? "" : " · missing"}
                   </p>
+                  {provider.readiness === "blocked" ? (
+                    <p className="text-[11px] text-danger">{provider.reason}</p>
+                  ) : null}
                 </div>
-                <State
-                  label={provider.configured ? "configured" : "missing"}
-                  ok={provider.configured}
-                />
+                <Readiness state={provider.readiness} />
               </li>
             ))}
           </ul>
@@ -171,7 +171,8 @@ export default async function AdminDiagnosticsPage() {
           </li>
           <li>
             Run a provider test on the Providers page and confirm this page
-            reports the key as configured.
+            reports the provider as ready. The Providers page cannot enable a
+            provider whose key this runtime cannot see.
           </li>
           <li>
             Do not paste a secret into this page, a FID or a commit. The receipt

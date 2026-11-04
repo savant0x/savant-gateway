@@ -201,7 +201,9 @@ export function AdminProvidersPanel({
                     <td>
                       <span className="mono text-xs">{provider.keyEnvVar}</span>
                       <p className="mt-1 text-[11px] text-muted">
-                        {provider.configured ? "configured" : "missing key"}
+                        {provider.configured
+                          ? "configured"
+                          : "missing key — add it before enabling"}
                       </p>
                     </td>
                     <td>
@@ -241,7 +243,10 @@ export function AdminProvidersPanel({
                           Edit
                         </Button>
                         <Button
-                          isDisabled={busy !== null}
+                          isDisabled={
+                            busy !== null ||
+                            (!provider.enabled && !provider.configured)
+                          }
                           size="sm"
                           variant="secondary"
                           onPress={() => toggle(provider)}

@@ -1,6 +1,9 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
 import { createProvider, getProvider, listProviders } from "@/lib/store";
-import { readProviderInput } from "@/lib/providers/registry";
+import {
+  providerEnableRefusal,
+  readProviderInput,
+} from "@/lib/providers/registry";
 import { refreshEnabledProviderAccounts } from "@/lib/providers/runtime";
 import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 
@@ -36,6 +39,11 @@ export async function POST(request: Request) {
   const input = readProviderInput(body);
 
   if (!input.ok) return adminError(400, input.error);
+
+  const refusal = providerEnableRefusal(input.value);
+
+  if (refusal) return adminError(409, refusal);
+
   if (await getProvider(input.value.slug)) {
     return adminError(409, "A provider with that slug already exists.");
   }

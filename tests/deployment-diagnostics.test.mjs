@@ -42,13 +42,36 @@ test("runtime commit, branch and repository are reported without secrets", () =>
   assert.equal(data.repository, "spenc/gateway");
   assert.equal(data.siteOrigin, "https://gateway.example.com");
   assert.deepEqual(data.missingKeys, ["COMMANDCODE_API_KEY"]);
+  assert.deepEqual(data.enabledUnready, []);
   assert.equal(data.providerKeys[0].configured, true);
+  assert.equal(data.providerKeys[0].readiness, "ready");
+  assert.equal(data.providerKeys[1].readiness, "disabled");
   assert.equal(data.generatedAt, "2026-11-03T12:00:00.000Z");
 
   const serialized = JSON.stringify(data);
 
   assert.equal(serialized.includes("sk_live_secret_value"), false);
   assert.equal(serialized.includes('PROVIDER_KEY"'), true);
+});
+
+test("an enabled provider without a key is blocked and named", () => {
+  const data = readDeploymentDiagnostics(
+    { NODE_ENV: "production" },
+    [
+      {
+        slug: "commandcode",
+        label: "CommandCode",
+        keyEnvVar: "COMMANDCODE_API_KEY",
+        enabled: true,
+      },
+    ],
+  );
+
+  assert.equal(data.providerKeys[0].readiness, "blocked");
+  assert.equal(data.providerKeys[0].configured, false);
+  assert.match(data.providerKeys[0].reason, /COMMANDCODE_API_KEY/);
+  assert.deepEqual(data.enabledUnready, ["COMMANDCODE_API_KEY"]);
+  assert.deepEqual(data.missingKeys, ["COMMANDCODE_API_KEY"]);
 });
 
 test("a malformed commit or origin is absent, not guessed", () => {

@@ -208,3 +208,70 @@ export function providerKeyConfigured(
 ) {
   return Boolean(env[keyEnvVar]?.trim());
 }
+
+export type ProviderReadinessState = "ready" | "disabled" | "blocked";
+
+export type ProviderReadiness = {
+  state: ProviderReadinessState;
+  configured: boolean;
+  /** Secret-free explanation when the provider claims to be enabled. */
+  reason: string | null;
+};
+
+/**
+ * Whether this runtime can actually serve a provider. Enabled plus a visible
+ * non-blank key is the only ready state; a missing key on an enabled record is
+ * blocked, not merely unconfigured, because the record currently claims service
+ * it cannot provide. A disabled provider is never blocked: it is not claiming
+ * anything, so a missing key is ordinary preparation.
+ */
+export function providerReadiness(input: {
+  keyEnvVar: string;
+  enabled: boolean;
+  env?: Record<string, string | undefined>;
+}): ProviderReadiness {
+  const name = input.keyEnvVar.trim();
+  const configured = name !== "" && providerKeyConfigured(name, input.env);
+
+  if (configured) {
+    return {
+      state: input.enabled ? "ready" : "disabled",
+      configured: true,
+      reason: null,
+    };
+  }
+
+  if (!input.enabled) {
+    return { state: "disabled", configured: false, reason: null };
+  }
+
+  return {
+    state: "blocked",
+    configured: false,
+    reason: name
+      ? `${name} is not set in this runtime.`
+      : "No key environment variable is recorded.",
+  };
+}
+
+/**
+ * The operator-facing refusal for a save that would leave a provider enabled
+ * without a visible key. Null means the save is admissible.
+ */
+export function providerEnableRefusal(input: {
+  label: string;
+  keyEnvVar: string;
+  enabled: boolean;
+  env?: Record<string, string | undefined>;
+}): string | null {
+  const readiness = providerReadiness(input);
+
+  if (readiness.state !== "blocked") return null;
+
+  const name = input.label.trim() || "This provider";
+
+  return (
+    `Cannot enable ${name}: ${readiness.reason} ` +
+    "Set the variable for this environment and restart or redeploy, or keep the provider disabled."
+  );
+}

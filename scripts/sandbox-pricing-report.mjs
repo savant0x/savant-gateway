@@ -144,6 +144,18 @@ function pct(bps) {
   return bps === null || bps === undefined ? "—" : `${(bps / 100).toFixed(1)}%`;
 }
 
+function signedUsd(micros) {
+  if (!micros) return "$0";
+
+  return `${micros > 0 ? "+" : "-"}${usd(Math.abs(micros))}`;
+}
+
+function changeMove(change) {
+  if (change.direction === "new") return "new price";
+
+  return `${change.direction}${change.maxAbsBps === null ? "" : ` ${pct(change.maxAbsBps)}`}`;
+}
+
 function table(report, catalog) {
   const lines = [
     "# Sandbox pricing economics report",
@@ -167,6 +179,35 @@ function table(report, catalog) {
       `${usd(report.summary.recommendedScenarioProfitMicros)} at the recommendation ` +
       `(${usd(report.summary.modeledProfitDeltaMicros)} delta).`,
     "",
+    "## Highest-impact modeled price changes",
+    "",
+    `Ranked by absolute modeled profit movement at ${scenarioLabel(report.summary.scenario)} per row. ` +
+      "Includes safe and review-required rows; unchanged recommendations are excluded.",
+    "",
+    "| Model | Class | Route | Current sell / 1M | Recommended / 1M | Move | Scenario profit now → after | Δ modeled |",
+    "| --- | --- | --- | --- | --- | --- | --- | ---: |",
+  ];
+
+  if (report.priceChanges.length === 0) {
+    lines.push(
+      "| — | — | — | — | — | — | — | No eligible price change in the modeled scenario. |",
+    );
+  } else {
+    for (const change of report.priceChanges) {
+      lines.push(
+        `| ${change.name} | ${change.classification} | ` +
+          `${change.upstreamProvider}${change.routeTakeover ? ` → ${change.servingProvider}` : ""} | ` +
+          `${usd(change.currentInputMicros)} / ${usd(change.currentOutputMicros)} | ` +
+          `${usd(change.recommendedInputMicros)} / ${usd(change.recommendedOutputMicros)} | ` +
+          `${changeMove(change)} | ` +
+          `${usd(change.currentScenarioProfitMicros)} → ${usd(change.recommendedScenarioProfitMicros)} | ` +
+          `${signedUsd(change.profitDeltaMicros)} |`,
+      );
+    }
+  }
+
+  lines.push(
+    "",
     "## Catalog sources",
     "",
     "| Provider | Key variable | Models | Synced | Enabled |",
@@ -183,7 +224,7 @@ function table(report, catalog) {
     "",
     "| Model | Route | Change | Current sell / 1M | Recommended / 1M | Explanation |",
     "| --- | --- | --- | --- | --- | --- |",
-  ];
+  );
   const queue = reviewQueue(report, 10);
 
   if (queue.length === 0) {

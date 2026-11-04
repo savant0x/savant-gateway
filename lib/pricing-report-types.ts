@@ -32,6 +32,29 @@ export type PricePoint = {
   scenarioProfitMicros: number;
 };
 
+export type PricingReportChange = {
+  id: string;
+  name: string;
+  classification: PricingReportClass;
+  upstreamProvider: string;
+  servingProvider: string | null;
+  routeTakeover: boolean;
+  direction: PricingReportRow["change"]["direction"];
+  inputBps: number | null;
+  outputBps: number | null;
+  maxAbsBps: number | null;
+  currentInputMicros: number;
+  currentOutputMicros: number;
+  recommendedInputMicros: number;
+  recommendedOutputMicros: number;
+  currentScenarioProfitMicros: number;
+  recommendedScenarioProfitMicros: number;
+  /** Signed modeled profit movement at the labelled scenario. */
+  profitDeltaMicros: number;
+  /** Absolute movement, used for the ranking. */
+  impactMicros: number;
+};
+
 export type PricingReportRow = {
   id: string;
   name: string;
@@ -76,6 +99,8 @@ export type PricingReportOptions = {
   /** A relative move larger than this needs explicit review. 25% default. */
   reviewThresholdBps?: number;
   includeOutOfCatalog?: boolean;
+  /** Rows in the highest-impact change table. 10 default. */
+  priceChangeLimit?: number;
 };
 
 export type PricingReportSummary = {
@@ -98,8 +123,10 @@ export type PricingReportSummary = {
 
 export type PricingReport = {
   report: "sandbox-pricing-economics";
-  schema: 1;
+  schema: 2;
   summary: PricingReportSummary;
+  /** Eligible price changes ranked by absolute modeled profit movement. */
+  priceChanges: PricingReportChange[];
   rows: PricingReportRow[];
 };
 

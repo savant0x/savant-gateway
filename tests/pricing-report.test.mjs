@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   buildPricingReport,
   DEFAULT_REVIEW_THRESHOLD_BPS,
+  rankPriceChanges,
   reviewQueue,
 } from "../lib/pricing-report.ts";
 
@@ -74,6 +75,7 @@ test("free and subscription rows are classified without a per-token price", () =
   assert.equal(report.summary.paidRows, 0);
   assert.equal(report.summary.currentScenarioProfitMicros, 0);
   assert.equal(report.summary.autoPublish, false);
+  assert.deepEqual(report.priceChanges, []);
 });
 
 test("unknown and stale costs are blocked from recommendation", () => {
@@ -240,6 +242,48 @@ test("rows sort by risk and the review queue ranks by impact", () => {
   assert.equal(queue.length, 2);
   assert.ok(queue[0].impactMicros >= queue[1].impactMicros);
   assert.ok(queue.every((row) => row.classification === "review-required"));
+});
+
+test("the highest-impact table ranks modeled changes and excludes unchanged rows", () => {
+  const report = rows([
+    model({ id: "small", costInputPer1M: 0.5, costOutputPer1M: 0.5 }),
+    model({ id: "large", costInputPer1M: 10, costOutputPer1M: 10 }),
+    model({
+      id: "unchanged",
+      inputPricePer1M: 2.857143,
+      outputPricePer1M: 11.428572,
+    }),
+    model({ id: "unknown", costSource: "unknown" }),
+  ]);
+
+  assert.equal(report.schema, 2);
+  assert.deepEqual(
+    report.priceChanges.map((change) => change.id),
+    ["large", "small"],
+  );
+  assert.ok(
+    report.priceChanges[0].impactMicros >=
+      report.priceChanges[1].impactMicros,
+  );
+  assert.ok(
+    report.priceChanges.every((change) => change.direction !== "unchanged"),
+  );
+  assert.equal(
+    report.priceChanges.some((change) => change.id === "unknown"),
+    false,
+  );
+
+  const [top, reducing] = report.priceChanges;
+
+  assert.equal(
+    top.profitDeltaMicros,
+    top.recommendedScenarioProfitMicros - top.currentScenarioProfitMicros,
+  );
+  assert.ok(top.profitDeltaMicros > 0);
+  assert.ok(reducing.profitDeltaMicros < 0, "a decrease keeps its sign");
+
+  assert.equal(rankPriceChanges(report.rows, 1).length, 1);
+  assert.equal(rankPriceChanges(report.rows, 0).length, 0);
 });
 
 test("out-of-catalog rows are excluded unless the report asks for them", () => {

@@ -1,6 +1,7 @@
 import type { AdminModelSummary } from "./types.ts";
 import type {
   PricingReport,
+  PricingReportChange,
   PricingReportClass,
   PricingReportOptions,
   PricingReportRow,
@@ -34,6 +35,7 @@ import { DEFAULT_REVIEW_THRESHOLD_BPS } from "./pricing-report-types.ts";
 export type {
   PricePoint,
   PricingReport,
+  PricingReportChange,
   PricingReportClass,
   PricingReportOptions,
   PricingReportRow,
@@ -196,7 +198,7 @@ export function buildPricingReport(
 
   return {
     report: "sandbox-pricing-economics",
-    schema: 1,
+    schema: 2,
     summary: {
       generatedAt: now.toISOString(),
       source: "sandbox",
@@ -215,8 +217,62 @@ export function buildPricingReport(
       excludedOutOfCatalog,
       autoPublish: false,
     },
+    priceChanges: rankPriceChanges(rows, options.priceChangeLimit ?? 10),
     rows,
   };
+}
+
+/**
+ * The modeled changes that move profit the most, regardless of classification.
+ *
+ * The review queue answers "what needs approval"; this table answers "what
+ * changes the economics". A safe row still belongs here, and a price decrease
+ * ranks by the profit it removes just like an increase ranks by the profit it
+ * adds. Unchanged recommendations are excluded because they model no change.
+ */
+export function rankPriceChanges(
+  rows: PricingReportRow[],
+  limit = 10,
+): PricingReportChange[] {
+  const changes: PricingReportChange[] = [];
+
+  for (const row of rows) {
+    const recommended = row.recommended;
+
+    if (recommended === null || row.change.direction === "unchanged") continue;
+
+    changes.push({
+      id: row.id,
+      name: row.name,
+      classification: row.classification,
+      upstreamProvider: row.upstreamProvider,
+      servingProvider: row.servingProvider,
+      routeTakeover: row.routeTakeover,
+      direction: row.change.direction,
+      inputBps: row.change.inputBps,
+      outputBps: row.change.outputBps,
+      maxAbsBps: row.change.maxAbsBps,
+      currentInputMicros: row.current.inputMicros,
+      currentOutputMicros: row.current.outputMicros,
+      recommendedInputMicros: recommended.inputMicros,
+      recommendedOutputMicros: recommended.outputMicros,
+      currentScenarioProfitMicros: row.current.scenarioProfitMicros,
+      recommendedScenarioProfitMicros: recommended.scenarioProfitMicros,
+      profitDeltaMicros:
+        recommended.scenarioProfitMicros - row.current.scenarioProfitMicros,
+      impactMicros: row.impactMicros,
+    });
+  }
+
+  changes.sort(
+    (left, right) =>
+      right.impactMicros - left.impactMicros ||
+      left.name.localeCompare(right.name),
+  );
+
+  const bounded = Number.isFinite(limit) ? Math.max(0, Math.floor(limit)) : 10;
+
+  return changes.slice(0, bounded);
 }
 
 /** The highest-impact rows an operator should inspect first. */

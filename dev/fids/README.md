@@ -24,6 +24,10 @@ working set; each FID owns its own status, evidence and resolution.
 | [2026-1104-009](FID-2026-1104-009-browser-journey-receipt.md) | Fresh browser journey receipt | converged | Worker adds the Playwright runner and records six journeys in both themes. |
 | [2026-1104-011](FID-2026-1104-011-policy-v1-2-publication.md) | Policy v1.2 for the current service surface | converged | Operator approves the recipient inventory; worker drafts v1.2 and the acceptance bump. |
 | [2026-1104-013](FID-2026-1104-013-model-matched-visual-builds.md) | Pelican-first model-matched visual builds with a gated OpenRouter track | converged | 013A only after 009; schema-aware backup (SCOPE VB6) is implemented. 013B stays blocked on a lawful OpenRouter fixture and rights. |
+| [2026-1104-015](FID-2026-1104-015-content-fetch-automation-and-history.md) | Dashboard-configured fetching and durable history | converged | Planning only; coding reserved and scheduler backend unconfirmed. |
+| [2026-1104-016](FID-2026-1104-016-persistent-content-model-decisions.md) | Persistent content/model acceptance and dismissal | converged | Planning only; accepted links remain attached across automatic work. |
+| [2026-1104-017](FID-2026-1104-017-content-matching-controls-and-review.md) | Full linked-content management, settings and rematch | converged | Implement after 015 and 016 in a coding session. |
+| [2026-1104-018](FID-2026-1104-018-content-automation-master.md) | Content automation and persistent matching master | converged | Planning handoff ready; no coding or hosted activation authorized. |
 
 > 2026-11-04 correction: FID-013 was absent from this table despite the
 > planning summary's "registered" claim. It is now registered as 013A/013B;

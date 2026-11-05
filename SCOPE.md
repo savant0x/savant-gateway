@@ -1,5 +1,43 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-04 (content automation and persistent matching design)
+
+Operator instruction, verbatim: "This is big enough for a multi fid + perfection
+loop only. You are the planning agent, not the coding".
+Persistence clarification, verbatim: "The entire point of tagging it is so the
+link is persistant". Accepted links remain attached to content; dismissal removes
+the association from active use and prevents automatic recreation. Stored content
+is not deleted by a link decision.
+
+Automation level 3 for planning; strict; single agent. Recorded presentation:
+trace the existing fetching, topic tags, model matching, public projections and
+operator review; author three child contracts and a dependency master; audit each
+through the Perfection Loop; present a verified planning handoff. No application
+code, schema, runtime settings, source fetch, hosted scheduler, deployment or paid
+service change is authorized by this pass. Scheduler backend/tier is unconfirmed.
+
+- [x] **CA1 — Fetch automation/history design.** FID-2026-1104-015 covers the
+  scheduler connection, dashboard settings, fair due work, durable run/cycle
+  history, last-attempt versus last-success, and heartbeat health.
+- [x] **CA2 — Persistent link decisions design.** FID-2026-1104-016 covers
+  explicit acceptance, durable dismissal, atomic reconciliation, honest legacy
+  migration, consistent public reads and decision history.
+- [x] **CA3 — Matching management design.** FID-2026-1104-017 covers the full
+  linked-content browser, matching settings and aliases, scoped stored-content
+  rematch, provenance, progress and catalog-change behavior.
+- [x] **CA4 — Master and audits.** FID-2026-1104-018 orders the children,
+  carries acceptance scenarios and operator boundaries, and records each
+  document's Perfection Loop and the planning verification receipt.
+  Evidence: 163 structural/reference/test-gate checks, two final unchanged
+  reviews per document; 55/55 focused baseline and 1,015/1,019 full baseline
+  tests (four PostgreSQL-only skips), check/quality/build/attribution/repository
+  gates pass. The session receipt records the 015 edit-cap deviation and all
+  measured deltas; no clean protocol-compliance claim is made for that pass.
+- [ ] **CA5 — Implementation (blocked by explicit operator instruction).**
+  Coding is reserved to a subsequent implementation session. No child is closed
+  by this planning pass. Hosted scheduling additionally requires a confirmed
+  backend, secret provisioning and deployment authorization.
+
 ## Session — 2026-11-04 (completed FID cleanup)
 
 Operator clarification, verbatim: "because i have not funded the wallet, im

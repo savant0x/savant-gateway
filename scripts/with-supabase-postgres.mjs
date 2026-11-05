@@ -20,6 +20,11 @@
  *
  * A hard process kill can leave the generated database behind. The final line
  * names the database so an operator can drop it; nothing else is affected.
+ *
+ * TLS: every remote host is certificate-verified. Supply the managed provider
+ * CA through PROVISIONING_DATABASE_CA or PROVISIONING_DATABASE_CA_FILE; a
+ * remote sslmode=disable or unverified mode is refused. The configured role
+ * must be disposable-only and must not own or write production schemas.
  */
 
 import { spawnSync } from "node:child_process";
@@ -29,6 +34,7 @@ import { resolve } from "node:path";
 import { Client } from "pg";
 
 import { redactPostgresUrl } from "./disposable-postgres.mjs";
+import { provisioningSslConfig } from "./provisioning-tls.mjs";
 
 const PREFIX = "supabase-postgres";
 const GENERATED_NAME = /^gateway_(push|verify|run)_\d+_\d+$/;
@@ -135,22 +141,6 @@ function parseConnectionString(value) {
   return url;
 }
 
-function sslConfig(url) {
-  if (url.searchParams.get("sslmode") === "disable") return undefined;
-
-  const host = url.hostname.toLowerCase();
-  const loopback =
-    host === "127.0.0.1" ||
-    host === "localhost" ||
-    host === "::1" ||
-    host === "[::1]";
-
-  // The managed provider presents a certificate this environment may not have
-  // in its trust store. Test data only; verification is not a security boundary
-  // here, and a loopback server is left on the driver default.
-  return loopback ? undefined : { rejectUnauthorized: false };
-}
-
 function npmCommand(name) {
   return process.platform === "win32" ? `${name}.cmd` : name;
 }
@@ -164,7 +154,7 @@ function resolveCommand(command) {
 async function probe(connectionString) {
   const client = new Client({
     connectionString,
-    ssl: sslConfig(new URL(connectionString)),
+    ssl: provisioningSslConfig(new URL(connectionString)),
     connectionTimeoutMillis: 15_000,
     application_name: "savant-gateway-disposable-probe",
   });
@@ -211,7 +201,7 @@ try {
 
     admin = new Client({
       connectionString: raw,
-      ssl: sslConfig(baseUrl),
+      ssl: provisioningSslConfig(baseUrl),
       connectionTimeoutMillis: 15_000,
       application_name: "savant-gateway-disposable-admin",
     });

@@ -42,10 +42,11 @@ environment is expected to fail this command; that is not a regression.
 | `origin_insecure` | Origin is not HTTPS | Use `https://`; localhost is not a production origin. |
 | `origin_loopback` | Origin is localhost, a loopback address or a wildcard | Use the public hostname. |
 | `origin_invalid` | Origin has credentials, a path, query or fragment | Supply an origin only, for example `https://gateway.example.com`. |
-| `db_missing` | `DB_PATH` is unset | Set an absolute path on the persistent volume. |
-| `db_memory` | `DB_PATH` is `:memory:` | Use a file; in-memory storage loses the ledger. |
-| `db_relative` | `DB_PATH` is relative | Use an absolute path. |
-| `db_ephemeral` | `DB_PATH` is under the system temporary directory | Mount the volume and put the file outside temp. |
+| `db_missing` | `DATABASE_URL` is unset | Set the production PostgreSQL URL. |
+| `db_memory` | `DATABASE_URL` names PGlite or `:memory:` | Use a networked PostgreSQL database. |
+| `db_relative` | `DATABASE_URL` is not an absolute URL | Use `postgres://` or `postgresql://` with a host. |
+| `db_invalid` | `DATABASE_URL` is malformed, not PostgreSQL, or has no host | Correct the URL. |
+| `db_ephemeral` | `DATABASE_URL` points at loopback in production | Use a networked host; only an explicit disposable start skips this check. |
 | `admin_unconfigured` | Admin password or session secret is missing/too short | Set `ADMIN_PASSWORD` (12+) and `ADMIN_SESSION_SECRET` (32+). |
 | `multi_worker` | `WEB_CONCURRENCY`/`PM2_INSTANCES` above 1 or `NODE_APP_INSTANCE` above 0 | Run one process. |
 | `manual_signal_handler` | `NEXT_MANUAL_SIG_HANDLE` is truthy | Unset it so SIGTERM drains in-flight streams. |

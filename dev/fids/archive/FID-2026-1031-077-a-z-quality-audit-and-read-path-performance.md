@@ -1,5 +1,6 @@
 # FID-2026-1031-077 — A–Z quality audit and read-path performance
 
+- **ID:** FID-2026-1031-077
 - **Status:** closed
 - **Severity:** medium
 - **Created:** 2026-10-31

@@ -1,5 +1,6 @@
 # FID-2026-1031-079 — Lifecycle activity tracking
 
+- **ID:** FID-2026-1031-079
 - **Status:** closed
 - **Severity:** medium
 - **Created:** 2026-10-31

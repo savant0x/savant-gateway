@@ -34,7 +34,10 @@ Generate a session secret with:
 node -e "console.log(require('node:crypto').randomBytes(24).toString('base64url'))"
 ```
 
-`DB_PATH` is optional and defaults to `./data/gateway.db`. The local origin
+`DATABASE_URL` is optional locally and required in production. Leave it blank
+for local development; the app then uses embedded PostgreSQL (PGlite) at
+`PG_LOCAL_PATH` (default `./data/pg`). A production start refuses to boot
+without a networked `postgres://` or `postgresql://` URL. The local origin
 defaults to `http://localhost:3000`; leave `NEXT_PUBLIC_SITE_URL` alone for local
 work.
 
@@ -103,8 +106,9 @@ completion, failure or stream close.
 
 ## Local database and recovery
 
-Local development runs PostgreSQL through PGlite in `data/pg`; a deployment
-runs on the server named by `DATABASE_URL`. There is no database file to copy.
+Local development runs PostgreSQL through PGlite at `PG_LOCAL_PATH` (default
+`data/pg`); a deployment runs on the server named by `DATABASE_URL`. There is no
+database file to copy.
 
 ```bash
 npm run db:backup

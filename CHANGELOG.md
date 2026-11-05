@@ -3,6 +3,27 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-05 — FID register and current-doc audit
+
+- **FID register —** reconciled the register against the folder: 12 active
+  records, 165 archived, 177 allocated. The active table matches the folder
+  exactly, IDs are unique, and no record is split or missing. The audit date and
+  count are current, FID-137's next action now names only the open 127 evidence
+  (126 is archived), and three archived 2026-10-31 records (077–079) gained the
+  `**ID:**` metadata field they predated. No status, resolution or evidence text
+  was changed.
+- **Docs —** `docs/project-status.md` is reindexed to 2026-11-05 with the current
+  11/11 verify receipt (1,046 tests, zero skips, seven concurrency assertions,
+  776 HTTP checks plus trial, recovery 14/14) and all 12 active records. It
+  records that the load gate was not run. `docs/getting-started.md` replaces the
+  obsolete `DB_PATH` guidance with `DATABASE_URL`/`PG_LOCAL_PATH`, and
+  `docs/troubleshooting.md` now lists the live production-config codes
+  (`db_missing`, `db_memory`, `db_relative`, `db_invalid`, `db_ephemeral`)
+  against `DATABASE_URL`.
+- **Verification:** `npm run repository:check` passes with 12 active FIDs; this
+  is a docs-and-register change with no runtime behavior change. The pre-push
+  hook runs the full verification gate before the push.
+
 ## 2026-11-05 — Docker-free verification
 
 - **FID-2026-1105-002 — high —** development, CI, push and load workflows no

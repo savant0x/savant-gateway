@@ -1,13 +1,13 @@
 # Current project status
 
-**Newer review:** [2026-11-04 release audit](../dev/audits/2026-11-04-release-readiness.md)
-records the current quality checks, repaired guard/ledger defects, remaining
-release conditions and ranked engagement/QOL proposals. The dated tables below
-remain the 2026-11-03 index and do not supersede that audit.
-
-**Index date: 2026-11-03.** This page is a dated index, not a receipt. Each claim
+**Index date: 2026-11-05.** This page is a dated index, not a receipt. Each claim
 links to the record that owns it; a record can be newer than this page. The
 previous index is preserved as [the 2026-10-31 record](project-status-2026-10-31.md).
+
+**Current evidence:** [`CHANGELOG.md`](../CHANGELOG.md) and the
+[`dev/fids/README.md`](../dev/fids/README.md) register. The earlier
+[2026-11-04 release audit](../dev/audits/2026-11-04-release-readiness.md)
+remains the dated release review.
 
 ## Where the truth lives
 
@@ -20,36 +20,57 @@ previous index is preserved as [the 2026-10-31 record](project-status-2026-10-31
 | How is real acceptance recorded? | [launch-receipt.md](launch-receipt.md) |
 | How is the app installed and deployed? | [getting-started.md](getting-started.md), [README](../README.md) |
 
-## Verification — 2026-11-03
+## Verification — 2026-11-05
 
-Measured locally against the working tree at `a789b94` plus this documentation
-slice, on Windows with Node 24:
+Measured locally on Windows x64 with Node 24.21.0. The full run was repeated by
+the pre-push hook on the pushed tree at `e726209`:
 
 | Gate | Result |
 | --- | --- |
+| `npm run verify` | PASS — 11/11 gates, 137.8 s; summary in `.verify/summary.json` |
 | `npm run check` (lint + typecheck) | PASS |
-| `npm test` | 959 tests: 958 pass, 0 fail, 1 skipped |
+| `npm test` | 1,046/1,046 tests, 0 failed, 0 skipped |
+| `npm run test:postgres` | PASS — seven assertions across the four declared files, 0 skipped, on the pinned native PostgreSQL 17.11.0-beta.19. The verifier summary's `2/2` is the first test file's total. |
+| `npm run test:http` | PASS — 776 main checks plus the trial suite, both on real PostgreSQL |
+| `npm run test:recovery` | PASS — 14/14 dump, restore, replay and refusal checks |
+| `tests/disposable-postgres.test.mjs` | PASS — 9/9 lifecycle and refusal tests |
 | `npm run quality` | PASS (400-line ceiling) |
 | `npm run build` | PASS |
-| `npm run test:http` | 776 checks PASS; the trial suite requires a real PostgreSQL endpoint |
-| `npm run test:recovery` | PASS (dump, restore, replay and refusals) |
-| `npm run test:postgres` | PASS — disposable PostgreSQL 18.6 on loopback: 1/1, 0 skipped; exactly one of two racing debits committed. Plain `npm test` still skips this case when `TEST_DATABASE_URL` is unset. |
-| `npm run test:load` | Real PostgreSQL 17.11 on an isolated database in the configured Supabase cluster (pooler port 6543). Every workload and the ledger reconciliation ran; five candidate targets failed (4.76 admitted rps, steady p95 1,974ms, two mixed-billing 503s). FID-148 closes the port; capacity acceptance remains open under FID-062, and the envelope stays a candidate. |
+| `npm run test:load` | **Not run in this pass.** Capacity acceptance and the candidate envelope remain open under FID-2026-1030-062. |
 
-The Vercel production deployment reached Ready on `67551ea`; `/api/ready`
-reports PostgreSQL storage healthy, and the 2026-11-03 cutover receipt records
-44 models and 16 content sources. That is deployment evidence, not launch
-acceptance: none of the external items below has been observed.
+The gate stack is Docker-free. With `TEST_DATABASE_URL` unset, `verify` starts
+one pinned native PostgreSQL 17 cluster under ignored `.scratch/postgres`, binds
+it to loopback on an ephemeral port, supplies both test URLs, and removes only
+its own marked directory. CI declares no container service, and the obsolete
+container and Fly packaging is removed. Linux CI, a clean install with
+postinstall scripts enabled, the load gate and hosted delivery were not
+observed in this pass; the archived FID-2026-1105-002 records those limits.
+
+The Vercel deployment last observed Ready on `67551ea`; `/api/ready` reported
+PostgreSQL storage healthy, and the 2026-11-03 cutover receipt records 44 models
+and 16 content sources. That is historical deployment evidence, not launch
+acceptance. None of the external items below has been observed on this tree, and
+no hosted re-observation is claimed here.
 
 ## Active queue
+
+Twelve records are active. The [register](../dev/fids/README.md) owns the exact
+next action and evidence edges; this table is the current summary.
 
 | ID | Status | Open obligation |
 | --- | --- | --- |
 | [043](../dev/fids/FID-2026-1030-043-launch-master.md) | converged | Launch remains **no-go**. Owns the dependency register and the operator decision. |
-| [062](../dev/fids/FID-2026-1030-062-launch-acceptance-and-rollout.md) | converged | Items 1–8: real NOWPayments invoice/signed IPN/replay refusal, hosted restore, delivered alert, PostgreSQL load envelope, published `v1.2` policies, hosted restore/retention confirmation, explicit public GO. Funded paid inference was withdrawn from the test scope on 2026-11-04 and remains unverified. |
+| [062](../dev/fids/FID-2026-1030-062-launch-acceptance-and-rollout.md) | converged | Items 1–8: real NOWPayments invoice/signed IPN/replay refusal, hosted restore, delivered alert, PostgreSQL load envelope, published `v1.2` policies, hosted retention confirmation, explicit public GO. Funded paid inference was withdrawn on 2026-11-04 and remains unverified. |
 | [068](../dev/fids/FID-2026-1030-068-usdc-receive-lane.md) | fixed | Direct USDC lane: chain/token contract, hardware-wallet xpub, RPC endpoint and screening ruling. Not a launch path. |
 | [127](../dev/fids/FID-2026-1103-127-real-launch-acceptance-receipt.md) | fixed | `npm run receipt:launch` reports INCOMPLETE until the operator records the five required observations (`payment`, `recovery`, `alert`, `load`, `rollback`) and a go decision pinned to the release SHA. |
-| [137](../dev/fids/FID-2026-1103-137-product-hardening-and-install-order-master.md) | converged | Sequencing register; closes only after 126 and 127 have their evidence. |
+| [137](../dev/fids/FID-2026-1103-137-product-hardening-and-install-order-master.md) | converged | Sequencing register; closes only after FID-127 has its operator evidence. FID-126 is already closed. |
+| [009](../dev/fids/FID-2026-1104-009-browser-journey-receipt.md) | converged | Add the browser runner and record six journeys in both themes against a pinned build. |
+| [011](../dev/fids/FID-2026-1104-011-policy-v1-2-publication.md) | converged | Operator approves the recipient inventory; draft and publish policy `v1.2` with the acceptance bump. |
+| [013](../dev/fids/FID-2026-1104-013-model-matched-visual-builds.md) | converged | 013A waits on FID-009; 013B waits on a lawful OpenRouter fixture and rights. No implementation has started. |
+| [015](../dev/fids/FID-2026-1104-015-content-fetch-automation-and-history.md) | converged | Planning only; coding is reserved and the scheduler backend is unconfirmed. |
+| [016](../dev/fids/FID-2026-1104-016-persistent-content-model-decisions.md) | converged | Planning only; accepted links must remain attached across automatic work. |
+| [017](../dev/fids/FID-2026-1104-017-content-matching-controls-and-review.md) | converged | Implement after 015 and 016; management, settings and rematch are not shipped. |
+| [018](../dev/fids/FID-2026-1104-018-content-automation-master.md) | converged | Planning handoff ready; no coding or hosted activation is authorized. |
 
 The free/paid SKU split, content sources, Signal engagement work and the pricing
 console are implemented and covered by the gates above. They are public product
@@ -57,11 +78,19 @@ behavior, not payment or launch acceptance.
 
 ## Recently closed
 
-FIDs 126, 128–136, 141, 148 and the 2026-11-02 content/catalog queue moved
+FIDs 126, 128–136, 141 and 148 and the 2026-11-02 content/catalog queue moved
 through the Perfection Loop into commits `4b57ebe`, `8bb2d20`, `d701ce6`,
 `35c1d35` and `a789b94`; their closed records and evidence are under
-[`dev/fids/archive/`](../dev/fids/archive/). FID-148 closes the load-gate port
-only; the failed capacity targets are still owned by FID-062. FID 127 remains
-active because the operator receipt does not exist yet. The dated receipts
-in [the 2026-10-31 record](project-status-2026-10-31.md) remain historical
-evidence and are not a claim about today's tree.
+[`dev/fids/archive/`](../dev/fids/archive/). FID-148 closed the load-gate port
+only; its failed capacity targets remain owned by FID-062.
+
+On 2026-11-05, FID-2026-1105-001 closed at `84189f8` (YouTube description model
+matching) and FID-2026-1105-002 closed at `a3ed2a1` (Docker-free native
+PostgreSQL verification). The 002 closure includes the 11/11 gate run, the
+native lifecycle suite, real-PostgreSQL concurrency and HTTP checks, and the
+recovery drill; it does not claim Linux CI, a clean install with postinstall
+scripts enabled, the load gate or hosted delivery.
+
+FID-127 remains active because the operator receipt does not exist yet. The
+dated receipts in [the 2026-10-31 record](project-status-2026-10-31.md) remain
+historical evidence and are not a claim about today's tree.

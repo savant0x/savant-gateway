@@ -36,8 +36,8 @@ or changed.
   returned 200 with 76/76/76/0 rows and the refined join reproduces 47
   token/chat-labelled and 39 available. Gates: lint, typecheck, 31 focused
   tests, quality (633 files), build, `repository:check` and `attribution` all
-  pass. Implementation is RC3 and is complete in the working tree; the commit
-  and archive move remain pending.
+  pass. Implementation is RC3 and is committed as `6cdfc80`; the archive move
+  remains pending.
 - [x] **RC3 — Implement FID-003.** Complete the converged implementation and
   declared gates without paid inference or unauthorized management writes.
   Implemented the disabled review-required seed, `model_eligibility`, the
@@ -45,8 +45,8 @@ or changed.
   guards, the admin decision API and inline review panel. Verified: lint,
   typecheck, full `npm test` 1,055 tests (1,048 pass, 0 fail, 7 environment
   skips), quality PASS 637 files, build, `repository:check` and `attribution`.
-  No paid inference or reseller management write occurred; the commit and
-  archive move remain pending.
+  No paid inference or reseller management write occurred; implementation
+  commit `6cdfc80` exists and the archive move remains pending.
 
 Operator instruction: "write the fid to fully implement the upstream provider
 following the other systems. Run the perfection loop on the fid then present

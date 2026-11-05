@@ -505,8 +505,8 @@ implementation commit, `CHANGELOG.md` and the archive move.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [x] **Commit SHA:** No commit yet. The implementation is an uncommitted
-  working-tree change; closure still requires a real commit and archive move.
+- [x] **Commit SHA:** `6cdfc80`. The archive move and remaining closure
+  acceptance are still pending.
 - [x] **File:line ranges:** `lib/providers/eligibility.ts:34` (`isModelEligible`)
   and `:91` (`modelAdmissionRefusal`), 1-146; `lib/storage/schema/catalog.ts:27`
   (provider column), `:47` (eligibility table) and `:147` (additive column);
@@ -661,9 +661,8 @@ and build exit 0. No code changed after them.
 
 ## Resolution
 
-- **Closed Date:** Not closed. The implementation is complete in the working
-  tree; closure waits on the implementation commit, full closure gates and the
-  archive move.
+- **Closed Date:** Not closed. Implementation commit `6cdfc80` exists; closure
+  waits on the archive move and the remaining acceptance observations.
 - **Fix Description:** Implemented the disabled `router-cheap` preset with
   `requires_model_review = 1`, the `model_eligibility` table keyed by provider
   and exact upstream id, the shared eligibility/freshness rule, and enforcement
@@ -687,8 +686,8 @@ and build exit 0. No code changed after them.
   probes returned 200 with 76/76/76/0 rows. No paid inference, balance check,
   resale permission or request-time price is claimed.
 - **Archived:** Not archived. The record remains active in `dev/fids/` because
-  the implementation is uncommitted and the full closure gates have not yet
-  produced a commit receipt.
+  the archive move and full closure acceptance are still pending, even though
+  implementation commit `6cdfc80` exists.
 
 ## Lessons Learned
 

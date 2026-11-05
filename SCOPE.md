@@ -1,5 +1,37 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-05 (scheduled provider sync design: 004)
+
+Operator instruction: "well we need the sync to be automatic and on a schedule,
+also able to be triggered, would be ideal to have the current button be AIO
+sync". Follow-up: "keep it on hobby schedule". Design: write a proper FID, run
+the Perfection Loop with sequential thinking, and present it. Follow-up
+"proceed w/ build" authorized the local implementation. No secret, provider
+activation, spend, deployment or scheduler activation was authorized.
+
+- [x] **SP1 — Converge the design.** FID-2026-1105-004 records the authenticated
+  scheduler endpoint, due-only policy, explicit scheduler tick, manual AIO
+  action, truthful card status and the confirmed Vercel Hobby daily boundary.
+  The initial six-hour Vercel artifact was rejected; the daily `0 0 * * *`
+  schedule is specified for implementation.
+- [x] **SP2 — Run the Perfection Loop.** The FID records the sequential thought
+  trace, four loop passes, adversarial findings, missed questions and residual
+  risks. Branch B (scheduler-agnostic endpoint) was selected; the six-hour
+  Vercel branch and the in-process timer were rejected. Loop 4 records the
+  operator's Hobby daily confirmation and the daily schedule artifact.
+- [x] **SP3 — Verify the planning tree.** Run lint, typecheck, repository
+  contract and attribution; record the planning receipt. No implementation
+  gates are claimed.
+- [x] **SP4 — Implement the local contract.** Wrote the authenticated
+  `/api/cron/providers` route, `force` tick option, manual **AIO sync**,
+  policy-derived card, daily `vercel.json`, unit tests, HTTP fixture and
+  operator docs. Lint, typecheck, 1059 tests, quality, build, the
+  native-PostgreSQL HTTP gate (776 + trial), repository check and attribution
+  pass. No commit was created.
+- [ ] **SP5 — Activate.** Requires separate authorization for a commit,
+  deployment, `CRON_SECRET` provisioning and an observed scheduler receipt.
+  The daily schedule is written, not deployed or observed.
+
 ## Session — 2026-11-05 (router.cheap provider design)
 
 Operator clarification: "look at how i have other other upstream setup, we're

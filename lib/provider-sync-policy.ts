@@ -51,3 +51,19 @@ export function providersDue(
     })
     .map((row) => row.slug);
 }
+
+/**
+ * Secrets that may authenticate the provider scheduler. Both names are
+ * accepted at once: Vercel Cron injects `CRON_SECRET`, while a generic
+ * scheduler may use `PROVIDER_CRON_SECRET`. A precedence rule would make the
+ * other name fail when both are configured.
+ */
+export function providerCronSecrets(
+  env: Record<string, string | undefined> = process.env,
+): string[] {
+  const values = [env.PROVIDER_CRON_SECRET, env.CRON_SECRET]
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value));
+
+  return Array.from(new Set(values));
+}

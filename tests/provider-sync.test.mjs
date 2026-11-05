@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { providersDue, syncIntervalMs } from "../lib/provider-sync-policy.ts";
+import {
+  providerCronSecrets,
+  providersDue,
+  syncIntervalMs,
+} from "../lib/provider-sync-policy.ts";
 import { PUBLIC_MODEL_SCOPE, PRICE_MAX_AGE_DAYS } from "../lib/storage/store/model-sql.ts";
 
 const HOUR = 60 * 60 * 1000;
@@ -66,6 +70,30 @@ test("disabled or unconfigured providers are never due", () => {
 
 test("a disabled interval reports nothing due", () => {
   assert.deepEqual(providersDue([row()], NOW, 0), []);
+});
+
+test("the provider scheduler accepts either configured cron secret", () => {
+  assert.deepEqual(providerCronSecrets({ PROVIDER_CRON_SECRET: "a" }), ["a"]);
+  assert.deepEqual(providerCronSecrets({ CRON_SECRET: "b" }), ["b"]);
+  assert.deepEqual(
+    providerCronSecrets({ PROVIDER_CRON_SECRET: " a ", CRON_SECRET: "b" }),
+    ["a", "b"],
+  );
+});
+
+test("a shared or duplicate provider cron secret is accepted once", () => {
+  assert.deepEqual(
+    providerCronSecrets({ PROVIDER_CRON_SECRET: "same", CRON_SECRET: "same" }),
+    ["same"],
+  );
+});
+
+test("blank or absent provider cron secrets configure nothing", () => {
+  assert.deepEqual(
+    providerCronSecrets({ PROVIDER_CRON_SECRET: "", CRON_SECRET: "  " }),
+    [],
+  );
+  assert.deepEqual(providerCronSecrets({}), []);
 });
 
 test("the public scope withholds paid rows without a sell price", () => {

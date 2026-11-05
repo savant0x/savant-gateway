@@ -82,6 +82,7 @@ The full first-run path is in [docs/getting-started.md](docs/getting-started.md)
 | `CONTENT_ENABLED` | No | Signal is on unless this is `false`. |
 | `CONTENT_INGEST_ENABLED` | Scheduled ingestion | `false` by default. Gates the cron route, not an explicit admin fetch. |
 | `CONTENT_CRON_SECRET` | Cron | Bearer/`x-content-secret` value for `/api/cron/content`. |
+| `PROVIDER_CRON_SECRET` | Cron | Bearer/`x-provider-secret` value for `/api/cron/providers`. `CRON_SECRET` is also accepted. |
 | `YOUTUBE_API_KEY` | Optional | Adds likes and YouTube comment counts. Channel ids and `@handles` work without it. |
 | `GITHUB_TOKEN` | Optional | Raises the public GitHub rate limit for repository facts and READMEs. |
 | `GATEWAY_DISPOSABLE_START` | Tests only | Never set on a real deployment. `/api/ready` reports `mode: "disposable"` when set. |
@@ -267,7 +268,15 @@ refuses a production start without a networked `DATABASE_URL`.
    vercel env add ADMIN_SESSION_SECRET production
    vercel env add PROVIDER_KEY production
    vercel env add COMMANDCODE_API_KEY production   # only if that provider is enabled
+   vercel env add CRON_SECRET production           # authenticates the provider cron
    ```
+
+   The committed `vercel.json` schedules one daily provider heartbeat
+   (`/api/cron/providers`, `0 0 * * *`). Vercel sends
+   `Authorization: Bearer $CRON_SECRET`; without that variable the endpoint
+   returns `503` and refreshes nothing. `PROVIDER_CRON_SECRET` is an alternative
+   when a generic scheduler calls the same route. Vercel Hobby allows daily
+   crons only; do not add a sub-daily schedule.
 
    Add any payment/content keys you use. Use the pooled database URL so
    serverless instances do not exhaust connections. The provider registry stores
@@ -302,6 +311,11 @@ refuses a production start without a networked `DATABASE_URL`.
    fields for the local checkout; comparing the two is the deployment receipt.
    A provider key can be present locally and missing on Vercel, and a provider
    test that passes locally proves nothing about the hosted runtime.
+
+   Finally, call the provider heartbeat once with the secret and confirm `200`:
+   a deployment and a saved cron are not proof that the route authenticates or
+   that a provider was actually due. See
+   [docs/provider-scheduler.md](docs/provider-scheduler.md).
 
 The build logs may show two npm warnings on Vercel: an unknown `cache-dir` env
 config and install scripts for `better-sqlite3`/`unrs-resolver`. Neither is a

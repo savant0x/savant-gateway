@@ -6,8 +6,10 @@ import { useState } from "react";
 
 export function ProviderSyncButton({
   label = "Sync provider",
+  endpoint = "legacy",
 }: {
   label?: string;
+  endpoint?: "legacy" | "admin";
 }) {
   const router = useRouter();
   const [syncing, setSyncing] = useState(false);
@@ -20,12 +22,17 @@ export function ProviderSyncButton({
     setNotice(null);
 
     try {
-      const response = await fetch("/api/provider/sync", { method: "POST" });
+      const url =
+        endpoint === "admin"
+          ? "/api/admin/providers/sync"
+          : "/api/provider/sync";
+      const response = await fetch(url, { method: "POST" });
       const payload = (await response.json().catch(() => null)) as {
         imported?: number;
         free?: number;
         paid?: number;
         subscriptionOnly?: number;
+        providers?: Array<{ slug: string }>;
         warnings?: string[];
         error?: string;
       } | null;
@@ -33,7 +40,9 @@ export function ProviderSyncButton({
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
           throw new Error(
-            "Provider sync needs localhost or a signed-in admin session.",
+            endpoint === "admin"
+              ? "AIO sync needs a signed-in admin session."
+              : "Provider sync needs localhost or a signed-in admin session.",
           );
         }
 
@@ -42,8 +51,14 @@ export function ProviderSyncButton({
         );
       }
 
+      const providerCount = payload?.providers?.length ?? 0;
+      const prefix =
+        providerCount > 0
+          ? `AIO sync: ${providerCount} provider${providerCount === 1 ? "" : "s"} · `
+          : "Synced ";
+
       setNotice(
-        `Synced ${payload?.imported ?? 0} models · ${payload?.free ?? 0} free · ${payload?.paid ?? 0} priced · ${payload?.subscriptionOnly ?? 0} subscription-only.${
+        `${prefix}${payload?.imported ?? 0} models · ${payload?.free ?? 0} free · ${payload?.paid ?? 0} priced · ${payload?.subscriptionOnly ?? 0} subscription-only.${
           payload?.warnings?.length ? ` ${payload.warnings.join(" ")}` : ""
         }`,
       );

@@ -309,6 +309,16 @@ export async function startMockUpstream({ expectedKey }) {
         return;
       }
 
+      if (state.catalog.mode === "empty") {
+        // A legitimate provider may publish an empty list. The provider
+        // scheduler fixture uses it so a due sync advances the timestamp
+        // without importing or delisting any row.
+        response.writeHead(200, { "content-type": "application/json" });
+        response.end(JSON.stringify({ object: "list", data: [] }));
+
+        return;
+      }
+
       response.writeHead(200, { "content-type": "application/json" });
       response.end(
         JSON.stringify({

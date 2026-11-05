@@ -35,13 +35,28 @@ it is neither a successful delivery nor a scheduler failure.
 
 ## Automatic provider sync
 
-Provider catalogs refresh without a scheduler. A render of `/`, `/models` or the
+Provider catalogs refresh from two triggers. A render of `/`, `/models` or the
 catalog data calls `ensureProvidersFresh()` (`lib/provider-sync.ts`): any enabled
 provider whose `synced_at` is older than `PROVIDER_SYNC_INTERVAL_HOURS` (default
 6) is synced in the background, at most one run per process at a time and never
 more often than every five minutes. The page always serves stored rows, so an
-unresponsive upstream cannot delay it. `PROVIDER_SYNC_INTERVAL_HOURS=0` turns it
-off and leaves only the **Sync** button.
+unresponsive upstream cannot delay it. `PROVIDER_SYNC_INTERVAL_HOURS=0` turns the
+render path off.
+
+The second trigger is the committed Vercel Hobby daily cron
+(`vercel.json`: `/api/cron/providers`, `0 0 * * *`). An idle deployment therefore
+still refreshes due catalogs. The route authenticates with
+`PROVIDER_CRON_SECRET` or `CRON_SECRET` (Vercel sends the latter as a bearer
+token), returns `503` when neither is set and `401` on a wrong secret, and
+performs no database or upstream work before authentication. It refreshes only
+enabled, configured providers that are due; it bypasses only the five-minute
+attempt floor, not the interval or the per-provider lease. **AIO sync** in
+`/admin/providers` is the manual override for every enabled provider.
+
+A daily run is the Hobby limit, not a six-hour promise. The card shows
+`refresh due` from the same policy the scheduler uses, and it reports last sync,
+not scheduler health. See [provider-scheduler.md](provider-scheduler.md) for the
+contract, activation receipt and failure semantics.
 
 An imported catalog is not a published catalog. A paid row without a sell price
 is never public, and a row priced from a manually entered cost is withheld once

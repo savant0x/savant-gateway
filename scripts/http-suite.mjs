@@ -24,6 +24,7 @@ import { runMetadataChecks } from "./http-suite/metadata-checks.mjs";
 import { seedCatalog } from "./http-suite/seed.mjs";
 import { runOperationsChecks } from "./http-suite/operations-checks.mjs";
 import { runPolicyChecks } from "./http-suite/policy-checks.mjs";
+import { runProviderCronChecks } from "./http-suite/provider-cron-checks.mjs";
 import { runPromoChecks } from "./http-suite/promo-checks.mjs";
 import { runQuotaChecks } from "./http-suite/quota-checks.mjs";
 import { runRequestLimitChecks } from "./http-suite/request-limit-checks.mjs";
@@ -37,6 +38,7 @@ const PROVIDER_KEY = "http-suite-provider-key";
 const BENCHMARK_KEY = "http-suite-benchmark-key";
 const PROVIDER_KEY_ENV = "HTTP_SUITE_PROVIDER_KEY";
 const CONTENT_CRON_SECRET = "http-suite-content-cron-secret";
+const PROVIDER_CRON_SECRET = "http-suite-provider-cron-secret";
 
 const repo = process.cwd();
 const buildMarker = join(repo, ".next", "BUILD_ID");
@@ -107,6 +109,10 @@ try {
       COMMANDCODE_API_KEY: "",
       CONTENT_INGEST_ENABLED: "true",
       CONTENT_CRON_SECRET,
+      PROVIDER_CRON_SECRET,
+      // The provider scheduler gate asserts the documented 6h due interval.
+      // Pin it so an operator override in `.env.local` cannot change the gate.
+      PROVIDER_SYNC_INTERVAL_HOURS: "6",
       CRON_SECRET: "",
       // The suite proves disposable production startup: loopback origin,
       // throwaway database file. The validator requires this to be spelled
@@ -137,6 +143,15 @@ try {
     slug: "mock",
     upstreamUrl: mock.baseUrl,
     apiKey: PROVIDER_KEY,
+  });
+
+  // A disposable provider with an empty catalog proves the scheduler contract
+  // without touching the seeded catalog; it restores its fixture in `finally`.
+  await runProviderCronChecks({
+    baseUrl,
+    db: database,
+    secret: PROVIDER_CRON_SECRET,
+    mock,
   });
 
   // Needs a populated catalog, so it runs before anything that leaves the

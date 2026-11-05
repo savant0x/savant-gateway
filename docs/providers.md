@@ -78,6 +78,18 @@ re-synced in the background while the page serves stored rows. A provider with
 no credential is skipped, because it cannot sync. A database-backed lease
 coordinates provider sync across application instances.
 
+That render path is not a schedule: an idle deployment never calls it. The
+committed `vercel.json` therefore runs one Vercel Hobby daily cron at 00:00 UTC
+(`0 0 * * *`) against `/api/cron/providers`. The route authenticates with
+`PROVIDER_CRON_SECRET` or `CRON_SECRET`, returns `503` until one is set, and
+refreshes only enabled, configured providers whose catalog is due. It may bypass
+the render path's five-minute attempt floor, never the due interval or the
+durable lease. The daily cron is the automatic floor; the 6h value is a due
+threshold, so a rendered page can still refresh sooner. **AIO sync** in
+`/admin/providers` is the explicit manual action: it syncs the account and
+catalog of every enabled provider regardless of the due clock and reports
+warnings. Full contract: [provider-scheduler.md](provider-scheduler.md).
+
 Publication is not the same as import. `PUBLIC_MODEL_SCOPE` publishes a row only
 when it is active, its group is visible, `is_primary` selects it, a paid group
 has a sell price above zero, and — for an operator-entered cost — that cost is

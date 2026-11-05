@@ -20,8 +20,10 @@ import { claimProviderSync, releaseProviderSync } from "./lease.ts";
  *    selected — a provider that cannot sync must not be retried on every view.
  * 2. One refresh per handle runs at a time; a second caller joins it instead of
  *    starting a competing sync of the same catalog.
- * 3. A five-minute floor separates attempts, so a burst of page views cannot
- *    outrun a catalog that keeps failing.
+ * 3. A five-minute floor separates render-path attempts, so a burst of page
+ *    views cannot outrun a catalog that keeps failing. An explicit scheduler
+ *    tick may bypass only this floor with `force`; it cannot bypass the due
+ *    interval or the durable lease.
  *
  * Two deliberate differences from the synchronous version:
  *
@@ -66,6 +68,11 @@ export type ProviderSyncDeps = {
   intervalMs?: number;
   /** How long a sync claim is held before another instance may reclaim it. */
   leaseMs?: number;
+  /**
+   * An explicit scheduler tick may run even when the render path attempted
+   * recently. The due interval and durable lease still apply.
+   */
+  force?: boolean;
 };
 
 /**
@@ -86,7 +93,7 @@ export async function refreshProvidersIfDue(
 
   if (state.inFlight) return state.inFlight;
 
-  if (now - state.lastAttempt < MIN_ATTEMPT_MS) return [];
+  if (!deps.force && now - state.lastAttempt < MIN_ATTEMPT_MS) return [];
 
   const summaries = await listProviderCatalogSummary(db);
   const due = providersDue(

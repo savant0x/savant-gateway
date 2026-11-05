@@ -4,7 +4,7 @@ import { Card } from "@heroui/react";
 
 import { LocalTime } from "@/components/local-time";
 import { ProviderSyncButton } from "@/components/provider-sync";
-import { syncIntervalMs } from "@/lib/provider-sync-policy";
+import { providersDue, syncIntervalMs } from "@/lib/provider-sync-policy";
 
 /**
  * Live provider state, not a snapshot of the last sync response. Every number
@@ -20,27 +20,20 @@ export function ProviderSyncCard({
 }) {
   const interval = syncIntervalMs(process.env.PROVIDER_SYNC_INTERVAL_HOURS);
   const now = Date.now();
-  const overdue = (syncedAt: string | null) => {
-    if (interval === 0) return false;
-    if (!syncedAt) return true;
-
-    const at = Date.parse(syncedAt);
-
-    return !Number.isFinite(at) || now - at >= interval;
-  };
+  const due = new Set(providersDue(providers, now, interval));
 
   return (
     <Card variant="secondary">
       <Card.Header>
         <Card.Title>Sync and boundaries</Card.Title>
         <Card.Description>
-          Every enabled provider syncs on its own: balance, subscription and
-          catalog where the upstream publishes them. Sync preserves operator
-          disables, manual prices and delisted rows.
+          AIO sync runs balance, subscription and catalog for every enabled
+          provider. A scheduler runs the same due policy in the background. Sync
+          preserves operator disables, manual prices and delisted rows.
         </Card.Description>
       </Card.Header>
       <Card.Content className="space-y-4">
-        <ProviderSyncButton label="Sync every enabled provider" />
+        <ProviderSyncButton endpoint="admin" label="AIO sync" />
         <div className="space-y-3 text-xs text-muted">
           {providers.length === 0 ? (
             <p>No providers registered.</p>
@@ -50,8 +43,14 @@ export function ProviderSyncCard({
                 <p>
                   <span className="text-foreground">{provider.label}</span>{" "}
                   <span className="mono text-[11px]">{provider.slug}</span>
-                  {overdue(provider.syncedAt) ? (
-                    <span className="text-warning"> · sync overdue</span>
+                  {!provider.enabled ? (
+                    <span className="text-muted"> · disabled</span>
+                  ) : null}
+                  {provider.enabled && !provider.configured ? (
+                    <span className="text-muted"> · no key</span>
+                  ) : null}
+                  {due.has(provider.slug) ? (
+                    <span className="text-warning"> · refresh due</span>
                   ) : null}
                 </p>
                 <p>
@@ -60,6 +59,7 @@ export function ProviderSyncCard({
                   {provider.servingCount} serving
                 </p>
                 <p>
+                  {provider.enabled ? "enabled" : "disabled"} ·{" "}
                   {provider.configured ? "key present" : "no key"} · last sync{" "}
                   <LocalTime value={provider.syncedAt} />
                 </p>
@@ -69,9 +69,8 @@ export function ProviderSyncCard({
           <p>
             Automatic sync:{" "}
             {interval === 0
-              ? "off — catalogs refresh only from this button"
-              : `an enabled provider re-syncs once its catalog is ${interval / 3_600_000}h old`}
-            .
+              ? "off — catalogs refresh only from AIO sync"
+              : `Vercel Hobby calls the scheduler daily; an enabled provider becomes due once its catalog is ${interval / 3_600_000}h old. A page render may refresh sooner.`}
           </p>
           <p>
             Pricing:{" "}

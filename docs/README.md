@@ -22,6 +22,7 @@ against, not automatically today's behavior.
 | Handle a support or deletion request | [support-runbook.md](support-runbook.md) |
 | Configure alerts, pause admission and respond to incidents | [operations-runbook.md](operations-runbook.md) |
 | Schedule and verify content source fetching | [content-scheduler.md](content-scheduler.md) |
+| Schedule and verify provider catalog refresh | [provider-scheduler.md](provider-scheduler.md) |
 | Measure capacity and rehearse load/failure recovery | [load-acceptance.md](load-acceptance.md) |
 | Configure verification and password recovery | [account-email.md](account-email.md) |
 | Change or publish a policy | [policies/README.md](policies/README.md) |
@@ -74,6 +75,9 @@ same answer data the page renders.
 - [content-scheduler.md](content-scheduler.md) — authenticated GET/POST content
   heartbeat, supported scheduler options, policy controls and the activation
   receipt, including the Vercel plan limitation.
+- [provider-scheduler.md](provider-scheduler.md) — authenticated due-only
+  provider heartbeat, the committed Hobby daily cron, the manual AIO override,
+  response shape, activation receipt and failure semantics.
 - [providers.md](providers.md) — register an upstream, price it, and how the
   cheapest-provider routing and stable published ids work.
 - [research/apixo-provider-review.md](research/apixo-provider-review.md) —

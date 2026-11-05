@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-007-provisioning-tls-verification.md`
 **ID:** FID-2026-1104-007
 **Severity:** high
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-04 17:10
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -181,9 +181,14 @@ Implemented in `0433cf7473e6c0563128ce2083e18830cca0724a`.
 ## Resolution
 
 - **Convergence Date:** 2026-11-04 17:10
-- **Next action:** run a live trusted/self-signed handshake on a disposable
-  endpoint with the provider CA, then confirm the disposable-only role scope.
-- **Archived:** no.
+- **Closed Date:** 2026-11-04; the committed implementation and local policy,
+  unit, typecheck, lint, quality and build gates are complete under the
+  committed-implementation auto-archive ruling.
+- **Next action:** the live trusted/self-signed handshake and disposable-role
+  confirmation are tracked as `FID-2026-1104-007-LIVE` in
+  `dev/tracking/internal-followups.json`. Record the receipts there; no live
+  TLS acceptance is claimed here.
+- **Archived:** 2026-11-04; moved to `dev/fids/archive/`.
 
 ## Lessons Learned
 

@@ -75,3 +75,8 @@ zero-warning lint, typecheck, config check (non-production), quality PASS
 No item is archived or marked closed. The remaining active work is FID-003's
 harness policy proof, FID-006, FID-010, FID-009, FID-008, SCOPE VB6 and then
 FID-013A; the operator- and externally-gated items keep the boundaries above.
+
+**2026-11-04 cleanup:** FIDs 003, 005, 007 and 010 were later closed and
+archived after their committed implementations passed the local gates; live
+acceptance moved to the `-LIVE` followups. See
+[the cleanup summary](2026-11-04-completed-fid-cleanup.md).

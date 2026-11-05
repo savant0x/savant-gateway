@@ -1,6 +1,6 @@
 # FID register
 
-**Last folder audit:** 2026-11-03 (hardening pass). This page indexes the
+**Last folder audit:** 2026-11-04 (completed-implementation cleanup). This page indexes the
 working set; each FID owns its own status, evidence and resolution.
 
 ## Layout
@@ -21,29 +21,27 @@ working set; each FID owns its own status, evidence and resolution.
 | [068](FID-2026-1030-068-usdc-receive-lane.md) | Direct-to-wallet USDC receive lane | fixed | Operator inputs still gate the receive lane; re-read the record before acting. |
 | [127](FID-2026-1103-127-real-launch-acceptance-receipt.md) | Real launch acceptance receipt | fixed | Operator records the five observations (`payment`, `recovery`, `alert`, `load`, `rollback`) and a go pinned to the release SHA, then runs `npm run receipt:launch`. |
 | [137](FID-2026-1103-137-product-hardening-and-install-order-master.md) | Product hardening and install-order master | converged | Closes only after 126 and 127 have their required evidence. |
-| [2026-1104-003](FID-2026-1104-003-free-allocation-refusal-truth.md) | Free-allocation refusal truth and hermetic supply | fixed | Implementation `7091b8f`; isolated `npm run test:load` remains (no disposable PostgreSQL endpoint on this host). |
-| [2026-1104-005](FID-2026-1104-005-capacity-envelope-and-pool-faults.md) | Accepted capacity envelope and database pool faults | fixed | Implementation `e145413`; real-server saturation proof and isolated load rerun remain. |
 | [2026-1104-006](FID-2026-1104-006-bounded-transport-and-jobs.md) | Bounded transport and durable scheduled work | converged | Worker streams with a byte cap, validates redirects and adds durable job claims. |
-| [2026-1104-007](FID-2026-1104-007-provisioning-tls-verification.md) | Verified TLS for provisioning helpers | fixed | Implementation `0433cf7`; live trusted/self-signed handshake with the provider CA and disposable-role confirmation remain. |
 | [2026-1104-008](FID-2026-1104-008-runtime-gates-and-current-docs.md) | One runtime, one gate contract and current documentation | converged | Operator picks Node 22 or 24; worker unifies the gate list and adds the repository check. |
 | [2026-1104-009](FID-2026-1104-009-browser-journey-receipt.md) | Fresh browser journey receipt | converged | Worker adds the Playwright runner and records six journeys in both themes. |
-| [2026-1104-010](FID-2026-1104-010-discovery-to-inference-events.md) | Discovery-to-inference business events | fixed | Implementation `78c6920`; real-PostgreSQL HTTP and `verify:supabase` receipts remain blocked by the host database and CA. |
 | [2026-1104-011](FID-2026-1104-011-policy-v1-2-publication.md) | Policy v1.2 for the current service surface | converged | Operator approves the recipient inventory; worker drafts v1.2 and the acceptance bump. |
 | [2026-1104-013](FID-2026-1104-013-model-matched-visual-builds.md) | Pelican-first model-matched visual builds with a gated OpenRouter track | converged | 013A only after 006/009; schema-aware backup (SCOPE VB6) is implemented. 013B stays blocked on a lawful OpenRouter fixture and rights. |
 
 > 2026-11-04 correction: FID-013 was absent from this table despite the
 > planning summary's "registered" claim. It is now registered as 013A/013B;
-> the active count is 14/20. Neither track is implemented, and 013B is not an
-> implementation authorization.
+> the active count was 14/20 before the completed-implementation cleanup (now
+> 10/20). Neither track is implemented, and 013B is not an implementation
+> authorization.
 >
 > 2026-11-04 convergence review: seven design corrections applied; 013 is
 > `converged`. 013A code remains blocked on FID-006, FID-009 and schema-aware
 > backup (SCOPE VB6); 013B remains blocked on a lawful fixture and rights.
 >
-> 2026-11-04 level-3 implementation: FID-005 is `fixed` in `e145413` (bounded
-> pool acquisition and failed-rollback discard); FID-007 is `fixed` in
-> `0433cf7` (verified remote provisioning TLS). Both carry partial receipts;
-> real-server and live TLS acceptance remain, so neither is closed.
+> 2026-11-04 level-3 implementation: FID-005 landed in `e145413` (bounded pool
+> acquisition and failed-rollback discard); FID-007 landed in `0433cf7`
+> (verified remote provisioning TLS). Both are now closed and archived;
+> real-server and live TLS acceptance remain in `FID-2026-1104-005-LIVE` and
+> `FID-2026-1104-007-LIVE`.
 >
 > 2026-11-04 SCOPE VB6: the logical dump/restore is schema-aware (`/2`), legacy
 > `/1` dumps still restore, and the recovery drill covers `content` and
@@ -52,8 +50,9 @@ working set; each FID owns its own status, evidence and resolution.
 >
 > 2026-11-04 FID-010 implementation: `78c6920` adds five bounded funnel events,
 > a durable once-only first-completion marker, and a 30-day admin aggregate.
-> The FID is `fixed`; its HTTP gate is red in the single-connection PGlite
-> fixture and `verify:supabase` lacks the managed-host CA, so it is not closed.
+> The FID is closed and archived; its HTTP gate was red in the single-connection
+> PGlite fixture and `verify:supabase` lacked the managed-host CA, so those
+> acceptance receipts remain in `FID-2026-1104-010-LIVE`.
 
 Finding 3 of the 2026-11-04 release audit has no new record: real payment,
 hosted restore, delivered alert and the release decision stay with
@@ -62,6 +61,18 @@ hosted restore, delivered alert and the release decision stay with
 [062](FID-2026-1030-062-launch-acceptance-and-rollout.md). Funded paid
 inference was withdrawn from the required test scope on 2026-11-04 and remains
 unverified.
+
+### Closed in the 2026-11-04 completed-implementation cleanup
+
+[2026-1104-003](archive/FID-2026-1104-003-free-allocation-refusal-truth.md),
+[2026-1104-005](archive/FID-2026-1104-005-capacity-envelope-and-pool-faults.md),
+[2026-1104-007](archive/FID-2026-1104-007-provisioning-tls-verification.md) and
+[2026-1104-010](archive/FID-2026-1104-010-discovery-to-inference-events.md) are
+`closed` with commits `7091b8f`, `e145413`, `0433cf7` and `78c6920`. Local
+implementation gates pass; the isolated load, two-connection pool proof, live
+TLS handshake and real-PostgreSQL HTTP/verify receipts remain acceptance
+observations in `../tracking/internal-followups.json` (`-LIVE` entries). They
+are not implementation blockers and no launch acceptance is claimed.
 
 ### Closed in the 2026-11-04 shared-admission implementation
 

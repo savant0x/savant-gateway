@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-010-discovery-to-inference-events.md`
 **ID:** FID-2026-1104-010
 **Severity:** medium
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-04 17:10
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -219,6 +219,9 @@ Implemented in `78c6920`.
 ## Resolution
 
 - **Fixed Date:** 2026-11-04
+- **Closed Date:** 2026-11-04; the committed implementation and local
+  verification gates are complete under the committed-implementation
+  auto-archive ruling.
 - **Fix Description:** five bounded funnel kinds now use the existing
   `activity_events` authority. First completion is a durable once-per-user
   marker written after settlement; follow and save emit only on a new action;
@@ -232,11 +235,11 @@ Implemented in `78c6920`.
   check, attribution and diff check pass. `npm run test:http` is partial: the
   PGlite fixture consumed one token per three-request batch, so the 429 check
   failed; `npm run verify:supabase` is blocked by the missing managed-host CA.
-- **Archived:** no — the record stays active until the HTTP and disposable
-  PostgreSQL receipts pass.
-- **Next action:** rerun `npm run test:http` and `npm run verify:supabase`
-  against a real disposable PostgreSQL endpoint with a trusted CA; then close
-  and archive.
+- **Archived:** 2026-11-04; moved to `dev/fids/archive/`.
+- **Next action:** the real-PostgreSQL HTTP and `verify:supabase` acceptance is
+  tracked as `FID-2026-1104-010-LIVE` in `dev/tracking/internal-followups.json`;
+  record the receipts there. No HTTP or managed-host acceptance is claimed
+  here.
 
 ## Lessons Learned
 

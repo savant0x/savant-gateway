@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-005-capacity-envelope-and-pool-faults.md`
 **ID:** FID-2026-1104-005
 **Severity:** critical
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-04 17:10
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -202,10 +202,15 @@ Implemented in `e145413eee2df944da59e23fe503649309298731`.
 ## Resolution
 
 - **Convergence Date:** 2026-11-04 17:10
-- **Next action:** run the pool-saturation and failed-rollback proof on a
-  disposable PostgreSQL endpoint, rerun the isolated load with the FID-003
-  policy assertion, then record the envelope decision.
-- **Archived:** no.
+- **Closed Date:** 2026-11-04; the committed implementation and local unit,
+  typecheck, lint, quality and build gates are complete under the
+  committed-implementation auto-archive ruling.
+- **Next action:** the pool-saturation/failed-rollback proof, isolated load
+  rerun and dated envelope decision are tracked as
+  `FID-2026-1104-005-LIVE` in `dev/tracking/internal-followups.json`. Record
+  the receipts there; no capacity claim is made here.
+- **Archived:** 2026-11-04; moved to `dev/fids/archive/`. The envelope remains
+  `candidate`.
 
 ## Lessons Learned
 

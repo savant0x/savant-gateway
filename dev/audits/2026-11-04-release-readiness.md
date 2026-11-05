@@ -88,8 +88,9 @@ customer capacity, and it cannot hold for a full day on this plan: 20 rps at
 about 1,200 weighted tokens per call would need ~2.07B weighted tokens per day,
 roughly 104× the grant. The target is not lowered here.
 
-Contract: [FID-2026-1104-003](../fids/FID-2026-1104-003-free-allocation-refusal-truth.md)
-(converged, design only). It requires one limit-aware refusal builder, both
+Contract: [FID-2026-1104-003](../fids/archive/FID-2026-1104-003-free-allocation-refusal-truth.md)
+(closed; implementation `7091b8f`; load acceptance in
+`FID-2026-1104-003-LIVE`). It requires one limit-aware refusal builder, both
 environment families pinned, the resolved policy read back after boot, refusal
 reasons recorded in the load JSON, and the observed supply declared in the
 envelope.

@@ -190,6 +190,42 @@
       "detail": "FID-085 and FID-086 are archived with 2026-11-01 closure bodies. The application resolves one PostgreSQL handle through lib/storage/runtime.ts; lib/db.ts and lib/store/* are deleted, better-sqlite3 is a devDependency for the one-way importer only, and npm run storage:check reports one storage engine. FID-066's libSQL target is retired. The remaining live obligations are a Neon Launch project, a hosted restore rehearsal and a PostgreSQL load rerun, which are tracked under FID-062 items 3, 5 and 7 and FID-058-LIVE/FID-060-LIVE.",
       "evidence": "dev/fids/archive/FID-2026-1031-085-postgres-production-storage.md; dev/fids/archive/FID-2026-1031-086-storage-cutover-and-dev-data-migration.md; lib/storage/runtime.ts; npm run storage:check (2026-11-02 PASS)",
       "next_action": "Provision the Neon Launch project, confirm its retention window, run a hosted restore/rollback rehearsal and rerun the load envelope against PostgreSQL; record each dated receipt under FID-062 before approval."
+    },
+    {
+      "id": "FID-2026-1104-003-LIVE",
+      "fid": "FID-2026-1104-003",
+      "state": "blocked",
+      "title": "Isolated load rerun with effective free-pool policy",
+      "detail": "The limit-aware refusal builder, effective-policy read-back and refusal-reason recording are implemented and closed at 7091b8f. The isolated `npm run test:load` that proves the pinned envelope and reads the server-resolved policy was not run: this host has no disposable PostgreSQL endpoint and Docker is unavailable. No load result or capacity claim exists.",
+      "evidence": "dev/fids/archive/FID-2026-1104-003-free-allocation-refusal-truth.md; tests/free-pool.test.mjs; tests/allocation.test.mjs; tests/load-envelope.test.mjs; config/load-envelope.json",
+      "next_action": "Run `npm run test:load` against a disposable PostgreSQL endpoint with the pinned envelope; confirm the policy read-back matches and every unexpected 429 records the binding limit, then attach the dated receipt."
+    },
+    {
+      "id": "FID-2026-1104-005-LIVE",
+      "fid": "FID-2026-1104-005",
+      "state": "blocked",
+      "title": "Real-server pool saturation and failed-rollback proof",
+      "detail": "Bounded pool acquisition (5,000 ms) and error-flagged release are implemented and closed at e145413; unit regressions pass. The two-connection saturation/failed-rollback proof, the isolated load rerun and the dated envelope decision were not executed because no disposable PostgreSQL endpoint or Docker is available. The envelope remains `candidate`; no capacity claim is made.",
+      "evidence": "dev/fids/archive/FID-2026-1104-005-capacity-envelope-and-pool-faults.md; lib/storage/pg-pool.ts; lib/storage/pg-adapter.ts; tests/db-adapter.test.mjs",
+      "next_action": "Run `npm run test:postgres` with the new pool proofs and `npm run test:load` on the intended topology; record zero unresolved settlements and ledger differences, then put the dated envelope decision to the operator. This is acceptance under FID-060-LIVE, not a reopening of the implementation."
+    },
+    {
+      "id": "FID-2026-1104-007-LIVE",
+      "fid": "FID-2026-1104-007",
+      "state": "blocked",
+      "title": "Live TLS handshake and disposable-role confirmation",
+      "detail": "Remote TLS verification, explicit CA input and the loopback-only exception are implemented and closed at 0433cf7; nine policy regressions pass. No live trusted/self-signed handshake ran because no provider CA or disposable endpoint is configured, and the least-privilege disposable role is not confirmed. `verify:supabase` remains unverified.",
+      "evidence": "dev/fids/archive/FID-2026-1104-007-provisioning-tls-verification.md; scripts/provisioning-tls.mjs; scripts/with-supabase-postgres.mjs; tests/provisioning-tls.test.mjs",
+      "next_action": "With `PROVISIONING_DATABASE_CA` or the platform trust store available, connect to a disposable endpoint and record a trusted success plus a self-signed refusal; confirm the role cannot touch production schemas."
+    },
+    {
+      "id": "FID-2026-1104-010-LIVE",
+      "fid": "FID-2026-1104-010",
+      "state": "blocked",
+      "title": "Real-PostgreSQL HTTP and managed-host verification",
+      "detail": "Five funnel events, the once-only first-completion marker and the 30-day aggregate are implemented and closed at 78c6920; focused 12/12, full suite 1005/1009 with 4 PostgreSQL-only skips, lint, typecheck, quality and build pass. `npm run test:http` failed in the single-connection PGlite fixture and `npm run verify:supabase` lacked the managed-host CA; neither real-PostgreSQL HTTP nor managed-host verification has passed.",
+      "evidence": "dev/fids/archive/FID-2026-1104-010-discovery-to-inference-events.md; tests/activity.test.mjs; scripts/http-suite/checks.mjs; CHANGELOG.md (2026-11-04 FID-010 entry)",
+      "next_action": "Run `npm run test:http` and `npm run verify:supabase` against a disposable PostgreSQL endpoint with a trusted CA, then record the receipts; the implementation is closed and this followup owns only acceptance."
     }
   ]
 }

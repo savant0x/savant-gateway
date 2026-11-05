@@ -3,6 +3,26 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-04 — Completed implementation FIDs archived (003, 005, 007, 010)
+
+- **FID-2026-1104-003, -005, -007, -010 — high/medium —** four committed,
+  locally verified implementation records were closed and moved to
+  `dev/fids/archive/` under the committed-implementation auto-archive ruling.
+  FID-003 fixed the free-allocation refusal copy and pinned the load policy
+  (`7091b8f`); FID-005 bounded pool acquisition and discarded failed rollbacks
+  (`e145413`); FID-007 restored verified TLS for provisioning (`0433cf7`); and
+  FID-010 added five bounded discovery-to-inference events (`78c6920`). Their
+  live acceptance — isolated load, two-connection pool proof, trusted TLS
+  handshake and real-PostgreSQL HTTP/verify — moved to `-LIVE` entries in
+  `dev/tracking/internal-followups.json`. No launch acceptance is claimed, and
+  the active queue is 10 records.
+- **Operator clarification —** the funds exist in the operator's bank account
+  but are not loaded into a provider wallet until launch: "im building the
+  platform and have the money sitting in my bank account ... not loaded into
+  the account because im not launching it until everything is done." The
+  zero-spend build/testing boundary is unchanged; funded inference remains
+  outside the required receipt and unverified.
+
 ## 2026-11-04 — Funded-wallet test scope withdrawn (operator ruling)
 
 - **Operator ruling / FID-2026-1103-127, FID-2026-1030-062 — high —** the

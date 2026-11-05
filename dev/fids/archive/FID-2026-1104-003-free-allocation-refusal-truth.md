@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-003-free-allocation-refusal-truth.md`
 **ID:** FID-2026-1104-003
 **Severity:** high
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-04 16:30
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -19,8 +19,8 @@ asserted the effective free-pool policy it measured. The result was three load
 failures misread as product behavior and a release receipt that names a feature
 that is switched off.
 
-This record is design-only. Coding is reserved to the operator's separate
-worker per the 2026-11-04 SCOPE ruling.
+Implementation landed in `7091b8f`; the isolated load acceptance is tracked
+as `FID-2026-1104-003-LIVE`.
 
 ## Environment
 
@@ -309,10 +309,15 @@ PostgreSQL endpoint is available on this host.
 
 - **Convergence Date:** 2026-11-04 16:30
 - **Fixed Date:** 2026-11-04; implementation `7091b8f`.
-- **Next action:** run `npm run test:load` against a disposable PostgreSQL
-  endpoint, confirm the policy read-back and any unexpected 429 reason, then
-  close this record with the load receipt.
-- **Archived:** no; the load gate is still open.
+- **Closed Date:** 2026-11-04; the committed implementation and local
+  verification gates are complete under the committed-implementation
+  auto-archive ruling.
+- **Next action:** the isolated load acceptance is tracked as
+  `FID-2026-1104-003-LIVE` in `dev/tracking/internal-followups.json`. Run it
+  against a disposable PostgreSQL endpoint, confirm the policy read-back and
+  any unexpected 429 reason, then record the receipt there.
+- **Archived:** 2026-11-04; moved to `dev/fids/archive/`. No load acceptance is
+  claimed.
 
 ## Lessons Learned
 

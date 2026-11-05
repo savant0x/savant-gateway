@@ -1,5 +1,26 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-04 (completed FID cleanup)
+
+Operator clarification, verbatim: "because i have not funded the wallet, im
+building the platform and have the money sitting in my bank account. I have it,
+just not loaded into the account because im not launching it until everything
+is done. so clean up these completed fids."
+
+- [x] **C1 — Close and archive completed implementation FIDs.** FIDs
+  2026-1104-003, -005, -007 and -010 have committed implementations
+  (`7091b8f`, `e145413`, `0433cf7`, `78c6920`) and passing local gates. They are
+  `closed` and moved to `dev/fids/archive/` under the committed-implementation
+  auto-archive ruling.
+- [x] **C2 — Keep acceptance as followups.** The isolated load, two-connection
+  pool proof, live TLS handshake and real-PostgreSQL HTTP/verify receipts are
+  now `-LIVE` entries in `dev/tracking/internal-followups.json`. They are not
+  closure conditions and no launch acceptance is claimed.
+- [x] **C3 — Preserve funding truth.** The money exists but is not loaded into a
+  provider wallet during build/testing; the operator will load it at launch.
+  This does not restore funded inference to the required receipt, and no funded
+  call or receipt is claimed.
+
 ## Session — 2026-11-04 (testing without funded-wallet acceptance)
 
 Operator ruling, verbatim: "no, let me be clear, i do not have a sandbox, im not
@@ -7,8 +28,8 @@ going to fund a wallet to light money on fire to satisfy some made up
 requirement i did not make."
 
 - [x] **W1 — Withdraw funded-wallet testing.** No sandbox is available and no
-  provider wallet will be funded. Testing proceeds against mock or disposable
-  providers at zero spend. The funded paid-inference observation is removed
+  provider wallet is funded during build or testing; see C3. Testing proceeds
+  against mock or disposable providers at zero spend. The funded paid-inference observation is removed
   from the launch receipt's required items; no funded call, top-up, transfer or
   sandbox receipt is claimed.
 - [x] **W2 — Preserve the evidence boundary.** The receipt still requires
@@ -93,23 +114,28 @@ worker; every record is design-only and `converged`.
   single-instance topology; two-instance proof required.
 - [x] **A14 — Capacity and pool faults (findings 2, 6).** FID-2026-1104-005;
   bounded pool acquisition, error-flagged release, remeasured envelope.
+  Implemented `e145413`; closed with acceptance in `FID-2026-1104-005-LIVE`.
 - [x] **A15 — Bounded transport and jobs (findings 5, 7, 8).** FID-2026-1104-006;
   byte cap, redirect validation, total deadline, durable claims, bound refresh.
 - [x] **A16 — Provisioning TLS (finding 9).** FID-2026-1104-007; verification
   restored, loopback-only exception, least-privilege disposable role.
+  Implemented `0433cf7`; closed with acceptance in `FID-2026-1104-007-LIVE`.
 - [x] **A17 — Runtime, gates and docs (findings 10, 11, 14).**
   FID-2026-1104-008; one runtime, one gate contract, executable repository check.
 - [x] **A18 — Browser receipt (finding 12).** FID-2026-1104-009; six journeys,
   both themes, keyboard and mobile, failure-only screenshots.
 - [x] **A19 — Funnel events (finding 13).** FID-2026-1104-010; five bounded
-  event kinds on the existing activity authority.
+  event kinds on the existing activity authority. Implemented `78c6920`;
+  closed with acceptance in `FID-2026-1104-010-LIVE`.
 - [x] **A20 — Policy v1.2 (finding 4).** FID-2026-1104-011; new immutable
   version, operator publication approval, recorded reacceptance.
 - [x] **A21 — Finding 3 ownership.** No new record: real payment, funded
   inference, hosted restore, delivered alert and the release decision remain
   with FID-2026-1103-127, FID-2026-1030-043 and FID-2026-1030-062.
-- [ ] **A22 — Implementation.** FID-004 is closed in A25; FIDs 005–011 remain
-  converged and reserved to the operator's worker.
+- [x] **A22 — Implementation.** FID-004 is closed in A25; FIDs 005, 007 and 010
+  are implemented, closed and archived with acceptance in their `-LIVE`
+  followups. FIDs 006, 008, 009 and 011 remain converged and reserved to the
+  operator's worker.
 - [x] **A23 — NOWPayments sandbox procedure.** FID-2026-1104-012.
   dropped::operator-approved 2026-11-04 — "These were only created" and "It's a
   service, so just assume it works as we have it wired." The nine-step route →
@@ -160,10 +186,13 @@ with its Perfection Loop. Coding remains reserved to the operator's worker.
   spend, credential or secret value was printed.
 - [x] **A11 — FID-2026-1104-003.** The non-trial free refusal names a disabled
   trial, and the load harness never asserted the effective free-pool policy.
-  Design converged with RED criteria, acceptance and gates; no code was written.
-- [ ] **A12 — Implementation (blocked: reserved to the operator's worker).**
-  Limit-aware refusal builder, effective-policy read-back, refusal reasons in
-  the load JSON and observed supply fields; then rerun the isolated load.
+  Design converged with RED criteria, acceptance and gates. Implementation
+  landed in `7091b8f`; the record is closed and archived, with load acceptance
+  in `FID-2026-1104-003-LIVE`.
+- [x] **A12 — Implementation.** Limit-aware refusal builder, effective-policy
+  read-back, refusal reasons in the load JSON and observed supply fields landed
+  in `7091b8f`; focused 41/41, full suite, lint, typecheck, quality and build
+  pass. The isolated load receipt remains `FID-2026-1104-003-LIVE`.
 
 ## Current Session — 2026-11-04 (release readiness audit)
 

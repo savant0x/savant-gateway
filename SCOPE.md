@@ -27,10 +27,10 @@ activation, spend, deployment or scheduler activation was authorized.
   policy-derived card, daily `vercel.json`, unit tests, HTTP fixture and
   operator docs. Lint, typecheck, 1059 tests, quality, build, the
   native-PostgreSQL HTTP gate (776 + trial), repository check and attribution
-  pass. No commit was created.
-- [ ] **SP5 — Activate.** Requires separate authorization for a commit,
-  deployment, `CRON_SECRET` provisioning and an observed scheduler receipt.
-  The daily schedule is written, not deployed or observed.
+  pass. Committed at `15d01b4`.
+- [ ] **SP5 — Activate.** Requires separate authorization for a deployment,
+  `CRON_SECRET` provisioning and an observed scheduler receipt. The daily
+  schedule is written, not deployed or observed.
 
 ## Session — 2026-11-05 (router.cheap provider design)
 

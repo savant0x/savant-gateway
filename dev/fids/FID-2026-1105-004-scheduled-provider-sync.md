@@ -33,8 +33,8 @@ catalog; truthful per-provider status derived from the existing `providersDue`
 policy; and a Vercel Hobby daily schedule (`vercel.json`, `0 0 * * *`). The
 operator confirmed Hobby daily on 2026-11-05. The code does **not** create an
 in-process timer. Deployment, `CRON_SECRET` provisioning and the activation
-receipt remain operator steps. The local implementation is complete and gated
-below; no commit, deployment or activation has occurred.
+receipt remain operator steps. The local implementation is complete, gated and
+committed at `15d01b4`; no deployment or activation has occurred.
 
 ## Environment
 
@@ -44,10 +44,10 @@ below; no commit, deployment or activation has occurred.
 - **Tool Versions:** PostgreSQL 17.11 pinned through
   `@embedded-postgres/windows-x64`; PGlite 0.5.14 for unit fixtures;
   `node --test`; `npm run quality`.
-- **Commit/State:** baseline commit `edde1c7`
-  (`docs(fids): record FID-003 implementation commit`). The implementation is
-  uncommitted in the working tree; the two untracked chat exports are
-  untouched. No runtime secret, deployment or scheduler activation exists.
+- **Commit/State:** implementation commit `15d01b4`
+  (`feat(providers): schedule daily sync and add an explicit AIO action`), on
+  top of baseline `edde1c7`. The two untracked chat exports are untouched. No
+  runtime secret, deployment or scheduler activation exists.
 
 ## Detailed Description
 
@@ -170,8 +170,7 @@ config test, not a six-hour schedule.
   `docs/providers.md`, `docs/operations-runbook.md`, `docs/README.md` —
   operator contract.
 
-All listed paths are written in the working tree; the implementation is
-uncommitted.
+All listed paths are committed in `15d01b4`.
 
 ### Risk Level
 
@@ -310,7 +309,7 @@ implementation: not started
 scheduler activation: not performed
 ```
 
-Implementation receipt, 2026-11-05, against the uncommitted working tree:
+Implementation receipt, 2026-11-05, against the tree committed as `15d01b4`:
 
 ```text
 npm run lint exit=0
@@ -626,17 +625,19 @@ uses `refresh due`. The rest of this Final stands.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [ ] **Commit SHA:** Not created. The implementation is in the working tree;
-  this record stays `fixed` until a local commit exists.
+- [x] **Commit SHA:** `15d01b4`
+  (`feat(providers): schedule daily sync and add an explicit AIO action
+  (FID-2026-1105-004)`). This record remains `fixed`; deployment and
+  activation are separate obligations.
 - [x] **File:line ranges:** `app/api/cron/providers/route.ts:48,71-73,112-118`;
   `lib/provider-sync-policy.ts:61-70`;
   `lib/storage/providers/freshness.ts:75,96`;
   `components/provider-sync.tsx:9-27`;
   `components/admin/provider-sync-card.tsx:23,36,53,73`;
-  `scripts/http-suite.mjs:27,44,115-118,153-157`;
-  `scripts/http-suite/harness.mjs:339`;
+  `scripts/http-suite.mjs:27,41,112-115,150-156`;
+  `scripts/http-suite/harness.mjs:312`;
   `scripts/http-suite/provider-cron-checks.mjs:13-197`;
-  `tests/provider-sync.test.mjs:72`; `tests/provider-scheduler.test.mjs:5`;
+  `tests/provider-sync.test.mjs:75`; `tests/provider-scheduler.test.mjs:5`;
   `vercel.json:3-8`.
 - [x] **Gate output:** Pasted in the implementation receipt above; lint,
   typecheck, 12 focused tests, 1059 unit tests, quality, build, the native-PG
@@ -657,7 +658,8 @@ uses `refresh due`. The rest of this Final stands.
   `/api/cron/providers`; the route calls `providerCronSecrets`,
   `refreshProvidersIfDue(db, { force: true })` and `syncProvider`; the admin
   card calls `/api/admin/providers/sync` through `ProviderSyncButton`.
-- [x] FID status reflects the actual state: `fixed`, uncommitted, not activated.
+- [x] FID status reflects the actual state: `fixed`, committed at `15d01b4`, not
+  activated.
 
 ## Resolution
 

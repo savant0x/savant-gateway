@@ -17,7 +17,7 @@ counts: 13 active / 20 slots, 166 archived, 179 allocated.
 
 | ID | Title | Status | Next action |
 | --- | --- | --- | --- |
-| [2026-1105-004](FID-2026-1105-004-scheduled-provider-sync.md) | Scheduled provider sync and AIO trigger | fixed | Implementation and local gates pass; no commit, deployment or `CRON_SECRET`. Next: commit, deploy, then record an observed scheduler run. |
+| [2026-1105-004](FID-2026-1105-004-scheduled-provider-sync.md) | Scheduled provider sync and AIO trigger | fixed | Implementation committed at `15d01b4`; local gates pass. Next: deploy, set `CRON_SECRET`, then record an observed scheduler run. |
 | [2026-1105-003](FID-2026-1105-003-router-cheap-provider.md) | router.cheap reseller integration | fixed | Implementation commit `6cdfc80`; archive after the remaining closure acceptance. No inference, reseller customer or management write. |
 | [043](FID-2026-1030-043-launch-master.md) | Master launch contract and dependency register | converged | Keep coverage, ordering and release decisions current. |
 | [062](FID-2026-1030-062-launch-acceptance-and-rollout.md) | Real launch acceptance, controlled rollout and rollback | converged | Discharge the dated external receipt items 1–8; launch remains no-go. |
@@ -40,8 +40,9 @@ counts: 13 active / 20 slots, 166 archived, 179 allocated.
   resolution and evidence text is unchanged.
 - `npm run repository:check` passes: 13 active FIDs, closure commit references,
   root links and current-doc links are consistent.
-- FID-2026-1105-004 is implemented and locally gated; the Hobby daily schedule
-  is written, but no deployment, secret or scheduler activation exists yet.
+- FID-2026-1105-004 is implemented, gated and committed at `15d01b4`; the Hobby
+  daily schedule is written, but no deployment, secret or scheduler activation
+  exists yet.
 - 068 and 127 use the legacy `fixed` status that the template still accepts;
   their resolutions state the remaining operator and external evidence. Neither
   is a closure candidate.

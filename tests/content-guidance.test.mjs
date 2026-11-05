@@ -20,6 +20,7 @@ function source(overrides = {}) {
     status: "active",
     failureStreak: 0,
     lastFetchedAt: "2026-11-03T11:30:00.000Z",
+    lastSuccessAt: "2026-11-03T11:30:00.000Z",
     fetchIntervalMinutes: 60,
     lastError: null,
     ...overrides,
@@ -44,11 +45,13 @@ test("the public summary counts each state and the latest success", () => {
         status: "error",
         failureStreak: 3,
         lastFetchedAt: "2026-11-03T10:00:00.000Z",
+        lastSuccessAt: "2026-11-03T10:00:00.000Z",
         lastError: "Upstream returned HTTP 403.",
       }),
       source({
         id: "src_3",
         lastFetchedAt: "2026-11-02T08:00:00.000Z",
+        lastSuccessAt: "2026-11-02T08:00:00.000Z",
       }),
       source({ id: "src_4", enabled: false, status: "disabled" }),
     ],
@@ -93,13 +96,10 @@ test("paused, delayed and never-fetched sources get distinct actions", () => {
     NOW,
   );
   const delayed = sourceGuidance(
-    source({ lastFetchedAt: "2026-11-02T08:00:00.000Z" }),
+    source({ lastSuccessAt: "2026-11-02T08:00:00.000Z" }),
     NOW,
   );
-  const never = sourceGuidance(
-    source({ lastFetchedAt: null }),
-    NOW,
-  );
+  const never = sourceGuidance(source({ lastSuccessAt: null }), NOW);
 
   assert.equal(paused.state, "paused");
   assert.match(paused.action, /Re-enable/);
@@ -125,7 +125,7 @@ test("the hub empty state reflects configured, paused, attention and current sou
   );
   assert.match(
     publicHubEmptyExplanation(
-      [source({ lastFetchedAt: "2026-11-01T08:00:00.000Z" })],
+      [source({ lastSuccessAt: "2026-11-01T08:00:00.000Z" })],
       NOW,
     ).title,
     /delayed/,

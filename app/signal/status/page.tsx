@@ -113,8 +113,8 @@ export default async function SignalStatusPage() {
                       <p className="mt-0.5 text-[11px] text-muted">
                         {PUBLIC_SOURCE_KIND_LABELS[source.kind]} · every{" "}
                         {source.fetchIntervalMinutes} min · last success:{" "}
-                        {source.lastFetchedAt
-                          ? `${contentDate(source.lastFetchedAt)} (${publicSourceAge(source.lastFetchedAt, now)})`
+                        {source.lastSuccessAt
+                          ? `${contentDate(source.lastSuccessAt)} (${publicSourceAge(source.lastSuccessAt, now)})`
                           : "never"}
                       </p>
                     </div>

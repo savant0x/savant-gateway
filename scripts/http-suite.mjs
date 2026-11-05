@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 import { runChecks } from "./http-suite/checks.mjs";
+import { runContentChecks } from "./http-suite/content-checks.mjs";
 import {
   checkProviderDouble,
   createTempWorkspace,
@@ -35,6 +36,7 @@ const IPN_SECRET = "nowpayments-ipn-secret-0123456789abcdef";
 const PROVIDER_KEY = "http-suite-provider-key";
 const BENCHMARK_KEY = "http-suite-benchmark-key";
 const PROVIDER_KEY_ENV = "HTTP_SUITE_PROVIDER_KEY";
+const CONTENT_CRON_SECRET = "http-suite-content-cron-secret";
 
 const repo = process.cwd();
 const buildMarker = join(repo, ".next", "BUILD_ID");
@@ -103,6 +105,9 @@ try {
       ARTIFICIAL_ANALYSIS_BASE_URL: mock.baseUrl,
       PROVIDER_KEY: "",
       COMMANDCODE_API_KEY: "",
+      CONTENT_INGEST_ENABLED: "true",
+      CONTENT_CRON_SECRET,
+      CRON_SECRET: "",
       // The suite proves disposable production startup: loopback origin,
       // throwaway database file. The validator requires this to be spelled
       // out rather than silently allowing a temp-database production start.
@@ -167,6 +172,14 @@ try {
     baseUrl,
     db: database,
     mockBaseUrl: mock.baseUrl,
+  });
+
+  // Must precede the destructive readiness block inside runChecks. The probes
+  // prove both HTTP methods, the authenticated secret and durable run rows.
+  await runContentChecks({
+    baseUrl,
+    db: database,
+    secret: CONTENT_CRON_SECRET,
   });
 
   await runChecks({

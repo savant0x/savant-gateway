@@ -1,7 +1,13 @@
 import { timingSafeEqual } from "node:crypto";
 
 import { ingestDueSourcesBounded } from "@/lib/content/ingest";
-import { contentCronSecret, contentIngestEnabled } from "@/lib/content/policy";
+import { contentCronSecret } from "@/lib/content/policy";
+import {
+  finishFetchRun,
+  readAutomationPolicy,
+  startFetchRun,
+} from "@/lib/content/store/automation";
+import { countDueSources } from "@/lib/content/store/source-due";
 import { getDatabase } from "@/lib/storage/runtime";
 
 export const runtime = "nodejs";
@@ -9,12 +15,19 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const NO_STORE = { "Cache-Control": "no-store" } as const;
+const RUN_DEADLINE_MS = 35_000;
+const RUN_LEASE_MS = 120_000;
 
 function suppliedSecret(request: Request): string {
   const authorization = request.headers.get("authorization") ?? "";
   const bearer = authorization.match(/^Bearer\s+(.+)$/i)?.[1]?.trim();
 
-  return bearer ?? request.headers.get("x-content-secret")?.trim() ?? "";
+  return (
+    bearer ??
+    request.headers.get("x-content-secret")?.trim() ??
+    request.headers.get("x-cron-secret")?.trim() ??
+    ""
+  );
 }
 
 function matches(supplied: string, expected: string): boolean {
@@ -26,22 +39,21 @@ function matches(supplied: string, expected: string): boolean {
   return timingSafeEqual(left, right);
 }
 
-export async function POST(request: Request) {
-  if (!contentIngestEnabled()) {
-    return Response.json(
-      {
-        error:
-          "Content ingestion is disabled. Set CONTENT_INGEST_ENABLED=true.",
-      },
-      { status: 503, headers: NO_STORE },
-    );
-  }
-
+/**
+ * One heartbeat contract for GET and POST. The configured secret may be either
+ * `CONTENT_CRON_SECRET` or the platform-standard `CRON_SECRET`. A paused policy
+ * still records a durable heartbeat and returns the paused state; it does not
+ * pretend a source was processed.
+ */
+async function heartbeat(request: Request) {
   const expected = contentCronSecret();
 
   if (!expected) {
     return Response.json(
-      { error: "CONTENT_CRON_SECRET is not configured." },
+      {
+        error:
+          "No cron secret is configured. Set CONTENT_CRON_SECRET or CRON_SECRET.",
+      },
       { status: 503, headers: NO_STORE },
     );
   }
@@ -54,28 +66,80 @@ export async function POST(request: Request) {
   }
 
   const db = await getDatabase();
-  // The route has 60 seconds; stop starting new sources at 45 so the response
-  // is written before the platform kills the function. Claims make the
-  // remaining work resumable on the next tick.
+  const read = await readAutomationPolicy(db);
+
+  if (read.error) {
+    return Response.json(
+      { error: read.error },
+      { status: 503, headers: NO_STORE },
+    );
+  }
+
+  if (!read.policy.enabled) {
+    const due = await countDueSources(db);
+    const run = await startFetchRun(db, {
+      trigger: "scheduled",
+      ownerToken: "paused_heartbeat",
+      batchLimit: read.policy.batchLimit,
+      leaseMs: RUN_LEASE_MS,
+      sourcesDue: due,
+    });
+
+    await finishFetchRun(db, run.id, {
+      status: "paused",
+      sourcesClaimed: 0,
+      sourcesOk: 0,
+      sourcesFailed: 0,
+      sourcesSkipped: due,
+      deadlineReached: false,
+      error:
+        "Automation is paused in the dashboard. No source work was admitted.",
+    });
+
+    return Response.json(
+      {
+        paused: true,
+        runId: run.id,
+        status: "paused",
+        due,
+        policyRevision: read.policy.revision,
+      },
+      { headers: NO_STORE },
+    );
+  }
+
+  const due = await countDueSources(db);
   const run = await ingestDueSourcesBounded(
     db,
     {},
     {
-      limit: 10,
-      deadlineMs: 45_000,
+      limit: read.policy.batchLimit,
+      deadlineMs: RUN_DEADLINE_MS,
+      leaseMs: RUN_LEASE_MS,
+      trigger: "scheduled",
     },
   );
 
   return Response.json(
     {
-      sources: run.results.length,
-      ok: run.results.filter((result) => result.ok).length,
-      failed: run.results.filter((result) => !result.ok).length,
+      paused: false,
+      runId: run.runId,
+      status: run.status,
+      sourcesDue: due,
       claimed: run.claimed,
       skipped: run.skipped,
       deadlineReached: run.deadlineReached,
       results: run.results,
+      policyRevision: read.policy.revision,
     },
     { headers: NO_STORE },
   );
+}
+
+export async function GET(request: Request) {
+  return heartbeat(request);
+}
+
+export async function POST(request: Request) {
+  return heartbeat(request);
 }

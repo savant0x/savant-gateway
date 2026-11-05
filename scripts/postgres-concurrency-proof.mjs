@@ -24,6 +24,7 @@ import {
 const TEST_FILES = [
   "tests/settlement-concurrency.test.mjs",
   "tests/admission-concurrency.test.mjs",
+  "tests/content-job-concurrency.test.mjs",
 ];
 
 function fail(message) {
@@ -38,7 +39,11 @@ function runProof(connectionString) {
       ["--test", file],
       {
         stdio: "inherit",
-        env: { ...process.env, TEST_DATABASE_URL: connectionString },
+        env: {
+          ...process.env,
+          TEST_DATABASE_URL: connectionString,
+          CONTENT_CONCURRENCY_REQUIRED: "1",
+        },
       },
     );
 

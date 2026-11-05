@@ -43,9 +43,9 @@ export function publicSourceState(
     return "attention";
   }
 
-  if (!source.lastFetchedAt) return "delayed";
+  if (!source.lastSuccessAt) return "delayed";
 
-  const last = new Date(source.lastFetchedAt);
+  const last = new Date(source.lastSuccessAt);
 
   if (Number.isNaN(last.getTime())) return "delayed";
 

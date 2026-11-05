@@ -21,6 +21,7 @@ against, not automatically today's behavior.
 | Understand the earlier hosting decision | [hosting-decision.md](hosting-decision.md) |
 | Handle a support or deletion request | [support-runbook.md](support-runbook.md) |
 | Configure alerts, pause admission and respond to incidents | [operations-runbook.md](operations-runbook.md) |
+| Schedule and verify content source fetching | [content-scheduler.md](content-scheduler.md) |
 | Measure capacity and rehearse load/failure recovery | [load-acceptance.md](load-acceptance.md) |
 | Configure verification and password recovery | [account-email.md](account-email.md) |
 | Change or publish a policy | [policies/README.md](policies/README.md) |
@@ -69,6 +70,9 @@ same answer data the page renders.
 - [support-runbook.md](support-runbook.md) — support queue and manual deletion.
 - [operations-runbook.md](operations-runbook.md) — scheduled monitor, alert
   webhook and signature, incident dedup/retry, and pause/drain/provider controls.
+- [content-scheduler.md](content-scheduler.md) — authenticated GET/POST content
+  heartbeat, supported scheduler options, policy controls and the activation
+  receipt, including the Vercel plan limitation.
 - [providers.md](providers.md) — register an upstream, price it, and how the
   cheapest-provider routing and stable published ids work.
 - [research/apixo-provider-review.md](research/apixo-provider-review.md) —

@@ -5,6 +5,7 @@ import { useState } from "react";
 
 type Result = {
   ok: boolean;
+  paused?: boolean;
   itemsSeen: number;
   itemsUpserted: number;
   error?: string;
@@ -24,6 +25,12 @@ export function ContentSourceActions({
   const [message, setMessage] = useState<string | null>(null);
 
   async function request(action: "fetch" | "toggle" | "delete") {
+    if (action === "fetch" && !enabled) {
+      setMessage("Enable this source before fetching it.");
+
+      return;
+    }
+
     if (
       action === "delete" &&
       !window.confirm("Delete this source and its items?")
@@ -51,9 +58,11 @@ export function ContentSourceActions({
         const result = body.results?.[0];
 
         setMessage(
-          result?.ok
-            ? `${result.itemsUpserted} of ${result.itemsSeen} items stored.`
-            : (result?.error ?? "Fetch failed."),
+          result?.paused
+            ? `Paused after ${result.itemsUpserted} of ${result.itemsSeen} items; the checkpoint resumes on the next tick.`
+            : result?.ok
+              ? `${result.itemsUpserted} of ${result.itemsSeen} items stored.`
+              : (result?.error ?? "Fetch failed."),
         );
       } else {
         const response = await fetch(
@@ -96,7 +105,8 @@ export function ContentSourceActions({
       ) : null}
       <button
         className="rounded-md border border-black/10 px-2 py-1 text-xs transition-colors hover:bg-black/5 disabled:opacity-50 dark:border-white/10 dark:hover:bg-white/5"
-        disabled={busy !== null}
+        disabled={busy !== null || !enabled}
+        title={enabled ? undefined : "Enable this source before fetching."}
         type="button"
         onClick={() => request("fetch")}
       >

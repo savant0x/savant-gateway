@@ -1,5 +1,8 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
-import { ingestDueSources, ingestSource } from "@/lib/content/ingest";
+import {
+  ingestDueSourcesBounded,
+  ingestOneSourceBounded,
+} from "@/lib/content/ingest";
 import { getSource } from "@/lib/content/store/sources";
 import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 import { getDatabase } from "@/lib/storage/runtime";
@@ -29,12 +32,34 @@ export async function POST(request: Request) {
 
     if (!source) return adminError(404, "Source not found.");
 
-    const result = await ingestSource(db, source);
+    const outcome = await ingestOneSourceBounded(
+      db,
+      source,
+      {},
+      { trigger: "manual" },
+    );
 
-    return Response.json({ results: [result] }, { headers: NO_STORE });
+    if (!outcome.claimed) return adminError(409, outcome.error);
+
+    return Response.json(
+      { results: [outcome.result], runId: outcome.runId },
+      { headers: NO_STORE },
+    );
   }
 
-  const results = await ingestDueSources(db, {}, 10);
+  const run = await ingestDueSourcesBounded(
+    db,
+    {},
+    { limit: 10, deadlineMs: 45_000, trigger: "admin_batch" },
+  );
 
-  return Response.json({ results }, { headers: NO_STORE });
+  return Response.json(
+    {
+      results: run.results,
+      runId: run.runId,
+      status: run.status,
+      deadlineReached: run.deadlineReached,
+    },
+    { headers: NO_STORE },
+  );
 }

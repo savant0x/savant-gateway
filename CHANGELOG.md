@@ -3,6 +3,25 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-04 — Content fetch automation and run history (015)
+
+- **FID-2026-1104-015 — high —** content fetching now has a durable policy, a
+  first-class run receipt, a renewable owner lease and a whole-run budget. GET
+  and POST `/api/cron/content` share one handler and accept either
+  `CONTENT_CRON_SECRET` or `CRON_SECRET`; a paused policy records a paused
+  heartbeat instead of pretending work happened. Source attempts and successes
+  are separate clocks, budget pauses keep a revision-bound checkpoint, and
+  expired runs become `interrupted` rather than successful. The admin content
+  surface adds the policy panel and paged run/source history.
+- **Verification:** `npm test` is 1,019 passed, 0 failed, 5 PostgreSQL-only
+  skipped; `npm run build`, `config:check`, lint, typecheck and quality pass. The
+  new HTTP content probes pass, but the overall HTTP gate stops later at the
+  pre-existing `paid account limit holds across different keys` probe; its
+  120-request burst refills the 60 RPM bucket on this slow runner. `test:postgres`
+  cannot run here: Docker is unavailable and `TEST_DATABASE_URL` is unset. The
+  record is **not closed**; FID-016 and FID-017 remain, and no full `verify` or
+  hosted scheduler activation is claimed.
+
 ## 2026-11-04 — Trial reservation lock order (014)
 
 - **FID-2026-1104-014 — high —** three concurrent first trial calls could

@@ -44,6 +44,7 @@ function source(overrides = {}) {
     status: "active",
     failureStreak: 0,
     lastFetchedAt: "2026-11-03T11:50:00.000Z",
+    lastSuccessAt: "2026-11-03T11:50:00.000Z",
     fetchIntervalMinutes: 60,
     ...overrides,
   };
@@ -104,7 +105,7 @@ test("status badge reports the public projection, never a private reason", () =>
   assert.equal(buildStatusBadge([source()], NOW).message, "1/1 current");
 
   const delayed = buildStatusBadge(
-    [source({ lastFetchedAt: null }), source({ id: "src_2" })],
+    [source({ lastSuccessAt: null }), source({ id: "src_2" })],
     NOW,
   );
 
@@ -121,7 +122,10 @@ test("status badge reports the public projection, never a private reason", () =>
   );
   assert.equal(
     buildStatusBadge(
-      [source({ status: "error" }), source({ id: "src_2", lastFetchedAt: null })],
+      [
+        source({ status: "error" }),
+        source({ id: "src_2", lastSuccessAt: null }),
+      ],
       NOW,
     ).color,
     "red",

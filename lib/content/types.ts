@@ -34,7 +34,12 @@ export type ContentSource = {
   maxItems: number;
   status: SourceStatus;
   failureStreak: number;
+  /** Last attempt, successful or not. This is the cadence clock. */
   lastFetchedAt: string | null;
+  /** Last successful completed primary cycle. This is the freshness clock. */
+  lastSuccessAt: string | null;
+  /** Bumped whenever source inputs change, invalidating a stored checkpoint. */
+  configRevision: number;
   lastError: string | null;
   createdAt: string;
   updatedAt: string;
@@ -144,6 +149,7 @@ export type PublicContentSource = {
   status: SourceStatus;
   failureStreak: number;
   lastFetchedAt: string | null;
+  lastSuccessAt: string | null;
   fetchIntervalMinutes: number;
 };
 
@@ -209,13 +215,41 @@ export type ParsedItem = {
 
 export type FetchCycle = {
   id: string;
-  sourceId: string;
-  status: "running" | "ok" | "error";
+  /** Null after the source is deliberately deleted; the label is preserved. */
+  sourceId: string | null;
+  sourceLabel: string;
+  runId: string | null;
+  trigger: "scheduled" | "manual" | "admin_batch" | "legacy";
+  status: "running" | "ok" | "error" | "paused" | "interrupted";
   startedAt: string;
   finishedAt: string | null;
   itemsSeen: number;
   itemsUpserted: number;
   itemsSkipped: number;
+  budgetStopped: boolean;
+  error: string | null;
+};
+
+export type FetchRunTrigger = "scheduled" | "manual" | "admin_batch";
+
+export type FetchRunStatus =
+  "running" | "ok" | "partial" | "failed" | "paused" | "interrupted";
+
+export type FetchRun = {
+  id: string;
+  trigger: FetchRunTrigger | "legacy";
+  status: FetchRunStatus;
+  startedAt: string;
+  finishedAt: string | null;
+  expiresAt: string;
+  ownerToken: string;
+  batchLimit: number;
+  sourcesDue: number;
+  sourcesClaimed: number;
+  sourcesOk: number;
+  sourcesFailed: number;
+  sourcesSkipped: number;
+  deadlineReached: boolean;
   error: string | null;
 };
 
@@ -238,7 +272,10 @@ export type ContentStats = {
   comments: number;
   reactions: number;
   savedItems: number;
+  /** Last attempt; failures move this clock. */
   lastFetchedAt: string | null;
+  /** Last successful finished cycle; failures never move this clock. */
+  lastSuccessAt: string | null;
 };
 
 export type CoverageItem = ContentItem & {

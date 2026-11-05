@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import Link from "next/link";
 
+import { ContentAutomationPanel } from "@/components/admin/content-automation-panel";
 import { ContentCommentModeration } from "@/components/admin/content-comment-moderation";
 import { ContentLinkActions } from "@/components/admin/content-link-actions";
 import { ContentLinkForm } from "@/components/admin/content-link-form";
@@ -9,7 +10,10 @@ import { ContentSourceFetchAll } from "@/components/admin/content-source-fetch-a
 import { ContentSourceForm } from "@/components/admin/content-source-form";
 import { ContentSourcePresets } from "@/components/admin/content-source-presets";
 import { ContentSourceTable } from "@/components/admin/content-source-table";
+import { automationHealth } from "@/lib/content/automation";
 import { contentDate } from "@/lib/content/format";
+import { contentCronSecret } from "@/lib/content/policy";
+import { automationSnapshot } from "@/lib/content/store/automation";
 import { listRecentCommentsForOperator } from "@/lib/content/store/comments";
 import { listRecentCycles, contentStats } from "@/lib/content/store/cycles";
 import { listItems, listLinkableModels } from "@/lib/content/store/items";
@@ -46,6 +50,7 @@ export default async function AdminContentPage() {
   let recentComments: Awaited<
     ReturnType<typeof listRecentCommentsForOperator>
   > = [];
+  let snapshot: Awaited<ReturnType<typeof automationSnapshot>> | null = null;
 
   try {
     const db = await getDatabase();
@@ -78,10 +83,20 @@ export default async function AdminContentPage() {
           commentRows,
         ],
       );
+    snapshot = await automationSnapshot(db);
   } catch (caught) {
     error =
       caught instanceof Error ? caught.message : "Storage is unavailable.";
   }
+
+  const health = snapshot
+    ? automationHealth(
+        snapshot.policy,
+        snapshot.lastRun,
+        Boolean(contentCronSecret()),
+        snapshot.dueCount,
+      )
+    : null;
 
   return (
     <>
@@ -95,26 +110,47 @@ export default async function AdminContentPage() {
           </h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
             RSS, Reddit, YouTube, HuggingFace Daily Papers, Trendshift, and
-            Hacker News sources become public Signal items. Ingestion is bounded
-            to 15 seconds, 2 MiB, and the per-source item cap; five consecutive
+            Hacker News sources become public Signal items. Each source has a
+            15-second transport bound, 2 MiB response cap, and per-source item
+            cap; each heartbeat has a 35-second work budget. Five consecutive
             fetch failures disable a source, while a configuration mistake stays
             visible without disabling it. Hacker News is filtered to AI/agent
             stories locally. Model links are automatic only on an exact title or
             tag alias, and an operator can override or dismiss them.
           </p>
         </div>
-        <Link
-          className="rounded-lg border border-black/10 px-3 py-2 text-xs font-medium transition-colors hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
-          href="/signal"
-        >
-          Open public Signal
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            className="rounded-lg border border-black/10 px-3 py-2 text-xs font-medium transition-colors hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
+            href="/admin/content/history"
+          >
+            Run history
+          </Link>
+          <Link
+            className="rounded-lg border border-black/10 px-3 py-2 text-xs font-medium transition-colors hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
+            href="/signal"
+          >
+            Open public Signal
+          </Link>
+        </div>
       </div>
 
       {error ? (
         <CardError message={error} />
       ) : (
         <>
+          {snapshot && health ? (
+            <ContentAutomationPanel
+              dueCount={snapshot.dueCount}
+              health={health}
+              lastRun={snapshot.lastRun}
+              lastSuccessAt={snapshot.lastSuccessAt}
+              policy={snapshot.policy}
+              policyError={snapshot.policyError}
+              secretConfigured={Boolean(contentCronSecret())}
+            />
+          ) : null}
+
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Stat label="Sources" value={stats?.sources ?? 0} />
             <Stat label="Enabled" value={stats?.enabledSources ?? 0} />
@@ -124,7 +160,15 @@ export default async function AdminContentPage() {
             <Stat label="Reactions" value={stats?.reactions ?? 0} />
             <Stat label="Saved items" value={stats?.savedItems ?? 0} />
             <Stat
-              label="Last fetch"
+              label="Last success"
+              value={
+                stats?.lastSuccessAt
+                  ? contentDate(stats.lastSuccessAt)
+                  : "Never"
+              }
+            />
+            <Stat
+              label="Last attempt"
               value={
                 stats?.lastFetchedAt
                   ? contentDate(stats.lastFetchedAt)
@@ -143,10 +187,19 @@ export default async function AdminContentPage() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             <section className="rounded-xl border border-black/10 bg-surface p-5 dark:border-white/10">
-              <h2 className="text-sm font-semibold">Recent fetch cycles</h2>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-sm font-semibold">Recent fetch cycles</h2>
+                <Link
+                  className="text-[11px] font-medium text-accent hover:underline"
+                  href="/admin/content/history"
+                >
+                  All history →
+                </Link>
+              </div>
               <p className="mt-1 text-xs text-muted">
                 A cycle is written before the request and closed with counts, so
-                a failed fetch is visible rather than silent.
+                a failed fetch is visible rather than silent. Attempt and
+                success clocks are recorded separately.
               </p>
               <div className="mt-4 space-y-2">
                 {cycles.length === 0 ? (

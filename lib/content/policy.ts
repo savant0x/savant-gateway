@@ -27,7 +27,7 @@ export function githubToken(
 export function contentCronSecret(
   env: Record<string, string | undefined> = process.env,
 ): string | null {
-  return env.CONTENT_CRON_SECRET?.trim() || null;
+  return env.CONTENT_CRON_SECRET?.trim() || env.CRON_SECRET?.trim() || null;
 }
 
 /** Feed ingestion is external work; keep it behind an explicit switch. */

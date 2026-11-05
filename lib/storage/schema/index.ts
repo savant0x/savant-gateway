@@ -4,6 +4,7 @@ import { admissionSchema } from "./admission.ts";
 import { billingSchema } from "./billing.ts";
 import { catalogSchema } from "./catalog.ts";
 import { contentSchema } from "./content.ts";
+import { contentAutomationSchema } from "./content-automation.ts";
 import { coreSchema } from "./core.ts";
 import { customerSchema } from "./customers.ts";
 import { identitySchema } from "./identity.ts";
@@ -31,6 +32,7 @@ export async function applySchema(
   await billingSchema(db);
   await identitySchema(db);
   await contentSchema(db);
+  await contentAutomationSchema(db);
   await admissionSchema(db);
 
   // The seed belongs to the embedded engine, not to "not production". A dev

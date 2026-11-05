@@ -36,6 +36,8 @@ type SourceRow = {
   status: SourceStatus;
   failure_streak: number;
   last_fetched_at: string | null;
+  last_success_at: string | null;
+  config_revision: number;
   last_error: string | null;
   created_at: string;
   updated_at: string;
@@ -54,6 +56,8 @@ function toSource(row: SourceRow): ContentSource {
     status: row.status,
     failureStreak: row.failure_streak,
     lastFetchedAt: row.last_fetched_at,
+    lastSuccessAt: row.last_success_at,
+    configRevision: row.config_revision,
     lastError: row.last_error,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -83,7 +87,7 @@ export async function listPublicSources(
   const rows = await db
     .prepare(
       `SELECT id, label, kind, enabled, status, failure_streak,
-              last_fetched_at, fetch_interval_minutes
+              last_fetched_at, last_success_at, fetch_interval_minutes
          FROM content.sources
         ORDER BY label ASC`,
     )
@@ -95,6 +99,7 @@ export async function listPublicSources(
       status: SourceStatus;
       failure_streak: number;
       last_fetched_at: string | null;
+      last_success_at: string | null;
       fetch_interval_minutes: number;
     }>();
 
@@ -106,9 +111,16 @@ export async function listPublicSources(
     status: row.status,
     failureStreak: row.failure_streak,
     lastFetchedAt: row.last_fetched_at,
+    lastSuccessAt: row.last_success_at,
     fetchIntervalMinutes: row.fetch_interval_minutes,
   }));
 }
+
+export const DUE_SOURCE_PREDICATE = `s.enabled = 1
+  AND s.status <> 'disabled'
+  AND (s.last_fetched_at IS NULL
+       OR s.last_fetched_at::timestamptz
+          <= ?::timestamptz - (s.fetch_interval_minutes * INTERVAL '1 minute'))`;
 
 export async function listDueSources(
   db: PostgresDatabase,
@@ -117,13 +129,9 @@ export async function listDueSources(
 ): Promise<ContentSource[]> {
   const rows = await db
     .prepare(
-      `SELECT * FROM content.sources
-        WHERE enabled = 1
-          AND status <> 'disabled'
-          AND (last_fetched_at IS NULL
-               OR last_fetched_at::timestamptz
-                  <= ?::timestamptz - (fetch_interval_minutes * INTERVAL '1 minute'))
-        ORDER BY last_fetched_at ASC NULLS FIRST
+      `SELECT s.* FROM content.sources s
+        WHERE ${DUE_SOURCE_PREDICATE}
+        ORDER BY s.last_fetched_at ASC NULLS FIRST, s.id ASC
         LIMIT ?`,
     )
     .all<SourceRow>(now, Math.min(50, Math.max(1, limit)));
@@ -257,7 +265,8 @@ export async function updateSource(
       `UPDATE content.sources
           SET kind = ?, label = ?, url = ?, config_json = ?, enabled = ?,
               fetch_interval_minutes = ?, max_items = ?, status = ?,
-              failure_streak = ?, updated_at = ?
+              failure_streak = ?, config_revision = config_revision + 1,
+              checkpoint_json = NULL, updated_at = ?
         WHERE id = ?`,
     )
     .run(
@@ -321,10 +330,11 @@ export async function recordSourceSuccess(
     .prepare(
       `UPDATE content.sources
           SET status = 'active', failure_streak = 0, last_fetched_at = ?,
-              last_error = NULL, updated_at = ?
+              last_success_at = ?, checkpoint_json = NULL, last_error = NULL,
+              updated_at = ?
         WHERE id = ?`,
     )
-    .run(fetchedAt, fetchedAt, id);
+    .run(fetchedAt, fetchedAt, fetchedAt, id);
 }
 
 /**

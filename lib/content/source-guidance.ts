@@ -75,12 +75,12 @@ export function summarizePublicSources(
     else summary[state] += 1;
 
     if (
-      source.lastFetchedAt &&
+      source.lastSuccessAt &&
       (!summary.lastSuccessAt ||
-        new Date(source.lastFetchedAt).getTime() >
+        new Date(source.lastSuccessAt).getTime() >
           new Date(summary.lastSuccessAt).getTime())
     ) {
-      summary.lastSuccessAt = source.lastFetchedAt;
+      summary.lastSuccessAt = source.lastSuccessAt;
     }
   }
 
@@ -141,8 +141,8 @@ export function sourceGuidance(
   }
 
   if (state === "delayed") {
-    const age = source.lastFetchedAt
-      ? publicSourceAge(source.lastFetchedAt, now)
+    const age = source.lastSuccessAt
+      ? publicSourceAge(source.lastSuccessAt, now)
       : null;
     const hint = age
       ? `No successful fetch within two intervals and the grace period. Last success: ${age}.`
@@ -174,9 +174,9 @@ export function sourceGuidance(
   return {
     state,
     failureClass: null,
-    hint: source.lastFetchedAt
-      ? `Last success ${publicSourceAge(source.lastFetchedAt, now)}.`
-      : "Waiting for the first fetch.",
+    hint: source.lastSuccessAt
+      ? `Last success ${publicSourceAge(source.lastSuccessAt, now)}.`
+      : "Waiting for the first successful fetch.",
     action: "No action is needed while the source remains current.",
   };
 }

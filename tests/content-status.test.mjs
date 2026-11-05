@@ -21,6 +21,7 @@ const SOURCE = {
   status: "active",
   failureStreak: 0,
   lastFetchedAt: "2026-11-03T10:00:00.000Z",
+  lastSuccessAt: "2026-11-03T10:00:00.000Z",
   fetchIntervalMinutes: 60,
 };
 
@@ -50,16 +51,16 @@ test("public source state has tested disabled, failure, delay, and current bound
     "attention",
   );
   assert.equal(
-    publicSourceState({ ...SOURCE, lastFetchedAt: null }, justNow),
+    publicSourceState({ ...SOURCE, lastSuccessAt: null }, justNow),
     "delayed",
   );
   assert.equal(
-    publicSourceState({ ...SOURCE, lastFetchedAt: "not-a-date" }, justNow),
+    publicSourceState({ ...SOURCE, lastSuccessAt: "not-a-date" }, justNow),
     "delayed",
   );
 
   const limit = new Date(
-    new Date(SOURCE.lastFetchedAt).getTime() +
+    new Date(SOURCE.lastSuccessAt).getTime() +
       (SOURCE.fetchIntervalMinutes * SOURCE_STATUS_POLICY.delayedAfterIntervals +
         SOURCE_STATUS_POLICY.graceMinutes) *
         60 *
@@ -108,6 +109,7 @@ test("the public projection never selects the URL, config, or last_error", async
       "kind",
       "label",
       "lastFetchedAt",
+      "lastSuccessAt",
       "status",
     ]);
     assert.equal(rows[0].failureStreak, 3);

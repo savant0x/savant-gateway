@@ -54,7 +54,7 @@ export function ContentSourceTable({ sources }: { sources: ContentSource[] }) {
             <th>Kind</th>
             <th>Tags</th>
             <th>Status</th>
-            <th>Last fetch</th>
+            <th>Fetch clocks</th>
             <th>Failures</th>
             <th />
           </tr>
@@ -86,9 +86,18 @@ export function ContentSourceTable({ sources }: { sources: ContentSource[] }) {
                     <SourceStatusCell source={source} />
                   </td>
                   <td className="text-xs">
-                    {source.lastFetchedAt
-                      ? contentDate(source.lastFetchedAt)
-                      : "Never"}
+                    <p>
+                      Success:{" "}
+                      {source.lastSuccessAt
+                        ? contentDate(source.lastSuccessAt)
+                        : "Never"}
+                    </p>
+                    <p className="mt-1 text-muted">
+                      Attempt:{" "}
+                      {source.lastFetchedAt
+                        ? contentDate(source.lastFetchedAt)
+                        : "Never"}
+                    </p>
                   </td>
                   <td>{source.failureStreak}</td>
                   <td>

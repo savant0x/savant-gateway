@@ -1,5 +1,37 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-04 (content automation implementation)
+
+Operator instruction: implement the content automation and persistent matching
+program in `dev/session-summaries/2026-11-04-content-automation-implementation-handoff.md`.
+Automation level 3; strict; single agent. This pass is the coding session that
+SCOPE CA5 reserved. Implementation order is FID-2026-1104-015, then 016, then
+017, with FID-018 as the integration master.
+
+Recorded presentation: add the additive automation/run schema, settings-backed
+policy, durable source/run history, authenticated GET/POST heartbeat, complete
+fetch and link management surfaces, persistent accept/dismiss/restore decisions,
+stored-content rematch and catalog invalidation. Accepted associations remain
+attached across refetch, rematch and restart; dismissals suppress automatic
+recreation and never delete content. No deployment, hosted scheduler activation,
+secret provisioning, plan purchase, paid classifier or real-money test is
+authorized. The two existing untracked chat exports remain untouched.
+
+- [x] **CA6 — FID-015 implementation.** Dashboard-configured policy, durable
+  run/source history, authenticated GET/POST heartbeat, fair bounded due work,
+  attempt versus success clocks, and the scheduler activation runbook. Landed;
+  closure still awaits the disposable-PostgreSQL proof and a full HTTP gate
+  pass (the unrelated paid-burst probe is timing-sensitive on this runner).
+- [ ] **CA7 — FID-016 implementation.** Durable suggested/auto_published/
+  accepted/dismissed/retired states, explicit decisions, honest migration,
+  atomic reconciliation and one public visibility authority.
+- [ ] **CA8 — FID-017 implementation.** Complete link inventory and paging,
+  versioned matching policy and aliases, stored-content rematch jobs and
+  catalog-change invalidation.
+- [ ] **CA9 — FID-018 integration and closure.** Cross-feature acceptance,
+  child closure in order, archive and changelog evidence, with hosted scheduler
+  activation and deployment left to the operator.
+
 ## Session — 2026-11-04 (content automation and persistent matching design)
 
 Operator instruction, verbatim: "This is big enough for a multi fid + perfection

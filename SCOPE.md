@@ -1,5 +1,42 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-05 (admin economics planning program: 005–008)
+
+Operator supplied a planning-only master, `FID-2026-1105-008`, with children
+005–007 for pricing, provider capital, customer profitability, free-tier
+economics, plan simulation and actionable alerts. The register's next action was
+to complete the design audit, Perfection Loop and planning handoff. Automation
+level 3; strict; single agent. Six unique items (the operator's item 4 is
+repeated once). No implementation, external funding, payment, price publication
+or deployment was requested or performed. The operator's approximately $300
+remains provider working capital, not infrastructure budget.
+
+- [x] **AE1 — Converge 005–008.** Re-authored all four records to
+  `templates/FID-TEMPLATE.md`: Environment fields, risk checklist, one
+  RED/GREEN/AUDIT/ADVERSARIAL record per loop, missed questions, planned test
+  paths, gates and the five-field Resolution. Status `analyzed` → `converged`
+  because the repository contract allows only `converged` or `fixed` for an
+  active FID. Ownership: 005 pricing (item 1), 006 provider capital and alerts
+  (items 2 and 6), 007 customer, free cohorts and simulator (items 3, 4 and
+  5); 008 orders them. Whole-document deltas: 005 +163.0%, 006 +154.4%, 007
+  +136.4%, 008 +139.9%. These exceed the 10% per-pass cap; the drafts had none
+  of the required template sections, so the rewrite is recorded as a deviation,
+  not hidden.
+- [x] **AE2 — Register and hand off.** The four rows in `dev/fids/README.md`
+  now read `converged` with the implementation order; the stale audit bullet
+  (13 active / 179 allocated) was corrected to 17 active / 183 allocated. The
+  verified handoff is
+  `dev/session-summaries/2026-11-05-admin-economics-planning-handoff.md`.
+- [x] **AE3 — Planning gates.** `npm run repository:check` PASS (Node 24, 11
+  gates, 17 active FIDs); `npm run attribution` PASS (both guards); `npm run
+  lint` exit 0; `npm run typecheck` exit 0. No implementation gate is claimed
+  and the three planned test files do not exist yet.
+- [ ] **AE4 — Implementation.** Blocked pending an explicit operator
+  authorization for a coding session. Order is 005 → 006 → 007; each child
+  closes only with committed code, its declared gates and call-graph evidence.
+  No price, funding, ledger, entitlement or deployment action is authorized by
+  the planning pass.
+
 ## Session — 2026-11-05 (scheduled provider sync design: 004)
 
 Operator instruction: "well we need the sync to be automatic and on a schedule,

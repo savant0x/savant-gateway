@@ -95,8 +95,8 @@ async function seed(db) {
     .run(NOW);
 }
 
-function tamper(directory, table, predicate, change) {
-  const path = join(directory, `${table}.jsonl`);
+function tamper(directory, schema, table, predicate, change) {
+  const path = join(directory, `${schema}.${table}.jsonl`);
   const lines = readFileSync(path, "utf8").split("\n").filter(Boolean);
   const rewritten = lines.map((line) => {
     const row = JSON.parse(line);
@@ -122,8 +122,20 @@ test("a dump restores every row, every checksum and a spendable balance", async 
 
     const { manifest } = await dumpDatabase(source, dumpDirectory);
 
-    assert.equal(manifest.format, "savant-gateway-pg-dump/1");
+    assert.equal(manifest.format, "savant-gateway-pg-dump/2");
     assert.equal(manifest.balance.mismatches, 0);
+    assert.ok(
+      manifest.tables.some(
+        (entry) => entry.schema === "content" && entry.table === "sources",
+      ),
+      "the content schema is in the dump",
+    );
+    assert.ok(
+      manifest.tables.some(
+        (entry) => entry.schema === "identity" && entry.table === "protocols",
+      ),
+      "the identity schema is in the dump",
+    );
     assert.equal(
       manifest.tables.find((entry) => entry.table === "users").rows,
       3,
@@ -146,7 +158,9 @@ test("a dump restores every row, every checksum and a spendable balance", async 
       assert.equal(restoredRows.rows, entry.rows, entry.table);
 
       const counted = await restored
-        .prepare(`SELECT COUNT(*) AS count FROM "${entry.table}"`)
+        .prepare(
+          `SELECT COUNT(*) AS count FROM "${entry.schema}"."${entry.table}"`,
+        )
         .get();
 
       assert.equal(Number(counted.count), entry.rows, entry.table);
@@ -185,7 +199,7 @@ test("a tampered dump is refused and the target keeps its rows", async () => {
     await dumpDatabase(source, dumpDirectory);
 
     cpSync(dumpDirectory, tampered, { recursive: true });
-    tamper(tampered, "credit_ledger", (row) => row.kind === "usage", (row) => {
+    tamper(tampered, "public", "credit_ledger", (row) => row.kind === "usage", (row) => {
       row.amount_micros = "-1";
     });
 
@@ -265,7 +279,7 @@ test("restore refuses a populated target unless forced, and a short table", asyn
 
     cpSync(dumpDirectory, shortDirectory, { recursive: true });
 
-    const topups = join(shortDirectory, "topups.jsonl");
+    const topups = join(shortDirectory, "public.topups.jsonl");
     const lines = readFileSync(topups, "utf8").split("\n").filter(Boolean);
 
     writeFileSync(topups, `${lines.slice(0, -1).join("\n")}\n`);

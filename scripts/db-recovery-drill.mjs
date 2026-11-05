@@ -142,8 +142,8 @@ async function seed(db) {
 }
 
 /** Rewrites one row in a table's dump file without touching the manifest. */
-function tamperRow(directory, table, predicate, change) {
-  const path = join(directory, `${table}.jsonl`);
+function tamperRow(directory, schema, table, predicate, change) {
+  const path = join(directory, `${schema}.${table}.jsonl`);
   const lines = readFileSync(path, "utf8").split("\n").filter(Boolean);
   const rewritten = lines.map((line) => {
     const row = JSON.parse(line);
@@ -189,7 +189,16 @@ try {
   check(
     "dump covers the ledger and payment tables",
     ["users", "credit_ledger", "credit_holds", "topups", "billing_events"].every(
-      (table) => manifest.tables.some((entry) => entry.table === table),
+      (table) =>
+        manifest.tables.some(
+          (entry) => entry.schema === "public" && entry.table === table,
+        ),
+    ),
+  );
+  check(
+    "dump covers the content and identity schemas",
+    ["content.sources", "identity.protocols"].every((name) =>
+      manifest.tables.some((entry) => `${entry.schema}.${entry.table}` === name),
     ),
   );
   check(
@@ -207,7 +216,9 @@ try {
     join(workspace, "restored"),
     dumpDirectory,
   );
-  const restoredRows = receipt.tables.find((entry) => entry.table === "users");
+  const restoredRows = receipt.tables.find(
+    (entry) => entry.schema === "public" && entry.table === "users",
+  );
 
   check("restore reports the dumped tables", restoredRows?.rows === 3);
   check("restore verifies every balance", receipt.balance.mismatches === 0);
@@ -264,7 +275,7 @@ try {
   const tampered = join(workspace, "tampered");
 
   cpSync(dumpDirectory, tampered, { recursive: true });
-  tamperRow(tampered, "credit_ledger", (row) => row.kind === "usage", (row) => {
+  tamperRow(tampered, "public", "credit_ledger", (row) => row.kind === "usage", (row) => {
     row.amount_micros = "-1";
   });
 
@@ -303,7 +314,7 @@ try {
 
   cpSync(dumpDirectory, shortDir, { recursive: true });
 
-  const shortPath = join(shortDir, "topups.jsonl");
+  const shortPath = join(shortDir, "public.topups.jsonl");
   const shortLines = readFileSync(shortPath, "utf8").split("\n").filter(Boolean);
 
   writeFileSync(shortPath, `${shortLines.slice(0, -1).join("\n")}\n`);

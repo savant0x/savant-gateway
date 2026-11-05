@@ -1,10 +1,20 @@
 import type { PostgresDatabase } from "./pg-adapter.ts";
+import type { TableRef } from "./backup-tables.ts";
 
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import {
+  columnsOf,
+  foreignKeyOrder,
+  qualifiedTable,
+  quote,
+} from "./backup-tables.ts";
 import { balanceAudit } from "./ledger/invariants.ts";
+
+export { foreignKeyOrder };
+export type { TableRef } from "./backup-tables.ts";
 
 /**
  * Logical backup and restore for the PostgreSQL handle (FID-086 step 6).
@@ -32,18 +42,18 @@ import { balanceAudit } from "./ledger/invariants.ts";
  * a table added later is neither forgotten nor inserted before its parent.
  */
 
-export const DUMP_FORMAT = "savant-gateway-pg-dump/1";
+export const DUMP_FORMAT = "savant-gateway-pg-dump/2";
+export const LEGACY_DUMP_FORMAT = "savant-gateway-pg-dump/1";
 const MANIFEST = "manifest.json";
 
-export type DumpTable = {
-  table: string;
+export type DumpTable = TableRef & {
   columns: string[];
   rows: number;
   checksum: string;
 };
 
 export type DumpManifest = {
-  format: typeof DUMP_FORMAT;
+  format: typeof DUMP_FORMAT | typeof LEGACY_DUMP_FORMAT;
   created_at: string;
   tables: DumpTable[];
   balance: { users: number; mismatches: number };
@@ -68,10 +78,6 @@ export class BackupRefused extends Error {
   }
 }
 
-function quote(identifier: string) {
-  return `"${identifier.replaceAll('"', '""')}"`;
-}
-
 /** `JSON.stringify` throws on a bigint; the driver can return one for BIGINT. */
 function serialize(row: Record<string, unknown>) {
   return JSON.stringify(row, (_key, value) =>
@@ -87,98 +93,17 @@ function checksumOf(lines: string[]) {
   return createHash("sha256").update(hashes.join("")).digest("hex");
 }
 
-const rowsFile = (directory: string, table: string) =>
-  join(directory, `${table}.jsonl`);
-
-async function tableNames(db: PostgresDatabase) {
-  const rows = await db.query<{ table_name: string }>(
-    `SELECT table_name FROM information_schema.tables
-      WHERE table_schema = current_schema() AND table_type = 'BASE TABLE'
-      ORDER BY table_name`,
-  );
-
-  return rows.map((row) => row.table_name);
+function rowsFileName(table: TableRef, format: DumpManifest["format"]) {
+  return format === LEGACY_DUMP_FORMAT
+    ? `${table.table}.jsonl`
+    : `${table.schema}.${table.table}.jsonl`;
 }
 
-/**
- * Parents before children, from the catalog itself. A cycle (none exist today)
- * is broken alphabetically and reported by the caller's row counts rather than
- * by a failed insert.
- */
-export async function foreignKeyOrder(db: PostgresDatabase) {
-  const tables = await tableNames(db);
-  const edges = await db.query<{ child: string; parent: string }>(
-    `SELECT c.relname AS child, p.relname AS parent
-       FROM pg_constraint con
-       JOIN pg_class c ON c.oid = con.conrelid
-       JOIN pg_class p ON p.oid = con.confrelid
-       JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE con.contype = 'f' AND n.nspname = current_schema()
-        AND c.relname <> p.relname`,
-  );
-  const parents = new Map<string, Set<string>>();
-  const indegree = new Map<string, number>(tables.map((table) => [table, 0]));
-
-  for (const edge of edges) {
-    if (!indegree.has(edge.child) || !indegree.has(edge.parent)) continue;
-
-    const set = parents.get(edge.parent) ?? new Set<string>();
-
-    if (set.has(edge.child)) continue;
-
-    set.add(edge.child);
-    parents.set(edge.parent, set);
-    indegree.set(edge.child, (indegree.get(edge.child) ?? 0) + 1);
-  }
-
-  const ready = tables
-    .filter((table) => indegree.get(table) === 0)
-    .sort((left, right) => left.localeCompare(right));
-  const order: string[] = [];
-
-  while (ready.length > 0) {
-    const table = ready.shift() as string;
-
-    order.push(table);
-
-    const children = parents.get(table);
-
-    if (!children) continue;
-
-    for (const child of Array.from(children)) {
-      const next = (indegree.get(child) ?? 0) - 1;
-
-      indegree.set(child, next);
-
-      if (next === 0) {
-        ready.push(child);
-        ready.sort((left, right) => left.localeCompare(right));
-      }
-    }
-  }
-
-  const remaining = tables.filter((table) => !order.includes(table));
-
-  return [
-    ...order,
-    ...remaining.sort((left, right) => left.localeCompare(right)),
-  ];
-}
-
-async function columnsOf(db: PostgresDatabase, table: string, rows: unknown[]) {
-  if (rows.length > 0) {
-    return Object.keys(rows[0] as Record<string, unknown>);
-  }
-
-  const columns = await db.query<{ column_name: string }>(
-    `SELECT column_name FROM information_schema.columns
-      WHERE table_schema = current_schema() AND table_name = ?
-      ORDER BY ordinal_position`,
-    [table],
-  );
-
-  return columns.map((row) => row.column_name);
-}
+const rowsFile = (
+  directory: string,
+  table: TableRef,
+  format: DumpManifest["format"],
+) => join(directory, rowsFileName(table, format));
 
 /**
  * Reads every table and writes one JSONL file per table plus a manifest.
@@ -206,17 +131,18 @@ export async function dumpDatabase(
 
   for (const table of await foreignKeyOrder(db)) {
     const rows = await db.query<Record<string, unknown>>(
-      `SELECT * FROM ${quote(table)}`,
+      `SELECT * FROM ${qualifiedTable(table)}`,
     );
     const lines = rows.map(serialize);
     const columns = await columnsOf(db, table, rows);
 
     writeFileSync(
-      rowsFile(directory, table),
+      rowsFile(directory, table, DUMP_FORMAT),
       lines.map((line) => `${line}\n`).join(""),
     );
     tables.push({
-      table,
+      schema: table.schema,
+      table: table.table,
       columns,
       rows: lines.length,
       checksum: checksumOf(lines),
@@ -238,34 +164,73 @@ export async function dumpDatabase(
 }
 
 export function readManifest(directory: string): DumpManifest {
-  let manifest: DumpManifest;
+  let parsed: unknown;
 
   try {
-    manifest = JSON.parse(
-      readFileSync(join(directory, MANIFEST), "utf8"),
-    ) as DumpManifest;
+    parsed = JSON.parse(readFileSync(join(directory, MANIFEST), "utf8"));
   } catch {
     throw new BackupRefused(`No readable manifest in ${directory}.`);
   }
 
-  if (manifest?.format !== DUMP_FORMAT) {
-    throw new BackupRefused(`Unsupported dump format: ${manifest?.format}.`);
+  const manifest = parsed as {
+    format?: unknown;
+    created_at?: unknown;
+    tables?: unknown;
+    balance?: unknown;
+  };
+  const format = manifest?.format;
+
+  if (format !== DUMP_FORMAT && format !== LEGACY_DUMP_FORMAT) {
+    throw new BackupRefused(`Unsupported dump format: ${String(format)}.`);
   }
 
   if (!Array.isArray(manifest.tables) || manifest.tables.length === 0) {
     throw new BackupRefused("The dump manifest lists no tables.");
   }
 
-  return manifest;
+  const tables: DumpTable[] = manifest.tables.map((value) => {
+    const entry = value as Partial<DumpTable> & { schema?: unknown };
+
+    return {
+      schema:
+        typeof entry.schema === "string" && entry.schema
+          ? entry.schema
+          : "public",
+      table: String(entry.table ?? ""),
+      columns: Array.isArray(entry.columns)
+        ? entry.columns.map((column) => String(column))
+        : [],
+      rows: Number(entry.rows ?? 0),
+      checksum: String(entry.checksum ?? ""),
+    };
+  });
+  const balance = manifest.balance as
+    { users?: unknown; mismatches?: unknown } | undefined;
+
+  return {
+    format,
+    created_at: String(manifest.created_at ?? ""),
+    tables,
+    balance: {
+      users: Number(balance?.users ?? 0),
+      mismatches: Number(balance?.mismatches ?? 0),
+    },
+  };
 }
 
-function linesFor(directory: string, table: string) {
+function linesFor(
+  directory: string,
+  table: DumpTable,
+  format: DumpManifest["format"],
+) {
   let content: string;
 
   try {
-    content = readFileSync(rowsFile(directory, table), "utf8");
+    content = readFileSync(rowsFile(directory, table, format), "utf8");
   } catch {
-    throw new BackupRefused(`The dump is missing ${table}.jsonl.`);
+    throw new BackupRefused(
+      `The dump is missing ${rowsFileName(table, format)}.`,
+    );
   }
 
   return content.split("\n").filter((line) => line.trim().length > 0);
@@ -276,7 +241,7 @@ async function verifyTable(
   entry: DumpTable,
 ): Promise<string[]> {
   const rows = await db.query<Record<string, unknown>>(
-    `SELECT * FROM ${quote(entry.table)}`,
+    `SELECT * FROM ${qualifiedTable(entry)}`,
   );
   const problems: string[] = [];
 
@@ -321,7 +286,7 @@ export async function restoreDatabase(
 
   await db
     .transaction(async () => {
-      const tables = manifest.tables.map((entry) => quote(entry.table));
+      const tables = manifest.tables.map((entry) => qualifiedTable(entry));
 
       await db.exec(`TRUNCATE TABLE ${tables.join(", ")} CASCADE`);
 
@@ -329,13 +294,13 @@ export async function restoreDatabase(
         const columns = entry.columns.map(quote).join(", ");
         const placeholders = entry.columns.map(() => "?").join(", ");
         const insert = db.prepare(
-          `INSERT INTO ${quote(entry.table)} (${columns}) VALUES (${placeholders})`,
+          `INSERT INTO ${qualifiedTable(entry)} (${columns}) VALUES (${placeholders})`,
         );
-        const lines = linesFor(directory, entry.table);
+        const lines = linesFor(directory, entry, manifest.format);
 
         if (lines.length !== entry.rows) {
           throw new BackupRefused(
-            `${entry.table}.jsonl holds ${lines.length} rows but the manifest says ${entry.rows}.`,
+            `${rowsFileName(entry, manifest.format)} holds ${lines.length} rows but the manifest says ${entry.rows}.`,
           );
         }
 

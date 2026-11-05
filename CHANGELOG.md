@@ -3,6 +3,22 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-04 — Schema-aware logical backup (SCOPE VB6)
+
+- **SCOPE VB6 / FID-2026-1104-013 durability prerequisite — high —** the
+  logical dump enumerated only the current schema and wrote bare table names,
+  silently omitting the existing `content` and `identity` schemas and any future
+  `showcase` schema. Dump format `savant-gateway-pg-dump/2` now enumerates every
+  non-system base table, orders parents before children from catalog foreign
+  keys, records the schema in the manifest, writes
+  `${schema}.${table}.jsonl`, and uses qualified identifiers for select,
+  truncate and insert. Legacy `/1` dumps remain restorable as `public`. The
+  catalog helpers were split into `lib/storage/backup-tables.ts` to keep both
+  modules under the 400-line ceiling. Verified: recovery tests 5/5, drill 14/14
+  PASS including `content.sources` and `identity.protocols`, typecheck,
+  zero-warning lint and quality. No `showcase` schema exists yet; 013A still
+  depends on FID-006 and FID-009.
+
 ## 2026-11-04 — Release audit and verification integrity
 
 - **FID-2026-1104-001 — high —** the audit reproduced a stale approval accepted

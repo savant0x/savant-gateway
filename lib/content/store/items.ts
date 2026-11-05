@@ -9,6 +9,7 @@ import type {
 
 import { CONTENT_LIMITS } from "../policy.ts";
 import { normalizeTags, tagLabel } from "../taxonomy.ts";
+import { PUBLIC_LINK_STATE_SQL } from "../visibility.ts";
 
 import { ITEM_COLUMNS, type ItemRow, toItem } from "./item-rows.ts";
 
@@ -44,7 +45,8 @@ function itemWhere(query: ItemQuery) {
   if (query.modelId) {
     clauses.push(
       `EXISTS (SELECT 1 FROM content.model_links l
-                WHERE l.item_id = i.id AND l.model_id = ? AND l.reviewed = 1)`,
+                WHERE l.item_id = i.id AND l.model_id = ?
+                  AND l.state IN (${PUBLIC_LINK_STATE_SQL}))`,
     );
     args.push(query.modelId);
   }

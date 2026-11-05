@@ -243,9 +243,10 @@ export default async function AdminContentPage() {
             <section className="rounded-xl border border-black/10 bg-surface p-5 dark:border-white/10">
               <h2 className="text-sm font-semibold">Model link override</h2>
               <p className="mt-1 text-xs leading-5 text-muted">
-                A manual link is permanent across re-fetches. Dismiss an
-                automatic link when the alias match is wrong; the next fetch may
-                recreate it unless the model alias is corrected upstream.
+                A manual link is permanent across re-fetches. Accept pins an
+                automatic suggestion as a durable operator decision. Dismissal
+                is durable too: a later fetch cannot recreate the pair. Restore
+                is the only route back to a suggested or accepted state.
               </p>
               <div className="mt-4">
                 <ContentLinkForm
@@ -272,6 +273,7 @@ export default async function AdminContentPage() {
                   <th>Model</th>
                   <th>Relation</th>
                   <th>Source</th>
+                  <th>State</th>
                   <th>Confidence</th>
                   <th>Why</th>
                   <th />
@@ -280,7 +282,7 @@ export default async function AdminContentPage() {
               <tbody>
                 {links.length === 0 ? (
                   <tr>
-                    <td className="text-muted" colSpan={7}>
+                    <td className="text-muted" colSpan={8}>
                       No model links yet. Fetch a source whose title or tag
                       contains a catalog model alias.
                     </td>
@@ -294,6 +296,7 @@ export default async function AdminContentPage() {
                       <td className="mono text-xs">{link.modelId}</td>
                       <td>{link.relation}</td>
                       <td>{link.relationSource}</td>
+                      <td className="mono text-xs">{link.state}</td>
                       <td>{Math.round(link.confidence * 100)}%</td>
                       <td className="max-w-[20rem] text-xs text-muted">
                         {link.reason}
@@ -302,7 +305,8 @@ export default async function AdminContentPage() {
                         <ContentLinkActions
                           itemId={link.itemId}
                           modelId={link.modelId}
-                          relationSource={link.relationSource}
+                          revision={link.revision}
+                          state={link.state}
                         />
                       </td>
                     </tr>

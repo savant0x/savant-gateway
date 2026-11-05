@@ -12,6 +12,7 @@ import {
 import { getSource } from "../lib/content/store/sources.ts";
 import { claimSource } from "../lib/content/store/claims.ts";
 import {
+  acceptAutoLink,
   createSource,
   listContentForModel,
   listItems,
@@ -78,7 +79,7 @@ async function seedModel(db) {
     );
 }
 
-test("ingestion stores the item, tag, cycle, and reviewed model link", async () => {
+test("ingestion stores the item, tag, cycle, and review-required link", async () => {
   const db = await createStorageDatabase({ env: {} });
 
   try {
@@ -110,12 +111,22 @@ test("ingestion stores the item, tag, cycle, and reviewed model link", async () 
     assert.equal(result.itemsSeen, 1);
     assert.equal(result.itemsUpserted, 1);
 
+    const pending = await listContentForModel(db, MODEL_ID);
+    const pendingStats = await contentStats(db);
+
+    assert.equal(pending.items.length, 0);
+    assert.equal(pendingStats.items, 1);
+    assert.equal(pendingStats.linkedItems, 0);
+
+    const item = (await listItems(db, { sourceId: source.id })).items[0];
+
+    assert.equal(await acceptAutoLink(db, item.id, MODEL_ID), true);
+
     const coverage = await listContentForModel(db, MODEL_ID);
     const stats = await contentStats(db);
 
     assert.equal(coverage.items.length, 1);
     assert.equal(coverage.items[0].relation, "release");
-    assert.equal(stats.items, 1);
     assert.equal(stats.linkedItems, 1);
 
     const refreshed = await getSource(db, source.id);

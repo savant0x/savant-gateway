@@ -183,7 +183,7 @@ export function suggestModelLinks(
           relation,
           confidence,
           reason,
-          reviewed: true,
+          reviewed: false,
         };
       }
 

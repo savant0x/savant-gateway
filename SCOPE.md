@@ -22,9 +22,10 @@ authorized. The two existing untracked chat exports remain untouched.
   attempt versus success clocks, and the scheduler activation runbook. Landed;
   closure still awaits the disposable-PostgreSQL proof and a full HTTP gate
   pass (the unrelated paid-burst probe is timing-sensitive on this runner).
-- [ ] **CA7 — FID-016 implementation.** Durable suggested/auto_published/
+- [x] **CA7 — FID-016 implementation.** Durable suggested/auto_published/
   accepted/dismissed/retired states, explicit decisions, honest migration,
-  atomic reconciliation and one public visibility authority.
+  atomic reconciliation and one public visibility authority. Landed; closure
+  awaits the disposable-PostgreSQL link-decision race and browser exercise.
 - [ ] **CA8 — FID-017 implementation.** Complete link inventory and paging,
   versioned matching policy and aliases, stored-content rematch jobs and
   catalog-change invalidation.

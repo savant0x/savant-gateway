@@ -4,6 +4,7 @@ import type { ContentStats, FetchCycle } from "../types.ts";
 import { randomUUID } from "node:crypto";
 
 import { clampPageLimit, decodeCursor, encodeCursor } from "../pagination.ts";
+import { PUBLIC_LINK_STATE_SQL } from "../visibility.ts";
 
 type CycleRow = {
   id: string;
@@ -223,7 +224,8 @@ export async function contentStats(
 
   const linkRow = await db
     .prepare(
-      "SELECT COUNT(DISTINCT item_id) AS total FROM content.model_links WHERE reviewed = 1",
+      `SELECT COUNT(DISTINCT item_id) AS total FROM content.model_links
+        WHERE state IN (${PUBLIC_LINK_STATE_SQL})`,
     )
     .get<{ total: number | string }>();
 

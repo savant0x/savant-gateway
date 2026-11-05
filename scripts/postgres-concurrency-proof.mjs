@@ -25,6 +25,7 @@ const TEST_FILES = [
   "tests/settlement-concurrency.test.mjs",
   "tests/admission-concurrency.test.mjs",
   "tests/content-job-concurrency.test.mjs",
+  "tests/content-link-concurrency.test.mjs",
 ];
 
 function fail(message) {

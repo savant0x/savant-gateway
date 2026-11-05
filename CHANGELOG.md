@@ -3,6 +3,24 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-04 — Persistent content/model link decisions (016)
+
+- **FID-2026-1104-016 — high —** model links now have durable `suggested`,
+  `auto_published`, `accepted`, `dismissed` and `retired` states, an optimistic
+  revision and an append-only decision log. The additive migration labels an
+  existing operator row `accepted` and a reviewed automatic row
+  `auto_published`; newly detected pairs are review-required. Automatic
+  reconciliation refreshes or retires only undecided rows, so refetching cannot
+  resurrect a dismissal or clear an acceptance. Accept, dismiss and restore are
+  compare-and-swap operations; public detail, coverage, model filters and linked
+  counts share one visibility predicate. The admin link table shows state and
+  offers the explicit decisions.
+- **Verification:** `npm test` is 1,021 passed, 0 failed, 6 PostgreSQL-only
+  skipped; `npm run build`, lint, typecheck and quality pass. The new decision
+  suite passes. The two-connection link race is registered but **unrun** here
+  because Docker and `TEST_DATABASE_URL` are unavailable; the browser controls
+  were not exercised in a real browser.
+
 ## 2026-11-04 — Content fetch automation and run history (015)
 
 - **FID-2026-1104-015 — high —** content fetching now has a durable policy, a

@@ -1,5 +1,6 @@
 import type { PostgresDatabase } from "../../storage/pg-adapter.ts";
 import type {
+  ContentLinkState,
   ContentRelation,
   Coverage,
   CoverageItem,
@@ -9,6 +10,7 @@ import type {
 import { parseGithubJson } from "../github.ts";
 import { CONTENT_RELATIONS } from "../types.ts";
 import { normalizeTags } from "../taxonomy.ts";
+import { PUBLIC_LINK_STATE_SQL } from "../visibility.ts";
 
 type CoverageRow = {
   id: string;
@@ -81,94 +83,23 @@ function coverageRowToItem(row: CoverageRow): CoverageItem {
   };
 }
 
-/**
- * Auto links never overwrite an operator decision. The `WHERE` clause on the
- * conflict update is what preserves a manual relation when the same item is
- * fetched again.
- */
-export async function replaceAutoLinks(
-  db: PostgresDatabase,
-  itemId: string,
-  suggestions: LinkSuggestion[],
-  now = new Date().toISOString(),
-): Promise<void> {
-  for (const suggestion of suggestions) {
-    await db
-      .prepare(
-        `INSERT INTO content.model_links
-          (item_id, model_id, relation, relation_source, confidence, reason,
-           reviewed, created_at, updated_at)
-         VALUES (?, ?, ?, 'auto', ?, ?, ?, ?, ?)
-         ON CONFLICT (item_id, model_id) DO UPDATE SET
-           relation = EXCLUDED.relation,
-           confidence = EXCLUDED.confidence,
-           reason = EXCLUDED.reason,
-           reviewed = EXCLUDED.reviewed,
-           updated_at = EXCLUDED.updated_at
-         WHERE content.model_links.relation_source = 'auto'`,
-      )
-      .run(
-        itemId,
-        suggestion.modelId,
-        suggestion.relation,
-        suggestion.confidence,
-        suggestion.reason,
-        suggestion.reviewed ? 1 : 0,
-        now,
-        now,
-      );
-  }
-}
-
-export async function manualLink(
-  db: PostgresDatabase,
-  itemId: string,
-  modelId: string,
-  relation: ContentRelation,
-  reason = "Operator link",
-  now = new Date().toISOString(),
-): Promise<void> {
-  await db
-    .prepare(
-      `INSERT INTO content.model_links
-        (item_id, model_id, relation, relation_source, confidence, reason,
-         reviewed, created_at, updated_at)
-       VALUES (?, ?, ?, 'operator', 1, ?, 1, ?, ?)
-       ON CONFLICT (item_id, model_id) DO UPDATE SET
-         relation = EXCLUDED.relation,
-         relation_source = 'operator',
-         confidence = 1,
-         reason = EXCLUDED.reason,
-         reviewed = 1,
-         updated_at = EXCLUDED.updated_at`,
-    )
-    .run(itemId, modelId, relation, reason, now, now);
-}
-
-export async function dismissAutoLink(
-  db: PostgresDatabase,
-  itemId: string,
-  modelId: string,
-): Promise<boolean> {
-  const result = await db
-    .prepare(
-      `DELETE FROM content.model_links
-        WHERE item_id = ? AND model_id = ? AND relation_source = 'auto'`,
-    )
-    .run(itemId, modelId);
-
-  return result.changes > 0;
-}
+// Link writes and decisions live in ./link-writes.ts. Keeping them separate
+// makes the read projections below impossible to mistake for a mutation path.
 
 export async function listLinksForItem(
   db: PostgresDatabase,
   itemId: string,
+  options: { includeHidden?: boolean } = {},
 ): Promise<LinkSuggestion[]> {
+  const visibility = options.includeHidden
+    ? ""
+    : `AND state IN (${PUBLIC_LINK_STATE_SQL})`;
   const rows = await db
     .prepare(
-      `SELECT model_id, relation, relation_source, confidence, reason, reviewed
+      `SELECT model_id, relation, relation_source, confidence, reason, reviewed,
+              state, revision
          FROM content.model_links
-        WHERE item_id = ?
+        WHERE item_id = ? ${visibility}
         ORDER BY confidence DESC, model_id ASC`,
     )
     .all<{
@@ -178,6 +109,8 @@ export async function listLinksForItem(
       confidence: number;
       reason: string;
       reviewed: number;
+      state: ContentLinkState;
+      revision: number;
     }>(itemId);
 
   return rows.map((row) => ({
@@ -186,6 +119,8 @@ export async function listLinksForItem(
     confidence: row.confidence,
     reason: row.reason,
     reviewed: row.reviewed === 1,
+    state: row.state,
+    revision: row.revision,
   }));
 }
 
@@ -211,7 +146,7 @@ export async function listContentForModel(
          FROM content.model_links l
          JOIN content.items i ON i.id = l.item_id
          JOIN content.sources s ON s.id = i.source_id
-        WHERE l.model_id = ? AND l.reviewed = 1
+        WHERE l.model_id = ? AND l.state IN (${PUBLIC_LINK_STATE_SQL})
         ORDER BY i.published_at DESC
         LIMIT ?`,
     )
@@ -226,7 +161,7 @@ export async function listContentForModel(
   const totalRow = await db
     .prepare(
       `SELECT COUNT(*) AS total FROM content.model_links
-        WHERE model_id = ? AND reviewed = 1`,
+        WHERE model_id = ? AND state IN (${PUBLIC_LINK_STATE_SQL})`,
     )
     .get<{ total: number | string }>(modelId);
 
@@ -247,6 +182,8 @@ export type AdminLinkRow = {
   reason: string;
   confidence: number;
   reviewed: boolean;
+  state: ContentLinkState;
+  revision: number;
   createdAt: string;
 };
 
@@ -258,7 +195,7 @@ export async function listRecentLinks(
     .prepare(
       `SELECT l.item_id, i.title AS item_title, l.model_id, l.relation,
               l.relation_source, l.reason, l.confidence, l.reviewed,
-              l.created_at
+              l.state, l.revision, l.created_at
          FROM content.model_links l
          JOIN content.items i ON i.id = l.item_id
         ORDER BY l.created_at DESC
@@ -273,6 +210,8 @@ export async function listRecentLinks(
       reason: string;
       confidence: number;
       reviewed: number;
+      state: ContentLinkState;
+      revision: number;
       created_at: string;
     }>(Math.min(100, Math.max(1, limit)));
 
@@ -285,6 +224,8 @@ export async function listRecentLinks(
     reason: row.reason,
     confidence: row.confidence,
     reviewed: row.reviewed === 1,
+    state: row.state,
+    revision: row.revision,
     createdAt: row.created_at,
   }));
 }
@@ -293,7 +234,7 @@ export async function linkedItemCount(db: PostgresDatabase): Promise<number> {
   const row = await db
     .prepare(
       `SELECT COUNT(DISTINCT item_id) AS total FROM content.model_links
-        WHERE reviewed = 1`,
+        WHERE state IN (${PUBLIC_LINK_STATE_SQL})`,
     )
     .get<{ total: number | string }>();
 

@@ -160,6 +160,8 @@ export type ContentModelLink = {
   confidence: number;
   reason: string;
   reviewed: boolean;
+  state: ContentLinkState;
+  revision: number;
 };
 
 export type ContentRelation =
@@ -188,12 +190,17 @@ export type LinkableModel = {
   upstreamId: string;
 };
 
+export type ContentLinkState =
+  "suggested" | "auto_published" | "accepted" | "dismissed" | "retired";
+
 export type LinkSuggestion = {
   modelId: string;
   relation: ContentRelation;
   confidence: number;
   reason: string;
   reviewed: boolean;
+  state?: ContentLinkState;
+  revision?: number;
 };
 
 export type ParsedItem = {

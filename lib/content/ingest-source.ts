@@ -51,7 +51,7 @@ import { recordSourceFailure, recordSourceSuccess } from "./store/sources.ts";
 import { listLinkableModels } from "./store/items.ts";
 import { pruneMetricSnapshots } from "./store/momentum.ts";
 import { upsertItem } from "./store/item-writes.ts";
-import { replaceAutoLinks } from "./store/links.ts";
+import { replaceAutoLinks } from "./store/link-writes.ts";
 import { finishCycle, startCycle } from "./store/cycles.ts";
 
 export type IngestDeps = {

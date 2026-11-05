@@ -8,6 +8,10 @@ import {
 } from "../lib/storage/store/catalog.ts";
 import { getLandingData } from "../lib/storage/store/overview.ts";
 import { refreshProvidersIfDue } from "../lib/storage/providers/freshness.ts";
+import {
+  claimProviderSync,
+  releaseProviderSync,
+} from "../lib/storage/providers/lease.ts";
 import { createPgliteDatabase } from "./pglite-pool.mjs";
 
 const NOW = "2026-10-31T12:00:00.000Z";
@@ -177,6 +181,74 @@ test("only stale, enabled and credentialed providers are refreshed", async () =>
     await db.close();
     delete process.env.KEY_DUE;
     delete process.env.KEY_FRESH;
+  }
+});
+
+test("a live provider lease blocks another instance until release", async () => {
+  const db = await fixture();
+
+  try {
+    assert.equal(
+      await claimProviderSync(db, {
+        slug: "one",
+        owner: "instance-a",
+        at: NOW,
+        expiresAt: "2026-10-31T12:10:00.000Z",
+      }),
+      true,
+    );
+    assert.equal(
+      await claimProviderSync(db, {
+        slug: "one",
+        owner: "instance-b",
+        at: NOW,
+        expiresAt: "2026-10-31T12:10:00.000Z",
+      }),
+      false,
+    );
+
+    await releaseProviderSync(db, "one", "instance-a");
+
+    assert.equal(
+      await claimProviderSync(db, {
+        slug: "one",
+        owner: "instance-b",
+        at: "2026-10-31T12:00:01.000Z",
+        expiresAt: "2026-10-31T12:10:01.000Z",
+      }),
+      true,
+    );
+  } finally {
+    await db.close();
+  }
+});
+
+test("a provider held by another instance is not refreshed", async () => {
+  const db = await fixture();
+  const attempted = [];
+
+  process.env.KEY_ONE = "configured";
+
+  try {
+    await addProvider(db, "one", { keyEnvVar: "KEY_ONE" });
+    await claimProviderSync(db, {
+      slug: "one",
+      owner: "other-instance",
+      at: NOW,
+      expiresAt: "2026-10-31T12:10:00.000Z",
+    });
+
+    const refreshed = await refreshProvidersIfDue(db, {
+      sync: async (slug) => attempted.push(slug),
+      now: NOW_MS,
+      intervalMs: INTERVAL,
+    });
+
+    assert.deepEqual(refreshed, []);
+    assert.deepEqual(attempted, []);
+  } finally {
+    await db.close();
+    delete process.env.KEY_ONE;
   }
 });
 

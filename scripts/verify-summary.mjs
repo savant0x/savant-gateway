@@ -24,6 +24,11 @@ export const VERIFY_GATES = [
   { name: "check", script: "check", expectsTests: false },
   { name: "storage:check", script: "storage:check", expectsTests: false },
   { name: "config:check", script: "config:check", expectsTests: false },
+  {
+    name: "repository:check",
+    script: "repository:check",
+    expectsTests: false,
+  },
   { name: "test", script: "test", expectsTests: true },
   {
     name: "test:postgres",

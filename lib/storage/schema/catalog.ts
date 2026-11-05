@@ -91,6 +91,15 @@ export async function catalogSchema(db: PostgresDatabase) {
       run_id TEXT NOT NULL,
       lease_until TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS provider_sync_leases (
+      slug TEXT PRIMARY KEY,
+      owner_token TEXT NOT NULL,
+      claimed_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS provider_sync_leases_expiry_idx
+      ON provider_sync_leases(expires_at);
   `);
 
   // `COLLATE NOCASE UNIQUE` has no direct equivalent; a unique index on

@@ -7,7 +7,7 @@ OpenAI Chat Completions or Anthropic Messages. It syncs each provider catalog,
 mints local consumer keys, routes models through one streaming endpoint (free
 rows immediately, non-free rows once priced), prices paid calls in integer
 micro-dollars, settles them against tenant credit, and records revenue,
-upstream cost, and usage in SQLite.
+upstream cost, and usage in PostgreSQL.
 
 ## Facts that are easy to get wrong
 
@@ -198,8 +198,10 @@ subscription_required`; a past-due plan returns `402 subscription_past_due`
   run it against the real schema; `lib/store/analytics.ts` is the `server-only`
   wrapper over the singleton connection. A failed upstream call writes a
   zero-charge error row, and an included plan call writes cost with zero charge.
-- **SQLite is local state.** `data/` is ignored and not part of the
-  deliverable. Deleting it and syncing again is the reset path.
+- **PostgreSQL is the durable state.** Local development uses embedded PGlite
+  under `data/pg`; a hosted deployment uses a networked PostgreSQL database.
+  `data/` is ignored and not part of the deliverable. Deleting it and syncing
+  again is the local reset path.
 - **Customer identity is server-side and revocable.** `POST /api/auth/signup`
   writes a scrypt hash; login issues a 32-byte opaque token in the
   `sg_session` cookie, and only its SHA-256 hash is stored in
@@ -222,8 +224,8 @@ subscription_required`; a past-due plan returns `402 subscription_past_due`
   Stripe receives cents; the database receives micros.
 - **Route-level verification is a separate post-build gate.** `npm test` stays
   pure and in-memory. `npm run test:http` (`scripts/http-suite.mjs`) boots
-  `next start` from the production build against a disposable `DB_PATH`, seeds
-  through a second `better-sqlite3` connection because the app's store modules
+  `next start` from the production build against a disposable PostgreSQL
+  database, seeds through the database handle because the app's store modules
   are `server-only`, points one provider at an in-process mock upstream, and
   asserts real HTTP behavior. It is wired after `build` in `npm run verify`,
   CI, and the pre-push hook, and it fails fast when `.next/BUILD_ID` is
@@ -362,8 +364,9 @@ tampering, expiry, password rotation, epoch revocation, origin checks, the
 login limiter, HTTP key extraction, pricing arithmetic, revenue/MRR math,
 in-memory analytics aggregation against the real subscription schema, family
 normalization, provider-registry validation, provider-scoped catalog identity,
-and Anthropic request/response/stream translation. The current tree builds 51
-routes, runs 107 tests, and scans 189 files. FID-2026-1029-007 adds the group
+and Anthropic request/response/stream translation. Counts in the historical
+receipts below describe the tree at the date named; they are not current
+measurements. FID-2026-1029-007 adds the group
 receipt: a zero-cost free model moved to a paid group charged 160 micros after
 a provider sync. FID-2026-1029-008 adds the subscription receipt: a signed
 `invoice.paid` activated exactly one period, an included call charged zero with
@@ -379,7 +382,7 @@ $40.00, and $0.00; anonymous `/admin/analytics` redirected 307 to login, a
 wrong password returned 401, and the authenticated page returned 200.
 FID-2026-1029-012 adds the route-level HTTP receipt: `npm run test:http` boots
 the production build against a disposable database, seeds a mock provider and a
-paid model through a second SQLite connection, and passes 100 checks — signup
+paid model through the PostgreSQL handle, and passes 100 checks — signup
 sets a hardened `sg_session` and logout revokes it, duplicate signup is 409 and
 foreign-origin mutations are 403, a cross-account key revoke returns 404, a
 signed webhook credits once and a replay is a no-op, an invalid signature is

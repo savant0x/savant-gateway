@@ -1,8 +1,12 @@
 import type { PostgresDatabase } from "../pg-adapter.ts";
 
+import { randomUUID } from "node:crypto";
+
 import { providersDue, syncIntervalMs } from "../../provider-sync-policy.ts";
 import { clearPublicCatalogCache } from "../store/catalog.ts";
 import { listProviderCatalogSummary } from "../store/provider-catalog.ts";
+
+import { claimProviderSync, releaseProviderSync } from "./lease.ts";
 
 /**
  * Stale-while-revalidate for provider catalogs, ported to the async handle
@@ -60,6 +64,8 @@ export type ProviderSyncDeps = {
   now?: number;
   /** Overrides `PROVIDER_SYNC_INTERVAL_HOURS`; `0` disables the refresh. */
   intervalMs?: number;
+  /** How long a sync claim is held before another instance may reclaim it. */
+  leaseMs?: number;
 };
 
 /**
@@ -95,20 +101,44 @@ export async function refreshProvidersIfDue(
   );
 
   if (due.length === 0) return [];
+  if (!deps.sync) return [];
 
   state.lastAttempt = now;
 
+  const owner = randomUUID();
+  const leaseMs = deps.leaseMs ?? 10 * 60 * 1000;
+
   const task = (async () => {
+    const attempted: string[] = [];
+
     try {
       for (const slug of due) {
-        await deps.sync?.(slug).catch(() => undefined);
+        const at = new Date(now).toISOString();
+        const acquired = await claimProviderSync(db, {
+          slug,
+          owner,
+          at,
+          expiresAt: new Date(now + leaseMs).toISOString(),
+        });
+
+        // Another process owns this provider. It is not a failure; the next
+        // tick sees whether the lease was released or expired.
+        if (!acquired) continue;
+
+        attempted.push(slug);
+
+        try {
+          await deps.sync?.(slug).catch(() => undefined);
+        } finally {
+          await releaseProviderSync(db, slug, owner);
+        }
       }
 
       // A refresh that landed must be visible on the next render, not after the
       // display cache expires.
-      clearPublicCatalogCache(db);
+      if (attempted.length > 0) clearPublicCatalogCache(db);
 
-      return due;
+      return attempted;
     } finally {
       state.inFlight = null;
     }

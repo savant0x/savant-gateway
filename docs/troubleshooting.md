@@ -3,6 +3,12 @@
 Start with the exact command and its output. The gates print codes or check
 names, not secret values; do not paste credentials into an issue.
 
+> **Storage and deployment note (2026-11-04).** Current storage is PostgreSQL and
+the current deployment path is Vercel. The SQLite, WAL, `DB_PATH` and Fly
+sections below are historical troubleshooting from the superseded 2026-11-02
+topology; they are retained as a record, not as current procedure. See
+[deployment-runbook.md](deployment-runbook.md) for the dated banner.
+
 ## The catalog is empty
 
 **Symptoms:** `/models` has no rows; `/v1/models` returns an empty list.
@@ -128,7 +134,7 @@ development-tenant calls, the **Tenant credit** card on `/admin` funds that
 tenant; it does not credit a customer account. A redirect from Stripe is not
 proof of payment; credit is written only by the signed webhook.
 
-## `better-sqlite3` fails after a Node upgrade
+## `better-sqlite3` fails after a Node upgrade (historical SQLite)
 
 The native module is rebuilt for the Node ABI that installed it. Rebuild it:
 
@@ -139,13 +145,13 @@ npm rebuild better-sqlite3
 If the build tools are missing on Windows, install the current Visual Studio
 Build Tools with the C++ workload, then rerun `npm install`.
 
-## `database is locked` or a second process writes unexpectedly
+## `database is locked` or a second process writes unexpectedly (historical SQLite)
 
-This application is one process against one SQLite file. WAL mode does not make
-two writers safe, and the process-local rate limiter assumes a single writer.
-Stop the extra `next start`/`next dev` process. Do not run the HTTP suites
-concurrently with a dev server that points at the same `DB_PATH`; the suites use
-disposable databases, but a manual `npm start` can still collide on the port.
+This section describes the superseded SQLite topology. WAL mode did not make
+two writers safe, and the process-local rate limiter assumed a single writer.
+Current PostgreSQL deployments use shared admission and connection pooling; do
+not apply this SQLite-specific workaround. Stop any extra local `next start` /
+`next dev` process if the disposable test port collides.
 
 ## Fly CLI is “not found”
 

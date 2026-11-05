@@ -1522,7 +1522,7 @@ days'` (the interval is built from a validated integer at module load, never
   provider. Pinned `provider/model` ids still resolve directly. The admin
   catalog shows the serving provider, every competing route and a read-only
   cost when another provider serves the row. Adding a provider stays registry
-  + key + sync + price (see [docs/providers.md](../docs/providers.md)).
+  + key + sync + price (see [docs/providers.md](docs/providers.md)).
   Automatic cross-provider failover, media endpoints and Apixo price import are
   explicit non-goals.
 
@@ -1535,7 +1535,7 @@ days'` (the interval is built from a validated integer at module load, never
   rows whose cost is unknown now import disabled; a priced row and a free-pool
   row still import active, and an existing row keeps whatever status the operator
   gave it. The
-  [provider review](../docs/research/apixo-provider-review.md) records the
+  [provider review](docs/research/apixo-provider-review.md) records the
   verified API surface (dual wire format, per-key rate limits, 402/429 errors,
   a separate four-model image catalog at $0.01–$0.08 per image), the resale
   economics ($50 panel fee, $100 first top-up, cost at their public price), and
@@ -1556,7 +1556,7 @@ Verification: `node --test tests/catalog-integrity.test.mjs` 14 pass;
   claim recovery and is added additively. A provider-scoped usage composite was
   measured and rejected: it adds one index write to every settlement, while the
   existing `created_at` index already bounds the day window. The
-  [A–Z audit](../dev/audits/2026-10-31-a-z-quality-audit.md) records 26 dimensions,
+  [A–Z audit](dev/audits/2026-10-31-a-z-quality-audit.md) records 26 dimensions,
   evidence and the open launch dependencies. Load passed 123/123 checks at
   213.71–224.31 sustained admitted rps across post-change runs (one cold 181.42)
   against the 229.84 candidate baseline; the envelope remains unapproved.

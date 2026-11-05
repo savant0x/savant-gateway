@@ -27,20 +27,10 @@ else
   run_gate "attribution guard" node scripts/attribution-guard.mjs --all
 fi
 run_gate "attribution documents" node scripts/attribution-document-guard.mjs
-run_gate "lint" npm run lint
-run_gate "typecheck" npm run typecheck
-run_gate "config check" npm run config:check
-run_gate "tests" npm test
-run_gate "postgres concurrency proof" npm run test:postgres
-run_gate "quality" npm run quality
-run_gate "build" npm run build
-# A disposable TEST_DATABASE_URL is the same endpoint the concurrency proof
-# already requires. Reuse it for the HTTP suites so their concurrent trial
-# check gets real transaction semantics instead of the single-connection
-# PGlite default (FID-144). An explicit HTTP_TEST_DATABASE_URL still wins.
-run_gate "http suite" env \
-  "HTTP_TEST_DATABASE_URL=${HTTP_TEST_DATABASE_URL:-${TEST_DATABASE_URL:-}}" \
-  npm run test:http
-run_gate "recovery drill" npm run test:recovery
+# `verify` owns the ordered gate contract. The hook does not restate it, so a
+# gate added there cannot be silently omitted here. A disposable
+# TEST_DATABASE_URL is reused for the HTTP suites by scripts/verify.mjs; an
+# explicit HTTP_TEST_DATABASE_URL still wins.
+run_gate "verify" npm run verify
 
 echo "pre-push: all gates passed"

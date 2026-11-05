@@ -2733,7 +2733,7 @@ append-only `activity_events` table carries business lifecycle events without
 prompts, completions, keys, tokens, or full codes.
 
 - [x] **Q1 — A–Z quality audit and read-path performance (FID-077).** The
-  [A–Z audit](../dev/audits/2026-10-31-a-z-quality-audit.md) covers 26 dimensions.
+  [A–Z audit](dev/audits/2026-10-31-a-z-quality-audit.md) covers 26 dimensions.
   Analytics now compares ISO timestamps directly and the query plan uses
   `usage_events_created_idx`. The low-write payment-claim index was added; a
   provider composite was measured and rejected because it adds a write to every

@@ -24,6 +24,7 @@ against, not automatically today's behavior.
 | Measure capacity and rehearse load/failure recovery | [load-acceptance.md](load-acceptance.md) |
 | Configure verification and password recovery | [account-email.md](account-email.md) |
 | Change or publish a policy | [policies/README.md](policies/README.md) |
+| Review the commercial model and evidence | [business-model.md](business-model.md), [offering-evidence.md](offering-evidence.md) |
 
 ## Customer-facing documentation
 
@@ -93,6 +94,28 @@ same answer data the page renders.
 - [echo-protocol.md](echo-protocol.md) — short orientation to the governing
   single-agent protocol.
 - [../SECURITY.md](../SECURITY.md) — threat model and secret handling.
+
+## Research, decisions and evidence
+
+These files are inputs or dated decisions, not current procedure. A prompt is
+not an implementation authorization and a decision record is not a receipt.
+
+- [business-plan-research-prompt.md](business-plan-research-prompt.md) —
+  external research prompt for an early-stage business plan.
+- [content-integration-research-prompt.md](content-integration-research-prompt.md)
+  — external research prompt for the content-to-commerce surface.
+- [model-identity-research-prompt.md](model-identity-research-prompt.md) —
+  external research prompt for model identity; not an implementation plan.
+- [crypto-payments-decision.md](crypto-payments-decision.md) — dated decision
+  record; the direct-to-wallet lane still depends on operator inputs.
+- [subscriptions-decision.md](subscriptions-decision.md) — 2026-10-29 decision
+  record; plans are implemented but were not offered at that date.
+- [trial-conversion-contract.md](trial-conversion-contract.md) — disabled trial
+  implementation contract from 2026-10-29.
+- [trial-system-audit.md](trial-system-audit.md) — 2026-10-29 audit of the trial
+  ledger; historical state, not a current receipt.
+- [release-audit-answers.md](release-audit-answers.md) — operator fill-in sheet
+  for the 2026-11-04 release-audit questions.
 
 ## Historical records
 

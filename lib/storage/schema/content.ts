@@ -107,6 +107,17 @@ export async function contentSchema(db: PostgresDatabase) {
     CREATE INDEX IF NOT EXISTS content_fetch_cycles_source_idx
       ON content.fetch_cycles(source_id, started_at DESC);
 
+    CREATE TABLE IF NOT EXISTS content.ingest_claims (
+      source_id TEXT PRIMARY KEY REFERENCES content.sources(id) ON DELETE CASCADE,
+      owner_token TEXT NOT NULL,
+      stage TEXT NOT NULL DEFAULT 'claimed'
+        CHECK (stage IN ('claimed', 'ingesting', 'done')),
+      claimed_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS content_ingest_claims_expiry_idx
+      ON content.ingest_claims(expires_at);
+
     CREATE TABLE IF NOT EXISTS content.watches (
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       model_id TEXT NOT NULL,

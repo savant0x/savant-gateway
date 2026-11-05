@@ -69,7 +69,7 @@ Do these once, in order, before inviting a customer:
 ## Safety rails
 
 - **One process, one volume.** Do not add a second Machine, a process manager,
-  `WEB_CONCURRENCY > 1` or autoscaling. The rate limiter and SQLite writer assume
+  `WEB_CONCURRENCY > 1` or autoscaling. The process-local rate limiter assumes
   one process, and the startup gate rejects a multi-worker topology.
 - **Deploys replace the Machine** because the volume attaches to one Machine at a
   time. Expect a short gap; the runbook sets a 120-second drain.

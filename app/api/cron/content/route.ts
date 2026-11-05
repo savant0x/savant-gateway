@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 
-import { ingestDueSources } from "@/lib/content/ingest";
+import { ingestDueSourcesBounded } from "@/lib/content/ingest";
 import { contentCronSecret, contentIngestEnabled } from "@/lib/content/policy";
 import { getDatabase } from "@/lib/storage/runtime";
 
@@ -54,14 +54,27 @@ export async function POST(request: Request) {
   }
 
   const db = await getDatabase();
-  const results = await ingestDueSources(db, {}, 10);
+  // The route has 60 seconds; stop starting new sources at 45 so the response
+  // is written before the platform kills the function. Claims make the
+  // remaining work resumable on the next tick.
+  const run = await ingestDueSourcesBounded(
+    db,
+    {},
+    {
+      limit: 10,
+      deadlineMs: 45_000,
+    },
+  );
 
   return Response.json(
     {
-      sources: results.length,
-      ok: results.filter((result) => result.ok).length,
-      failed: results.filter((result) => !result.ok).length,
-      results,
+      sources: run.results.length,
+      ok: run.results.filter((result) => result.ok).length,
+      failed: run.results.filter((result) => !result.ok).length,
+      claimed: run.claimed,
+      skipped: run.skipped,
+      deadlineReached: run.deadlineReached,
+      results: run.results,
     },
     { headers: NO_STORE },
   );

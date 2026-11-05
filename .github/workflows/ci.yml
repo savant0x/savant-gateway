@@ -11,6 +11,12 @@ permissions:
 jobs:
   gates:
     runs-on: ubuntu-latest
+    env:
+      TEST_DATABASE_URL: postgres://gateway:gateway_concurrency_probe@127.0.0.1:5432/gateway_concurrency
+      # The trial suite's concurrent transactions need real PostgreSQL
+      # semantics; PGlite's single connection interleaves them. The gate
+      # resets both schemas, so it must follow the concurrency proof.
+      HTTP_TEST_DATABASE_URL: postgres://gateway:gateway_concurrency_probe@127.0.0.1:5432/gateway_concurrency
     services:
       postgres:
         image: postgres:17-alpine
@@ -35,19 +41,4 @@ jobs:
 
       - run: npm ci
       - run: node scripts/attribution-guard.mjs
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run config:check
-      - run: npm test
-      - run: npm run test:postgres
-        env:
-          TEST_DATABASE_URL: postgres://gateway:gateway_concurrency_probe@127.0.0.1:5432/gateway_concurrency
-      - run: npm run quality
-      - run: npm run build
-      - run: npm run test:http
-        env:
-          # The trial suite's concurrent transactions need real PostgreSQL
-          # semantics; PGlite's single connection interleaves them. The gate
-          # resets both schemas, so it must follow the concurrency proof.
-          HTTP_TEST_DATABASE_URL: postgres://gateway:gateway_concurrency_probe@127.0.0.1:5432/gateway_concurrency
-      - run: npm run test:recovery
+      - run: npm run verify

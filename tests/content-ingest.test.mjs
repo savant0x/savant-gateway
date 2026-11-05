@@ -1,12 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { ingestSource } from "../lib/content/ingest.ts";
+import {
+  ingestDueSourcesBounded,
+  ingestSource,
+} from "../lib/content/ingest.ts";
 import {
   contentStats,
   listRecentCycles,
 } from "../lib/content/store/cycles.ts";
 import { getSource } from "../lib/content/store/sources.ts";
+import { claimSource } from "../lib/content/store/claims.ts";
 import {
   createSource,
   listContentForModel,
@@ -179,6 +183,140 @@ test("YouTube ingestion merges Data API likes and comment counts", async () => {
       comments: 90,
       rating: 4.5,
     });
+  } finally {
+    await db.close();
+  }
+});
+
+test("a zero deadline stops the run before starting a source", async () => {
+  const db = await createStorageDatabase({ env: {} });
+
+  try {
+    await createSource(db, {
+      kind: "rss",
+      label: "Due but past deadline",
+      url: "https://example.com/deadline.xml",
+      config: { tags: [] },
+      enabled: true,
+      fetchIntervalMinutes: 60,
+      maxItems: 5,
+    });
+    let fetches = 0;
+    const run = await ingestDueSourcesBounded(
+      db,
+      {
+        fetchText: async () => {
+          fetches += 1;
+
+          return FEED;
+        },
+        now: () => "2026-11-02T12:00:00.000Z",
+        clock: () => 1_000,
+        models: [],
+      },
+      { deadlineMs: 0 },
+    );
+
+    assert.equal(run.deadlineReached, true);
+    assert.equal(run.results.length, 0);
+    assert.equal(run.claimed, 0);
+    assert.equal(run.skipped, 1);
+    assert.equal(fetches, 0);
+  } finally {
+    await db.close();
+  }
+});
+
+test("a source claimed by another owner is skipped, not duplicated", async () => {
+  const db = await createStorageDatabase({ env: {} });
+
+  try {
+    const source = await createSource(db, {
+      kind: "rss",
+      label: "Held",
+      url: "https://example.com/held.xml",
+      config: { tags: [] },
+      enabled: true,
+      fetchIntervalMinutes: 60,
+      maxItems: 5,
+    });
+
+    assert.equal(
+      await claimSource(db, {
+        sourceId: source.id,
+        owner: "other-run",
+        at: "2026-11-02T12:00:00.000Z",
+        expiresAt: "2026-11-02T12:10:00.000Z",
+      }),
+      true,
+    );
+
+    let fetches = 0;
+    const run = await ingestDueSourcesBounded(
+      db,
+      {
+        fetchText: async () => {
+          fetches += 1;
+
+          return FEED;
+        },
+        now: () => "2026-11-02T12:00:00.000Z",
+        clock: () => Date.parse("2026-11-02T12:00:01.000Z"),
+        models: [],
+      },
+      { owner: "this-run" },
+    );
+
+    assert.equal(run.results.length, 0);
+    assert.equal(run.claimed, 0);
+    assert.equal(run.skipped, 1);
+    assert.equal(fetches, 0);
+  } finally {
+    await db.close();
+  }
+});
+
+test("an expired claim is reclaimed and released after a successful run", async () => {
+  const db = await createStorageDatabase({ env: {} });
+
+  try {
+    const source = await createSource(db, {
+      kind: "rss",
+      label: "Expired lease",
+      url: "https://example.com/expired.xml",
+      config: { tags: [] },
+      enabled: true,
+      fetchIntervalMinutes: 60,
+      maxItems: 5,
+    });
+
+    await claimSource(db, {
+      sourceId: source.id,
+      owner: "dead-run",
+      at: "2026-11-02T11:00:00.000Z",
+      expiresAt: "2026-11-02T11:10:00.000Z",
+    });
+
+    const run = await ingestDueSourcesBounded(
+      db,
+      {
+        fetchText: async () => FEED,
+        now: () => "2026-11-02T12:00:00.000Z",
+        clock: () => Date.parse("2026-11-02T12:00:00.000Z"),
+        models: [],
+      },
+      { owner: "new-run" },
+    );
+
+    assert.equal(run.results.length, 1);
+    assert.equal(run.results[0].ok, true);
+    assert.equal(run.claimed, 1);
+
+    const held = await db
+      .prepare("SELECT COUNT(*) AS count FROM content.ingest_claims")
+      .get();
+
+    assert.equal(Number(held.count), 0);
   } finally {
     await db.close();
   }

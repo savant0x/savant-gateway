@@ -14,11 +14,22 @@ import {
   youtubeFeedUrl,
 } from "./feeds.ts";
 import { SourceConfigError } from "./source-error.ts";
+import {
+  fetchPublicResponse,
+  FetchError,
+  readBoundedResponseText,
+} from "./transport.ts";
 import { FETCH_POLICY } from "./url.ts";
+
+export { FetchError };
 
 export type FetchText = (url: string) => Promise<string>;
 
-export class FetchError extends Error {}
+export type FeedFetchBounds = {
+  maxBytes?: number;
+  timeoutMs?: number;
+  maxRedirects?: number;
+};
 
 export type FeedCacheEntry = {
   body: string;
@@ -38,6 +49,7 @@ export function createConditionalFeedFetcher(
   fetchImpl: typeof fetch = fetch,
   cache: Map<string, FeedCacheEntry> = new Map(),
   maxEntries = 64,
+  bounds: FeedFetchBounds = {},
 ): FetchText {
   return async (url) => {
     const cached = cache.get(url);
@@ -51,9 +63,11 @@ export function createConditionalFeedFetcher(
     if (cached?.lastModified)
       headers["if-modified-since"] = cached.lastModified;
 
-    const response = await fetchImpl(url, {
+    const { response } = await fetchPublicResponse(url, {
+      fetchImpl,
       headers,
-      signal: AbortSignal.timeout(FETCH_POLICY.timeoutMs),
+      timeoutMs: bounds.timeoutMs,
+      maxRedirects: bounds.maxRedirects,
     });
 
     if (response.status === 304) {
@@ -72,17 +86,11 @@ export function createConditionalFeedFetcher(
       throw new FetchError(`Upstream returned HTTP ${response.status}.`);
     }
 
-    const length = Number(response.headers.get("content-length") ?? "0");
-
-    if (length > FETCH_POLICY.maxBytes) {
-      throw new FetchError("Feed exceeds the 2 MiB response ceiling.");
-    }
-
-    const text = await response.text();
-
-    if (text.length > FETCH_POLICY.maxBytes) {
-      throw new FetchError("Feed exceeds the 2 MiB response ceiling.");
-    }
+    const text = await readBoundedResponseText(
+      response,
+      bounds.maxBytes ?? FETCH_POLICY.maxBytes,
+      "Feed",
+    );
 
     if (maxEntries > 0) {
       cache.delete(url);

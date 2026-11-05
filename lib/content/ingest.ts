@@ -15,6 +15,8 @@ import type {
   ParsedItem,
 } from "./types.ts";
 
+import { randomUUID } from "node:crypto";
+
 import { parseFeedReport } from "./feeds.ts";
 import { plainTextBody } from "./feed-xml.ts";
 import {
@@ -32,6 +34,7 @@ import {
 import { suggestModelLinks } from "./linking.ts";
 import { enrichOspImpressions } from "./osp-impressions.ts";
 import { CONTENT_LIMITS, youtubeApiKey } from "./policy.ts";
+import { FETCH_POLICY } from "./url.ts";
 import { SourceConfigError, type SourceFailureKind } from "./source-error.ts";
 import { normalizeTags } from "./taxonomy.ts";
 import { parseTrendshiftListing } from "./trendshift.ts";
@@ -45,9 +48,17 @@ import { pruneMetricSnapshots } from "./store/momentum.ts";
 import { upsertItem } from "./store/item-writes.ts";
 import { replaceAutoLinks } from "./store/links.ts";
 import { finishCycle, startCycle } from "./store/cycles.ts";
+import {
+  claimSource,
+  markSourceClaimStage,
+  releaseSourceClaim,
+} from "./store/claims.ts";
+
 export type IngestDeps = {
   fetchText?: FetchText;
   now?: () => string;
+  /** Monotonic-ish wall clock used for deadlines and leases; tests inject it. */
+  clock?: () => number;
   models?: LinkableModel[];
   apiKey?: string | null;
   fetchGithub?: (slug: string) => Promise<GitHubRepo | null>;
@@ -251,17 +262,85 @@ export async function ingestSource(
   }
 }
 
+export type IngestRunOptions = {
+  limit?: number;
+  /** Total wall-clock budget for this run. Omitted means no deadline. */
+  deadlineMs?: number;
+  owner?: string;
+  leaseMs?: number;
+};
+
+export type IngestRun = {
+  results: IngestResult[];
+  claimed: number;
+  skipped: number;
+  deadlineReached: boolean;
+  owner: string;
+};
+
+/**
+ * One bounded scheduled run: a total deadline, one owner per source and a
+ * durable claim that survives a process death. Expired claims are reclaimed by
+ * the next tick; a live claim held by another owner is skipped, not duplicated.
+ */
+export async function ingestDueSourcesBounded(
+  db: PostgresDatabase,
+  deps: IngestDeps = {},
+  options: IngestRunOptions = {},
+): Promise<IngestRun> {
+  const limit = Math.min(50, Math.max(1, options.limit ?? 10));
+  const owner = options.owner ?? `ingest_${randomUUID()}`;
+  const clock = deps.clock ?? Date.now;
+  const startedAt = clock();
+  const deadlineAt =
+    startedAt + (options.deadlineMs ?? Number.POSITIVE_INFINITY);
+  const leaseMs = options.leaseMs ?? 2 * FETCH_POLICY.timeoutMs;
+  const sources = await listDueSources(db, deps.now?.(), limit);
+  const results: IngestResult[] = [];
+  let claimed = 0;
+  let skipped = 0;
+  let deadlineReached = false;
+
+  for (let index = 0; index < sources.length; index += 1) {
+    if (clock() >= deadlineAt) {
+      deadlineReached = true;
+      skipped += sources.length - index;
+      break;
+    }
+
+    const source = sources[index];
+    const at = new Date(clock()).toISOString();
+    const acquired = await claimSource(db, {
+      sourceId: source.id,
+      owner,
+      at,
+      expiresAt: new Date(clock() + leaseMs).toISOString(),
+    });
+
+    if (!acquired) {
+      skipped += 1;
+      continue;
+    }
+
+    claimed += 1;
+
+    try {
+      await markSourceClaimStage(db, source.id, owner, "ingesting");
+      results.push(await ingestSource(db, source, deps));
+      await markSourceClaimStage(db, source.id, owner, "done");
+    } finally {
+      await releaseSourceClaim(db, source.id, owner);
+    }
+  }
+
+  return { results, claimed, skipped, deadlineReached, owner };
+}
+
+/** Compatibility wrapper: callers that only need the results. */
 export async function ingestDueSources(
   db: PostgresDatabase,
   deps: IngestDeps = {},
   limit = 10,
 ): Promise<IngestResult[]> {
-  const sources = await listDueSources(db, deps.now?.(), limit);
-  const results: IngestResult[] = [];
-
-  for (const source of sources) {
-    results.push(await ingestSource(db, source, deps));
-  }
-
-  return results;
+  return (await ingestDueSourcesBounded(db, deps, { limit })).results;
 }

@@ -13,12 +13,13 @@
 Expand the existing literal content/model matcher to use the stored description
 of YouTube videos in addition to title and tags, during both ingestion and
 stored-item rematching. Preserve explicit accepted and dismissed decisions. This
-record is a planning deliverable; no application code or feature is implemented.
+record specifies and tracks the implementation authorized on 2026-11-05.
 
 ## Environment
 
 Windows, PowerShell, Node 24, Next.js 16 and PostgreSQL/PGlite. Grounding HEAD
-`1c4c2a5`; SCOPE YD1–YD2. Operator requested FID and Perfection Loop only.
+`1c4c2a5`; SCOPE YD1–YD2 and YI1–YI3. The operator subsequently authorized
+implementation and FID completion.
 
 ## Detailed Description
 
@@ -123,12 +124,11 @@ operator decisions must remain intact. No billing or model routing changes.
 
 ### Steps
 
-1. **blocked — coding reserved:** shared bounded description normalization and
+1. **implemented:** shared bounded description normalization and
    precise matching evidence, with YouTube source-kind gating.
-2. **blocked — coding reserved:** wire stored evidence into ingestion and rematch.
-3. **blocked — coding reserved:** add backward-compatible policy/dashboard control.
-4. **blocked — coding reserved:** prove behavior, decision persistence, races and
-   operator rematch; document and close with committed evidence.
+2. **implemented:** wire stored evidence into ingestion and rematch.
+3. **implemented:** add backward-compatible policy/dashboard control.
+4. **in progress:** complete the verification receipt and close with committed evidence.
 
 ### Verification
 
@@ -145,12 +145,15 @@ with auto-publish enabled. A real two-connection test must cover a decision
 racing a rematch and stale item/policy changes; register that proof in the
 existing mandatory PostgreSQL runner. Render the settings/reason and verify
 keyboard use. Preserve actual output and production call-graph evidence.
+The description-focused behavior is additionally covered by
+`tests/content-description-matching.test.mjs`.
 
 ## Verification Gates
 
 - gate: lint — `npm run lint`.
 - gate: typecheck — `npm run typecheck`.
 - gate: test tests/content-linking.test.mjs.
+- gate: test tests/content-description-matching.test.mjs.
 - gate: test tests/content-ingest.test.mjs.
 - gate: test tests/content-rematch.test.mjs.
 - gate: test tests/content-match-management.test.mjs.
@@ -192,8 +195,10 @@ and unverified. Implementation must supply its own complete receipt.
 
 ### Implementation Evidence
 
-Implementation is blocked by the operator's planning-only instruction. No
-implementation commit, feature behavior or hosted observation is claimed.
+Implementation was subsequently authorized. Ingestion and bounded rematching
+call `matchStoredItem`, which reads the locked stored item and current locked
+policy, extracts YouTube description evidence and calls `suggestModelLinks` and
+`replaceAutoLinks`. Hosted operation is not claimed.
 
 ### Code Verification Evidence
 

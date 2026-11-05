@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
  * Run before `runChecks`, which deliberately destroys a required table. These
  * probes are read-only for catalog state and add only fetch-run receipts.
  */
-export async function runContentChecks({ baseUrl, db, secret }) {
+export async function runContentChecks({ baseUrl, db, secret, adminPassword }) {
   const unauthorized = await fetch(`${baseUrl}/api/cron/content`, {
     method: "GET",
   });
@@ -48,4 +48,35 @@ export async function runContentChecks({ baseUrl, db, secret }) {
   assert.equal(rows.length, 2, "both heartbeat receipts must be durable");
   assert.ok(rows.every((row) => row.status === "ok"));
   assert.ok(rows.every((row) => row.trigger === "scheduled"));
+
+  const login = await fetch(`${baseUrl}/api/admin/session`, {
+    method: "POST",
+    headers: { "content-type": "application/json", origin: baseUrl },
+    body: JSON.stringify({ password: adminPassword }),
+  });
+  assert.equal(login.status, 200);
+  const cookie = login.headers.get("set-cookie")?.split(";")[0];
+  assert.ok(cookie);
+  const headers = { cookie, origin: baseUrl, "content-type": "application/json" };
+  const policyResponse = await fetch(`${baseUrl}/api/admin/content/matching`, { headers });
+  assert.equal(policyResponse.status, 200);
+  const current = await policyResponse.json();
+  const updated = await fetch(`${baseUrl}/api/admin/content/matching`, {
+    method: "PATCH", headers,
+    body: JSON.stringify({ expectedRevision: current.policy.revision, matchYouTubeDescriptions: false }),
+  });
+  assert.equal(updated.status, 200);
+  const saved = await updated.json();
+  assert.equal(saved.policy.matchYouTubeDescriptions, false);
+  const rematch = await fetch(`${baseUrl}/api/admin/content/rematch`, {
+    method: "POST", headers, body: JSON.stringify({ limit: 10 }),
+  });
+  assert.equal(rematch.status, 200);
+  const restored = await fetch(`${baseUrl}/api/admin/content/matching`, {
+    method: "PATCH", headers,
+    body: JSON.stringify({ expectedRevision: saved.policy.revision, matchYouTubeDescriptions: true }),
+  });
+  assert.equal(restored.status, 200);
+  assert.equal((await restored.json()).policy.matchYouTubeDescriptions, true);
+  console.log("http-suite: description matching policy and rematch PASS");
 }

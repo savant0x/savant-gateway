@@ -1,14 +1,10 @@
 import type { PostgresDatabase } from "../../storage/pg-adapter.ts";
-import type { ContentKind } from "../types.ts";
 
 import { randomUUID } from "node:crypto";
 
-import { suggestModelLinks } from "../linking.ts";
-import { normalizeTags } from "../taxonomy.ts";
-
 import { readAutomationPolicy } from "./automation.ts";
 import { listLinkableModels } from "./items.ts";
-import { replaceAutoLinks } from "./link-writes.ts";
+import { matchStoredItem } from "./match-stored-item.ts";
 import { readMatchingPolicy } from "./matching.ts";
 
 export type RematchTrigger = "manual" | "policy" | "catalog";
@@ -56,13 +52,6 @@ type RematchRow = {
   processed: number;
   changed: number;
   error: string | null;
-};
-
-type RematchItem = {
-  id: string;
-  title: string;
-  kind: ContentKind;
-  tags_json: string;
 };
 
 function toRun(row: RematchRow): RematchRun {
@@ -168,14 +157,6 @@ async function claim(
   return row ?? null;
 }
 
-function tagsOf(value: string): string[] {
-  try {
-    return normalizeTags(JSON.parse(value));
-  } catch {
-    return [];
-  }
-}
-
 /**
  * Process one bounded batch. The cursor is a stored item id, so an interrupted
  * or paused invocation resumes exactly where it stopped. Matching runs against
@@ -273,28 +254,22 @@ export async function runRematchBounded(
       const remaining = limit - (processed - claimed.processed);
       const items = await db
         .prepare(
-          `SELECT i.id, i.title, i.kind,
-                  COALESCE(
-                    (SELECT json_agg(t.tag ORDER BY t.tag)
-                       FROM content.item_tags t WHERE t.item_id = i.id),
-                    '[]'::json
-                  )::text AS tags_json
+          `SELECT i.id
              FROM content.items i
             WHERE i.id > ?
             ORDER BY i.id ASC
             LIMIT ?`,
         )
-        .all<RematchItem>(cursor ?? "", remaining);
+        .all<{ id: string }>(cursor ?? "", remaining);
 
       if (items.length === 0) break;
 
       for (const item of items) {
-        const suggestions = suggestModelLinks(
-          { title: item.title, tags: tagsOf(item.tags_json), kind: item.kind },
-          models,
-          matching.policy,
-        );
-        const result = await replaceAutoLinks(db, item.id, suggestions, at());
+        const result = await matchStoredItem(db, item.id, models, {
+          at: at(),
+          runId: claimed.id,
+          owner,
+        });
 
         changed += result.matched + result.retired;
         processed += 1;

@@ -180,6 +180,7 @@ try {
     baseUrl,
     db: database,
     secret: CONTENT_CRON_SECRET,
+    adminPassword: ADMIN_PASSWORD,
   });
 
   await runChecks({

@@ -1,5 +1,22 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-05 (YouTube description matching implementation)
+
+Operator instruction: "build it and complete the fid". Automation level 3;
+strict; single agent. FID-2026-1105-001 is the converged implementation contract.
+Recorded impact: extend literal matching to bounded stored YouTube descriptions
+in both ingestion and rematch; add a dashboard policy control; retain exact model
+identity and accepted/dismissed decisions; verify races, HTTP and browser behavior.
+No paid inference, wallet funding, secret exposure or hosted activation is needed.
+
+- [ ] **YI1 — Matching and policy.** Implement description evidence, precision
+  safeguards, backward-compatible configuration and the operator control.
+- [ ] **YI2 — Ingestion and rematch.** Consume the same stored evidence in both
+  paths and protect concurrent decisions and changed item/policy inputs.
+- [ ] **YI3 — Verification and closure.** Complete the FID's declared tests,
+  real PostgreSQL race proof, HTTP/browser evidence and gates; commit, close,
+  archive and record the receipt.
+
 ## Session — 2026-11-05 (YouTube description matching design)
 
 Operator request: "make the fid and run the full perfection loop on it then

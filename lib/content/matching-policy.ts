@@ -16,6 +16,7 @@ export type ContentMatchingPolicy = {
   revision: number;
   enabled: boolean;
   autoPublish: boolean;
+  matchYouTubeDescriptions: boolean;
   aliases: Record<string, string[]>;
 };
 
@@ -32,6 +33,7 @@ export function defaultMatchingPolicy(): ContentMatchingPolicy {
     revision: 0,
     enabled: true,
     autoPublish: false,
+    matchYouTubeDescriptions: true,
     aliases: {},
   };
 }
@@ -123,6 +125,13 @@ export function parseMatchingPolicy(raw: string | null): MatchingParse {
     return { ok: false, error: "autoPublish must be a boolean." };
   }
 
+  if (
+    value.matchYouTubeDescriptions !== undefined &&
+    typeof value.matchYouTubeDescriptions !== "boolean"
+  ) {
+    return { ok: false, error: "matchYouTubeDescriptions must be a boolean." };
+  }
+
   if (value.enabled !== undefined && typeof value.enabled !== "boolean") {
     return { ok: false, error: "enabled must be a boolean." };
   }
@@ -138,6 +147,7 @@ export function parseMatchingPolicy(raw: string | null): MatchingParse {
       revision: value.revision,
       enabled: value.enabled ?? true,
       autoPublish: value.autoPublish,
+      matchYouTubeDescriptions: value.matchYouTubeDescriptions ?? true,
       aliases,
     },
   };
@@ -184,6 +194,19 @@ export function validateMatchingPatch(
 
   let aliases = policy.aliases;
 
+  let matchYouTubeDescriptions = policy.matchYouTubeDescriptions;
+
+  if ("matchYouTubeDescriptions" in input) {
+    if (typeof input.matchYouTubeDescriptions !== "boolean") {
+      return {
+        ok: false,
+        status: 400,
+        error: "matchYouTubeDescriptions must be a boolean.",
+      };
+    }
+    matchYouTubeDescriptions = input.matchYouTubeDescriptions;
+  }
+
   if ("aliases" in input) {
     const parsed = aliasMap(input.aliases);
 
@@ -196,7 +219,13 @@ export function validateMatchingPatch(
 
   return {
     ok: true,
-    policy: { ...policy, enabled, autoPublish, aliases },
+    policy: {
+      ...policy,
+      enabled,
+      autoPublish,
+      matchYouTubeDescriptions,
+      aliases,
+    },
   };
 }
 

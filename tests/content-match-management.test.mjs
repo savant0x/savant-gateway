@@ -37,6 +37,10 @@ test("matching policy rejects malformed rows and stale revisions", () => {
   );
 
   const policy = defaultMatchingPolicy();
+  const legacy = { ...policy };
+  delete legacy.matchYouTubeDescriptions;
+  assert.equal(parseMatchingPolicy(JSON.stringify(legacy)).policy.matchYouTubeDescriptions, true);
+  assert.equal(validateMatchingPatch(policy, { matchYouTubeDescriptions: "yes" }).ok, false);
   const stale = validateMatchingPatch(policy, { expectedRevision: 2 });
 
   assert.equal(stale.ok, false);
@@ -105,6 +109,7 @@ test("matching policy persists with one revisioned writer", async () => {
     const saved = await saveMatchingPolicy(db, {
       expectedRevision: 0,
       autoPublish: true,
+      matchYouTubeDescriptions: false,
       aliases: { [MODEL.id]: ["Luna Prime"] },
     });
 
@@ -117,6 +122,7 @@ test("matching policy persists with one revisioned writer", async () => {
     const reread = await readMatchingPolicy(db);
 
     assert.equal(reread.policy.autoPublish, true);
+    assert.equal(reread.policy.matchYouTubeDescriptions, false);
     assert.deepEqual(reread.policy.aliases, { [MODEL.id]: ["Luna Prime"] });
 
     const stale = await saveMatchingPolicy(db, { expectedRevision: 0 });

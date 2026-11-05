@@ -7,6 +7,8 @@ import type {
 
 import { randomUUID } from "node:crypto";
 
+import { lockContentItem } from "./item-lock.ts";
+
 /**
  * The only write path for content/model link decisions (FID-2026-1104-016).
  *
@@ -95,24 +97,26 @@ export async function replaceAutoLinks(
             (item_id, model_id, relation, relation_source, confidence, reason,
              reviewed, state, decision_at, decision_source, revision,
              created_at, updated_at)
-           VALUES (?, ?, ?, 'auto', ?, ?, ?, ?, ?, 'system', 0, ?, ?)
-           ON CONFLICT (item_id, model_id) DO UPDATE SET
+           VALUES (?, ?, ?, 'auto', ?, ?, ?, ?, ?, 'system', 0, ?, ?) ON CONFLICT
+           (item_id, model_id) DO UPDATE SET
              relation = EXCLUDED.relation,
              confidence = EXCLUDED.confidence,
              reason = EXCLUDED.reason,
-             reviewed = CASE
+             reviewed = CASE WHEN EXCLUDED.confidence = 0.7 AND EXCLUDED.reviewed = 0 THEN 0
                WHEN content.model_links.state = 'auto_published' THEN 1
                ELSE EXCLUDED.reviewed
              END,
-             state = CASE
-               WHEN content.model_links.state = 'auto_published' THEN
-                 'auto_published'
+             state = CASE WHEN EXCLUDED.confidence = 0.7 AND EXCLUDED.reviewed = 0 THEN 'suggested'
+               WHEN content.model_links.state = 'auto_published' THEN 'auto_published'
                ELSE EXCLUDED.state
              END,
-             decision_at = CASE
-               WHEN content.model_links.state = 'retired'
-                 THEN EXCLUDED.decision_at
+             decision_at = CASE WHEN EXCLUDED.confidence = 0.7 AND EXCLUDED.reviewed = 0 THEN NULL
+               WHEN content.model_links.state = 'retired' THEN EXCLUDED.decision_at
                ELSE content.model_links.decision_at
+             END,
+             revision = CASE WHEN content.model_links.state = 'auto_published' AND EXCLUDED.confidence = 0.7
+                    AND EXCLUDED.reviewed = 0 THEN content.model_links.revision + 1
+               ELSE content.model_links.revision
              END,
              updated_at = EXCLUDED.updated_at
            WHERE content.model_links.relation_source = 'auto'
@@ -188,6 +192,7 @@ export async function manualLink(
   now = new Date().toISOString(),
 ): Promise<void> {
   await db.transaction(async () => {
+    await lockContentItem(db, itemId);
     const row = await db
       .prepare(
         `INSERT INTO content.model_links
@@ -268,6 +273,7 @@ export async function decideLink(
   const now = input.now ?? new Date().toISOString();
   const actor = input.actor ?? "operator";
   const result = await db.transaction(async () => {
+    await lockContentItem(db, input.itemId);
     const row = await db
       .prepare(
         `SELECT state, revision FROM content.model_links

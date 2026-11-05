@@ -3,8 +3,8 @@
  *
  * This is a product-claim boundary, so the matcher is deliberately literal:
  * a model is linked only when its alias appears as a contiguous token sequence
- * in the title or in an exact publisher tag. There is no fuzzy score, no family
- * match, and no excerpt-only link. `GPT is useful` must not link to every GPT
+ * in the title, an exact publisher tag or a YouTube description. There is no
+ * fuzzy score or family match. `GPT is useful` must not link to every GPT
  * model, and `GPT-4o` must not satisfy an alias for `GPT-4`.
  *
  * Tokens rather than substrings are the load-bearing choice: `gpt-6.1-sol`
@@ -151,12 +151,65 @@ export type LinkInput = {
   title: string;
   tags: string[];
   kind: ContentKind;
+  sourceKind?: string;
+  description?: string;
 };
 
 export type LinkOptions = {
   aliases?: Record<string, string[]>;
   autoPublish?: boolean;
+  matchYouTubeDescriptions?: boolean;
 };
+
+function descriptionMatches(
+  input: LinkInput,
+  models: LinkableModel[],
+  options: LinkOptions,
+): Set<string> {
+  const found = new Set<string>();
+
+  if (
+    input.sourceKind !== "youtube" ||
+    !input.description ||
+    options.matchYouTubeDescriptions === false
+  )
+    return found;
+
+  const aliases = new Map<string, string[][]>();
+
+  for (const model of models) {
+    for (const alias of modelAliases(
+      model,
+      options.aliases?.[model.id] ?? [],
+    )) {
+      const entries = aliases.get(alias.tokens[0]) ?? [];
+
+      entries.push(alias.tokens);
+      aliases.set(alias.tokens[0], entries);
+    }
+  }
+
+  const tokens = tokenize(input.description);
+
+  for (let index = 0; index < tokens.length; index += 1) {
+    let longest = 0;
+    const matches: string[][] = [];
+
+    for (const alias of aliases.get(tokens[index]) ?? []) {
+      if (!alias.every((token, offset) => tokens[index + offset] === token))
+        continue;
+      if (alias.length > longest) {
+        longest = alias.length;
+        matches.length = 0;
+      }
+      if (alias.length === longest) matches.push(alias);
+    }
+
+    for (const match of matches) found.add(match.join(" "));
+  }
+
+  return found;
+}
 
 /**
  * Returns at most one suggestion per model. A title match outranks a tag match;
@@ -168,6 +221,7 @@ export function suggestModelLinks(
   options: LinkOptions = {},
 ): LinkSuggestion[] {
   const titleTokens = tokenize(input.title);
+  const descriptionKeys = descriptionMatches(input, models, options);
   const tagKeys = new Set(
     input.tags.map((tag) => tokenize(normalizeTag(tag)).join(" ")),
   );
@@ -185,13 +239,16 @@ export function suggestModelLinks(
       const key = alias.tokens.join(" ");
       const titleMatch = containsSequence(titleTokens, alias.tokens);
       const tagMatch = tagKeys.has(key);
+      const descriptionMatch = descriptionKeys.has(key);
 
-      if (!titleMatch && !tagMatch) continue;
+      if (!titleMatch && !tagMatch && !descriptionMatch) continue;
 
-      const confidence = titleMatch ? 1 : 0.85;
+      const confidence = titleMatch ? 1 : tagMatch ? 0.85 : 0.7;
       const reason = titleMatch
         ? `Title matches “${alias.label}”`
-        : `Tag matches “${alias.label}”`;
+        : tagMatch
+          ? `Tag matches “${alias.label}”`
+          : `Description matches “${alias.label}”`;
 
       if (
         !best ||
@@ -204,7 +261,8 @@ export function suggestModelLinks(
           relation,
           confidence,
           reason,
-          reviewed: (options.autoPublish ?? false) && bestVersioned,
+          reviewed:
+            (options.autoPublish ?? false) && bestVersioned && confidence > 0.7,
         };
       }
 

@@ -28,6 +28,9 @@ export function ContentMatchingPanel({
   const router = useRouter();
   const [enabled, setEnabled] = useState(policy.enabled);
   const [autoPublish, setAutoPublish] = useState(policy.autoPublish);
+  const [matchYouTubeDescriptions, setMatchYouTubeDescriptions] = useState(
+    policy.matchYouTubeDescriptions,
+  );
   const [aliasText, setAliasText] = useState(formatAliasLines(policy.aliases));
   const [busy, setBusy] = useState<"save" | "run" | "cancel" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -45,6 +48,7 @@ export function ContentMatchingPanel({
           expectedRevision: policy.revision,
           enabled,
           autoPublish,
+          matchYouTubeDescriptions,
           aliases,
         }),
       });
@@ -159,6 +163,24 @@ export function ContentMatchingPanel({
         </label>
 
         <div className="space-y-3">
+          <label className="flex items-start gap-2 rounded-lg border border-black/10 px-3 py-2 text-xs dark:border-white/10">
+            <input
+              checked={matchYouTubeDescriptions}
+              className="mt-0.5"
+              type="checkbox"
+              onChange={(event) =>
+                setMatchYouTubeDescriptions(event.target.checked)
+              }
+            />
+            <span>
+              Match YouTube descriptions
+              <span className="mt-1 block text-muted">
+                Description-only matches require review. Disabling this may
+                retire automatic matches when content is rematched; accepted and
+                dismissed decisions remain.
+              </span>
+            </span>
+          </label>
           <label className="flex items-start gap-2 rounded-lg border border-black/10 px-3 py-2 text-xs dark:border-white/10">
             <input
               checked={enabled}

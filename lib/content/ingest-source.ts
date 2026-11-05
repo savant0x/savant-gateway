@@ -37,7 +37,6 @@ import {
   HUGGINGFACE_DAILY_PAPERS_URL,
   parseDailyPapers,
 } from "./huggingface.ts";
-import { suggestModelLinks } from "./linking.ts";
 import { enrichOspImpressions } from "./osp-impressions.ts";
 import { CONTENT_LIMITS, youtubeApiKey } from "./policy.ts";
 import { SourceConfigError, type SourceFailureKind } from "./source-error.ts";
@@ -52,7 +51,7 @@ import { listLinkableModels } from "./store/items.ts";
 import { readMatchingPolicy } from "./store/matching.ts";
 import { pruneMetricSnapshots } from "./store/momentum.ts";
 import { upsertItem } from "./store/item-writes.ts";
-import { replaceAutoLinks } from "./store/link-writes.ts";
+import { matchStoredItem } from "./store/match-stored-item.ts";
 import { finishCycle, startCycle } from "./store/cycles.ts";
 
 export type IngestDeps = {
@@ -266,13 +265,7 @@ export async function ingestSource(
       const itemId = await upsertItem(db, source, item, now());
 
       if (matching.policy.enabled) {
-        const suggestions = suggestModelLinks(
-          { title: item.title, tags: item.tags, kind: item.kind },
-          models,
-          matching.policy,
-        );
-
-        await replaceAutoLinks(db, itemId, suggestions, now());
+        await matchStoredItem(db, itemId, models, { at: now() });
       }
 
       upserted += 1;

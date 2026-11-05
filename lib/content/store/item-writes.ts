@@ -109,7 +109,7 @@ function contentHash(item: ParsedItem) {
  * by two feeds produces one item. The later fetch updates the body and tags and
  * keeps the stable item id.
  */
-export async function upsertItem(
+async function upsertItemInTransaction(
   db: PostgresDatabase,
   source: ContentSource,
   item: ParsedItem,
@@ -189,6 +189,16 @@ export async function upsertItem(
   await writeMetricSnapshot(db, itemId, item, now);
 
   return itemId;
+}
+
+/** Keep the stored item and its tag set consistent for matching readers. */
+export async function upsertItem(
+  db: PostgresDatabase,
+  source: ContentSource,
+  item: ParsedItem,
+  now = new Date().toISOString(),
+): Promise<string> {
+  return db.transaction(() => upsertItemInTransaction(db, source, item, now))();
 }
 
 /** Persists a lazily fetched reader body so later views never refetch it. */

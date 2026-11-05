@@ -27,7 +27,7 @@ working set; each FID owns its own status, evidence and resolution.
 | [2026-1104-007](FID-2026-1104-007-provisioning-tls-verification.md) | Verified TLS for provisioning helpers | fixed | Implementation `0433cf7`; live trusted/self-signed handshake with the provider CA and disposable-role confirmation remain. |
 | [2026-1104-008](FID-2026-1104-008-runtime-gates-and-current-docs.md) | One runtime, one gate contract and current documentation | converged | Operator picks Node 22 or 24; worker unifies the gate list and adds the repository check. |
 | [2026-1104-009](FID-2026-1104-009-browser-journey-receipt.md) | Fresh browser journey receipt | converged | Worker adds the Playwright runner and records six journeys in both themes. |
-| [2026-1104-010](FID-2026-1104-010-discovery-to-inference-events.md) | Discovery-to-inference business events | converged | Worker adds five bounded event kinds and the operator aggregate. |
+| [2026-1104-010](FID-2026-1104-010-discovery-to-inference-events.md) | Discovery-to-inference business events | fixed | Implementation `78c6920`; real-PostgreSQL HTTP and `verify:supabase` receipts remain blocked by the host database and CA. |
 | [2026-1104-011](FID-2026-1104-011-policy-v1-2-publication.md) | Policy v1.2 for the current service surface | converged | Operator approves the recipient inventory; worker drafts v1.2 and the acceptance bump. |
 | [2026-1104-013](FID-2026-1104-013-model-matched-visual-builds.md) | Pelican-first model-matched visual builds with a gated OpenRouter track | converged | 013A only after 006/009; schema-aware backup (SCOPE VB6) is implemented. 013B stays blocked on a lawful OpenRouter fixture and rights. |
 
@@ -49,6 +49,11 @@ working set; each FID owns its own status, evidence and resolution.
 > `/1` dumps still restore, and the recovery drill covers `content` and
 > `identity`. FID-013's durability prerequisite is satisfied; 013A remains
 > blocked on FID-006 and FID-009.
+>
+> 2026-11-04 FID-010 implementation: `78c6920` adds five bounded funnel events,
+> a durable once-only first-completion marker, and a 30-day admin aggregate.
+> The FID is `fixed`; its HTTP gate is red in the single-connection PGlite
+> fixture and `verify:supabase` lacks the managed-host CA, so it is not closed.
 
 Finding 3 of the 2026-11-04 release audit has no new record: real payment,
 funded inference, hosted restore, delivered alert and the release decision stay

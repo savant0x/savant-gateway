@@ -3,6 +3,24 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-04 — Discovery-to-inference funnel events (FID-2026-1104-010)
+
+- **FID-2026-1104-010 — medium —** the activity authority now records five
+  bounded funnel events on the existing `activity_events` table:
+  `follow_created`, `save_created`, `content_model_click`, `briefing_return` and
+  `first_completion`. Follow and save emit only when the action is new; a first
+  completion is a deterministic once-per-user marker written after settlement
+  commits, so a replay or race cannot duplicate it. Metadata is limited to
+  identifiers (`modelId`, `contentId`, `groupSlug`, `source`); prompts,
+  completions, keys, emails and IPs remain refused. `/api/admin/activity`
+  returns a 30-day UTC day/kind summary and `/admin` shows the per-kind totals.
+  Verified: focused 12/12, full suite 1004/1008 with 4 PostgreSQL-only skips,
+  zero-warning lint, typecheck, quality (602 files), production build, config
+  check, attribution guard and `git diff --check`. Partial: the HTTP suite's
+  paid-limit check failed in the single-connection PGlite fixture (three
+  concurrent probes consumed one token per batch), and `verify:supabase` could
+  not verify the managed host without its CA. FID-010 is `fixed`, not closed.
+
 ## 2026-11-04 — Free-allocation refusal truth (FID-2026-1104-003)
 
 - **FID-2026-1104-003 — high —** the shared free-pool refusal always said

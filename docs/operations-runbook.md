@@ -50,6 +50,28 @@ Re-enter the cost in `/admin/pricing` to republish it. This is the guard against
 silent upstream price drift on providers that publish no machine-readable rates;
 crypto sales are not refundable, so a price nobody re-checked is not offered.
 
+## Funnel activity events
+
+`activity_events` holds the account and money lifecycle plus five bounded
+product events. The writer allowlists identifiers such as `modelId`,
+`contentId`, `groupSlug` and `source`; prompts, completions, keys, emails and
+IPs are refused.
+
+| Event | Written when | Identity |
+| --- | --- | --- |
+| `follow_created` | a signed-in customer newly follows a model | model id |
+| `save_created` | a signed-in customer newly saves an item | content id |
+| `content_model_click` | a signed-in customer opens a model from an item | content and model ids |
+| `briefing_return` | a signed-in customer loads `/signal/briefing` | page id |
+| `first_completion` | the first successful settlement for a customer | durable per-user marker |
+
+`first_completion` is written after settlement commits and is best-effort; a
+failed event never rolls back a paid or free call. The other four are also
+best-effort and record a new action, not a repeat. `GET /api/admin/activity`
+returns the latest events plus a 30-day `summary` grouped by UTC day and kind;
+`/admin` shows the per-kind totals. Counts are a lower bound when a best-effort
+write was lost. This surface adds no new retention window.
+
 ## What it observes
 
 All values come from PostgreSQL; the monitor makes no upstream call and no

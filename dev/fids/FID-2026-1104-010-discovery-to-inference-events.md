@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-010-discovery-to-inference-events.md`
 **ID:** FID-2026-1104-010
 **Severity:** medium
-**Status:** converged
+**Status:** fixed
 **Created:** 2026-11-04 17:10
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -107,7 +107,29 @@ exist. No new test file is promised at convergence.
 
 ### Verification Receipt
 
-- verified: not yet — design converged, implementation pending.
+- verified: 2026-11-04 — implementation complete; one gate is partial.
+- `node --test tests/activity.test.mjs tests/content-store.test.mjs
+  tests/content-reactions.test.mjs`: 12 pass, 0 fail.
+- `npm test`: 1008 tests, 1004 pass, 4 skipped (PostgreSQL-only), 0 fail.
+- `npm run lint`: exit 0, zero warnings.
+- `npm run typecheck`: exit 0.
+- `npm run quality`: PASS, 400-line ceiling, 602 files scanned.
+- `npm run build`: exit 0; `/api/account/content/model-click` is in the route
+  list.
+- `npm run config:check`: PASS (non-production).
+- `node scripts/attribution-guard.mjs`: PASS.
+- `git diff --check`: clean.
+- **Partial — `npm run test:http`:** exit 1 at `paid account limit holds
+  across different keys`. The fixture runs three concurrent probes through
+  PGlite's single connection; the bucket row showed one token consumed per
+  batch (`60 → 20.9` after 40 batches), so no 429 was produced. All probes were
+  402, and the failure is in the fixture's concurrent transaction handling,
+  not in a FID-010 path. No real PostgreSQL endpoint was available: Docker's
+  engine returned 500, no local PostgreSQL binaries or server exist, and
+  `npm run verify:supabase` could not verify the managed host without its CA
+  (`sslmode=no-verify` was refused; `verify-full` saw a self-signed chain and
+  no `PROVISIONING_DATABASE_CA` or file is configured). The HTTP and
+  `verify:supabase` gates remain unpassed on this host.
 
 ## Perfection Loop
 
@@ -154,22 +176,67 @@ exist. No new test file is promised at convergence.
 
 ## Implementation Evidence
 
-Pending. Coding is reserved to the operator's separate worker.
+Implemented in `78c6920`.
 
-- [ ] Commit SHA, file ranges, gate output, step statuses.
-- [ ] Journey-to-event receipt.
+- [x] **Commit SHA:** `78c6920` — `feat(activity): record
+  discovery-to-inference funnel events (FID-2026-1104-010)`.
+- [x] **File:line ranges:**
+  - `lib/activity.ts:17-21` — the five kinds; `:140` once-only writer;
+    `:240` aggregate type; `:247` aggregate query.
+  - `lib/storage/ledger/activity.ts:16` — async once-only insert.
+  - `lib/storage/store/activity.ts:52` — first-completion marker; `:83`
+    aggregate.
+  - `lib/storage/gateway/settle.ts:127` — emit after successful settlement.
+  - `app/api/account/content/watch/route.ts:44` and `saved/route.ts:41` — new
+    follow and save.
+  - `app/signal/briefing/page.tsx:50` — briefing return.
+  - `app/api/account/content/model-click/route.ts:46`,
+    `components/content/model-click-link.tsx:11`, and
+    `components/content/model-module.tsx:60` — click emission and model links.
+  - `app/api/admin/activity/route.ts:41`, `app/admin/(panel)/page.tsx`, and
+    `components/admin/activity-panel.tsx` — aggregate read surface.
+  - `tests/activity.test.mjs:123,142,167` — metadata, once-only and aggregate
+    tests.
+- [x] **Gate output:** focused 12/12; full suite 1004 pass and 4 PostgreSQL-only
+  skips; lint, typecheck, quality, build, config check, attribution and diff
+  check pass. HTTP and `verify:supabase` are recorded as partial above.
+- [x] **Reproducibility:** `rg -n "first_completion|content_model_click|follow_created|save_created|briefing_return" lib app components`
+  finds the vocabulary, emitters and read surface.
+- [x] **Step statuses:** all four Proposed Solution steps are `implemented`; the
+  HTTP and disposable-PostgreSQL verification receipt is partial.
 
 ## Code Verification Evidence
 
-- [x] Table, writers and indexes were inspected.
-- [x] Status reflects reality: `converged`.
+- [x] Files referenced in Affected Components exist.
+- [x] Implementation matches the Proposed Solution.
+- [x] Typecheck, focused tests, full suite, lint, quality and build pass with
+  pasted tool output.
+- [x] Production call-graph evidence is present for the new writers, emitters
+  and aggregate reader.
+- [x] Status reflects reality: `fixed` with the partial HTTP/verify receipt.
+- [ ] Real-PostgreSQL HTTP and `verify:supabase` receipt.
 
 ## Resolution
 
-- **Convergence Date:** 2026-11-04 17:10
-- **Next action:** worker implements the vocabulary, emitters and aggregate;
-  operator approves the metadata boundary and retention reference.
-- **Archived:** no.
+- **Fixed Date:** 2026-11-04
+- **Fix Description:** five bounded funnel kinds now use the existing
+  `activity_events` authority. First completion is a durable once-per-user
+  marker written after settlement; follow and save emit only on a new action;
+  briefing returns and authenticated content-to-model clicks are recorded with
+  identifiers only. `/api/admin/activity` and `/admin` expose a 30-day UTC
+  day/kind aggregate.
+- **Tests Added:** Yes — `tests/activity.test.mjs` covers the new vocabulary,
+  identifier metadata, the once-only marker and the day/kind aggregate.
+- **Verification Evidence:** commit `78c6920`; focused 12/12, full suite 1004
+  pass with 4 PostgreSQL-only skips, lint, typecheck, quality, build, config
+  check, attribution and diff check pass. `npm run test:http` is partial: the
+  PGlite fixture consumed one token per three-request batch, so the 429 check
+  failed; `npm run verify:supabase` is blocked by the missing managed-host CA.
+- **Archived:** no — the record stays active until the HTTP and disposable
+  PostgreSQL receipts pass.
+- **Next action:** rerun `npm run test:http` and `npm run verify:supabase`
+  against a real disposable PostgreSQL endpoint with a trusted CA; then close
+  and archive.
 
 ## Lessons Learned
 

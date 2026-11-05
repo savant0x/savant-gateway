@@ -7,6 +7,10 @@ import {
   readAutomationPolicy,
   startFetchRun,
 } from "@/lib/content/store/automation";
+import {
+  latestRematchRun,
+  runRematchBounded,
+} from "@/lib/content/store/rematch";
 import { countDueSources } from "@/lib/content/store/source-due";
 import { getDatabase } from "@/lib/storage/runtime";
 
@@ -119,6 +123,16 @@ async function heartbeat(request: Request) {
       trigger: "scheduled",
     },
   );
+  const queuedRematch = await latestRematchRun(db);
+  const rematch =
+    queuedRematch?.status === "paused"
+      ? await runRematchBounded(db, {
+          runId: queuedRematch.id,
+          trigger: "catalog",
+          limit: 10,
+          deadlineMs: 10_000,
+        })
+      : null;
 
   return Response.json(
     {
@@ -130,6 +144,15 @@ async function heartbeat(request: Request) {
       skipped: run.skipped,
       deadlineReached: run.deadlineReached,
       results: run.results,
+      rematch: rematch
+        ? {
+            id: rematch.id,
+            status: rematch.status,
+            processed: rematch.processed,
+            changed: rematch.changed,
+            error: rematch.error,
+          }
+        : null,
       policyRevision: read.policy.revision,
     },
     { headers: NO_STORE },

@@ -80,7 +80,9 @@ export async function replaceAutoLinks(
   itemId: string,
   suggestions: LinkSuggestion[],
   now = new Date().toISOString(),
-): Promise<void> {
+): Promise<{ matched: number; retired: number }> {
+  let retiredCount = 0;
+
   await db.transaction(async () => {
     for (const suggestion of suggestions) {
       const state: ContentLinkState = suggestion.reviewed
@@ -155,6 +157,8 @@ export async function replaceAutoLinks(
         ...suggestions.map((suggestion) => suggestion.modelId),
       );
 
+    retiredCount = retired.length;
+
     for (const row of retired) {
       await recordDecision(db, {
         itemId,
@@ -167,6 +171,8 @@ export async function replaceAutoLinks(
       });
     }
   })();
+
+  return { matched: suggestions.length, retired: retiredCount };
 }
 
 /**

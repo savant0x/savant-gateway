@@ -6,6 +6,7 @@ import { ContentAutomationPanel } from "@/components/admin/content-automation-pa
 import { ContentCommentModeration } from "@/components/admin/content-comment-moderation";
 import { ContentLinkActions } from "@/components/admin/content-link-actions";
 import { ContentLinkForm } from "@/components/admin/content-link-form";
+import { ContentMatchingPanel } from "@/components/admin/content-matching-panel";
 import { ContentSourceFetchAll } from "@/components/admin/content-source-fetch-all";
 import { ContentSourceForm } from "@/components/admin/content-source-form";
 import { ContentSourcePresets } from "@/components/admin/content-source-presets";
@@ -18,6 +19,8 @@ import { listRecentCommentsForOperator } from "@/lib/content/store/comments";
 import { listRecentCycles, contentStats } from "@/lib/content/store/cycles";
 import { listItems, listLinkableModels } from "@/lib/content/store/items";
 import { listRecentLinks } from "@/lib/content/store/links";
+import { readMatchingPolicy } from "@/lib/content/store/matching";
+import { latestRematchRun } from "@/lib/content/store/rematch";
 import { listSources } from "@/lib/content/store/sources";
 import { getDatabase } from "@/lib/storage/runtime";
 
@@ -51,6 +54,8 @@ export default async function AdminContentPage() {
     ReturnType<typeof listRecentCommentsForOperator>
   > = [];
   let snapshot: Awaited<ReturnType<typeof automationSnapshot>> | null = null;
+  let matching: Awaited<ReturnType<typeof readMatchingPolicy>> | null = null;
+  let rematch: Awaited<ReturnType<typeof latestRematchRun>> = null;
 
   try {
     const db = await getDatabase();
@@ -84,6 +89,10 @@ export default async function AdminContentPage() {
         ],
       );
     snapshot = await automationSnapshot(db);
+    [matching, rematch] = await Promise.all([
+      readMatchingPolicy(db),
+      latestRematchRun(db),
+    ]);
   } catch (caught) {
     error =
       caught instanceof Error ? caught.message : "Storage is unavailable.";
@@ -122,6 +131,12 @@ export default async function AdminContentPage() {
         <div className="flex flex-wrap gap-2">
           <Link
             className="rounded-lg border border-black/10 px-3 py-2 text-xs font-medium transition-colors hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
+            href="/admin/content/links"
+          >
+            All model links
+          </Link>
+          <Link
+            className="rounded-lg border border-black/10 px-3 py-2 text-xs font-medium transition-colors hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
             href="/admin/content/history"
           >
             Run history
@@ -148,6 +163,14 @@ export default async function AdminContentPage() {
               policy={snapshot.policy}
               policyError={snapshot.policyError}
               secretConfigured={Boolean(contentCronSecret())}
+            />
+          ) : null}
+
+          {matching ? (
+            <ContentMatchingPanel
+              policy={matching.policy}
+              policyError={matching.error}
+              run={rematch}
             />
           ) : null}
 

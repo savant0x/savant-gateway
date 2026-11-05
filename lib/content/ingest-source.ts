@@ -49,6 +49,7 @@ import {
 } from "./store/source-checkpoints.ts";
 import { recordSourceFailure, recordSourceSuccess } from "./store/sources.ts";
 import { listLinkableModels } from "./store/items.ts";
+import { readMatchingPolicy } from "./store/matching.ts";
 import { pruneMetricSnapshots } from "./store/momentum.ts";
 import { upsertItem } from "./store/item-writes.ts";
 import { replaceAutoLinks } from "./store/link-writes.ts";
@@ -254,6 +255,7 @@ export async function ingestSource(
     }
 
     const models = deps.models ?? (await listLinkableModels(db));
+    const matching = await readMatchingPolicy(db);
 
     options.budget?.check();
 
@@ -262,12 +264,17 @@ export async function ingestSource(
 
       const item = items[nextIndex];
       const itemId = await upsertItem(db, source, item, now());
-      const suggestions = suggestModelLinks(
-        { title: item.title, tags: item.tags, kind: item.kind },
-        models,
-      );
 
-      await replaceAutoLinks(db, itemId, suggestions, now());
+      if (matching.policy.enabled) {
+        const suggestions = suggestModelLinks(
+          { title: item.title, tags: item.tags, kind: item.kind },
+          models,
+          matching.policy,
+        );
+
+        await replaceAutoLinks(db, itemId, suggestions, now());
+      }
+
       upserted += 1;
     }
 

@@ -3,6 +3,26 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-04 — Content matching controls and inventory (017)
+
+- **FID-2026-1104-017 — medium —** the admin content area now has a complete
+  paged link inventory with state/model/text filters and all-state counts, plus
+  a matching policy with `enabled`, `autoPublish` and model-scoped custom
+  aliases. A custom alias without a version can suggest but cannot publish
+  unattended. Turning matching off stops detection and rematch while source
+  fetching continues; pausing automation stops rematch as well. The durable
+  rematch runner reads stored items and tags only, resumes by an item-id cursor,
+  and preserves accepted/dismissed decisions. Catalog sync and policy saves
+  queue work; the scheduler drains a paused rematch after its fetch batch.
+- **Verification:** `npm test` is 1,026 passed, 0 failed, 6 PostgreSQL-only
+  skipped; build, config check, lint, typecheck and quality pass. The HTTP
+  content probes pass, but the overall HTTP gate still stops at the pre-existing
+  `paid account limit holds across different keys` burst probe. This **does not
+  close FID-017**: its keyset/source/kind/relation/date filters, pinned job
+  snapshots, cancellation/retry scopes and HTTP/browser receipts remain open.
+  The disposable-PostgreSQL race proof is unrun because Docker and
+  `TEST_DATABASE_URL` are unavailable.
+
 ## 2026-11-04 — Persistent content/model link decisions (016)
 
 - **FID-2026-1104-016 — high —** model links now have durable `suggested`,

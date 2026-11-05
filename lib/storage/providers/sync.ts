@@ -19,6 +19,7 @@ import {
   saveProviderCatalogSync,
 } from "../store/providers.ts";
 import { getMarkupBps } from "../store/settings.ts";
+import { startRematch } from "../../content/store/rematch.ts";
 
 import { refreshProviderRuntime, type ProviderRuntimeDeps } from "./runtime.ts";
 
@@ -164,6 +165,15 @@ export async function syncProvider(
   ).length;
 
   await saveProviderCatalogSync(db, slug);
+
+  // A catalog change is an invalidation signal for stored content matching.
+  // Queueing is bounded and never fetches a publisher. Content storage is
+  // optional for a catalog sync, so a content-schema failure must not fail it.
+  try {
+    await startRematch(db, "catalog");
+  } catch {
+    // The operator can run the rematch explicitly once content storage is up.
+  }
 
   return {
     slug,

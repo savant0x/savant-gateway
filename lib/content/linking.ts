@@ -23,6 +23,7 @@ import { normalizeTag } from "./taxonomy.ts";
 type Alias = {
   label: string;
   tokens: string[];
+  versioned: boolean;
 };
 
 const MIN_ALIAS_TOKENS = 2;
@@ -51,13 +52,14 @@ function hasVersion(tokens: string[]): boolean {
   return tokens.some((token) => /\d/.test(token));
 }
 
-function aliasFrom(value: string): Alias | null {
+function aliasFrom(value: string, requireVersion = true): Alias | null {
   const tokens = tokenize(value);
 
-  if (tokens.length < MIN_ALIAS_TOKENS || !hasVersion(tokens)) return null;
+  if (tokens.length < MIN_ALIAS_TOKENS) return null;
+  if (requireVersion && !hasVersion(tokens)) return null;
   if (tokens.every((token) => !/[a-z]/.test(token))) return null;
 
-  return { label: value.trim(), tokens };
+  return { label: value.trim(), tokens, versioned: hasVersion(tokens) };
 }
 
 function lastSegment(value: string): string {
@@ -66,18 +68,22 @@ function lastSegment(value: string): string {
   return parts.at(-1) ?? value;
 }
 
-/** Public aliases for one model, deduplicated and precision-filtered. */
-export function modelAliases(model: LinkableModel): Alias[] {
+/** Public and operator aliases, deduplicated and precision-filtered. */
+export function modelAliases(
+  model: LinkableModel,
+  extraAliases: string[] = [],
+): Alias[] {
   const candidates = [
-    lastSegment(model.id),
-    model.name,
-    lastSegment(model.upstreamId),
+    ...extraAliases.map((alias) => ({ value: alias, operator: true })),
+    { value: lastSegment(model.id), operator: false },
+    { value: model.name, operator: false },
+    { value: lastSegment(model.upstreamId), operator: false },
   ];
   const seen = new Set<string>();
   const aliases: Alias[] = [];
 
   for (const candidate of candidates) {
-    const alias = aliasFrom(candidate);
+    const alias = aliasFrom(candidate.value, !candidate.operator);
 
     if (!alias) continue;
 
@@ -147,6 +153,11 @@ export type LinkInput = {
   kind: ContentKind;
 };
 
+export type LinkOptions = {
+  aliases?: Record<string, string[]>;
+  autoPublish?: boolean;
+};
+
 /**
  * Returns at most one suggestion per model. A title match outranks a tag match;
  * a tag match is exact because tags are normalized at ingest.
@@ -154,6 +165,7 @@ export type LinkInput = {
 export function suggestModelLinks(
   input: LinkInput,
   models: LinkableModel[],
+  options: LinkOptions = {},
 ): LinkSuggestion[] {
   const titleTokens = tokenize(input.title);
   const tagKeys = new Set(
@@ -164,8 +176,12 @@ export function suggestModelLinks(
 
   for (const model of models) {
     let best: LinkSuggestion | null = null;
+    let bestVersioned = false;
 
-    for (const alias of modelAliases(model)) {
+    for (const alias of modelAliases(
+      model,
+      options.aliases?.[model.id] ?? [],
+    )) {
       const key = alias.tokens.join(" ");
       const titleMatch = containsSequence(titleTokens, alias.tokens);
       const tagMatch = tagKeys.has(key);
@@ -177,17 +193,22 @@ export function suggestModelLinks(
         ? `Title matches “${alias.label}”`
         : `Tag matches “${alias.label}”`;
 
-      if (!best || confidence > best.confidence) {
+      if (
+        !best ||
+        confidence > best.confidence ||
+        (!bestVersioned && alias.versioned && confidence === best.confidence)
+      ) {
+        bestVersioned = alias.versioned;
         best = {
           modelId: model.id,
           relation,
           confidence,
           reason,
-          reviewed: false,
+          reviewed: (options.autoPublish ?? false) && bestVersioned,
         };
       }
 
-      if (titleMatch) break;
+      if (titleMatch && alias.versioned) break;
     }
 
     if (best) suggestions.set(model.id, best);

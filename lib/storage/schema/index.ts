@@ -6,6 +6,7 @@ import { catalogSchema } from "./catalog.ts";
 import { contentSchema } from "./content.ts";
 import { contentAutomationSchema } from "./content-automation.ts";
 import { contentDecisionsSchema } from "./content-decisions.ts";
+import { contentMatchingSchema } from "./content-matching.ts";
 import { coreSchema } from "./core.ts";
 import { customerSchema } from "./customers.ts";
 import { identitySchema } from "./identity.ts";
@@ -35,6 +36,7 @@ export async function applySchema(
   await contentSchema(db);
   await contentAutomationSchema(db);
   await contentDecisionsSchema(db);
+  await contentMatchingSchema(db);
   await admissionSchema(db);
 
   // The seed belongs to the embedded engine, not to "not production". A dev

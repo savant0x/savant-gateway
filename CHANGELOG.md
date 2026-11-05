@@ -3,6 +3,21 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-04 — Trial reservation lock order (014)
+
+- **FID-2026-1104-014 — high —** three concurrent first trial calls could
+deadlock between reservation and settlement. Reservation locked the user row
+`FOR UPDATE` and then needed the trial grant; settlement held the grant and then
+inserted a row whose foreign key took a `KEY SHARE` on the same user. PostgreSQL
+aborted one transaction with `40P01`, producing an intermittent `500` instead of
+the expected refusal. Reservation now uses `FOR NO KEY UPDATE`, which still
+serializes competing reservations but is compatible with settlement's foreign-key
+lock. The trial HTTP suite now prints its server log tail on failure. Ten
+consecutive real-PostgreSQL trial runs pass; the full gate is 11/11 with
+1,019/1,019 tests, zero skips, 4/4 two-connection proofs, 776 main HTTP checks
+plus the trial suite, and recovery 14/14. The implementation is `fixed`; the
+closure record follows.
+
 ## 2026-11-04 — Bounded ingestion transport, Node 24 and one gate contract (006, 008)
 
 - **FID-2026-1104-006 — high —** content fetches now stream raw bytes and cancel
@@ -23,8 +38,13 @@ distinguish verified behavior from unverified claims.
   `repository:check` for FID registration, promised test paths, archived closure
   commits, root links, docs indexing and current-topology claims. Root links
   were corrected, unindexed docs added, and historical SQLite/Fly sections
-  labeled. The record is `fixed`, not closed: the PostgreSQL HTTP/proof gates
-  and a clean-install full run are still missing.
+  labeled. The record is `closed`: a clean `npm ci` and full `npm run verify`
+  pass on Node 24 against disposable PostgreSQL 17.6 (11/11 gates, 1,019/1,019
+  tests with zero skips, 4/4 two-connection proofs, 776 main HTTP checks plus the
+  trial suite, recovery 14/14). The managed `verify:supabase` wrapper remains
+  unrun because its self-signed chain has no configured CA; live TLS acceptance
+  stays in `FID-2026-1104-007-LIVE`. The first full run exposed the trial
+  reservation/settlement deadlock fixed in `FID-2026-1104-014`.
 
 ## 2026-11-04 — Completed implementation FIDs archived (003, 005, 007, 010)
 

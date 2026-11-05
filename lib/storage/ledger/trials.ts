@@ -76,8 +76,14 @@ export async function reserveTrial(
       // write lets concurrent calls both see the same balance. The row lock
       // serializes them on PostgreSQL; the conditional inserts keep the rule
       // true on engines where the lock cannot exclude.
+      //
+      // Use FOR NO KEY UPDATE, not FOR UPDATE: settlement inserts rows that
+      // reference users and therefore takes a KEY SHARE, while it holds the
+      // trial-grant row this transaction needs. FOR UPDATE conflicts with that
+      // KEY SHARE and creates a lock cycle; FOR NO KEY UPDATE still excludes
+      // competing reservations but is compatible with the settlement's FK lock.
       await db
-        .prepare("SELECT id FROM users WHERE id = ? FOR UPDATE")
+        .prepare("SELECT id FROM users WHERE id = ? FOR NO KEY UPDATE")
         .get(input.userId);
 
       const historic = await db

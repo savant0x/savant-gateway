@@ -222,19 +222,19 @@
       "id": "FID-2026-1104-006-LIVE",
       "fid": "FID-2026-1104-006",
       "state": "blocked",
-      "title": "Real-PostgreSQL HTTP, two-connection and managed-host verification",
-      "detail": "Bounded transport, redirect validation, source claims and deadlines, and provider sync leases are implemented and closed at 941c60f. Focused suites pass 18/18 and 8/8; full suite 1,015/1,019 with four PostgreSQL-only skips; check, quality, build, recovery, storage, config and repository checks pass. `npm run test:http` exited 1 at `paid account limit holds across different keys` in the single-connection PGlite fixture; `npm run test:postgres` refused because Docker and TEST_DATABASE_URL are unavailable; `npm run verify:supabase` was not run. DNS resolution is still not pinned, so DNS rebinding remains a documented residual.",
+      "title": "Managed-host verification and DNS-rebinding residual",
+      "detail": "Bounded transport, redirect validation, source claims and deadlines, and provider sync leases are implemented and closed at 941c60f. Focused suites pass 18/18 and 8/8. The 2026-11-04 local real-PostgreSQL receipt passes: clean `npm ci`; `npm run test:postgres` 4/4 with zero skips; `npm run test:http` 776 main checks plus the trial suite; full `npm run verify` 11/11 with 1,019/1,019 tests and zero skips; recovery 14/14. The managed `verify:supabase` handshake remains unrun because the configured endpoint uses a self-signed chain and no trusted CA is configured. DNS resolution is still not pinned, so DNS rebinding remains a documented residual.",
       "evidence": "dev/fids/archive/FID-2026-1104-006-bounded-transport-and-jobs.md; lib/content/transport.ts; lib/content/store/claims.ts; lib/storage/providers/lease.ts; tests/content-ingest.test.mjs; tests/content-fetch-conditional.test.mjs; tests/provider-freshness-postgres.test.mjs",
-      "next_action": "Run `npm run test:http` and `npm run verify:supabase` against a disposable PostgreSQL endpoint, confirm the paid-account limit race, and record the receipts. If DNS pinning is required for launch, add it as a separate implementation change rather than treating this followup as proof."
+      "next_action": "Configure a trusted CA for the disposable managed host and run `npm run verify:supabase`; record the managed-host receipt. Do not treat the local loopback receipt as managed-host proof. Decide separately whether DNS pinning is required for launch."
     },
     {
       "id": "FID-2026-1104-010-LIVE",
       "fid": "FID-2026-1104-010",
       "state": "blocked",
-      "title": "Real-PostgreSQL HTTP and managed-host verification",
-      "detail": "Five funnel events, the once-only first-completion marker and the 30-day aggregate are implemented and closed at 78c6920; focused 12/12, full suite 1005/1009 with 4 PostgreSQL-only skips, lint, typecheck, quality and build pass. `npm run test:http` failed in the single-connection PGlite fixture and `npm run verify:supabase` lacked the managed-host CA; neither real-PostgreSQL HTTP nor managed-host verification has passed.",
+      "title": "Managed-host verification after the local PostgreSQL HTTP receipt",
+      "detail": "Five funnel events, the once-only first-completion marker and the 30-day aggregate are implemented and closed at 78c6920; focused 12/12, lint, typecheck, quality and build pass. The 2026-11-04 local real-PostgreSQL receipt passes: `npm run test:http` 776 main checks plus the trial suite and full `npm run verify` 11/11 with 1,019/1,019 tests and zero skips. The managed `verify:supabase` handshake remains unrun because the configured endpoint uses a self-signed chain and no trusted CA is configured.",
       "evidence": "dev/fids/archive/FID-2026-1104-010-discovery-to-inference-events.md; tests/activity.test.mjs; scripts/http-suite/checks.mjs; CHANGELOG.md (2026-11-04 FID-010 entry)",
-      "next_action": "Run `npm run test:http` and `npm run verify:supabase` against a disposable PostgreSQL endpoint with a trusted CA, then record the receipts; the implementation is closed and this followup owns only acceptance."
+      "next_action": "Configure a trusted CA for the disposable managed host and run `npm run verify:supabase`, then record the managed-host receipt; the implementation is closed and this followup owns only acceptance."
     }
   ]
 }

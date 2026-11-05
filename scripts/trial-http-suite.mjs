@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 
 import {
-  check, checkEqual, checkProviderDouble, request, reservePort,
+  check, checkEqual, checkProviderDouble, logTail, request, reservePort,
   startNextServer, stopNextServer, waitForServer, cookieValue,
 } from "./http-suite/harness.mjs";
 import {
@@ -254,6 +254,9 @@ try {
   const message = error instanceof Error ? error.message : String(error);
 
   console.error(`trial-http-suite FAIL: ${message}`);
+  if (server) {
+    console.error(`trial-http-suite: server log tail\n${logTail(server.logs)}`);
+  }
   process.exitCode = 1;
 } finally {
   await db?.close();

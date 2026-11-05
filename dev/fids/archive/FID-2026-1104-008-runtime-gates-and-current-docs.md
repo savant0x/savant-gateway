@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-008-runtime-gates-and-current-docs.md`
 **ID:** FID-2026-1104-008
 **Severity:** medium
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-04 17:10
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -113,22 +113,26 @@ One small script plus list extraction.
 
 ### Verification Receipt
 
-- runtime: Node `24.x` in `package.json`, `.nvmrc`, CI and `Dockerfile`; local
-  workstation is Node `v24.21.0`.
-- `npm run repository:check` PASS: Node 24, 11 gates, 10 active FIDs, root
-  links and current docs consistent.
-- `npm run check` PASS; `npm test` 1,019 tests, 1,015 pass, 4 PostgreSQL-only
-  skips, 0 fail; `npm run quality` PASS (605 files); `npm run build` PASS;
-  `npm run storage:check` PASS; `npm run config:check` PASS (non-production);
-  `npm run test:recovery` 14/14 PASS.
-- not run: `npm run test:postgres` refused because Docker and
-  `TEST_DATABASE_URL` are unavailable; `npm run test:http` exited 1 at
-  `paid account limit holds across different keys` in the single-connection
-  PGlite fixture; `npm run verify:supabase` was not run. A full verify receipt
-  is therefore not claimed.
-- clean install: not rerun under a clean `npm ci` in this pass; the existing
-  dependency tree was used. Do not close until a clean install and the full
-  gate run on Node 24 exist.
+- runtime: Node `v24.21.0`; `package.json`, `.nvmrc`, CI and `Dockerfile` all
+  pin Node 24.
+- clean install: `npm ci` exit 0 (488 packages, 1m); the subsequent gate run is
+  the clean-install receipt.
+- `npm run test:postgres` PASS — 4/4 tests, 0 skipped, against disposable
+  PostgreSQL 17.6 on loopback (`gateway_verify`).
+- `npm run test:http` PASS — main suite 776 checks; trial suite all checks,
+  against disposable PostgreSQL (`gateway_http`).
+- `npm run verify` PASS — 11/11 gates; `test` 1,019/1,019, 0 skipped; duration
+  126.6s; receipt `.verify/summary.json`. The first full run exposed a trial
+  reservation/settlement deadlock; it was fixed and is recorded in
+  FID-2026-1104-014.
+- `npm run check`, `npm run quality`, `npm run build`, `npm run storage:check`,
+  `npm run config:check`, `npm run repository:check` and
+  `npm run test:recovery` 14/14 all PASS.
+- managed host: `npm run verify:supabase` was not run because the configured
+  endpoint uses a self-signed chain and no trusted CA is configured; the gate
+  was not weakened. The real-PostgreSQL receipt is a disposable localhost
+  cluster, not a managed-host claim. Live TLS acceptance remains in
+  `FID-2026-1104-007-LIVE`.
 
 ## Perfection Loop
 
@@ -194,17 +198,23 @@ Implemented in commit `941c60f`.
 - [x] The check fails on an unregistered active FID, a broken root link, an
   unindexed doc and the three stale current claims it names.
 - [x] A passing check is documented as path/link validation, not prose review.
-- [x] Status reflects reality: `fixed`, not `closed`; the full-gate receipt is
-  still missing.
+- [x] Status reflects reality: `closed` with the clean-install, full-gate and
+  real-PostgreSQL receipts recorded above.
 
 ## Resolution
 
 - **Convergence Date:** 2026-11-04 17:10
 - **Commit:** `941c60f`
-- **Next action:** on a disposable PostgreSQL host, run `npm run test:postgres`,
-  then `npm run test:http` (or `npm run verify:supabase`) and a clean
-  `npm ci` on Node 24. Close only when that full receipt exists.
-- **Archived:** no.
+- **Closure Date:** 2026-11-04
+- **Verification:** clean `npm ci` and full `npm run verify` PASS on Node 24
+  against disposable PostgreSQL 17.6; 11/11 gates, 1,019/1,019 tests, 0
+  skipped, two-connection proof 4/4, 776 main HTTP checks plus the trial suite,
+  and recovery 14/14. The managed `verify:supabase` wrapper remains unrun
+  because no trusted CA is configured for its self-signed chain; live TLS
+  acceptance stays in `FID-2026-1104-007-LIVE`.
+- **Next action:** none for this record. The trial deadlock found during the
+  first full run is fixed in `FID-2026-1104-014`.
+- **Archived:** 2026-11-04; moved to `dev/fids/archive/`.
 
 ## Lessons Learned
 

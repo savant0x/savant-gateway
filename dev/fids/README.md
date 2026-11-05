@@ -21,7 +21,7 @@ working set; each FID owns its own status, evidence and resolution.
 | [068](FID-2026-1030-068-usdc-receive-lane.md) | Direct-to-wallet USDC receive lane | fixed | Operator inputs still gate the receive lane; re-read the record before acting. |
 | [127](FID-2026-1103-127-real-launch-acceptance-receipt.md) | Real launch acceptance receipt | fixed | Operator records the five observations (`payment`, `recovery`, `alert`, `load`, `rollback`) and a go pinned to the release SHA, then runs `npm run receipt:launch`. |
 | [137](FID-2026-1103-137-product-hardening-and-install-order-master.md) | Product hardening and install-order master | converged | Closes only after 126 and 127 have their required evidence. |
-| [2026-1104-008](FID-2026-1104-008-runtime-gates-and-current-docs.md) | One runtime, one gate contract and current documentation | fixed | Node 24 and the repository check are implemented; run the PostgreSQL HTTP/proof gates and a clean install before closing. |
+| [2026-1104-014](FID-2026-1104-014-trial-reservation-lock-order.md) | Trial reservation and settlement lock order | fixed | Record the implementation SHA and close after the real-PostgreSQL trial receipt. |
 | [2026-1104-009](FID-2026-1104-009-browser-journey-receipt.md) | Fresh browser journey receipt | converged | Worker adds the Playwright runner and records six journeys in both themes. |
 | [2026-1104-011](FID-2026-1104-011-policy-v1-2-publication.md) | Policy v1.2 for the current service surface | converged | Operator approves the recipient inventory; worker drafts v1.2 and the acceptance bump. |
 | [2026-1104-013](FID-2026-1104-013-model-matched-visual-builds.md) | Pelican-first model-matched visual builds with a gated OpenRouter track | converged | 013A only after 009; schema-aware backup (SCOPE VB6) is implemented. 013B stays blocked on a lawful OpenRouter fixture and rights. |
@@ -74,6 +74,18 @@ TLS handshake and real-PostgreSQL HTTP/verify receipts remain acceptance
 observations in `../tracking/internal-followups.json` (`-LIVE` entries). They
 are not implementation blockers and no launch acceptance is claimed.
 
+### Closed in the 2026-11-04 PostgreSQL verification pass
+
+[2026-1104-008](archive/FID-2026-1104-008-runtime-gates-and-current-docs.md)
+is `closed` with implementation commit `941c60f`. A clean `npm ci` and full
+`npm run verify` pass on Node 24 against disposable PostgreSQL 17.6: 11/11
+gates, 1,019/1,019 tests with zero skips, the two-connection proof 4/4, the main
+HTTP suite's 776 checks plus the trial suite, and recovery 14/14. The managed
+`verify:supabase` wrapper remains unrun because its self-signed chain has no
+configured CA; live TLS acceptance stays in
+`FID-2026-1104-007-LIVE`. The first full run exposed a trial reservation /
+settlement deadlock, fixed and recorded in FID-014.
+
 ### Closed in the 2026-11-04 bounded transport pass
 
 [2026-1104-006](archive/FID-2026-1104-006-bounded-transport-and-jobs.md) is
@@ -84,8 +96,9 @@ total cron deadline and a database provider-sync lease. Focused suites pass
 check, quality, build, recovery, storage, config and repository checks pass.
 The real-PostgreSQL HTTP and mandatory two-connection receipts, plus the DNS
 rebinding residual, remain in `FID-2026-1104-006-LIVE`; no full `verify` or
-launch acceptance is claimed. FID-008 remains active at `fixed` for the same
-PostgreSQL gate.
+launch acceptance is claimed. FID-008 is now closed with the clean-install,
+full-gate real-PostgreSQL receipt; FID-014 records the trial deadlock found
+during that run.
 
 ### Closed in the 2026-11-04 shared-admission implementation
 

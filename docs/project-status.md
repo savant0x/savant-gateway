@@ -46,9 +46,9 @@ acceptance: none of the external items below has been observed.
 | ID | Status | Open obligation |
 | --- | --- | --- |
 | [043](../dev/fids/FID-2026-1030-043-launch-master.md) | converged | Launch remains **no-go**. Owns the dependency register and the operator decision. |
-| [062](../dev/fids/FID-2026-1030-062-launch-acceptance-and-rollout.md) | converged | Items 1–8: real NOWPayments invoice/signed IPN/replay refusal, funded paid inference, hosted restore, delivered alert, PostgreSQL load envelope, published `v1.2` policies, hosted restore/retention confirmation, explicit public GO. |
+| [062](../dev/fids/FID-2026-1030-062-launch-acceptance-and-rollout.md) | converged | Items 1–8: real NOWPayments invoice/signed IPN/replay refusal, hosted restore, delivered alert, PostgreSQL load envelope, published `v1.2` policies, hosted restore/retention confirmation, explicit public GO. Funded paid inference was withdrawn from the test scope on 2026-11-04 and remains unverified. |
 | [068](../dev/fids/FID-2026-1030-068-usdc-receive-lane.md) | fixed | Direct USDC lane: chain/token contract, hardware-wallet xpub, RPC endpoint and screening ruling. Not a launch path. |
-| [127](../dev/fids/FID-2026-1103-127-real-launch-acceptance-receipt.md) | fixed | `npm run receipt:launch` reports INCOMPLETE until the operator records all six observations and a go decision pinned to the release SHA. |
+| [127](../dev/fids/FID-2026-1103-127-real-launch-acceptance-receipt.md) | fixed | `npm run receipt:launch` reports INCOMPLETE until the operator records the five required observations (`payment`, `recovery`, `alert`, `load`, `rollback`) and a go decision pinned to the release SHA. |
 | [137](../dev/fids/FID-2026-1103-137-product-hardening-and-install-order-master.md) | converged | Sequencing register; closes only after 126 and 127 have their evidence. |
 
 The free/paid SKU split, content sources, Signal engagement work and the pricing

@@ -3,6 +3,22 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-04 — Funded-wallet test scope withdrawn (operator ruling)
+
+- **Operator ruling / FID-2026-1103-127, FID-2026-1030-062 — high —** the
+  operator declined to create a sandbox or fund a provider wallet for testing,
+  verbatim: "no, let me be clear, i do not have a sandbox, im not going to fund
+  a wallet to light money on fire to satisfy some made up requirement i did not
+  make." The launch receipt now requires five observations (`payment`,
+  `recovery`, `alert`, `load`, `rollback`); `inference` was removed from
+  `ACCEPTANCE_ITEMS`. The decision form's funding plan and real-spend
+  authorization are withdrawn, FID-127 and FID-062 record the waiver, and the
+  operator followups no longer require funded calls or wallet funding. Funded
+  inference remains unverified and is recorded as withdrawn, not passed; the
+  remaining launch blockers are unchanged. Verified: focused
+  `tests/launch-receipt.test.mjs` 9/9, full suite 1005/1009 with 4
+  PostgreSQL-only skips, zero-warning lint, typecheck and quality (602 files).
+
 ## 2026-11-04 — Discovery-to-inference funnel events (FID-2026-1104-010)
 
 - **FID-2026-1104-010 — medium —** the activity authority now records five

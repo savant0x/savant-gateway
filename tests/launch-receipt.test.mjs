@@ -50,6 +50,13 @@ test("a complete pass tied to HEAD passes", () => {
   assert.deepEqual(verdict.reasons, []);
 });
 
+test("funded inference is not a required launch observation", () => {
+  assert.deepEqual(
+    ACCEPTANCE_ITEMS.map(({ id }) => id),
+    ["payment", "recovery", "alert", "load", "rollback"],
+  );
+});
+
 test("a missing or malformed item keeps the receipt incomplete", () => {
   const data = receipt();
   delete data.items.alert;

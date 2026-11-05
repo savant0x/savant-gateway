@@ -12,6 +12,14 @@ and tick “configured”; the form records only whether the value exists.
 
 Nothing below is approved until you sign section 6.
 
+**2026-11-04 amendment — funded testing withdrawn.** Operator ruling, verbatim:
+"no, let me be clear, i do not have a sandbox, im not going to fund a wallet to
+light money on fire to satisfy some made up requirement i did not make."
+Section 1.8's funding plan and section 2.4's real-spend authorization are
+withdrawn for testing. No provider wallet is funded; the acceptance run uses
+mock or disposable providers at zero spend. Funded inference is not a required
+launch-receipt item and remains unverified.
+
 ## Fast path — the eight answers that unblock the most
 
 If the full form is too long for one pass, answer these first. Every other item
@@ -126,12 +134,12 @@ Answer only if section 1.5 selected B.
 
 ### 1.8 Upstream funding
 
-- Amount funded: $150.00  Date: not yet funded (target: before the acceptance
-  run).
-- [x] Low-balance alert policy approved at the section 1.2 value; it will be set
-      on the provider account when funding lands.
+- Amount funded: $0.00. **Withdrawn 2026-11-04: no wallet is funded during
+  testing.**
+- [x] Low-balance alert policy approved at the section 1.2 value; **not
+      applied because no funding occurs.**
 - [x] Funding is treated as prepaid inventory, not monthly burn.
-- [x] No paid inference is admitted before this funding is observed.
+- [x] No paid inference is admitted; funded testing was withdrawn 2026-11-04.
 
 ### 1.9 Plan and subscription sales
 
@@ -220,14 +228,13 @@ capacity is **3.33 rps** on the 200 RPM plan, or 0.5 rps on the Boost.
 ### 2.4 Real acceptance run
 
 - Who runs it: **operator, with the agent running the local commands**.
-- Date: **the first business day after the NOWPayments credentials and the $150
-  upstream funding are observed.** No calendar date before those inputs exist.
+- Date: **not scheduled; funded-wallet testing was withdrawn 2026-11-04.**
 - Funded upstream account: [ ] ready  [x] not ready
-- Test payment amount: **$5.00** (minimum top-up, smallest real settlement).
-- Test customer account: **a dedicated operator-controlled account**, created for
-  the run and not used by a real customer.
-- [x] I authorize real provider spend for this run, capped at $150 (the approved
-      upstream funding envelope), subject to the section 2.2 daily cap.
+- Test payment amount: **not applicable to the withdrawn funded run.**
+- Test customer account: **not applicable to the withdrawn funded run.**
+- [ ] I authorize real provider spend for this run, capped at $150 (the approved
+  upstream funding envelope), subject to the section 2.2 daily cap. — withdrawn
+  2026-11-04; no funded test run is authorized.
 
 This is authorization for the internal acceptance run only; it is not approval
 to admit public traffic.
@@ -345,15 +352,17 @@ Tick only after reading the limitation:
 - Release SHA: not pinned; the last verified commit is `45461a9` and the
   storage cutover flip is `723ac1f`.
 - Launch cohort: not set.
-- Spend cap: $150 for the acceptance run; no production traffic authorized.
+- Spend cap: $0 for the acceptance run (funded-wallet testing withdrawn
+  2026-11-04); no production traffic authorized.
 
 - [x] **GO — internal acceptance only.** Run the real payment/webhook,
-      funded-inference, restore/rollback, alert and observation journeys against
-      the pinned candidate, within the $150 authorization and $25/day cap.
+      restore/rollback, alert and observation journeys against the pinned
+      candidate at zero provider spend.
 - [x] **NO-GO — public launch.** Do not admit public traffic. The real hosted
-      payment/webhook, funded paid inference, hosted restore/rollback, delivered
-      alert, 24h/7d observation, PostgreSQL load rerun, and `v1.2` policy
-      publication do not exist yet. These are tracked in FID-2026-1030-062.
+      payment/webhook, hosted restore/rollback, delivered alert, 24h/7d
+      observation, PostgreSQL load rerun, and `v1.2` policy publication do not
+      exist yet. Funded paid inference is withdrawn from the test scope and is
+      not claimed. These are tracked in FID-2026-1030-062.
 
 Signature / explicit approval: operator instruction recorded 2026-11-01; GO for
 the internal acceptance run, NO-GO for public launch.

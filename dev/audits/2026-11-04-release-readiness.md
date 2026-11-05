@@ -4,6 +4,13 @@
 > first.** The operator clarified the current milestone, hosting, content priority
 > and strict type rule after this report. That companion supersedes conflicting
 > recommendations below. Dated test results remain unchanged.
+>
+> **2026-11-04 operator ruling —** funded paid inference was withdrawn from the
+> required launch test scope ("i do not have a sandbox, im not going to fund a
+> wallet to light money on fire to satisfy some made up requirement i did not
+> make"). `npm run receipt:launch` now requires five observations (`payment`,
+> `recovery`, `alert`, `load`, `rollback`); finding 3's "six" count and its
+> funded-inference wording are superseded. Funded inference remains unverified.
 
 ## Decision
 

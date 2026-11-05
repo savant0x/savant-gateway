@@ -19,7 +19,7 @@ working set; each FID owns its own status, evidence and resolution.
 | [043](FID-2026-1030-043-launch-master.md) | Master launch contract and dependency register | converged | Keep coverage, ordering and release decisions current. |
 | [062](FID-2026-1030-062-launch-acceptance-and-rollout.md) | Real launch acceptance, controlled rollout and rollback | converged | Discharge the dated external receipt items 1–8; launch remains no-go. |
 | [068](FID-2026-1030-068-usdc-receive-lane.md) | Direct-to-wallet USDC receive lane | fixed | Operator inputs still gate the receive lane; re-read the record before acting. |
-| [127](FID-2026-1103-127-real-launch-acceptance-receipt.md) | Real launch acceptance receipt | fixed | Operator records the six observations and a go pinned to the release SHA, then runs `npm run receipt:launch`. |
+| [127](FID-2026-1103-127-real-launch-acceptance-receipt.md) | Real launch acceptance receipt | fixed | Operator records the five observations (`payment`, `recovery`, `alert`, `load`, `rollback`) and a go pinned to the release SHA, then runs `npm run receipt:launch`. |
 | [137](FID-2026-1103-137-product-hardening-and-install-order-master.md) | Product hardening and install-order master | converged | Closes only after 126 and 127 have their required evidence. |
 | [2026-1104-003](FID-2026-1104-003-free-allocation-refusal-truth.md) | Free-allocation refusal truth and hermetic supply | fixed | Implementation `7091b8f`; isolated `npm run test:load` remains (no disposable PostgreSQL endpoint on this host). |
 | [2026-1104-005](FID-2026-1104-005-capacity-envelope-and-pool-faults.md) | Accepted capacity envelope and database pool faults | fixed | Implementation `e145413`; real-server saturation proof and isolated load rerun remain. |
@@ -56,10 +56,12 @@ working set; each FID owns its own status, evidence and resolution.
 > fixture and `verify:supabase` lacks the managed-host CA, so it is not closed.
 
 Finding 3 of the 2026-11-04 release audit has no new record: real payment,
-funded inference, hosted restore, delivered alert and the release decision stay
-with [127](FID-2026-1103-127-real-launch-acceptance-receipt.md),
+hosted restore, delivered alert and the release decision stay with
+[127](FID-2026-1103-127-real-launch-acceptance-receipt.md),
 [043](FID-2026-1030-043-launch-master.md) and
-[062](FID-2026-1030-062-launch-acceptance-and-rollout.md).
+[062](FID-2026-1030-062-launch-acceptance-and-rollout.md). Funded paid
+inference was withdrawn from the required test scope on 2026-11-04 and remains
+unverified.
 
 ### Closed in the 2026-11-04 shared-admission implementation
 
@@ -110,8 +112,8 @@ isolated load measurement fails eight targets; the
 [141](archive/FID-2026-1103-141-catalog-pricing-optimization-and-deployment-truth.md)
 are `closed` with commit, test and gate receipts. FID-148 closes the load-gate
 port; its real-PostgreSQL run failed five candidate targets, which stay with 062.
-127 stays active because the operator's six observations and explicit go
-decision do not exist yet.
+127 stays active because the operator's five required observations and explicit
+go decision do not exist yet.
 
 ### Closed in the 2026-11-03 sandbox readiness pass
 

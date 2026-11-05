@@ -1,12 +1,14 @@
 /**
  * Launch acceptance receipt (FID-2026-1103-127).
  *
- * The automated suite cannot prove a real payment, a funded paid call, a hosted
- * restore, a delivered alert or an approved load envelope. This module validates
- * the operator-authored record of those observations. It never creates an
- * observation, never fills a missing item, and never authorizes release: a
- * receipt passes only when every item is a recorded pass and the operator's
- * explicit go decision names the pinned SHA that is running.
+ * The automated suite cannot prove a real payment, a hosted restore, a delivered
+ * alert or an approved load envelope. Funded paid inference is deliberately not
+ * a required observation: the operator withdrew that test scope on 2026-11-04.
+ * This module validates the operator-authored record of the required
+ * observations. It never creates an observation, never fills a missing item,
+ * and never authorizes release: a receipt passes only when every required item
+ * is a recorded pass and the operator's explicit go decision names the pinned
+ * SHA that is running.
  */
 
 export const RECEIPT_SCHEMA = 1;
@@ -17,12 +19,6 @@ export const ACCEPTANCE_ITEMS = [
     label: "Hosted payment and signed webhook",
     detail:
       "A real hosted checkout completed, the provider-signed event was delivered, a replay was refused, and the ledger agrees.",
-  },
-  {
-    id: "inference",
-    label: "Funded paid inference",
-    detail:
-      "Funded JSON and streaming calls succeeded and usage, charge, upstream cost and hold release reconcile.",
   },
   {
     id: "recovery",

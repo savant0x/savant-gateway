@@ -1,5 +1,21 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-04 (testing without funded-wallet acceptance)
+
+Operator ruling, verbatim: "no, let me be clear, i do not have a sandbox, im not
+going to fund a wallet to light money on fire to satisfy some made up
+requirement i did not make."
+
+- [x] **W1 — Withdraw funded-wallet testing.** No sandbox is available and no
+  provider wallet will be funded. Testing proceeds against mock or disposable
+  providers at zero spend. The funded paid-inference observation is removed
+  from the launch receipt's required items; no funded call, top-up, transfer or
+  sandbox receipt is claimed.
+- [x] **W2 — Preserve the evidence boundary.** The receipt still requires
+  hosted payment, recovery, alert delivery, bounded load and rollback, plus the
+  operator's explicit go/no-go. Funded inference remains unverified and is not
+  represented as a pass. Unrelated launch blockers are unchanged.
+
 ## Session — 2026-11-04 (combined visual builds design)
 
 Operator request: "make the fid, run full perfection loop on it then present it".

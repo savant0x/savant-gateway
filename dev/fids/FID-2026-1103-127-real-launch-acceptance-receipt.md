@@ -11,10 +11,12 @@
 
 ## Summary
 
-The automated suite does not prove a real payment/IPN journey, funded paid
-inference, hosted restore/rollback, delivered alert, or approved load envelope.
-This FID defines one redacted operator acceptance receipt that records each
-external observation without claiming success from fixtures.
+The automated suite does not prove a real payment/IPN journey, hosted
+restore/rollback, delivered alert, or approved load envelope. Funded paid
+inference was removed from the required observations by operator ruling
+2026-11-04 and remains unverified. This FID defines one redacted operator
+acceptance receipt that records each external observation without claiming
+success from fixtures.
 
 ## Impact Assessment
 
@@ -27,9 +29,9 @@ external observation without claiming success from fixtures.
 
 1. **implemented (design):** define preconditions, test accounts, rollback
    authority, evidence fields, and secret-redaction rules.
-2. **implemented (design):** exercise top-up/webhook, paid inference,
-   backup/restore, alert delivery, and bounded load in a disposable or approved
-   hosted environment.
+2. **implemented (design):** exercise top-up/webhook, backup/restore, alert
+   delivery, and bounded load in a disposable or approved hosted environment.
+   Funded paid inference is deliberately not part of the required receipt.
 3. **implemented (design):** attach timestamps, request ids, outcomes, and
    unresolved blockers to the launch master; never invent operator approval.
 
@@ -62,8 +64,9 @@ external observation without claiming success from fixtures.
 ## Implementation Evidence
 
 - **Commit SHA:** `35c1d35`.
-- **Implementation:** `lib/launch-receipt.ts` defines six required observations
-  (`payment`, `inference`, `recovery`, `alert`, `load`, `rollback`), validates
+- **Implementation:** `lib/launch-receipt.ts` defines five required observations
+  (`payment`, `recovery`, `alert`, `load`, `rollback`); funded inference was
+  removed by the 2026-11-04 operator ruling. It validates
   timestamps, operator, evidence and an explicit go/no-go pinned to the running
   SHA, and rejects configured secret values or credential shapes by JSON path.
   `scripts/launch-receipt.mjs` (`npm run receipt:launch`) never creates a
@@ -82,7 +85,9 @@ external observation without claiming success from fixtures.
 
 - **Convergence Date:** 2026-11-03
 - **Implementation:** receipt contract and validator implemented at `35c1d35`.
-- **Next action:** the operator performs the six observations, writes
+- **Next action:** the operator performs the five required observations
+  (`payment`, `recovery`, `alert`, `load`, `rollback`), writes
   `dev/acceptance/launch-receipt.json` and runs `npm run receipt:launch` against
-  the pinned release SHA. Launch remains no-go until then.
+  the pinned release SHA. Funded inference is waived, not passed. Launch remains
+  no-go until the five items and the explicit go decision exist.
 - **Archived:** no.

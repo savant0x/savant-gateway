@@ -19,16 +19,19 @@ converged plan or green fixture suite cannot satisfy this final launch gate.
 ## Environment
 
 All child contracts, `docs/launch-plan.md` phases 5–7 and the approved production
-artifact/configuration. Hosting, wallet funding, keys and operator approval are required inputs.
+artifact/configuration. Hosting, keys and operator approval are required inputs.
+Funded-wallet testing was withdrawn by the operator on 2026-11-04.
 
 ## Detailed Description
 
 ### Problem / expected behavior / root cause
 
-Real hosted payment, delivered webhook, funded paid inference, operational restore,
-alert delivery and complete candidate journey remain unverified. Historical live
-free calls and local signed events prove narrower behavior. Release needs one
-dated evidence bundle linked to exact code/configuration, not a stitched claim.
+Real hosted payment, delivered webhook, operational restore, alert delivery and
+complete candidate journey remain unverified. Funded paid inference was removed
+from the required test scope on 2026-11-04 and remains unverified; it is not a
+pass. Historical live free calls and local signed events prove narrower
+behavior. Release needs one dated evidence bundle linked to exact
+code/configuration, not a stitched claim.
 
 ### Evidence
 
@@ -49,8 +52,9 @@ deployment remain explicit operator actions; silence or a planning request is no
 1. Assemble every child implementation/acceptance receipt and unresolved-input
    register; pin SHA, schema, safe configuration names, offering and budgets.
 2. Exercise real signup/verification/recovery/key revocation, free JSON/SSE,
-   real hosted payment and provider-delivered signed event/replay, funded paid
-   JSON/SSE and exact account/ledger/provider-cost reconciliation.
+   real hosted payment and provider-delivered signed event/replay, and exact
+   account/ledger/provider-cost reconciliation. Funded paid inference is not
+   required after the 2026-11-04 operator ruling.
 3. Prove refusal, cancellation, quota reset, recovery/restore and alert delivery.
    Test trial/subscription disabled branches; require additional real journeys
    only after an explicitly approved activation decision.
@@ -123,10 +127,13 @@ operator-accepted as an assumption, not a receipt):
    as an assumption, not verified; no paid invoice, provider-delivered IPN or
    replay refusal exists. Stripe cards remain gated off and are not a launch
    journey.
-2. Funded paid inference against a real upstream, with account/ledger/provider
-   cost reconciled exactly. **Still blocked 2026-11-02:** the configured
-   upstream reports `balance_usd: 0` on the free 15 RPM plan; see the
-   prerequisite receipt below.
+2. Funded paid inference against a real upstream — **withdrawn from the
+   required test scope by operator ruling 2026-11-04**, verbatim: "no, let me
+   be clear, i do not have a sandbox, im not going to fund a wallet to light
+   money on fire to satisfy some made up requirement i did not make." No
+   provider wallet is funded, no funded call is required, and no funded
+   inference is claimed. The paid path remains unverified; this item is not a
+   pass.
 3. Restore and rollback proof on the production-equivalent PostgreSQL host; the
    local recovery drill is not a hosted restore.
 4. Delivered operational alert to a real operator destination, plus first-payment,
@@ -178,8 +185,9 @@ rpm_plan: free
 No paid completion was dispatched. Item 2 requires a *funded* real model, and a
 $0 wallet cannot satisfy that condition; issuing the call would only exercise
 the upstream refusal, not the funded path. No provider spend occurred and no
-customer credit, hold, usage, settlement or ledger row was created. Item 2
-remains open.
+customer credit, hold, usage, settlement or ledger row was created. Item 2 was
+later withdrawn from the required test scope on 2026-11-04; the historical open
+status is preserved, and no funded inference is claimed.
 
 The same check confirmed the remaining external inputs are absent:
 `NOWPAYMENTS_TOPUPS_ENABLED`, `APP_URL` / `NEXT_PUBLIC_SITE_URL` and

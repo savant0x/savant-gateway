@@ -65,7 +65,7 @@ next action and evidence edges; this table is the current summary.
 | ID | Status | Open obligation |
 | --- | --- | --- |
 | [2026-1105-003](../dev/fids/FID-2026-1105-003-router-cheap-provider.md) | fixed | Implementation committed at `6cdfc80`; archive after closure acceptance. No paid inference or reseller management write. |
-| [2026-1105-004](../dev/fids/FID-2026-1105-004-scheduled-provider-sync.md) | fixed | Implementation committed at `15d01b4`; local gates pass (776 HTTP checks on native PostgreSQL). No deployment or `CRON_SECRET`; the scheduler has not been observed running. |
+| [2026-1105-004](../dev/fids/FID-2026-1105-004-scheduled-provider-sync.md) | fixed | Deployed at `https://savant-gateway.vercel.app` (`dpl_53PM1vwqGkVk61xzaCWXfruwL2CC`); `CRON_SECRET` set; unauth `401`, auth and Vercel-triggered run `200` (nothing due). First scheduled run and a due-provider refresh not yet observed. |
 | [043](../dev/fids/FID-2026-1030-043-launch-master.md) | converged | Launch remains **no-go**. Owns the dependency register and the operator decision. |
 | [062](../dev/fids/FID-2026-1030-062-launch-acceptance-and-rollout.md) | converged | Items 1–8: real NOWPayments invoice/signed IPN/replay refusal, hosted restore, delivered alert, PostgreSQL load envelope, published `v1.2` policies, hosted retention confirmation, explicit public GO. Funded paid inference was withdrawn on 2026-11-04 and remains unverified. |
 | [068](../dev/fids/FID-2026-1030-068-usdc-receive-lane.md) | fixed | Direct USDC lane: chain/token contract, hardware-wallet xpub, RPC endpoint and screening ruling. Not a launch path. |

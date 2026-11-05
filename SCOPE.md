@@ -28,9 +28,11 @@ activation, spend, deployment or scheduler activation was authorized.
   operator docs. Lint, typecheck, 1059 tests, quality, build, the
   native-PostgreSQL HTTP gate (776 + trial), repository check and attribution
   pass. Committed at `15d01b4`.
-- [ ] **SP5 — Activate.** Requires separate authorization for a deployment,
-  `CRON_SECRET` provisioning and an observed scheduler receipt. The daily
-  schedule is written, not deployed or observed.
+- [ ] **SP5 — Activate.** Deployed at `dpl_53PM1vwqGkVk61xzaCWXfruwL2CC`;
+  `CRON_SECRET` is set in Production and the cron is registered at
+  `0 0 * * *`. Unauthenticated `401`, authenticated and Vercel-triggered `200`
+  with nothing due. The first scheduled run and a due-provider refresh are not
+  yet observed.
 
 ## Session — 2026-11-05 (router.cheap provider design)
 

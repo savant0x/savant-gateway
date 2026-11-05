@@ -116,6 +116,21 @@ Do these in order, with deployment authorization:
    is live. The endpoint and the committed cron still work when triggered
    manually, and the card must not be read as scheduler health.
 
+## Activation status — 2026-11-05
+
+Production is deployed at `https://savant-gateway.vercel.app`
+(`dpl_53PM1vwqGkVk61xzaCWXfruwL2CC`). `CRON_SECRET` is set as a Production
+Secret. The route returned `401` without the secret and `200` with it; the
+empty `attempted` list was correct because Savant had synced at 21:08Z and was
+not due. `vercel crons list` shows the single `0 0 * * *` job, enabled, and
+`vercel crons run` invoked it at 21:52:32Z with a `200` in runtime logs. The
+full receipt is in FID-2026-1105-004.
+
+Still open: the first 00:00 UTC scheduled run and a refresh of a due provider.
+At 00:00 UTC Savant will still be inside the 6h window, so the expected
+`attempted` list is empty; observe a later daily run, or a due provider, before
+claiming automatic refresh is proven.
+
 ## Failure semantics
 
 - No configured secret: `503`, no database or upstream work.

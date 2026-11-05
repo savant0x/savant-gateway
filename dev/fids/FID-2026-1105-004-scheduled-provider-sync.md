@@ -33,8 +33,10 @@ catalog; truthful per-provider status derived from the existing `providersDue`
 policy; and a Vercel Hobby daily schedule (`vercel.json`, `0 0 * * *`). The
 operator confirmed Hobby daily on 2026-11-05. The code does **not** create an
 in-process timer. Deployment, `CRON_SECRET` provisioning and the activation
-receipt remain operator steps. The local implementation is complete, gated and
-committed at `15d01b4`; no deployment or activation has occurred.
+receipt remain operator steps. The implementation is committed at `15d01b4` and deployed to
+production; `CRON_SECRET` is provisioned and the daily cron is registered. The
+authenticated route and a Vercel-triggered invocation returned `200`; the first
+scheduled run and a due-provider refresh are not yet observed.
 
 ## Environment
 
@@ -46,8 +48,10 @@ committed at `15d01b4`; no deployment or activation has occurred.
   `node --test`; `npm run quality`.
 - **Commit/State:** implementation commit `15d01b4`
   (`feat(providers): schedule daily sync and add an explicit AIO action`), on
-  top of baseline `edde1c7`. The two untracked chat exports are untouched. No
-  runtime secret, deployment or scheduler activation exists.
+  top of baseline `edde1c7`. The two untracked chat exports are untouched.
+  Production deployment `dpl_53PM1vwqGkVk61xzaCWXfruwL2CC` runs with
+  `CRON_SECRET`; the daily cron is registered. No provider was due during the
+  activation probes.
 
 ## Detailed Description
 
@@ -177,8 +181,9 @@ All listed paths are committed in `15d01b4`.
 - [ ] Critical: System crash, data loss, or security vulnerability
 - [ ] High: Major feature broken, no workaround
 - [x] Medium: an unauthenticated or duplicated scheduler can multiply metadata
-  calls; a manual AIO can race the daily sync; the daily cron is implemented but
-  deployment and activation are unproven.
+  calls; a manual AIO can race the daily sync; the daily cron is deployed and
+  registered, but the first scheduled run and a due-provider refresh are
+  unproven.
 - [ ] Low: Minor issue, cosmetic, or edge case
 
 ## Proposed Solution
@@ -337,6 +342,36 @@ different keys` check because PGlite's single connection loses concurrent
 bucket updates. The same check passes under the repository's declared gate on
 disposable native PostgreSQL, which is the command above. That limitation is
 recorded here rather than hidden by a weakened assertion.
+
+### Activation Receipt — 2026-11-05
+
+- **Deployment:** `dpl_53PM1vwqGkVk61xzaCWXfruwL2CC`, production target, Ready,
+  at `https://savant-gateway-f6xy9xc59-savantai.vercel.app`, aliased to
+  `https://savant-gateway.vercel.app`. Deployed from the tree whose HEAD was
+  `3095067`; `main` is two commits ahead of `origin/main` and was not pushed.
+- **Secret:** `CRON_SECRET` exists in Production as a Secret. The
+  64-hex-character value was generated locally, passed to Vercel over stdin,
+  and never printed, committed or passed as a command-line argument.
+- **Readiness:** `/api/ready` returned `200` with
+  `{"status":"ready","checks":{"configuration":"ok","storage":"ok"},"mode":"durable","admission":"open"}`.
+- **Route authentication:** `GET /api/cron/providers` returned `401` without a
+  secret and `200` with it at `2026-11-05T21:51:07Z`, and `200` again on repeat.
+  The body reported `ok: true`, `attempted: []` and `intervalHours: 6` because
+  Savant had synced at `2026-11-05T21:08:13.165Z` (45 models, 34 serving) and
+  was not due. An empty `attempted` list is the correct due-policy result, not
+  a failure.
+- **Cron registration:** `vercel crons list --json` reports exactly one job,
+  `/api/cron/providers` at `0 0 * * *`, host
+  `savant-gateway-f6xy9xc59-savantai.vercel.app`, `enabled: true`, with empty
+  `undeployed` and `modified` lists.
+- **Platform invocation:** `vercel crons run /api/cron/providers` triggered the
+  job at `2026-11-05T21:52:32.246Z`. Deployment runtime logs record
+  `GET /api/cron/providers` with `responseStatusCode: 200` at that time.
+- **Not yet observed:** the first scheduled 00:00 UTC run, and a provider
+  refresh caused by the scheduler. At 00:00 UTC Savant is still inside the 6h
+  due window (last sync 21:08Z), so an empty `attempted` list is expected; a
+  later run with a due provider is required to observe `synced_at` advance
+  without a page render or manual click.
 
 ## Perfection Loop
 
@@ -645,8 +680,9 @@ uses `refresh due`. The rest of this Final stands.
 - [x] **Reproducibility:** `git diff` shows the scheduler policy, route,
   freshness option, UI, schedule and tests; the HTTP fixture seeds and deletes
   its own provider in `finally`.
-- [x] **Step statuses:** Steps 1–8 are implemented; activation (deployment,
-  secret, observed run) remains operator work and is not claimed.
+- [x] **Step statuses:** Steps 1–8 are implemented; deployment and secret
+  provisioning are recorded in the activation receipt, while an observed
+  due-provider run is not claimed.
 
 ### Code Verification Evidence
 
@@ -658,8 +694,8 @@ uses `refresh due`. The rest of this Final stands.
   `/api/cron/providers`; the route calls `providerCronSecrets`,
   `refreshProvidersIfDue(db, { force: true })` and `syncProvider`; the admin
   card calls `/api/admin/providers/sync` through `ProviderSyncButton`.
-- [x] FID status reflects the actual state: `fixed`, committed at `15d01b4`, not
-  activated.
+- [x] FID status reflects the actual state: `fixed`, committed at `15d01b4`,
+  deployed with a registered cron, and awaiting the first scheduled run.
 
 ## Resolution
 

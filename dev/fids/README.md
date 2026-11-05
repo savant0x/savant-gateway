@@ -16,7 +16,6 @@ working set; each FID owns its own status, evidence and resolution.
 
 | ID | Title | Status | Next action |
 | --- | --- | --- | --- |
-| [2026-1105-002](FID-2026-1105-002-docker-free-verification.md) | Docker-free verification and operational workflows | converged | Implement the native PostgreSQL lifecycle and retain the declared verification gates. |
 | [043](FID-2026-1030-043-launch-master.md) | Master launch contract and dependency register | converged | Keep coverage, ordering and release decisions current. |
 | [062](FID-2026-1030-062-launch-acceptance-and-rollout.md) | Real launch acceptance, controlled rollout and rollback | converged | Discharge the dated external receipt items 1–8; launch remains no-go. |
 | [068](FID-2026-1030-068-usdc-receive-lane.md) | Direct-to-wallet USDC receive lane | fixed | Operator inputs still gate the receive lane; re-read the record before acting. |
@@ -32,6 +31,13 @@ working set; each FID owns its own status, evidence and resolution.
 
 [2026-1105-001](archive/FID-2026-1105-001-youtube-description-model-matching.md)
 is closed with implementation commit `84189f8` and local verification evidence.
+
+[2026-1105-002](archive/FID-2026-1105-002-docker-free-verification.md) is closed
+with implementation commit `a3ed2a1`. A full `npm run verify` passes on the
+pinned native PostgreSQL lifecycle (11/11 gates, 1,046 tests, zero skips, 776
+HTTP checks on real PostgreSQL), and the lifecycle suite is 9/9. Linux CI, a
+clean install with postinstall scripts enabled, the load gate and hosted
+delivery remain unobserved.
 
 > 2026-11-04 correction: FID-013 was absent from this table despite the
 > planning summary's "registered" claim. It is now registered as 013A/013B;

@@ -3,6 +3,26 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-05 — Docker-free verification
+
+- **FID-2026-1105-002 — high —** development, CI, push and load workflows no
+  longer require Docker. `scripts/disposable-postgres.mjs` owns a fresh
+  PostgreSQL 17 cluster from the pinned
+  `@embedded-postgres/windows-x64`/`linux-x64` packages, with a loopback-only
+  ephemeral port, random per-run password, verified `data_directory` and
+  ownership-marked cleanup. `verify` runs one cluster for every sequential
+  gate and supplies real PostgreSQL to both HTTP suites. CI has no container
+  service, and `Dockerfile`, `.dockerignore`, `fly.toml` and the entrypoint are
+  removed; the repository check refuses their return. The paid-limit probe is
+  restored to three-wide batches so provider admission cannot mask the account
+  bucket.
+- **Verification:** `npm run verify` passed 11/11 gates: 1,046/1,046 tests with
+  zero skips, seven real concurrency assertions, 776 main HTTP checks on real
+  PostgreSQL plus the trial suite, recovery 14/14, quality and build. The
+  lifecycle suite passed 9/9. Implementation commit `a3ed2a1`. Not verified:
+  Linux CI, a clean install with postinstall scripts enabled, the load gate and
+  hosted delivery.
+
 ## 2026-11-05 — YouTube description matching
 
 - **FID-2026-1105-001 — medium —** YouTube descriptions now contribute

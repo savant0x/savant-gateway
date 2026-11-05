@@ -31,9 +31,9 @@ in FID-2026-1105-002. Design is not implementation or verification of a fix.
   mismatched markers, symlink refusal, two real connections, cleanup). Full
   `npm run verify` PASS: 11/11 gates, 1,046 tests with zero skips, 776 main
   HTTP checks plus the trial suite on real PostgreSQL, seven concurrency
-  assertions across four files, recovery 14/14, quality and build. Not
-  verified: Linux CI, a clean install with postinstall scripts enabled, the
-  load gate and hosted delivery.
+  assertions across four files, recovery 14/14, quality and build. Implementation
+  commit `a3ed2a1`. Not verified: Linux CI, a clean install with postinstall
+  scripts enabled, the load gate and hosted delivery.
 
 ## Session — 2026-11-05 (YouTube description matching implementation)
 

@@ -21,6 +21,16 @@ async function latestUsage(database, userId) {
     .get(userId);
 }
 
+function refusalReason(message) {
+  if (!message) return "unknown";
+  if (/trial/i.test(message)) return "trial";
+  if (/cap/i.test(message)) return "cap";
+  if (/allocation/i.test(message)) return "allocation";
+  if (/provider|shared free pool|upstream/i.test(message)) return "provider";
+
+  return "other";
+}
+
 function resetInference(mock) {
   mock.state.inference.delayMs = 0;
   mock.state.inference.failure = null;
@@ -220,6 +230,7 @@ export async function runQuotaReset(context) {
   });
   const usage = await latestUsage(database, fixture.free.userId);
   const chargedMicros = Number(usage?.charged_micros ?? 0);
+  const freeMessage = freeCall.json?.error?.message ?? null;
 
   return {
     label: "quota-reset",
@@ -227,6 +238,12 @@ export async function runQuotaReset(context) {
     expiredStatus: expired.status,
     recoveredStatus: recovered.status,
     freeCallStatus: freeCall.status,
+    freeRefusalReason:
+      freeCall.status === 200 ? null : refusalReason(freeMessage),
+    freeMessage,
+    effectiveAllowance:
+      context.effectivePolicy?.effectivePerAccountTokens ?? null,
+    effectivePoolTokens: context.effectivePolicy?.dailyPoolTokens ?? null,
     freeBillingSource: usage?.billing_source ?? null,
     freeChargedMicros: chargedMicros,
     honest:

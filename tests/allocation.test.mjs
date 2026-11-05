@@ -10,6 +10,7 @@ import {
   clampAllocationBps,
   DEFAULT_FREE_POOL_ALLOCATION_BPS,
   DEFAULT_FREE_POOL_DAILY_TOKENS,
+  formatAllocationMessage,
   readAllocationConfig,
   remainingAllocation,
   observedDailyPool,
@@ -393,6 +394,17 @@ test("summary reports pool, allocations, usage and holds", () => {
   const second = summary.rows.find((row) => row.userId === "u2");
 
   assert.equal(second.heldTokens, 500_000);
+});
+
+test("the allocation copy uses the shared free-pool formatter", () => {
+  assert.equal(
+    formatAllocationMessage({
+      allocatedTokens: 900,
+      day: DAY,
+      resetAt: "2026-10-30T00:00:00.000Z",
+    }),
+    "Daily free-tier allocation reached (900 weighted tokens for 2026-10-29). Resets at 2026-10-30T00:00:00.000Z.",
+  );
 });
 
 test("the per-account cap lowers a share and zero disables it", () => {

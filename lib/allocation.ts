@@ -1,3 +1,5 @@
+import { formatFreeAllowanceRefusal } from "./free-pool.ts";
+
 /**
  * Daily shared free-pool allocation.
  *
@@ -171,5 +173,10 @@ export function formatAllocationMessage(input: {
   day: string;
   resetAt: string;
 }) {
-  return `Daily free-tier allocation reached (${input.allocatedTokens.toLocaleString("en-US")} weighted tokens for ${input.day}). Resets at ${input.resetAt}.`;
+  return formatFreeAllowanceRefusal({
+    mode: "allocation",
+    allowanceTokens: input.allocatedTokens,
+    day: input.day,
+    resetAt: input.resetAt,
+  });
 }

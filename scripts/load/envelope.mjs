@@ -49,6 +49,47 @@ export function validateEnvelope(input) {
   const budget = input.budget ?? {};
   const targets = input.targets ?? {};
   const workloads = input.workloads ?? {};
+  const environment = input.environment ?? {};
+
+  if (
+    !Number.isSafeInteger(environment.freePoolDailyWeightedTokens) ||
+    environment.freePoolDailyWeightedTokens < 1
+  ) {
+    throw new Error("environment.freePoolDailyWeightedTokens must be a positive integer.");
+  }
+
+  if (
+    !Number.isSafeInteger(environment.freePoolAllocationBps) ||
+    environment.freePoolAllocationBps < 0 ||
+    environment.freePoolAllocationBps > 10_000
+  ) {
+    throw new Error("environment.freePoolAllocationBps must be an integer from 0 to 10000.");
+  }
+
+  if (typeof environment.freePoolAllocationEnabled !== "boolean") {
+    throw new Error("environment.freePoolAllocationEnabled must be a boolean.");
+  }
+
+  if (
+    !Number.isSafeInteger(environment.freeAccountDailyCap) ||
+    environment.freeAccountDailyCap < 0
+  ) {
+    throw new Error("environment.freeAccountDailyCap must be a non-negative integer.");
+  }
+
+  if (
+    !Number.isSafeInteger(environment.fallbackFreeDailyWeightedTokens) ||
+    environment.fallbackFreeDailyWeightedTokens < 1
+  ) {
+    throw new Error("environment.fallbackFreeDailyWeightedTokens must be a positive integer.");
+  }
+
+  if (
+    !Number.isSafeInteger(environment.observedDailyWeightedTokens) ||
+    environment.observedDailyWeightedTokens < 1
+  ) {
+    throw new Error("environment.observedDailyWeightedTokens must be a positive integer.");
+  }
 
   for (const field of INTEGER_FIELDS) {
     integer(budget[field], `budget.${field}`);
@@ -154,8 +195,17 @@ export function loadServerEnvironment(envelope) {
     PAID_KEY_RPM: "6000",
     PROVIDER_SHARED_RPM: String(environment.providerRpm),
     PROVIDER_SHARED_CONCURRENCY: String(environment.providerConcurrency),
-    FREE_POOL_ALLOCATION_ENABLED: "true",
-    FREE_ACCOUNT_DAILY_CAP: "100000",
+    FREE_POOL_DAILY_WEIGHTED_TOKENS: String(
+      environment.freePoolDailyWeightedTokens,
+    ),
+    FREE_POOL_ALLOCATION_BPS: String(environment.freePoolAllocationBps),
+    FREE_POOL_ALLOCATION_ENABLED: String(
+      environment.freePoolAllocationEnabled,
+    ),
+    FREE_ACCOUNT_DAILY_CAP: String(environment.freeAccountDailyCap),
+    FREE_DAILY_WEIGHTED_TOKENS: String(
+      environment.fallbackFreeDailyWeightedTokens,
+    ),
     TRIAL_ENABLED: "false",
     GATEWAY_DISPOSABLE_START: "yes",
   };

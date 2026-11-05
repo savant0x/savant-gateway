@@ -1,6 +1,34 @@
 import { waitFor } from "./client.mjs";
 import { summarize } from "./metrics.mjs";
 
+function refusalReason(message) {
+  if (!message) return "unknown";
+  if (/trial/i.test(message)) return "trial";
+  if (/cap/i.test(message)) return "cap";
+  if (/allocation/i.test(message)) return "allocation";
+  if (/provider|shared free pool|upstream/i.test(message)) return "provider";
+
+  return "other";
+}
+
+function unexpectedDetails(observations, expectedStatuses, policy) {
+  const expected = new Set(expectedStatuses ?? [200]);
+
+  return observations
+    .filter((row) => !expected.has(row.status))
+    .map((row) => {
+      const message = row.json?.error?.message ?? null;
+
+      return {
+        status: row.status,
+        refusalReason: refusalReason(message),
+        message,
+        effectiveAllowance: policy?.effectivePerAccountTokens ?? null,
+        effectivePoolTokens: policy?.dailyPoolTokens ?? null,
+      };
+    });
+}
+
 export async function counts(database) {
   const settlement = await database
     .prepare(
@@ -111,6 +139,11 @@ export async function runOffered(context, input) {
     unresolvedDelta: after.admitted - before.admitted,
     holdDelta: after.holds - before.holds,
     settled: Boolean(settled),
+    unexpectedDetails: unexpectedDetails(
+      observations,
+      input.expectedStatuses,
+      context.effectivePolicy,
+    ),
     wallMs: Math.round(wallMs),
     rps:
       wallMs > 0 ? Math.round((dispatched / (wallMs / 1000)) * 100) / 100 : 0,

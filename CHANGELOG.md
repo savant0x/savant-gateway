@@ -3,6 +3,25 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-04 — Free-allocation refusal truth (FID-2026-1104-003)
+
+- **FID-2026-1104-003 — high —** the shared free-pool refusal always said
+  "Daily trial-credit allocation reached" even when the lifetime trial was
+  disabled and the binding limit was the account's daily allocation, the
+  per-account cap, or the fixed fallback. One formatter now names the mode and
+  the actual limit; `lib/allocation.ts` delegates to it instead of keeping a
+  divergent copy. The load fixture pins all five free-pool environment values,
+  reads the server's resolved policy back through
+  `/api/admin/gateway?provider=load`, fails on any mismatch with the envelope or
+  the observed 20M upstream grant, and records refusal reason, effective
+  allowance and effective pool for unexpected statuses. The admin allocation
+  summary now accepts the provider whose policy it is reporting. Verified:
+  focused 41/41, full suite 1001/1005 with 4 PostgreSQL-only skips, typecheck,
+  zero-warning lint, quality, production build, attribution guard and
+  `git diff --check`. `npm run test:load` was not run because this host has no
+  disposable PostgreSQL endpoint and Docker is unavailable; the FID records a
+  partial receipt rather than claiming the load acceptance.
+
 ## 2026-11-04 — Schema-aware logical backup (SCOPE VB6)
 
 - **SCOPE VB6 / FID-2026-1104-013 durability prerequisite — high —** the

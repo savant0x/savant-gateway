@@ -33,7 +33,16 @@
     "upstreamDelayMs": 25,
     "completionBodyBytes": 2097152,
     "streamBytes": 33554432,
-    "notes": "The fixture account declares no upstream RPM, so the configured 6000 rpm fallback is the serving ceiling. Concurrency 8 is the measured local envelope, not an upstream contract."
+    "freePoolDailyWeightedTokens": 20000000,
+    "freePoolAllocationBps": 9000,
+    "freePoolAllocationEnabled": true,
+    "freeAccountDailyCap": 100000,
+    "fallbackFreeDailyWeightedTokens": 500000,
+    "observedDailyWeightedTokens": 20000000,
+    "observedRpm": 15,
+    "observedAt": "2026-11-04T16:24:23Z",
+    "source": "Read-only GET /balance and /subscription on api.apinex.bond at 2026-11-04T16:24:23.654Z; no inference and no spend.",
+    "notes": "The fixture account declares no upstream RPM, so the configured 6000 rpm fallback is the serving ceiling. Concurrency 8 is the measured local envelope, not an upstream contract. The free-pool values are pinned and read back from the server before measurement; the observed 20M daily grant and 15 rpm are the upstream account facts, not changed by this candidate envelope."
   },
   "budget": {
     "maxOfferedCalls": 500,

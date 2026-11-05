@@ -118,7 +118,11 @@ export function evaluateVerdict(input) {
     results.mixedBilling.statuses["200"] ===
       envelope.workloads.mixedBilling.free +
         envelope.workloads.mixedBilling.paid,
-    JSON.stringify(results.mixedBilling.statuses),
+    `${JSON.stringify(results.mixedBilling.statuses)}${
+      results.mixedBilling.unexpectedDetails?.length
+        ? `; ${JSON.stringify(results.mixedBilling.unexpectedDetails)}`
+        : ""
+    }`,
   );
   add(
     "mixed billing records free and credit sources",
@@ -190,6 +194,9 @@ export function evaluateVerdict(input) {
     expired: results.quotaReset.expiredStatus,
     recovered: results.quotaReset.recoveredStatus,
     free: results.quotaReset.freeCallStatus,
+    reason: results.quotaReset.freeRefusalReason,
+    effectiveAllowance: results.quotaReset.effectiveAllowance,
+    effectivePoolTokens: results.quotaReset.effectivePoolTokens,
   }));
   add(
     "database contention waits and settles",

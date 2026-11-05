@@ -7,6 +7,7 @@ import {
   DEFAULT_FREE_PROVIDER_REMAINING_FLOOR,
   decideFreeAdmission,
   estimateWeightedTokens,
+  formatFreeAllowanceRefusal,
   nextUtcReset,
   rawTokensForWeight,
   readFreePoolConfig,
@@ -106,9 +107,57 @@ test("in-flight reservations count toward the daily allowance", () => {
   assert.equal(decision.reason, "user_allowance");
   assert.equal(decision.status, 429);
   assert.equal(decision.type, "rate_limit_error");
-  assert.match(decision.message, /Daily trial-credit allocation reached/);
+  assert.match(decision.message, /Daily free-tier allocation reached/);
+    assert.doesNotMatch(decision.message, /trial/i);
   assert.equal(decision.resetAt, "2026-10-30T00:00:00.000Z");
   assert.equal(decision.retryAfterSeconds, 64_800);
+});
+
+test("a capped refusal names the cap instead of an allocation or trial", () => {
+  const decision = admission({
+    usedWeightedTokens: 500_000,
+    allowance: { mode: "allocation", capBinds: true },
+  });
+
+  assert.equal(decision.allowed, false);
+  assert.equal(decision.reason, "user_allowance");
+  assert.match(decision.message, /Daily free-tier cap reached/);
+  assert.doesNotMatch(decision.message, /trial/i);
+});
+
+test("the fixed fallback is named as an allowance, not a trial", () => {
+  const decision = admission({
+    usedWeightedTokens: 500_000,
+    allowance: { mode: "fallback" },
+  });
+
+  assert.equal(decision.allowed, false);
+  assert.match(decision.message, /Daily free-tier allowance reached/);
+  assert.doesNotMatch(decision.message, /trial/i);
+});
+
+test("the lifetime trial mode still names the trial", () => {
+  const decision = admission({
+    usedWeightedTokens: 500_000,
+    allowance: { mode: "trial" },
+  });
+
+  assert.equal(decision.allowed, false);
+  assert.match(decision.message, /Daily trial allowance reached/);
+});
+
+test("the shared formatter carries the allocation day and exact amount", () => {
+  const message = formatFreeAllowanceRefusal({
+    mode: "allocation",
+    allowanceTokens: 900,
+    day: "2026-11-04",
+    resetAt: "2026-11-05T00:00:00.000Z",
+  });
+
+  assert.equal(
+    message,
+    "Daily free-tier allocation reached (900 weighted tokens for 2026-11-04). Resets at 2026-11-05T00:00:00.000Z.",
+  );
 });
 
 test("an allowance boundary is inclusive", () => {

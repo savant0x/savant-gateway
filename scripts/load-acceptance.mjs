@@ -191,6 +191,54 @@ try {
     );
   }
 
+  const policyResponse = await request(
+    baseUrl,
+    "/api/admin/gateway?provider=load",
+    { cookie: adminCookie },
+  );
+
+  if (policyResponse.status !== 200) {
+    throw new Error(
+      `effective free-pool policy read failed with ${policyResponse.status}: ${policyResponse.text.slice(0, 200)}`,
+    );
+  }
+
+  const policy = JSON.parse(policyResponse.text)?.allocation;
+  const expectedPolicy = {
+    enabled: envelope.environment.freePoolAllocationEnabled,
+    dailyPoolTokens: envelope.environment.freePoolDailyWeightedTokens,
+    allocationBps: envelope.environment.freePoolAllocationBps,
+    accountDailyCapTokens: envelope.environment.freeAccountDailyCap,
+  };
+  const policyMismatches = Object.entries(expectedPolicy).filter(
+    ([key, value]) => policy?.[key] !== value,
+  );
+
+  if (policyMismatches.length > 0) {
+    throw new Error(
+      `effective free-pool policy does not match the envelope: expected ${JSON.stringify(expectedPolicy)}, server ${JSON.stringify({ enabled: policy?.enabled, dailyPoolTokens: policy?.dailyPoolTokens, allocationBps: policy?.allocationBps, accountDailyCapTokens: policy?.accountDailyCapTokens })}`,
+    );
+  }
+
+  if (
+    policy.dailyPoolTokens !==
+    envelope.environment.observedDailyWeightedTokens
+  ) {
+    throw new Error(
+      `effective daily pool ${policy.dailyPoolTokens} does not equal the observed upstream grant ${envelope.environment.observedDailyWeightedTokens}.`,
+    );
+  }
+
+  const effectivePolicy = {
+    enabled: policy.enabled,
+    dailyPoolTokens: policy.dailyPoolTokens,
+    allocationBps: policy.allocationBps,
+    accountDailyCapTokens: policy.accountDailyCapTokens,
+    effectivePerAccountTokens: policy.effectivePerAccountTokens,
+    observedDailyWeightedTokens:
+      envelope.environment.observedDailyWeightedTokens,
+  };
+
   sampler = setInterval(() => {
     const value = rssMb(currentChild?.pid);
     const numeric = Number(value);
@@ -209,6 +257,7 @@ try {
     fixture,
     envelope,
     adminCookie,
+    effectivePolicy,
     crashServer,
     restartServer,
   };
@@ -278,6 +327,7 @@ try {
       streamBytes: envelope.environment.streamBytes,
       offeredCallBudget: offered,
       maxOfferedCalls: envelope.budget.maxOfferedCalls,
+      effectiveFreePoolPolicy: effectivePolicy,
     },
     workload: envelope.workloads,
     resources: {

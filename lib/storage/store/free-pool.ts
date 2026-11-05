@@ -254,21 +254,19 @@ export async function reserveFreeCall(
         providerRemaining: remaining,
         providerAllowed: current ? status.subscriptionAllowed : null,
         providerUnlimited: current && status.quota.unlimited,
+        allowance: {
+          mode: trial.enabled
+            ? "trial"
+            : allocation.enabled
+              ? "allocation"
+              : "fallback",
+          day,
+          capBinds,
+        },
         now: nowMs,
       });
 
-      if (!next.allowed) {
-        return {
-          decision:
-            next.reason === "user_allowance" && capBinds
-              ? {
-                  ...next,
-                  message: `Daily trial-credit cap reached (${dailyAllowance.toLocaleString("en-US")} weighted tokens). Resets at ${next.resetAt}.`,
-                }
-              : next,
-          alert: null,
-        };
-      }
+      if (!next.allowed) return { decision: next, alert: null };
 
       if (
         trial.enabled &&

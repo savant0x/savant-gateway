@@ -20,16 +20,22 @@ function record(value: unknown): JsonRecord | null {
     : null;
 }
 
+function allocationProvider(request: Request) {
+  return new URL(request.url).searchParams.get("provider")?.trim() || "savant";
+}
+
 export async function GET(request: Request) {
   const blocked = await guardAdminApi(request);
 
   if (blocked) return blocked;
 
-  await refreshProviderRuntime("savant");
+  const provider = allocationProvider(request);
+
+  await refreshProviderRuntime(provider);
 
   return Response.json(
     {
-      allocation: getAllocationSummary(utcDay()),
+      allocation: getAllocationSummary(utcDay(), provider),
       banner: getBannerConfig(),
       bannerMaxChars: CONTEXT_BANNER_MAX_CHARS,
     },

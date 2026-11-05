@@ -171,9 +171,13 @@ export async function ensureDailyAllocation(
   });
 }
 
-export async function getAllocationSummary(db: PostgresDatabase, day: string) {
-  const status = await getProviderStatusBySlug(db, "savant");
-  const config = await getObservedAllocationConfig(db);
+export async function getAllocationSummary(
+  db: PostgresDatabase,
+  day: string,
+  providerSlug = "savant",
+) {
+  const status = await getProviderStatusBySlug(db, providerSlug);
+  const config = await getObservedAllocationConfig(db, providerSlug);
 
   return {
     ...(await allocationSummary(db, {

@@ -38,6 +38,44 @@ export type FreeAdmissionBlocked = {
 
 export type FreeAdmission = FreeAdmissionAllowed | FreeAdmissionBlocked;
 
+export type FreeAllowanceMode = "trial" | "allocation" | "fallback";
+
+export type FreeAllowanceContext = {
+  mode?: FreeAllowanceMode;
+  day?: string | null;
+  capBinds?: boolean;
+};
+
+/**
+ * One limit-aware refusal builder. The shared path serves the lifetime trial,
+ * the daily allocation and the fixed fallback, so the copy names the limit
+ * that actually bound instead of assuming a trial.
+ */
+export function formatFreeAllowanceRefusal(input: {
+  mode: FreeAllowanceMode;
+  allowanceTokens: number;
+  day?: string | null;
+  capBinds?: boolean;
+  resetAt: string;
+}) {
+  const amount = Math.max(
+    0,
+    Math.floor(Number(input.allowanceTokens) || 0),
+  ).toLocaleString("en-US");
+  const label =
+    input.mode === "trial"
+      ? "trial allowance"
+      : input.capBinds
+        ? "free-tier cap"
+        : input.mode === "allocation"
+          ? "free-tier allocation"
+          : "free-tier allowance";
+  const day =
+    input.mode === "allocation" && input.day ? ` for ${input.day}` : "";
+
+  return `Daily ${label} reached (${amount} weighted tokens${day}). Resets at ${input.resetAt}.`;
+}
+
 function positiveInt(raw: string | undefined, fallback: number) {
   const value = Number(raw);
 
@@ -116,6 +154,7 @@ export function decideFreeAdmission(input: {
   providerRemaining: number | null;
   providerAllowed: boolean | null;
   providerUnlimited?: boolean;
+  allowance?: FreeAllowanceContext;
   now?: number;
 }): FreeAdmission {
   const now = input.now ?? Date.now();
@@ -181,12 +220,20 @@ export function decideFreeAdmission(input: {
   if (committed > input.config.dailyWeightedTokens) {
     const resetAt = nextUtcReset(now).toISOString();
 
+    const allowance = input.allowance ?? {};
+
     return {
       allowed: false,
       reason: "user_allowance",
       status: 429,
       type: "rate_limit_error",
-      message: `Daily trial-credit allocation reached (${input.config.dailyWeightedTokens.toLocaleString("en-US")} weighted tokens). Resets at ${resetAt}.`,
+      message: formatFreeAllowanceRefusal({
+        mode: allowance.mode ?? "allocation",
+        allowanceTokens: input.config.dailyWeightedTokens,
+        day: allowance.day,
+        capBinds: allowance.capBinds,
+        resetAt,
+      }),
       retryAfterSeconds,
       resetAt,
     };

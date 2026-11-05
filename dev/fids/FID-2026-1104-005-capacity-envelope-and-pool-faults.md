@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-005-capacity-envelope-and-pool-faults.md`
 **ID:** FID-2026-1104-005
 **Severity:** critical
-**Status:** converged
+**Status:** fixed
 **Created:** 2026-11-04 17:10
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -117,7 +117,12 @@ existing required tests are extended rather than duplicated.
 
 ### Verification Receipt
 
-- verified: not yet — design converged, implementation pending.
+- verified: partial — implementation `e145413`; full unit suite 996 tests
+  (992 pass, 4 environment-skipped), typecheck, lint, quality and production
+  build pass. The two-connection proof, the pool-saturation/failed-rollback
+  integration proof and the isolated load rerun are not run because this host
+  has no disposable PostgreSQL endpoint and Docker is unavailable. The
+  envelope remains `candidate`. No capacity claim is made.
 
 ## Perfection Loop
 
@@ -167,22 +172,39 @@ existing required tests are extended rather than duplicated.
 
 ## Implementation Evidence
 
-Pending. Coding is reserved to the operator's separate worker.
+Implemented in `e145413eee2df944da59e23fe503649309298731`.
 
-- [ ] Commit SHA, file ranges, gate output, step statuses.
-- [ ] Load receipt on the pinned envelope.
+- [x] **Commit SHA:** `e145413`.
+- [x] **File:line ranges:** `lib/storage/pg-pool.ts:29-64`
+  (`connectionTimeoutMs`, 5,000 ms default, `connectionTimeoutMillis`);
+  `lib/storage/pg-adapter.ts:29` (`release(error?: Error)`),
+  `:302-337` (rollback failure captured and passed to release);
+  `tests/db-adapter.test.mjs:182-205`, `:311-336`.
+- [x] **Gate output:** unit 996 (992 pass, 4 skipped), typecheck 0, lint 0,
+  quality PASS, build 0.
+- [x] **Call graph:** `createPostgresPool` → `buildPoolOptions`;
+  `createPostgresDatabase.transaction` → `client.release(releaseError)`.
+- [x] **Step statuses:** steps 1–2 implemented; step 3 blocked on a disposable
+  PostgreSQL endpoint; steps 4–5 blocked on that endpoint and the operator
+  envelope decision. No step is deferred by the agent.
+- [ ] **Load receipt:** pending the pinned-envelope rerun.
 
 ## Code Verification Evidence
 
 - [x] Pool and adapter files exist; the missing timeout and unflagged release
-  were read directly.
-- [x] Status reflects reality: `converged`.
+  were read directly and repaired.
+- [x] The failed-rollback regression asserts the original error is preserved
+  and the lease carries the rollback error for discard.
+- [x] Typecheck, lint, quality, build and the full unit suite pass.
+- [x] Status reflects reality: `fixed`, not `closed`; the real-server proof and
+  load rerun are still outstanding.
 
 ## Resolution
 
 - **Convergence Date:** 2026-11-04 17:10
-- **Next action:** worker implements steps 1–3, reruns the isolated load, and
-  returns the receipt; operator records the envelope decision.
+- **Next action:** run the pool-saturation and failed-rollback proof on a
+  disposable PostgreSQL endpoint, rerun the isolated load with the FID-003
+  policy assertion, then record the envelope decision.
 - **Archived:** no.
 
 ## Lessons Learned

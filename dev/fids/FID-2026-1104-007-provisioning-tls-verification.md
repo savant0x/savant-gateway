@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-007-provisioning-tls-verification.md`
 **ID:** FID-2026-1104-007
 **Severity:** high
-**Status:** converged
+**Status:** fixed
 **Created:** 2026-11-04 17:10
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -101,7 +101,13 @@ claim it ran.
 
 ### Verification Receipt
 
-- verified: not yet — design converged, implementation pending.
+- verified: partial — implementation `0433cf7`; nine focused TLS policy
+  regressions, the full unit suite (996 tests, 992 pass, 4 environment-skipped),
+  typecheck, lint, quality and production build pass. A live self-signed
+  handshake and `test:postgres`/`verify:supabase` are not run because no
+  disposable endpoint or provider CA is configured on this host.
+  `config:check:prod` is not run without the production inventory. The
+  least-privilege role remains an operator confirmation, not a claim.
 
 ## Perfection Loop
 
@@ -146,21 +152,37 @@ claim it ran.
 
 ## Implementation Evidence
 
-Pending. Coding is reserved to the operator's separate worker.
+Implemented in `0433cf7473e6c0563128ce2083e18830cca0724a`.
 
-- [ ] Commit SHA, file ranges, gate output, step statuses.
-- [ ] Refusal and trusted-connection receipts.
+- [x] **Commit SHA:** `0433cf7`.
+- [x] **File:line ranges:** `scripts/provisioning-tls.mjs:1-88`;
+  `scripts/with-supabase-postgres.mjs:23-27`, `:34-37`, `:144-160`,
+  `:193-205`; `tests/provisioning-tls.test.mjs:1-129`.
+- [x] **Gate output:** TLS 9/9, unit 996 (992 pass, 4 skipped), typecheck 0,
+  lint 0, quality PASS, build 0.
+- [x] **Call graph:** both the admin client and the probe call
+  `provisioningSslConfig`; no `rejectUnauthorized: false` remains under
+  `scripts/`, `lib/`, `app/`, `components/`, `config/` or `tests/`.
+- [x] **Step statuses:** steps 1–2 implemented; step 3 has policy regression
+  coverage but no live handshake receipt; step 4 is documented and awaits the
+  operator's disposable-role confirmation. No step is deferred by the agent.
+- [ ] **Live receipts:** trusted connection and self-signed refusal on a
+  disposable endpoint with the provider CA.
 
 ## Code Verification Evidence
 
-- [x] The helper and fallback line were read.
-- [x] Status reflects reality: `converged`.
+- [x] The helper and fallback line were read and the fallback was removed.
+- [x] Remote verification, explicit CA input, loopback-only plaintext and
+  unverified-mode refusal are covered by nine passing regressions.
+- [x] Typecheck, lint, quality, build and the full unit suite pass.
+- [x] Status reflects reality: `fixed`, not `closed`; the live handshake and
+  disposable-role confirmation are still outstanding.
 
 ## Resolution
 
 - **Convergence Date:** 2026-11-04 17:10
-- **Next action:** worker implements verified TLS, the CA input and the refusal
-  regression; operator confirms the disposable role scope.
+- **Next action:** run a live trusted/self-signed handshake on a disposable
+  endpoint with the provider CA, then confirm the disposable-only role scope.
 - **Archived:** no.
 
 ## Lessons Learned

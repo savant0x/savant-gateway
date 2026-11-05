@@ -39,7 +39,12 @@ export function StatusChip({ status }: { status: string }) {
           : "default";
 
   return (
-    <Chip color={color} size="sm" variant="soft">
+    <Chip
+      className="min-w-max whitespace-nowrap"
+      color={color}
+      size="sm"
+      variant="soft"
+    >
       {status}
     </Chip>
   );

@@ -28,9 +28,9 @@ distinguish verified behavior from unverified claims.
   zero skips, PostgreSQL 2/2, quality PASS (647 files), build PASS, 776 main
   HTTP checks plus the trial suite, recovery 14/14, 155.5 s. New suites
   `tests/admin-pricing-command.test.mjs` and `tests/provider-capital.test.mjs`;
-  the pricing-decision, analytics and operations suites were extended. No
-  hosted deployment, provider funding or price publication outside the existing
-  guarded approval path is claimed.
+  the pricing-decision, analytics and operations suites were extended.
+  Implementation commit `59341a4`. No hosted deployment, provider funding or
+  price publication outside the existing guarded approval path is claimed.
 
 ## 2026-11-05 — Browser journey receipt and 013A authorization
 

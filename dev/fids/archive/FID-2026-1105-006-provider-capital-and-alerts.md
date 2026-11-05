@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1105-006-provider-capital-and-alerts.md`
 **ID:** FID-2026-1105-006
 **Severity:** high
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-05 18:13 America/New_York
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -113,13 +113,13 @@ notification transport is assumed.
 
 ### Steps
 
-1. **Define projections (planned).** Specify provider balance, recorded spend
+1. **Define projections (complete).** Specify provider balance, recorded spend
    and dependent-model projections with age and coverage rules.
-2. **Operator view (planned).** Add the bounded view with assumptions, unknown
+2. **Operator view (complete).** Add the bounded view with assumptions, unknown
    states and safe links.
-3. **Alert rules (planned).** Extend existing thresholds and incident evaluation
+3. **Alert rules (complete).** Extend existing thresholds and incident evaluation
    with default-off economic rules.
-4. **Failure behavior (planned).** Prove idempotence, deduplication, delivery
+4. **Failure behavior (complete).** Prove idempotence, deduplication, delivery
    failure visibility and recovery without any funded call.
 
 ### Verification
@@ -146,9 +146,10 @@ call or external transfer is part of the evidence.
 
 ### Verification Receipt
 
-Planning-only record: no implementation gate is claimed because no code exists.
-The convergence-pass receipt (commands, exit codes, output) is recorded in
-`dev/session-summaries/2026-11-05-admin-economics-planning-handoff.md`.
+Implementation record. `npm run verify` passed 11/11 gates on 2026-11-05:
+1,075/1,075 tests with zero skips, PostgreSQL 2/2, quality PASS (647 files),
+build PASS, 776 HTTP checks plus the trial suite, and recovery 14/14 in 155.5 s.
+Implementation commit `59341a4`; `.verify/summary.json` holds the per-gate logs.
 
 ## Perfection Loop
 
@@ -198,22 +199,36 @@ The convergence-pass receipt (commands, exit codes, output) is recorded in
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [ ] **Commit SHA:** none; the design is not implemented.
-- [ ] **File:line ranges:** none; no application file was changed.
-- [ ] **Gate output:** no implementation run exists.
-- [ ] **Reproducibility:** the design cites existing code only.
-- [ ] **Step statuses:** steps 1–4 are **blocked** pending operator
-  authorization for a coding session; planning alone does not authorize code.
+- [x] **Commit SHA:** `59341a4`.
+- [x] **File:line ranges:** `lib/provider-capital.ts:1-326` (states, runway and
+  candidate rules), `lib/storage/store/provider-capital.ts:1-224`
+  (serving-provider spend, dependencies and economic inputs),
+  `lib/operations-economics.ts:1-81` (default-off thresholds),
+  `lib/storage/operations/tick.ts:1-236` and `lib/operations-tick.ts:1-236`
+  (extra candidates with fingerprint deduplication),
+  `components/admin/provider-capital.tsx:1-214`, and the providers-page wiring.
+- [x] **Gate output:** `npm run verify` PASS — 11/11 gates, 1,075/1,075 tests,
+  2/2 PostgreSQL, quality PASS (647 files), build PASS, 776 HTTP checks plus the
+  trial suite, recovery 14/14, 155.5 s.
+- [x] **Reproducibility:** `node --test tests/provider-capital.test.mjs
+  tests/operations.test.mjs`; then `npm run verify`.
+- [x] **Step statuses:** steps 1–4 complete. No balance was fetched, funded or
+  changed, and no external transfer exists.
 
 ### Code Verification Evidence
 
 - [x] Files referenced in Affected Components exist
   (`lib/storage/providers/runtime.ts`, `lib/storage/store/provider-rows.ts`,
   `lib/storage/store/operations.ts`, `components/admin/operations-panel.tsx`).
-- [ ] Implementation matches the Proposed Solution — none exists.
-- [ ] Typecheck/tests/lint pass for new behavior — none exists.
-- [ ] Production call-graph evidence for new wiring — none exists.
-- [x] FID status reflects the actual state: `converged`, not `fixed`.
+- [x] Implementation matches the Proposed Solution: capability/freshness-aware
+  balances, serving-provider spend, coverage, dependencies, explicit runway and
+  default-off economic incidents in the existing pipeline.
+- [x] Typecheck, tests, lint, quality and build pass for the new behavior.
+- [x] Production call-graph evidence: providers page → `getProviderCapital`;
+  `runOperationsMonitor` → `getEconomicAlertInput` → `economicAlertCandidates`
+  → `runOperationsTick` → existing incident/delivery state.
+- [x] FID status reflects the actual state: `closed`, archived after the
+  verified implementation commit.
 
 ### Loop 2 — Independent audit and self-correction
 
@@ -244,17 +259,37 @@ The convergence-pass receipt (commands, exit codes, output) is recorded in
   reports that state.
 - **CHANGE DELTA:** 0% — no text changed in this pass.
 
+### Loop 4 — Implementation
+
+- **RED:** The first operation test failed because the public and storage ticks
+  are separate implementations, and the capital fixture collided with seeded
+  provider rows.
+- **GREEN:** Added `extraCandidates` with fingerprint deduplication to both
+  ticks; made the tests assert isolated provider slugs instead of seeded totals;
+  kept the economic input read inside the existing monitor and behind the
+  default-off switch.
+- **AUDIT:** PASS `tests/provider-capital.test.mjs` proves freshness, capability,
+  coverage, zero/negative/absent balance behavior, spend attribution to the
+  serving provider, and all four alert fingerprints and safe links;
+  `tests/operations.test.mjs` proves deduplication, delivery and recovery.
+- **ADVERSARIAL:** Stale balance, stale cost and absent capability are not
+  healthy or infinite. A deleted provider's recorded spend remains visible. A
+  failed economic input read leaves the operational guards running.
+- **CHANGE DELTA:** implementation only; no funding or balance mutation added.
+
 ## Resolution
 
-- **Closed Date:** not set — the design is converged, not implemented.
-- **Fix Description:** Planning convergence only. No provider balance, funding,
-  code, schema or deployment was changed.
-- **Tests Added:** No. `tests/provider-capital.test.mjs` is planned and must exist
-  before any implementation closure.
-- **Verification Evidence:** planning gates receipt in
-  `dev/session-summaries/2026-11-05-admin-economics-planning-handoff.md`; no
-  implementation evidence is claimed.
-- **Archived:** not set — a converged design is not archived.
+- **Closed Date:** 2026-11-05.
+- **Fix Description:** Added capability/freshness-aware provider capital with
+  recorded spend, coverage, dependencies and an explicit runway, plus default-off
+  economic rules reusing the existing operations incident and delivery path. No
+  balance was fetched, funded or changed.
+- **Tests Added:** Yes — `tests/provider-capital.test.mjs`; extended
+  `tests/operations.test.mjs`.
+- **Verification Evidence:** `npm run verify` PASS (11/11 gates, 1,075/1,075
+  tests, 155.5 s) at implementation commit `59341a4`; details in `CHANGELOG.md`
+  and `.verify/summary.json`.
+- **Archived:** `dev/fids/archive/FID-2026-1105-006-provider-capital-and-alerts.md`.
 
 ## Lessons Learned
 

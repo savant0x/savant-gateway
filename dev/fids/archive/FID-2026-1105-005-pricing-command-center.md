@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1105-005-pricing-command-center.md`
 **ID:** FID-2026-1105-005
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-05 18:13 America/New_York
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -113,15 +113,15 @@ reason and actor through the existing audit history.
 
 ### Steps
 
-1. **Bounded projection (planned).** Define one indexed, window-bounded
+1. **Bounded projection (complete).** Define one indexed, window-bounded
    aggregate over settled usage and recorded cost, including unknown-cost coverage.
-2. **Rank and compare (planned).** Add sorting, pagination, tie-breaking and
+2. **Rank and compare (complete).** Add sorting, pagination, tie-breaking and
    dated benchmark states to the pricing view.
-3. **Guarded preview (planned).** Add a preview that uses current versions,
+3. **Guarded preview (complete).** Add a preview that uses current versions,
    labels historical-volume assumptions and performs no write.
-4. **Guarded approval (planned).** Reuse the existing decision endpoint with
+4. **Guarded approval (complete).** Reuse the existing decision endpoint with
    version checks, mandatory reason and atomic before/after history.
-5. **Honest states (planned).** Render unknown, stale, unavailable and zero as
+5. **Honest states (complete).** Render unknown, stale, unavailable and zero as
    distinct states with keyboard and mobile support.
 
 ### Verification
@@ -149,9 +149,10 @@ and run before closure.
 
 ### Verification Receipt
 
-Planning-only record: no implementation gate is claimed because no code exists.
-The convergence-pass receipt (commands, exit codes, output) is recorded in
-`dev/session-summaries/2026-11-05-admin-economics-planning-handoff.md`.
+Implementation record. `npm run verify` passed 11/11 gates on 2026-11-05:
+1,075/1,075 tests with zero skips, PostgreSQL 2/2, quality PASS (647 files),
+build PASS, 776 HTTP checks plus the trial suite, and recovery 14/14 in 155.5 s.
+Implementation commit `59341a4`; `.verify/summary.json` holds the per-gate logs.
 
 ## Perfection Loop
 
@@ -206,22 +207,38 @@ The convergence-pass receipt (commands, exit codes, output) is recorded in
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [ ] **Commit SHA:** none; the design is not implemented.
-- [ ] **File:line ranges:** none; no application file was changed.
-- [ ] **Gate output:** no implementation run exists.
-- [ ] **Reproducibility:** the design cites existing code only.
-- [ ] **Step statuses:** steps 1–5 are **blocked** pending operator
-  authorization for a coding session; planning alone does not authorize code.
+- [x] **Commit SHA:** `59341a4`.
+- [x] **File:line ranges:** `lib/pricing-command.ts:1-308` (window, sort,
+  pagination, version and projection), `lib/storage/store/pricing-command.ts:1-203`
+  (credit-only grouped read), `lib/storage/store/pricing-approval.ts:1-126`
+  (conditional version-checked update), `app/api/admin/pricing/route.ts:1-248`
+  (PATCH version enforcement), `components/admin/pricing-command.tsx:1-324`,
+  `components/admin/pricing-volume-cell.tsx:1-42`,
+  `components/admin/pricing-recommendations.tsx:1-397` (projection and expected
+  version), `app/admin/(panel)/pricing/page.tsx` (window and volume wiring).
+- [x] **Gate output:** `npm run verify` PASS — 11/11 gates, 1,075/1,075 tests,
+  2/2 PostgreSQL, quality PASS (647 files), build PASS, 776 HTTP checks plus the
+  trial suite, recovery 14/14, 155.5 s.
+- [x] **Reproducibility:** `node --test tests/admin-pricing-command.test.mjs
+  tests/pricing-decisions.test.mjs tests/store-analytics-postgres.test.mjs`;
+  then `npm run verify`.
+- [x] **Step statuses:** steps 1–5 complete. No price was published outside the
+  guarded approval path; the command center and preview are read-only.
 
 ### Code Verification Evidence
 
 - [x] Files referenced in Affected Components exist (`app/api/admin/pricing/route.ts`,
   `components/admin/pricing-recommendations.tsx`, `lib/price-recommendation.ts`,
   `lib/catalog-economics.ts`).
-- [ ] Implementation matches the Proposed Solution — none exists.
-- [ ] Typecheck/tests/lint pass for new behavior — none exists.
-- [ ] Production call-graph evidence for new wiring — none exists.
-- [x] FID status reflects the actual state: `converged`, not `fixed`.
+- [x] Implementation matches the Proposed Solution: credit-only realized totals,
+  unknown-cost coverage, read-only preview, version-checked approval and atomic
+  decision history.
+- [x] Typecheck, tests, lint, quality and build pass for the new behavior.
+- [x] Production call-graph evidence: pricing page → `getPricingCommand`;
+  approval PATCH → `approvePricingRecommendation` → conditional UPDATE and
+  `recordPricingDecision` in one transaction.
+- [x] FID status reflects the actual state: `closed`, archived after the
+  verified implementation commit.
 
 ### Loop 2 — Independent audit and self-correction
 
@@ -255,17 +272,39 @@ The convergence-pass receipt (commands, exit codes, output) is recorded in
   request path. If coverage is partial, the UI must say so.
 - **CHANGE DELTA:** 0% — no text changed in this pass.
 
+### Loop 4 — Implementation
+
+- **RED:** The first implementation grew
+  `components/admin/pricing-recommendations.tsx` to 415 lines, over the enforced
+  400-line ceiling, and the extracted projection cell needed a formatting-only
+  correction before lint was clean.
+- **GREEN:** Extracted `components/admin/pricing-volume-cell.tsx`; kept the
+  preview read-only; put the four previewed version integers in the approval
+  body and in the conditional `UPDATE ... WHERE`; returned 409 on a zero-row
+  update without writing a decision.
+- **AUDIT:** PASS `tests/admin-pricing-command.test.mjs` proves credit-only
+  totals, unknown-cost exclusion, stable sorting, pagination, projection math
+  and stale-version refusal; `tests/store-analytics-postgres.test.mjs`
+  reconciles command revenue with analytics; `tests/pricing-decisions.test.mjs`
+  proves a stale approval writes no second decision.
+- **ADVERSARIAL:** A cost or sell change between preview and approval is a
+  conflict, not a reprice. A deleted model is reported with unknown cost even
+  though its persisted charge is retained, so contribution is never fabricated.
+- **CHANGE DELTA:** implementation only; the converged design was not re-scoped.
+
 ## Resolution
 
-- **Closed Date:** not set — the design is converged, not implemented.
-- **Fix Description:** Planning convergence only. No price, code, schema or
-  deployment was changed.
-- **Tests Added:** No. `tests/admin-pricing-command.test.mjs` is planned and must
-  exist before any implementation closure.
-- **Verification Evidence:** planning gates receipt in
-  `dev/session-summaries/2026-11-05-admin-economics-planning-handoff.md`; no
-  implementation evidence is claimed.
-- **Archived:** not set — a converged design is not archived.
+- **Closed Date:** 2026-11-05.
+- **Fix Description:** Added the realized pricing command center, credit-only
+  windowed aggregation with unknown-cost coverage, a historical-volume preview
+  and version-checked approval. Manual edits remain on the existing path; no
+  plan cash was allocated to models and no price was published outside approval.
+- **Tests Added:** Yes — `tests/admin-pricing-command.test.mjs`; extended
+  `tests/pricing-decisions.test.mjs` and `tests/store-analytics-postgres.test.mjs`.
+- **Verification Evidence:** `npm run verify` PASS (11/11 gates, 1,075/1,075
+  tests, 155.5 s) at implementation commit `59341a4`; details in `CHANGELOG.md`
+  and `.verify/summary.json`.
+- **Archived:** `dev/fids/archive/FID-2026-1105-005-pricing-command-center.md`.
 
 ## Lessons Learned
 

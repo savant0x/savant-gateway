@@ -2,7 +2,7 @@
 
 **Last folder audit:** 2026-11-05 (register reconciliation). This page indexes the
 working set; each FID owns its own status, evidence and resolution. Current
-counts: 17 active / 20 slots, 166 archived, 183 allocated.
+counts: 15 active / 20 slots, 168 archived, 183 allocated.
 
 ## Layout
 
@@ -19,8 +19,6 @@ counts: 17 active / 20 slots, 166 archived, 183 allocated.
 | --- | --- | --- | --- |
 | [2026-1105-008](FID-2026-1105-008-admin-economics-master.md) | Admin economics systems master | converged | Planning handoff ready; implementation of 005 → 006 → 007 requires a coding session. |
 | [2026-1105-007](FID-2026-1105-007-customer-and-offering-economics.md) | Customer and offering economics | converged | Implement after 005 and 006; no plan, ledger or entitlement write is authorized by the design. |
-| [2026-1105-006](FID-2026-1105-006-provider-capital-and-alerts.md) | Provider capital and economic alerts | converged | Implement after 005; alerts stay default-off and no funding action exists. |
-| [2026-1105-005](FID-2026-1105-005-pricing-command-center.md) | Pricing command center | converged | Implement first; preview remains read-only and approval stays on the existing PATCH path. |
 | [2026-1105-004](FID-2026-1105-004-scheduled-provider-sync.md) | Scheduled provider sync and AIO trigger | fixed | Deployed at `dpl_53PM1vwqGkVk61xzaCWXfruwL2CC`; `CRON_SECRET` set; unauth `401`, auth and Vercel-triggered run `200` (nothing due). Next: observe a scheduled due-provider refresh. |
 | [2026-1105-003](FID-2026-1105-003-router-cheap-provider.md) | router.cheap reseller integration | fixed | Implementation commit `6cdfc80`; archive after the remaining closure acceptance. No inference, reseller customer or management write. |
 | [043](FID-2026-1030-043-launch-master.md) | Master launch contract and dependency register | converged | Keep coverage, ordering and release decisions current. |
@@ -37,12 +35,12 @@ counts: 17 active / 20 slots, 166 archived, 183 allocated.
 
 ### 2026-11-05 register audit
 
-- 17 active records match the 17 table rows above; 166 records are archived, for
+- 15 active records match the 15 table rows above; 168 records are archived, for
   183 allocated FIDs. No active record is unlisted, split or duplicated.
 - Every filename matches its `**ID:**` field. Three archived 2026-10-31 records
   (077–079) predated that metadata field and now carry it; their status,
   resolution and evidence text is unchanged.
-- `npm run repository:check` passes: 17 active FIDs, closure commit references,
+- `npm run repository:check` passes: 15 active FIDs, closure commit references,
   root links and current-doc links are consistent.
 - 005–008 are `converged` as of the 2026-11-05 admin-economics planning pass:
   template-conformant records, six unique operator items assigned to three
@@ -112,6 +110,17 @@ hosted restore, delivered alert and the release decision stay with
 [062](FID-2026-1030-062-launch-acceptance-and-rollout.md). Funded paid
 inference was withdrawn from the required test scope on 2026-11-04 and remains
 unverified.
+
+### Closed in the 2026-11-05 admin economics implementation
+
+[2026-1105-005](archive/FID-2026-1105-005-pricing-command-center.md) and
+[2026-1105-006](archive/FID-2026-1105-006-provider-capital-and-alerts.md) are
+`closed` with implementation commit `59341a4`. The realized pricing command
+center and the provider capital/runway view are implemented; economic alerts
+remain default-off. `npm run verify` passed 11/11 gates with 1,075/1,075 tests,
+quality (647 files), build, 776 main HTTP checks plus trial, and recovery 14/14.
+No provider funding, balance mutation, ledger write, price publication outside
+the guarded PATCH path, or deployment is claimed.
 
 ### Closed in the 2026-11-04 completed-implementation cleanup
 

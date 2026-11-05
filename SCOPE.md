@@ -39,7 +39,7 @@ remains provider working capital, not infrastructure budget.
   economic incidents reusing the operations ledger. No price was published
   outside the guarded approval path, no provider was funded, and no ledger or
   entitlement was mutated. Evidence: `npm run verify` PASS, 11/11 gates,
-  1,075/1,075 tests; implementation commit recorded in the closed FIDs.
+  1,075/1,075 tests; implementation commit `59341a4`.
 - [ ] **AE5 — Implement 007.** Customer and offering economics remains
   unimplemented. It needs its own coding session and may not infer a plan,
   ledger or entitlement write from this pass.

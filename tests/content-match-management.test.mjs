@@ -176,17 +176,29 @@ test("inventory pages every association beyond the recent preview", async () => 
     }
 
     const first = await listLinkInventory(db, { limit: 100 });
-    const second = await listLinkInventory(db, { limit: 100, offset: 100 });
+    const second = await listLinkInventory(db, {
+      limit: 100,
+      cursor: first.nextCursor,
+    });
     const filtered = await listLinkInventory(db, {
       search: "Inventory story 104",
+    });
+    const scoped = await listLinkInventory(db, {
+      sourceId: source.id,
+      kind: "article",
+      relation: "mention",
+      since: "2026-01-01",
+      until: "2027-01-01",
     });
 
     assert.equal(first.total, 105);
     assert.equal(first.links.length, 100);
+    assert.ok(first.nextCursor);
     assert.equal(second.links.length, 5);
     assert.equal(second.total, 105);
     assert.equal(filtered.total, 1);
     assert.equal(filtered.links[0].itemTitle, "Inventory story 104");
+    assert.equal(scoped.total, 105);
     assert.equal(first.counts.suggested, 105);
   } finally {
     await db.close();

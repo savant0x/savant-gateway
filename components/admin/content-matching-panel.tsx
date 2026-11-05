@@ -29,7 +29,7 @@ export function ContentMatchingPanel({
   const [enabled, setEnabled] = useState(policy.enabled);
   const [autoPublish, setAutoPublish] = useState(policy.autoPublish);
   const [aliasText, setAliasText] = useState(formatAliasLines(policy.aliases));
-  const [busy, setBusy] = useState<"save" | "run" | null>(null);
+  const [busy, setBusy] = useState<"save" | "run" | "cancel" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   async function save() {
@@ -58,6 +58,31 @@ export function ContentMatchingPanel({
       setMessage(
         `Policy saved at revision ${body.policy?.revision ?? policy.revision + 1}. A stored-content rematch is queued.`,
       );
+      router.refresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Request failed.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function cancel() {
+    if (!run) return;
+
+    setBusy("cancel");
+    setMessage(null);
+
+    try {
+      const response = await fetch("/api/admin/content/rematch", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "cancel", runId: run.id }),
+      });
+      const body = (await response.json()) as { error?: string };
+
+      if (!response.ok) throw new Error(body.error ?? "Cancel failed.");
+
+      setMessage("Rematch cancelled; completed work and decisions were kept.");
       router.refresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Request failed.");
@@ -182,6 +207,16 @@ export function ContentMatchingPanel({
           >
             {busy === "run" ? "Running…" : "Run rematch batch (50)"}
           </button>
+          {run?.status === "paused" || run?.status === "running" ? (
+            <button
+              className="w-full rounded-lg border border-danger/30 px-3 py-2 text-xs font-medium text-danger disabled:opacity-50"
+              disabled={busy !== null}
+              type="button"
+              onClick={cancel}
+            >
+              {busy === "cancel" ? "Cancelling…" : "Cancel rematch"}
+            </button>
+          ) : null}
 
           {run ? (
             <div className="rounded-lg bg-black/[0.02] px-3 py-2 text-[11px] text-muted dark:bg-white/[0.03]">

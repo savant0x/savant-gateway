@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
-import type { ContentLinkState } from "@/lib/content/types";
+import type {
+  ContentKind,
+  ContentLinkState,
+  ContentRelation,
+} from "@/lib/content/types";
 
 import Link from "next/link";
 
 import { ContentLinkActions } from "@/components/admin/content-link-actions";
 import { contentDate } from "@/lib/content/format";
 import { listLinkInventory } from "@/lib/content/store/link-inventory";
+import { CONTENT_KINDS, CONTENT_RELATIONS } from "@/lib/content/types";
 import { CONTENT_LINK_STATES } from "@/lib/content/visibility";
 import { getDatabase } from "@/lib/storage/runtime";
 
@@ -18,6 +23,17 @@ export const metadata: Metadata = {
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
+type Filters = {
+  state: string;
+  modelId: string;
+  sourceId: string;
+  kind: string;
+  relation: string;
+  since: string;
+  until: string;
+  q: string;
+};
+
 function one(
   params: Record<string, string | string[] | undefined>,
   key: string,
@@ -27,16 +43,14 @@ function one(
   return Array.isArray(value) ? (value[0] ?? "") : (value ?? "");
 }
 
-function pageHref(
-  filters: { state: string; modelId: string; q: string },
-  page: number,
-): string {
+function hrefFor(filters: Filters, cursor?: string | null): string {
   const params = new URLSearchParams();
 
-  if (filters.state) params.set("state", filters.state);
-  if (filters.modelId) params.set("modelId", filters.modelId);
-  if (filters.q) params.set("q", filters.q);
-  if (page > 1) params.set("page", String(page));
+  for (const [key, value] of Object.entries(filters)) {
+    if (value) params.set(key, value);
+  }
+
+  if (cursor) params.set("cursor", cursor);
 
   const query = params.toString();
 
@@ -53,13 +67,31 @@ export default async function AdminContentLinksPage({
   const state = CONTENT_LINK_STATES.includes(stateValue as ContentLinkState)
     ? (stateValue as ContentLinkState)
     : undefined;
+  const kindValue = one(params, "kind");
+  const kind = CONTENT_KINDS.includes(kindValue as ContentKind)
+    ? (kindValue as ContentKind)
+    : undefined;
+  const relationValue = one(params, "relation");
+  const relation = CONTENT_RELATIONS.includes(relationValue as ContentRelation)
+    ? (relationValue as ContentRelation)
+    : undefined;
   const modelId = one(params, "modelId").trim().slice(0, 200);
+  const sourceId = one(params, "sourceId").trim().slice(0, 200);
+  const since = one(params, "since").trim().slice(0, 40);
+  const until = one(params, "until").trim().slice(0, 40);
   const q = one(params, "q").trim().slice(0, 120);
-  const requestedPage = Number(one(params, "page"));
-  const page =
-    Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const cursor = one(params, "cursor") || undefined;
   const limit = 50;
-  const filters = { state: state ?? "", modelId, q };
+  const filters: Filters = {
+    state: state ?? "",
+    modelId,
+    sourceId,
+    kind: kind ?? "",
+    relation: relation ?? "",
+    since,
+    until,
+    q,
+  };
   let inventory: Awaited<ReturnType<typeof listLinkInventory>> | null = null;
   let error: string | null = null;
 
@@ -69,16 +101,19 @@ export default async function AdminContentLinksPage({
     inventory = await listLinkInventory(db, {
       state,
       modelId: modelId || undefined,
+      sourceId: sourceId || undefined,
+      kind,
+      relation,
       search: q || undefined,
+      since: since || undefined,
+      until: until || undefined,
+      cursor,
       limit,
-      offset: (page - 1) * limit,
     });
   } catch (caught) {
     error =
       caught instanceof Error ? caught.message : "Storage is unavailable.";
   }
-
-  const pages = inventory ? Math.max(1, Math.ceil(inventory.total / limit)) : 1;
 
   return (
     <>
@@ -92,9 +127,9 @@ export default async function AdminContentLinksPage({
           </h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
             Every stored association, including suggested, dismissed, retired
-            and accepted rows. Paging is complete, so an older accepted story is
-            reachable beyond the recent preview. Decisions are revisioned; a
-            stale tab cannot overwrite a newer decision.
+            and accepted rows. Paging is a stable keyset, so an older accepted
+            story stays reachable beyond the recent preview. Decisions are
+            revisioned; a stale tab cannot overwrite a newer decision.
           </p>
         </div>
         <Link
@@ -128,7 +163,7 @@ export default async function AdminContentLinksPage({
           </div>
 
           <form
-            className="grid gap-2 rounded-xl border border-black/10 bg-surface p-4 sm:grid-cols-[10rem_14rem_minmax(0,1fr)_auto] dark:border-white/10"
+            className="grid gap-2 rounded-xl border border-black/10 bg-surface p-4 sm:grid-cols-2 lg:grid-cols-4 dark:border-white/10"
             method="get"
           >
             <select
@@ -151,16 +186,70 @@ export default async function AdminContentLinksPage({
             />
             <input
               className="rounded-lg border border-black/10 bg-background px-3 py-2 text-sm dark:border-white/10"
+              defaultValue={sourceId}
+              name="sourceId"
+              placeholder="Exact source id"
+            />
+            <input
+              className="rounded-lg border border-black/10 bg-background px-3 py-2 text-sm dark:border-white/10"
               defaultValue={q}
               name="q"
               placeholder="Search item title or model id"
             />
+            <select
+              className="rounded-lg border border-black/10 bg-background px-3 py-2 text-sm dark:border-white/10"
+              defaultValue={kind ?? ""}
+              name="kind"
+            >
+              <option value="">All content kinds</option>
+              {CONTENT_KINDS.map((entry) => (
+                <option key={entry} value={entry}>
+                  {entry}
+                </option>
+              ))}
+            </select>
+            <select
+              className="rounded-lg border border-black/10 bg-background px-3 py-2 text-sm dark:border-white/10"
+              defaultValue={relation ?? ""}
+              name="relation"
+            >
+              <option value="">All relations</option>
+              {CONTENT_RELATIONS.map((entry) => (
+                <option key={entry} value={entry}>
+                  {entry}
+                </option>
+              ))}
+            </select>
+            <label className="text-[11px] text-muted">
+              Published since
+              <input
+                className="mt-1 w-full rounded-lg border border-black/10 bg-background px-3 py-2 text-sm dark:border-white/10"
+                defaultValue={since}
+                name="since"
+                type="date"
+              />
+            </label>
+            <label className="text-[11px] text-muted">
+              Published before
+              <input
+                className="mt-1 w-full rounded-lg border border-black/10 bg-background px-3 py-2 text-sm dark:border-white/10"
+                defaultValue={until}
+                name="until"
+                type="date"
+              />
+            </label>
             <button
               className="rounded-lg bg-foreground px-3 py-2 text-sm font-medium text-background"
               type="submit"
             >
               Filter
             </button>
+            <Link
+              className="rounded-lg border border-black/10 px-3 py-2 text-center text-sm dark:border-white/10"
+              href="/admin/content/links"
+            >
+              Clear
+            </Link>
           </form>
 
           <section className="scroll-shell rounded-xl border border-black/10 dark:border-white/10">
@@ -169,8 +258,8 @@ export default async function AdminContentLinksPage({
                 <tr>
                   <th>Item</th>
                   <th>Model</th>
+                  <th>Source / kind</th>
                   <th>Relation</th>
-                  <th>Source</th>
                   <th>State</th>
                   <th>Revision</th>
                   <th>Created</th>
@@ -189,11 +278,25 @@ export default async function AdminContentLinksPage({
                   inventory.links.map((link) => (
                     <tr key={`${link.itemId}:${link.modelId}`}>
                       <td className="max-w-[20rem] truncate">
-                        {link.itemTitle}
+                        <Link
+                          className="text-accent hover:underline"
+                          href={`/signal/${encodeURIComponent(link.itemId)}`}
+                        >
+                          {link.itemTitle}
+                        </Link>
                       </td>
-                      <td className="mono text-xs">{link.modelId}</td>
+                      <td className="mono max-w-[14rem] truncate text-xs">
+                        <Link
+                          className="text-accent hover:underline"
+                          href={`/models/${encodeURIComponent(link.modelId)}`}
+                        >
+                          {link.modelId}
+                        </Link>
+                      </td>
+                      <td className="text-xs text-muted">
+                        {link.sourceLabel} · {link.kind}
+                      </td>
                       <td>{link.relation}</td>
-                      <td>{link.relationSource}</td>
                       <td>{link.state}</td>
                       <td className="mono text-xs">{link.revision}</td>
                       <td className="text-xs text-muted">
@@ -218,22 +321,18 @@ export default async function AdminContentLinksPage({
           </section>
 
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
-            <span>
-              {inventory.total} association(s) · page {page} of {pages}
-            </span>
+            <span>{inventory.total} association(s)</span>
             <div className="flex gap-2">
-              {page > 1 ? (
+              <Link
+                className="rounded-lg border border-black/10 px-3 py-1.5 dark:border-white/10"
+                href={hrefFor(filters)}
+              >
+                First page
+              </Link>
+              {inventory.nextCursor ? (
                 <Link
                   className="rounded-lg border border-black/10 px-3 py-1.5 dark:border-white/10"
-                  href={pageHref(filters, page - 1)}
-                >
-                  ← Previous
-                </Link>
-              ) : null}
-              {page < pages ? (
-                <Link
-                  className="rounded-lg border border-black/10 px-3 py-1.5 dark:border-white/10"
-                  href={pageHref(filters, page + 1)}
+                  href={hrefFor(filters, inventory.nextCursor)}
                 >
                   Next →
                 </Link>

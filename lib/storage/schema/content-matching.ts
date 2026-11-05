@@ -22,8 +22,11 @@ export async function contentMatchingSchema(db: PostgresDatabase) {
       cursor_item_id TEXT,
       processed INTEGER NOT NULL DEFAULT 0,
       changed INTEGER NOT NULL DEFAULT 0,
+      cancel_requested INTEGER NOT NULL DEFAULT 0,
       error TEXT
     );
+    ALTER TABLE IF EXISTS content.rematch_runs
+      ADD COLUMN IF NOT EXISTS cancel_requested INTEGER NOT NULL DEFAULT 0;
     CREATE INDEX IF NOT EXISTS content_rematch_runs_started_idx
       ON content.rematch_runs(started_at DESC, id DESC);
     CREATE INDEX IF NOT EXISTS content_rematch_runs_status_idx

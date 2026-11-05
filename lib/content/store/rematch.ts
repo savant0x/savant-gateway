@@ -27,6 +27,25 @@ export type RematchRun = {
   error: string | null;
 };
 
+export async function cancelRematch(
+  db: PostgresDatabase,
+  runId: string,
+  now = new Date(),
+): Promise<RematchRun | null> {
+  const row = await db
+    .prepare(
+      `UPDATE content.rematch_runs
+          SET status = 'interrupted', finished_at = ?, cancel_requested = 1,
+              owner_token = '',
+              error = 'Cancelled by the operator; completed work was retained.'
+        WHERE id = ? AND status IN ('running', 'paused')
+        RETURNING ${COLUMNS}`,
+    )
+    .get<RematchRow>(now.toISOString(), runId);
+
+  return row ? toRun(row) : null;
+}
+
 type RematchRow = {
   id: string;
   trigger: RematchTrigger;
@@ -233,6 +252,22 @@ export async function runRematchBounded(
     let changed = claimed.changed;
 
     while (processed - claimed.processed < limit) {
+      const cancellation = await db
+        .prepare(
+          `SELECT cancel_requested FROM content.rematch_runs WHERE id = ?`,
+        )
+        .get<{ cancel_requested: number }>(claimed.id);
+
+      if (cancellation?.cancel_requested === 1) {
+        return (
+          (await getRematchRun(db, claimed.id)) ?? {
+            ...run,
+            status: "interrupted",
+            error: "Cancelled by the operator; completed work was retained.",
+          }
+        );
+      }
+
       if (clock() - started >= deadlineMs) break;
 
       const remaining = limit - (processed - claimed.processed);

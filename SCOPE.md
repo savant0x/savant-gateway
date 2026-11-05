@@ -26,10 +26,11 @@ authorized. The two existing untracked chat exports remain untouched.
   accepted/dismissed/retired states, explicit decisions, honest migration,
   atomic reconciliation and one public visibility authority. Landed; closure
   awaits the disposable-PostgreSQL link-decision race and browser exercise.
-- [ ] **CA8 — FID-017 implementation.** Core landed: paged all-state inventory,
-  versioned matching policy and aliases, stored-content rematch and
-  catalog/policy invalidation. Closure still needs the FID's keyset/filter set,
-  pinned job snapshots, cancellation/retry scopes and HTTP/browser receipts.
+- [ ] **CA8 — FID-017 implementation.** Core landed: keyset all-state inventory
+  with source/kind/relation/date filters, versioned matching policy and aliases,
+  cancellable stored-content rematch and catalog/policy invalidation. Closure
+  still needs pinned job snapshots, per-item retry scopes and HTTP/browser
+  receipts.
 - [ ] **CA9 — FID-018 integration and closure.** Cross-feature acceptance,
   child closure in order, archive and changelog evidence, with hosted scheduler
   activation and deployment left to the operator.

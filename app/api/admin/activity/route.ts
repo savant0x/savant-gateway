@@ -1,5 +1,7 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
 import { ACTIVITY_KINDS, type ActivityKind } from "@/lib/activity";
+import { getDatabase } from "@/lib/storage/runtime";
+import { activityCounts } from "@/lib/storage/store/activity";
 import { listActivity } from "@/lib/store";
 
 export const runtime = "nodejs";
@@ -26,12 +28,17 @@ export async function GET(request: Request) {
     return adminError(400, "Unknown activity kind.");
   }
 
+  const until = new Date().toISOString();
+  const since = new Date(Date.now() - 30 * 86_400_000).toISOString();
+  const db = await getDatabase();
+
   return Response.json(
     {
       events: await listActivity(parseLimit(url.searchParams.get("limit")), {
         userId: userId || undefined,
         kind: (kindParam || undefined) as ActivityKind | undefined,
       }),
+      summary: await activityCounts(db, { since, until }),
     },
     { headers: NO_STORE },
   );

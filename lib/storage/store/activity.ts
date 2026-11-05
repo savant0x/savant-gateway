@@ -1,5 +1,6 @@
 import type { PostgresDatabase } from "../pg-adapter.ts";
 import type {
+  ActivityCount,
   ActivityInput,
   ActivityKind,
   ActivitySummary,
@@ -9,7 +10,7 @@ import {
   parseActivityMetadata,
   sanitizeActivityMetadata,
 } from "../../activity.ts";
-import { insertActivity } from "../ledger/activity.ts";
+import { insertActivity, insertActivityOnce } from "../ledger/activity.ts";
 
 /**
  * Activity store, ported to the async handle (FID-085 step 4).
@@ -41,6 +42,66 @@ export async function recordActivityBestEffort(
   } catch {
     return null;
   }
+}
+
+/**
+ * Writes one durable first-completion marker per customer. The deterministic
+ * id makes a replay, retry or race a no-op; the surrounding settlement has
+ * already committed, so a failed event is lost rather than rolling it back.
+ */
+export async function recordFirstCompletion(
+  db: PostgresDatabase,
+  input: {
+    userId: string;
+    modelId?: string | null;
+    groupSlug?: string | null;
+  },
+) {
+  const metadata: Record<string, string> = {};
+
+  if (input.modelId) metadata.modelId = input.modelId;
+  if (input.groupSlug) metadata.groupSlug = input.groupSlug;
+
+  try {
+    return await insertActivityOnce(
+      db,
+      {
+        userId: input.userId,
+        actor: "system",
+        kind: "first_completion",
+        entityType: "user",
+        entityId: input.userId,
+        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+      },
+      `first_completion_${input.userId}`,
+    );
+  } catch {
+    return false;
+  }
+}
+
+export async function activityCounts(
+  db: PostgresDatabase,
+  input: { since: string; until: string },
+): Promise<ActivityCount[]> {
+  const rows = await db
+    .prepare(
+      `SELECT substr(created_at, 1, 10) AS day, kind, COUNT(*) AS total
+         FROM activity_events
+        WHERE created_at >= ? AND created_at < ?
+        GROUP BY day, kind
+        ORDER BY day ASC, kind ASC`,
+    )
+    .all<{ day: string; kind: ActivityKind; total: number | string }>(
+      input.since,
+      input.until,
+    );
+
+  return rows.map((row) => ({
+    day: row.day,
+    kind: row.kind,
+    count: Number(row.total),
+  }));
 }
 
 type ActivityRow = {

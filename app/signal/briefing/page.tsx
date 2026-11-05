@@ -14,7 +14,7 @@ import {
 } from "@/lib/content/store/engagement";
 import { listItems } from "@/lib/content/store/items";
 import { getCustomerSession } from "@/lib/customer-auth";
-import { getCatalogData } from "@/lib/store";
+import { getCatalogData, recordActivityBestEffort } from "@/lib/store";
 import { getDatabase } from "@/lib/storage/runtime";
 
 export const dynamic = "force-dynamic";
@@ -45,6 +45,17 @@ export default async function SignalBriefingPage() {
   const watched = customer ? await listWatchedModelIds(db, customer.id) : [];
   const groups = customer ? await briefingForUser(db, customer.id) : [];
   const latest = await listItems(db, { limit: 6 });
+
+  if (customer) {
+    await recordActivityBestEffort({
+      userId: customer.id,
+      actor: "customer",
+      kind: "briefing_return",
+      entityType: "page",
+      entityId: "briefing",
+      metadata: { source: "briefing" },
+    });
+  }
 
   return (
     <div className="site-shell">

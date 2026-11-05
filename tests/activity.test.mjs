@@ -5,8 +5,10 @@ import Database from "better-sqlite3";
 
 import {
   ACTIVITY_KINDS,
+  activityCounts,
   insertActivity,
   insertActivityBestEffort,
+  insertActivityOnce,
   queryActivity,
   sanitizeActivityMetadata,
 } from "../lib/activity.ts";
@@ -118,6 +120,92 @@ test("metadata rejects unknown keys, secret-shaped keys, and non-scalars", () =>
   );
 });
 
+test("funnel metadata accepts bounded identifiers but never prompt text", () => {
+  assert.equal(
+    sanitizeActivityMetadata({
+      contentId: "item_1",
+      modelId: "model_1",
+      groupSlug: "free",
+    }),
+    '{"contentId":"item_1","modelId":"model_1","groupSlug":"free"}',
+  );
+  assert.throws(
+    () => sanitizeActivityMetadata({ prompt: "private input" }),
+    /not allowed/,
+  );
+  assert.throws(
+    () => sanitizeActivityMetadata({ content: "private body" }),
+    /not allowed/,
+  );
+});
+
+test("a first-completion marker is durable and written once", () => {
+  const db = fixture();
+
+  try {
+    const input = {
+      userId: "cust_1",
+      actor: "system",
+      kind: "first_completion",
+      entityType: "user",
+      entityId: "cust_1",
+      metadata: { modelId: "model_1" },
+      now: "2026-10-31T10:00:00.000Z",
+    };
+
+    assert.equal(insertActivityOnce(db, input, "first_completion_cust_1"), true);
+    assert.equal(insertActivityOnce(db, input, "first_completion_cust_1"), false);
+    assert.equal(
+      db.prepare("SELECT COUNT(*) AS n FROM activity_events").get().n,
+      1,
+    );
+  } finally {
+    db.close();
+  }
+});
+
+test("activity counts group by day and kind", () => {
+  const db = fixture();
+
+  try {
+    insertActivity(db, {
+      userId: "cust_1",
+      kind: "follow_created",
+      entityType: "model",
+      entityId: "model_1",
+      metadata: { modelId: "model_1" },
+      now: "2026-10-31T10:00:00.000Z",
+    });
+    insertActivity(db, {
+      userId: "cust_1",
+      kind: "follow_created",
+      entityType: "model",
+      entityId: "model_2",
+      metadata: { modelId: "model_2" },
+      now: "2026-10-31T11:00:00.000Z",
+    });
+    insertActivity(db, {
+      userId: "cust_1",
+      kind: "save_created",
+      entityType: "content",
+      entityId: "item_1",
+      metadata: { contentId: "item_1" },
+      now: "2026-11-01T09:00:00.000Z",
+    });
+
+    const counts = activityCounts(db, {
+      since: "2026-10-31T00:00:00.000Z",
+      until: "2026-11-01T00:00:00.000Z",
+    });
+
+    assert.deepEqual(counts, [
+      { day: "2026-10-31", kind: "follow_created", count: 2 },
+    ]);
+  } finally {
+    db.close();
+  }
+});
+
 test("a failed best-effort insert leaves no partial row", () => {
   const db = fixture();
 
@@ -153,6 +241,11 @@ test("the declared activity vocabulary covers every emitted kind", () => {
     "topup.paid",
     "promo.created",
     "promo.redeemed",
+    "first_completion",
+    "content_model_click",
+    "follow_created",
+    "save_created",
+    "briefing_return",
   ]) {
     assert.equal(
       ACTIVITY_KINDS.includes(kind),

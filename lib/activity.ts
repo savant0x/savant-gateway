@@ -14,6 +14,11 @@ export const ACTIVITY_KINDS = [
   "topup.paid",
   "promo.created",
   "promo.redeemed",
+  "first_completion",
+  "content_model_click",
+  "follow_created",
+  "save_created",
+  "briefing_return",
 ] as const;
 
 export type ActivityKind = (typeof ACTIVITY_KINDS)[number];
@@ -52,11 +57,14 @@ const METADATA_KEYS = new Set([
   "adjustmentKind",
   "maxRedemptions",
   "source",
+  "modelId",
+  "contentId",
+  "groupSlug",
 ]);
 
 /** Refuses to serialize a value whose name suggests a credential or content. */
 const FORBIDDEN_KEY =
-  /(secret|token|password|authorization|api[_-]?key|prompt|completion|content)/i;
+  /(secret|token|password|authorization|api[_-]?key|prompt|completion)/i;
 const MAX_METADATA_BYTES = 1_000;
 
 export function sanitizeActivityMetadata(
@@ -122,6 +130,37 @@ export function insertActivity(database: DatabaseHandle, input: ActivityInput) {
     );
 
   return id;
+}
+
+/**
+ * Inserts at most one row for a caller-supplied key. The key becomes the
+ * primary id, so a retry, replay or concurrent success cannot write a second
+ * funnel marker.
+ */
+export function insertActivityOnce(
+  database: DatabaseHandle,
+  input: ActivityInput,
+  key: string,
+) {
+  const result = database
+    .prepare(
+      `INSERT INTO activity_events
+        (id, user_id, actor, kind, entity_type, entity_id, metadata, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT (id) DO NOTHING`,
+    )
+    .run(
+      `act_${key}`,
+      input.userId ?? null,
+      input.actor ?? "system",
+      input.kind,
+      input.entityType,
+      input.entityId ?? null,
+      sanitizeActivityMetadata(input.metadata),
+      input.now ?? new Date().toISOString(),
+    );
+
+  return result.changes > 0;
 }
 
 /**
@@ -195,6 +234,38 @@ export function queryActivity(
     entityId: row.entity_id,
     metadata: parseActivityMetadata(row.metadata),
     createdAt: row.created_at,
+  }));
+}
+
+export type ActivityCount = {
+  day: string;
+  kind: ActivityKind;
+  count: number;
+};
+
+/** Counts by UTC day and kind for the operator funnel. */
+export function activityCounts(
+  database: DatabaseHandle,
+  input: { since: string; until: string },
+): ActivityCount[] {
+  const rows = database
+    .prepare(
+      `SELECT substr(created_at, 1, 10) AS day, kind, COUNT(*) AS total
+         FROM activity_events
+        WHERE created_at >= ? AND created_at < ?
+        GROUP BY day, kind
+        ORDER BY day ASC, kind ASC`,
+    )
+    .all(input.since, input.until) as Array<{
+    day: string;
+    kind: ActivityKind;
+    total: number;
+  }>;
+
+  return rows.map((row) => ({
+    day: row.day,
+    kind: row.kind,
+    count: Number(row.total),
   }));
 }
 

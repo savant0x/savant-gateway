@@ -11,6 +11,7 @@ import { usagePrices } from "../../gateway-usage.ts";
 import { subscriptionWeightedTokens } from "../../plans.ts";
 import { redactSecrets } from "../../redaction.ts";
 import { usageSource } from "../../usage.ts";
+import { recordFirstCompletion } from "../store/activity.ts";
 import { recordUsage } from "../store/usage.ts";
 
 /**
@@ -91,7 +92,7 @@ export async function settleCall(
   const estimated =
     options.estimated ?? (source === "partial" || source === "estimated");
 
-  return recordUsage(db, {
+  const charged = await recordUsage(db, {
     auth: context.auth,
     model: context.model,
     inputTokens: usage.inputTokens,
@@ -122,4 +123,14 @@ export async function settleCall(
     includedWeightedTokens,
     billingSource,
   });
+
+  if (status === "ok") {
+    await recordFirstCompletion(db, {
+      userId: context.auth.userId,
+      modelId: context.model.id,
+      groupSlug: context.model.groupSlug,
+    });
+  }
+
+  return charged;
 }

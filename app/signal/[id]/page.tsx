@@ -231,7 +231,11 @@ export default async function SignalDetailPage({ params }: PageProps) {
               </article>
             ) : null}
 
-            <ModelModule models={linkedModels} signedIn={Boolean(customer)} />
+            <ModelModule
+              contentId={item.id}
+              models={linkedModels}
+              signedIn={Boolean(customer)}
+            />
 
             <ReactionBar
               initial={reactions}

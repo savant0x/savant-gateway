@@ -2,6 +2,8 @@ import type { ModelSummary } from "@/lib/types";
 
 import Link from "next/link";
 
+import { ModelClickLink } from "./model-click-link";
+
 import { AccessChip } from "@/components/dashboard/chips";
 import { formatPricePer1M } from "@/components/dashboard/format";
 import { purchaseCta } from "@/lib/content/format";
@@ -18,10 +20,12 @@ export type LinkedModel = {
 export function ModelModule({
   models,
   signedIn,
+  contentId,
   heading = "Models in this piece",
 }: {
   models: LinkedModel[];
   signedIn: boolean;
+  contentId?: string;
   heading?: string;
 }) {
   if (models.length === 0) return null;
@@ -53,12 +57,14 @@ export function ModelModule({
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <Link
+                  <ModelClickLink
                     className="font-semibold underline-offset-4 hover:underline"
+                    contentId={contentId}
                     href={`/models/${model.id}`}
+                    modelId={model.id}
                   >
                     {model.name}
-                  </Link>
+                  </ModelClickLink>
                   <p className="mono mt-0.5 text-[11px] text-muted">
                     {model.id}
                   </p>
@@ -92,12 +98,14 @@ export function ModelModule({
                 >
                   {cta.label}
                 </Link>
-                <Link
+                <ModelClickLink
                   className="rounded-lg border border-black/10 px-3 py-2 text-xs font-medium transition-colors hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
+                  contentId={contentId}
                   href={`/models/${model.id}`}
+                  modelId={model.id}
                 >
                   Model details
-                </Link>
+                </ModelClickLink>
               </div>
             </div>
           );

@@ -1,8 +1,9 @@
 import { customerError, requireCustomerApi } from "@/lib/customer-auth";
 import { getItem } from "@/lib/content/store/items";
-import { setSaved } from "@/lib/content/store/engagement";
+import { isSaved, setSaved } from "@/lib/content/store/engagement";
 import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 import { getDatabase } from "@/lib/storage/runtime";
+import { recordActivityBestEffort } from "@/lib/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,7 +34,19 @@ export async function POST(request: Request) {
   if (!item) return customerError(404, "That item does not exist.");
 
   try {
+    const existing = await isSaved(db, customer.id, itemId);
     const next = await setSaved(db, customer.id, itemId, saved);
+
+    if (next && !existing) {
+      await recordActivityBestEffort({
+        userId: customer.id,
+        actor: "customer",
+        kind: "save_created",
+        entityType: "content",
+        entityId: itemId,
+        metadata: { contentId: itemId },
+      });
+    }
 
     return Response.json(
       { saved: next },

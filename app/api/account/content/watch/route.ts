@@ -1,7 +1,8 @@
 import { customerError, requireCustomerApi } from "@/lib/customer-auth";
-import { setWatch } from "@/lib/content/store/engagement";
+import { isWatching, setWatch } from "@/lib/content/store/engagement";
 import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 import { getDatabase } from "@/lib/storage/runtime";
+import { recordActivityBestEffort } from "@/lib/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,7 +37,19 @@ export async function POST(request: Request) {
   if (!model) return customerError(404, "That model is not in the catalog.");
 
   try {
+    const existing = await isWatching(db, customer.id, modelId);
     const next = await setWatch(db, customer.id, modelId, watched);
+
+    if (next && !existing) {
+      await recordActivityBestEffort({
+        userId: customer.id,
+        actor: "customer",
+        kind: "follow_created",
+        entityType: "model",
+        entityId: modelId,
+        metadata: { modelId },
+      });
+    }
 
     return Response.json(
       { watched: next },

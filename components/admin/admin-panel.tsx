@@ -1,4 +1,4 @@
-import type { ActivitySummary } from "@/lib/activity";
+import type { ActivityCount, ActivitySummary } from "@/lib/activity";
 import type { PromoCodeSummary } from "@/lib/promo-codes";
 import type { ProviderCatalogSummary } from "@/lib/provider-catalog";
 import type { AdminOverview, AnalyticsData } from "@/lib/types";
@@ -46,12 +46,14 @@ export function AdminPanel({
   data,
   analytics,
   activity,
+  activityCounts,
   promos,
   providers,
 }: {
   data: AdminOverview;
   analytics: AnalyticsData;
   activity: ActivitySummary[];
+  activityCounts: ActivityCount[];
   promos: {
     enabled: boolean;
     reason: string | null;
@@ -137,7 +139,7 @@ export function AdminPanel({
       </section>
 
       <section>
-        <ActivityPanel events={activity} />
+        <ActivityPanel counts={activityCounts} events={activity} />
       </section>
 
       <section>

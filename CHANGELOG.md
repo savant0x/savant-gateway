@@ -3,6 +3,17 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-05 — YouTube description matching
+
+- **FID-2026-1105-001 — medium —** YouTube descriptions now contribute
+  review-required model suggestions during ingestion and stored-item rematches.
+  The admin matching policy controls this behavior; accepted and dismissed links
+  remain authoritative. Existing videos can be processed with the existing rematch.
+- **Verification:** `npm run verify` passed all 11 gates, including 1,037 tests
+  with zero skips, real PostgreSQL concurrency, HTTP and recovery. A local Edge
+  browser check verified keyboard control, persistence and the match reason.
+  Implementation commit `84189f8`; hosted behavior was not tested.
+
 ## 2026-11-04 — Content matching controls and inventory (017)
 
 - **FID-2026-1104-017 — medium —** the admin content area now has a complete

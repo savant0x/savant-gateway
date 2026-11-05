@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1105-001-youtube-description-model-matching.md`
 **ID:** FID-2026-1105-001
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-05
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -128,7 +128,7 @@ operator decisions must remain intact. No billing or model routing changes.
    precise matching evidence, with YouTube source-kind gating.
 2. **implemented:** wire stored evidence into ingestion and rematch.
 3. **implemented:** add backward-compatible policy/dashboard control.
-4. **in progress:** complete the verification receipt and close with committed evidence.
+4. **complete:** verify behavior, decision persistence, races and operator rematch.
 
 ### Verification
 
@@ -164,9 +164,15 @@ The description-focused behavior is additionally covered by
 
 ### Verification Receipt
 
-Planning baseline: focused existing suites 17 pass, 0 fail, 0 skipped, exit 0.
-New description behavior, browser interactions and concurrency are unimplemented
-and unverified. Implementation must supply its own complete receipt.
+Implementation commit: `84189f8`. On disposable PostgreSQL 17.6,
+`npm run verify` exited 0: all 11 gates PASS, 1,037/1,037 tests passed with
+zero skipped; PostgreSQL concurrency, quality (633 files), production build,
+HTTP suites and recovery passed. The two link concurrency tests passed five
+additional consecutive runs. A headless Edge session on disposable data verified
+keyboard operation, saved policy persistence after reload and the description
+reason in the link inventory. An earlier concurrent run exposed a deadlock;
+decisions and manual links now lock the parent item before the link, matching
+the rematch lock order, and the tests above passed after that correction.
 
 ## Perfection Loop
 
@@ -202,9 +208,11 @@ policy, extracts YouTube description evidence and calls `suggestModelLinks` and
 
 ### Code Verification Evidence
 
-Existing code paths and baseline tests are cited above. Implementation must
-prove ingestion and rematch both call the shared helper and matcher; compilation
-alone is not production reachability evidence.
+`ingest-source.ts` and `store/rematch.ts` both call `matchStoredItem`; that
+function reads the stored item and policy, calls `descriptionEvidence` and
+`suggestModelLinks`, then reconciles via `replaceAutoLinks`. The ingestion and
+stored-rematch fixture verifies a mention beyond the excerpt, without a network
+request during rematch; the HTTP and browser receipts exercise the operator UI.
 
 ### Loop 2 — Independent audit and self-correction
 
@@ -232,8 +240,9 @@ implementation verification is implied by document convergence.
 
 ## Resolution
 
-Design only. Close and archive only after implementation, the declared gates,
-production call-graph evidence and a real implementation commit exist.
+Implemented and verified locally in `84189f8`. Existing items become eligible
+when the operator runs rematch; the implementation does not initiate an archive
+scan on page load. Hosted operation was not tested.
 
 ## Lessons Learned
 

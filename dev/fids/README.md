@@ -28,7 +28,9 @@ working set; each FID owns its own status, evidence and resolution.
 | [2026-1104-016](FID-2026-1104-016-persistent-content-model-decisions.md) | Persistent content/model acceptance and dismissal | converged | Planning only; accepted links remain attached across automatic work. |
 | [2026-1104-017](FID-2026-1104-017-content-matching-controls-and-review.md) | Full linked-content management, settings and rematch | converged | Implement after 015 and 016 in a coding session. |
 | [2026-1104-018](FID-2026-1104-018-content-automation-master.md) | Content automation and persistent matching master | converged | Planning handoff ready; no coding or hosted activation authorized. |
-| [2026-1105-001](FID-2026-1105-001-youtube-description-model-matching.md) | YouTube description model matching | converged | Planning-only design; implementation reserved for a coding session. |
+
+[2026-1105-001](archive/FID-2026-1105-001-youtube-description-model-matching.md)
+is closed with implementation commit `84189f8` and local verification evidence.
 
 > 2026-11-04 correction: FID-013 was absent from this table despite the
 > planning summary's "registered" claim. It is now registered as 013A/013B;

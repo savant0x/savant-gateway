@@ -9,11 +9,11 @@ in both ingestion and rematch; add a dashboard policy control; retain exact mode
 identity and accepted/dismissed decisions; verify races, HTTP and browser behavior.
 No paid inference, wallet funding, secret exposure or hosted activation is needed.
 
-- [ ] **YI1 — Matching and policy.** Implement description evidence, precision
+- [x] **YI1 — Matching and policy.** Implement description evidence, precision
   safeguards, backward-compatible configuration and the operator control.
-- [ ] **YI2 — Ingestion and rematch.** Consume the same stored evidence in both
+- [x] **YI2 — Ingestion and rematch.** Consume the same stored evidence in both
   paths and protect concurrent decisions and changed item/policy inputs.
-- [ ] **YI3 — Verification and closure.** Complete the FID's declared tests,
+- [x] **YI3 — Verification and closure.** Complete the FID's declared tests,
   real PostgreSQL race proof, HTTP/browser evidence and gates; commit, close,
   archive and record the receipt.
 

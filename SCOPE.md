@@ -1,5 +1,21 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-05 (YouTube description matching design)
+
+Operator request: "make the fid and run the full perfection loop on it then
+present it". Planning only; strict single-agent protocol; automation level 3.
+Record and audit FID-2026-1105-001 for matching model aliases in YouTube video
+descriptions during ingestion and stored-content rematches. Accepted and dismissed
+associations remain durable. No application code or hosted changes are authorized.
+
+- [x] **YD1 — Design and audit.** Record current call paths, exact matching and
+  evidence semantics, bounded description parsing, existing-item rematch and
+  decision preservation; run the Perfection Loop and present evidence. Focused
+  existing tests 17/17; repository and attribution checks pass. FID-2026-1105-001
+  records the planning evidence and two unchanged pre-receipt document reads.
+- [ ] **YD2 — Implementation (blocked by operator's planning-only instruction).**
+  Implementation, tests and deployment require a subsequent coding session.
+
 ## Session — 2026-11-04 (content automation implementation)
 
 Operator instruction: implement the content automation and persistent matching

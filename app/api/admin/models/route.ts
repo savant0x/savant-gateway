@@ -74,10 +74,16 @@ export async function PATCH(request: Request) {
     const result = await setModelStatus(id, status as "active" | "disabled");
 
     if (result === "not_found") return adminError(404, "Model not found.");
+    if (result === "not_eligible") {
+      return adminError(
+        400,
+        "Record an explicit chat decision for this provider before enabling this model.",
+      );
+    }
     if (result === "cost_unknown") {
       return adminError(
         400,
-        "Set the upstream cost before enabling this model.",
+        "Set positive input and output costs and a sell price before enabling this model.",
       );
     }
   }

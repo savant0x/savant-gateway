@@ -12,7 +12,14 @@ function database() {
     CREATE TABLE providers (
       slug TEXT PRIMARY KEY,
       enabled INTEGER NOT NULL DEFAULT 1,
-      sort_order INTEGER NOT NULL DEFAULT 0
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      requires_model_review INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE TABLE model_eligibility (
+      provider_slug TEXT NOT NULL,
+      upstream_id TEXT NOT NULL,
+      decision TEXT NOT NULL,
+      PRIMARY KEY (provider_slug, upstream_id)
     );
     CREATE TABLE model_groups (
       slug TEXT PRIMARY KEY,
@@ -38,6 +45,7 @@ function database() {
       price_source TEXT NOT NULL DEFAULT 'auto',
       allow_free INTEGER NOT NULL DEFAULT 0,
       cost_source TEXT NOT NULL DEFAULT 'unknown',
+      cost_observed_at TEXT,
       status TEXT NOT NULL DEFAULT 'active',
       in_catalog INTEGER NOT NULL DEFAULT 1,
       group_slug TEXT,

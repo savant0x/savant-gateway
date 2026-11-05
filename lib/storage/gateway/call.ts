@@ -58,6 +58,7 @@ import { callProvider } from "./provider-call.ts";
 import {
   failureStatus,
   isFreeCall,
+  modelRefusal,
   resolveModel,
   retryHeaders,
   safeUpstreamMessage,
@@ -136,6 +137,16 @@ export async function handleChatCompletions(request: Request) {
   const provider = await getProvider(db, model.upstreamSlug);
 
   if (model.status !== "active" || !provider?.enabled) {
+    return jsonError(
+      503,
+      `Model ${model.id} is currently unavailable`,
+      "model_unavailable",
+    );
+  }
+
+  // Resolve, then refuse before admission: a direct id, alias, non-primary row
+  // or subscription snapshot must not reach an unreviewed upstream row.
+  if (modelRefusal(model) !== null) {
     return jsonError(
       503,
       `Model ${model.id} is currently unavailable`,

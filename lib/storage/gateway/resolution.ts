@@ -1,5 +1,7 @@
 import type { PostgresDatabase } from "../pg-adapter.ts";
+import type { GatewayModel } from "../../projections.ts";
 
+import { modelAdmissionRefusal } from "../../providers/eligibility.ts";
 import { getModelByUpstreamId, getModelForGateway } from "../store/models.ts";
 
 export {
@@ -44,4 +46,19 @@ export async function resolveModel(db: PostgresDatabase, publicId: string) {
   }
 
   return getModelByUpstreamId(db, publicId);
+}
+
+/** The gateway's refusal for a resolved model, before admission or dispatch. */
+export function modelRefusal(model: GatewayModel) {
+  return modelAdmissionRefusal({
+    requiresReview: model.requiresModelReview,
+    decision: model.decision,
+    billingMode: model.billingMode,
+    costSource: model.costSource,
+    costInputMicros: model.costInputMicros,
+    costOutputMicros: model.costOutputMicros,
+    sellInputMicros: model.sellInputMicros,
+    sellOutputMicros: model.sellOutputMicros,
+    costObservedAt: model.costObservedAt,
+  });
 }

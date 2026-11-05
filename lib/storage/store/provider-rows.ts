@@ -33,6 +33,7 @@ export type ProviderRow = {
   supports_balance: number;
   supports_subscription: number;
   supports_pricing: number;
+  requires_model_review: number;
   enabled: number;
   sort_order: number;
   status: ProviderStatus["status"];
@@ -91,6 +92,7 @@ export function toRecord(row: ProviderRow): ProviderRecord {
       subscription: Number(row.supports_subscription) === 1,
       pricing: Number(row.supports_pricing) === 1,
     },
+    requiresModelReview: Number(row.requires_model_review) === 1,
     enabled: Number(row.enabled) === 1,
     sortOrder: Number(row.sort_order),
     createdAt: row.created_at,
@@ -179,6 +181,7 @@ export function emptyRow(slug: string): ProviderRow {
     supports_balance: 0,
     supports_subscription: 0,
     supports_pricing: 0,
+    requires_model_review: 0,
     enabled: 0,
     sort_order: 0,
     status: "unconfigured",

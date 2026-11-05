@@ -1,5 +1,6 @@
 import * as banner from "../storage/store/banner.ts";
 import * as catalog from "../storage/store/catalog.ts";
+import * as eligibility from "../storage/store/eligibility.ts";
 import * as groups from "../storage/store/groups.ts";
 import * as modelSync from "../storage/store/model-sync.ts";
 import * as models from "../storage/store/models.ts";
@@ -52,6 +53,11 @@ export const replaceModels = bound(modelSync.replaceModels);
 export const setModelCost = bound(models.setModelCost);
 export const setModelPricing = bound(models.setModelPricing);
 export const setModelStatus = bound(models.setModelStatus);
+
+export const listProviderReviewModels = bound(
+  eligibility.listProviderReviewModels,
+);
+export const setModelEligibility = bound(eligibility.setModelEligibility);
 
 export const getMarkupBps = bound(settings.getMarkupBps);
 export const saveMarkupBps = bound(settings.saveMarkupBps);

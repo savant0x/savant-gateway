@@ -189,6 +189,23 @@ async function seedProviders(db: PostgresDatabase) {
        ON CONFLICT DO NOTHING`,
     )
     .run(now, now);
+
+  // router.cheap ships disabled and review-required: its model list carries
+  // identifiers but no chat, endpoint or price evidence. No reseller customer,
+  // key or balance is created here; the row only names the model key variable.
+  await db
+    .prepare(
+      `INSERT INTO providers
+        (slug, label, kind, base_url, key_env_var, default_headers,
+         supports_balance, supports_subscription, supports_pricing,
+         requires_model_review, enabled, sort_order, status, created_at,
+         updated_at)
+       VALUES ('router-cheap', 'router.cheap', 'openai',
+               'https://router.cheap/v1', 'ROUTER_CHEAP_API_KEY', '{}',
+               0, 0, 0, 1, 0, 40, 'unconfigured', ?, ?)
+       ON CONFLICT DO NOTHING`,
+    )
+    .run(now, now);
 }
 
 /**

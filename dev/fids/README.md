@@ -2,7 +2,7 @@
 
 **Last folder audit:** 2026-11-05 (register reconciliation). This page indexes the
 working set; each FID owns its own status, evidence and resolution. Current
-counts: 11 active / 20 slots, 166 archived, 177 allocated.
+counts: 12 active / 20 slots, 166 archived, 178 allocated.
 
 ## Layout
 
@@ -17,6 +17,7 @@ counts: 11 active / 20 slots, 166 archived, 177 allocated.
 
 | ID | Title | Status | Next action |
 | --- | --- | --- | --- |
+| [2026-1105-003](FID-2026-1105-003-router-cheap-provider.md) | router.cheap reseller integration | fixed | Implementation and local gates are complete; commit and archive after the remaining closure acceptance. No inference, reseller customer or management write. |
 | [043](FID-2026-1030-043-launch-master.md) | Master launch contract and dependency register | converged | Keep coverage, ordering and release decisions current. |
 | [062](FID-2026-1030-062-launch-acceptance-and-rollout.md) | Real launch acceptance, controlled rollout and rollback | converged | Discharge the dated external receipt items 1–8; launch remains no-go. |
 | [068](FID-2026-1030-068-usdc-receive-lane.md) | Direct-to-wallet USDC receive lane | fixed | Operator inputs still gate the receive lane; re-read the record before acting. |
@@ -31,12 +32,12 @@ counts: 11 active / 20 slots, 166 archived, 177 allocated.
 
 ### 2026-11-05 register audit
 
-- 11 active records match the 11 table rows above; 166 records are archived, for
-  177 allocated FIDs. No active record is unlisted, split or duplicated.
+- 12 active records match the 12 table rows above; 166 records are archived, for
+  178 allocated FIDs. No active record is unlisted, split or duplicated.
 - Every filename matches its `**ID:**` field. Three archived 2026-10-31 records
   (077–079) predated that metadata field and now carry it; their status,
   resolution and evidence text is unchanged.
-- `npm run repository:check` passes: 11 active FIDs, closure commit references,
+- `npm run repository:check` passes: 12 active FIDs, closure commit references,
   root links and current-doc links are consistent.
 - 068 and 127 use the legacy `fixed` status that the template still accepts;
   their resolutions state the remaining operator and external evidence. Neither
@@ -45,7 +46,7 @@ counts: 11 active / 20 slots, 166 archived, 177 allocated.
   015–018) remain converged, not implemented; 009 is closed.
 - The 2026-11-04 note's `8/20` count was accurate at that point; four content
   records (015–018) were added afterwards. With 009 archived, the current count
-  is 11/20.
+  is 12/20.
 
 [2026-1105-001](archive/FID-2026-1105-001-youtube-description-model-matching.md)
 is closed with implementation commit `84189f8` and local verification evidence.

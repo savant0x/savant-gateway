@@ -54,11 +54,13 @@ test("the seeded registry is listed in sort order", async () => {
 
   assert.deepEqual(
     records.map((provider) => provider.slug),
-    ["savant", "commandcode", "apixo"],
-    "the migration seeds all three, ordered by sort_order",
+    ["savant", "commandcode", "apixo", "router-cheap"],
+    "the migration seeds all four, ordered by sort_order",
   );
   assert.equal(records[0].label, "Savant");
   assert.equal(records[0].defaultHeaders.src, "gate");
+  assert.equal(records[3].requiresModelReview, true);
+  assert.equal(records[3].enabled, false);
 });
 
 test("the summary carries a model count and a status per provider", async () => {

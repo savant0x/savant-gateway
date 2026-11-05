@@ -1,5 +1,67 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-05 (router.cheap provider design)
+
+Operator clarification: "look at how i have other other upstream setup, we're
+doing the exact same thing, simply adding a new provider"; follow-up: "might
+also be smart to do a full write up on how to properly add further upstream
+providers". Use the existing Savant provider-key, routing and billing pattern;
+the previous proposal to create a reseller customer was an incorrect inference.
+Update the current provider guide with the actual onboarding and verification
+paths, and continue the router.cheap FID and implementation.
+
+- [ ] **RC4 — Provider onboarding guide.** Document the existing provider
+  contract and a complete review process; verify against code and run gates.
+
+Operator follow-up: "Yeah, let's wire it up, we need fid+perfection loop then a
+full run down of the models. It also expands our model access. Lets probe it,
+and make the fid". The no-credit-spend instruction remains in force. Update the
+FID for the reseller price and public endpoint feeds, verify its design, produce
+the model census, then implement and verify the authorized integration.
+
+Operator clarification: "we're wiring only the reseller, key is set as well".
+The `rsk_` management token is present; documented model calls require a
+reseller-customer `sk-` key. Read-only `GET /customers?limit=1` returned zero
+customers. FID-003's earlier root-key design is superseded by this clarification.
+The operator clarified that Savant issues its own customer keys and routes
+through its backend, as with other providers. Use the configured account model
+key and keep Savant's ledger authoritative; the earlier shared reseller-customer
+proposal was an incorrect inference and is withdrawn by the operator correction.
+No reseller customer, key, balance, plan, inference or webhook has been created
+or changed.
+
+- [x] **RC2 — Refine FID-003 and census.** Capture reseller cost/plan scope,
+  tier and root-key billing uncertainty; audit the design and model census.
+  FID-003 is template-conformant and `converged`; the four read-only probes
+  returned 200 with 76/76/76/0 rows and the refined join reproduces 47
+  token/chat-labelled and 39 available. Gates: lint, typecheck, 31 focused
+  tests, quality (633 files), build, `repository:check` and `attribution` all
+  pass. Implementation is RC3 and is complete in the working tree; the commit
+  and archive move remain pending.
+- [x] **RC3 — Implement FID-003.** Complete the converged implementation and
+  declared gates without paid inference or unauthorized management writes.
+  Implemented the disabled review-required seed, `model_eligibility`, the
+  shared eligibility/freshness rule, the four enforcement points, activation
+  guards, the admin decision API and inline review panel. Verified: lint,
+  typecheck, full `npm test` 1,055 tests (1,048 pass, 0 fail, 7 environment
+  skips), quality PASS 637 files, build, `repository:check` and `attribution`.
+  No paid inference or reseller management write occurred; the commit and
+  archive move remain pending.
+
+Operator instruction: "write the fid to fully implement the upstream provider
+following the other systems. Run the perfection loop on the fid then present
+it". Planning only; automation level 3; strict; single agent. The earlier
+instruction to spend no credits remains in force. FID-2026-1105-003 records
+integration, verified capability and pricing boundaries, safe tests and the
+implementation contract. No provider registration, activation, inference,
+funding, deployment or application-code change is authorized by this pass.
+
+- [x] **RC1 — Provider design and audit.** Trace the registry, catalog,
+  routing and settlement, write the FID, run its Perfection Loop and present
+  the resulting design with evidence and unresolved live observations. The
+  no-spend model-list census reports 76 valid IDs and no pricing or capability
+  fields; 22 focused baseline tests pass. Implementation remains unstarted.
+
 ## Session — 2026-11-05 (browser receipt and 013A authorization)
 
 Operator instruction: "lets auth 013a and complete 009". Automation level 3;

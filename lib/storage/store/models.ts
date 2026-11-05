@@ -1,6 +1,8 @@
 import type { PostgresDatabase } from "../pg-adapter.ts";
 import type { AdminModelSummary } from "../../types.ts";
+import type { EligibilityDecision } from "../../providers/eligibility.ts";
 
+import { isModelEligible } from "../../providers/eligibility.ts";
 import { routeGroupKey } from "../../model-identity.ts";
 import { pricesForGroup } from "../../model-groups.ts";
 import { defaultSellMicros } from "../../pricing.ts";
@@ -40,7 +42,18 @@ type AccessRow = Pick<
   | "group_billing_mode"
 >;
 
-type StatusRow = AccessRow & Pick<ModelRow, "cost_source">;
+type StatusRow = AccessRow &
+  Pick<
+    ModelRow,
+    | "cost_source"
+    | "input_price_micros"
+    | "output_price_micros"
+    | "sell_input_micros"
+    | "sell_output_micros"
+  > & {
+    requires_model_review: number;
+    eligibility_decision: EligibilityDecision | null;
+  };
 
 export async function listAllModels(
   db: PostgresDatabase,
@@ -71,7 +84,8 @@ export async function listAllModels(
   );
 }
 
-export type ModelStatusResult = "ok" | "not_found" | "cost_unknown";
+export type ModelStatusResult =
+  "ok" | "not_found" | "cost_unknown" | "not_eligible";
 
 export async function setModelStatus(
   db: PostgresDatabase,
@@ -82,8 +96,15 @@ export async function setModelStatus(
     const row = await db
       .prepare(
         `SELECT m.allow_free, m.token_weight, m.upstream_id, m.group_slug,
-                m.cost_source, g.billing_mode AS group_billing_mode
+                m.cost_source, m.input_price_micros, m.output_price_micros,
+                m.sell_input_micros, m.sell_output_micros,
+                p.requires_model_review, me.decision AS eligibility_decision,
+                g.billing_mode AS group_billing_mode
            FROM models m
+           JOIN providers p ON p.slug = m.upstream_slug
+           LEFT JOIN model_eligibility me
+             ON me.provider_slug = m.upstream_slug
+            AND me.upstream_id = m.upstream_id
            LEFT JOIN model_groups g ON g.slug = m.group_slug
           WHERE m.id = ?`,
       )
@@ -91,7 +112,26 @@ export async function setModelStatus(
 
     if (!row) return "not_found";
 
-    if (accessFor(row) !== "free" && row.cost_source === "unknown") {
+    if (Number(row.requires_model_review) === 1) {
+      if (
+        !isModelEligible({
+          requiresReview: true,
+          decision: row.eligibility_decision,
+        })
+      ) {
+        return "not_eligible";
+      }
+
+      if (
+        accessFor(row) !== "free" &&
+        (Number(row.input_price_micros) <= 0 ||
+          Number(row.output_price_micros) <= 0 ||
+          Number(row.sell_input_micros) <= 0 ||
+          Number(row.sell_output_micros) <= 0)
+      ) {
+        return "cost_unknown";
+      }
+    } else if (accessFor(row) !== "free" && row.cost_source === "unknown") {
       return "cost_unknown";
     }
   }

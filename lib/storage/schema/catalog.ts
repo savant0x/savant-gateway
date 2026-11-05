@@ -24,6 +24,7 @@ export async function catalogSchema(db: PostgresDatabase) {
       supports_balance INTEGER NOT NULL DEFAULT 0,
       supports_subscription INTEGER NOT NULL DEFAULT 0,
       supports_pricing INTEGER NOT NULL DEFAULT 0,
+      requires_model_review INTEGER NOT NULL DEFAULT 0,
       enabled INTEGER NOT NULL DEFAULT 1,
       sort_order INTEGER NOT NULL DEFAULT 0,
       status TEXT NOT NULL DEFAULT 'unconfigured',
@@ -42,6 +43,20 @@ export async function catalogSchema(db: PostgresDatabase) {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS model_eligibility (
+      provider_slug TEXT NOT NULL
+        REFERENCES providers(slug) ON DELETE CASCADE,
+      upstream_id TEXT NOT NULL,
+      decision TEXT NOT NULL
+        CHECK (decision IN ('chat', 'unsupported', 'unknown')),
+      source TEXT NOT NULL,
+      observed_at TEXT NOT NULL,
+      note TEXT,
+      PRIMARY KEY (provider_slug, upstream_id)
+    );
+    CREATE INDEX IF NOT EXISTS model_eligibility_decision_idx
+      ON model_eligibility(provider_slug, decision);
 
     CREATE TABLE IF NOT EXISTS model_groups (
       slug TEXT PRIMARY KEY,
@@ -129,6 +144,7 @@ async function providerColumns(db: PostgresDatabase) {
     ["quota_error", "TEXT"],
     ["runtime_lease_id", "TEXT"],
     ["runtime_lease_until", "TEXT"],
+    ["requires_model_review", "INTEGER NOT NULL DEFAULT 0"],
   ] as const) {
     await ensureColumn(db, "providers", column, definition);
   }

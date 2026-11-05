@@ -8,6 +8,7 @@ import type {
   ProviderStatus,
   UsageSummary,
 } from "./types.ts";
+import type { EligibilityDecision } from "./providers/eligibility.ts";
 
 import { canonicalModelKey } from "./model-identity.ts";
 import {
@@ -47,6 +48,10 @@ export type ModelRow = {
   served_protocol: "chat" | "messages" | null;
   served_cost_input_micros: number | null;
   served_cost_output_micros: number | null;
+  served_requires_model_review: number | null;
+  served_eligibility_decision: EligibilityDecision | null;
+  served_cost_source: "synced" | "manual" | "unknown" | null;
+  served_cost_observed_at: string | null;
   cost_source: "synced" | "manual" | "unknown";
   cost_observed_at: string | null;
   context_window: string;
@@ -118,6 +123,9 @@ export type GatewayModel = {
   groupLabel: string;
   groupSource: "auto" | "manual";
   billingMode: ModelAccess;
+  requiresModelReview: boolean;
+  decision: EligibilityDecision | null;
+  costObservedAt: string | null;
   status: string;
   inCatalog: boolean;
 };
@@ -199,7 +207,7 @@ export function toGatewayModel(row: ModelRow): GatewayModel {
     upstreamSlug: servedSlug,
     family: row.family ?? row.provider,
     protocol: servedProtocol,
-    costSource: row.cost_source,
+    costSource: row.served_cost_source ?? row.cost_source,
     contextWindow: row.context_window,
     tokenWeight: row.token_weight,
     costInputMicros,
@@ -211,6 +219,9 @@ export function toGatewayModel(row: ModelRow): GatewayModel {
     groupLabel: row.group_label ?? SYSTEM_GROUP_LABELS[billingMode],
     groupSource: row.group_source ?? "auto",
     billingMode,
+    requiresModelReview: Number(row.served_requires_model_review ?? 0) === 1,
+    decision: row.served_eligibility_decision ?? null,
+    costObservedAt: row.served_cost_observed_at ?? row.cost_observed_at,
     status: row.status,
     inCatalog: row.in_catalog === 1,
   };

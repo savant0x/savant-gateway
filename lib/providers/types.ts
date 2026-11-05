@@ -17,6 +17,8 @@ export type ProviderRecord = {
   keyEnvVar: string;
   defaultHeaders: Record<string, string>;
   capabilities: ProviderCapabilities;
+  /** Only an explicit per-model `chat` decision may publish or serve. */
+  requiresModelReview: boolean;
   enabled: boolean;
   sortOrder: number;
   createdAt: string;

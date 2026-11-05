@@ -13,6 +13,7 @@ import {
   providerPayload,
   type ProviderDraft,
 } from "@/components/admin/provider-form";
+import { ProviderEligibility } from "@/components/admin/provider-eligibility";
 import { StatusChip } from "@/components/dashboard/chips";
 import { formatNumber, responseError } from "@/components/dashboard/format";
 import { LocalTime } from "@/components/local-time";
@@ -29,6 +30,10 @@ export function AdminProvidersPanel({
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [reviewing, setReviewing] = useState<{
+    slug: string;
+    label: string;
+  } | null>(null);
 
   async function send(url: string, method: string, payload?: unknown) {
     const response = await fetch(url, {
@@ -186,6 +191,11 @@ export function AdminProvidersPanel({
                           <Chip color="default" size="sm" variant="soft">
                             disabled
                           </Chip>
+                        ) : null}{" "}
+                        {provider.requiresModelReview ? (
+                          <Chip color="warning" size="sm" variant="soft">
+                            review required
+                          </Chip>
                         ) : null}
                       </p>
                       <p className="mono truncate text-[11px] text-muted">
@@ -234,6 +244,21 @@ export function AdminProvidersPanel({
                         >
                           Test
                         </Button>
+                        {provider.requiresModelReview ? (
+                          <Button
+                            isDisabled={busy !== null}
+                            size="sm"
+                            variant="secondary"
+                            onPress={() =>
+                              setReviewing({
+                                slug: provider.slug,
+                                label: provider.label,
+                              })
+                            }
+                          >
+                            Review
+                          </Button>
+                        ) : null}
                         <Button
                           isDisabled={busy !== null}
                           size="sm"
@@ -275,6 +300,14 @@ export function AdminProvidersPanel({
           </div>
         </Card.Content>
       </Card>
+
+      {reviewing ? (
+        <ProviderEligibility
+          label={reviewing.label}
+          slug={reviewing.slug}
+          onClose={() => setReviewing(null)}
+        />
+      ) : null}
 
       <ProviderForm
         busy={busy}

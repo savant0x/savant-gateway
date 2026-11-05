@@ -1,5 +1,6 @@
 import type { DatabaseHandle } from "./schema/columns.ts";
 import type { ModelAccess, ModelRouteSummary } from "./types.ts";
+import type { EligibilityDecision } from "./providers/eligibility.ts";
 
 import { routeGroupKey } from "./model-identity.ts";
 import { pricesForGroup } from "./model-groups.ts";
@@ -24,6 +25,9 @@ type RouteRow = {
   group_billing_mode: ModelAccess;
   provider_enabled: number;
   provider_sort_order: number;
+  requires_model_review: number;
+  eligibility_decision: EligibilityDecision | null;
+  cost_observed_at: string | null;
 };
 
 const ROUTE_SELECT = `
@@ -32,9 +36,14 @@ const ROUTE_SELECT = `
          m.sell_input_micros, m.sell_output_micros, m.price_source,
          m.allow_free, m.cost_source, m.status, m.in_catalog,
          COALESCE(g.billing_mode, 'paid') AS group_billing_mode,
-         p.enabled AS provider_enabled, p.sort_order AS provider_sort_order
+         p.enabled AS provider_enabled, p.sort_order AS provider_sort_order,
+         p.requires_model_review, me.decision AS eligibility_decision,
+         m.cost_observed_at
   FROM models m
   JOIN providers p ON p.slug = m.upstream_slug
+  LEFT JOIN model_eligibility me
+    ON me.provider_slug = m.upstream_slug
+   AND me.upstream_id = m.upstream_id
   LEFT JOIN model_groups g ON g.slug = m.group_slug
 `;
 
@@ -93,6 +102,9 @@ function toCandidate(row: RouteRow): RouteCandidate {
     sellInputMicros: row.sell_input_micros,
     sellOutputMicros: row.sell_output_micros,
     groupBillingMode: row.group_billing_mode,
+    requiresReview: Number(row.requires_model_review) === 1,
+    decision: row.eligibility_decision ?? null,
+    costObservedAt: row.cost_observed_at,
   };
 }
 

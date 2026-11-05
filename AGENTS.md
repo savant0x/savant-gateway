@@ -102,8 +102,9 @@ npm run verify       # sequential gates + .verify/summary.json + per-gate logs
 The pre-push hook runs the attribution guard, lint, typecheck, config check,
 tests, the disposable-PostgreSQL concurrency proof, quality, build, both HTTP
 suites and the recovery drill. It fails closed. The concurrency proof uses
-`TEST_DATABASE_URL` when set, otherwise it starts a throwaway PostgreSQL 17
-container; it fails rather than skips when neither is available.
+`TEST_DATABASE_URL` when set, otherwise `verify` starts a pinned native
+PostgreSQL 17 cluster under ignored `.scratch/postgres` and removes it
+afterwards; the proof fails rather than skips when no cluster can be created.
 `test:load` is an additional release measurement with a disposable fixture and
 is intentionally not part of `verify` or the pre-push hook.
 

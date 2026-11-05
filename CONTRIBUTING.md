@@ -33,10 +33,12 @@ fails closed. Before a production deployment, run
 `npm run config:check:prod`, which enforces the deployment inventory rather than
 reporting the non-production pass.
 
-If Docker cannot start (including the `Personal Virtualization support not
-detected` error), do not skip the gate. Run the full set against a generated
-database on the configured server with `npm run verify:supabase`. For the
-mandatory proof alone:
+The PostgreSQL gates need no container runtime. With `TEST_DATABASE_URL` unset,
+`npm run verify` starts a pinned native PostgreSQL 17 cluster for the whole run
+and removes it afterwards; `npm run test:postgres` does the same for the
+mandatory two-connection proof alone. For a managed server, run the full set
+against a generated database with `npm run verify:supabase`, or the proof
+alone with:
 
 ```bash
 node scripts/with-supabase-postgres.mjs -- npm run test:postgres

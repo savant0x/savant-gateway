@@ -331,16 +331,23 @@ subscription_required`; a past-due plan returns `402 subscription_past_due`
   `components/dashboard/*`, `components/admin/*` — UI.
 - `assets/` — source brand files; served copies live in `public/`.
 
-## Docker-free PostgreSQL gates
+## Native PostgreSQL gates
 
-Docker Desktop can fail before its engine starts with `Personal Virtualization
-support not detected`; that is a host/firmware setting, not a repository defect.
-Do not skip the mandatory proof. The configured server can host the disposable
-database:
+The PostgreSQL gates need no container runtime and no system PostgreSQL
+install. `@embedded-postgres/windows-x64` and `@embedded-postgres/linux-x64`
+are pinned optionalDependencies; `scripts/disposable-postgres.mjs` initializes a
+fresh cluster per run under ignored `.scratch/postgres`, binds it to
+`127.0.0.1` on an ephemeral port with a random per-run password, proves the
+connected cluster is the run-owned one, and deletes only its own marked
+directory after a clean stop. `verify` owns one cluster for the whole
+sequential run and passes its URL to `TEST_DATABASE_URL` and
+`HTTP_TEST_DATABASE_URL`.
+
+A managed server remains the explicit alternative:
 
 ```bash
 node scripts/with-supabase-postgres.mjs -- npm run test:postgres
-npm run verify:supabase   # full ten-gate run on a generated database
+npm run verify:supabase   # full gate run on a generated database
 npm run push:supabase     # pre-push proof on a generated database
 ```
 

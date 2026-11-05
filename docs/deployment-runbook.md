@@ -11,13 +11,14 @@ shutdown behavior described here were implemented and verified locally against
 the superseded topology. **No Fly deployment, volume provisioning, DNS change,
 secret injection or release was executed.**
 
-Since FID-2026-1030-067 the host is chosen — one persistent process on a local
-volume, per [hosting-decision.md](hosting-decision.md) — and the packaging
-exists (`Dockerfile`, `.dockerignore`, `fly.toml`, `scripts/docker-entrypoint.sh`).
-What has *not* happened is a build of that image: Docker's Linux engine cannot
-start on the development machine, so the image is unbuilt and the first
-`fly deploy` is also its first build. The application-side contract below is
-verified; the container is not.
+Since FID-2026-1030-067 the host was one persistent process on a local volume,
+per [hosting-decision.md](hosting-decision.md), packaged with a `Dockerfile`,
+`.dockerignore`, `fly.toml` and a container entrypoint. That packaging was
+removed on 2026-11-05 (FID-2026-1105-002): the operator cannot run Docker, the
+current delivery path is Vercel with PostgreSQL, and nothing in the repository
+references the removed files. The historical image was never built on this
+machine. The application-side contract below was verified; the container was
+not, and is no longer part of the deliverable.
 
 ## Runtime contract
 
@@ -162,8 +163,8 @@ not run cron.
 ## Capacity and failure acceptance
 
 `npm run test:load` boots the production artifact against an isolated PostgreSQL
-database (from `LOAD_TEST_DATABASE_URL` or `TEST_DATABASE_URL`, otherwise a
-disposable `postgres:17-alpine` container) and a local provider fixture. It
+database (from `LOAD_TEST_DATABASE_URL` or `TEST_DATABASE_URL`, otherwise the
+pinned native PostgreSQL cluster) and a local provider fixture. It
 measures ramp, steady, burst, mixed billing, streams, cancellations, key churn,
 competing reservations, provider faults, quota reset, database contention, alert
 failure, drain, process crash and a durable storage-write failure. It reconciles
@@ -183,7 +184,7 @@ conditions and the real-upstream/production-host gaps.
 ## Health and readiness
 
 - `GET /api/health` — liveness only: the process can answer. It makes no claim
-  about the database. Wire container restarts / `docker healthcheck` here.
+  about the database. Wire the host's restart probe here.
 - `GET /api/ready` — truthful readiness: reports `ready` / `not_ready` with
   `checks: { configuration, storage }`, `mode: "durable" | "disposable"`, and
   HTTP 503 when either fails. Storage is probed by listing required tables and
@@ -369,6 +370,7 @@ sets, on a file database instead of the suites' disposable one:
   with `admin_unconfigured`, `origin_loopback`/`origin_insecure`, `db_relative`
   and `multi_worker` on each broken one, printing codes and never values.
 
-Not verified: the container image itself. `docker build` could not run because
-Docker's Linux engine cannot start without virtualization enabled on this
-machine.
+Not verified (historical): the container image itself. `docker build` could not
+run because Docker's Linux engine could not start without virtualization on this
+machine. That packaging was removed on 2026-11-05 (FID-2026-1105-002); no image
+build is part of the current delivery path.

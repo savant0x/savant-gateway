@@ -64,14 +64,16 @@ export async function runRequestLimitChecks({ baseUrl, db, mock, adminPassword }
   checkEqual("concurrent excess key creation is refused", attempts.filter((r) => r.status === 429).length, 3);
   checkEqual("key ceiling is persisted", (await db.prepare("SELECT COUNT(*)::int AS n FROM api_keys WHERE user_id = ? AND status = 'active'").get(id)).n, 10);
   const anotherSecret = attempts.find((response) => response.status === 201).json.secret;
-  // Exceed the 60 RPM bucket without exceeding the separate provider
-  // concurrency gate. Sequential probing is timing-dependent: a slow runner
-  // refills a token between requests, so 120 probes can all pass. A single
-  // 80-request burst instead hits provider concurrency first. Batches of three
-  // stay under the default provider cap while still spending the account
-  // bucket faster than it refills; 40 batches is double the bucket capacity.
-  // Unfunded admissions must still refuse with 402 and never dispatch
-  // upstream.
+  // Exceed the 60 RPM bucket while staying under the separate provider
+  // concurrency gate. Three concurrent probes fit the default four provider
+  // slots, so every one reaches the account bucket; a wider burst is refused
+  // by provider admission and never spends the account allowance. Forty
+  // batches send 120 probes, double the 60-token capacity. Sequential probing
+  // was timing-dependent: on the single-connection PGlite fixture a token
+  // refilled between probes, so 120 could all pass. The HTTP gate now runs
+  // against real PostgreSQL under `verify`, where the bucket is shared and
+  // persisted. Unfunded admissions must still refuse with 402 and never
+  // dispatch upstream.
   const probes = [];
 
   for (let batch = 0; batch < 40; batch++) {
@@ -92,7 +94,11 @@ export async function runRequestLimitChecks({ baseUrl, db, mock, adminPassword }
     probes.push(...responses);
   }
 
-  const limited = probes.find((probe) => probe.status === 429);
+  const limited = probes.find(
+    (probe) =>
+      probe.status === 429 &&
+      probe.headers.get("x-ratelimit-scope") === "paid",
+  );
 
   for (const probe of probes) {
     if (probe.status !== 429) {

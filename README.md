@@ -328,7 +328,7 @@ npm test                  # node --test "tests/*.test.mjs"
 npm run quality           # 400-line file ceiling
 npm run build             # next build
 npm run test:http         # HTTP suites against a disposable database
-npm run test:postgres     # mandatory two-connection debit proof (Docker or TEST_DATABASE_URL)
+npm run test:postgres     # mandatory two-connection debit proof (native PostgreSQL or TEST_DATABASE_URL)
 npm run test:recovery     # backup/restore/reconciliation drill
 npm run receipt:deploy    # redacted local deployment/env-presence receipt
 
@@ -338,8 +338,10 @@ npm run push:supabase     # generated database on the configured server, then gi
 npm run verify:supabase   # full verify against a generated database, then drop it
 ```
 
-When Docker cannot start (for example `Personal Virtualization support not
-detected`), run the proof or the full set through the configured server:
+The proof needs no container runtime: with `TEST_DATABASE_URL` unset, `verify`
+and `npm run test:postgres` start a pinned native PostgreSQL 17 cluster under
+ignored `.scratch/postgres`, bound to loopback on an ephemeral port, and remove
+it afterwards. On a managed server, run the proof or the full set with
 `node scripts/with-supabase-postgres.mjs -- npm run test:postgres` or
 `npm run verify:supabase`. Both create a generated database and drop it.
 

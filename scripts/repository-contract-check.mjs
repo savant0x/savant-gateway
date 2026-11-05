@@ -32,10 +32,21 @@ function read(relative) {
   }
 }
 
+const NATIVE_POSTGRES = {
+  "@embedded-postgres/windows-x64": "17.11.0-beta.19",
+  "@embedded-postgres/linux-x64": "17.11.0-beta.19",
+};
+
+const REMOVED_CONTAINER_FILES = [
+  "Dockerfile",
+  ".dockerignore",
+  "fly.toml",
+  "scripts/docker-entrypoint.sh",
+];
+
 function runtimeContract() {
   const pkg = JSON.parse(read("package.json") || "{}");
   const ci = read(".github/workflows/ci.yml");
-  const docker = read("Dockerfile");
   const nvmrc = read(".nvmrc").trim();
 
   if (pkg.engines?.node !== "24.x") {
@@ -44,10 +55,38 @@ function runtimeContract() {
   if (!/node-version:\s*24\b/.test(ci)) {
     fail(".github/workflows/ci.yml does not pin node-version: 24");
   }
-  if (!/^FROM node:24-/m.test(docker)) {
-    fail("Dockerfile does not build from a node:24 image");
-  }
   if (nvmrc !== "24") fail(`.nvmrc is ${nvmrc || "missing"}; expected 24`);
+
+  const optional = pkg.optionalDependencies ?? {};
+
+  for (const [name, version] of Object.entries(NATIVE_POSTGRES)) {
+    if (optional[name] !== version) {
+      fail(
+        `package.json optionalDependencies.${name} is ${optional[name] ?? "missing"}; expected ${version}`,
+      );
+    }
+  }
+
+  for (const removed of REMOVED_CONTAINER_FILES) {
+    if (existsSync(join(ROOT, removed))) {
+      fail(
+        `${removed}: container packaging must not return; delivery is Vercel with PostgreSQL`,
+      );
+    }
+  }
+
+  if (/^\s*services:/m.test(ci) || /postgres:17-alpine/.test(ci)) {
+    fail(".github/workflows/ci.yml still declares a container service");
+  }
+
+  const disposable = read("scripts/disposable-postgres.mjs");
+
+  if (!/initdb/.test(disposable) || !/native\/bin/.test(disposable)) {
+    fail("scripts/disposable-postgres.mjs does not own a native initdb lifecycle");
+  }
+  if (/["']docker["']/i.test(disposable)) {
+    fail("scripts/disposable-postgres.mjs still invokes docker");
+  }
 }
 
 function gateContract() {

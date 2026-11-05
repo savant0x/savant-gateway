@@ -16,6 +16,7 @@ working set; each FID owns its own status, evidence and resolution.
 
 | ID | Title | Status | Next action |
 | --- | --- | --- | --- |
+| [2026-1105-002](FID-2026-1105-002-docker-free-verification.md) | Docker-free verification and operational workflows | converged | Implement the native PostgreSQL lifecycle and retain the declared verification gates. |
 | [043](FID-2026-1030-043-launch-master.md) | Master launch contract and dependency register | converged | Keep coverage, ordering and release decisions current. |
 | [062](FID-2026-1030-062-launch-acceptance-and-rollout.md) | Real launch acceptance, controlled rollout and rollback | converged | Discharge the dated external receipt items 1–8; launch remains no-go. |
 | [068](FID-2026-1030-068-usdc-receive-lane.md) | Direct-to-wallet USDC receive lane | fixed | Operator inputs still gate the receive lane; re-read the record before acting. |

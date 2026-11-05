@@ -104,8 +104,8 @@ const databaseServer = await startDatabaseServer({
   await workspace.remove();
   console.error(
     "load-acceptance FAIL: the gate requires real PostgreSQL. Set " +
-      `LOAD_TEST_DATABASE_URL or TEST_DATABASE_URL to a disposable endpoint, ` +
-      `or start Docker (${detail}).`,
+      `LOAD_TEST_DATABASE_URL or TEST_DATABASE_URL to a disposable endpoint; ` +
+      `the pinned native lifecycle otherwise starts one (${detail}).`,
   );
   process.exit(1);
 });

@@ -9,6 +9,9 @@
 /coverage
 /.verify/
 
+# run-owned native PostgreSQL clusters (FID-2026-1105-002)
+/.scratch/
+
 # next.js
 /.next/
 /out/

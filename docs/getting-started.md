@@ -125,50 +125,52 @@ npm test             # unit tests
 npm run quality      # 400-line file ceiling
 npm run build        # production build
 npm run test:http    # builds must already exist; disposable database
-npm run test:postgres # two-connection proof; Docker, TEST_DATABASE_URL or the wrapper
+npm run test:postgres # two-connection proof; native PostgreSQL or TEST_DATABASE_URL
 npm run test:recovery # backup/restore drill; builds must already exist
 npm run verify       # sequential runner; writes .verify/summary.json
 ```
 
 The pre-push hook runs the same gates plus the attribution guard and fails
 closed. CI runs the same set. `npm run verify` does not run
-`config:check:prod`; that is a deployment-time gate, not a local one. For a
-push, `npm run push:postgres` starts a disposable `postgres:17-alpine`
-container, exports `TEST_DATABASE_URL` and `HTTP_TEST_DATABASE_URL` to
-`git push`, and stops the container afterwards. Pass push arguments after
-`--`, for example `npm run push:postgres -- origin main`. Set
-`TEST_DATABASE_URL` to reuse an existing disposable endpoint instead; a
-non-loopback endpoint is refused unless `PUSH_POSTGRES_ALLOW_REMOTE=yes` is set.
-When Docker is unavailable but a managed PostgreSQL server is configured (for
-example Supabase), `npm run push:supabase` creates a uniquely named
-`gateway_push_*` database on the server named by `DATABASE_URL` (falling back
-to `DB_CONNECTION_STRING`), exports both test variables to the push, and drops
-that database afterwards. `npm run verify:supabase` runs the full `verify` gate
-against the same kind of generated endpoint. The base database is never used as
-a test target. A hard kill can leave the generated database behind; drop the
-name printed by the script if cleanup reports a failure.
+`config:check:prod`; that is a deployment-time gate, not a local one.
 
-If Docker Desktop cannot start at all (the host reports "Personal
-Virtualization support not detected"), run the proof alone through the same
-wrapper:
+`npm run verify` needs no container runtime. With `TEST_DATABASE_URL` unset it
+starts one pinned native PostgreSQL 17 cluster for the whole sequential run,
+exports its URL to both `TEST_DATABASE_URL` and `HTTP_TEST_DATABASE_URL`, and
+stops and removes it afterwards. The cluster binds only to loopback on an
+ephemeral port, uses a random per-run password, and lives under ignored
+`.scratch/postgres`; `npm run test:postgres` does the same for the mandatory
+proof alone. Set `TEST_DATABASE_URL` to reuse an existing disposable endpoint
+instead; a non-loopback endpoint is refused unless
+`PUSH_POSTGRES_ALLOW_REMOTE=yes` is set.
 
-```bash
-node scripts/with-supabase-postgres.mjs -- npm run test:postgres
-```
+For a push with an explicitly disposable endpoint, `npm run push:postgres`
+starts the same native cluster, exports both test variables to `git push`, and
+removes the cluster afterwards. Pass push arguments after `--`, for example
+`npm run push:postgres -- origin main`.
+
+A managed PostgreSQL server remains the explicit alternative.
+`npm run push:supabase` creates a uniquely named `gateway_push_*` database on
+the server named by `DATABASE_URL` (falling back to `DB_CONNECTION_STRING`),
+exports both test variables to the push, and drops that database afterwards.
+`npm run verify:supabase` runs the full `verify` gate against the same kind of
+generated endpoint. The base database is never used as a test target. A hard
+kill can leave the generated database behind; drop the name printed by the
+script if cleanup reports a failure.
+
 Every gate's raw output is kept in `.verify/<gate>.log`, and the JSON summary
 records exit codes, durations, test totals and unexpected skips. A skipped
 required gate fails the run; the summary is not a replacement for the logs.
 
-The PostgreSQL concurrency proof is mandatory and never silently skips. Set
-`TEST_DATABASE_URL` to a disposable database, or leave it unset and keep Docker
-running so the gate can start a throwaway `postgres:17-alpine` container.
+The PostgreSQL concurrency proof is mandatory and never silently skips. It uses
+`TEST_DATABASE_URL` when set; otherwise it starts the native cluster described
+above and fails closed if that cannot start.
 
 The main HTTP suite uses a PGlite wire fixture by default. The trial suite
 requires real PostgreSQL because it proves concurrent trial admission: it uses
 `HTTP_TEST_DATABASE_URL` (or the shared `TEST_DATABASE_URL`) when set, otherwise
-it starts a disposable `postgres:17-alpine` container and fails closed when
-Docker is unavailable. The pre-push hook and `npm run verify` fall back to
-`TEST_DATABASE_URL`, so one disposable endpoint covers both the concurrency
-proof and the HTTP suites. The suites drop and recreate the `public` and
-`content` schemas, and they refuse an endpoint equal to `DATABASE_URL`; never
-point either variable at production.
+it starts the native cluster and fails closed if that cannot start. The suites
+drop and recreate the `public` and `content` schemas, and they refuse an
+endpoint equal to `DATABASE_URL`; never point either variable at production. A
+non-loopback HTTP endpoint also requires `DISPOSABLE_REMOTE_HTTP=yes`, which
+`verify:supabase` sets for its generated database.

@@ -64,7 +64,8 @@ same answer data the page renders.
 - [deployment-runbook.md](deployment-runbook.md) — historical SQLite/Fly
   runbook, superseded 2026-11-02 by Vercel + PostgreSQL.
 - [troubleshooting.md](troubleshooting.md) — empty catalog, config codes, Stripe
-  503, gate prerequisites, native SQLite and Fly CLI failures.
+  503, gate prerequisites, native PostgreSQL lifecycle failures, and historical
+  SQLite and Fly boundaries.
 - [hosting-decision.md](hosting-decision.md) — historical hosting decision
   record from before the PostgreSQL cutover.
 - [support-runbook.md](support-runbook.md) — support queue and manual deletion.

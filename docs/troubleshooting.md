@@ -64,12 +64,24 @@ npm run test:recovery
 set. A dev server holding the same port can also make a suite fail to start; stop
 the local server before running the gates.
 
-## Docker Desktop cannot start (`Personal Virtualization support not detected`)
+## The native PostgreSQL cluster cannot start
 
-Docker Desktop needs hardware virtualization. When firmware or a VM has it
-disabled, the engine never starts and `npm run test:postgres` fails with
-`Docker is unavailable`. You do not need Docker for the PostgreSQL gates: use
-the configured server to create a disposable database.
+Docker is not required and is not used. With `TEST_DATABASE_URL` unset,
+`npm run verify` and `npm run test:postgres` use the pinned
+`@embedded-postgres/windows-x64` or `@embedded-postgres/linux-x64` binaries. If
+the error says the package is missing, run `npm install`: it is an
+optionalDependency, so an unsupported platform is skipped rather than failing
+the install. Only Windows x64 and Linux x64 are pinned; on another platform,
+supply an explicit disposable endpoint.
+
+A failed startup removes its own run directory and prints the reason. A hard
+kill can leave a cluster running under `.scratch/postgres/run-*`; stop it with
+the `pg_ctl` binary from the package, or delete that marked directory only
+after the process is gone. Never point `TEST_DATABASE_URL` at the application
+database: the HTTP suites drop and recreate schemas, and they refuse an endpoint
+equal to `DATABASE_URL`.
+
+A managed PostgreSQL server remains the explicit alternative:
 
 ```bash
 # DATABASE_URL (or DB_CONNECTION_STRING) in .env.local names the server.
@@ -78,15 +90,10 @@ node scripts/with-supabase-postgres.mjs -- npm run test:postgres
 
 The wrapper creates one generated `gateway_run_<timestamp>_<pid>` database,
 sets `TEST_DATABASE_URL` and `HTTP_TEST_DATABASE_URL` for the child, and drops
-only that database afterwards. The base database is never the test target.
-The same wrapper backs `npm run verify:supabase` (the full ten-gate run) and
-`npm run push:supabase` (the pre-push proof). A hard kill can leave the
-generated database behind; the script prints its name, and a failed cleanup is
-reported rather than hidden.
-
-Do not work around this by pointing `TEST_DATABASE_URL` at the production
-database. The HTTP suites drop and recreate schemas, and they refuse an endpoint
-equal to `DATABASE_URL`.
+only that database afterwards. The base database is never the test target. The
+same wrapper backs `npm run verify:supabase` and `npm run push:supabase`. A hard
+kill can leave the generated database behind; the script prints its name, and a
+failed cleanup is reported rather than hidden.
 
 ## Admin sign-in is unavailable
 
@@ -153,41 +160,15 @@ Current PostgreSQL deployments use shared admission and connection pooling; do
 not apply this SQLite-specific workaround. Stop any extra local `next start` /
 `next dev` process if the disposable test port collides.
 
-## Fly CLI is “not found”
+## Historical Fly and container failures
 
-On Windows installs the CLI is often at `%USERPROFILE%\.fly\bin\flyctl.exe`
-(`~/.fly/bin/flyctl.exe` in Bash), which is not always on the shell `PATH`.
-Either add that directory to `PATH` or invoke the binary directly:
-
-```bash
-"$HOME/.fly/bin/flyctl.exe" version
-```
-
-## `fly apps list` says the trial has ended
-
-The authenticated CLI can reach Fly, but the account has no active payment
-method. App and volume creation will fail until the operator enables billing:
-
-```text
-trial has ended, please add a credit card
-```
-
-No app, volume, machine or secret exists in that state, so a deploy or restore
-cannot be timed. This is an account boundary, not a code defect. Record it as a
-blocker and do not fabricate a deployment or recovery receipt.
-
-## First `fly deploy` is also the first image build
-
-The repository carries a `Dockerfile` and `fly.toml`, but the image has not been
-built locally: Docker's Linux engine cannot start without virtualization on this
-development machine. Fly's remote builder performs the first build. A successful
-`/api/ready` is required before routing traffic; a 503 names configuration or
-storage rather than entering rotation.
-
-If the image build stops at `NEXT_PUBLIC_SITE_URL build argument is required`,
-set the origin in both `fly.toml`'s `[build.args]` and `[env]` tables. Build
-arguments are not inherited from the runtime environment, and static social
-metadata needs the value during `next build`.
+The Fly and container path was removed on 2026-11-05 (FID-2026-1105-002). The
+repository no longer carries `Dockerfile`, `.dockerignore`, `fly.toml` or a
+container entrypoint, and the current delivery path is Vercel with PostgreSQL.
+Earlier Fly CLI, trial-billing and first-image-build failures are recorded in
+the [deployment runbook](deployment-runbook.md) and
+[hosting decision](hosting-decision.md); do not follow them as current
+procedure.
 
 ## The pre-push hook does not run
 

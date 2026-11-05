@@ -6,7 +6,7 @@
  * cannot debit one balance twice. PGlite has one connection, so the ordinary
  * unit suite can only skip that proof. Skipping is allowed there; it is not
  * allowed here. This gate either runs against an explicitly disposable
- * PostgreSQL URL or starts a throwaway container, and it fails closed when
+ * PostgreSQL URL or starts a throwaway native cluster, and it fails closed when
  * neither is available.
  *
  * Only disposable credentials are permitted. `TEST_DATABASE_URL` is deliberately
@@ -17,6 +17,7 @@
 import { spawnSync } from "node:child_process";
 
 import {
+  assertDisposableEndpoint,
   redactPostgresUrl,
   startDisposablePostgres,
 } from "./disposable-postgres.mjs";
@@ -62,19 +63,18 @@ try {
   const supplied = process.env.TEST_DATABASE_URL?.trim();
 
   if (supplied) {
-    if (/^(postgres|postgresql):\/\//.test(supplied) === false) {
-      fail("TEST_DATABASE_URL must be a postgres:// or postgresql:// URL");
-    } else {
-      console.log(`postgres-concurrency: using ${redactPostgresUrl(supplied)}`);
-      runProof(supplied);
-      console.log(
-        "postgres-concurrency: PASS — no double-debit and no doubled admission",
-      );
-    }
+    assertDisposableEndpoint(supplied, "TEST_DATABASE_URL", {
+      allowRemote: process.env.PUSH_POSTGRES_ALLOW_REMOTE === "yes",
+    });
+    console.log(`postgres-concurrency: using ${redactPostgresUrl(supplied)}`);
+    runProof(supplied);
+    console.log(
+      "postgres-concurrency: PASS — no double-debit and no doubled admission",
+    );
   } else {
     disposable = await startDisposablePostgres();
     console.log(
-      `postgres-concurrency: starting disposable ${disposable.image} on port ${disposable.port}`,
+      `postgres-concurrency: starting disposable ${disposable.image} on 127.0.0.1:${disposable.port}`,
     );
     runProof(disposable.connectionString);
     console.log(
@@ -84,5 +84,10 @@ try {
 } catch (error) {
   fail(error instanceof Error ? error.message : String(error));
 } finally {
-  disposable?.close();
+  const cleanup = disposable?.close();
+
+  if (cleanup && !cleanup.ok) {
+    console.error(`postgres-concurrency: cleanup FAIL — ${cleanup.error}`);
+    process.exitCode = 1;
+  }
 }

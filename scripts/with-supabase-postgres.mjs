@@ -242,6 +242,11 @@ try {
         ...process.env,
         TEST_DATABASE_URL: connectionString,
         HTTP_TEST_DATABASE_URL: connectionString,
+        // The generated database is remote and disposable. Both opt-ins are
+        // explicit so the native helper never permits a remote target by
+        // default (FID-2026-1105-002).
+        PUSH_POSTGRES_ALLOW_REMOTE: "yes",
+        DISPOSABLE_REMOTE_HTTP: "yes",
       },
       shell: process.platform === "win32" && /^(npm|npx)$/.test(command[0]),
     });

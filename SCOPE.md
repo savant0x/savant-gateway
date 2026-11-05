@@ -1,5 +1,40 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-05 (Docker-free workflow FID)
+
+Operator instruction: "as i've already stated, we are not using docker, that is
+not possible to run, so whatever you have attempted to wire with docker needs
+to be removed and replaced." Follow-up: "build the fid". Automation level 3;
+strict; single agent. Record the affected workflows and a replacement contract
+in FID-2026-1105-002. Design is not implementation or verification of a fix.
+
+- [x] **DP1 — Docker-free workflow FID.** Document the current failure,
+  inventory, safe native PostgreSQL lifecycle, delivery and CI implications,
+  implementation steps and verification requirements. The design audit selects
+  pinned native binaries and records mandatory implementation receipts; the
+  document records that per-pass edit distances were not verified.
+- [x] **DP2 — Native PostgreSQL implementation.** Replaced the Docker fallback
+  with one run-owned native PostgreSQL 17 cluster from the pinned
+  `@embedded-postgres/windows-x64` / `linux-x64` optional dependencies
+  (`17.11.0-beta.19`). The helper initializes under ignored `.scratch/postgres`,
+  binds loopback on an ephemeral port, uses a random per-run password, proves
+  the connected cluster's `data_directory` is the run-owned one, and deletes
+  only a non-symlinked, ownership-marked directory after a clean stop.
+  `verify` owns one cluster for the whole sequential run and passes its URL to
+  both test variables; the standalone proof, HTTP and load callers share the
+  same lifecycle. Removed `Dockerfile`, `.dockerignore`, `fly.toml` and the
+  container entrypoint; the repository contract rejects their return and CI
+  has no PostgreSQL service. The paid-limit HTTP probe stays three-wide so
+  provider admission cannot hide the account bucket, and `verify` supplies
+  real PostgreSQL to both HTTP suites, addressing the single-connection PGlite
+  failure. Lifecycle suite 9/9 (parallel runs, occupied port, foreign and
+  mismatched markers, symlink refusal, two real connections, cleanup). Full
+  `npm run verify` PASS: 11/11 gates, 1,046 tests with zero skips, 776 main
+  HTTP checks plus the trial suite on real PostgreSQL, seven concurrency
+  assertions across four files, recovery 14/14, quality and build. Not
+  verified: Linux CI, a clean install with postinstall scripts enabled, the
+  load gate and hosted delivery.
+
 ## Session — 2026-11-05 (YouTube description matching implementation)
 
 Operator instruction: "build it and complete the fid". Automation level 3;

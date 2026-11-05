@@ -33,8 +33,9 @@ commands:
   # `next start` against a disposable database; it is not part of `npm test`.
   test_http: 'npm run test:http'
   # Mandatory two-connection debit proof. Runs against TEST_DATABASE_URL when
-  # supplied, otherwise starts a throwaway PostgreSQL 17 container; it fails
-  # closed rather than skipping.
+  # supplied, otherwise starts a pinned native PostgreSQL 17 cluster under
+  # ignored .scratch/postgres and removes it; it fails closed rather than
+  # skipping.
   test_postgres: 'npm run test:postgres'
   # Backup/restore drill. Requires a completed production build; it boots real
   # servers on throwaway databases and proves recovery through HTTP reconciliation.

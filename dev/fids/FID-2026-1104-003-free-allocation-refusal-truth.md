@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-003-free-allocation-refusal-truth.md`
 **ID:** FID-2026-1104-003
 **Severity:** high
-**Status:** converged
+**Status:** fixed
 **Created:** 2026-11-04 16:30
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -203,8 +203,12 @@ FID does not redefine the envelope's targets.
 
 ### Verification Receipt
 
-- verified: not yet — design converged, implementation pending.
-- No gate output is claimed for code that does not exist.
+- verified: partial — implementation `7091b8f`; focused 41/41, full suite
+  1001/1005 with 4 PostgreSQL-only skips, typecheck, zero-warning lint, quality,
+  production build, attribution and `git diff --check` pass.
+- Not verified: `npm run test:load`. This host has no disposable PostgreSQL
+  endpoint and Docker is unavailable, so the isolated load acceptance and its
+  effective-policy read-back were not executed. No load result is claimed.
 
 ## Perfection Loop
 
@@ -272,30 +276,43 @@ FID does not redefine the envelope's targets.
 
 ## Implementation Evidence
 
-Pending. Coding is reserved to the operator's separate worker; this record ships
-the design, acceptance criteria and gates only.
+Implemented in `7091b8f`. The load acceptance is partial because no disposable
+PostgreSQL endpoint is available on this host.
 
-- [ ] **Commit SHA:** not yet.
-- [ ] **File:line ranges:** not yet.
-- [ ] **Gate output:** not yet.
-- [ ] **Reproducibility:** RED cases defined above; no code to grep yet.
-- [ ] **Step statuses:** all five proposed steps are design-only; none is
-  `implemented`. No step is `deferred` by the operator.
+- [x] **Commit SHA:** `7091b8f`.
+- [x] **Files:** `lib/free-pool.ts` (formatter and mode context),
+  `lib/allocation.ts` (delegates), `lib/storage/store/free-pool.ts` (passes the
+  resolved mode and cap), `lib/storage/store/allocations.ts` and
+  `app/api/admin/gateway/route.ts` (provider-aware summary),
+  `scripts/load/{envelope,offered,faults,verdict}.mjs`,
+  `scripts/load-acceptance.mjs` and `config/load-envelope.json`.
+- [x] **Gate output:** focused 41/41; full suite 1001 pass, 4 environment skips;
+  typecheck, lint (zero warnings), quality, build, attribution and diff check
+  pass. `test:load` is the named unrun gate.
+- [x] **Reproducibility:** `node --test tests/free-pool.test.mjs
+  tests/allocation.test.mjs tests/load-envelope.test.mjs`.
+- [x] **Step statuses:** step 1 `implemented`; step 2 `implemented`; step 3
+  `implemented` but not executed against a live load run; step 4 `implemented`;
+  step 5 `implemented`. Load acceptance remains `partial`, not passed.
 
 ## Code Verification Evidence
 
 - [x] Files referenced in Affected Components exist in the working tree.
 - [x] The described call path matches the inspected source.
-- [ ] Typecheck/tests/lint — pending implementation.
-- [ ] Production call-graph evidence — pending implementation.
-- [x] Status reflects reality: `converged`, not `fixed`.
+- [x] Typecheck, focused tests, full unit tests, lint and quality pass.
+- [x] Production call-graph evidence: `reserveFreeCall` passes the resolved
+  mode/cap; the admin summary accepts the fixture provider; the load runner
+  reads it back before workloads.
+- [x] Status reflects reality: `fixed`, with the load gate explicitly unrun.
 
 ## Resolution
 
 - **Convergence Date:** 2026-11-04 16:30
-- **Next action:** the worker implements steps 1–5, captures the two RED runs,
-  and returns a gate receipt.
-- **Archived:** no.
+- **Fixed Date:** 2026-11-04; implementation `7091b8f`.
+- **Next action:** run `npm run test:load` against a disposable PostgreSQL
+  endpoint, confirm the policy read-back and any unexpected 429 reason, then
+  close this record with the load receipt.
+- **Archived:** no; the load gate is still open.
 
 ## Lessons Learned
 

@@ -15,6 +15,10 @@ import { Pool } from "pg";
  * pg-pool waits for an async `onConnect` before it hands the client to a caller,
  * so a request cannot race the two settings.
  *
+ * `connectionTimeoutMillis` bounds the wait for a pool slot before the server
+ * ever sees the statement, so a saturated pool fails closed instead of
+ * queueing past the route deadline.
+ *
  * `buildPoolOptions` is pure and exported so the settings are testable without
  * opening a socket; nothing in this module connects at import time.
  */
@@ -22,6 +26,7 @@ import { Pool } from "pg";
 export type PostgresPoolSettings = {
   connectionString: string;
   maxConnections?: number;
+  connectionTimeoutMs?: number;
   statementTimeoutMs?: number;
   idleInTransactionTimeoutMs?: number;
   applicationName?: string;
@@ -30,11 +35,13 @@ export type PostgresPoolSettings = {
 export type PostgresPoolConfig = {
   connectionString: string;
   max: number;
+  connectionTimeoutMillis: number;
   application_name: string;
   onConnect: (client: PgQueryable) => Promise<void>;
 };
 
 const DEFAULT_MAX_CONNECTIONS = 10;
+const DEFAULT_CONNECTION_TIMEOUT_MS = 5_000;
 const DEFAULT_STATEMENT_TIMEOUT_MS = 15_000;
 const DEFAULT_IDLE_IN_TRANSACTION_TIMEOUT_MS = 30_000;
 const DEFAULT_APPLICATION_NAME = "savant-gateway";
@@ -51,6 +58,8 @@ export function buildPoolOptions(
   return {
     connectionString: settings.connectionString,
     max: settings.maxConnections ?? DEFAULT_MAX_CONNECTIONS,
+    connectionTimeoutMillis:
+      settings.connectionTimeoutMs ?? DEFAULT_CONNECTION_TIMEOUT_MS,
     application_name: settings.applicationName ?? DEFAULT_APPLICATION_NAME,
     async onConnect(client) {
       await client.query(

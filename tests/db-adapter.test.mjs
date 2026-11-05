@@ -29,7 +29,7 @@ function createFakePool(respond = () => EMPTY) {
       return respond({ sql, values, lease: null });
     },
     async connect() {
-      const lease = { queries: [], released: false };
+      const lease = { queries: [], released: false, releaseError: undefined };
 
       leases.push(lease);
 
@@ -39,8 +39,9 @@ function createFakePool(respond = () => EMPTY) {
 
           return respond({ sql, values, lease });
         },
-        release() {
+        release(error) {
           lease.released = true;
+          lease.releaseError = error;
         },
       };
     },
@@ -178,6 +179,29 @@ test("a throwing transaction rolls back and still releases", async () => {
 
   assert.deepEqual(statements(leases[0]), ["BEGIN", "ROLLBACK"]);
   assert.equal(leases[0].released, true);
+  assert.equal(leases[0].releaseError, undefined);
+});
+
+test("a failed rollback discards the client with the rollback error", async () => {
+  const { pool, leases } = createFakePool(({ sql }) => {
+    if (sql === "ROLLBACK") throw new Error("connection lost");
+
+    return EMPTY;
+  });
+  const db = createPostgresDatabase({ pool });
+
+  await assert.rejects(
+    async () =>
+      db.transaction(async () => {
+        throw new Error("boom");
+      })(),
+    /boom/,
+    "the original statement error is preserved",
+  );
+
+  assert.deepEqual(statements(leases[0]), ["BEGIN", "ROLLBACK"]);
+  assert.equal(leases[0].released, true);
+  assert.equal(leases[0].releaseError?.message, "connection lost");
 });
 
 test("a nested transaction uses a savepoint and releases it", async () => {
@@ -284,18 +308,26 @@ test("a failed initialization fails closed for every later call", async () => {
   );
 });
 
-test("pool options apply the session timeouts after connect", async () => {
+test("pool options apply the acquisition budget and session timeouts", async () => {
   const queries = [];
   const options = buildPoolOptions({
     connectionString: "postgres://example.test/gateway",
     maxConnections: 4,
+    connectionTimeoutMs: 1_500,
     statementTimeoutMs: 12_000,
     idleInTransactionTimeoutMs: 45_000,
   });
 
   assert.equal(options.connectionString, "postgres://example.test/gateway");
   assert.equal(options.max, 4);
+  assert.equal(options.connectionTimeoutMillis, 1_500);
   assert.equal(options.application_name, "savant-gateway");
+  assert.equal(
+    buildPoolOptions({ connectionString: "postgres://example.test/gateway" })
+      .connectionTimeoutMillis,
+    5_000,
+    "the default acquisition budget is finite and below the route deadline",
+  );
   assert.equal(
     "options" in options,
     false,

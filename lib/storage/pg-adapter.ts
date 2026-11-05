@@ -26,7 +26,7 @@ export type PgQueryable = {
 };
 
 export type PgLease = PgQueryable & {
-  release(): void;
+  release(error?: Error): void;
 };
 
 export type PgPool = PgQueryable & {
@@ -300,6 +300,7 @@ export function createPostgresDatabase(
       if (active) return runNested(active, fn);
 
       const client = await pool.connect();
+      let releaseError: Error | undefined;
 
       try {
         await client.query("BEGIN");
@@ -315,14 +316,19 @@ export function createPostgresDatabase(
       } catch (error) {
         try {
           await client.query("ROLLBACK");
-        } catch {
+        } catch (rollbackError) {
           // The statement that failed is the error worth reporting. A rollback
-          // failure means the connection is unusable; `release()` drops it.
+          // failure means the connection is unusable; release it with the
+          // error so node-postgres destroys it instead of returning it idle.
+          releaseError =
+            rollbackError instanceof Error
+              ? rollbackError
+              : new Error(String(rollbackError));
         }
 
         throw error;
       } finally {
-        client.release();
+        client.release(releaseError);
       }
     };
 

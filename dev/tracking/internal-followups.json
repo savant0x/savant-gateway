@@ -219,6 +219,15 @@
       "next_action": "With `PROVISIONING_DATABASE_CA` or the platform trust store available, connect to a disposable endpoint and record a trusted success plus a self-signed refusal; confirm the role cannot touch production schemas."
     },
     {
+      "id": "FID-2026-1104-006-LIVE",
+      "fid": "FID-2026-1104-006",
+      "state": "blocked",
+      "title": "Real-PostgreSQL HTTP, two-connection and managed-host verification",
+      "detail": "Bounded transport, redirect validation, source claims and deadlines, and provider sync leases are implemented and closed at 941c60f. Focused suites pass 18/18 and 8/8; full suite 1,015/1,019 with four PostgreSQL-only skips; check, quality, build, recovery, storage, config and repository checks pass. `npm run test:http` exited 1 at `paid account limit holds across different keys` in the single-connection PGlite fixture; `npm run test:postgres` refused because Docker and TEST_DATABASE_URL are unavailable; `npm run verify:supabase` was not run. DNS resolution is still not pinned, so DNS rebinding remains a documented residual.",
+      "evidence": "dev/fids/archive/FID-2026-1104-006-bounded-transport-and-jobs.md; lib/content/transport.ts; lib/content/store/claims.ts; lib/storage/providers/lease.ts; tests/content-ingest.test.mjs; tests/content-fetch-conditional.test.mjs; tests/provider-freshness-postgres.test.mjs",
+      "next_action": "Run `npm run test:http` and `npm run verify:supabase` against a disposable PostgreSQL endpoint, confirm the paid-account limit race, and record the receipts. If DNS pinning is required for launch, add it as a separate implementation change rather than treating this followup as proof."
+    },
+    {
       "id": "FID-2026-1104-010-LIVE",
       "fid": "FID-2026-1104-010",
       "state": "blocked",

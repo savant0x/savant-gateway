@@ -21,21 +21,21 @@ working set; each FID owns its own status, evidence and resolution.
 | [068](FID-2026-1030-068-usdc-receive-lane.md) | Direct-to-wallet USDC receive lane | fixed | Operator inputs still gate the receive lane; re-read the record before acting. |
 | [127](FID-2026-1103-127-real-launch-acceptance-receipt.md) | Real launch acceptance receipt | fixed | Operator records the five observations (`payment`, `recovery`, `alert`, `load`, `rollback`) and a go pinned to the release SHA, then runs `npm run receipt:launch`. |
 | [137](FID-2026-1103-137-product-hardening-and-install-order-master.md) | Product hardening and install-order master | converged | Closes only after 126 and 127 have their required evidence. |
-| [2026-1104-006](FID-2026-1104-006-bounded-transport-and-jobs.md) | Bounded transport and durable scheduled work | converged | Worker streams with a byte cap, validates redirects and adds durable job claims. |
-| [2026-1104-008](FID-2026-1104-008-runtime-gates-and-current-docs.md) | One runtime, one gate contract and current documentation | converged | Operator picks Node 22 or 24; worker unifies the gate list and adds the repository check. |
+| [2026-1104-008](FID-2026-1104-008-runtime-gates-and-current-docs.md) | One runtime, one gate contract and current documentation | fixed | Node 24 and the repository check are implemented; run the PostgreSQL HTTP/proof gates and a clean install before closing. |
 | [2026-1104-009](FID-2026-1104-009-browser-journey-receipt.md) | Fresh browser journey receipt | converged | Worker adds the Playwright runner and records six journeys in both themes. |
 | [2026-1104-011](FID-2026-1104-011-policy-v1-2-publication.md) | Policy v1.2 for the current service surface | converged | Operator approves the recipient inventory; worker drafts v1.2 and the acceptance bump. |
-| [2026-1104-013](FID-2026-1104-013-model-matched-visual-builds.md) | Pelican-first model-matched visual builds with a gated OpenRouter track | converged | 013A only after 006/009; schema-aware backup (SCOPE VB6) is implemented. 013B stays blocked on a lawful OpenRouter fixture and rights. |
+| [2026-1104-013](FID-2026-1104-013-model-matched-visual-builds.md) | Pelican-first model-matched visual builds with a gated OpenRouter track | converged | 013A only after 009; schema-aware backup (SCOPE VB6) is implemented. 013B stays blocked on a lawful OpenRouter fixture and rights. |
 
 > 2026-11-04 correction: FID-013 was absent from this table despite the
 > planning summary's "registered" claim. It is now registered as 013A/013B;
 > the active count was 14/20 before the completed-implementation cleanup (now
-> 10/20). Neither track is implemented, and 013B is not an implementation
-> authorization.
+> 9/20 after FID-006 closed). Neither track is implemented, and 013B is not an
+> implementation authorization.
 >
 > 2026-11-04 convergence review: seven design corrections applied; 013 is
-> `converged`. 013A code remains blocked on FID-006, FID-009 and schema-aware
-> backup (SCOPE VB6); 013B remains blocked on a lawful fixture and rights.
+> `converged`. 013A code remains blocked on FID-009 and schema-aware backup
+> (SCOPE VB6); FID-006 is now closed. 013B remains blocked on a lawful fixture
+> and rights.
 >
 > 2026-11-04 level-3 implementation: FID-005 landed in `e145413` (bounded pool
 > acquisition and failed-rollback discard); FID-007 landed in `0433cf7`
@@ -46,7 +46,7 @@ working set; each FID owns its own status, evidence and resolution.
 > 2026-11-04 SCOPE VB6: the logical dump/restore is schema-aware (`/2`), legacy
 > `/1` dumps still restore, and the recovery drill covers `content` and
 > `identity`. FID-013's durability prerequisite is satisfied; 013A remains
-> blocked on FID-006 and FID-009.
+> blocked on FID-009.
 >
 > 2026-11-04 FID-010 implementation: `78c6920` adds five bounded funnel events,
 > a durable once-only first-completion marker, and a 30-day admin aggregate.
@@ -73,6 +73,19 @@ implementation gates pass; the isolated load, two-connection pool proof, live
 TLS handshake and real-PostgreSQL HTTP/verify receipts remain acceptance
 observations in `../tracking/internal-followups.json` (`-LIVE` entries). They
 are not implementation blockers and no launch acceptance is claimed.
+
+### Closed in the 2026-11-04 bounded transport pass
+
+[2026-1104-006](archive/FID-2026-1104-006-bounded-transport-and-jobs.md) is
+`closed` with commit `941c60f`: streaming byte caps, manual redirect
+validation, private-literal normalization, atomic expiring source claims, a
+total cron deadline and a database provider-sync lease. Focused suites pass
+18/18 and 8/8; the full suite is 1,015/1,019 with four PostgreSQL-only skips;
+check, quality, build, recovery, storage, config and repository checks pass.
+The real-PostgreSQL HTTP and mandatory two-connection receipts, plus the DNS
+rebinding residual, remain in `FID-2026-1104-006-LIVE`; no full `verify` or
+launch acceptance is claimed. FID-008 remains active at `fixed` for the same
+PostgreSQL gate.
 
 ### Closed in the 2026-11-04 shared-admission implementation
 

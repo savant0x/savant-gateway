@@ -3,6 +3,29 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-04 — Bounded ingestion transport, Node 24 and one gate contract (006, 008)
+
+- **FID-2026-1104-006 — high —** content fetches now stream raw bytes and cancel
+  at the 2 MiB ceiling, ignore a dishonest `Content-Length`, follow redirects
+  manually and revalidate every hop, and refuse decimal/octal/hex and
+  IPv4-mapped private literals. Cron ingestion has a 45-second total deadline,
+  atomic expiring source claims and stage checkpoints; provider refresh uses a
+  database lease instead of only a per-handle promise. Commit `941c60f`.
+  Focused suites pass 18/18 and 8/8; full `npm test` is 1,015/1,019 with four
+  PostgreSQL-only skips; check, quality, build, recovery, storage, config and
+  repository checks pass. `test:http` remains red in the single-connection
+  PGlite fixture and `test:postgres` cannot start without Docker or
+  `TEST_DATABASE_URL`; both receipts and the DNS-rebinding residual remain in
+  `FID-2026-1104-006-LIVE`. No full `verify` or launch acceptance is claimed.
+- **FID-2026-1104-008 — medium —** Node 24 is pinned in `package.json`,
+  `.nvmrc`, CI and the Dockerfile. `VERIFY_GATES` is the only ordered gate list;
+  CI and the pre-push hook call `npm run verify`, and the fifth gate is the new
+  `repository:check` for FID registration, promised test paths, archived closure
+  commits, root links, docs indexing and current-topology claims. Root links
+  were corrected, unindexed docs added, and historical SQLite/Fly sections
+  labeled. The record is `fixed`, not closed: the PostgreSQL HTTP/proof gates
+  and a clean-install full run are still missing.
+
 ## 2026-11-04 — Completed implementation FIDs archived (003, 005, 007, 010)
 
 - **FID-2026-1104-003, -005, -007, -010 — high/medium —** four committed,

@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-006-bounded-transport-and-jobs.md`
 **ID:** FID-2026-1104-006
 **Severity:** high
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-04 17:10
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -122,7 +122,29 @@ path above exists. No new test file is promised at convergence.
 
 ### Verification Receipt
 
-- verified: not yet — design converged, implementation pending.
+- verified: 2026-11-04 against `941c60f`.
+- focused: `tests/content-ingest.test.mjs` 18/18 PASS, including dishonest
+  `Content-Length`, chunked oversize, public/private redirect, decimal and
+  mapped IPv4 literals, zero deadline, live-claim skip and expired-claim
+  reclaim.
+- focused: `tests/provider-freshness-postgres.test.mjs` 8/8 PASS, including a
+  live provider lease blocking another owner and an externally held provider
+  being skipped.
+- full: `npm test` 1,019 tests, 1,015 pass, 4 PostgreSQL-only skips, 0 fail.
+- gates: `npm run check` PASS; `npm run quality` PASS (605 files); `npm run build`
+  PASS (23 static pages); `npm run repository:check` PASS; `npm run storage:check`
+  PASS; `npm run config:check` PASS (non-production); `npm run test:recovery`
+  14/14 PASS.
+- HTTP: `npm run test:http` exited 1 at `paid account limit holds across
+  different keys` in the single-connection PGlite fixture. This is the known
+  fixture limitation, not a claim that the route passed. The two-connection
+  PostgreSQL receipt remains live acceptance.
+- PostgreSQL: `npm run test:postgres` refused because Docker and `TEST_DATABASE_URL`
+  are unavailable. `npm run verify:supabase` was not run. No full `verify`
+  receipt is claimed.
+- residual: redirects are manually followed and each literal host is
+  revalidated, but DNS resolution is not pinned, so DNS rebinding remains a
+  documented residual rather than a closed claim.
 
 ## Perfection Loop
 
@@ -172,22 +194,45 @@ path above exists. No new test file is promised at convergence.
 
 ## Implementation Evidence
 
-Pending. Coding is reserved to the operator's separate worker.
+Implemented in commit `941c60f`.
 
-- [ ] Commit SHA, file ranges, gate output, step statuses.
+- `lib/content/transport.ts` streams raw bytes, cancels at the cap, ignores
+  `Content-Length`, follows redirects manually and revalidates every hop.
+- `lib/content/url.ts` normalizes decimal, octal, hex and shortened IPv4 plus
+  IPv4-mapped IPv6 literals before the private-address decision.
+- `lib/content/store/claims.ts` adds atomic expiring source claims and stage
+  checkpoints; `content.ingest_claims` is in the content schema.
+- `lib/content/ingest.ts` adds `ingestDueSourcesBounded` with a total deadline,
+  owner token, skipped/deadline reporting and a compatibility wrapper.
+- `app/api/cron/content/route.ts` stops starting sources at 45 seconds and
+  reports claimed, skipped and `deadlineReached`.
+- `lib/storage/providers/lease.ts` and `provider_sync_leases` add a durable
+  provider-sync owner; `lib/storage/providers/freshness.ts` claims and releases
+  it, retaining the per-handle promise only as an in-process coalescer.
+- Focused cases extended `tests/content-ingest.test.mjs`,
+  `tests/content-fetch-conditional.test.mjs` and
+  `tests/provider-freshness-postgres.test.mjs`.
 
 ## Code Verification Evidence
 
-- [x] Files exist; the buffer-before-check and detached-refresh behavior were
-  inspected.
-- [x] Status reflects reality: `converged`.
+- [x] Files and tests were read 0-EOF before editing.
+- [x] Streaming counts bytes, not decoded characters, and cancels at the cap.
+- [x] Redirects are revalidated before the next request; private literals are
+  refused before any request.
+- [x] Claims use conditional SQL, not read-then-write, and expired claims are
+  reclaimable.
+- [x] Status reflects the evidence: `closed` for local implementation; the
+  PostgreSQL/HTTP acceptance gap remains in `FID-2026-1104-006-LIVE`.
 
 ## Resolution
 
 - **Convergence Date:** 2026-11-04 17:10
-- **Next action:** worker implements the transport helper, deadline/claim model
-  and refresh ownership, then returns the focused and HTTP receipts.
-- **Archived:** no.
+- **Commit:** `941c60f`
+- **Next action:** none for implementation. Live acceptance is owned by
+  `FID-2026-1104-006-LIVE`: run `npm run test:http` and
+  `npm run verify:supabase` against a disposable PostgreSQL endpoint, then
+  record the receipts. DNS rebinding remains a documented residual.
+- **Archived:** yes.
 
 ## Lessons Learned
 

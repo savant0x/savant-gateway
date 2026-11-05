@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-008-runtime-gates-and-current-docs.md`
 **ID:** FID-2026-1104-008
 **Severity:** medium
-**Status:** converged
+**Status:** fixed
 **Created:** 2026-11-04 17:10
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -108,13 +108,27 @@ One small script plus list extraction.
 - gate: verify — `npm run verify:supabase`.
 - gate: attribution — `npm run attribution`.
 
-**Planned artifact:** `scripts/repository-contract-check.mjs` is new and does not
-exist at convergence; the worker adds it together with its gate wiring. No test
-file is claimed before it exists.
+**Artifact:** `scripts/repository-contract-check.mjs` is implemented and wired as
+`repository:check`, the fifth gate in `VERIFY_GATES`.
 
 ### Verification Receipt
 
-- verified: not yet — design converged, implementation pending.
+- runtime: Node `24.x` in `package.json`, `.nvmrc`, CI and `Dockerfile`; local
+  workstation is Node `v24.21.0`.
+- `npm run repository:check` PASS: Node 24, 11 gates, 10 active FIDs, root
+  links and current docs consistent.
+- `npm run check` PASS; `npm test` 1,019 tests, 1,015 pass, 4 PostgreSQL-only
+  skips, 0 fail; `npm run quality` PASS (605 files); `npm run build` PASS;
+  `npm run storage:check` PASS; `npm run config:check` PASS (non-production);
+  `npm run test:recovery` 14/14 PASS.
+- not run: `npm run test:postgres` refused because Docker and
+  `TEST_DATABASE_URL` are unavailable; `npm run test:http` exited 1 at
+  `paid account limit holds across different keys` in the single-connection
+  PGlite fixture; `npm run verify:supabase` was not run. A full verify receipt
+  is therefore not claimed.
+- clean install: not rerun under a clean `npm ci` in this pass; the existing
+  dependency tree was used. Do not close until a clean install and the full
+  gate run on Node 24 exist.
 
 ## Perfection Loop
 
@@ -160,21 +174,36 @@ file is claimed before it exists.
 
 ## Implementation Evidence
 
-Pending. Coding is reserved to the operator's separate worker.
+Implemented in commit `941c60f`.
 
-- [ ] Commit SHA, file ranges, gate output, step statuses.
-- [ ] Clean-install receipt on the pinned runtime.
+- Runtime: Node 24 selected; `package.json` `engines.node`, `.nvmrc`, CI and
+  `Dockerfile` all match. `docs/project-status.md` already records Node 24.
+- Gate contract: `VERIFY_GATES` in `scripts/verify-summary.mjs` now includes
+  `repository:check`; `scripts/verify.mjs` iterates it, while CI and the
+  pre-push hook call `npm run verify` instead of restating the list.
+- Repository check: active FID registration and uniqueness, allowed active
+  statuses, promised test paths for implemented records, archived closure
+  commit resolution, root-document links, docs indexing and current-topology
+  claims.
+- Corrections: root links in `SCOPE.md` and `CHANGELOG.md`; historical SQLite/Fly
+  banners and current wording; unindexed docs added to `docs/README.md`.
 
 ## Code Verification Evidence
 
-- [x] Files and link targets were inspected; the mismatch is source-confirmed.
-- [x] Status reflects reality: `converged`.
+- [x] Gate list is consumed, not duplicated by CI or pre-push.
+- [x] The check fails on an unregistered active FID, a broken root link, an
+  unindexed doc and the three stale current claims it names.
+- [x] A passing check is documented as path/link validation, not prose review.
+- [x] Status reflects reality: `fixed`, not `closed`; the full-gate receipt is
+  still missing.
 
 ## Resolution
 
 - **Convergence Date:** 2026-11-04 17:10
-- **Next action:** operator runtime ruling, then the worker unifies the gate list
-  and adds the repository check.
+- **Commit:** `941c60f`
+- **Next action:** on a disposable PostgreSQL host, run `npm run test:postgres`,
+  then `npm run test:http` (or `npm run verify:supabase`) and a clean
+  `npm ci` on Node 24. Close only when that full receipt exists.
 - **Archived:** no.
 
 ## Lessons Learned

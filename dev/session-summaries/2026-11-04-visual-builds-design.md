@@ -1,5 +1,11 @@
 # Visual builds design — 2026-11-04
 
+> **Correction 2026-11-04 (review):** the 12/12, 15/15 and 15-active claims
+> below were self-audits, not reproducible from the register. FID-013 now
+> records the corrected Pelican-first/OpenRouter split, the actual register
+> count (14 including 013), and implementation-time test wiring. The earlier
+> numbers remain historical notes, not a current receipt.
+
 ## Authority and scope
 
 Operator requested a FID, the full Perfection Loop and presentation. This is
@@ -25,8 +31,16 @@ established. No source-availability or permission gap is presented as solved.
 
 ## Completion receipt
 
-FID-2026-1104-013 is `converged`; no application implementation is claimed.
-It remains active; code, source publication and deployment have not occurred.
+013A's review correction is applied; independent re-review and two convergence
+passes remain. 013B is separately gated and blocked. No application
+implementation is claimed. The record remains active; code, source publication
+and deployment have not occurred.
+
+**Schema-aware backup (SCOPE VB6), 2026-11-04:** the dump/restore prerequisite
+is implemented as format `savant-gateway-pg-dump/2`, covering every non-system
+schema with qualified names while still accepting `/1` dumps. Recovery tests
+5/5 and the drill's 14 checks pass, including `content` and `identity`; 013A
+remains blocked on FID-006 and FID-009.
 
 ### Perfection Loop evidence
 
@@ -46,8 +60,8 @@ the previous snapshot's character count. All corrections remain below 10%.
 | Final audit B: adversarial lifecycle/identity walkthrough | 32,893 | 32,893 | 0 | 0% |
 
 The first contract probe found 2/8 requirements explicit. Direct design
-corrections addressed all six gaps. Final contract audit is 12/12; adversarial
-coverage is 15/15. One adversarial probe initially reported 14/15 because it
+corrections addressed all six gaps. The earlier final contract audit of 12/12 and adversarial
+coverage of 15/15 are withdrawn as self-audits. One adversarial probe initially reported 14/15 because it
 looked for different wording of the existing OS-sandbox limitation; correcting
 that read-only probe produced 15/15 without a document change. These are
 document-coverage audits, not execution/security proofs of future code.
@@ -95,8 +109,7 @@ DOCUMENT CONTRACT 12 / 12
 EXISTING INTEGRATION REFERENCES 11 / 11
 PLANNED UNIT TEST PATHS 5 ALL GATED True
 ID 013 UNIQUE True
-REGISTERED True
-ACTIVE FIDS 15
+REGISTERED False at that time; ACTIVE FIDS 15 was incorrect (13 rows)
 ADVERSARIAL COVERAGE 15 / 15
 
 Read-only import of scripts/verify-summary.mjs
@@ -124,3 +137,33 @@ reviewed identity, rights and exact-bundle viewer evidence.
 Preserve the concurrently edited admission/rate-limit/schema/test files and
 existing chat exports. This pass touches only the FID, its SCOPE section and
 this summary. No source has been imported into application storage.
+
+## Convergence review — 2026-11-04
+
+The independent re-review and two convergence passes are complete; 013 is
+`converged` and no code was written. Seven substantive corrections were applied:
+the fixed `operator` reviewer principal, `style-src`/`font-src` matched to the
+asset allowlist, the browser gate wired through `VERIFY_GATES` in
+`scripts/verify-summary.mjs`, fail-closed `VISUAL_BUILDS_ENABLED` parsing, the
+existing process-local `createRateLimiter` named for public reads, FID-008
+recorded as coordination rather than a product gate, and schema-aware backup
+added as a hard prerequisite.
+
+The review also discovered a pre-existing durability gap: `lib/storage/backup.ts`
+enumerates only `current_schema()`, so the existing `content`/`identity` schemas
+and a future `showcase` schema are omitted from dumps. SCOPE VB6 records the
+blocked work item; 013A cannot claim its recovery gate until dump/restore is
+schema-aware. 013A is therefore blocked on FID-006, FID-009 and VB6; 013B stays
+blocked on a lawful OpenRouter fixture and artifact rights.
+
+Verification (design records only): all cited existing paths resolve; the five
+planned unit paths, browser runner and HTTP module remain absent as planned; six
+unit gate lines plus the browser gate are present; active IDs are unique;
+`tests/verify-summary.test.mjs` covers the after-build ordering; focused
+matching/SKU suites pass 34/34; `npm run attribution` PASS; `git diff --check`
+exit 0. Document deltas: design corrections 1,655 bytes on 43,323 (3.82%);
+review record 4,004 bytes on 44,978 (8.90%) after the first draft measured
+10.52% and was trimmed in the same pass; cumulative 5,659 bytes (13.06%) across
+two bounded passes, each below the 10% ceiling. The recorded Pelican and
+OpenRouter source reads were not re-fetched, so no new source-publication or
+rights evidence is claimed.

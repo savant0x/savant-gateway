@@ -1,8 +1,17 @@
 {
   "version": 1,
-  "updated": "2026-11-02",
+  "updated": "2026-11-04",
   "policy": "Archived implementations do not claim live acceptance. These are observation, operator-input or revisit items linked to archived records; they do not hold implementation closure.",
   "items": [
+    {
+      "id": "FID-2026-1104-013-STORE-WIRING",
+      "fid": "FID-2026-1104-013",
+      "state": "blocked",
+      "title": "Visual-builds PostgreSQL proof and recovery wiring",
+      "detail": "The 013A design requires tests/visual-builds-store.test.mjs in scripts/postgres-concurrency-proof.mjs and showcase.assets/revisions in scripts/db-recovery-drill.mjs. The test and schema do not exist, so adding the path now would fail the mandatory test:postgres gate. This record is not proof that the concurrency or recovery proof ran.",
+      "evidence": "dev/fids/FID-2026-1104-013-model-matched-visual-builds.md; scripts/postgres-concurrency-proof.mjs; scripts/db-recovery-drill.mjs",
+      "next_action": "When 013A schema/store lands, add tests/visual-builds-store.test.mjs to TEST_FILES, extend the recovery drill to seed and compare showcase asset/revision hashes, then run npm run test:postgres, npm run test:recovery and npm run verify:supabase."
+    },
     {
       "id": "FID-2026-1030-045-LIVE",
       "fid": "FID-2026-1030-045",

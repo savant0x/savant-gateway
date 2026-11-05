@@ -29,7 +29,7 @@ working set; each FID owns its own status, evidence and resolution.
 | [2026-1104-009](FID-2026-1104-009-browser-journey-receipt.md) | Fresh browser journey receipt | converged | Worker adds the Playwright runner and records six journeys in both themes. |
 | [2026-1104-010](FID-2026-1104-010-discovery-to-inference-events.md) | Discovery-to-inference business events | converged | Worker adds five bounded event kinds and the operator aggregate. |
 | [2026-1104-011](FID-2026-1104-011-policy-v1-2-publication.md) | Policy v1.2 for the current service surface | converged | Operator approves the recipient inventory; worker drafts v1.2 and the acceptance bump. |
-| [2026-1104-013](FID-2026-1104-013-model-matched-visual-builds.md) | Pelican-first model-matched visual builds with a gated OpenRouter track | converged | 013A only after 006/009 and schema-aware backup (SCOPE VB6) land. 013B stays blocked on a lawful OpenRouter fixture and rights. |
+| [2026-1104-013](FID-2026-1104-013-model-matched-visual-builds.md) | Pelican-first model-matched visual builds with a gated OpenRouter track | converged | 013A only after 006/009; schema-aware backup (SCOPE VB6) is implemented. 013B stays blocked on a lawful OpenRouter fixture and rights. |
 
 > 2026-11-04 correction: FID-013 was absent from this table despite the
 > planning summary's "registered" claim. It is now registered as 013A/013B;
@@ -44,6 +44,11 @@ working set; each FID owns its own status, evidence and resolution.
 > pool acquisition and failed-rollback discard); FID-007 is `fixed` in
 > `0433cf7` (verified remote provisioning TLS). Both carry partial receipts;
 > real-server and live TLS acceptance remain, so neither is closed.
+>
+> 2026-11-04 SCOPE VB6: the logical dump/restore is schema-aware (`/2`), legacy
+> `/1` dumps still restore, and the recovery drill covers `content` and
+> `identity`. FID-013's durability prerequisite is satisfied; 013A remains
+> blocked on FID-006 and FID-009.
 
 Finding 3 of the 2026-11-04 release audit has no new record: real payment,
 funded inference, hosted restore, delivered alert and the release decision stay

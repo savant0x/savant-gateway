@@ -19,12 +19,35 @@ are not authorized by this request.
   full single-agent Perfection Loop with measured document deltas.
 - [x] **VB3 — Verify and present.** Check document structure, references,
   registration and attribution; present the converged FID with explicit
-  implementation and source-publication boundaries. Evidence: document 12/12,
-  adversarial coverage 15/15, two unchanged final passes, static gates exit 0,
-  existing matching/SKU tests 34/34; planning session summary holds the receipt.
+  implementation and source-publication boundaries. Evidence: the earlier
+  12/12 and 15/15 self-audits were withdrawn; VB5 records the checks that
+  survive.
 - [ ] **VB4 — Implementation (blocked pending operator authorization).**
   FID-2026-1104-013 remains design-only in this session. No application code,
   schema, source import, paid generation or deployment is authorized here.
+- [x] **VB5 — Convergence review.** Independent re-read of FID-2026-1104-013
+  against HEAD plus two convergence passes. Seven substantive design
+  corrections applied: fixed `operator` reviewer principal, CSP style/font
+  sources matched to the asset allowlist, browser gate wired through
+  `VERIFY_GATES`, fail-closed feature-flag parsing, named process-local read
+  limiter, 008 recorded as coordination rather than a product gate, and
+  schema-aware backup added as a hard prerequisite. Existing matching/SKU
+  suites 34/34; `npm run attribution` and `git diff --check` exit 0. No code
+  written; VB4 remains blocked.
+- [x] **VB6 — Schema-aware backup (discovered and implemented 2026-11-04).**
+  The dump previously enumerated only `table_schema = current_schema()`
+  (public) and used bare table names, so `content` and `identity` were omitted.
+  Dump format `savant-gateway-pg-dump/2` now enumerates every non-system base
+  table across schemas, orders parents before children from the catalog, writes
+  schema-qualified manifest entries and `${schema}.${table}.jsonl` files, and
+  restores with schema-qualified select/truncate/insert. Legacy `/1` dumps are
+  still accepted and normalized to `public`. The catalog helpers live in
+  `lib/storage/backup-tables.ts` to keep both modules under the 400-line
+  ceiling. Evidence: `tests/database-recovery.test.mjs` 5/5 and
+  `scripts/db-recovery-drill.mjs` all 14 checks PASS, including
+  `content.sources` and `identity.protocols`; typecheck, zero-warning lint and
+  quality pass. A future `showcase` schema is covered by the same enumeration
+  and must be asserted when 013A lands.
 
 ## Audit clarification — 2026-11-04
 

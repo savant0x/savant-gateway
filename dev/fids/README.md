@@ -21,7 +21,6 @@ working set; each FID owns its own status, evidence and resolution.
 | [068](FID-2026-1030-068-usdc-receive-lane.md) | Direct-to-wallet USDC receive lane | fixed | Operator inputs still gate the receive lane; re-read the record before acting. |
 | [127](FID-2026-1103-127-real-launch-acceptance-receipt.md) | Real launch acceptance receipt | fixed | Operator records the five observations (`payment`, `recovery`, `alert`, `load`, `rollback`) and a go pinned to the release SHA, then runs `npm run receipt:launch`. |
 | [137](FID-2026-1103-137-product-hardening-and-install-order-master.md) | Product hardening and install-order master | converged | Closes only after 126 and 127 have their required evidence. |
-| [2026-1104-014](FID-2026-1104-014-trial-reservation-lock-order.md) | Trial reservation and settlement lock order | fixed | Record the implementation SHA and close after the real-PostgreSQL trial receipt. |
 | [2026-1104-009](FID-2026-1104-009-browser-journey-receipt.md) | Fresh browser journey receipt | converged | Worker adds the Playwright runner and records six journeys in both themes. |
 | [2026-1104-011](FID-2026-1104-011-policy-v1-2-publication.md) | Policy v1.2 for the current service surface | converged | Operator approves the recipient inventory; worker drafts v1.2 and the acceptance bump. |
 | [2026-1104-013](FID-2026-1104-013-model-matched-visual-builds.md) | Pelican-first model-matched visual builds with a gated OpenRouter track | converged | 013A only after 009; schema-aware backup (SCOPE VB6) is implemented. 013B stays blocked on a lawful OpenRouter fixture and rights. |
@@ -29,7 +28,7 @@ working set; each FID owns its own status, evidence and resolution.
 > 2026-11-04 correction: FID-013 was absent from this table despite the
 > planning summary's "registered" claim. It is now registered as 013A/013B;
 > the active count was 14/20 before the completed-implementation cleanup (now
-> 9/20 after FID-006 closed). Neither track is implemented, and 013B is not an
+> 8/20 after the PostgreSQL verification pass). Neither track is implemented, and 013B is not an
 > implementation authorization.
 >
 > 2026-11-04 convergence review: seven design corrections applied; 013 is
@@ -84,7 +83,8 @@ HTTP suite's 776 checks plus the trial suite, and recovery 14/14. The managed
 `verify:supabase` wrapper remains unrun because its self-signed chain has no
 configured CA; live TLS acceptance stays in
 `FID-2026-1104-007-LIVE`. The first full run exposed a trial reservation /
-settlement deadlock, fixed and recorded in FID-014.
+settlement deadlock; [FID-014](archive/FID-2026-1104-014-trial-reservation-lock-order.md)
+is `closed` at `8f40a76`.
 
 ### Closed in the 2026-11-04 bounded transport pass
 
@@ -97,8 +97,8 @@ check, quality, build, recovery, storage, config and repository checks pass.
 The real-PostgreSQL HTTP and mandatory two-connection receipts, plus the DNS
 rebinding residual, remain in `FID-2026-1104-006-LIVE`; no full `verify` or
 launch acceptance is claimed. FID-008 is now closed with the clean-install,
-full-gate real-PostgreSQL receipt; FID-014 records the trial deadlock found
-during that run.
+full-gate real-PostgreSQL receipt; FID-014 is `closed` at `8f40a76` with the
+trial deadlock found during that run.
 
 ### Closed in the 2026-11-04 shared-admission implementation
 

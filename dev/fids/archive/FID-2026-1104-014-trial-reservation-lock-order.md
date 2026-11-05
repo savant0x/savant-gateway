@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-014-trial-reservation-lock-order.md`
 **ID:** FID-2026-1104-014
 **Severity:** high
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-04 22:05
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -198,8 +198,7 @@ weakened assertion. PostgreSQL already provides the needed row-lock mode.
   rationale beside it.
 - `scripts/trial-http-suite.mjs` — imports `logTail` and prints the server log
   tail when the suite fails.
-- The implementation and this record are in the same commit; the closure record
-  will name that commit once it exists.
+- The implementation commit is `8f40a76`; this closure record names it.
 
 ## Code Verification Evidence
 
@@ -208,8 +207,24 @@ weakened assertion. PostgreSQL already provides the needed row-lock mode.
   grant and reservation inserts.
 - [x] The trial assertion was not relaxed.
 - [x] The server log is available on failure without exposing a secret.
-- [x] Status reflects reality: `fixed` with a complete local PostgreSQL receipt;
+- [x] Status reflects reality: `closed` with a complete local PostgreSQL receipt;
   managed-host acceptance remains separate.
+
+## Resolution
+
+- **Closed Date:** 2026-11-04
+- **Commit:** `8f40a76`
+- **Fix Description:** trial reservation locks the account row with
+  `FOR NO KEY UPDATE`, preserving serialization while allowing settlement's
+  foreign-key `KEY SHARE` to complete. The trial HTTP suite now prints its
+  server log tail on failure.
+- **Tests Added:** No new test file; the existing trial HTTP suite was run ten
+  times on disposable PostgreSQL 17.6 and passed every concurrent-trial check.
+- **Verification Evidence:** full `npm run verify` PASS (11/11 gates,
+  1,019/1,019 tests, zero skips, 4/4 two-connection proofs, 776 main HTTP checks
+  plus the trial suite, recovery 14/14); repository, quality, attribution and
+  whitespace checks PASS.
+- **Archived:** 2026-11-04; moved to `dev/fids/archive/`.
 
 ## Lessons Learned
 

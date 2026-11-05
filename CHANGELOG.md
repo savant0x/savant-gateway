@@ -15,8 +15,7 @@ serializes competing reservations but is compatible with settlement's foreign-ke
 lock. The trial HTTP suite now prints its server log tail on failure. Ten
 consecutive real-PostgreSQL trial runs pass; the full gate is 11/11 with
 1,019/1,019 tests, zero skips, 4/4 two-connection proofs, 776 main HTTP checks
-plus the trial suite, and recovery 14/14. The implementation is `fixed`; the
-closure record follows.
+plus the trial suite, and recovery 14/14. Closed at `8f40a76`.
 
 ## 2026-11-04 — Bounded ingestion transport, Node 24 and one gate contract (006, 008)
 

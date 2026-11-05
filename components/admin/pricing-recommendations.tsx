@@ -5,6 +5,7 @@ import type {
   PriceRecommendation,
   RoundingPolicy,
 } from "@/lib/price-recommendation";
+import type { HistoricalVolume } from "@/lib/pricing-command";
 
 import { Button, Card, Chip, Spinner } from "@heroui/react";
 import { useRouter } from "next/navigation";
@@ -16,9 +17,11 @@ import {
   formatSignedMicros,
   responseError,
 } from "@/components/dashboard/format";
+import { PricingVolumeCell } from "@/components/admin/pricing-volume-cell";
 import { StatePanel } from "@/components/ui/state-panel";
 import { adminLoginHref } from "@/lib/admin-return";
 import { microsToPrice, priceToMicros } from "@/lib/pricing";
+import { projectPricingVolume } from "@/lib/pricing-command";
 import { recommendPrices } from "@/lib/price-recommendation";
 
 function recommendationFor(
@@ -41,9 +44,13 @@ function recommendationFor(
 
 export function PricingRecommendations({
   models,
+  volumeById = {},
+  windowDays = 30,
   defaultTargetPercent = 30,
 }: {
   models: AdminModelSummary[];
+  volumeById?: Record<string, HistoricalVolume>;
+  windowDays?: number;
   defaultTargetPercent?: number;
 }) {
   const router = useRouter();
@@ -88,6 +95,12 @@ export function PricingRecommendations({
           targetMarginBps: targetBps,
           rounding,
           reason: reason.trim(),
+          expected: {
+            inputPricePer1M: model.inputPricePer1M,
+            outputPricePer1M: model.outputPricePer1M,
+            costInputPer1M: model.costInputPer1M,
+            costOutputPer1M: model.costOutputPer1M,
+          },
         }),
       });
 
@@ -240,6 +253,9 @@ export function PricingRecommendations({
                   <th className="text-right" scope="col">
                     Profit
                   </th>
+                  <th className="text-right" scope="col">
+                    At {windowDays}d volume
+                  </th>
                   <th scope="col">Action</th>
                 </tr>
               </thead>
@@ -247,6 +263,21 @@ export function PricingRecommendations({
                 {rows.map(({ model, recommendation }) => {
                   const eligible = recommendation.eligible;
                   const warning = recommendation.warnings.join(" ");
+                  const volume = volumeById[model.id];
+                  const projected = eligible
+                    ? projectPricingVolume(
+                        volume,
+                        {
+                          inputMicros: recommendation.inputMicros,
+                          outputMicros: recommendation.outputMicros,
+                        },
+                        {
+                          inputMicros: priceToMicros(model.costInputPer1M),
+                          outputMicros: priceToMicros(model.costOutputPer1M),
+                        },
+                        model.costSource !== "unknown",
+                      )
+                    : null;
 
                   return (
                     <tr key={model.id}>
@@ -310,6 +341,11 @@ export function PricingRecommendations({
                           "—"
                         )}
                       </td>
+                      <PricingVolumeCell
+                        hadVolume={Boolean(volume)}
+                        projected={projected}
+                        requests={volume?.requests ?? 0}
+                      />
                       <td className="align-middle">
                         {eligible ? (
                           <div className="space-y-1">
@@ -347,6 +383,14 @@ export function PricingRecommendations({
             </table>
           </div>
         )}
+
+        <p className="max-w-3xl text-[11px] leading-5 text-muted">
+          &ldquo;At {windowDays}d volume&rdquo; replays the tokens actually
+          settled in that window at the recommended price and the current cost
+          basis. It is a what-if, not a forecast: it assumes the same traffic,
+          the same route and the same upstream cost. A row with an unknown cost
+          basis shows no projection.
+        </p>
       </Card.Content>
     </Card>
   );

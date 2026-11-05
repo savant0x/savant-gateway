@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { createStorageDatabase } from "../lib/storage/database.ts";
 import { getAnalyticsData } from "../lib/storage/store/analytics.ts";
+import { getPricingCommand } from "../lib/storage/store/pricing-command.ts";
 import { createPgliteDatabase } from "./pglite-pool.mjs";
 
 const NOW = new Date("2026-10-31T12:00:00.000Z");
@@ -253,6 +254,36 @@ test("plan revenue comes from paid usd invoices, MRR from live prices", async ()
       data.byPlan.map((plan) => plan.planId),
       ["plan_month", "plan_year", "plan_solo"],
       "revenue first, then run-rate",
+    );
+  } finally {
+    await db.close();
+  }
+});
+
+test("pricing command revenue reconciles with analytics and flags unknown cost", async () => {
+  const db = await fixture();
+
+  try {
+    await db
+      .prepare("UPDATE models SET cost_source = 'synced' WHERE id = 'm1'")
+      .run();
+
+    const analytics = await getAnalyticsData(db, 7, NOW);
+    const command = await getPricingCommand(db, 7, NOW.toISOString());
+
+    assert.equal(command.summary.requests, analytics.totals.requests);
+    assert.equal(command.summary.revenueMicros, analytics.totals.chargedMicros);
+    assert.equal(command.summary.revenueMicros, 400);
+
+    // The deleted model's cost basis is unknown, so its 40 micros of recorded
+    // cost stays out of the command total instead of being trusted as zero.
+    assert.equal(command.summary.knownRevenueMicros, 300);
+    assert.equal(command.summary.costMicros, 100);
+    assert.equal(command.summary.contributionMicros, 200);
+    assert.equal(command.summary.unknownCostRequests, 1);
+    assert.equal(
+      command.summary.costMicros + 40,
+      analytics.totals.costMicros,
     );
   } finally {
     await db.close();

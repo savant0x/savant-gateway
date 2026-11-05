@@ -3,6 +3,35 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-05 — Pricing command center and provider capital (005, 006)
+
+- **FID-2026-1105-005 — medium —** added a realized pricing command center to
+  the admin pricing page. It ranks settled credit revenue, recorded upstream
+  cost and contribution over a bounded 7/30/90-day UTC window, with sortable and
+  paginated rows, current sell/cost rates, cost-basis age, and an explicit
+  unknown-cost coverage count instead of a zero. Free and included plan usage
+  stay out of the per-model credit totals. The recommendation preview now shows
+  a historical-volume what-if and sends the previewed sell/cost version with an
+  approval; the existing guarded PATCH path performs a conditional update and
+  returns 409 when the price or serving cost moved, so a stale preview cannot
+  publish and no second decision row is written.
+- **FID-2026-1105-006 — high —** added a read-only provider capital panel with
+  capability-aware balances, freshness state, recorded spend by serving
+  provider, trailing coverage, dependent catalog rows and an explicitly stated
+  runway estimate that requires a current balance and seven covered days. The
+  economic alert rules (runway floor, margin floor, stale manual cost, customer
+  spend) join the existing operations incident and delivery pipeline behind the
+  default-off `OPERATIONS_ECONOMIC_ALERTS` switch, with deduplicated
+  fingerprints and admin links. No funding action, balance mutation, ledger
+  write or external transfer was added.
+- **Verification:** `npm run verify` PASS — 11/11 gates, 1,075/1,075 tests with
+  zero skips, PostgreSQL 2/2, quality PASS (647 files), build PASS, 776 main
+  HTTP checks plus the trial suite, recovery 14/14, 155.5 s. New suites
+  `tests/admin-pricing-command.test.mjs` and `tests/provider-capital.test.mjs`;
+  the pricing-decision, analytics and operations suites were extended. No
+  hosted deployment, provider funding or price publication outside the existing
+  guarded approval path is claimed.
+
 ## 2026-11-05 — Browser journey receipt and 013A authorization
 
 - **FID-2026-1104-009 — medium —** added Playwright 1.55.0 and one

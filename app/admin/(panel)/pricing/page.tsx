@@ -5,6 +5,7 @@ import { Card } from "@heroui/react";
 import { AnalyticsChart } from "@/components/admin/analytics-chart";
 import { MarkupForm } from "@/components/admin/markup-form";
 import { PricingChart } from "@/components/admin/pricing-chart";
+import { PricingCommand } from "@/components/admin/pricing-command";
 import { PricingRecommendations } from "@/components/admin/pricing-recommendations";
 import { PricingTable } from "@/components/admin/pricing-table";
 import { StatCard } from "@/components/dashboard/chips";
@@ -12,8 +13,10 @@ import {
   formatMarginPercent,
   formatNumber,
 } from "@/components/dashboard/format";
+import { normalizePricingWindow } from "@/lib/pricing-command";
 import {
   getAnalyticsData,
+  getPricingCommand,
   getPricingSummary,
   listAllModels,
   listModelGroups,
@@ -27,14 +30,33 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function AdminPricingPage() {
-  const [models, groups, decisions, analytics] = await Promise.all([
+export default async function AdminPricingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ window?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const windowDays = normalizePricingWindow(
+    Array.isArray(params.window) ? params.window[0] : params.window,
+  );
+  const [models, groups, decisions, analytics, command] = await Promise.all([
     listAllModels(),
     listModelGroups(),
     listPricingDecisions(200),
     getAnalyticsData(30),
+    getPricingCommand(windowDays),
   ]);
   const data = { models, summary: await getPricingSummary(models) };
+  const volumeById = Object.fromEntries(
+    command.rows.map((row) => [
+      row.modelId,
+      {
+        requests: row.requests,
+        inputTokens: row.inputTokens,
+        outputTokens: row.outputTokens,
+      },
+    ]),
+  );
 
   return (
     <>
@@ -88,9 +110,15 @@ export default async function AdminPricingPage() {
 
       <MarkupForm markupBps={data.summary.markupBps} />
 
+      <PricingCommand data={command} />
+
       <PricingChart decisions={decisions} models={data.models} />
 
-      <PricingRecommendations models={data.models} />
+      <PricingRecommendations
+        models={data.models}
+        volumeById={volumeById}
+        windowDays={command.rangeDays}
+      />
 
       <PricingTable groups={groups} models={data.models} />
 

@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { createStorageDatabase } from "../lib/storage/database.ts";
 import { setModelPricing } from "../lib/storage/store/models.ts";
+import { setModelPricingChecked } from "../lib/storage/store/pricing-approval.ts";
 import {
   listPricingDecisions,
   recordPricingDecision,
@@ -156,6 +157,70 @@ test("a plain price edit can be audited, and a free row cannot", async () => {
 
     assert.equal(free, false);
     assert.equal((await listPricingDecisions(db, 10)).length, 1);
+  } finally {
+    await db.close();
+  }
+});
+
+test("a stale price version is refused without a second decision", async () => {
+  const db = await fixture();
+
+  try {
+    await seed(db);
+
+    const expected = {
+      sellInputMicros: 1_250,
+      sellOutputMicros: 2_500,
+      costInputMicros: 1_000,
+      costOutputMicros: 2_000,
+    };
+    const approval = {
+      actor: "admin-session",
+      reason: "Version checked approval",
+      modelName: "Model One",
+      costSource: "synced",
+      costInputMicros: 1_000,
+      costOutputMicros: 2_000,
+      targetMarginBps: 3_000,
+      rounding: "micro",
+      recommendationJson: JSON.stringify({ eligible: true }),
+    };
+
+    assert.equal(
+      (
+        await setModelPricingChecked(
+          db,
+          "m1",
+          2_000,
+          4_000,
+          expected,
+          approval,
+        )
+      ).status,
+      "ok",
+    );
+
+    assert.equal(
+      (
+        await setModelPricingChecked(
+          db,
+          "m1",
+          3_000,
+          5_000,
+          expected,
+          approval,
+        )
+      ).status,
+      "stale",
+    );
+
+    assert.equal((await listPricingDecisions(db, 10)).length, 1);
+
+    const row = await db
+      .prepare("SELECT sell_input_micros FROM models WHERE id = 'm1'")
+      .get();
+
+    assert.equal(Number(row.sell_input_micros), 2_000);
   } finally {
     await db.close();
   }

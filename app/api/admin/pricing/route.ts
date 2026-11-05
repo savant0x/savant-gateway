@@ -1,9 +1,11 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
 import { priceToMicros, readMarkupInput, readPriceInput } from "@/lib/pricing";
+import { readPricingVersion } from "@/lib/pricing-command";
 import { recommendPrices } from "@/lib/price-recommendation";
 import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 import {
   applyCatalogMarkup,
+  approvePricingRecommendation,
   getPricingSummary,
   listAllModels,
   listPricingDecisions,
@@ -67,6 +69,7 @@ export async function PATCH(request: Request) {
     targetMarginBps?: unknown;
     rounding?: unknown;
     reason?: unknown;
+    expected?: unknown;
   };
 
   try {
@@ -127,25 +130,49 @@ export async function PATCH(request: Request) {
       return adminError(409, recommendation.reason);
     }
 
-    if (
-      !(await setModelPricing(
-        id,
-        recommendation.inputMicros,
-        recommendation.outputMicros,
-        {
-          actor: "admin-session",
-          reason,
-          modelName: model.name,
-          costSource: model.costSource,
-          costInputMicros,
-          costOutputMicros,
-          targetMarginBps,
-          rounding: recommendation.rounding,
-          recommendationJson: JSON.stringify(recommendation),
-        },
-      ))
-    ) {
+    const expected = readPricingVersion(body.expected);
+
+    if (!expected) {
+      return adminError(
+        400,
+        "The approval is missing the price and cost version it was previewed against. Reload the pricing page and review the current numbers.",
+      );
+    }
+
+    const approved = await approvePricingRecommendation(
+      id,
+      recommendation.inputMicros,
+      recommendation.outputMicros,
+      expected,
+      {
+        actor: "admin-session",
+        reason,
+        modelName: model.name,
+        costSource: model.costSource,
+        costInputMicros,
+        costOutputMicros,
+        targetMarginBps,
+        rounding: recommendation.rounding,
+        recommendationJson: JSON.stringify(recommendation),
+      },
+    );
+
+    if (approved.status === "not_found") {
       return adminError(404, "Model not found.");
+    }
+
+    if (approved.status === "free") {
+      return adminError(
+        400,
+        "This model is in a free group. Move it to a paid or subscription group before setting a sell price.",
+      );
+    }
+
+    if (approved.status === "stale") {
+      return adminError(
+        409,
+        "The sell price or the serving cost changed since this recommendation was previewed. Reload the page and approve the current numbers.",
+      );
     }
 
     return Response.json(

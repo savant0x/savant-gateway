@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 
+import { ProviderCapitalPanel } from "@/components/admin/provider-capital";
 import { AdminProvidersPanel } from "@/components/admin/providers-panel";
-import { listProviders } from "@/lib/store";
+import { getProviderCapital, listProviders } from "@/lib/store";
 import { refreshEnabledProviderAccounts } from "@/lib/providers/runtime";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,10 @@ export const metadata: Metadata = {
 export default async function AdminProvidersPage() {
   await refreshEnabledProviderAccounts();
 
-  const providers = await listProviders();
+  const [providers, capital] = await Promise.all([
+    listProviders(),
+    getProviderCapital(),
+  ]);
 
   return (
     <>
@@ -39,6 +43,8 @@ export default async function AdminProvidersPage() {
       </div>
 
       <AdminProvidersPanel providers={providers} />
+
+      <ProviderCapitalPanel data={capital} />
     </>
   );
 }

@@ -574,6 +574,51 @@ test("unconfigured delivery is recorded without sending or burning attempts", as
   assert.equal(listIncidents(db)[0].nextAttemptAt, null);
 });
 
+test("economic candidates join the same pipeline and resolve when absent", async () => {
+  const db = createDatabase();
+  const sent = [];
+  const transport = async (payload) => {
+    sent.push(payload);
+
+    return { ok: true };
+  };
+  const extraCandidates = [
+    {
+      fingerprint: "economics:runway:alpha",
+      severity: "warning",
+      title: "Provider Alpha has a short estimated runway",
+      detail: "Two days at the current recorded pace. Review /admin/providers.",
+    },
+  ];
+  const first = await runOperationsTick({
+    database: db,
+    snapshot: snapshot(),
+    thresholds: thresholds(),
+    transport,
+    extraCandidates: [...extraCandidates, ...extraCandidates],
+    now: T0,
+  });
+
+  assert.equal(first.active, 1, "the same fingerprint is evaluated once");
+  assert.equal(first.opened, 1);
+  assert.equal(first.delivered, 1);
+  assert.equal(sent[0].fingerprint, "economics:runway:alpha");
+
+  const recovery = await runOperationsTick({
+    database: db,
+    snapshot: snapshot({ generatedAt: "2026-10-31T12:06:00.000Z" }),
+    thresholds: thresholds(),
+    transport,
+    extraCandidates: [],
+    now: "2026-10-31T12:06:00.000Z",
+  });
+
+  assert.equal(recovery.resolved, 1);
+  assert.equal(recovery.delivered, 1);
+  assert.equal(sent[1].event, "recovery");
+  assert.equal(listIncidents(db)[0].status, "resolved");
+});
+
 test("transport config refuses insecure destinations and short secrets", () => {
   assert.equal(readAlertTransportConfig({}).configured, false);
   assert.equal(

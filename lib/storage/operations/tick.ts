@@ -1,5 +1,6 @@
 import type { PostgresDatabase } from "../pg-adapter.ts";
 import type {
+  IncidentCandidate,
   OperationsAlertPayload,
   OperationsDeliveryResult,
   OperationsIncident,
@@ -146,17 +147,34 @@ async function markDeliveryFailure(
  * One monitor run: evaluate, reconcile incident rows, then attempt every due
  * delivery. Delivery is outside the incident transaction so a slow endpoint
  * cannot hold a database write lock over the whole run.
+ *
+ * `extraCandidates` is how the economic rules join the same pass without a
+ * second incident pipeline: they are evaluated with the same fingerprints,
+ * deduplicated, recorded in the same transaction and delivered by the same
+ * transport. `resolveMissingIncidents` therefore resolves a runway warning when
+ * economic alerts are switched off or the balance recovers, just like any other
+ * condition.
  */
 export async function runOperationsTick(input: {
   database: PostgresDatabase;
   snapshot: OperationsSnapshot;
   thresholds: OperationsThresholds;
   transport: OperationsTransport;
+  extraCandidates?: IncidentCandidate[];
   now?: string;
 }): Promise<OperationsTickResult> {
   const { database, snapshot, thresholds, transport } = input;
   const now = input.now ?? snapshot.generatedAt;
-  const candidates = evaluateOperations(snapshot, thresholds);
+  const unique = new Map<string, IncidentCandidate>();
+
+  for (const candidate of [
+    ...evaluateOperations(snapshot, thresholds),
+    ...(input.extraCandidates ?? []),
+  ]) {
+    unique.set(candidate.fingerprint, candidate);
+  }
+
+  const candidates = Array.from(unique.values());
   const active = new Set(candidates.map((candidate) => candidate.fingerprint));
   let opened = 0;
   let reopened = 0;

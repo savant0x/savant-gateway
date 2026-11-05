@@ -31,11 +31,18 @@ remains provider working capital, not infrastructure budget.
   gates, 17 active FIDs); `npm run attribution` PASS (both guards); `npm run
   lint` exit 0; `npm run typecheck` exit 0. No implementation gate is claimed
   and the three planned test files do not exist yet.
-- [ ] **AE4 — Implementation.** Blocked pending an explicit operator
-  authorization for a coding session. Order is 005 → 006 → 007; each child
-  closes only with committed code, its declared gates and call-graph evidence.
-  No price, funding, ledger, entitlement or deployment action is authorized by
-  the planning pass.
+- [x] **AE4 — Implement 005 and 006.** Added the realized pricing command
+  center (`lib/pricing-command.ts`, `lib/storage/store/pricing-command.ts`,
+  `components/admin/pricing-command.tsx`), version-checked approval on the
+  existing PATCH path (`lib/storage/store/pricing-approval.ts`), the historical-
+  volume preview, and the provider capital/runway panel with default-off
+  economic incidents reusing the operations ledger. No price was published
+  outside the guarded approval path, no provider was funded, and no ledger or
+  entitlement was mutated. Evidence: `npm run verify` PASS, 11/11 gates,
+  1,075/1,075 tests; implementation commit recorded in the closed FIDs.
+- [ ] **AE5 — Implement 007.** Customer and offering economics remains
+  unimplemented. It needs its own coding session and may not infer a plan,
+  ledger or entitlement write from this pass.
 
 ## Session — 2026-11-05 (scheduled provider sync design: 004)
 

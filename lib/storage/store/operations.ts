@@ -18,6 +18,11 @@ import {
 } from "../../operations-types.ts";
 import { readOperationsThresholds } from "../../operations-thresholds.ts";
 import {
+  readEconomicAlertThresholds,
+  type EconomicAlertInput,
+} from "../../operations-economics.ts";
+import { economicAlertCandidates } from "../../provider-capital.ts";
+import {
   acknowledgeIncident,
   listIncidents,
   readAdmissionControl,
@@ -29,6 +34,7 @@ import {
   readDatabaseBytes,
 } from "../operations/storage.ts";
 
+import { getEconomicAlertInput } from "./provider-capital.ts";
 import { saveSetting } from "./settings.ts";
 
 /**
@@ -143,12 +149,40 @@ export async function runOperationsMonitor(
     storage: await observeStorage(db),
   });
   const config = readAlertTransportConfig(process.env);
+  const economic = readEconomicAlertThresholds(process.env);
+  let extraCandidates: ReturnType<typeof economicAlertCandidates> = [];
+
+  if (economic.enabled) {
+    let input: EconomicAlertInput | null = null;
+
+    try {
+      input = await getEconomicAlertInput(db, {
+        now: snapshot.generatedAt,
+        windowDays: economic.capitalWindowDays,
+        customerSpendMicros: economic.customerSpendMicros,
+      });
+    } catch {
+      // A partial schema must not stop the operational guards. The economic
+      // rules are additive; their failure is not a reason to skip traffic,
+      // settlement or payment checks.
+      input = null;
+    }
+
+    if (input) {
+      extraCandidates = economicAlertCandidates(
+        input,
+        economic,
+        snapshot.generatedAt,
+      );
+    }
+  }
 
   return runOperationsTick({
     database: db,
     snapshot,
     thresholds,
     transport: (payload) => deliverAlert(payload, config),
+    extraCandidates,
     now: snapshot.generatedAt,
   });
 }

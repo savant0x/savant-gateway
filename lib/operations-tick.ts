@@ -1,5 +1,6 @@
 import type { DatabaseHandle } from "./schema/columns.ts";
 import type {
+  IncidentCandidate,
   OperationsAlertPayload,
   OperationsDeliveryResult,
   OperationsIncident,
@@ -150,17 +151,32 @@ function markDeliveryFailure(
  * One monitor run: evaluate, reconcile incident rows, then attempt every due
  * delivery. Delivery is outside the incident transaction so a slow endpoint
  * cannot hold a database write lock over the whole run.
+ *
+ * `extraCandidates` is the shared extension point for rules whose inputs are
+ * not part of the snapshot, such as the economic alerts. Fingerprints are
+ * deduplicated so the caller cannot record or alert the same condition twice
+ * in one pass.
  */
 export async function runOperationsTick(input: {
   database: DatabaseHandle;
   snapshot: OperationsSnapshot;
   thresholds: OperationsThresholds;
   transport: OperationsTransport;
+  extraCandidates?: IncidentCandidate[];
   now?: string;
 }): Promise<OperationsTickResult> {
   const { database, snapshot, thresholds, transport } = input;
   const now = input.now ?? snapshot.generatedAt;
-  const candidates = evaluateOperations(snapshot, thresholds);
+  const unique = new Map<string, IncidentCandidate>();
+
+  for (const candidate of [
+    ...evaluateOperations(snapshot, thresholds),
+    ...(input.extraCandidates ?? []),
+  ]) {
+    unique.set(candidate.fingerprint, candidate);
+  }
+
+  const candidates = Array.from(unique.values());
   const active = new Set(candidates.map((candidate) => candidate.fingerprint));
   let opened = 0;
   let reopened = 0;

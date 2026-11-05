@@ -22,12 +22,12 @@ remains the dated release review.
 
 ## Verification — 2026-11-05
 
-Measured locally on Windows x64 with Node 24.21.0. The full run was repeated by
-the pre-push hook on the pushed tree at `e726209`:
+Measured locally on Windows x64 with Node 24.21.0. The closure run is based on
+implementation commit `0052734`; the pre-push hook repeats it on the pushed tree:
 
 | Gate | Result |
 | --- | --- |
-| `npm run verify` | PASS — 11/11 gates, 137.8 s; summary in `.verify/summary.json` |
+| `npm run verify` | PASS — 11/11 gates, 132.9 s; summary in `.verify/summary.json` |
 | `npm run check` (lint + typecheck) | PASS |
 | `npm test` | 1,046/1,046 tests, 0 failed, 0 skipped |
 | `npm run test:postgres` | PASS — seven assertions across the four declared files, 0 skipped, on the pinned native PostgreSQL 17.11.0-beta.19. The verifier summary's `2/2` is the first test file's total. |
@@ -37,6 +37,11 @@ the pre-push hook on the pushed tree at `e726209`:
 | `npm run quality` | PASS (400-line ceiling) |
 | `npm run build` | PASS |
 | `npm run test:load` | **Not run in this pass.** Capacity acceptance and the candidate envelope remain open under FID-2026-1030-062. |
+
+The separate browser receipt passes 12/12 journey checks on build
+`IbsGZjBu7Q51HrQ3KPfsT` at implementation commit `0052734`, using Microsoft Edge
+via Playwright. It is a manual release measurement, not part of `verify`; the
+receipt is [`dev/audits/2026-11-05-browser-matrix-009.md`](../dev/audits/2026-11-05-browser-matrix-009.md).
 
 The gate stack is Docker-free. With `TEST_DATABASE_URL` unset, `verify` starts
 one pinned native PostgreSQL 17 cluster under ignored `.scratch/postgres`, binds
@@ -54,7 +59,7 @@ no hosted re-observation is claimed here.
 
 ## Active queue
 
-Twelve records are active. The [register](../dev/fids/README.md) owns the exact
+Eleven records are active. The [register](../dev/fids/README.md) owns the exact
 next action and evidence edges; this table is the current summary.
 
 | ID | Status | Open obligation |
@@ -64,9 +69,8 @@ next action and evidence edges; this table is the current summary.
 | [068](../dev/fids/FID-2026-1030-068-usdc-receive-lane.md) | fixed | Direct USDC lane: chain/token contract, hardware-wallet xpub, RPC endpoint and screening ruling. Not a launch path. |
 | [127](../dev/fids/FID-2026-1103-127-real-launch-acceptance-receipt.md) | fixed | `npm run receipt:launch` reports INCOMPLETE until the operator records the five required observations (`payment`, `recovery`, `alert`, `load`, `rollback`) and a go decision pinned to the release SHA. |
 | [137](../dev/fids/FID-2026-1103-137-product-hardening-and-install-order-master.md) | converged | Sequencing register; closes only after FID-127 has its operator evidence. FID-126 is already closed. |
-| [009](../dev/fids/FID-2026-1104-009-browser-journey-receipt.md) | converged | Add the browser runner and record six journeys in both themes against a pinned build. |
 | [011](../dev/fids/FID-2026-1104-011-policy-v1-2-publication.md) | converged | Operator approves the recipient inventory; draft and publish policy `v1.2` with the acceptance bump. |
-| [013](../dev/fids/FID-2026-1104-013-model-matched-visual-builds.md) | converged | 013A waits on FID-009; 013B waits on a lawful OpenRouter fixture and rights. No implementation has started. |
+| [013](../dev/fids/FID-2026-1104-013-model-matched-visual-builds.md) | converged | 013A is authorized; implementation may start now that 006 and 009 are closed. 013B waits on a lawful OpenRouter fixture and rights. No implementation has started. |
 | [015](../dev/fids/FID-2026-1104-015-content-fetch-automation-and-history.md) | converged | Planning only; coding is reserved and the scheduler backend is unconfirmed. |
 | [016](../dev/fids/FID-2026-1104-016-persistent-content-model-decisions.md) | converged | Planning only; accepted links must remain attached across automatic work. |
 | [017](../dev/fids/FID-2026-1104-017-content-matching-controls-and-review.md) | converged | Implement after 015 and 016; management, settings and rematch are not shipped. |
@@ -90,6 +94,10 @@ PostgreSQL verification). The 002 closure includes the 11/11 gate run, the
 native lifecycle suite, real-PostgreSQL concurrency and HTTP checks, and the
 recovery drill; it does not claim Linux CI, a clean install with postinstall
 scripts enabled, the load gate or hosted delivery.
+
+FID-2026-1104-009 closed on 2026-11-05 at `0052734` with the 12/12 browser
+receipt above. FID-2026-1104-013A is authorized; its implementation has not
+started, and 013B remains blocked.
 
 FID-127 remains active because the operator receipt does not exist yet. The
 dated receipts in [the 2026-10-31 record](project-status-2026-10-31.md) remain

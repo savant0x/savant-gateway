@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-009-browser-journey-receipt.md`
 **ID:** FID-2026-1104-009
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-04 17:10
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -19,7 +19,8 @@ surfaces the audit names.
 ## Environment
 
 - Windows; Node v24.21.0; Next.js 16.4.3; disposable PostgreSQL and production build.
-- Repository HEAD `aef6730`.
+- Repository HEAD at convergence `aef6730`; implementation commit `0052734`.
+- Receipt build ID `IbsGZjBu7Q51HrQ3KPfsT`; Playwright 1.55.0 on Microsoft Edge.
 - Existing receipt: `dev/audits/2026-10-31-browser-matrix-056.md` (132/132, dated).
 
 ## Detailed Description
@@ -96,13 +97,19 @@ cross-browser grid, no hosted service. The existing HTTP gate keeps its role.
 - gate: lint, typecheck, build.
 - gate: test_http — `npm run test:http` for server behavior.
 - gate: quality — `npm run quality`.
+- gate: test_browser — `npm run test:browser` (manual receipt; not in `verify`).
+- gate: verify — `npm run verify` on the closure tree.
 
-**Planned artifact:** `scripts/browser-matrix.mjs` and its receipt are new and do
-not exist at convergence. The worker adds them; this record does not claim a run.
+**Artifact:** `scripts/browser-matrix.mjs`, the `test:browser` package command
+and the dated receipt `dev/audits/2026-11-05-browser-matrix-009.md` now exist.
 
 ### Verification Receipt
 
-- verified: not yet — design converged, implementation pending.
+- verified: 2026-11-05 — `npm run build` exit 0; `npm run test:browser` exit 0
+  with 12/12 journey checks on build `IbsGZjBu7Q51HrQ3KPfsT` at commit
+  `0052734`; lint, typecheck and quality exit 0. Full `npm run verify` PASS:
+  11/11 gates, 1,046/1,046 tests with zero skips, 776 main HTTP checks plus the
+  trial suite, recovery 14/14, 132.9 s.
 
 ## Perfection Loop
 
@@ -148,22 +155,51 @@ not exist at convergence. The worker adds them; this record does not claim a run
 
 ## Implementation Evidence
 
-Pending. Coding is reserved to the operator's separate worker.
-
-- [ ] Commit SHA, file ranges, gate output, step statuses.
-- [ ] Dated browser receipt.
+- [x] **Commit SHA:** `0052734e87aaa69594d4878d287c30187ab1ebc6`.
+- [x] **File:line ranges:** `scripts/browser-matrix.mjs:28-29` viewports;
+  `:34-39` fixture ids; `:41-89` browser launch; `:127-221` schema and seeded
+  content; `:224-281` theme, focus and overflow assertions; `:284-317` error
+  capture and failure screenshots; `:334-498` the six journeys; `:500-594`
+  theme/context orchestration; `:596-723` disposable server and receipt writer.
+  `package.json:21` adds `test:browser`; `package.json:96` pins Playwright.
+- [x] **Gate output:** build exit 0; browser matrix exit 0 with 12/12; lint,
+  typecheck and quality exit 0; full `npm run verify` PASS (11/11 gates,
+  1,046/1,046 tests, zero skips, 132.9 s). The exact browser transcript is in
+  `dev/audits/2026-11-05-browser-matrix-009.md`.
+- [x] **Reproducibility:** `scripts/browser-matrix.mjs` and
+  `npm run test:browser` exist on `HEAD`; the runner fails when no browser or
+  journey is available.
+- [x] **Step statuses:** all four Proposed Solution steps implemented. Step 1:
+  Playwright and one runner. Step 2: six journeys in both themes. Step 3:
+  keyboard/focus/console/mobile assertions and failure-only screenshots. Step
+  4: disposable database, mock upstream, local production build and pinned
+  receipt.
 
 ## Code Verification Evidence
 
-- [x] The prior receipt and the HTTP-only boundary were inspected.
-- [x] Status reflects reality: `converged`.
+- [x] `scripts/browser-matrix.mjs`, `package.json` and the receipt exist.
+- [x] Implementation matches the Proposed Solution: six journeys, both themes,
+  keyboard operation, visible focus, failure-only screenshots and a pinned
+  receipt.
+- [x] Typecheck, lint, build and the browser run pass with pasted output.
+- [x] Production call graph: the runner starts the built server, seeds the
+  disposable database, signs in through the public form and exercises the
+  mounted client components.
+- [x] Status reflects reality: `closed`.
 
 ## Resolution
 
-- **Convergence Date:** 2026-11-04 17:10
-- **Next action:** worker adds the runner and journeys, then records the receipt
-  against a pinned build.
-- **Archived:** no.
+- **Closed Date:** 2026-11-05 17:49 UTC
+- **Fix Description:** added Playwright, `scripts/browser-matrix.mjs` and the
+  `test:browser` command; the runner covers the six named journeys in light and
+  dark against a disposable database and local production build.
+- **Tests Added:** 12 browser journey checks (six journeys x two themes), with
+  a dated receipt at `dev/audits/2026-11-05-browser-matrix-009.md`.
+- **Verification Evidence:** commit `0052734`; build id
+  `IbsGZjBu7Q51HrQ3KPfsT`; build and browser matrix exit 0 with 12/12; lint,
+  typecheck and quality exit 0; full `npm run verify` 11/11 gates with
+  1,046/1,046 tests and zero skips.
+- **Archived:** 2026-11-05; `dev/fids/archive/`.
 
 ## Lessons Learned
 

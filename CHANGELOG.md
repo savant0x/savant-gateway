@@ -3,6 +3,26 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-05 — Browser journey receipt and 013A authorization
+
+- **FID-2026-1104-009 — medium —** added Playwright 1.55.0 and one
+  `scripts/browser-matrix.mjs` runner with `npm run test:browser`. Six journeys
+  (palette, video dialog, reply, reaction, catalog filter/Back, mobile account)
+  run in light and dark against a disposable PostgreSQL database, a mock
+  upstream and a local production build. The runner fails on a skipped journey,
+  uncaught page/console error, missing visible focus or mobile overflow, and
+  captures masked screenshots only on failure. Implementation commit `0052734`;
+  the receipt `dev/audits/2026-11-05-browser-matrix-009.md` records build
+  `IbsGZjBu7Q51HrQ3KPfsT` and 12/12 checks.
+- **FID-2026-1104-013A —** the operator authorized the Pelican-first visual
+  builds implementation. FID-006 and FID-009 are closed prerequisites; 013B
+  remains separately blocked on a lawful OpenRouter fixture and rights. No
+  013A code was written in this pass.
+- **Verification:** `npm run verify` PASS — 11/11 gates, 1,046/1,046 tests with
+  zero skips, 776 main HTTP checks plus the trial suite, recovery 14/14, 132.9 s.
+  The separate `npm run test:browser` passes 12/12; the pre-push hook repeats the
+  full gate stack on the pushed tree.
+
 ## 2026-11-05 — FID register and current-doc audit
 
 - **FID register —** reconciled the register against the folder: 12 active

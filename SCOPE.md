@@ -1,5 +1,30 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-05 (browser receipt and 013A authorization)
+
+Operator instruction: "lets auth 013a and complete 009". Automation level 3;
+strict; single agent. FID-2026-1104-009 is the execution contract; FID-2026-1104-013A
+is a design contract whose implementation is authorized but not started.
+
+- [x] **BR1 — Browser runner.** Added Playwright 1.55.0 and one
+  `scripts/browser-matrix.mjs` runner with `npm run test:browser`. It uses a
+  disposable PostgreSQL database, a mock upstream, a local production build,
+  loopback-only traffic and failure-only masked screenshots. Implementation
+  commit `0052734`.
+- [x] **BR2 — Six journeys in both themes.** Palette open/select/Escape; video
+  dialog Escape and focus return; reply; reaction; catalog filter and Back; and
+  mobile sign-in, key reveal and top-up entry. Each theme is asserted from the
+  rendered class and computed `color-scheme`; the mobile viewport is 390x844.
+  All 12 checks pass on build `IbsGZjBu7Q51HrQ3KPfsT`. Receipt:
+  `dev/audits/2026-11-05-browser-matrix-009.md`.
+- [x] **BR3 — Close FID-009.** Recorded the implementation and verification
+  evidence, archived the record and added the CHANGELOG entry. The runner is
+  not added to `VERIFY_GATES`; the receipt is a manual release measurement.
+- [x] **BR4 — Authorize 013A.** The operator authorized the Pelican-first 013A
+  implementation only. FID-006 and FID-009 are closed, so 013A is unblocked;
+  013B remains blocked on a lawful OpenRouter fixture and rights. No 013A code
+  was written in this pass.
+
 ## Session — 2026-11-05 (Docker-free workflow FID)
 
 Operator instruction: "as i've already stated, we are not using docker, that is
@@ -200,9 +225,9 @@ are not authorized by this request.
   implementation and source-publication boundaries. Evidence: the earlier
   12/12 and 15/15 self-audits were withdrawn; VB5 records the checks that
   survive.
-- [ ] **VB4 — Implementation (blocked pending operator authorization).**
-  FID-2026-1104-013 remains design-only in this session. No application code,
-  schema, source import, paid generation or deployment is authorized here.
+- [x] **VB4 — Implementation authorized 2026-11-05.** The operator authorized
+  FID-2026-1104-013A only; 013B remains separately gated. The design session
+  wrote no application code, schema, source import, paid generation or deployment.
 - [x] **VB5 — Convergence review.** Independent re-read of FID-2026-1104-013
   against HEAD plus two convergence passes. Seven substantive design
   corrections applied: fixed `operator` reviewer principal, CSP style/font
@@ -211,7 +236,7 @@ are not authorized by this request.
   limiter, 008 recorded as coordination rather than a product gate, and
   schema-aware backup added as a hard prerequisite. Existing matching/SKU
   suites 34/34; `npm run attribution` and `git diff --check` exit 0. No code
-  written; VB4 remains blocked.
+  written; VB4 remained blocked until the 2026-11-05 authorization.
 - [x] **VB6 — Schema-aware backup (discovered and implemented 2026-11-04).**
   The dump previously enumerated only `table_schema = current_schema()`
   (public) and used bare table names, so `content` and `identity` were omitted.
@@ -263,8 +288,9 @@ worker; every record is design-only and `converged`.
   Implemented `0433cf7`; closed with acceptance in `FID-2026-1104-007-LIVE`.
 - [x] **A17 — Runtime, gates and docs (findings 10, 11, 14).**
   FID-2026-1104-008; one runtime, one gate contract, executable repository check.
-- [x] **A18 — Browser receipt (finding 12).** FID-2026-1104-009; six journeys,
-  both themes, keyboard and mobile, failure-only screenshots.
+- [x] **A18 — Browser receipt (finding 12).** FID-2026-1104-009 implemented at
+  `0052734`: six journeys, both themes, keyboard and mobile, failure-only
+  screenshots; receipt `dev/audits/2026-11-05-browser-matrix-009.md` (12/12).
 - [x] **A19 — Funnel events (finding 13).** FID-2026-1104-010; five bounded
   event kinds on the existing activity authority. Implemented `78c6920`;
   closed with acceptance in `FID-2026-1104-010-LIVE`.
@@ -273,10 +299,12 @@ worker; every record is design-only and `converged`.
 - [x] **A21 — Finding 3 ownership.** No new record: real payment, funded
   inference, hosted restore, delivered alert and the release decision remain
   with FID-2026-1103-127, FID-2026-1030-043 and FID-2026-1030-062.
-- [x] **A22 — Implementation.** FID-004 is closed in A25; FIDs 005, 007 and 010
-  are implemented, closed and archived with acceptance in their `-LIVE`
-  followups. FIDs 006, 008, 009 and 011 remain converged and reserved to the
-  operator's worker.
+- [x] **A22 — Implementation.** FID-004 is closed in A25; FIDs 005, 006, 007,
+  008, 009 and 010 are closed and archived. FIDs 005, 007 and 010 carry live
+  acceptance in their `-LIVE` followups; 006's residual is in
+  `FID-2026-1104-006-LIVE`; 009's browser receipt is
+  `dev/audits/2026-11-05-browser-matrix-009.md`. FID-011 remains converged and
+  reserved to the operator's worker.
 - [x] **A23 — NOWPayments sandbox procedure.** FID-2026-1104-012.
   dropped::operator-approved 2026-11-04 — "These were only created" and "It's a
   service, so just assume it works as we have it wired." The nine-step route →

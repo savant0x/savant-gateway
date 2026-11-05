@@ -4,8 +4,10 @@
 **ID:** FID-2026-1104-013
 **Severity:** medium
 **Status:** converged
-**Scope:** 013A Pelican implementation; 013B OpenRouter separately gated;
-neither track is implemented
+**Authorization:** 013A authorized by the operator 2026-11-05; implementation
+has not started. 013B remains separately gated.
+**Scope:** 013A Pelican implementation (authorized 2026-11-05); 013B OpenRouter
+separately gated; neither track is implemented
 **Created:** 2026-11-04 17:15 UTC
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -32,8 +34,11 @@ not implement or publish the feature.
   this session's SCOPE section and its planning receipt may be edited here.
 - PostgreSQL/PGlite, existing catalog, model-detail and admin authentication.
 - Planning authority: "make the fid, run full perfection loop on it then present it".
+- 2026-11-05 authorization: "lets auth 013a and complete 009". FID-2026-1104-009
+  is closed at `0052734`; 013A is authorized to start. 013B is not authorized.
 - 2026-11-04 review correction: the operator accepted the FID corrections,
-  register row and Pelican/OpenRouter split. Implementation remains blocked.
+  register row and Pelican/OpenRouter split. Implementation was blocked at that
+  review; 013A was authorized on 2026-11-05.
 - Source ruling: "let's remove scad, i reviewed it and it it very outdated,
   we need to remove that source". SCADBench removed by operator 2026-11-04.
   VoxelBench remains shelved. Neither receives an adapter, preset or import.
@@ -106,8 +111,8 @@ scenarios only after a real source page and payload pass the same contract.
   payload, HTML dependency packaging, rights and browser fixture are unresolved.
   It is not implemented under 013A and must not be called live acceptance.
 - **Dependency order:** FID-2026-1104-006 bounded transport →
-  FID-2026-1104-009 Playwright runner → 013A. 013A code stays `blocked` until
-  006 and 009 are implemented; source fixtures may be prepared before that gate.
+  FID-2026-1104-009 Playwright runner → 013A. Both prerequisites are closed
+  (006, and 009 at `0052734`); 013A is authorized to start. 013B remains blocked.
   FID-2026-1104-008's gate-contract work is a coordination input, not a product
   gate: 013A adds one line to `VERIFY_GATES` and 008 must preserve it when it
   unifies the lists.
@@ -432,8 +437,9 @@ never appear. Stable revisions make rollback a pointer change, not re-ingestion.
 
 ### Steps
 
-All steps below are `blocked` for code until the operator authorizes 013A and
-the 006/009 gates pass. Design is specified here; 013B is not in this sequence.
+The operator authorized 013A on 2026-11-05, and the 006/009 gates are closed.
+The steps below are authorized for implementation; none has started. Design is
+specified here; 013B is not in this sequence.
 
 1. Verify FID-006's bounded transport and FID-009's browser runner on disk; if
    either is absent, stop and keep 013A blocked. Pin Pelican fixtures, prompt,
@@ -618,6 +624,7 @@ is claimed.
 | Durability prerequisite | resolved | SCOPE VB6: format `/2`, schema-qualified dump/restore, 5/5 recovery tests, drill PASS |
 | Status finalization | applied | `converged`; implementation blocked on 006/009; VB6 resolved |
 | Review deltas | measured | corrections A 3.82%; review B 8.90% after trim (draft 10.52%); cumulative 13.06% across two bounded passes |
+| 2026-11-05 operator authorization | applied | 013A authorized; FID-009 closed at `0052734`; no code written |
 
 ## Perfection Loop
 
@@ -786,10 +793,10 @@ is claimed.
 
 ## Resolution
 
-- **State:** converged 2026-11-04 after the independent re-review and two
-  convergence passes. 013A implementation is blocked on FID-006 and FID-009;
-  the schema-aware backup prerequisite (SCOPE VB6) is implemented and verified.
-  013B is separately gated and blocked. No implementation has started.
+- **State:** converged design 2026-11-04; 013A authorized 2026-11-05. FID-006
+  and FID-009 are closed; 013A implementation may start but has not started.
+  The schema-aware backup prerequisite (SCOPE VB6) is implemented and verified.
+  013B is separately gated and blocked.
 - **Closed Date:** unset; no implementation commit or feature receipt exists.
 - **Tests Added:** none; five unit suites plus HTTP/browser gate scripts planned.
   The visual-builds store suite is not yet in `test:postgres`; adding its path

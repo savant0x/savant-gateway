@@ -2,7 +2,7 @@
 
 **Last folder audit:** 2026-11-05 (register reconciliation). This page indexes the
 working set; each FID owns its own status, evidence and resolution. Current
-counts: 12 active / 20 slots, 165 archived, 177 allocated.
+counts: 11 active / 20 slots, 166 archived, 177 allocated.
 
 ## Layout
 
@@ -22,9 +22,8 @@ counts: 12 active / 20 slots, 165 archived, 177 allocated.
 | [068](FID-2026-1030-068-usdc-receive-lane.md) | Direct-to-wallet USDC receive lane | fixed | Operator inputs still gate the receive lane; re-read the record before acting. |
 | [127](FID-2026-1103-127-real-launch-acceptance-receipt.md) | Real launch acceptance receipt | fixed | Operator records the five observations (`payment`, `recovery`, `alert`, `load`, `rollback`) and a go pinned to the release SHA, then runs `npm run receipt:launch`. |
 | [137](FID-2026-1103-137-product-hardening-and-install-order-master.md) | Product hardening and install-order master | converged | Closes only after 127 has its required operator evidence; 126 is already closed. |
-| [2026-1104-009](FID-2026-1104-009-browser-journey-receipt.md) | Fresh browser journey receipt | converged | Worker adds the Playwright runner and records six journeys in both themes. |
 | [2026-1104-011](FID-2026-1104-011-policy-v1-2-publication.md) | Policy v1.2 for the current service surface | converged | Operator approves the recipient inventory; worker drafts v1.2 and the acceptance bump. |
-| [2026-1104-013](FID-2026-1104-013-model-matched-visual-builds.md) | Pelican-first model-matched visual builds with a gated OpenRouter track | converged | 013A only after 009; schema-aware backup (SCOPE VB6) is implemented. 013B stays blocked on a lawful OpenRouter fixture and rights. |
+| [2026-1104-013](FID-2026-1104-013-model-matched-visual-builds.md) | Pelican-first model-matched visual builds with a gated OpenRouter track | converged | 013A is authorized; implementation may start now that 006 and 009 are closed. 013B stays blocked on a lawful OpenRouter fixture and rights. |
 | [2026-1104-015](FID-2026-1104-015-content-fetch-automation-and-history.md) | Dashboard-configured fetching and durable history | converged | Planning only; coding reserved and scheduler backend unconfirmed. |
 | [2026-1104-016](FID-2026-1104-016-persistent-content-model-decisions.md) | Persistent content/model acceptance and dismissal | converged | Planning only; accepted links remain attached across automatic work. |
 | [2026-1104-017](FID-2026-1104-017-content-matching-controls-and-review.md) | Full linked-content management, settings and rematch | converged | Implement after 015 and 016 in a coding session. |
@@ -32,20 +31,21 @@ counts: 12 active / 20 slots, 165 archived, 177 allocated.
 
 ### 2026-11-05 register audit
 
-- 12 active records match the 12 table rows above; 165 records are archived, for
+- 11 active records match the 11 table rows above; 166 records are archived, for
   177 allocated FIDs. No active record is unlisted, split or duplicated.
 - Every filename matches its `**ID:**` field. Three archived 2026-10-31 records
   (077–079) predated that metadata field and now carry it; their status,
   resolution and evidence text is unchanged.
-- `npm run repository:check` passes: 12 active FIDs, closure commit references,
+- `npm run repository:check` passes: 11 active FIDs, closure commit references,
   root links and current-doc links are consistent.
 - 068 and 127 use the legacy `fixed` status that the template still accepts;
   their resolutions state the remaining operator and external evidence. Neither
   is a closure candidate.
-- 043, 062 and 137 are converged masters. The seven design records (009, 011,
-  013, 015–018) remain converged, not implemented.
+- 043, 062 and 137 are converged masters. The six design records (011, 013,
+  015–018) remain converged, not implemented; 009 is closed.
 - The 2026-11-04 note's `8/20` count was accurate at that point; four content
-  records (015–018) were added afterwards, so the current count is 12/20.
+  records (015–018) were added afterwards. With 009 archived, the current count
+  is 11/20.
 
 [2026-1105-001](archive/FID-2026-1105-001-youtube-description-model-matching.md)
 is closed with implementation commit `84189f8` and local verification evidence.
@@ -57,17 +57,22 @@ HTTP checks on real PostgreSQL), and the lifecycle suite is 9/9. Linux CI, a
 clean install with postinstall scripts enabled, the load gate and hosted
 delivery remain unobserved.
 
+[2026-1104-009](archive/FID-2026-1104-009-browser-journey-receipt.md) is closed
+with implementation commit `0052734`. The Playwright runner passes 12/12
+journeys (six journeys x light/dark) on build `IbsGZjBu7Q51HrQ3KPfsT`; the
+pinned receipt is `dev/audits/2026-11-05-browser-matrix-009.md`.
+
 > 2026-11-04 correction: FID-013 was absent from this table despite the
 > planning summary's "registered" claim. It is now registered as 013A/013B;
 > the active count was 14/20 before the completed-implementation cleanup (8/20
-> at that point; the current count is 12/20 after four content records were
-> added). Neither track is implemented, and 013B is not an implementation
-> authorization.
+> at that point; the current count is 11/20 after four content records were
+> added and 009 was archived). Neither track is implemented, and 013B is not an
+> implementation authorization.
 >
 > 2026-11-04 convergence review: seven design corrections applied; 013 is
-> `converged`. 013A code remains blocked on FID-009 and schema-aware backup
-> (SCOPE VB6); FID-006 is now closed. 013B remains blocked on a lawful fixture
-> and rights.
+> `converged`. 013A was blocked on FID-009 and schema-aware backup (SCOPE VB6);
+> VB6 and 009 are now closed, and the operator authorized 013A on 2026-11-05.
+> 013B remains blocked on a lawful fixture and rights.
 >
 > 2026-11-04 level-3 implementation: FID-005 landed in `e145413` (bounded pool
 > acquisition and failed-rollback discard); FID-007 landed in `0433cf7`
@@ -77,8 +82,8 @@ delivery remain unobserved.
 >
 > 2026-11-04 SCOPE VB6: the logical dump/restore is schema-aware (`/2`), legacy
 > `/1` dumps still restore, and the recovery drill covers `content` and
-> `identity`. FID-013's durability prerequisite is satisfied; 013A remains
-> blocked on FID-009.
+> `identity`. FID-013's durability prerequisite is satisfied; 009 is now closed
+> at `0052734`, and 013A is authorized.
 >
 > 2026-11-04 FID-010 implementation: `78c6920` adds five bounded funnel events,
 > a durable once-only first-completion marker, and a 30-day admin aggregate.

@@ -235,6 +235,15 @@
       "detail": "The authenticated due-only provider endpoint, AIO action, daily Vercel cron and scheduler contract are implemented at 15d01b4 and deployed at dpl_53PM1vwqGkVk61xzaCWXfruwL2CC with CRON_SECRET configured. The route returned 401 without a secret and 200 with it, and a platform-triggered invocation returned 200 with an empty attempted list because no provider was due. The first scheduled 00:00 UTC run and a due-provider refresh have not been observed. At 2026-11-06 00:00 UTC Savant was still inside the 6h due window; the first possible due refresh is the 2026-11-07 run. No provider run-history table or scheduler heartbeat exists.",
       "evidence": "dev/fids/archive/FID-2026-1105-004-scheduled-provider-sync.md; vercel.json; app/api/cron/providers/route.ts; docs/provider-scheduler.md",
       "next_action": "After the 2026-11-07 00:00 UTC run, confirm the cron invocation succeeded with a due provider attempted and that providers.synced_at advanced without a page render or manual click. Record the deployment id and timestamp. A 200 with an empty attempted list is not proof of a scheduled refresh."
+    },
+    {
+      "id": "FID-2026-1105-003-LIVE",
+      "fid": "FID-2026-1105-003",
+      "state": "unverified",
+      "title": "router.cheap root-key billing, resale and serving-source observations",
+      "detail": "Eligibility enforcement is closed at 6cdfc80 and the read-only three-source review evidence at 192b7b0. The review shows the account catalog, reseller availability/cost and public endpoint/billing metadata with observation times and plan/pricing versions. No feed price is imported or used for admission. No paid inference, resale permission, root-key billing basis, model mapping/serving source or request-time charge has been observed. The provider remains seeded disabled and every model starts unknown until an operator decision.",
+      "evidence": "dev/fids/archive/FID-2026-1105-003-router-cheap-provider.md; dev/audits/2026-11-05-router-cheap-model-census.md; docs/providers.md; tests/router-cheap-provider.test.mjs",
+      "next_action": "Record a dated operator attestation that the root model key has no model-mapping rule and that each family's serving source is intended, plus the resale permission and billing basis. If funded calls are later authorized, record request-time price and settlement. Do not infer these from the model list or the reference feeds."
     }
   ]
 }

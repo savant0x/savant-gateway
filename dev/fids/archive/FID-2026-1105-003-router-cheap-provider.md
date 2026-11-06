@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1105-003-router-cheap-provider.md`
 **ID:** FID-2026-1105-003
 **Severity:** high
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-05 14:10
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -505,8 +505,9 @@ implementation commit, `CHANGELOG.md` and the archive move.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [x] **Commit SHA:** `6cdfc80`. The archive move and remaining closure
-  acceptance are still pending.
+- [x] **Commit SHA:** `6cdfc80` (eligibility enforcement) and `192b7b0`
+  (read-only three-source review evidence). The archive move is recorded in
+  Resolution.
 - [x] **File:line ranges:** `lib/providers/eligibility.ts:34` (`isModelEligible`)
   and `:91` (`modelAdmissionRefusal`), 1-146; `lib/storage/schema/catalog.ts:27`
   (provider column), `:47` (eligibility table) and `:147` (additive column);
@@ -517,23 +518,23 @@ implementation commit, `CHANGELOG.md` and the archive move.
   (`modelRefusal`); `lib/storage/gateway/call.ts:149` (admission refusal);
   `lib/storage/store/eligibility.ts:36` (review list) and `:78` (decision
   write); `lib/projections.ts:222` (effective review state).
-- [x] **Gate output:** `npm run lint` exit 0; `npm run typecheck` exit 0;
-  `npm test` 1,055 tests with 1,048 pass, 0 fail, 7 environment-gated skips;
-  `npm run quality` PASS (400-line ceiling, 637 files); `npm run build` exit 0;
-  `npm run repository:check` PASS (Node 24, 11 gates, 12 active FIDs);
-  `npm run attribution` PASS; `git diff --check` exit 0. The focused
-  `tests/router-cheap-provider.test.mjs` is 9/9.
+- [x] **Gate output:** 2026-11-06 closure run — `npm run lint` exit 0;
+  `npm run typecheck` exit 0; `npm test` 1,127 tests, 1,127 pass, 0 fail,
+  0 skipped; `npm run test:postgres` 20/20; `npm run quality` PASS (400-line
+  ceiling, 689 files); `npm run build` exit 0; `npm run test:http` 758 checks
+  plus the trial suite; `npm run test:recovery` PASS; `npm run verify` PASS
+  12/12 gates in 202.9 s; `npm run attribution` PASS; `git diff --check` exit
+  0. The focused `tests/router-cheap-provider.test.mjs` is 12/12.
 - [x] **Reproducibility:** The seed, flag, table, helper, review route and
   enforcement sites are grep-reproducible; the focused suite creates its own
   PGlite schema and does not call a real provider.
-- [x] **Step statuses:** Step 1 `implemented`; step 2 `implemented` (review API
-  and inline panel); step 3 `implemented` (public scope, route planning,
-  gateway admission, subscription path); step 2 `implemented` for exact-id
-  decisions, the unknown-cost state and the inline review panel, but the
-  read-only three-source price comparison is not included in this pass; step 4
-  `implemented` (nine focused tests and a local PGlite path); step 5
-  `implemented` except the commit and archive move, which remain pending. No
-  step is presented as fully closed while that comparison is absent.
+- [x] **Step statuses:** Step 1 `implemented`; step 2 `implemented` (review
+  API, inline panel, and read-only three-source evidence columns with feed
+  observation time, plan/version, availability and pricing metadata); step 3
+  `implemented` (public scope, route planning, gateway admission, subscription
+  path); step 4 `implemented` (12 focused tests, including the feed parsers and
+  a local PGlite path); step 5 `implemented` (code committed, gates run, record
+  archived with Resolution).
 
 ### Code Verification Evidence
 
@@ -541,15 +542,16 @@ implementation commit, `CHANGELOG.md` and the archive move.
   table, review route, panel and test now exist too.
 - [x] Implementation matches the enforced Proposed Solution: the seed is
   disabled and review-required, decisions persist by exact id, and all four
-  selection points apply the rule. The read-only three-source price comparison
-  is deferred; no price import exists.
+  selection points apply the rule. The read-only three-source comparison is
+  present; it displays normalized reseller/public metadata and never imports a
+  price or evaluates an expression.
 - [x] Typecheck, lint, the focused tests, quality and build pass with pasted
   output below.
 - [x] Production call-graph evidence: `handleChatCompletions` resolves the
   effective route, then refuses before admission or dispatch; reconciliation
   and the public scope apply the same decision.
-- [x] FID status reflects the actual state: `fixed`, not closed; the commit and
-  archive move are still pending.
+- [x] FID status reflects the actual state: `closed` and archived at
+  implementation commits `6cdfc80` and `192b7b0`.
 
 > Every PASS and FAIL in AUDIT cites `path/to/file.ts:LINE` plus quoted code or
 > exact command output. The access probes are the exact commands above; the
@@ -661,8 +663,7 @@ and build exit 0. No code changed after them.
 
 ## Resolution
 
-- **Closed Date:** Not closed. Implementation commit `6cdfc80` exists; closure
-  waits on the archive move and the remaining acceptance observations.
+- **Closed Date:** 2026-11-06
 - **Fix Description:** Implemented the disabled `router-cheap` preset with
   `requires_model_review = 1`, the `model_eligibility` table keyed by provider
   and exact upstream id, the shared eligibility/freshness rule, and enforcement
@@ -670,24 +671,31 @@ and build exit 0. No code changed after them.
   subscription path. Added the reviewed-decision API and inline admin panel,
   activation guards for positive input/output costs and sell prices, and
   persistence across refetch and delisting. Existing providers keep their
-  current semantics because the flag defaults to 0. No paid inference, balance
-  check, reseller customer or management write was performed.
-- **Tests Added:** Yes. `tests/router-cheap-provider.test.mjs` has nine tests:
-  the review flag, cost/sell/freshness refusal, namespaced fallback exclusion,
-  stable-name hiding, seed state, decision persistence across refetch and
-  delisting, activation/publication, and gateway projection. No real provider
-  call is made.
-- **Verification Evidence:** `npm run lint` exit 0; `npm run typecheck` exit 0;
-  `npm test` 1,055 tests (1,048 pass, 0 fail, 7 skips gated on
-  `TEST_DATABASE_URL`); `npm run quality` PASS (637 files); `npm run build` exit
-  0; `npm run repository:check` PASS (Node 24, 11 gates, 12 active FIDs);
-  `npm run attribution` PASS; `git diff --check` exit 0. The focused
-  `tests/router-cheap-provider.test.mjs` is 9/9, 0 skipped. The four read-only
-  probes returned 200 with 76/76/76/0 rows. No paid inference, balance check,
-  resale permission or request-time price is claimed.
-- **Archived:** Not archived. The record remains active in `dev/fids/` because
-  the archive move and full closure acceptance are still pending, even though
-  implementation commit `6cdfc80` exists.
+  current semantics because the flag defaults to 0. Added a read-only
+  three-source review surface: the server fetches the reseller plan and public
+  pricing feeds through the bounded public transport, sends the reseller token
+  only to the reseller endpoint, and normalizes exact model ids, availability,
+  USD costs, customer-unit figures, endpoint labels, billing expressions,
+  plan/version, pricing version and observation time. The admin table shows
+  these beside the account catalog and manual cost/sell figures. No feed price
+  is imported, no expression is evaluated, and no paid inference, reseller
+  customer or management write was performed.
+- **Tests Added:** Yes. `tests/router-cheap-provider.test.mjs` has 12 tests: the
+  original review, cost/freshness, fallback, seed, persistence and gateway
+  cases, plus exact-id reseller normalization (including zero costs on an
+  unavailable row), public endpoint/pricing-version normalization, and
+  fail-closed malformed feeds. No real provider call is made.
+- **Verification Evidence:** 2026-11-06 closure run on commits `6cdfc80` and
+  `192b7b0` — `npm run verify` PASS 12/12 gates in 202.9 s, 1,127/1,127 tests
+  with zero skips, PostgreSQL 20/20, HTTP 758 checks plus the trial suite,
+  recovery, quality and build; lint, typecheck, attribution and `git diff
+  --check` exit 0. The focused `tests/router-cheap-provider.test.mjs` is 12/12.
+  External root-key billing, resale permission, model-mapping/serving-source
+  and request-time-price observations remain unverified and are owned by
+  `FID-2026-1105-003-LIVE` in `dev/tracking/internal-followups.json`. No paid
+  inference or resale permission is claimed.
+- **Archived:** 2026-11-06 — moved to `dev/fids/archive/`; the external
+  observations remain a live follow-up, not a closure claim.
 
 ## Lessons Learned
 

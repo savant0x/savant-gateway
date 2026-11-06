@@ -2,7 +2,7 @@
 
 **Last folder audit:** 2026-11-06 (FID-002 closure). This page indexes the
 working set; each FID owns its own status, evidence and resolution. Current
-counts: 11 active / 20 slots, 178 archived, 189 allocated.
+counts: 10 active / 20 slots, 179 archived, 189 allocated.
 
 ## Layout
 
@@ -17,7 +17,6 @@ counts: 11 active / 20 slots, 178 archived, 189 allocated.
 
 | ID | Title | Status | Next action |
 | --- | --- | --- | --- |
-| [2026-1105-003](FID-2026-1105-003-router-cheap-provider.md) | router.cheap reseller integration | fixed | Implementation commit `6cdfc80`; archive after the remaining closure acceptance. No inference, reseller customer or management write. |
 | [043](FID-2026-1030-043-launch-master.md) | Master launch contract and dependency register | converged | Keep coverage, ordering and release decisions current. |
 | [062](FID-2026-1030-062-launch-acceptance-and-rollout.md) | Real launch acceptance, controlled rollout and rollback | converged | Discharge the dated external receipt items 1–8; launch remains no-go. |
 | [068](FID-2026-1030-068-usdc-receive-lane.md) | Direct-to-wallet USDC receive lane | fixed | Operator inputs still gate the receive lane; re-read the record before acting. |
@@ -28,6 +27,18 @@ counts: 11 active / 20 slots, 178 archived, 189 allocated.
 | [2026-1104-016](FID-2026-1104-016-persistent-content-model-decisions.md) | Persistent content/model acceptance and dismissal | converged | Planning only; accepted links remain attached across automatic work. |
 | [2026-1104-017](FID-2026-1104-017-content-matching-controls-and-review.md) | Full linked-content management, settings and rematch | converged | Implement after 015 and 016 in a coding session. |
 | [2026-1104-018](FID-2026-1104-018-content-automation-master.md) | Content automation and persistent matching master | converged | Planning handoff ready; no coding or hosted activation authorized. |
+
+### Closed in the 2026-11-06 router.cheap evidence closure
+
+[2026-1105-003](archive/FID-2026-1105-003-router-cheap-provider.md) is `closed`
+at implementation commits `6cdfc80` (eligibility enforcement) and `192b7b0`
+(read-only three-source review evidence). The admin review now shows account,
+reseller and public evidence without importing a price or evaluating an
+expression. `npm run verify` PASS 12/12 gates with 1,127/1,127 tests,
+PostgreSQL 20/20, HTTP 758 checks plus trial, recovery, quality and build.
+External root-key billing, resale permission, serving-source and request-time
+price observations remain `FID-2026-1105-003-LIVE` in
+`../tracking/internal-followups.json`.
 
 ### Closed in the 2026-11-06 scheduled-sync closure
 
@@ -68,9 +79,9 @@ closure claim.
   `npm run verify` PASS on the final tree: 11/11 gates, 1,100 tests, PostgreSQL
   2/2, build, HTTP and recovery. No provider funding, live payment, price
   publication or deployment is claimed.
-- FID-2026-1105-004 is implemented, gated and committed at `15d01b4`; the Hobby
-  daily schedule is written, but no deployment, secret or scheduler activation
-  exists yet.
+- FID-2026-1105-004 is closed and archived at `22f4f6a`; implementation
+  `15d01b4` is deployed with `CRON_SECRET` and the Hobby daily cron. The first
+  scheduled due-provider refresh remains `FID-2026-1105-004-LIVE`.
 - 068 and 127 use the legacy `fixed` status that the template still accepts;
   their resolutions state the remaining operator and external evidence. Neither
   is a closure candidate.

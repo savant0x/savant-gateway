@@ -3,6 +3,28 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-06 — router.cheap review evidence closure (003)
+
+- **FID-2026-1105-003 — high —** router.cheap eligibility enforcement is
+  committed at `6cdfc80`; `192b7b0` adds a read-only three-source review surface.
+  The admin table now shows the account catalog beside normalized reseller
+  availability/cost and public endpoint/billing metadata, with observation
+  time, plan id/version and pricing version. The server sends the reseller
+  token only to the reseller endpoint and bounds each feed to 5 s / 1 MiB. No
+  price is imported, no billing expression is evaluated, and the provider stays
+  disabled until an operator records an exact-id `chat` decision.
+- **Verification:** `npm run verify` PASS — 12/12 gates, 1,127/1,127 tests with
+  zero skips, PostgreSQL 20/20, HTTP 758 checks plus the trial suite, recovery,
+  202.9 s. Focused `tests/router-cheap-provider.test.mjs` is 12/12, including
+  exact-id normalization, zero costs on an unavailable row, pricing-version
+  parsing and malformed-feed refusal.
+- **Open observations:** root-key billing basis, resale permission, model
+  mapping/serving source and request-time price remain unverified in
+  `FID-2026-1105-003-LIVE`. No paid inference or reseller management write is
+  claimed.
+- **Closure:** implementation commits `6cdfc80` and `192b7b0`; the record is
+  archived.
+
 ## 2026-11-06 — Scheduled provider sync closure (004)
 
 - **FID-2026-1105-004 — medium —** the authenticated due-only provider cron,

@@ -78,12 +78,11 @@ no hosted re-observation is claimed here.
 
 ## Active queue
 
-Eleven records are active. The [register](../dev/fids/README.md) owns the exact
+Ten records are active. The [register](../dev/fids/README.md) owns the exact
 next action and evidence edges; this table is the current summary.
 
 | ID | Status | Open obligation |
 | --- | --- | --- |
-| [2026-1105-003](../dev/fids/FID-2026-1105-003-router-cheap-provider.md) | fixed | Implementation committed at `6cdfc80`; archive after closure acceptance. No paid inference or reseller management write. |
 | [043](../dev/fids/FID-2026-1030-043-launch-master.md) | converged | Launch remains **no-go**. Owns the dependency register and the operator decision. |
 | [062](../dev/fids/FID-2026-1030-062-launch-acceptance-and-rollout.md) | converged | Items 1–8: real NOWPayments invoice/signed IPN/replay refusal, hosted restore, delivered alert, PostgreSQL load envelope, published `v1.2` policies, hosted retention confirmation, explicit public GO. Funded paid inference was withdrawn on 2026-11-04 and remains unverified. |
 | [068](../dev/fids/FID-2026-1030-068-usdc-receive-lane.md) | fixed | Direct USDC lane: chain/token contract, hardware-wallet xpub, RPC endpoint and screening ruling. Not a launch path. |
@@ -100,6 +99,15 @@ console are implemented and covered by the gates above. They are public product
 behavior, not payment or launch acceptance.
 
 ## Recently closed
+
+FID-2026-1105-003 closed on 2026-11-06 at implementation commits `6cdfc80`
+(eligibility enforcement) and `192b7b0` (read-only three-source review
+evidence). The admin review shows account, reseller and public evidence without
+importing a price. `npm run verify` PASS 12/12 gates with 1,127/1,127 tests,
+PostgreSQL 20/20, HTTP 758 checks plus trial, recovery, quality and build.
+External root-key billing, resale permission, serving-source and request-time
+price observations remain `FID-2026-1105-003-LIVE` in
+`internal-followups.json`.
 
 FID-2026-1105-004 closed on 2026-11-06 at implementation commit `15d01b4`.
 The due-only provider endpoint, AIO action, daily Vercel Hobby cron and scheduler

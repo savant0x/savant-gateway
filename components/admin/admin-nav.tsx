@@ -21,6 +21,7 @@ const ITEMS = [
   { href: "/admin/operations", icon: "fa-heart-pulse", label: "Operations" },
   { href: "/admin/gateway", icon: "fa-sliders", label: "Gateway" },
   { href: "/admin/pricing", icon: "fa-calculator", label: "Pricing" },
+  { href: "/admin/economics", icon: "fa-scale-balanced", label: "Economics" },
   { href: "/admin/analytics", icon: "fa-chart-line", label: "Analytics" },
   { href: "/admin/diagnostics", icon: "fa-stethoscope", label: "Diagnostics" },
 ] as const;

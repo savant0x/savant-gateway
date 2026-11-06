@@ -1,4 +1,5 @@
 import * as analytics from "../storage/store/analytics.ts";
+import * as economics from "../storage/store/economics.ts";
 import * as benchmarks from "../storage/store/benchmarks.ts";
 import * as operations from "../storage/store/operations.ts";
 import * as overview from "../storage/store/overview.ts";
@@ -25,6 +26,11 @@ export { ANALYTICS_RANGES, normalizeAnalyticsRange } from "../analytics.ts";
 export type { AnalyticsRange } from "../analytics.ts";
 
 export const getAnalyticsData = bound(analytics.getAnalyticsData);
+export const getCustomerContributionPage = bound(
+  economics.getCustomerContributionPage,
+);
+export const getFreeCohort = bound(economics.getFreeCohort);
+export const listSimulationModels = bound(economics.listSimulationModels);
 
 export const getOverview = bound(overview.getOverview);
 export const getOverviewStats = bound(overview.getOverviewStats);

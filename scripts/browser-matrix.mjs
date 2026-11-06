@@ -44,6 +44,8 @@ const ADMIN_SECRET = "browser-matrix-admin-secret-0123456789";
 const PROVIDER_KEY = "browser-matrix-provider-key";
 const ITEM_ID = "browser-suite-video";
 const ITEM_TITLE = "Browser Suite Video";
+const RELATED_ID = "browser-suite-related";
+const RELATED_TITLE = "Related Reading Fixture";
 const COMMENT_AUTHOR = "Browser Fixture Commenter";
 const COMMENT_BODY = "A top-level fixture comment for the reply journey.";
 const SOURCE_ID = "browser-suite-source";
@@ -303,6 +305,7 @@ async function waitForContentSchema(db) {
 
 async function seedContent(db, commenterId) {
   const now = new Date().toISOString();
+  const earlier = new Date(Date.now() - 60_000).toISOString();
 
   await db
     .prepare(
@@ -340,8 +343,32 @@ async function seedContent(db, commenterId) {
     );
 
   await db
-    .prepare("INSERT INTO content.item_tags (item_id, tag) VALUES (?, ?)")
-    .run(ITEM_ID, "ai");
+    .prepare(
+      `INSERT INTO content.items
+        (id, source_id, kind, title, url, external_url, excerpt, body_html,
+         author, published_at, fetched_at, thumbnail_url, video_id, external_id,
+         content_hash, created_at, updated_at)
+       VALUES (?, ?, 'article', ?, ?, NULL, ?, NULL, 'Browser Suite', ?, ?,
+         '/images/og.png', NULL, 'browser-suite-related', 'browser-fixture',
+         ?, ?)`,
+    )
+    .run(
+      RELATED_ID,
+      SOURCE_ID,
+      RELATED_TITLE,
+      "https://example.test/signal/related-fixture",
+      "A second tagged item so the related-reading rows render.",
+      earlier,
+      earlier,
+      now,
+      now,
+    );
+
+  for (const itemId of [ITEM_ID, RELATED_ID]) {
+    await db
+      .prepare("INSERT INTO content.item_tags (item_id, tag) VALUES (?, ?)")
+      .run(itemId, "ai");
+  }
   await db
     .prepare("INSERT INTO content.item_tags (item_id, tag) VALUES (?, ?)")
     .run(ITEM_ID, "video");
@@ -463,11 +490,37 @@ async function assertVisibleFocus(page) {
 }
 
 async function assertNoHorizontalOverflow(page) {
-  const overflow = await page.evaluate(
-    () => document.documentElement.scrollWidth - window.innerWidth,
-  );
+  const result = await page.evaluate(() => {
+    const viewport = window.innerWidth;
+    const offenders = [...document.querySelectorAll("body *")]
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
 
-  assert.ok(overflow <= 1, `mobile layout overflows by ${overflow}px`);
+        return {
+          tag: element.tagName.toLowerCase(),
+          className:
+            typeof element.className === "string"
+              ? element.className.slice(0, 120)
+              : "",
+          text: (element.textContent ?? "").trim().slice(0, 60),
+          left: Math.round(rect.left),
+          right: Math.round(rect.right),
+          width: Math.round(rect.width),
+        };
+      })
+      .filter((entry) => entry.right > viewport + 1 || entry.left < -1)
+      .slice(0, 8);
+
+    return {
+      overflow: document.documentElement.scrollWidth - viewport,
+      offenders,
+    };
+  });
+
+  assert.ok(
+    result.overflow <= 1,
+    `mobile layout overflows by ${result.overflow}px: ${JSON.stringify(result.offenders)}`,
+  );
 }
 
 function trackErrors(page, options = {}) {
@@ -654,6 +707,32 @@ async function reactionJourney(page, baseUrl) {
 
     return button?.getAttribute("aria-pressed") === "true";
   });
+
+  const aside = page.locator("aside");
+
+  await aside
+    .getByRole("heading", { name: "Related reading", exact: true })
+    .waitFor();
+
+  const relatedRows = aside.locator("ul > li");
+
+  assert.equal(await relatedRows.count(), 1, "one related row is rendered");
+  assert.equal(
+    await relatedRows
+      .getByRole("link", { name: RELATED_TITLE, exact: true })
+      .getAttribute("href"),
+    `/signal/${RELATED_ID}`,
+  );
+  assert.equal(
+    await relatedRows.locator('span[style*="background-image"]').count(),
+    1,
+    "the related row carries a thumbnail",
+  );
+  assert.equal(
+    await relatedRows.locator("iframe").count(),
+    0,
+    "a text-only related row creates no iframe",
+  );
 }
 
 function coverageSection(page) {
@@ -849,6 +928,7 @@ async function coverageJourney(page, baseUrl, theme) {
       emptyWidth.scroll <= emptyWidth.client + 1,
       `the empty coverage section overflows by ${emptyWidth.scroll - emptyWidth.client}px`,
     );
+    await assertNoHorizontalOverflow(page);
   }
 }
 

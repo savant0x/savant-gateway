@@ -3,6 +3,24 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-06 — Responsive free allocation and related reading (002)
+
+- **FID-2026-1106-002 — low —** the free-model detail page no longer overflows a
+  390 px viewport. Its content column and the free-allocation walkthrough rows
+  now shrink, so the `curl` block scrolls inside its own box instead of widening
+  the document by 214 px. Signal detail pages render related reading as the same
+  thumbnail row used by model coverage, with a separate title link and no
+  iframe before activation.
+- **Verification:** `npm run verify` PASS — 12/12 gates, 1,124/1,124 tests with
+  zero skips, PostgreSQL 20/20, both HTTP suites, recovery, quality and build,
+  191.4 s. The full browser matrix passes 14/14 journeys on the same build,
+  `0zm_Bb4Z79zlK7_rqLpy1`, and now asserts the whole empty free-model document
+  width at 390 px plus one seeded related-reading row.
+- **Receipt audit:** `dev/audits/2026-11-06-archived-fid-receipt-audit.md`
+  scanned 176 archived records. No stale build citation was found; one commit
+  was mislabeled as a build and is corrected. Four absent test filenames are
+  planning, rejected or explicitly skipped references, not passing claims.
+
 ## 2026-11-06 — Visual model coverage rows (001)
 
 - **FID-2026-1106-001 — low —** model pages now render up to six compact

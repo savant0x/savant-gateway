@@ -171,7 +171,7 @@ export default async function ModelDetailPage({ params }: PageProps) {
         </section>
 
         <section className="mx-auto grid w-full max-w-[80rem] gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:px-8">
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             <div className="rounded-xl border border-black/10 bg-surface p-5 dark:border-white/10">
               <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-muted">
                 Price

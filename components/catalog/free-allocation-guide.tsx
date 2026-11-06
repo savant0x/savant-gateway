@@ -97,7 +97,7 @@ export function FreeAllocationGuide({ mode, model, signedIn }: Props) {
           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-400/10 font-mono text-[11px] text-emerald-300">
             1
           </span>
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-medium">
               {signedIn
                 ? "Confirm an active key"
@@ -141,7 +141,7 @@ export function FreeAllocationGuide({ mode, model, signedIn }: Props) {
           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-400/10 font-mono text-[11px] text-emerald-300">
             2
           </span>
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-medium">Create a scoped key</p>
             <p className="mt-1 text-xs leading-5 text-muted">
               On the account page, create a key for this project. The secret is
@@ -155,7 +155,7 @@ export function FreeAllocationGuide({ mode, model, signedIn }: Props) {
           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-400/10 font-mono text-[11px] text-emerald-300">
             3
           </span>
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-medium">
               Send a Chat Completions request
             </p>
@@ -178,7 +178,7 @@ export function FreeAllocationGuide({ mode, model, signedIn }: Props) {
           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-400/10 font-mono text-[11px] text-emerald-300">
             4
           </span>
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-medium">Watch the settlement</p>
             <p className="mt-1 text-xs leading-5 text-muted">
               {mode === "daily"

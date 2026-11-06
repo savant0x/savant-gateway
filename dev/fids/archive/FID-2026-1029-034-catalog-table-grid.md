@@ -31,7 +31,7 @@ column and a predictable alignment.
 ## Environment
 
 - **Stack:** Next.js 16 App Router, Tailwind 4 + hand-written `styles/savant.css`
-- **State:** working tree at build `443cde5`, live data (34 public rows, 31 benchmarks)
+- **State:** working tree at commit `443cde5`, live data (34 public rows, 31 benchmarks)
 
 ## Detailed Description
 

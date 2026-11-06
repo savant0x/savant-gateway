@@ -2,7 +2,7 @@ import type { ContentItem } from "@/lib/content/types";
 
 import Link from "next/link";
 
-import { ContentCard } from "@/components/content/content-card";
+import { ContentMedia } from "@/components/content/content-media";
 import { contentDate, formatCount } from "@/lib/content/format";
 import { isHackerNewsDiscussionUrl } from "@/lib/content/hackernews";
 
@@ -166,11 +166,39 @@ export function ContentDetailAside({
       </div>
 
       {related.length > 0 ? (
-        <div className="space-y-3">
+        <div>
           <h2 className="text-sm font-semibold">Related reading</h2>
-          {related.map((entry) => (
-            <ContentCard key={entry.id} compact item={entry} />
-          ))}
+          <ul className="mt-3 divide-y divide-black/10 dark:divide-white/10">
+            {related.map((entry) => (
+              <li key={entry.id} className="py-3 first:pt-0 last:pb-0">
+                <div className="flex min-w-0 gap-3">
+                  <div className="w-24 shrink-0">
+                    <ContentMedia
+                      itemId={entry.id}
+                      sourceLabel={entry.sourceLabel}
+                      thumbnailUrl={
+                        entry.thumbnailUrl ?? entry.github?.ogImageUrl ?? null
+                      }
+                      title={entry.title}
+                      variant="row"
+                      videoId={entry.videoId}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <Link
+                      className="text-sm font-medium underline-offset-4 hover:underline"
+                      href={`/signal/${entry.id}`}
+                    >
+                      {entry.title}
+                    </Link>
+                    <p className="mt-1 text-[11px] text-muted">
+                      {entry.sourceLabel} · {contentDate(entry.publishedAt)}
+                    </p>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
     </aside>

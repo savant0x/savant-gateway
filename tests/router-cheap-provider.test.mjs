@@ -5,6 +5,10 @@ import {
   isModelEligible,
   modelAdmissionRefusal,
 } from "../lib/providers/eligibility.ts";
+import {
+  parsePublicEvidence,
+  parseResellerEvidence,
+} from "../lib/providers/review-evidence.ts";
 import { isServableRoute, planModelRoutes } from "../lib/model-routing.ts";
 import {
   MODEL_SELECT,
@@ -25,6 +29,7 @@ import { setProviderEnabled } from "../lib/storage/store/providers.ts";
 import { createPgliteDatabase } from "./pglite-pool.mjs";
 
 const NOW = Date.now();
+const OBSERVED = "2026-11-06T00:00:00.000Z";
 const RECENT = new Date(NOW - 60_000).toISOString();
 const OLD = new Date(NOW - 31 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -360,4 +365,94 @@ test("activation and publication wait for an explicit chat decision", async () =
   } finally {
     await db.close();
   }
+});
+
+test("reseller evidence keeps exact ids, plan metadata and unavailable zero costs", () => {
+  const evidence = parseResellerEvidence(
+    {
+      plan_id: 144,
+      plan_version: "2",
+      unit_name: "$",
+      data: [
+        {
+          model: "claude-fable-5",
+          available: true,
+          billing: "tokens",
+          source: "kiro",
+          group: "default",
+          cost_input_per_million_usd: "0.36",
+          cost_output_per_million_usd: 1.8,
+          input_per_million: 0.468,
+          output_per_million: "2.34",
+          per_request: 0.001,
+        },
+        {
+          model: "claude-fable-5-1",
+          available: false,
+          cost_input_per_million_usd: 0,
+          cost_output_per_million_usd: "0",
+        },
+      ],
+    },
+    OBSERVED,
+  );
+
+  assert.equal(evidence.state, "ok");
+  assert.equal(evidence.planId, 144);
+  assert.equal(evidence.planVersion, 2);
+  assert.equal(evidence.unit, "$");
+  assert.deepEqual(evidence.rows["claude-fable-5"], {
+    available: true,
+    billing: "tokens",
+    source: "kiro",
+    group: "default",
+    costInputUsd: 0.36,
+    costOutputUsd: 1.8,
+    inputPerMillion: 0.468,
+    outputPerMillion: 2.34,
+    perRequestUsd: 0.001,
+  });
+  assert.equal(evidence.rows["claude-fable-5-1"].available, false);
+  assert.equal(evidence.rows["claude-fable-5-1"].costInputUsd, 0);
+  assert.equal(evidence.rows["claude-fable-5-1"].costOutputUsd, 0);
+});
+
+test("public pricing evidence keeps endpoint labels and the pricing version", () => {
+  const evidence = parsePublicEvidence(
+    {
+      pricing_version: "a42d372ccf0b5dd13ecf71203521f9d2",
+      data: [
+        {
+          model_name: "gpt-5.5",
+          billing_expr: "tier(\"base\", 1)",
+          billing_mode: "tiered",
+          supported_endpoint_types: ["openai", "openai-response"],
+          context_length: "200000",
+        },
+      ],
+    },
+    OBSERVED,
+  );
+
+  assert.equal(evidence.state, "ok");
+  assert.equal(
+    evidence.pricingVersion,
+    "a42d372ccf0b5dd13ecf71203521f9d2",
+  );
+  assert.deepEqual(evidence.rows["gpt-5.5"], {
+    billingExpr: 'tier("base", 1)',
+    billingMode: "tiered",
+    endpointTypes: ["openai", "openai-response"],
+    contextLength: 200000,
+  });
+});
+
+test("malformed reference feeds fail closed without claiming rows", () => {
+  const reseller = parseResellerEvidence({ plan_id: 144 }, OBSERVED);
+  const publicPricing = parsePublicEvidence({ data: "not-a-row-array" }, OBSERVED);
+
+  assert.equal(reseller.state, "unavailable");
+  assert.equal(publicPricing.state, "unavailable");
+  assert.deepEqual(reseller.rows, {});
+  assert.deepEqual(publicPricing.rows, {});
 });

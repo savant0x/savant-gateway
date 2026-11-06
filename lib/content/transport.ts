@@ -28,6 +28,7 @@ export type PublicResponse = {
 };
 
 export type PublicFetchOptions = {
+  cache?: RequestInit["cache"];
   fetchImpl?: typeof fetch;
   headers?: Record<string, string>;
   timeoutMs?: number;
@@ -52,6 +53,7 @@ export async function fetchPublicResponse(
 
   for (let redirects = 0; ; redirects += 1) {
     const response = await fetchImpl(current.url.toString(), {
+      cache: options.cache,
       headers: options.headers,
       redirect: "manual",
       signal,

@@ -1,5 +1,6 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
 import { isEligibilityDecision } from "@/lib/providers/eligibility";
+import { readRouterCheapEvidence } from "@/lib/providers/review-evidence-fetch";
 import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 import { listProviderReviewModels, setModelEligibility } from "@/lib/store";
 
@@ -14,11 +15,12 @@ export async function GET(request: Request, context: Context) {
   if (blocked) return blocked;
 
   const { slug } = await context.params;
+  const [models, evidence] = await Promise.all([
+    listProviderReviewModels(slug),
+    slug === "router-cheap" ? readRouterCheapEvidence() : Promise.resolve(null),
+  ]);
 
-  return Response.json(
-    { models: await listProviderReviewModels(slug) },
-    { headers: NO_STORE },
-  );
+  return Response.json({ models, evidence }, { headers: NO_STORE });
 }
 
 export async function PATCH(request: Request, context: Context) {

@@ -109,10 +109,13 @@ the per-provider sync state.
 
 A provider whose catalog proves only identifiers — not chat capability — is
 seeded with `providers.requires_model_review = 1`. router.cheap is the shipped
-preset. Every model starts `unknown` and is neither published nor served. In
-`/admin/providers`, **Review** lists the catalog rows with their current cost,
-sell price and decision. Record `chat` only for the exact upstream id you have
-verified; `unsupported` and `unknown` both deny. A decision is keyed by provider
+preset. Every model starts `unknown` and is neither published nor served.In `/admin/providers`, **Review** lists the catalog rows with their current cost,
+sell price and decision, plus a read-only side-by-side view of the account
+catalog, reseller availability/cost and public endpoint/billing metadata. The
+feed observation time, plan id/version and pricing version are shown. These
+feeds are reference only: no reseller or public price is imported into a model
+cost. Record `chat` only for the exact upstream id you have verified;
+`unsupported` and `unknown` both deny. A decision is keyed by provider
 and exact upstream id, survives a refetch and a delisting, and is never inferred
 from a family name, a price or an OpenAI list envelope.
 

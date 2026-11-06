@@ -3,15 +3,20 @@ import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
 import { CommandPalette } from "@/components/content/command-palette";
 import { contentEnabled } from "@/lib/content/policy";
+import { visualBuildsEnabled } from "@/lib/visual-builds/types";
 import { siteConfig } from "@/config/site";
 
 export function SiteHeader() {
+  const navItems = visualBuildsEnabled()
+    ? [...siteConfig.navItems, { label: "Showcase", href: "/showcase" }]
+    : siteConfig.navItems;
+
   return (
     <header className="site-chrome">
       <div className="public-nav mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <BrandMark />
         <nav aria-label="Main navigation" className="public-nav-links">
-          {siteConfig.navItems.map((item) => (
+          {navItems.map((item) => (
             <Link key={item.href} href={item.href}>
               {item.label}
             </Link>
@@ -25,7 +30,7 @@ export function SiteHeader() {
           <details className="mobile-nav">
             <summary>Menu</summary>
             <nav aria-label="Mobile navigation">
-              {siteConfig.navItems.map((item) => (
+              {navItems.map((item) => (
                 <Link key={item.href} href={item.href}>
                   {item.label}
                 </Link>

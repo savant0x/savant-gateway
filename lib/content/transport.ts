@@ -97,12 +97,12 @@ export async function fetchPublicResponse(
  * `Content-Length` is deliberately ignored: a dishonest value must neither
  * grant a bypass nor reject a body that is actually small.
  */
-export async function readBoundedResponseText(
+export async function readBoundedResponseBytes(
   response: Response,
   maxBytes = FETCH_POLICY.maxBytes,
   label = "Response",
-): Promise<string> {
-  if (!response.body) return "";
+): Promise<Uint8Array> {
+  if (!response.body) return new Uint8Array(0);
 
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -129,8 +129,6 @@ export async function readBoundedResponseText(
     reader.releaseLock();
   }
 
-  if (chunks.length === 0) return "";
-
   const bytes = new Uint8Array(total);
   let offset = 0;
 
@@ -138,6 +136,16 @@ export async function readBoundedResponseText(
     bytes.set(chunk, offset);
     offset += chunk.byteLength;
   }
+
+  return bytes;
+}
+
+export async function readBoundedResponseText(
+  response: Response,
+  maxBytes = FETCH_POLICY.maxBytes,
+  label = "Response",
+): Promise<string> {
+  const bytes = await readBoundedResponseBytes(response, maxBytes, label);
 
   return new TextDecoder().decode(bytes);
 }

@@ -11,6 +11,7 @@ import { coreSchema } from "./core.ts";
 import { customerSchema } from "./customers.ts";
 import { identitySchema } from "./identity.ts";
 import { pricingSchema } from "./pricing.ts";
+import { showcaseSchema } from "./showcase.ts";
 
 /**
  * The additive migration for the Postgres port (FID-2026-1031-085, step 2).
@@ -38,6 +39,7 @@ export async function applySchema(
   await contentDecisionsSchema(db);
   await contentMatchingSchema(db);
   await admissionSchema(db);
+  await showcaseSchema(db);
 
   // The seed belongs to the embedded engine, not to "not production". A dev
   // server pointed at a networked database is still a real database, and

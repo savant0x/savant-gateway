@@ -72,7 +72,7 @@ next action and evidence edges; this table is the current summary.
 | [127](../dev/fids/FID-2026-1103-127-real-launch-acceptance-receipt.md) | fixed | `npm run receipt:launch` reports INCOMPLETE until the operator records the five required observations (`payment`, `recovery`, `alert`, `load`, `rollback`) and a go decision pinned to the release SHA. |
 | [137](../dev/fids/FID-2026-1103-137-product-hardening-and-install-order-master.md) | converged | Sequencing register; closes only after FID-127 has its operator evidence. FID-126 is already closed. |
 | [011](../dev/fids/FID-2026-1104-011-policy-v1-2-publication.md) | converged | Operator approves the recipient inventory; draft and publish policy `v1.2` with the acceptance bump. |
-| [013](../dev/fids/FID-2026-1104-013-model-matched-visual-builds.md) | converged | 013A is authorized; implementation may start now that 006 and 009 are closed. 013B waits on a lawful OpenRouter fixture and rights. No implementation has started. |
+| [013](../dev/fids/FID-2026-1104-013-model-matched-visual-builds.md) | fixed | 013A implemented 2026-11-06 but not archived. Open: browser journey receipt, store suite in `test:postgres`, showcase recovery assertions and real source-output rights. 013B waits on a lawful OpenRouter fixture and rights. |
 | [015](../dev/fids/FID-2026-1104-015-content-fetch-automation-and-history.md) | converged | Planning only; coding is reserved and the scheduler backend is unconfirmed. |
 | [016](../dev/fids/FID-2026-1104-016-persistent-content-model-decisions.md) | converged | Planning only; accepted links must remain attached across automatic work. |
 | [017](../dev/fids/FID-2026-1104-017-content-matching-controls-and-review.md) | converged | Implement after 015 and 016; management, settings and rematch are not shipped. |
@@ -98,8 +98,10 @@ recovery drill; it does not claim Linux CI, a clean install with postinstall
 scripts enabled, the load gate or hosted delivery.
 
 FID-2026-1104-009 closed on 2026-11-05 at `0052734` with the 12/12 browser
-receipt above. FID-2026-1104-013A is authorized; its implementation has not
-started, and 013B remains blocked.
+receipt above. FID-2026-1104-013A was implemented on 2026-11-06 and remains
+active: its browser journey, mandatory PostgreSQL store wiring, showcase
+recovery assertions and real source-output rights are still missing. 013B
+remains blocked.
 
 FID-127 remains active because the operator receipt does not exist yet. The
 dated receipts in [the 2026-10-31 record](project-status-2026-10-31.md) remain

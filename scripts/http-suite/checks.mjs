@@ -18,6 +18,7 @@ import {
   seedClaimedPaymentEvent,
   seedPendingTopup,
 } from "./seed.mjs";
+import { runShowcaseChecks } from "./showcase-checks.mjs";
 import { runSystemsChecks } from "./systems-checks.mjs";
 
 import { FAQ_GROUPS } from "../../components/docs/faq-data.ts";
@@ -2040,5 +2041,10 @@ export async function runChecks(context) {
   await runBenchmarkIntegrityChecks(context, adminCookie);
   await runCustomerExperienceChecks(context, alpha, beta);
   await runSupportChecks(context, alpha, beta, adminCookie);
+  await runShowcaseChecks({
+    baseUrl: context.baseUrl,
+    db: context.db,
+    adminCookie,
+  });
   await runDegradeChecks(context);
 }

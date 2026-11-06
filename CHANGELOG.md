@@ -3,6 +3,30 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-06 — Pelican visual builds (013A)
+
+- **FID-2026-1104-013A — medium —** added the Pelican-first visual-build
+  surface: an isolated `showcase` schema with sources, append-only rights,
+  import leases, content-addressed assets, immutable revisions, bindings,
+  aliases and reviews; a pinned Pelican adapter that verifies manifest, result,
+  prompt, thumbnail and license hashes; strict exact-id/alias matching with
+  catalog identity digests; a CSP-bound sandboxed viewer; a flag-gated public
+  gallery, detail page, JSON bundle, JPEG preview and model-page panel; and a
+  guarded admin review page/API for import, rights, bindings, publish and
+  withdraw. Every public read rechecks source enablement, current rights,
+  accepted binding, active catalog identity and published state. The flag
+  defaults off in `.env.example`.
+- **Verification:** `npm run verify` PASS — 11/11 gates, 1,113/1,113 tests,
+  2/2 PostgreSQL proofs, 758 main HTTP checks plus the trial suite (including
+  showcase gallery/detail/bundle/preview, rights withdrawal/restoration and
+  catalog-rename invalidation), recovery 14/14, quality 682 files, 154.4 s.
+  Focused visual-builds suites 13/13; lint and typecheck clean; build PASS.
+- **Not closed:** 013A remains active. No browser journey receipt exists; the
+  store suite is not in `test:postgres`; the recovery drill does not assert
+  showcase rows; and no real source-output redistribution right is evidenced.
+  013B remains blocked on a lawful OpenRouter fixture and rights. No real source
+  publication, funded inference, live payment or deployment is claimed.
+
 ## 2026-11-05 — Gateway policy read, webhook retries and load baseline (012)
 
 - **FID-2026-1105-012 — high —** fixed `GET /api/admin/gateway` and its PATCH

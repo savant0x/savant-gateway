@@ -1,0 +1,36 @@
+Build a complete interactive 3D signed-distance-field artwork of a pelican riding a bicycle.
+
+Return one self-contained JavaScript ES module and nothing else: no Markdown fences and no explanation. The evaluator supplies only a blank HTMLCanvasElement and browser-standard APIs. Do not import packages, request network resources, read other DOM elements, or use external assets.
+
+Your module must export exactly one function:
+
+export function createPelicanSdf(canvas)
+
+The function must initialize a WebGL2 renderer and return an object with these methods:
+
+- render(timeSeconds) — synchronously draw one complete frame. The evaluator owns the animation loop and calls this method.
+- setView(yaw, pitch, distance) — set the orbit camera in radians and world units so the evaluator can reproduce viewpoints.
+- getView() — return { yaw, pitch, distance } using the current camera.
+- dispose() — remove event listeners and release WebGL resources.
+
+You must implement everything else yourself, including all SDF primitives and operations, ray marching, normals, camera math, lighting, materials, background, and controls. Do not expect any helper functions or shader code from the host.
+
+Artwork requirements:
+
+- The scene must unmistakably show a charming pelican riding a functional bicycle, and remain coherent from every angle.
+- Include two separate wheels, tires, a connected frame, seat, handlebar, and a visible crank or pedals.
+- Include a pelican body, head, eye, long beak and throat pouch, wings, and two legs in a plausible riding pose.
+- Start at an appealing three-quarter view. setView(0, 0, distance) must show the bicycle from its right side; positive yaw orbits around world-up.
+- Pointer or mouse drag on the canvas must orbit through a full 360 degrees. Wheel and two-finger pinch must zoom from a useful full-subject view to a close inspection of the beak, rider contacts, frame, and pedals. Arrow keys must orbit and + / - must zoom when the canvas is focused.
+- Make the canvas focusable, prevent interaction gestures from scrolling while active, and respond crisply after input. Do not create your own animation loop.
+
+Technical requirements:
+
+- Use WebGL2 and render the scene primarily by ray marching signed distance functions in a fragment shader. Rasterized meshes or a 2D imitation do not satisfy the task.
+- Respect the canvas drawing-buffer width and height set by the evaluator. Do not lower the internal resolution, skip frames, cache completed frames, or vary quality based on timing.
+- render() and setView() must not resize the canvas. Rendering must be deterministic for the same time, view, and canvas size.
+- Do not use requestAnimationFrame, timers, workers, audio, storage, dialogs, dynamic code evaluation, or WebGPU.
+- Handle WebGL context loss without throwing. Throw a clear error during setup if WebGL2 is unavailable or shader compilation fails.
+- Keep the module at or below 32,768 UTF-8 bytes.
+
+Visual quality and rendering efficiency both matter. The evaluator will inspect the result at multiple angles and close zoom levels, then measure uncapped frame throughput at a fixed canvas size by calling your render() method directly. Canvas resizing, empty or near-empty output, low internal resolution, unchanged frames after camera moves, and missing close-inspection controls are validation failures rather than performance wins.

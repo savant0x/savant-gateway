@@ -30,3 +30,4 @@ export * from "./store-facade/catalog.ts";
 export * from "./store-facade/insights.ts";
 export * from "./store-facade/money.ts";
 export * from "./store-facade/operations.ts";
+export * from "./store-facade/showcase.ts";

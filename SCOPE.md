@@ -1,5 +1,39 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-06 (Pelican visual-builds implementation: 013A)
+
+Operator granted automation level 3 for the accepted roadmap and instructed the
+session to resume. This pass implements the authorized 013A Pelican track only;
+013B stays separately gated. Work is limited to repository code, a pinned
+structured fixture, disposable PostgreSQL and local HTTP tests. No real source
+publication, rights grant, funded inference, live payment, provider transfer,
+deployment or remote database change is performed.
+
+- [x] **PV1 — Land the showcase domain.** Added the isolated `showcase` schema
+  and stores for sources, append-only rights, import leases, asset quota,
+  immutable revisions, exact bindings, aliases and review receipts.
+- [x] **PV2 — Implement Pelican and packaging.** Pinned the fixture and verified
+  manifest, result, prompt, thumbnail and license hashes. Added strict
+  exact-id/alias matching with catalog identity digests and a thin CSP-bound
+  wrapper; generated code never executes on the server.
+- [x] **PV3 — Wire public and admin surfaces.** Added flag-gated gallery, detail
+  viewer, bundle and preview routes, the model-page panel, and guarded admin
+  review/import/rights/binding/publish/withdraw actions. Public reads recheck
+  current rights and catalog identity on every request.
+- [x] **PV4 — Prove HTTP invalidation.** Added showcase HTTP checks: 758 main
+  checks PASS, including rights withdrawal/restoration and catalog-rename
+  invalidation of the bundle and gallery.
+- [x] **PV5 — Restore the quality ceiling.** Split oversized showcase/Pelican
+  modules; quality PASS across 682 files under 400 lines. Lint zero warnings,
+  typecheck and build PASS.
+- [x] **PV6 — Run the full gate set.** `npm run verify` PASS: 11/11 gates,
+  1,113/1,113 tests, 2/2 PostgreSQL, 758 HTTP plus trial, recovery 14/14,
+  154.4 s.
+- [ ] **PV7 — Keep 013A open honestly.** No browser journey receipt exists, the
+  store suite is not in `test:postgres`, the recovery drill does not assert
+  showcase rows, and no real source-output redistribution right is evidenced.
+  013B remains blocked. FID-013A is recorded as implemented, not archived.
+
 ## Session — 2026-11-05 (policy read, route retries and load baseline: 012)
 
 Operator granted automation level 3 for the accepted roadmap. The bounded load

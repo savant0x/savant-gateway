@@ -9,6 +9,7 @@ import { notFound } from "next/navigation";
 
 import { FreeAllocationPanel } from "@/components/catalog/free-allocation-panel";
 import { CoveragePanel } from "@/components/content/coverage-panel";
+import { ModelVisualBuilds } from "@/components/showcase/model-visual-builds";
 import { IdentityPanel } from "@/components/identity/identity-panel";
 import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
@@ -20,10 +21,18 @@ import { isWatching } from "@/lib/content/store/engagement";
 import { listContentForModel } from "@/lib/content/store/links";
 import { getCustomerSession } from "@/lib/customer-auth";
 import { readPublishedIdentity } from "@/lib/identity/reads";
-import { getCatalogData, getDailyTrialSummary } from "@/lib/store";
+import {
+  getCatalogData,
+  getDailyTrialSummary,
+  listPublishedVisualBuilds,
+} from "@/lib/store";
 import { trialBalance } from "@/lib/storage/ledger/trials";
 import { getDatabase } from "@/lib/storage/runtime";
 import { readTrialConfig } from "@/lib/trials";
+import {
+  type VisualBuildPublicRow,
+  visualBuildsEnabled,
+} from "@/lib/visual-builds/types";
 
 export const dynamic = "force-dynamic";
 
@@ -72,10 +81,12 @@ export default async function ModelDetailPage({ params }: PageProps) {
   let unavailable = false;
   let coverage: Coverage | null = null;
   let watching = false;
+  let visualBuilds: VisualBuildPublicRow[] = [];
   let dailyAllocation: DailyTrialSummary | null = null;
   let lifetimeAllocation: TrialBalance | null = null;
   let allocationUnavailable = false;
   const showContent = contentEnabled();
+  const showVisualBuilds = visualBuildsEnabled();
   const customer = await getCustomerSession().catch(() => null);
   const trialConfig = readTrialConfig();
   const allocationMode = trialConfig.enabled ? "lifetime" : "daily";
@@ -112,6 +123,17 @@ export default async function ModelDetailPage({ params }: PageProps) {
       watching = customer ? await isWatching(db, customer.id, model.id) : false;
     } catch {
       coverage = null;
+    }
+  }
+
+  if (showVisualBuilds) {
+    try {
+      visualBuilds = await listPublishedVisualBuilds({
+        modelId: model.id,
+        limit: 3,
+      });
+    } catch {
+      visualBuilds = [];
     }
   }
 
@@ -221,6 +243,10 @@ export default async function ModelDetailPage({ params }: PageProps) {
                 </li>
               </ul>
             </div>
+
+            {showVisualBuilds ? (
+              <ModelVisualBuilds builds={visualBuilds} modelName={model.name} />
+            ) : null}
 
             {showContent && coverage ? (
               <CoveragePanel

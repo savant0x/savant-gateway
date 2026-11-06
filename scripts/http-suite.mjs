@@ -108,6 +108,9 @@ try {
       PROVIDER_KEY: "",
       COMMANDCODE_API_KEY: "",
       CONTENT_INGEST_ENABLED: "true",
+      // The showcase checks seed a source with an approved fixture decision and
+      // prove that the public gate follows the current rights and catalog rows.
+      VISUAL_BUILDS_ENABLED: "true",
       CONTENT_CRON_SECRET,
       PROVIDER_CRON_SECRET,
       // The provider scheduler gate asserts the documented 6h due interval.

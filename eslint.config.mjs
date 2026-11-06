@@ -31,6 +31,8 @@ export default defineConfig([globalIgnores([
     "public/*",
     "tests/*",
     "scripts/*",
+    // Disposable clones, logs and build output; already excluded by git.
+    "**/.scratch/**",
     // Reference-only copies of other projects live here for reading, never for
     // building. Their own lint config does not apply to this tree, so linting
     // them reports this project's rules against their code.

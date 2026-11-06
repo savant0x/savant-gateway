@@ -104,15 +104,26 @@ export type MatchOutcome = {
   ambiguous: string[];
 };
 
-/** `free/claude-opus-4.6`, `claude-opus-4-6` and ` Claude Opus 4.6 ` align. */
-export function normalizeModelKey(value: string): string {
-  return value
+/**
+ * `free/claude-opus-4.6`, `claude-opus-4-6` and ` Claude Opus 4.6 ` align.
+ *
+ * Benchmark matching folds the free prefix because both SKUs share one
+ * measurement. Strict visual-build matching opts out: a free SKU and its paid
+ * counterpart are separate products, so `free/gpt-6` must not bind to `gpt-6`.
+ */
+export function normalizeModelKey(
+  value: string,
+  options: { preserveFreePrefix?: boolean } = {},
+): string {
+  const folded = value
     .trim()
     .toLowerCase()
-    .replace(/^free\//, "")
-    .replace(/[._\s]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+    .replace(/[._\s]+/g, "-");
+  const unprefixed = options.preserveFreePrefix
+    ? folded
+    : folded.replace(/^free\//, "");
+
+  return unprefixed.replace(/-+/g, "-").replace(/^-|-$/g, "");
 }
 
 type CandidateIndex = Map<string, BenchmarkCandidate | null>;
@@ -189,7 +200,7 @@ export function matchBenchmarks(
 
   for (const model of models) {
     const slugKeys = [model.upstreamId, model.id]
-      .map(normalizeModelKey)
+      .map((value) => normalizeModelKey(value))
       .filter(Boolean);
     const nameKey = normalizeModelKey(model.name);
     const creatorKey = `${normalizeModelKey(model.family)}|${nameKey}`;

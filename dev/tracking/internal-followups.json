@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-11-04",
+  "updated": "2026-11-06",
   "policy": "Archived implementations do not claim live acceptance. These are observation, operator-input or revisit items linked to archived records; they do not hold implementation closure.",
   "items": [
     {
@@ -8,9 +8,18 @@
       "fid": "FID-2026-1104-013",
       "state": "blocked",
       "title": "Visual-builds PostgreSQL proof and recovery wiring",
-      "detail": "The 013A design requires tests/visual-builds-store.test.mjs in scripts/postgres-concurrency-proof.mjs and showcase.assets/revisions in scripts/db-recovery-drill.mjs. The test and schema do not exist, so adding the path now would fail the mandatory test:postgres gate. This record is not proof that the concurrency or recovery proof ran.",
-      "evidence": "dev/fids/FID-2026-1104-013-model-matched-visual-builds.md; scripts/postgres-concurrency-proof.mjs; scripts/db-recovery-drill.mjs",
-      "next_action": "When 013A schema/store lands, add tests/visual-builds-store.test.mjs to TEST_FILES, extend the recovery drill to seed and compare showcase asset/revision hashes, then run npm run test:postgres, npm run test:recovery and npm run verify:supabase."
+      "detail": "The 013A schema, stores and tests/visual-builds-store.test.mjs now exist and the focused suite passes against PGlite. The path is still absent from scripts/postgres-concurrency-proof.mjs TEST_FILES, so the mandatory two-connection proof has not run. scripts/db-recovery-drill.mjs also does not seed or compare showcase.assets/revisions. This record is not proof that the concurrency or recovery proof ran.",
+      "evidence": "dev/fids/FID-2026-1104-013-model-matched-visual-builds.md; lib/storage/schema/showcase.ts; tests/visual-builds-store.test.mjs; scripts/postgres-concurrency-proof.mjs; scripts/db-recovery-drill.mjs",
+      "next_action": "Add tests/visual-builds-store.test.mjs to TEST_FILES with a real two-connection race, extend the recovery drill to seed and compare showcase asset/revision hashes, then run npm run test:postgres, npm run test:recovery and npm run verify:supabase before archiving 013A."
+    },
+    {
+      "id": "FID-2026-1104-013-RIGHTS",
+      "fid": "FID-2026-1104-013",
+      "state": "blocked",
+      "title": "Real Pelican source-output redistribution rights",
+      "detail": "The committed fixture is a pinned Pelican repository snapshot under its MIT license and is used with a synthetic approval in tests. That license covers the repository, not permission to redistribute third-party model output or the upstream model provider's terms. No real source publication is claimed, and the public surface stays behind VISUAL_BUILDS_ENABLED.",
+      "evidence": "tests/fixtures/pelican/README.md; tests/fixtures/pelican/LICENSE; dev/fids/FID-2026-1104-013-model-matched-visual-builds.md",
+      "next_action": "Record separate permitted evidence for repository reuse, artifact contributor output and upstream model-provider terms per source/revision, attach its URL/hash and reviewer, then publish one real approved build and capture the public read receipt. Do not treat the MIT fixture as that grant."
     },
     {
       "id": "FID-2026-1030-045-LIVE",

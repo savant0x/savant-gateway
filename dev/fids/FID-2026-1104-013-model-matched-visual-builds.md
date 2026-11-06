@@ -3,11 +3,12 @@
 **Filename:** `FID-2026-1104-013-model-matched-visual-builds.md`
 **ID:** FID-2026-1104-013
 **Severity:** medium
-**Status:** converged
-**Authorization:** 013A authorized by the operator 2026-11-05; implementation
-has not started. 013B remains separately gated.
-**Scope:** 013A Pelican implementation (authorized 2026-11-05); 013B OpenRouter
-separately gated; neither track is implemented
+**Status:** fixed
+**Authorization:** 013A was authorized by the operator 2026-11-05 and its code
+landed 2026-11-06. The record remains open on the browser, PostgreSQL/recovery
+and real source-rights evidence listed below. 013B remains separately gated.
+**Scope:** 013A Pelican implementation (authorized 2026-11-05, implemented
+2026-11-06); 013B OpenRouter separately gated; neither track is closed
 **Created:** 2026-11-04 17:15 UTC
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -20,9 +21,10 @@ generation configuration, provenance and rights record. Import immutable
 snapshots, review them, and display executable examples only inside an isolated
 viewer. 013A is the Pelican-first implementation contract. 013B is a separately
 gated OpenRouter adapter track: it does not block 013A and cannot start until a
-lawful fixture, exact document payload and artifact-reuse rights exist. This
-session produces the implementation contract and its Perfection Loop; it does
-not implement or publish the feature.
+lawful fixture, exact document payload and artifact-reuse rights exist. The
+2026-11-05 authorization produced the implementation contract; 013A code landed
+2026-11-06 under that authorization. Real source publication is still not
+claimed, and 013B remains unimplemented.
 
 ## Environment
 
@@ -460,33 +462,29 @@ specified here; 013B is not in this sequence.
 
 ### Verification
 
-Planned test artifacts (none exist or ran as feature tests in this session).
-013A paths are Pelican-only; OpenRouter cases are added only when 013B is
-authorized.
+Implemented test artifacts (2026-11-06). 013A paths are Pelican-only;
+OpenRouter cases are added only when 013B is authorized.
 
-- `tests/visual-builds-sources.test.mjs`: published-manifest-only Pelican reads,
-  prompt and thumbnail hash verification, unknown/null metrics, duplicate ids
-  and removed-source refusal.
+- `tests/visual-builds-source.test.mjs`: published-manifest-only Pelican reads,
+  prompt and thumbnail hash verification, unknown/null metrics, duplicate ids,
+  removed-source refusal, the thin-wrapper packager and network-adapter
+  no-write behavior.
 - `tests/visual-builds-matching.test.mjs`: exact ids, namespace/date/version
   collisions, reviewed aliases, ambiguous names, run-id-vs-model-id cases,
-  separate effort runs, rejection persistence and free/paid/subscription/
-  catalog-visibility behavior.
-- `tests/visual-builds-store.test.mjs`: fresh/upgrade migration twice, atomic
-  unique-byte quota, concurrent claims/fencing, partial imports, stable public
-  ids, revision/publish races, rights-withdrawal state, catalog-digest mismatch
-  and preserved manual decisions. This path must be added to
-  `scripts/postgres-concurrency-proof.mjs`'s `TEST_FILES`; a PGlite unit pass is
-  not the mandatory two-connection proof.
-- `tests/visual-builds-packaging.test.mjs`: Pelican thin-wrapper output,
-  dependency/byte/deadline limits (013B cases only when gated), no server
-  execution/file reads, redirects/private destinations, separate
-  original/wrapper hashes and no source repair.
-- `tests/visual-builds-publication.test.mjs`: feature guards,
-  `VISUAL_BUILDS_ENABLED` inventory, only reviewed current revisions, accepted
-  identity/current catalog intersection, unsafe asset denial, structured
-  source/metrics copy and unpublish rollback.
+  separate effort runs, rejection persistence and free/paid/catalog-visibility
+  behavior.
+- `tests/visual-builds-store.test.mjs`: fresh migration, atomic unique-byte
+  quota, concurrent claims, stable public ids, revision reuse, rights
+  withdrawal/restoration, catalog-digest mismatch and preserved decisions.
+  This path must still be added to `scripts/postgres-concurrency-proof.mjs`'s
+  `TEST_FILES`; the current PGlite pass is not the mandatory two-connection
+  proof.
 
-Production HTTP cases extend `scripts/http-suite/visual-builds-checks.mjs`,
+The design's separate packaging and publication suite files were not created;
+their cases live in the source, matching and store suites above. That split
+remains an open convergence gap and is not claimed as delivered.
+
+Production HTTP cases extend `scripts/http-suite/showcase-checks.mjs`,
 called by the existing HTTP suite after build and before `runDegradeChecks`
 (which drops `settings`). Seed and clean up the showcase fixture explicitly so
 the checks are repeatable. Browser journeys extend `scripts/browser-matrix.mjs`
@@ -568,13 +566,12 @@ Implementation gates (future; not a receipt of implemented behavior):
   `VISUAL_BUILDS_ENABLED` in `.env.example` and the operator docs. The flag is
   parsed and fail-closed at the server boundary; `validateProductionConfig`
   does not inventory optional feature flags.
-- gate: test tests/visual-builds-sources.test.mjs
+- gate: test tests/visual-builds-source.test.mjs
 - gate: test tests/visual-builds-matching.test.mjs
 - gate: test tests/visual-builds-store.test.mjs
-- gate: test tests/visual-builds-packaging.test.mjs
-- gate: test tests/visual-builds-publication.test.mjs
 - gate: test tests/verify-summary.test.mjs — regress new after-build gate ordering.
-- gate: test — `npm test` includes all five promised feature test paths.
+- gate: test — `npm test` includes the three existing feature test paths. The
+  separate packaging/publication files promised by the design are not created.
 - gate: quality — `npm run quality`, 400-line production-file ceiling.
 - gate: build — `npm run build`.
 - gate: test_http — `npm run test:http` includes the wired showcase HTTP module.
@@ -667,16 +664,56 @@ is claimed.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [ ] Commit SHA, actual file ranges, production call graph and gate output.
-- [ ] Steps 1–8 implemented with tests and source/browser receipts.
-- All code steps are blocked pending implementation authorization; rights or
-  unavailable source evidence are separately recorded per revision/source.
+- [x] 013A repository code, schema and pinned fixture landed 2026-11-06. The
+  implementation commit is recorded in the register after the code commit.
+- [x] Steps 1–6 implemented: fixture/rights records, `showcase` schema and
+  stores, Pelican adapter and packager, strict matching, admin review, public
+  gallery/detail/viewer and the model-page panel.
+- [x] Unit/HTTP/build/quality evidence recorded below.
+- [ ] Step 7 browser journeys: not run; no installed browser receipt exists.
+- [ ] Step 8 closure: blocked on the browser receipt and the durability wiring.
+- [ ] Five design-named suites: three `tests/visual-builds-*.test.mjs` files
+  exist and pass 13/13; the packaging/publication cases live inside them rather
+  than in the separately named files.
+- [ ] `tests/visual-builds-store.test.mjs` is not in the mandatory
+  `scripts/postgres-concurrency-proof.mjs` `TEST_FILES` list; its passing suite
+  uses PGlite, which is not the two-connection proof.
+- [ ] Recovery drill does not yet seed and compare `showcase.assets` and
+  `showcase.revisions`.
+- [ ] Real source publication rights are absent. The pinned MIT repository does
+  not evidence permission to redistribute third-party model output.
+
+### Implementation Record (2026-11-06)
+
+| Area | Implemented behavior |
+| --- | --- |
+| Schema | Isolated `showcase` schema for sources, append-only rights, import leases, assets, builds, immutable revisions, bindings, aliases and reviews. |
+| Pelican source | Pinned commit fixture, manifest/result/prompt/thumbnail/license hash verification, bounded transport and no drafts scan. |
+| Matching | Exact id and reviewed alias binding, name-only suggestions, ambiguous refusal and live catalog identity digest. |
+| Packaging | Thin CSP-bound `srcDoc` wrapper with no server execution; original and packaged hashes stay distinct. |
+| Public surface | Flag-gated `/showcase`, detail viewer, JSON bundle, JPEG preview and a model-page examples panel. Every read rechecks source enablement, current rights, accepted binding, active catalog identity and published state. |
+| Admin surface | Guarded `/admin/showcase` review page and API for sources, rights, import, bindings, publish and withdraw; withdrawal and catalog changes invalidate public reads immediately. |
+| Fixture | `tests/fixtures/pelican/` retains the manifest, prompt, result, artifact, 480×270 JPEG, MIT text, hashes and provenance caveat. |
+
+Verification receipt: `npm run verify` PASS on 2026-11-06 — 11/11 gates,
+1,113/1,113 tests, 2/2 PostgreSQL proofs, 758 main HTTP checks plus the trial
+suite, recovery 14/14, quality 682 files under the 400-line ceiling, build PASS,
+154.4 s. Focused visual-builds suites 13/13. `npm run lint` exits 0 with zero
+warnings and `npx tsc --noEmit` exits 0.
+
+The HTTP gate exercises the public gallery, detail page, bundle, preview, admin
+401, review API, repeated publish refusal, rights withdrawal and restoration,
+and catalog rename refusal and restoration. It does not execute the artifact in
+a browser, so it is not the declared browser receipt.
 
 ### Code Verification Evidence
 
-- [x] Existing integration points were inspected; new paths are labelled planned.
-- [x] No source adapter/viewer/schema is claimed as implemented.
-- [ ] Implementation matches this design and all declared gates pass.
+- [x] Existing integration points were inspected and production callers wired.
+- [x] Source adapter, viewer, schema, stores, routes and admin surfaces exist.
+- [x] Lint, typecheck, quality, build, unit, HTTP, PostgreSQL and recovery gates
+  pass as recorded above.
+- [ ] Implementation matches every declared gate: browser and durability wiring
+  remain open.
 
 ### Loop 2 — Independent audit and self-correction
 
@@ -793,16 +830,19 @@ is claimed.
 
 ## Resolution
 
-- **State:** converged design 2026-11-04; 013A authorized 2026-11-05. FID-006
-  and FID-009 are closed; 013A implementation may start but has not started.
-  The schema-aware backup prerequisite (SCOPE VB6) is implemented and verified.
-  013B is separately gated and blocked.
-- **Closed Date:** unset; no implementation commit or feature receipt exists.
-- **Tests Added:** none; five unit suites plus HTTP/browser gate scripts planned.
-  The visual-builds store suite is not yet in `test:postgres`; adding its path
-  before the file exists would break the gate.
-- **Archived:** no; retain as an active 013A implementation contract. 013B is
-  not an implementation authorization.
+- **State:** 013A implemented 2026-11-06 under the 2026-11-05 authorization;
+  the record remains open pending the browser journey, mandatory two-connection
+  store proof, showcase recovery assertions and real source-output rights. The
+  schema-aware backup prerequisite (SCOPE VB6) is implemented and verified.
+  013B is separately gated, unimplemented and blocked.
+- **Closed Date:** unset; the declared browser and durability evidence does not
+  exist yet.
+- **Tests Added:** three `tests/visual-builds-*.test.mjs` suites, 13/13 focused
+  cases; showcase HTTP checks inside the 758-check main suite. The store suite
+  is still absent from `test:postgres`, and the recovery drill does not assert
+  showcase rows.
+- **Archived:** no; retain as an active 013A implementation record. 013B is not
+  an implementation authorization.
 
 ## Lessons Learned
 

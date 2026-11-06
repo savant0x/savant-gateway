@@ -93,6 +93,43 @@ try {
   return { html, sha256: sha256Hex(html) };
 }
 
+export function packageOpenRouterArtifact(html: string): {
+  html: string;
+  sha256: string;
+} {
+  if (Buffer.byteLength(html, "utf8") > VISUAL_BUILD_LIMITS.htmlBytes) {
+    throw new Error("The OpenRouter artifact exceeds its byte ceiling.");
+  }
+  if (!/^\s*<!doctype html/i.test(html)) {
+    throw new Error("The OpenRouter artifact is not an HTML document.");
+  }
+  if (!/<canvas[\s>]/i.test(html) || !/<script[\s>]/i.test(html)) {
+    throw new Error("The OpenRouter artifact has no executable canvas.");
+  }
+  if (!/default-src 'none'/i.test(html) || !/connect-src 'none'/i.test(html)) {
+    throw new Error("The OpenRouter artifact is missing its offline CSP.");
+  }
+  if (/(?:src|href)\s*=\s*["']\s*(?:https?:)?\/\//i.test(html)) {
+    throw new Error("The OpenRouter artifact references a remote asset.");
+  }
+  if (/<\s*(?:iframe|object|embed|base|form)\b/i.test(html)) {
+    throw new Error("The OpenRouter artifact contains a forbidden element.");
+  }
+
+  return { html, sha256: sha256Hex(html) };
+}
+
+export function packageVisualArtifact(
+  mime: string,
+  bytes: Uint8Array,
+): { html: string; sha256: string } {
+  const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+
+  return mime.startsWith("text/html")
+    ? packageOpenRouterArtifact(text)
+    : packagePelicanArtifact(text);
+}
+
 export function visualBuildBundleEtag(sha256: string): string {
   return `"vb-${sha256.slice(0, 32)}"`;
 }

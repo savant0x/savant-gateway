@@ -9,6 +9,7 @@ import type {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { ShowcaseOpenRouterPanel } from "@/components/admin/showcase-openrouter-panel";
 import { adminLoginHref } from "@/lib/admin-return";
 
 type Props = {
@@ -42,8 +43,8 @@ export function ShowcaseReview({
   const [redistribute, setRedistribute] = useState(true);
   const [importPath, setImportPath] = useState(resultPath);
   const [modelDraft, setModelDraft] = useState<Record<string, string>>({});
-  const source = sources[0] ?? null;
-  const current = rights[0] ?? null;
+  const source = sources.find((row) => row.kind === "pelican_sdf") ?? null;
+  const current = rights.find((row) => row.sourceId === source?.id) ?? null;
 
   async function act(key: string, payload: Payload) {
     setBusy(key);
@@ -108,9 +109,9 @@ export function ShowcaseReview({
           <div>
             <h2 className="text-sm font-semibold">1 · Source and rights</h2>
             <p className="mt-1 max-w-2xl text-xs leading-5 text-muted">
-              The pinned MIT repository is not by itself a grant to republish
-              the generated artifact. Record a separate decision, then leave
-              publication for the review table below. A later decision
+              The pinned Pelican MIT repository is not by itself a grant to
+              republish the generated artifact. Record a separate decision, then
+              leave publication for the review table below. A later decision
               supersedes this one.
             </p>
           </div>
@@ -125,7 +126,7 @@ export function ShowcaseReview({
               type="button"
               onClick={() => act("source", { action: "source" })}
             >
-              Register pinned source
+              Register pinned Pelican source
             </button>
           )}
         </div>
@@ -215,6 +216,7 @@ export function ShowcaseReview({
                 onClick={() =>
                   act("rights", {
                     action: "rights",
+                    sourceId: source.id,
                     state: rightsState,
                     evidenceNote: rightsNote,
                     displayAllowed: display,
@@ -234,11 +236,11 @@ export function ShowcaseReview({
       </section>
 
       <section className="rounded-xl border border-black/10 bg-surface p-5 dark:border-white/10">
-        <h2 className="text-sm font-semibold">2 · Import one record</h2>
+        <h2 className="text-sm font-semibold">2 · Import one Pelican record</h2>
         <p className="mt-1 max-w-2xl text-xs leading-5 text-muted">
-          The import fetches only a manifest-listed record and verifies the
-          prompt, artifact and thumbnail hashes plus the MIT text. It stores the
-          revision for review; it never publishes.
+          The import fetches only a manifest-listed Pelican record and verifies
+          the prompt, artifact and thumbnail hashes plus the MIT text. It stores
+          the revision for review; it never publishes.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <input
@@ -258,6 +260,13 @@ export function ShowcaseReview({
           </button>
         </div>
       </section>
+
+      <ShowcaseOpenRouterPanel
+        act={act}
+        busy={busy}
+        rights={rights}
+        sources={sources}
+      />
 
       <section className="scroll-shell rounded-xl border border-black/10 dark:border-white/10">
         <table className="data-table">

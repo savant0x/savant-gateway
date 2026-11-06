@@ -1,30 +1,30 @@
-# FID: Pelican-first model-matched visual builds with a gated OpenRouter track
+# FID: Model-matched visual builds with Pelican and OpenRouter artifacts
 
 **Filename:** `FID-2026-1104-013-model-matched-visual-builds.md`
 **ID:** FID-2026-1104-013
 **Severity:** medium
 **Status:** fixed
-**Authorization:** 013A was authorized by the operator 2026-11-05; its code and
-declared local gates landed 2026-11-06. Real source-output rights remain an
-external followup. 013B remains separately gated.
-**Scope:** 013A Pelican implementation (authorized 2026-11-05, implemented and
-locally verified 2026-11-06); 013B OpenRouter separately gated and unimplemented
+**Authorization:** 013A was authorized 2026-11-05 and 013B on 2026-11-06. The
+operator approved the MIT-licensed Pelican/OpenRouter source use and accepted
+the related publication responsibility. Both tracks are implemented and locally
+verified 2026-11-06; no real source publication is claimed.
+**Scope:** 013A Pelican and 013B OpenRouter artifact implementations, both
+authorized and locally verified 2026-11-06
 **Created:** 2026-11-04 17:15 UTC
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
 
 ## Summary
 
-Build the Savant visual showcase from Pelican SDF first, with precise links to
-the existing model catalog. Preserve the source prompt, model version,
-generation configuration, provenance and rights record. Import immutable
-snapshots, review them, and display executable examples only inside an isolated
-viewer. 013A is the Pelican-first implementation contract. 013B is a separately
-gated OpenRouter adapter track: it does not block 013A and cannot start until a
-lawful fixture, exact document payload and artifact-reuse rights exist. The
-2026-11-05 authorization produced the implementation contract; 013A code landed
-2026-11-06 under that authorization. Real source publication is still not
-claimed, and 013B remains unimplemented.
+Build the Savant visual showcase from Pelican SDF and OpenRouter game artifacts,
+with precise links to the existing model catalog. Preserve the source prompt,
+model version, generation configuration, provenance and rights record. Import
+immutable snapshots, review them, and display executable examples only inside
+an isolated viewer. 013A implements Pelican. 013B implements the OpenRouter
+self-contained HTML artifact lane against the observed games fixture. The
+operator approved both source tracks on 2026-11-06 and accepted publication
+responsibility. No real source publication is claimed without an operator
+import and review.
 
 ## Environment
 
@@ -91,7 +91,7 @@ Source reads on 2026-11-04, without inference, votes or outbound messages:
 | Source | Observed format | Publication evidence / limits |
 | --- | --- | --- |
 | Pelican SDF | `data/manifest.json`, `data/results/*.json`, `data/artifacts/*.js`, `benchmark/prompt.txt`, `assets/thumbnails/*.jpg`; 76 published runs | Public repository MIT license; pin a commit and retain its license text. The prompt is a separate 3,387-byte file; results expose `promptSha256`/`promptVersion` but no prompt text. Thumbnails are generated 480×270 previews under `assets/thumbnails/`, not a declared result field, and failed runs have none. |
-| OpenRouter games | Server-rendered listing with 44 model entries; `documentUrl`, `thumbnailUrl`, `costUsd` and `generationTimeMs` were reported by a prior read but are not confirmed in a stored fixture | Only one extracted document URL returned HTTP 200. The Data API's CC BY scope does not license the separate HTML/assets. 013B is blocked until a lawful fixture and exact payload are recorded; this is not a committed adapter source. |
+| OpenRouter games | Server-rendered listing observed 2026-11-06 with 46 model entries and `documentUrl`, `thumbnailUrl`, `costUsd`, `generationTimeMs` and `threeVersion` fields. Each document is a self-contained HTML file with inline Three.js and no external asset URL. | The operator approved the MIT-licensed source use on 2026-11-06 and accepted publication responsibility. A pinned one-record fixture is committed at `tests/fixtures/openrouter/`; no live page is scraped during import. |
 
 Pelican commit observed: `63190d7e5fb883175b8612374de5e7f094293548`.
 Sample `gpt-6-1-sol-high-run-01.json` reports source status `unverified`,
@@ -109,15 +109,15 @@ scenarios only after a real source page and payload pass the same contract.
   results, artifacts, prompt and thumbnails; showcase schema/store; exact
   matching; viewer; gallery; model panel; admin review. It is independently
   useful and does not require an OpenRouter fixture.
-- **013B — OpenRouter artifacts (separately gated).** The listing/document
-  payload, HTML dependency packaging, rights and browser fixture are unresolved.
-  It is not implemented under 013A and must not be called live acceptance.
+- **013B — OpenRouter artifacts (implemented 2026-11-06).** The observed
+  self-contained HTML document, strict offline CSP validation, operator-supplied
+  record, source registration and rights path are implemented. No live-page
+  scrape is used; a pinned fixture exercises the adapter.
 - **Dependency order:** FID-2026-1104-006 bounded transport →
-  FID-2026-1104-009 Playwright runner → 013A. Both prerequisites are closed
-  (006, and 009 at `0052734`); 013A is authorized to start. 013B remains blocked.
-  FID-2026-1104-008's gate-contract work is a coordination input, not a product
-  gate: 013A adds one line to `VERIFY_GATES` and 008 must preserve it when it
-  unifies the lists.
+  FID-2026-1104-009 Playwright runner → 013A/013B. Both prerequisites are closed
+  (006, and 009 at `0052734`); both tracks are implemented. FID-2026-1104-008's
+  gate-contract work is a coordination input, not a product gate: 013A adds one
+  line to `VERIFY_GATES` and 008 must preserve it when it unifies the lists.
 - **No duplicate harness:** 013A's browser journeys extend
   `scripts/browser-matrix.mjs` from 009. Do not add a second
   `scripts/visual-builds-browser.mjs`.
@@ -169,8 +169,8 @@ implementation targets, not claims that those files already exist.
 
 #### 1. Sources and reuse
 
-013A implements exactly `pelican_sdf`. `openrouter_artifacts` is a separate
-013B track and is not required by 013A. Additive records live in a `showcase`
+013A implements `pelican_sdf`; 013B adds `openrouter_artifacts`. Additive
+records live in a `showcase`
 namespace on the existing database, separate from money and article ingestion.
 This feature does not depend on `CONTENT_ENABLED`. Use
 `VISUAL_BUILDS_ENABLED=true` as an explicit public-surface switch; unset/false
@@ -192,13 +192,14 @@ drafts, raw transcripts or private metadata. Verify advertised artifact hashes;
 save the entire approved license notice with the snapshot. A manifest entry is
 not a quality endorsement.
 
-013B reads configured, operator-selected benchmark scenario pages and decodes
-their structured payload as data. Never `eval` page scripts or regex arbitrary
-script bodies into executable code. Require a validated schema and stable
-source identity; payload changes fail visibly without replacing good records.
-Discover assets only under approved model-assets paths. Do not start 013B until
-a lawful fixture records the exact HTML, document URLs, payload fields,
-dependency versions and upstream model-provider terms.
+013B accepts an operator-selected, observed OpenRouter game record and fetches
+only its exact `model-assets.openrouter.ai` document and thumbnail. Never `eval`
+page scripts or regex arbitrary script bodies into executable code. The record
+is validated against a strict schema and stable source identity; a changed
+payload fails visibly without replacing good records. The document must already
+be self-contained, declare `default-src 'none'` and `connect-src 'none'`, and
+contain no remote asset reference or forbidden element. The pinned fixture
+records the exact HTML, document URL, prompt and license hashes.
 
 Rights are an explicit append-only record keyed to a source or revision:
 `pending`, `approved`, `withdrawn`, with evidence URL/text/hash, allowed
@@ -210,15 +211,16 @@ identity. A named-operator identity is a separate change.
 Store Pelican's MIT notice, the artifact contributor's grant, and the upstream
 model provider's terms as separate evidence classes. The Data API's CC BY scope
 must not be assumed to license separate HTML/assets. An OpenRouter record may be
-imported for review but stays unpublished until artifact reuse is evidenced. A
-source link is not a substitute interactive build.
+imported for review after the operator supplies its exact record, prompt and
+license. The operator approval is recorded as a rights row; a source link is
+not a substitute interactive build.
 
 #### 2. Durable records and revision rules
 
 Use these logical tables, with additive idempotent schema registration:
 
-- `showcase.sources`: fixed source kinds (`pelican_sdf`; `openrouter_artifacts`
-  only when 013B is authorized), configured commit/scenario pages, enabled
+- `showcase.sources`: fixed source kinds (`pelican_sdf`, `openrouter_artifacts`),
+  configured commit/scenario pages, enabled
   state, allowed origins/paths and source-level rights references.
 - `showcase.rights`: append-only subject (`source` or `revision`), state,
   evidence URL/text/hash, allowed display/cache/redistribution modes,
@@ -439,9 +441,9 @@ never appear. Stable revisions make rollback a pointer change, not re-ingestion.
 
 ### Steps
 
-The operator authorized 013A on 2026-11-05, and the 006/009 gates are closed.
-The steps below are authorized for implementation; none has started. Design is
-specified here; 013B is not in this sequence.
+The operator authorized 013A on 2026-11-05 and 013B on 2026-11-06, and the
+006/009 gates are closed. Steps 1–8 below are implemented and verified; the
+original sequencing text is retained for history.
 
 1. Verify FID-006's bounded transport and FID-009's browser runner on disk; if
    either is absent, stop and keep 013A blocked. Pin Pelican fixtures, prompt,
@@ -454,20 +456,23 @@ specified here; 013B is not in this sequence.
    reconciliation with the defined identity digest.
 5. Wire guarded admin review, previews and revision-specific publication.
 6. Wire isolated execution, public gallery/detail and exact model panels.
-7. Run regressions and browser journeys for Pelican; record the OpenRouter
-   fixture/rights blockers separately. Do not claim both formats.
+7. Run regressions for Pelican and the OpenRouter fixture, including the
+   offline HTML packager and both source kinds.
 8. Re-run full gates, document operation/rollback, commit verified code, then
-   close/archive 013A with CHANGELOG and implementation evidence. 013B remains
-   a separate blocked track.
+   close 013A and 013B with CHANGELOG and implementation evidence.
 
 ### Verification
 
-Implemented test artifacts (2026-11-06). 013A paths are Pelican-only;
-OpenRouter cases are added only when 013B is authorized.
+Implemented test artifacts (2026-11-06). Both Pelican and OpenRouter paths are
+covered; the OpenRouter fixture exercises the observed self-contained HTML
+format.
 
 - `tests/visual-builds-sources.test.mjs`: published-manifest-only Pelican
   reads, prompt and thumbnail hash verification, unknown/null metrics,
   duplicate ids, removed-source refusal and network-adapter no-write behavior.
+- `tests/visual-builds-openrouter.test.mjs`: pinned HTML artifact, prompt and
+  license hashes, offline-CSP/remote-asset/forbidden-element refusal, duplicate
+  manifest ids and unauthorized asset hosts.
 - `tests/visual-builds-matching.test.mjs`: exact ids, namespace/date/version
   collisions, reviewed aliases, ambiguous names, run-id-vs-model-id cases,
   separate effort runs, rejection persistence and free/paid/catalog-visibility
@@ -565,12 +570,13 @@ Implementation gates (future; not a receipt of implemented behavior):
   parsed and fail-closed at the server boundary; `validateProductionConfig`
   does not inventory optional feature flags.
 - gate: test tests/visual-builds-sources.test.mjs
+- gate: test tests/visual-builds-openrouter.test.mjs
 - gate: test tests/visual-builds-matching.test.mjs
 - gate: test tests/visual-builds-store.test.mjs
 - gate: test tests/visual-builds-packaging.test.mjs
 - gate: test tests/visual-builds-publication.test.mjs
 - gate: test tests/verify-summary.test.mjs — regress new after-build gate ordering.
-- gate: test — `npm test` includes all five feature test paths.
+- gate: test — `npm test` includes all six feature test paths.
 - gate: quality — `npm run quality`, 400-line production-file ceiling.
 - gate: build — `npm run build`.
 - gate: test_http — `npm run test:http` includes the wired showcase HTTP module.
@@ -645,8 +651,9 @@ is claimed.
    no date/version stripping or serving-quality guarantee follows.
 3. Does public access establish artifact reuse? No; preserve rights evidence
    and require explicit revision publication.
-4. Is OpenRouter's voxel endpoint known? No; 013B remains gated on a lawful
-   fixture, and voxel support requires real payload evidence.
+4. Is OpenRouter's voxel endpoint known? No; the implemented games lane accepts
+   observed self-contained HTML records. Voxel support still requires real
+   payload evidence.
 5. Does source validation mean measured quality? No; keep source status,
    validation, measurement environment and local rendering checks distinct.
 6. Can model-generated code execute on the server? Never; packaging parses
@@ -664,10 +671,10 @@ is claimed.
 ### Implementation Evidence (REQUIRED for `closed`)
 
 - [x] 013A repository code, schema and pinned fixture landed 2026-11-06 in
-  commit `a73960f`.
+  commit `a73960f`; the OpenRouter lane is implemented in this follow-up.
 - [x] Steps 1–6 implemented: fixture/rights records, `showcase` schema and
-  stores, Pelican adapter and packager, strict matching, admin review, public
-  gallery/detail/viewer and the model-page panel.
+  stores, Pelican and OpenRouter adapters, strict matching, admin review,
+  public gallery/detail/viewer and the model-page panel.
 - [x] Unit/HTTP/build/quality evidence recorded below.
 - [x] Step 7 browser journeys: `npm run test:visual-builds-browser` PASS, 4/4
   journeys on bundled Chromium across both themes and 320/1024/1440 widths,
@@ -683,9 +690,17 @@ is claimed.
   publish race passes.
 - [x] Recovery drill seeds and compares `showcase.assets` and
   `showcase.revisions`; 15/15 checks pass.
-- [ ] Real source publication rights are absent. The pinned MIT repository does
-  not evidence permission to redistribute third-party model output; this is
-  recorded as `FID-2026-1104-013-RIGHTS` in `dev/tracking/internal-followups.json`.
+- [x] The operator approved the MIT-licensed source use on 2026-11-06 and
+  accepted publication responsibility. The rights path records the operator
+  decision; no separate external-rights blocker remains.
+- [x] 013B implemented: `openrouter_artifacts` source kind, strict record and
+  HTML validation, operator-supplied record import, pinned fixture and tests.
+  The document must be self-contained and declares `default-src 'none'` plus
+  `connect-src 'none'`; remote assets, iframes, objects, embeds, bases and forms
+  are refused. The admin review page provides source registration, the rights
+  decision and the record/prompt/license import form.
+- [x] 013B verification: `npm run verify` PASS with 1,123/1,123 tests; the
+  OpenRouter fixture suite passes 4/4 and the mandatory PostgreSQL gate 20/20.
 
 ### Implementation Record (2026-11-06)
 
@@ -695,21 +710,21 @@ Implementation commit `a73960f`.
 | --- | --- |
 | Schema | Isolated `showcase` schema for sources, append-only rights, import leases, assets, builds, immutable revisions, bindings, aliases and reviews. |
 | Pelican source | Pinned commit fixture, manifest/result/prompt/thumbnail/license hash verification, bounded transport and no drafts scan. |
+| OpenRouter source | Operator-supplied observed record, exact prompt/license hashes, self-contained offline HTML validation and an approved `model-assets.openrouter.ai` document/thumbnail pair. The committed fixture is `tests/fixtures/openrouter/`. |
 | Matching | Exact id and reviewed alias binding, name-only suggestions, ambiguous refusal and live catalog identity digest. |
 | Packaging | Thin CSP-bound `srcDoc` wrapper with no server execution; original and packaged hashes stay distinct. |
 | Public surface | Flag-gated `/showcase`, detail viewer, JSON bundle, JPEG preview and a model-page examples panel. Every read rechecks source enablement, current rights, accepted binding, active catalog identity and published state. |
-| Admin surface | Guarded `/admin/showcase` review page and API for sources, rights, import, bindings, publish and withdraw; withdrawal and catalog changes invalidate public reads immediately. |
+| Admin surface | Guarded `/admin/showcase` review page and API for sources, rights, import, bindings, publish and withdraw. The page registers Pelican and OpenRouter sources, records either decision and imports either record; withdrawal and catalog changes invalidate public reads immediately. |
 | Fixture | `tests/fixtures/pelican/` retains the manifest, prompt, result, artifact, 480×270 JPEG, MIT text, hashes and provenance caveat. |
 | Browser | Showcase-only Playwright Chromium journeys: real WebGL pixels, three widths, both themes, keyboard/touch/pointer, opaque-origin isolation and teardown. |
 | Durability | Real two-connection publish race, mandatory `TEST_FILES` registration, BYTEA dump/restore envelope and restored showcase asset/revision assertions. |
 
 Verification receipt: `npm run verify` PASS on 2026-11-06 — 12/12 gates,
-1,117/1,117 tests with zero skips, browser 4/4 journeys on bundled Chromium,
-758 main HTTP checks plus the trial suite, recovery 15/15, quality 682 files
-under the 400-line ceiling, build PASS and 167.8 s. The mandatory PostgreSQL
-gate passed; a standalone `npm run test:postgres` executed the showcase store
-5/5, including the two-connection publish race. `npm run check` (lint and
-typecheck) exits 0 with zero warnings.
+1,123/1,123 tests with zero skips, browser 4/4 journeys on bundled Chromium,
+758 main HTTP checks plus the trial suite, recovery 15/15, quality 687 files
+under the 400-line ceiling, build PASS and 177.7 s. The mandatory PostgreSQL
+gate passed 20/20, including the showcase store 5/5 and its two-connection
+publish race. `npm run check` (lint and typecheck) exits 0 with zero warnings.
 
 The HTTP gate exercises the public gallery, detail page, bundle, preview, admin
 401, review API, repeated publish refusal, rights withdrawal and restoration,
@@ -722,8 +737,8 @@ executes the artifact and hostile fixture.
 - [x] Source adapter, viewer, schema, stores, routes and admin surfaces exist.
 - [x] Lint, typecheck, quality, build, unit, HTTP, PostgreSQL and recovery gates
   pass as recorded above.
-- [x] Implementation matches every declared gate. The only remaining external
-  item is real source-output redistribution evidence, tracked separately.
+- [x] Implementation matches every declared gate. The operator approved the
+  MIT-licensed source use; no external source-rights blocker remains.
 
 ### Loop 2 — Independent audit and self-correction
 
@@ -818,8 +833,8 @@ executes the artifact and hostile fixture.
   is opaque and CSP-bound; a missing browser fails; a partial import never
   publishes.
 - **AUDIT:** document coverage only, not runtime security or browser receipts.
-  The recorded Pelican facts were not re-fetched; the OpenRouter fixture and
-  rights remain absent. No source, schema, route or package was added.
+  The recorded Pelican facts were not re-fetched; the OpenRouter path now uses
+  an observed pinned fixture and the operator's recorded approval.
 - **ADVERSARIAL:** no remaining actionable design correction. Residual limits
   stay stated: prior copies cannot be recalled, the frame can self-navigate, and
   process-local read limits are not cross-instance abuse control.
@@ -840,20 +855,19 @@ executes the artifact and hostile fixture.
 
 ## Resolution
 
-- **State:** 013A implemented and locally verified 2026-11-06 under the
-  2026-11-05 authorization. The browser, five-suite, mandatory two-connection
-  store, showcase recovery and HTTP gates pass. Real source-output rights remain
-  an external followup, not a code claim. The schema-aware backup prerequisite
-  (SCOPE VB6) is implemented and verified; the BYTEA envelope was added for
-  `showcase.assets`. 013B is separately gated, unimplemented and blocked.
-- **Closed Date:** 013A local implementation 2026-11-06; the record stays active
-  only because it also carries the blocked 013B track.
-- **Tests Added:** five `tests/visual-builds-*.test.mjs` suites, 17 cases (16
-  pass plus one expected PostgreSQL skip in the ordinary run); the mandatory
-  PostgreSQL run executes 5/5 store cases with zero skips. Browser gate 4/4;
-  recovery 15/15; showcase HTTP checks inside the 758-check main suite.
-- **Archived:** no; retain for the 013B contract and the external rights
-  followup. 013B is not an implementation authorization.
+- **State:** 013A and 013B implemented and locally verified 2026-11-06 under the
+  operator's authorization and source approval. The browser, six-suite,
+  mandatory two-connection store, showcase recovery and HTTP gates pass. The
+  schema-aware backup prerequisite (SCOPE VB6) is implemented and verified; the
+  BYTEA envelope is column-aware and format `/3`. No external source-rights
+  blocker remains.
+- **Closed Date:** 2026-11-06. Final verification and commit are recorded in
+  CHANGELOG; archive after that commit.
+- **Tests Added:** six `tests/visual-builds-*.test.mjs` suites, including the
+  OpenRouter fixture; the mandatory PostgreSQL run executes 5/5 store cases with
+  zero skips. Browser gate 4/4; recovery 15/15; showcase HTTP checks inside the
+  758-check main suite.
+- **Archived:** pending the final verified commit for both tracks.
 
 ## Lessons Learned
 

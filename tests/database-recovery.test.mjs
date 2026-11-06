@@ -122,7 +122,7 @@ test("a dump restores every row, every checksum and a spendable balance", async 
 
     const { manifest } = await dumpDatabase(source, dumpDirectory);
 
-    assert.equal(manifest.format, "savant-gateway-pg-dump/2");
+    assert.equal(manifest.format, "savant-gateway-pg-dump/3");
     assert.equal(manifest.balance.mismatches, 0);
     assert.ok(
       manifest.tables.some(

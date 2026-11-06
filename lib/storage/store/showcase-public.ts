@@ -5,7 +5,7 @@ import {
   type VisualBuildPublicRow,
   catalogIdentityDigest,
 } from "../../visual-builds/types.ts";
-import { packagePelicanArtifact } from "../../visual-builds/packaging.ts";
+import { packageVisualArtifact } from "../../visual-builds/packaging.ts";
 
 import { readShowcaseAsset } from "./showcase-sources.ts";
 
@@ -199,9 +199,7 @@ export async function getPublishedVisualBundle(
   if (!asset) return null;
 
   try {
-    const packaged = packagePelicanArtifact(
-      new TextDecoder("utf-8", { fatal: true }).decode(asset.bytes),
-    );
+    const packaged = packageVisualArtifact(asset.mime, asset.bytes);
 
     return {
       build: publicRow(row),

@@ -7,6 +7,7 @@ import {
   type RightsState,
   type VisualBuildRights,
   type VisualBuildSource,
+  type VisualBuildSourceKind,
   rightsApproved,
 } from "../../visual-builds/types.ts";
 
@@ -20,7 +21,7 @@ import {
 
 type SourceRow = {
   id: string;
-  kind: "pelican_sdf";
+  kind: VisualBuildSourceKind;
   label: string;
   base_url: string;
   revision: string;
@@ -102,17 +103,21 @@ function rightsRow(row: RightsRow): VisualBuildRights {
 
 export async function upsertShowcaseSource(
   db: PostgresDatabase,
-  input: Omit<VisualBuildSource, "kind" | "createdAt" | "updatedAt">,
+  input: Omit<VisualBuildSource, "kind" | "createdAt" | "updatedAt"> & {
+    kind?: VisualBuildSourceKind;
+  },
 ): Promise<VisualBuildSource> {
   const now = new Date().toISOString();
+  const kind = input.kind ?? "pelican_sdf";
 
   await db
     .prepare(
       `INSERT INTO showcase.sources
         (id, kind, label, base_url, revision, enabled, max_storage_bytes,
          created_at, updated_at)
-       VALUES (?, 'pelican_sdf', ?, ?, ?, ?, ?, ?, ?)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT (id) DO UPDATE SET
+         kind = EXCLUDED.kind,
          label = EXCLUDED.label,
          base_url = EXCLUDED.base_url,
          revision = EXCLUDED.revision,
@@ -121,6 +126,7 @@ export async function upsertShowcaseSource(
     )
     .run(
       input.id,
+      kind,
       input.label,
       input.baseUrl,
       input.revision,

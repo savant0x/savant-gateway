@@ -9,7 +9,7 @@ import { createHash } from "node:crypto";
  * this module may promote a build into routing, pricing or benchmark data.
  */
 
-export type VisualBuildSourceKind = "pelican_sdf";
+export type VisualBuildSourceKind = "pelican_sdf" | "openrouter_artifacts";
 
 export type RightsState = "pending" | "approved" | "withdrawn";
 
@@ -170,7 +170,7 @@ export const VISUAL_BUILD_LIMITS = {
   licenseBytes: 64 * 1024,
   artifactBytes: 192 * 1024,
   thumbnailBytes: 96 * 1024,
-  htmlBytes: 512 * 1024,
+  htmlBytes: 2 * 1024 * 1024,
   descriptionChars: 1_200,
   promptChars: 16_000,
   labelChars: 200,

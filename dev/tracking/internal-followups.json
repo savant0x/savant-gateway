@@ -4,15 +4,6 @@
   "policy": "Archived implementations do not claim live acceptance. These are observation, operator-input or revisit items linked to archived records; they do not hold implementation closure.",
   "items": [
     {
-      "id": "FID-2026-1104-013-RIGHTS",
-      "fid": "FID-2026-1104-013",
-      "state": "blocked",
-      "title": "Real Pelican source-output redistribution rights",
-      "detail": "The committed fixture is a pinned Pelican repository snapshot under its MIT license and is used with a synthetic approval in tests. That license covers the repository, not permission to redistribute third-party model output or the upstream model provider's terms. No real source publication is claimed, and the public surface stays behind VISUAL_BUILDS_ENABLED.",
-      "evidence": "tests/fixtures/pelican/README.md; tests/fixtures/pelican/LICENSE; dev/fids/FID-2026-1104-013-model-matched-visual-builds.md",
-      "next_action": "Record separate permitted evidence for repository reuse, artifact contributor output and upstream model-provider terms per source/revision, attach its URL/hash and reviewer, then publish one real approved build and capture the public read receipt. Do not treat the MIT fixture as that grant."
-    },
-    {
       "id": "FID-2026-1030-045-LIVE",
       "fid": "FID-2026-1030-045",
       "state": "blocked",

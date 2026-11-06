@@ -8,7 +8,7 @@ import {
   sha256Hex,
 } from "../../visual-builds/types.ts";
 import { bindingStillValid } from "../../visual-builds/matching.ts";
-import { packagePelicanArtifact } from "../../visual-builds/packaging.ts";
+import { packageVisualArtifact } from "../../visual-builds/packaging.ts";
 
 import { currentShowcaseRights } from "./showcase-sources.ts";
 import { readShowcaseAsset } from "./showcase-assets.ts";
@@ -155,9 +155,7 @@ export async function publishShowcaseBuild(
     let packaged: { html: string; sha256: string };
 
     try {
-      packaged = packagePelicanArtifact(
-        new TextDecoder("utf-8", { fatal: true }).decode(asset.bytes),
-      );
+      packaged = packageVisualArtifact(asset.mime, asset.bytes);
     } catch (error) {
       return {
         ok: false,

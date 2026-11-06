@@ -51,6 +51,8 @@ export type PelicanSnapshot = {
   rawRecordSha256: string;
   promptText: string;
   promptSha256: string;
+  artifactMime: "text/javascript; charset=utf-8";
+  sourceUrl: string;
   artifactBytes: Uint8Array;
   artifactSha256: string;
   thumbnailBytes: Uint8Array | null;

@@ -156,3 +156,39 @@ test("TAP evidence is recognized when the test reporter runs without a TTY", () 
 
   assert.deepEqual(parseTestTotals(output), parseTestTotals(OUTPUT));
 });
+
+test("multiple test-run summaries aggregate instead of using the first", () => {
+  const first = OUTPUT;
+  const second = OUTPUT.replace("tests 12", "tests 3")
+    .replace("pass 11", "pass 2")
+    .replace("skipped 1", "skipped 1");
+  const aggregate = parseTestTotals(`${first}\n${second}`);
+
+  assert.deepEqual(aggregate, {
+    total: 15,
+    pass: 13,
+    fail: 0,
+    skipped: 2,
+    cancelled: 0,
+  });
+});
+
+test("a skip in a later suite still fails the PostgreSQL gate", () => {
+  const first = OUTPUT.replace("skipped 1", "skipped 0").replace(
+    "pass 11",
+    "pass 12",
+  );
+  const later = OUTPUT;
+  const result = gateResult({
+    name: "test:postgres",
+    command: "fixture",
+    exitCode: 0,
+    signal: null,
+    startedAt: 0,
+    finishedAt: 1,
+    output: `${first}\n${later}`,
+    allowSkips: false,
+  });
+
+  assert.equal(result.status, "failed_skip");
+});

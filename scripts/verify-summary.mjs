@@ -59,9 +59,11 @@ const TEST_SKIPPED = /^(?:ℹ|#)\s+skipped\s+(\d+)\s*$/m;
 const TEST_CANCELLED = /^(?:ℹ|#)\s+cancelled\s+(\d+)\s*$/m;
 
 function count(pattern, output) {
-  const match = pattern.exec(output);
+  const matches = [...output.matchAll(new RegExp(pattern.source, "gm"))];
 
-  return match ? Number(match[1]) : null;
+  return matches.length > 0
+    ? matches.reduce((total, match) => total + Number(match[1]), 0)
+    : null;
 }
 
 /** Node's test reporter summary, or null when the gate emits none. */

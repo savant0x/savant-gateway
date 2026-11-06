@@ -11,6 +11,7 @@ import {
   qualifiedTable,
   quote,
 } from "./backup-tables.ts";
+import { byteaColumnsOf, serializeRow } from "./backup-encoding.ts";
 import { balanceAudit } from "./ledger/invariants.ts";
 
 export { foreignKeyOrder };
@@ -42,18 +43,23 @@ export type { TableRef } from "./backup-tables.ts";
  * a table added later is neither forgotten nor inserted before its parent.
  */
 
-export const DUMP_FORMAT = "savant-gateway-pg-dump/2";
-export const LEGACY_DUMP_FORMAT = "savant-gateway-pg-dump/1";
+export const DUMP_FORMAT = "savant-gateway-pg-dump/3";
+export const LEGACY_DUMP_FORMAT = "savant-gateway-pg-dump/2";
+export const LEGACY_DUMP_FORMAT_V1 = "savant-gateway-pg-dump/1";
 const MANIFEST = "manifest.json";
 
 export type DumpTable = TableRef & {
   columns: string[];
+  bytea_columns: string[];
   rows: number;
   checksum: string;
 };
 
 export type DumpManifest = {
-  format: typeof DUMP_FORMAT | typeof LEGACY_DUMP_FORMAT;
+  format:
+    | typeof DUMP_FORMAT
+    | typeof LEGACY_DUMP_FORMAT
+    | typeof LEGACY_DUMP_FORMAT_V1;
   created_at: string;
   tables: DumpTable[];
   balance: { users: number; mismatches: number };
@@ -78,42 +84,11 @@ export class BackupRefused extends Error {
   }
 }
 
-/**
- * `JSON.stringify` throws on a bigint and expands a Buffer into a lossy
- * `{type:"Buffer",data:[...]}` before the replacer sees it. Byte columns need an
- * explicit base64 envelope so a restore can pass bytes rather than an object to
- * the driver. This is additive: every other column keeps its previous shape.
- */
-function byteaEnvelope(value: unknown): { $bytea: string } | null {
-  if (value instanceof Uint8Array) {
-    return { $bytea: Buffer.from(value).toString("base64") };
-  }
-  if (
-    value &&
-    typeof value === "object" &&
-    (value as { type?: unknown }).type === "Buffer" &&
-    Array.isArray((value as { data?: unknown }).data)
-  ) {
-    return {
-      $bytea: Buffer.from((value as { data: number[] }).data).toString(
-        "base64",
-      ),
-    };
-  }
+/** Reverses the envelope only for a column the manifest declares as BYTEA. */
+function restoreValue(value: unknown, isBytea: boolean) {
+  if (!isBytea) return value ?? null;
+  if (value === null || value === undefined) return null;
 
-  return null;
-}
-
-function serialize(row: Record<string, unknown>) {
-  return JSON.stringify(row, (_key, value) => {
-    if (typeof value === "bigint") return value.toString();
-
-    return byteaEnvelope(value) ?? value;
-  });
-}
-
-/** Reverses the `$bytea` envelope for a restore parameter. */
-function restoreValue(value: unknown) {
   if (
     value &&
     typeof value === "object" &&
@@ -122,7 +97,9 @@ function restoreValue(value: unknown) {
     return Buffer.from((value as { $bytea: string }).$bytea, "base64");
   }
 
-  return value ?? null;
+  throw new BackupRefused(
+    "A BYTEA column is missing its base64 envelope; the dump is not format /3.",
+  );
 }
 
 function checksumOf(lines: string[]) {
@@ -134,7 +111,7 @@ function checksumOf(lines: string[]) {
 }
 
 function rowsFileName(table: TableRef, format: DumpManifest["format"]) {
-  return format === LEGACY_DUMP_FORMAT
+  return format === LEGACY_DUMP_FORMAT_V1
     ? `${table.table}.jsonl`
     : `${table.schema}.${table.table}.jsonl`;
 }
@@ -173,7 +150,8 @@ export async function dumpDatabase(
     const rows = await db.query<Record<string, unknown>>(
       `SELECT * FROM ${qualifiedTable(table)}`,
     );
-    const lines = rows.map(serialize);
+    const byteaColumns = await byteaColumnsOf(db, table);
+    const lines = rows.map((row) => serializeRow(row, new Set(byteaColumns)));
     const columns = await columnsOf(db, table, rows);
 
     writeFileSync(
@@ -184,6 +162,7 @@ export async function dumpDatabase(
       schema: table.schema,
       table: table.table,
       columns,
+      bytea_columns: byteaColumns,
       rows: lines.length,
       checksum: checksumOf(lines),
     });
@@ -220,7 +199,11 @@ export function readManifest(directory: string): DumpManifest {
   };
   const format = manifest?.format;
 
-  if (format !== DUMP_FORMAT && format !== LEGACY_DUMP_FORMAT) {
+  if (
+    format !== DUMP_FORMAT &&
+    format !== LEGACY_DUMP_FORMAT &&
+    format !== LEGACY_DUMP_FORMAT_V1
+  ) {
     throw new BackupRefused(`Unsupported dump format: ${String(format)}.`);
   }
 
@@ -239,6 +222,9 @@ export function readManifest(directory: string): DumpManifest {
       table: String(entry.table ?? ""),
       columns: Array.isArray(entry.columns)
         ? entry.columns.map((column) => String(column))
+        : [],
+      bytea_columns: Array.isArray(entry.bytea_columns)
+        ? entry.bytea_columns.map((column) => String(column))
         : [],
       rows: Number(entry.rows ?? 0),
       checksum: String(entry.checksum ?? ""),
@@ -291,7 +277,11 @@ async function verifyTable(
     );
   }
 
-  if (checksumOf(rows.map(serialize)) !== entry.checksum) {
+  if (
+    checksumOf(
+      rows.map((row) => serializeRow(row, new Set(entry.bytea_columns))),
+    ) !== entry.checksum
+  ) {
     problems.push(`${entry.table}: checksum does not match the dump`);
   }
 
@@ -344,11 +334,15 @@ export async function restoreDatabase(
           );
         }
 
+        const byteaColumns = new Set(entry.bytea_columns);
+
         for (const line of lines) {
           const row = JSON.parse(line) as Record<string, unknown>;
 
           await insert.run(
-            ...entry.columns.map((column) => restoreValue(row[column])),
+            ...entry.columns.map((column) =>
+              restoreValue(row[column], byteaColumns.has(column)),
+            ),
           );
         }
       }

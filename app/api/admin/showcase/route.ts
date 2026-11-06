@@ -18,7 +18,6 @@ import {
   withdrawShowcaseBuild,
 } from "@/lib/store";
 import {
-  PELICAN_BASE_URL,
   PELICAN_COMMIT,
   PELICAN_LICENSE_TEXT,
   PELICAN_RESULT_PATH,
@@ -26,6 +25,12 @@ import {
   fetchPelicanSnapshot,
   pelicanFixtureSource,
 } from "@/lib/visual-builds/pelican";
+import {
+  OPENROUTER_BASE_URL,
+  OPENROUTER_REVISION,
+  fetchOpenRouterSnapshot,
+  openRouterFixtureSource,
+} from "@/lib/visual-builds/openrouter";
 import { sha256Hex, visualBuildsEnabled } from "@/lib/visual-builds/types";
 
 export const runtime = "nodejs";
@@ -84,15 +89,28 @@ export async function POST(request: Request) {
 
   try {
     if (action === "source") {
-      const source = pelicanFixtureSource();
+      const kind = stringField(body, "kind") || "pelican_sdf";
+
+      if (kind !== "pelican_sdf" && kind !== "openrouter_artifacts") {
+        return adminError(400, "Unknown source kind.");
+      }
+
+      const source =
+        kind === "openrouter_artifacts"
+          ? openRouterFixtureSource({
+              baseUrl: stringField(body, "baseUrl") || OPENROUTER_BASE_URL,
+              revision: stringField(body, "revision") || OPENROUTER_REVISION,
+            })
+          : pelicanFixtureSource();
 
       return Response.json(
         {
           source: await upsertShowcaseSource({
             id: source.id,
+            kind,
             label: source.label,
-            baseUrl: PELICAN_BASE_URL,
-            revision: PELICAN_COMMIT,
+            baseUrl: source.baseUrl,
+            revision: source.revision,
             enabled: true,
             maxStorageBytes: source.maxStorageBytes,
           }),
@@ -112,26 +130,33 @@ export async function POST(request: Request) {
         return adminError(400, "state must be pending, approved or withdrawn.");
       }
 
+      const sourceId = stringField(body, "sourceId") || PELICAN_SOURCE_ID;
+      const isPelican = sourceId === PELICAN_SOURCE_ID;
       const licenseText =
-        stringField(body, "licenseText") || PELICAN_LICENSE_TEXT;
+        stringField(body, "licenseText") ||
+        (isPelican ? PELICAN_LICENSE_TEXT : "");
       const licenseSha =
         stringField(body, "licenseSha256") || sha256Hex(licenseText);
       const evidenceNote =
         stringField(body, "evidenceNote") ||
-        "Pinned Pelican repository and license reviewed by the operator.";
+        (isPelican
+          ? "Pinned Pelican repository and license reviewed by the operator."
+          : "Operator-approved OpenRouter game artifact.");
 
       return Response.json(
         {
           rights: await appendShowcaseRights({
-            sourceId: PELICAN_SOURCE_ID,
+            sourceId,
             state,
             evidenceUrl:
               stringField(body, "evidenceUrl") ||
-              `https://github.com/AzatJalilov/PelicanSdf/tree/${PELICAN_COMMIT}`,
+              (isPelican
+                ? `https://github.com/AzatJalilov/PelicanSdf/tree/${PELICAN_COMMIT}`
+                : ""),
             evidenceNote,
             evidenceSha256:
               stringField(body, "evidenceSha256") ||
-              sha256Hex(`${PELICAN_COMMIT}\0${evidenceNote}`),
+              sha256Hex(`${sourceId}\0${evidenceNote}`),
             licenseText,
             licenseSha256: licenseSha,
             attribution:
@@ -148,14 +173,14 @@ export async function POST(request: Request) {
     }
 
     if (action === "import") {
+      const sourceId = stringField(body, "sourceId") || PELICAN_SOURCE_ID;
       const source = (await listShowcaseSources()).find(
-        (row) => row.id === PELICAN_SOURCE_ID,
+        (row) => row.id === sourceId,
       );
 
       if (!source) return adminError(400, "Register the source first.");
       if (!source.enabled) return adminError(400, "The source is disabled.");
 
-      const resultPath = stringField(body, "resultPath") || PELICAN_RESULT_PATH;
       const ownerToken = `admin:${randomUUID()}`;
       const lease = await claimShowcaseImport(source.id, ownerToken);
 
@@ -164,7 +189,17 @@ export async function POST(request: Request) {
       }
 
       try {
-        const snapshot = await fetchPelicanSnapshot(source, resultPath);
+        const snapshot =
+          source.kind === "openrouter_artifacts"
+            ? await fetchOpenRouterSnapshot(source, {
+                record: body.record,
+                promptText: stringField(body, "promptText"),
+                licenseText: stringField(body, "licenseText"),
+              })
+            : await fetchPelicanSnapshot(
+                source,
+                stringField(body, "resultPath") || PELICAN_RESULT_PATH,
+              );
         const result = await persistShowcaseSnapshot(source.id, snapshot);
 
         await finishShowcaseImport({

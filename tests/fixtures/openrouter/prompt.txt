@@ -1,0 +1,8 @@
+Build a Fruit Ninja style slicing game. Fruit of at least four shapes and colors
+are tossed up from below in arcs and fall back out of view. Hold the left mouse
+button and drag to slice; the slice is the cursor's path between frames, so a
+fast swipe must cut every fruit it crosses. Sliced fruit splits into two halves
+that fly apart with spin plus a burst of juice particles. Bombs are tossed among
+the fruit, and slicing one ends the game, as does letting three fruit fall
+unsliced. One point per fruit, with a combo bonus for three or more in one swipe.
+Draw a blade trail while dragging. Show score, misses and a game over screen.

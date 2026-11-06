@@ -18,7 +18,7 @@ export async function showcaseSchema(db: PostgresDatabase) {
 
     CREATE TABLE IF NOT EXISTS showcase.sources (
       id TEXT PRIMARY KEY,
-      kind TEXT NOT NULL CHECK (kind IN ('pelican_sdf')),
+      kind TEXT NOT NULL CHECK (kind IN ('pelican_sdf', 'openrouter_artifacts')),
       label TEXT NOT NULL,
       base_url TEXT NOT NULL,
       revision TEXT NOT NULL,
@@ -51,6 +51,10 @@ export async function showcaseSchema(db: PostgresDatabase) {
       WHERE superseded_by IS NULL AND state = 'approved';
     CREATE INDEX IF NOT EXISTS showcase_source_rights_source_idx
       ON showcase.source_rights(source_id, created_at DESC);
+
+    ALTER TABLE showcase.sources DROP CONSTRAINT IF EXISTS showcase_sources_kind_check;
+    ALTER TABLE showcase.sources ADD CONSTRAINT showcase_sources_kind_check
+      CHECK (kind IN ('pelican_sdf', 'openrouter_artifacts'));
 
     CREATE TABLE IF NOT EXISTS showcase.import_runs (
       id TEXT PRIMARY KEY,

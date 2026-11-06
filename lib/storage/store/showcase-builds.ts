@@ -1,5 +1,6 @@
 import type { PostgresDatabase } from "../pg-adapter.ts";
 import type { PelicanSnapshot } from "../../visual-builds/pelican.ts";
+import type { OpenRouterSnapshot } from "../../visual-builds/openrouter.ts";
 
 import { randomUUID } from "node:crypto";
 
@@ -72,7 +73,7 @@ export type SnapshotPersistResult = {
 export async function persistShowcaseSnapshot(
   db: PostgresDatabase,
   sourceId: string,
-  snapshot: PelicanSnapshot,
+  snapshot: PelicanSnapshot | OpenRouterSnapshot,
 ): Promise<SnapshotPersistResult> {
   const source = await getShowcaseSource(db, sourceId);
 
@@ -85,7 +86,7 @@ export async function persistShowcaseSnapshot(
 
   const artifact = await putShowcaseAsset(db, sourceId, {
     sha256: snapshot.artifactSha256,
-    mime: "text/javascript; charset=utf-8",
+    mime: snapshot.artifactMime,
     kind: "artifact",
     bytes: snapshot.artifactBytes,
   });
@@ -141,7 +142,7 @@ export async function persistShowcaseSnapshot(
         build.id,
         snapshot.rawRecordSha256,
         sourceId,
-        new URL(`data/${snapshot.resultPath}`, source.baseUrl).toString(),
+        snapshot.sourceUrl,
         source.revision,
         snapshot.record.title,
         snapshot.record.description,

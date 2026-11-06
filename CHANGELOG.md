@@ -3,7 +3,7 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
-## 2026-11-06 — Pelican visual builds (013A)
+## 2026-11-06 — Pelican and OpenRouter visual builds (013A/013B)
 
 - **FID-2026-1104-013A — medium —** added the Pelican-first visual-build
   surface: an isolated `showcase` schema with sources, append-only rights,
@@ -16,13 +16,13 @@ distinguish verified behavior from unverified claims.
   withdraw. Every public read rechecks source enablement, current rights,
   accepted binding, active catalog identity and published state. The flag
   defaults off in `.env.example`.
-- **Verification:** `npm run verify` PASS — 12/12 gates, 1,117/1,117 tests
+- **Verification:** `npm run verify` PASS — 12/12 gates, 1,123/1,123 tests
   with zero skips, browser 4/4 journeys on bundled Chromium, 758 main HTTP
   checks plus the trial suite (including showcase gallery/detail/bundle/preview,
   rights withdrawal/restoration and catalog-rename invalidation), recovery
-  15/15, quality 682 files, build PASS, 167.8 s. A standalone `test:postgres`
-  executes the showcase store 5/5 including the two-connection publish race;
-  lint and typecheck are clean.
+  15/15, quality 687 files, build PASS, 177.7 s. The mandatory PostgreSQL gate
+  runs 20/20, including the showcase store 5/5 and its two-connection publish
+  race; lint and typecheck are clean.
 - **013A local completion:** added the showcase-only browser gate (4/4 journeys
   on bundled Chromium, both themes, 320/1024/1440 widths, WebGL pixels,
   keyboard/touch/pointer, hostile-origin isolation and teardown), registered
@@ -31,12 +31,25 @@ distinguish verified behavior from unverified claims.
   asset bytes and publication (15/15), and split the tests into the five
   design-named suites. Backup/restore now carries a `$bytea` base64 envelope;
   `showcase.assets` exposed that it previously handed an object to the driver.
-- **Implementation commit:** `a73960f`; durability/browser follow-up commits
-  follow this entry.
-- **Not closed:** 013A remains active only for the external source-output
-  redistribution right and the separately gated 013B track. No real source
-  publication, funded inference, live payment or deployment is claimed. 013B
-  remains blocked on a lawful OpenRouter fixture and rights.
+- **013B implementation:** added the operator-approved OpenRouter game artifact
+  lane. The observed record supplies an exact `model-assets.openrouter.ai` HTML
+  document and JPEG; the server validates prompt/license hashes and requires a
+  self-contained document with `default-src 'none'` and `connect-src 'none'`,
+  rejecting remote assets, frames, objects, embeds, bases and forms. The pinned
+  fixture is `tests/fixtures/openrouter/`; no live listing is scraped during an
+  import. The admin review page now registers the OpenRouter source, records its
+  rights decision and imports the operator-supplied record alongside the
+  Pelican controls.
+- **Verification and hardening:** the PostgreSQL summary now aggregates every
+  TAP summary instead of the first, so a later skipped suite cannot pass. CI
+  caches and installs Playwright Chromium. Backup format `/3` records
+  `bytea_columns` and decodes only those columns, so a JSON object containing a
+  `$bytea` property is not misread; legacy `/1` and `/2` dumps still restore.
+- **Implementation commits:** `a73960f`, `4009b21` and the 013B commit cited
+  in the FID resolution. The 013A/013B record closes with that resolution and
+  the 2026-11-06 gate receipt.
+- **Not closed:** no external source-rights blocker remains. No real source
+  publication, funded inference, live payment or deployment is claimed.
 
 ## 2026-11-05 — Gateway policy read, webhook retries and load baseline (012)
 

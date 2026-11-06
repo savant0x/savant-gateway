@@ -72,6 +72,8 @@ export async function loadPelicanFixture(
     resultPath,
     ...files,
     promptSha256: files.record.promptSha256,
+    artifactMime: "text/javascript; charset=utf-8",
+    sourceUrl: sourceUrl(source.baseUrl, `data/${resultPath}`),
   };
 }
 
@@ -191,6 +193,8 @@ export async function fetchPelicanSnapshot(
     resultPath,
     ...files,
     promptSha256: files.record.promptSha256,
+    artifactMime: "text/javascript; charset=utf-8",
+    sourceUrl: sourceUrl(source.baseUrl, `data/${resultPath}`),
   };
 }
 

@@ -38,9 +38,16 @@ deployment or remote database change is performed.
   `showcase.assets` exposed. Five design-named suites replace the three-file
   split. `npm run verify` PASS: 12/12 gates, 1,117/1,117 tests, zero skips,
   167.8 s. FID-013A is locally implemented, not archived.
-- [ ] **PV8 — External evidence remains blocked.** No real source-output
-  redistribution right is evidenced, so no real publication is claimed. 013B
-  remains separately gated on a lawful OpenRouter fixture and rights.
+- [x] **PV8 — OpenRouter artifacts unblocked and completed.** The operator
+  approved the MIT-licensed Pelican/OpenRouter source use on 2026-11-06 and
+  accepted publication responsibility. 013B adds `openrouter_artifacts`, a
+  strict record and offline-HTML validator, an operator-supplied import path
+  with admin controls for registration, rights and import, a pinned fixture and
+  tests. No live listing is scraped. Backup format `/3` is column-aware, the
+  PostgreSQL summary aggregates all suites, and CI provisions Chromium.
+  `npm run verify` PASS: 12/12 gates, 1,123/1,123 tests, mandatory PostgreSQL
+  20/20, browser 4/4, recovery 15/15, quality 687 files, 177.7 s. No real
+  source publication is claimed.
 
 ## Session — 2026-11-05 (policy read, route retries and load baseline: 012)
 

@@ -127,6 +127,11 @@ observation inside `PROVIDER_PRICE_MAX_AGE_DAYS`. The same rule is enforced in
 cannot bypass it. No price is imported from the reseller or public feed; cost
 entry stays manual.
 
+The operator confirmed on 2026-11-06 that router.cheap resale permission is
+clear: access is key-authenticated and gated. Root-key billing, model
+mapping/serving source and request-time price remain external observations; this
+ruling is not a funded-call or admin-to-sync-to-route receipt.
+
 The admin catalog opens with **Catalog by provider**: one card per registered
 provider with synced, active, priced, unknown-cost and currently-serving
 counts. A provider that has not been synced shows zero models and says so. The

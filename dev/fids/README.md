@@ -36,7 +36,8 @@ at implementation commits `6cdfc80` (eligibility enforcement) and `192b7b0`
 reseller and public evidence without importing a price or evaluating an
 expression. `npm run verify` PASS 12/12 gates with 1,127/1,127 tests,
 PostgreSQL 20/20, HTTP 758 checks plus trial, recovery, quality and build.
-External root-key billing, resale permission, serving-source and request-time
+The operator confirmed on 2026-11-06 that resale permission is clear: access is
+key-authenticated and gated. Root-key billing, serving-source and request-time
 price observations remain `FID-2026-1105-003-LIVE` in
 `../tracking/internal-followups.json`.
 

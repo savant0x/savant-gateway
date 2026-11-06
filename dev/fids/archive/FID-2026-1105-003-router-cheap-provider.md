@@ -690,12 +690,18 @@ and build exit 0. No code changed after them.
   with zero skips, PostgreSQL 20/20, HTTP 758 checks plus the trial suite,
   recovery, quality and build; lint, typecheck, attribution and `git diff
   --check` exit 0. The focused `tests/router-cheap-provider.test.mjs` is 12/12.
-  External root-key billing, resale permission, model-mapping/serving-source
-  and request-time-price observations remain unverified and are owned by
-  `FID-2026-1105-003-LIVE` in `dev/tracking/internal-followups.json`. No paid
-  inference or resale permission is claimed.
-- **Archived:** 2026-11-06 — moved to `dev/fids/archive/`; the external
-  observations remain a live follow-up, not a closure claim.
+  External root-key billing, model-mapping/serving-source and request-time-price
+  observations remain unverified and are owned by `FID-2026-1105-003-LIVE` in
+  `dev/tracking/internal-followups.json`. The operator confirmed resale
+  permission on 2026-11-06: access is key-authenticated and gated. No paid
+  inference or request-time price is claimed.
+- **Archived:** 2026-11-06 — moved to `dev/fids/archive/`; the remaining
+  external observations are a live follow-up, not a closure claim.
+
+**Operator ruling 2026-11-06 — resale permission.** The operator confirmed that
+resale permission is clear: router.cheap access is key-authenticated and gated.
+This clears the resale-permission observation. Root-key billing,
+model-mapping/serving source and request-time price remain open.
 
 ## Lessons Learned
 

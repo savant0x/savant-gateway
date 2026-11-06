@@ -18,10 +18,11 @@ distinguish verified behavior from unverified claims.
   202.9 s. Focused `tests/router-cheap-provider.test.mjs` is 12/12, including
   exact-id normalization, zero costs on an unavailable row, pricing-version
   parsing and malformed-feed refusal.
-- **Open observations:** root-key billing basis, resale permission, model
-  mapping/serving source and request-time price remain unverified in
-  `FID-2026-1105-003-LIVE`. No paid inference or reseller management write is
-  claimed.
+- **Operator ruling:** on 2026-11-06 the operator confirmed resale permission is
+  clear because router.cheap access is key-authenticated and gated; that
+  observation is closed. Root-key billing basis, model mapping/serving source
+  and request-time price remain unverified in `FID-2026-1105-003-LIVE`. No paid
+  inference or reseller management write is claimed.
 - **Closure:** implementation commits `6cdfc80` and `192b7b0`; the record is
   archived.
 

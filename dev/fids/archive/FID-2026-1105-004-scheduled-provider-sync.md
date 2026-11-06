@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1105-004-scheduled-provider-sync.md`
 **ID:** FID-2026-1105-004
 **Severity:** medium
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-05 16:17
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -662,8 +662,9 @@ uses `refresh due`. The rest of this Final stands.
 
 - [x] **Commit SHA:** `15d01b4`
   (`feat(providers): schedule daily sync and add an explicit AIO action
-  (FID-2026-1105-004)`). This record remains `fixed`; deployment and
-  activation are separate obligations.
+  (FID-2026-1105-004)`). This record is `closed`; deployment and activation
+  are recorded in the activation receipt, and the scheduled due-provider
+  refresh remains a live follow-up.
 - [x] **File:line ranges:** `app/api/cron/providers/route.ts:48,71-73,112-118`;
   `lib/provider-sync-policy.ts:61-70`;
   `lib/storage/providers/freshness.ts:75,96`;
@@ -694,16 +695,38 @@ uses `refresh due`. The rest of this Final stands.
   `/api/cron/providers`; the route calls `providerCronSecrets`,
   `refreshProvidersIfDue(db, { force: true })` and `syncProvider`; the admin
   card calls `/api/admin/providers/sync` through `ProviderSyncButton`.
-- [x] FID status reflects the actual state: `fixed`, committed at `15d01b4`,
-  deployed with a registered cron, and awaiting the first scheduled run.
+- [x] FID status reflects the actual state: `closed` and archived on
+  implementation evidence at `15d01b4`, deployed with a registered cron. The
+  first scheduled due-provider refresh is owned by
+  `FID-2026-1105-004-LIVE` and is not claimed here.
 
 ## Resolution
 
-- **Closed Date:**
-- **Fix Description:**
-- **Tests Added:**
-- **Verification Evidence:**
-- **Archived:**
+- **Closed Date:** 2026-11-06
+- **Fix Description:** Added the authenticated due-only `/api/cron/providers`
+  endpoint, the explicit AIO sync action, policy-derived provider status, the
+  Vercel Hobby daily `0 0 * * *` cron, and the scheduler contract documentation.
+  Deployment `dpl_53PM1vwqGkVk61xzaCWXfruwL2CC` runs with `CRON_SECRET` and one
+  registered cron; unauthenticated and authenticated probes returned `401` and
+  `200`. No provider was due during activation, so the first scheduled
+  due-provider refresh is not claimed.
+- **Tests Added:** Yes — `tests/provider-sync.test.mjs` (secret list),
+  `tests/provider-scheduler.test.mjs` (schedule and route contract), and
+  `scripts/http-suite/provider-cron-checks.mjs` (auth, due refresh, immediate
+  repeat, disabled and keyless providers). The implementation receipt records
+  12/12 focused tests, 1,059 unit tests with 7 environment-gated skips, the
+  disposable-PostgreSQL HTTP suite's 776 checks plus the trial suite, quality,
+  build, repository check and attribution.
+- **Verification Evidence:** Implementation commit `15d01b4`; the activation
+  receipt in this record names the deployment, secret presence, registered
+  cron, and the `2026-11-05T21:51:07Z` / `21:52:32.246Z` route and platform
+  invocations. The first scheduled due-provider refresh is not observed and is
+  owned by `FID-2026-1105-004-LIVE` in
+  `dev/tracking/internal-followups.json`. The 2026-11-06 closure tree passes
+  `npm run repository:check`; no provider inference or catalog refresh is
+  claimed by this closure.
+- **Archived:** 2026-11-06 — moved to `dev/fids/archive/`; the scheduled
+  due-provider refresh remains a live follow-up, not a closure claim.
 
 ## Non-Goals
 

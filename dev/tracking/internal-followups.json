@@ -226,6 +226,15 @@
       "detail": "Five funnel events, the once-only first-completion marker and the 30-day aggregate are implemented and closed at 78c6920; focused 12/12, lint, typecheck, quality and build pass. The 2026-11-04 local real-PostgreSQL receipt passes: `npm run test:http` 776 main checks plus the trial suite and full `npm run verify` 11/11 with 1,019/1,019 tests and zero skips. The managed `verify:supabase` handshake remains unrun because the configured endpoint uses a self-signed chain and no trusted CA is configured.",
       "evidence": "dev/fids/archive/FID-2026-1104-010-discovery-to-inference-events.md; tests/activity.test.mjs; scripts/http-suite/checks.mjs; CHANGELOG.md (2026-11-04 FID-010 entry)",
       "next_action": "Configure a trusted CA for the disposable managed host and run `npm run verify:supabase`, then record the managed-host receipt; the implementation is closed and this followup owns only acceptance."
+    },
+    {
+      "id": "FID-2026-1105-004-LIVE",
+      "fid": "FID-2026-1105-004",
+      "state": "unverified",
+      "title": "First scheduled provider refresh on Vercel Hobby",
+      "detail": "The authenticated due-only provider endpoint, AIO action, daily Vercel cron and scheduler contract are implemented at 15d01b4 and deployed at dpl_53PM1vwqGkVk61xzaCWXfruwL2CC with CRON_SECRET configured. The route returned 401 without a secret and 200 with it, and a platform-triggered invocation returned 200 with an empty attempted list because no provider was due. The first scheduled 00:00 UTC run and a due-provider refresh have not been observed. At 2026-11-06 00:00 UTC Savant was still inside the 6h due window; the first possible due refresh is the 2026-11-07 run. No provider run-history table or scheduler heartbeat exists.",
+      "evidence": "dev/fids/archive/FID-2026-1105-004-scheduled-provider-sync.md; vercel.json; app/api/cron/providers/route.ts; docs/provider-scheduler.md",
+      "next_action": "After the 2026-11-07 00:00 UTC run, confirm the cron invocation succeeded with a due provider attempted and that providers.synced_at advanced without a page render or manual click. Record the deployment id and timestamp. A 200 with an empty attempted list is not proof of a scheduled refresh."
     }
   ]
 }

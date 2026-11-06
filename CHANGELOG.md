@@ -3,6 +3,24 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-06 — Scheduled provider sync closure (004)
+
+- **FID-2026-1105-004 — medium —** the authenticated due-only provider cron,
+  explicit AIO sync action, policy-derived provider status, Vercel Hobby daily
+  schedule and scheduler contract are implemented at `15d01b4` and deployed at
+  `dpl_53PM1vwqGkVk61xzaCWXfruwL2CC` with `CRON_SECRET` and one registered cron.
+  The route returned `401` unauthenticated and `200` authenticated; a
+  platform-triggered invocation returned `200` with no provider due.
+- **Verification:** implementation receipt 12/12 focused tests, 1,059 unit
+  tests with 7 environment-gated skips, the disposable-PostgreSQL HTTP suite's
+  776 checks plus the trial suite, quality, build, repository check and
+  attribution. No provider was due during activation.
+- **Open observation:** the first scheduled due-provider refresh is tracked as
+  `FID-2026-1105-004-LIVE` in `dev/tracking/internal-followups.json`; the
+  2026-11-07 00:00 UTC run is the first possible due refresh. No catalog
+  refresh or scheduler-health claim is made by this closure.
+- **Closure:** commit recorded in the FID resolution; the record is archived.
+
 ## 2026-11-06 — Responsive free allocation and related reading (002)
 
 - **FID-2026-1106-002 — low —** the free-model detail page no longer overflows a

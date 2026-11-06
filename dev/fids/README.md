@@ -2,7 +2,7 @@
 
 **Last folder audit:** 2026-11-06 (FID-002 closure). This page indexes the
 working set; each FID owns its own status, evidence and resolution. Current
-counts: 12 active / 20 slots, 177 archived, 189 allocated.
+counts: 11 active / 20 slots, 178 archived, 189 allocated.
 
 ## Layout
 
@@ -17,7 +17,6 @@ counts: 12 active / 20 slots, 177 archived, 189 allocated.
 
 | ID | Title | Status | Next action |
 | --- | --- | --- | --- |
-| [2026-1105-004](FID-2026-1105-004-scheduled-provider-sync.md) | Scheduled provider sync and AIO trigger | fixed | Deployed at `dpl_53PM1vwqGkVk61xzaCWXfruwL2CC`; `CRON_SECRET` set; unauth `401`, auth and Vercel-triggered run `200` (nothing due). Next: observe a scheduled due-provider refresh. |
 | [2026-1105-003](FID-2026-1105-003-router-cheap-provider.md) | router.cheap reseller integration | fixed | Implementation commit `6cdfc80`; archive after the remaining closure acceptance. No inference, reseller customer or management write. |
 | [043](FID-2026-1030-043-launch-master.md) | Master launch contract and dependency register | converged | Keep coverage, ordering and release decisions current. |
 | [062](FID-2026-1030-062-launch-acceptance-and-rollout.md) | Real launch acceptance, controlled rollout and rollback | converged | Discharge the dated external receipt items 1–8; launch remains no-go. |
@@ -29,6 +28,18 @@ counts: 12 active / 20 slots, 177 archived, 189 allocated.
 | [2026-1104-016](FID-2026-1104-016-persistent-content-model-decisions.md) | Persistent content/model acceptance and dismissal | converged | Planning only; accepted links remain attached across automatic work. |
 | [2026-1104-017](FID-2026-1104-017-content-matching-controls-and-review.md) | Full linked-content management, settings and rematch | converged | Implement after 015 and 016 in a coding session. |
 | [2026-1104-018](FID-2026-1104-018-content-automation-master.md) | Content automation and persistent matching master | converged | Planning handoff ready; no coding or hosted activation authorized. |
+
+### Closed in the 2026-11-06 scheduled-sync closure
+
+[2026-1105-004](archive/FID-2026-1105-004-scheduled-provider-sync.md) is
+`closed` at implementation commit `15d01b4`. The authenticated due-only
+endpoint, AIO action, policy-derived status, daily Vercel Hobby cron and
+scheduler contract are implemented; deployment
+`dpl_53PM1vwqGkVk61xzaCWXfruwL2CC` has `CRON_SECRET` and one registered cron,
+and the route returned `401` unauthenticated / `200` authenticated. No provider
+was due during activation, so the first scheduled due-provider refresh remains
+`FID-2026-1105-004-LIVE` in `../tracking/internal-followups.json`; it is not a
+closure claim.
 
 ### 2026-11-06 register audit
 

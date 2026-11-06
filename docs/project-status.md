@@ -78,13 +78,12 @@ no hosted re-observation is claimed here.
 
 ## Active queue
 
-Twelve records are active. The [register](../dev/fids/README.md) owns the exact
+Eleven records are active. The [register](../dev/fids/README.md) owns the exact
 next action and evidence edges; this table is the current summary.
 
 | ID | Status | Open obligation |
 | --- | --- | --- |
 | [2026-1105-003](../dev/fids/FID-2026-1105-003-router-cheap-provider.md) | fixed | Implementation committed at `6cdfc80`; archive after closure acceptance. No paid inference or reseller management write. |
-| [2026-1105-004](../dev/fids/FID-2026-1105-004-scheduled-provider-sync.md) | fixed | Deployed at `https://savant-gateway.vercel.app` (`dpl_53PM1vwqGkVk61xzaCWXfruwL2CC`); `CRON_SECRET` set; unauth `401`, auth and Vercel-triggered run `200` (nothing due). First scheduled run and a due-provider refresh not yet observed. |
 | [043](../dev/fids/FID-2026-1030-043-launch-master.md) | converged | Launch remains **no-go**. Owns the dependency register and the operator decision. |
 | [062](../dev/fids/FID-2026-1030-062-launch-acceptance-and-rollout.md) | converged | Items 1–8: real NOWPayments invoice/signed IPN/replay refusal, hosted restore, delivered alert, PostgreSQL load envelope, published `v1.2` policies, hosted retention confirmation, explicit public GO. Funded paid inference was withdrawn on 2026-11-04 and remains unverified. |
 | [068](../dev/fids/FID-2026-1030-068-usdc-receive-lane.md) | fixed | Direct USDC lane: chain/token contract, hardware-wallet xpub, RPC endpoint and screening ruling. Not a launch path. |
@@ -101,6 +100,13 @@ console are implemented and covered by the gates above. They are public product
 behavior, not payment or launch acceptance.
 
 ## Recently closed
+
+FID-2026-1105-004 closed on 2026-11-06 at implementation commit `15d01b4`.
+The due-only provider endpoint, AIO action, daily Vercel Hobby cron and scheduler
+contract are deployed at `dpl_53PM1vwqGkVk61xzaCWXfruwL2CC`; the route returned
+`401` unauthenticated and `200` authenticated. No provider was due during
+activation, so the first scheduled due-provider refresh remains
+`FID-2026-1105-004-LIVE` in `internal-followups.json`.
 
 FIDs 126, 128–136, 141 and 148 and the 2026-11-02 content/catalog queue moved
 through the Perfection Loop into commits `4b57ebe`, `8bb2d20`, `d701ce6`,

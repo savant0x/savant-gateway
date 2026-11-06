@@ -21,6 +21,7 @@ distinguish verified behavior from unverified claims.
   showcase gallery/detail/bundle/preview, rights withdrawal/restoration and
   catalog-rename invalidation), recovery 14/14, quality 682 files, 154.4 s.
   Focused visual-builds suites 13/13; lint and typecheck clean; build PASS.
+- **Implementation commit:** `a73960f`.
 - **Not closed:** 013A remains active. No browser journey receipt exists; the
   store suite is not in `test:postgres`; the recovery drill does not assert
   showcase rows; and no real source-output redistribution right is evidenced.

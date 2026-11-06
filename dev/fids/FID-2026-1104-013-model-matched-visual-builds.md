@@ -664,8 +664,8 @@ is claimed.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [x] 013A repository code, schema and pinned fixture landed 2026-11-06. The
-  implementation commit is recorded in the register after the code commit.
+- [x] 013A repository code, schema and pinned fixture landed 2026-11-06 in
+  commit `a73960f`.
 - [x] Steps 1–6 implemented: fixture/rights records, `showcase` schema and
   stores, Pelican adapter and packager, strict matching, admin review, public
   gallery/detail/viewer and the model-page panel.
@@ -684,6 +684,8 @@ is claimed.
   not evidence permission to redistribute third-party model output.
 
 ### Implementation Record (2026-11-06)
+
+Implementation commit `a73960f`.
 
 | Area | Implemented behavior |
 | --- | --- |

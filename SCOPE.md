@@ -28,7 +28,7 @@ deployment or remote database change is performed.
   typecheck and build PASS.
 - [x] **PV6 — Run the full gate set.** `npm run verify` PASS: 11/11 gates,
   1,113/1,113 tests, 2/2 PostgreSQL, 758 HTTP plus trial, recovery 14/14,
-  154.4 s.
+  154.4 s. Implementation commit `a73960f`.
 - [ ] **PV7 — Keep 013A open honestly.** No browser journey receipt exists, the
   store suite is not in `test:postgres`, the recovery drill does not assert
   showcase rows, and no real source-output redistribution right is evidenced.

@@ -17,13 +17,15 @@ level 3; strict; single agent.
   `ContentMedia` row variant, six visual coverage rows with stored → GitHub →
   Signal fallback image precedence, and a seven-link mixed fixture plus empty
   free-model route. `npm run test:browser` passed 14/14 journeys on build
-  `tkJp85sx5BXKQNoi4rlas`; focused tests 7/7; `npm run verify` passed 12/12
-  gates, 1,124 tests, PostgreSQL 20/20, 758 HTTP plus trial, recovery 15/15,
-  176.6 s. Implementation commit `95ed201`; closure is recorded below.
-- [x] **MC3 — Commit and close.** Implementation commit `95ed201`; the FID moved
-  to `archive/` as `closed` with the measured receipt, the register moved to
-  12 active / 176 archived / 188 allocated, and the changelog plus current
-  status page now carry the implementation evidence.
+  `OMN5qQvSNGIvDZtz6wII7`; focused tests 7/7; `npm run verify` passed 12/12
+  gates, 1,124 tests, PostgreSQL 20/20, HTTP suites, recovery, 187.2 s.
+  Implementation commit `95ed201`.
+- [x] **MC3 — Reopen, complete and close.** The first archive was reopened
+  because the journey did not assert newest-first order or stored-over-GitHub
+  precedence. Both assertions now run in every theme and width, alongside
+  pointer and keyboard activation. The FID is `closed` in `archive/` with the
+  completion receipt; the register is 12 active / 176 archived / 188 allocated,
+  and the changelog plus status page carry the completion evidence.
 
 ## Session — 2026-11-06 (Pelican visual-builds implementation: 013A)
 

@@ -113,8 +113,21 @@ const COVERAGE_FIXTURES = [
     relation: "paper",
     thumbnailUrl: "/images/icon-512.png",
     videoId: null,
-    github: null,
-    reason: "A paper with a stored thumbnail must render it.",
+    github: {
+      slug: "savant-gateway/paper-fixture",
+      description: "Browser fixture paper.",
+      stars: 40,
+      forks: 4,
+      language: "TeX",
+      topics: ["ml"],
+      license: "CC-BY-4.0",
+      homepage: null,
+      pushedAt: null,
+      ogImageUrl: "/images/banner.png",
+      readmeHtml: null,
+    },
+    reason:
+      "The stored thumbnail must win over this GitHub OG image.",
   },
   {
     id: "browser-coverage-discussion",
@@ -654,6 +667,7 @@ async function coverageJourney(page, baseUrl, theme) {
   const invalid = COVERAGE_FIXTURES[1];
   const fallback = COVERAGE_FIXTURES[2];
   const repository = COVERAGE_FIXTURES[3];
+  const paper = COVERAGE_FIXTURES[4];
   const older = COVERAGE_FIXTURES[6];
   const displayed = COVERAGE_FIXTURES.slice(0, 6);
 
@@ -678,6 +692,18 @@ async function coverageJourney(page, baseUrl, theme) {
       6,
       "the model page renders exactly six coverage rows",
     );
+
+    for (const [index, fixture] of displayed.entries()) {
+      assert.equal(
+        await rows
+          .nth(index)
+          .getByRole("link", { name: fixture.title, exact: true })
+          .count(),
+        1,
+        `${fixture.title} is row ${index + 1} in newest-first order`,
+      );
+    }
+
     assert.equal(
       await section.getByText(older.title, { exact: true }).count(),
       0,
@@ -727,10 +753,21 @@ async function coverageJourney(page, baseUrl, theme) {
       .locator('span[style*="background-image"]')
       .first()
       .getAttribute("style");
+    const precedenceStyle = await rows
+      .filter({ hasText: paper.title })
+      .locator('span[style*="background-image"]')
+      .first()
+      .getAttribute("style");
 
     assert.match(storedStyle ?? "", /\/images\/og\.png/);
     assert.match(fallbackStyle ?? "", /thumb/);
     assert.match(repoStyle ?? "", /\/images\/icon-192\.png/);
+    assert.match(
+      precedenceStyle ?? "",
+      /\/images\/icon-512\.png/,
+      "the stored thumbnail wins when a GitHub OG image also exists",
+    );
+    assert.doesNotMatch(precedenceStyle ?? "", /\/images\/banner\.png/);
 
     const invalidRow = rows.filter({ hasText: invalid.title });
 
@@ -746,30 +783,36 @@ async function coverageJourney(page, baseUrl, theme) {
       `/signal/${invalid.id}`,
     );
 
-    const trigger = rows
-      .filter({ hasText: valid.title })
-      .getByRole("button", { name: `Play ${valid.title}` });
+    for (const input of ["pointer", "keyboard"]) {
+      const trigger = rows
+        .filter({ hasText: valid.title })
+        .getByRole("button", { name: `Play ${valid.title}` });
 
-    await trigger.waitFor({ state: "visible" });
+      await trigger.waitFor({ state: "visible" });
 
-    if (viewport.width === MOBILE.width) {
-      await trigger.click();
-    } else {
-      await trigger.focus();
-      await page.keyboard.press("Enter");
+      if (input === "pointer") {
+        await trigger.click();
+      } else {
+        await trigger.focus();
+        await page.keyboard.press("Enter");
+      }
+
+      const dialog = page.getByRole("dialog", { name: valid.title });
+
+      await dialog.waitFor({ state: "visible" });
+      assert.equal(
+        await dialog.locator("iframe").count(),
+        1,
+        `${input} activation mounts exactly one player iframe`,
+      );
+      await page.keyboard.press("Escape");
+      await dialog.waitFor({ state: "hidden" });
+      await page.waitForFunction(
+        (title) =>
+          document.activeElement?.getAttribute("aria-label") === `Play ${title}`,
+        valid.title,
+      );
     }
-
-    const dialog = page.getByRole("dialog", { name: valid.title });
-
-    await dialog.waitFor({ state: "visible" });
-    assert.equal(await dialog.locator("iframe").count(), 1);
-    await page.keyboard.press("Escape");
-    await dialog.waitFor({ state: "hidden" });
-    await page.waitForFunction(
-      (title) =>
-        document.activeElement?.getAttribute("aria-label") === `Play ${title}`,
-      valid.title,
-    );
 
     if (viewport.width === MOBILE.width) {
       await rows

@@ -19,8 +19,9 @@ responsive row with its thumbnail and existing attribution and matching context.
 - **OS:** Windows
 - **Language/Runtime:** TypeScript / Node
 - **Tool Versions:** See `package.json` and lockfile.
-- **Commit/State:** base `043fed1`; implementation commit `95ed201`. The record
-  is closed and archived with that commit's verification receipt.
+- **Commit/State:** base `043fed1`; implementation commit `95ed201`. The
+  verification contract was completed after the first archive was reopened;
+  the record is closed and archived with the completion receipt below.
 
 ## Detailed Description
 
@@ -133,18 +134,34 @@ receipt records the exact pass/fail lines.
 
 ### Verification Receipt
 
-- verified: 2026-11-06T15:25:12Z
+- verified: 2026-11-06T17:31:22Z
 - check: exit 0 (lint zero warnings; typecheck clean)
 - focused: `node --test tests/content-format.test.mjs
   tests/content-policy.test.mjs` exit 0, 7/7 tests
-- test:browser: exit 0, 14/14 journeys, build `tkJp85sx5BXKQNoi4rlas`
+- test:browser: exit 0, 14/14 journeys, build `OMN5qQvSNGIvDZtz6wII7`;
+  both themes at 390 and 1280 widths, with newest-first order,
+  stored-over-GitHub precedence and pointer plus keyboard activation
 - quality: PASS, 400-line ceiling, 687 files scanned
-- build: exit 0
+- build: exit 0, build `OMN5qQvSNGIvDZtz6wII7`
 - verify: PASS, 12/12 gates, 1,124/1,124 tests with zero skips,
-  PostgreSQL 20/20, 758 main HTTP checks plus trial, recovery 15/15,
-  176.6 s
-- scope note: the standalone 14/14 full browser run is the interaction
-  receipt above; `verify`'s showcase-only browser gate also exited 0.
+  PostgreSQL 20/20, HTTP suites pass, recovery pass, 187.2 s
+- scope note: the standalone full browser matrix ran on the build produced by
+  the same gate set; `verify`'s showcase-only browser gate also exited 0.
+- superseded: an earlier 15:25:12Z receipt named build
+  `tkJp85sx5BXKQNoi4rlas`, which no longer matched the tree, and did not
+  assert row order or image precedence. It is historical, not the closure
+  evidence.
+
+### Reopened and completed 2026-11-06
+
+The first archive was premature. Two assertions promised above were absent from
+the journey: newest-first row order and stored-thumbnail precedence over a
+GitHub OG image. The recorded browser build id also no longer matched the build
+under test. Both assertions are now in `scripts/browser-matrix.mjs:665-854`,
+the paper fixture carries a stored thumbnail and a GitHub OG image
+(`:56-152`), and the dialog is opened by pointer and by keyboard in each theme
+and width. The fresh full matrix passes 14/14 on the verify build; the
+completion receipt above replaces the earlier one.
 
 ## Perfection Loop
 
@@ -188,17 +205,18 @@ receipt records the exact pass/fail lines.
 ### Implementation Evidence
 
 - [x] **Commit SHA:** `95ed201`; base `043fed1`. The implementation is
-  committed and the record is archived.
+  committed; the verification contract was completed in the closure commit.
 - [x] **File:line ranges:** `components/content/content-media.tsx:20-34` adds
   the optional `row` variant; `:71-99` uses `aspect-video`, suppresses the
   source overlay in a row and ties the play glyph to the validated `embed`.
   `components/content/coverage-panel.tsx:67-107` renders six semantic rows with
   the stored/GitHub/fallback image chain and separate title links.
-  `scripts/browser-matrix.mjs:56-140,345-401,646-815` adds the mixed fixture,
-  empty route and both-width/theme journey; `tests/content-policy.test.mjs:1-9`
-  covers the content flag.
-- [x] **Gate output:** check, focused 7/7, browser 14/14, quality, build and full
-  verify 12/12 passed; exact receipt is above.
+  `scripts/browser-matrix.mjs:56-152` adds the mixed fixture,
+  `:358` seeds it and `:665-854` holds the both-width/theme journey;
+  `tests/content-policy.test.mjs:1-9` covers the content flag.
+- [x] **Gate output:** check, focused 7/7, browser 14/14 on build
+  `OMN5qQvSNGIvDZtz6wII7`, quality, build and full verify 12/12 passed; exact
+  receipt is above.
 - [x] **Reproducibility:** grep `variant="row"` finds the coverage consumer;
   grep `coverageJourney` finds the journey and its invocation.
 - [x] **Step statuses:** steps 1–4 are `implemented`; gates, call-graph audit,
@@ -280,9 +298,12 @@ recorded 11,169 and is excluded from the design delta calculation.
   separate title link for every row, unchanged metadata and display-scoped
   relation counts.
 - **Tests Added:** Yes — `tests/content-policy.test.mjs` and the model-coverage
-  browser journey in `scripts/browser-matrix.mjs`.
-- **Verification Evidence:** check, focused 7/7, browser 14/14, quality, build
-  and full `verify` 12/12 (1,124 tests) pass; receipt above.
+  browser journey in `scripts/browser-matrix.mjs`, including newest-first
+  order, stored-over-GitHub image precedence and pointer plus keyboard
+  activation added when the first archive was reopened.
+- **Verification Evidence:** check, focused 7/7, browser 14/14 on build
+  `OMN5qQvSNGIvDZtz6wII7`, quality, build and full `verify` 12/12 (1,124 tests,
+  187.2 s) pass; receipt above.
 - **Archived:** Yes — `dev/fids/archive/FID-2026-1106-001-model-coverage-thumbnails.md`.
 
 ## Lessons Learned

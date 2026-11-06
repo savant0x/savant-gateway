@@ -15,12 +15,15 @@ distinguish verified behavior from unverified claims.
   is created before activation and the media trigger and title link remain
   separate controls.
 - **Verification:** `npm run verify` PASS — 12/12 gates, 1,124/1,124 tests with
-  zero skips, PostgreSQL 20/20, 758 main HTTP checks plus the trial suite,
-  recovery 15/15, quality 687 files, build PASS and 176.6 s. The separate full
-  browser matrix passes 14/14 journeys in both themes at 390 and 1280 widths,
-  covering pointer and keyboard playback, Escape/focus return, fallback images,
-  invalid ids, the six-row limit, the empty free-model route and the existing
-  Signal player regression. Implementation commit `95ed201`.
+  zero skips, PostgreSQL 20/20, both HTTP suites, recovery, quality 687 files,
+  build PASS and 187.2 s on the completion run. The separate full browser
+  matrix passes 14/14 journeys on build `OMN5qQvSNGIvDZtz6wII7` in both themes
+  at 390 and 1280 widths, covering
+  pointer and keyboard playback, Escape/focus return, fallback images, invalid
+  ids, newest-first order, stored-over-GitHub precedence, the six-row limit,
+  the empty free-model route and the existing Signal player regression.
+  Implementation commit `95ed201`; the first archive was reopened to add the
+  order and precedence assertions.
 - **Not claimed:** no live payment, funded inference or deployment. The empty
   free-model page retains a pre-existing, unrelated allocation-code overflow at
   390px; the new empty Coverage section itself is width-clean.

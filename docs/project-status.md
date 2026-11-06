@@ -121,8 +121,10 @@ journey, mandatory PostgreSQL store wiring, showcase recovery assertions and
 OpenRouter fixture are present and verified. The operator approved the MIT
 source use; no external rights blocker remains. FID-2026-1106-001 closed on
 2026-11-06 at `95ed201`: model pages now render six compact coverage rows with
-validated playback, fallback images and separate detail links; the full browser
-matrix passes 14/14 and the gate set passes 12/12.
+validated playback, fallback images and separate detail links. The first
+archive was reopened to assert newest-first order and stored-over-GitHub image
+precedence; the completion browser matrix passes 14/14 on build
+`OMN5qQvSNGIvDZtz6wII7` and the gate set passes 12/12.
 
 FID-127 remains active because the operator receipt does not exist yet. The
 dated receipts in [the 2026-10-31 record](project-status-2026-10-31.md) remain

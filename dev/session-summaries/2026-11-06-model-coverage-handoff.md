@@ -1,26 +1,39 @@
 # Model coverage visual rows handoff
 
-> Executed 2026-11-06: FID-2026-1106-001 converged, was implemented at
-> `95ed201`, verified and moved to `archive/` as `closed`. The body below is the
-> original planning handoff.
+> Executed and closed 2026-11-06: FID-2026-1106-001 is `closed` in
+> `dev/fids/archive/` at implementation commit `95ed201`. The first archive
+> was reopened because two assertions in its own verification contract were
+> absent from the browser journey; the completion run is recorded below.
 
 The operator requested a FID and handoff for visual coverage on model pages.
-The implementation should show thumbnail rows for all coverage kinds, with
-YouTube playback matching Signal. The planning record is
-`dev/fids/FID-2026-1106-001-model-coverage-thumbnails.md`.
+Model pages now render up to six compact, semantic media rows through the
+shared `ContentMedia` component, using an optional `variant="row"` rather than a
+second player. Each row keeps the existing relation, source, date, title,
+matching reason and follow control. Images use the stored thumbnail, then the
+GitHub OG image, then the shared Signal fallback. A valid video opens the
+existing modal by pointer or keyboard; invalid video ids and every title link go
+to `/signal/{id}`. Coverage order, the six-row limit, the total message and
+display-scoped relation counts are preserved.
 
-The record is `analyzed`, not converged. Complete its Perfection Loop and
-register it in `SCOPE.md` and `dev/fids/README.md` before implementation. Read
-each file completely before editing. The scope register is large; retrieve it
-in non-truncated sections. Record measured document deltas and actual audit
-evidence rather than treating the draft loop as a completed receipt.
+## Verification completed
 
-The model page currently fetches six linked pieces. Coverage rows are text-only;
-the query already returns the thumbnail, video ID and GitHub image data. Signal's
-shared `ContentMedia` provides a thumbnail, fallback and modal video player.
-Relation counts are computed from the limited result set, not all linked pieces.
-The FID specifies preservation of existing metadata and behavior, keyboard and
-responsive browser checks, and regression coverage of the shared Signal cards.
+- `npm run verify` PASS: 12/12 gates, 1,124/1,124 tests with zero skips,
+  PostgreSQL 20/20, recovery, 187.2 s.
+- `npm run test:browser` PASS: 14/14 journeys on build
+  `OMN5qQvSNGIvDZtz6wII7`, both themes at 390 and 1280 widths.
+- The model-coverage journey now asserts newest-first row order, stored
+  thumbnail precedence when a GitHub OG image also exists, and dialog opening
+  by both pointer and keyboard with Escape and focus return.
+- Files: `components/content/coverage-panel.tsx`,
+  `components/content/content-media.tsx`, `scripts/browser-matrix.mjs`,
+  `tests/content-policy.test.mjs`.
+- No live payment, funded inference, provider transfer or deployment is
+  claimed.
 
-No application code was changed and no implementation or browser verification
-was run. Preserve the unrelated untracked handoff already present in the tree.
+## Original planning state
+
+The planning pass left the record `analyzed`, noted that the model page already
+fetched six linked pieces with thumbnail, video id and GitHub image data, and
+required the Perfection Loop, registration and browser evidence before
+implementation. The unrelated untracked handoff present at that time was
+preserved and later committed separately.

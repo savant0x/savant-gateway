@@ -32,10 +32,13 @@ counts: 12 active / 20 slots, 176 archived, 188 allocated.
 
 ### 2026-11-06 register audit
 
-- FID-2026-1106-001 closed at implementation commit `95ed201` and moved to
-  `archive/`. The current count is 12 active records, 176 archived, 188
-  allocated. Its convergence reconstruction exceeded the 10% per-pass cap in
-  all three passes; the record discloses the measured deltas.
+- FID-2026-1106-001 was reopened after its first archive because the browser
+  journey did not assert newest-first order or stored-over-GitHub image
+  precedence. It closed again at implementation commit `95ed201` with a fresh
+  14/14 browser run on build `OMN5qQvSNGIvDZtz6wII7` and a 12/12 gate run. The
+  current count is 12 active records, 176 archived, 188 allocated. Its
+  convergence reconstruction exceeded the 10% per-pass cap in all three
+  passes; the record discloses the measured deltas.
 - FID-2026-1104-013 closed and moved to `archive/` at implementation commit
   `de4dfbc`. At that point the count was 12 active records, 175 archived, 187
   allocated; no active record was unlisted, split or duplicated.
@@ -68,10 +71,12 @@ counts: 12 active / 20 slots, 176 archived, 188 allocated.
 [2026-1106-001](archive/FID-2026-1106-001-model-coverage-thumbnails.md) is
 `closed` at implementation commit `95ed201`. Model pages render up to six
 compact coverage rows with stored → GitHub → Signal fallback images, validated
-video playback and separate title links. `npm run verify` passed 12/12 gates
-with 1,124/1,124 tests, PostgreSQL 20/20, 758 main HTTP checks plus trial and
-recovery 15/15; the separate full browser matrix passed 14/14 journeys. No live
-payment, funded inference or deployment is claimed.
+video playback and separate title links. The first archive was reopened
+because the journey did not assert newest-first order or stored-over-GitHub
+precedence; the completion run adds both and passes 14/14 journeys on build
+`OMN5qQvSNGIvDZtz6wII7`. `npm run verify` passes 12/12 gates with 1,124/1,124
+tests, PostgreSQL 20/20, the HTTP suites and recovery. No live payment, funded
+inference or deployment is claimed.
 
 ### Closed in the 2026-11-06 visual-builds implementation
 

@@ -142,7 +142,8 @@ test("two connections release one quarantine without releasing other holds", asy
       const rows = await first.query(
         `SELECT COUNT(*)::int AS total FROM pg_stat_activity
           WHERE datname = current_database() AND wait_event_type = 'Lock'
-            AND (query LIKE '%held_micros%' OR query LIKE '%quarantined_holds%')`,
+            AND (query LIKE '%held_micros%' OR query LIKE '%quarantined_holds%'
+                 OR query LIKE '%FROM users%' OR query LIKE '%settlements%')`,
       );
       waiting = Number(rows[0].total);
 

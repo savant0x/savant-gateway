@@ -1,12 +1,14 @@
 import type { PostgresDatabase } from "../pg-adapter.ts";
 
 /**
- * Payment event state machine on the async handle (FID-2026-1031-086, step 4).
+ * Payment event state machine on the async handle (FID-2026-1031-086, step 4;
+ * fenced by FID-2026-1105-010).
  *
- * The rules are the same as `lib/payment-events.ts`, which remains the SQLite
- * test fixture until the suite port lands. A signed event is claimed once;
- * claiming is not proof of fulfillment, and only a failed or stale claim may be
- * retried. A processed or quarantined event is terminal.
+ * A signed event is claimed once per generation. Claiming is not proof of
+ * fulfillment: only a failed or stale claim may be reclaimed, and every
+ * financial or entitlement effect runs while the event row is locked and its
+ * generation is still current. A processed or quarantined event is terminal,
+ * including against a later environment-mismatch delivery.
  */
 
 export const CLAIM_GRACE_MS = 5 * 60 * 1000;
@@ -15,7 +17,7 @@ export type PaymentEventState =
   "claimed" | "processed" | "failed" | "quarantined";
 
 export type ClaimOutcome =
-  | { ok: true; attempt: number }
+  | { ok: true; attempt: number; generation: number }
   | {
       ok: false;
       reason:
@@ -26,7 +28,15 @@ type EventRow = {
   status: PaymentEventState;
   attempts: number;
   claimed_at: string | null;
+  claim_generation: number;
 };
+
+function stateReason(status: PaymentEventState) {
+  if (status === "processed") return "processed" as const;
+  if (status === "quarantined") return "quarantined" as const;
+
+  return "in_flight" as const;
+}
 
 export async function claimPaymentEvent(
   database: PostgresDatabase,
@@ -47,108 +57,213 @@ export async function claimPaymentEvent(
     input.livemode !== null &&
     input.livemode !== input.expectedLivemode
   ) {
-    await database
+    const detail = `Event livemode ${String(input.livemode)} does not match the configured environment.`;
+    const changed = await database
       .prepare(
         `INSERT INTO billing_events
           (id, type, processed_at, status, attempts, livemode, claimed_at,
-           last_error)
-         VALUES (?, ?, ?, 'quarantined', 1, ?, ?, ?)
-         ON CONFLICT(id) DO UPDATE SET
-           status = 'quarantined', last_error = excluded.last_error`,
+           last_error, claim_generation)
+         VALUES (?, ?, ?, 'quarantined', 1, ?, ?, ?, 1)
+         ON CONFLICT (id) DO UPDATE SET
+           status = 'quarantined',
+           claimed_at = excluded.claimed_at,
+           last_error = excluded.last_error,
+           claim_generation = billing_events.claim_generation + 1
+         WHERE billing_events.status NOT IN ('processed', 'quarantined')
+         RETURNING id`,
       )
-      .run(
-        input.id,
-        input.type,
-        at,
-        livemode,
-        at,
-        `Event livemode ${String(input.livemode)} does not match the configured environment.`,
-      );
+      .all<{ id: string }>(input.id, input.type, at, livemode, at, detail);
 
-    return { ok: false, reason: "environment_mismatch" };
+    if (changed.length > 0) {
+      return { ok: false, reason: "environment_mismatch" };
+    }
+
+    const terminal = await database
+      .prepare("SELECT status FROM billing_events WHERE id = ?")
+      .get<{ status: PaymentEventState }>(input.id);
+
+    return {
+      ok: false,
+      reason: terminal ? stateReason(terminal.status) : "quarantined",
+    };
+  }
+
+  const grace = input.graceMs ?? CLAIM_GRACE_MS;
+  const cutoff = new Date(input.now - grace).toISOString();
+  const rows = await database
+    .prepare(
+      `INSERT INTO billing_events
+        (id, type, processed_at, status, attempts, livemode, claimed_at,
+         last_error, claim_generation)
+       VALUES (?, ?, ?, 'claimed', 1, ?, ?, NULL, 1)
+       ON CONFLICT (id) DO UPDATE SET
+         status = 'claimed',
+         attempts = billing_events.attempts + 1,
+         claimed_at = excluded.claimed_at,
+         last_error = NULL,
+         claim_generation = billing_events.claim_generation + 1
+       WHERE billing_events.status = 'failed'
+          OR (billing_events.status = 'claimed'
+              AND (billing_events.claimed_at IS NULL
+                   OR billing_events.claimed_at::timestamptz <= ?::timestamptz))
+       RETURNING attempts, claim_generation`,
+    )
+    .all<{ attempts: number; claim_generation: number }>(
+      input.id,
+      input.type,
+      at,
+      livemode,
+      at,
+      cutoff,
+    );
+
+  if (rows.length > 0) {
+    return {
+      ok: true,
+      attempt: Number(rows[0].attempts),
+      generation: Number(rows[0].claim_generation),
+    };
   }
 
   const row = await database
     .prepare(
-      "SELECT status, attempts, claimed_at FROM billing_events WHERE id = ?",
+      "SELECT status, attempts, claimed_at, claim_generation FROM billing_events WHERE id = ?",
     )
     .get<EventRow>(input.id);
 
-  if (!row) {
-    await database
-      .prepare(
-        `INSERT INTO billing_events
-          (id, type, processed_at, status, attempts, livemode, claimed_at)
-         VALUES (?, ?, ?, 'claimed', 1, ?, ?)`,
-      )
-      .run(input.id, input.type, at, livemode, at);
-
-    return { ok: true, attempt: 1 };
-  }
-
-  if (row.status === "processed") return { ok: false, reason: "processed" };
-  if (row.status === "quarantined") return { ok: false, reason: "quarantined" };
-
-  const claimedAt = row.claimed_at ? Date.parse(row.claimed_at) : Number.NaN;
-  const grace = input.graceMs ?? CLAIM_GRACE_MS;
-  const stale = !Number.isFinite(claimedAt) || input.now - claimedAt >= grace;
-
-  if (row.status === "claimed" && !stale) {
-    return { ok: false, reason: "in_flight" };
-  }
-
-  await database
-    .prepare(
-      `UPDATE billing_events
-       SET status = 'claimed', attempts = attempts + 1, claimed_at = ?,
-           last_error = NULL
-       WHERE id = ?`,
-    )
-    .run(at, input.id);
-
-  return { ok: true, attempt: row.attempts + 1 };
+  return {
+    ok: false,
+    reason: row ? stateReason(row.status) : "in_flight",
+  };
 }
 
 export async function completePaymentEvent(
   database: PostgresDatabase,
   id: string,
+  generation: number,
   at: string,
 ) {
-  await database
+  const result = await database
     .prepare(
       `UPDATE billing_events
        SET status = 'processed', processed_at = ?, last_error = NULL
-       WHERE id = ? AND status = 'claimed'`,
+       WHERE id = ? AND status = 'claimed' AND claim_generation = ?`,
     )
-    .run(at, id);
+    .run(at, id, generation);
+
+  return result.changes > 0;
 }
 
 export async function failPaymentEvent(
   database: PostgresDatabase,
   id: string,
+  generation: number,
   detail: string,
 ) {
-  await database
+  const result = await database
     .prepare(
       `UPDATE billing_events
        SET status = 'failed', last_error = ?
-       WHERE id = ? AND status = 'claimed'`,
+       WHERE id = ? AND status = 'claimed' AND claim_generation = ?`,
     )
-    .run(detail.slice(0, 500), id);
+    .run(detail.slice(0, 500), id, generation);
+
+  return result.changes > 0;
 }
 
 export async function quarantinePaymentEvent(
   database: PostgresDatabase,
   id: string,
+  generation: number,
   detail: string,
 ) {
-  await database
+  const result = await database
     .prepare(
       `UPDATE billing_events
        SET status = 'quarantined', last_error = ?
-       WHERE id = ? AND status IN ('claimed', 'failed')`,
+       WHERE id = ? AND status IN ('claimed', 'failed')
+         AND claim_generation = ?`,
     )
-    .run(detail.slice(0, 500), id);
+    .run(detail.slice(0, 500), id, generation);
+
+  return result.changes > 0;
+}
+
+export type PaymentEventWork<T> = {
+  value: T;
+  quarantine?: string | null;
+};
+
+export type PaymentEventResult<T> =
+  | { ok: true; value: T; quarantined: boolean }
+  | { ok: false; reason: "lost_ownership" };
+
+/**
+ * Runs every effect and the terminal transition under one event-row lock.
+ *
+ * The event lock is taken before the shared user/subscription/period order, so
+ * a reclaimer cannot pass the generation fence while a financial write is in
+ * flight. A caller that loses ownership gets no value and must not answer as if
+ * it credited anyone.
+ */
+export async function processPaymentEvent<T>(
+  database: PostgresDatabase,
+  input: { id: string; generation: number; at?: string },
+  work: () => Promise<PaymentEventWork<T>>,
+): Promise<PaymentEventResult<T>> {
+  return database
+    .transaction(async () => {
+      const row = await database
+        .prepare(
+          `SELECT status, claim_generation FROM billing_events
+            WHERE id = ? FOR UPDATE`,
+        )
+        .get<{ status: PaymentEventState; claim_generation: number }>(input.id);
+
+      if (
+        !row ||
+        row.status !== "claimed" ||
+        Number(row.claim_generation) !== input.generation
+      ) {
+        return { ok: false, reason: "lost_ownership" } as const;
+      }
+
+      const result = await work();
+      const at = input.at ?? new Date().toISOString();
+
+      if (result.quarantine) {
+        const changed = await quarantinePaymentEvent(
+          database,
+          input.id,
+          input.generation,
+          result.quarantine,
+        );
+
+        if (!changed) throw new Error("Payment event lost ownership.");
+
+        return {
+          ok: true,
+          value: result.value,
+          quarantined: true,
+        } as const;
+      }
+
+      const changed = await completePaymentEvent(
+        database,
+        input.id,
+        input.generation,
+        at,
+      );
+
+      if (!changed) throw new Error("Payment event lost ownership.");
+
+      return {
+        ok: true,
+        value: result.value,
+        quarantined: false,
+      } as const;
+    })
+    .immediate();
 }
 
 export async function listPaymentEvents(

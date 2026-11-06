@@ -10,6 +10,7 @@ import {
   resolveUsage,
   usageSource,
 } from "../lib/usage.ts";
+import { completionText } from "../lib/gateway-usage.ts";
 
 test("complete usage keeps totals and provider subsets apart", () => {
   const usage = readProviderUsage({
@@ -117,6 +118,39 @@ test("split usage frames merge per component", () => {
 
   assert.equal(later?.inputTokens, 12);
   assert.equal(later?.outputTokens, 2);
+});
+
+test("a provider-reported zero output wins over the output fallback", () => {
+  const usage = readProviderUsage({
+    usage: { prompt_tokens: 12, completion_tokens: 0 },
+  });
+  const resolved = resolveUsage({
+    usage,
+    fallbackInputTokens: 999,
+    fallbackOutputTokens: 999,
+  });
+
+  assert.equal(resolved.inputTokens, 12);
+  assert.equal(resolved.outputTokens, 0);
+  assert.equal(resolved.complete, true);
+  assert.equal(usageSource(resolved), "reported");
+});
+
+test("buffered tool output enters the fallback text", () => {
+  const text = completionText({
+    choices: [
+      {
+        message: {
+          content: "call",
+          tool_calls: [
+            { function: { name: "write", arguments: "x".repeat(400) } },
+          ],
+        },
+      },
+    ],
+  });
+
+  assert.equal(text.length, 409);
 });
 
 test("a wholly estimated record is labelled and uses both fallbacks", () => {

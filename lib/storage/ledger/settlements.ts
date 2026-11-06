@@ -1,5 +1,13 @@
 import type { PostgresDatabase } from "../pg-adapter.ts";
 
+import {
+  lockPeriod,
+  lockQuarantinedHold,
+  lockSettlementForHold,
+  lockSubscription,
+  lockUser,
+} from "../store/subscription-locks.ts";
+
 /**
  * Durable settlement ledger, ported to the async handle (FID-085 step 3).
  *
@@ -207,28 +215,48 @@ export async function releaseQuarantinedHold(
   db: PostgresDatabase,
   input: { id: string; releasedAt: string; note?: string | null },
 ) {
+  const seed = await db
+    .prepare(
+      `SELECT kind, user_id, period_id, reserved FROM quarantined_holds
+        WHERE id = ? AND status = 'quarantined'`,
+    )
+    .get<{
+      kind: QuarantineKind;
+      user_id: string;
+      period_id: string | null;
+      reserved: number;
+    }>(input.id);
+
+  if (!seed) return false;
+
   return db
     .transaction(async () => {
-      const row = await db
-        .prepare(
-          `SELECT kind, user_id, period_id, reserved FROM quarantined_holds
-          WHERE id = ? AND status = 'quarantined' FOR UPDATE`,
-        )
-        .get<{
-          kind: QuarantineKind;
-          user_id: string;
-          period_id: string | null;
-          reserved: number;
-        }>(input.id);
+      await lockSettlementForHold(db, input.id);
 
-      if (!row) return false;
+      if (!(await lockUser(db, seed.user_id))) return false;
+
+      if (seed.period_id) {
+        const period = await db
+          .prepare(
+            "SELECT subscription_id FROM subscription_periods WHERE id = ?",
+          )
+          .get<{ subscription_id: string }>(seed.period_id);
+
+        if (!period) return false;
+        if (!(await lockSubscription(db, period.subscription_id))) return false;
+        if (!(await lockPeriod(db, seed.period_id))) return false;
+      }
+
+      const row = await lockQuarantinedHold(db, input.id);
+
+      if (!row || row.status !== "quarantined") return false;
 
       if (row.kind === "credit") {
         await db
           .prepare(
             "UPDATE users SET held_micros = GREATEST(0, held_micros - ?) WHERE id = ?",
           )
-          .run(row.reserved, row.user_id);
+          .run(Number(row.reserved), row.user_id);
       } else if (row.kind === "subscription" && row.period_id) {
         await db
           .prepare(
@@ -236,14 +264,14 @@ export async function releaseQuarantinedHold(
               SET weighted_tokens_held = GREATEST(0, weighted_tokens_held - ?)
             WHERE id = ?`,
           )
-          .run(row.reserved, row.period_id);
+          .run(Number(row.reserved), row.period_id);
       }
 
       await db
         .prepare(
           `UPDATE quarantined_holds
             SET status = 'released', released_at = ?, note = ?
-          WHERE id = ?`,
+          WHERE id = ? AND status = 'quarantined'`,
         )
         .run(input.releasedAt, input.note?.slice(0, 300) ?? null, input.id);
 

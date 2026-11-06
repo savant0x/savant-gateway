@@ -16,6 +16,11 @@ import {
   getSubscriptionSummary,
   subscriptionRowById,
 } from "./subscription-rows.ts";
+import {
+  lockActiveSubscriptionForUser,
+  lockSubscription,
+  lockUser,
+} from "./subscription-locks.ts";
 
 /**
  * Operator subscription actions, ported to the async handle (FID-086 Batch A).
@@ -117,10 +122,19 @@ export async function grantManualSubscription(
   }
 
   const id = `sub_${randomUUID()}`;
+  let conflicted = false;
 
   try {
     await db
       .transaction(async () => {
+        if (!(await lockUser(db, input.userId))) return;
+
+        if (await lockActiveSubscriptionForUser(db, input.userId)) {
+          conflicted = true;
+
+          return;
+        }
+
         const incomplete = await db
           .prepare(
             `SELECT id FROM subscriptions
@@ -187,6 +201,14 @@ export async function grantManualSubscription(
     throw error;
   }
 
+  if (conflicted) {
+    return {
+      ok: false,
+      status: 409,
+      error: "This customer already has an active or past-due subscription.",
+    };
+  }
+
   return { ok: true, subscription: (await getSubscriptionSummary(db, id))! };
 }
 
@@ -206,37 +228,47 @@ export async function extendSubscription(
     };
   }
 
-  const now = Date.now();
-  const currentEnd = Date.parse(row.current_period_end);
-  const baseMs = Number.isFinite(currentEnd) ? Math.max(currentEnd, now) : now;
-  const base = new Date(baseMs).toISOString();
-  const defaultEnd = intervalEndIso(base, row.interval_snapshot);
-  const end = futureDate(input.periodEnd, defaultEnd);
-
-  if (!end) {
-    return {
-      ok: false,
-      status: 400,
-      error: "Period end must be in the future.",
-    };
-  }
-
-  if (Date.parse(end) < baseMs) {
-    return {
-      ok: false,
-      status: 400,
-      error: "The new period end must move forward.",
-    };
-  }
+  let invalid: "future" | "backward" | null = null;
 
   await db
     .transaction(async () => {
-      await closeSubscriptionPeriod(db, row.id);
+      if (!(await lockUser(db, row.user_id))) return;
+
+      const locked = await lockSubscription(db, row.id);
+
+      if (!locked) return;
+
+      // Recompute from the locked row: a concurrent extend may already have
+      // moved the end, and the pre-lock date must not shorten the result.
+      const now = Date.now();
+      const currentEnd = Date.parse(locked.current_period_end);
+      const baseMs = Number.isFinite(currentEnd)
+        ? Math.max(currentEnd, now)
+        : now;
+      const base = new Date(baseMs).toISOString();
+      const defaultEnd = intervalEndIso(base, locked.interval_snapshot);
+      const end = futureDate(input.periodEnd, defaultEnd);
+
+      if (!end) {
+        invalid = "future";
+
+        return;
+      }
+
+      if (Date.parse(end) < baseMs) {
+        invalid = "backward";
+
+        return;
+      }
+
+      await closeSubscriptionPeriod(db, locked.id);
       await openSubscriptionPeriod(db, {
-        subscriptionId: row.id,
+        subscriptionId: locked.id,
         start: base,
         end,
-        includedWeightedTokens: Number(row.included_weighted_tokens_snapshot),
+        includedWeightedTokens: Number(
+          locked.included_weighted_tokens_snapshot,
+        ),
       });
 
       await db
@@ -246,9 +278,25 @@ export async function extendSubscription(
                   current_period_end = ?, cancel_at_period_end = 0, updated_at = ?
             WHERE id = ?`,
         )
-        .run(base, end, new Date().toISOString(), row.id);
+        .run(base, end, new Date().toISOString(), locked.id);
     })
     .immediate();
+
+  if (invalid === "future") {
+    return {
+      ok: false,
+      status: 400,
+      error: "Period end must be in the future.",
+    };
+  }
+
+  if (invalid === "backward") {
+    return {
+      ok: false,
+      status: 400,
+      error: "The new period end must move forward.",
+    };
+  }
 
   return {
     ok: true,
@@ -264,27 +312,43 @@ export async function refreshSubscriptionEntitlements(
 
   if (!row) return { ok: false, status: 404, error: "Subscription not found." };
 
-  const modelIds = await planEntitlementIds(db, row.plan_id);
+  let empty = false;
 
-  if (modelIds.length === 0) {
+  await db
+    .transaction(async () => {
+      if (!(await lockUser(db, row.user_id))) return;
+
+      const locked = await lockSubscription(db, row.id);
+
+      if (!locked) return;
+
+      // Read the plan's current entitlements under the same locks that exclude
+      // admission, so a concurrent plan edit cannot install a stale snapshot.
+      const modelIds = await planEntitlementIds(db, locked.plan_id);
+
+      if (modelIds.length === 0) {
+        empty = true;
+
+        return;
+      }
+
+      await db
+        .prepare("DELETE FROM subscription_models WHERE subscription_id = ?")
+        .run(locked.id);
+      await insertEntitlements(db, locked.id, modelIds);
+      await db
+        .prepare("UPDATE subscriptions SET updated_at = ? WHERE id = ?")
+        .run(new Date().toISOString(), locked.id);
+    })
+    .immediate();
+
+  if (empty) {
     return {
       ok: false,
       status: 400,
       error: "The current plan has no entitlements to refresh.",
     };
   }
-
-  await db
-    .transaction(async () => {
-      await db
-        .prepare("DELETE FROM subscription_models WHERE subscription_id = ?")
-        .run(row.id);
-      await insertEntitlements(db, row.id, modelIds);
-      await db
-        .prepare("UPDATE subscriptions SET updated_at = ? WHERE id = ?")
-        .run(new Date().toISOString(), row.id);
-    })
-    .immediate();
 
   return {
     ok: true,

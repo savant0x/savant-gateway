@@ -41,11 +41,13 @@ export async function expireIncompleteForUser(
     .all<{ id: string }>(userId);
 
   for (const row of rows) {
+    // closeSubscriptionPeriod takes the subscription then period locks; the
+    // caller holds the user lock, so the shared order is preserved.
     await closeSubscriptionPeriod(db, row.id);
     await db
       .prepare(
         `UPDATE subscriptions SET status = 'expired', updated_at = ?
-          WHERE id = ?`,
+          WHERE id = ? AND status = 'incomplete'`,
       )
       .run(new Date().toISOString(), row.id);
   }

@@ -17,6 +17,7 @@ import {
   openSubscriptionPeriod,
   sweepSubscriptions,
 } from "./subscription-access.ts";
+import { lockUser } from "./subscription-locks.ts";
 
 /**
  * Subscription checkout entry point, ported to the async handle (FID-086
@@ -95,9 +96,20 @@ export async function createStripeCheckoutSubscription(
   const now = new Date().toISOString();
   const id = `sub_${randomUUID()}`;
   const periodEnd = intervalEndIso(now, input.plan.interval);
+  let conflicted = false;
 
   await db
     .transaction(async () => {
+      if (!(await lockUser(db, input.userId))) return;
+
+      // The preflight check is only an optimisation. Every writer that creates
+      // an active row locks this user first, so this recheck is the decision.
+      if (await activeSubscriptionRow(db, input.userId)) {
+        conflicted = true;
+
+        return;
+      }
+
       await expireIncompleteForUser(db, input.userId);
 
       await db
@@ -138,6 +150,14 @@ export async function createStripeCheckoutSubscription(
       });
     })
     .immediate();
+
+  if (conflicted) {
+    return {
+      ok: false,
+      status: 409,
+      error: "You already have an active or past-due subscription.",
+    };
+  }
 
   return { ok: true, subscription: (await getSubscriptionSummary(db, id))! };
 }

@@ -250,6 +250,7 @@ export async function billingSchema(db: PostgresDatabase) {
     ["livemode", "INTEGER"],
     ["claimed_at", "TEXT"],
     ["last_error", "TEXT"],
+    ["claim_generation", "INTEGER NOT NULL DEFAULT 0"],
   ] as const) {
     await ensureColumn(db, "billing_events", column, definition);
   }

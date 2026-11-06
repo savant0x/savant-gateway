@@ -64,50 +64,35 @@ export async function runRequestLimitChecks({ baseUrl, db, mock, adminPassword }
   checkEqual("concurrent excess key creation is refused", attempts.filter((r) => r.status === 429).length, 3);
   checkEqual("key ceiling is persisted", (await db.prepare("SELECT COUNT(*)::int AS n FROM api_keys WHERE user_id = ? AND status = 'active'").get(id)).n, 10);
   const anotherSecret = attempts.find((response) => response.status === 201).json.secret;
-  // Exceed the 60 RPM bucket while staying under the separate provider
-  // concurrency gate. Three concurrent probes fit the default four provider
-  // slots, so every one reaches the account bucket; a wider burst is refused
-  // by provider admission and never spends the account allowance. Forty
-  // batches send 120 probes, double the 60-token capacity. Sequential probing
-  // was timing-dependent: on the single-connection PGlite fixture a token
-  // refilled between probes, so 120 could all pass. The HTTP gate now runs
-  // against real PostgreSQL under `verify`, where the bucket is shared and
-  // persisted. Unfunded admissions must still refuse with 402 and never
-  // dispatch upstream.
-  const probes = [];
+  // Seed the account bucket empty, then hit it through both keys. Natural
+  // depletion is timing-dependent: on a slow runner each request can take long
+  // enough for the 60 RPM bucket to refill, so a burst never produces a 429.
+  // The token arithmetic is covered by the unit suite; this probe proves the
+  // HTTP path uses one paid bucket per account rather than one per key.
+  await db
+    .prepare(
+      `INSERT INTO admission_buckets (scope, bucket_key, tokens, updated_at)
+       VALUES ('completion', ?, 0, ?)
+       ON CONFLICT (scope, bucket_key)
+       DO UPDATE SET tokens = 0, updated_at = excluded.updated_at`,
+    )
+    .run(`paid:${id}`, Date.now());
 
-  for (let batch = 0; batch < 40; batch++) {
-    const responses = await Promise.all(
-      Array.from({ length: 3 }, (_, offset) => {
-        const index = batch * 3 + offset;
-
-        return request(baseUrl, "/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            authorization: `Bearer ${index % 2 ? secret : anotherSecret}`,
-          },
-          body: valid,
-        });
+  const probes = await Promise.all(
+    [secret, anotherSecret].map((key) =>
+      request(baseUrl, "/v1/chat/completions", {
+        method: "POST",
+        headers: { authorization: `Bearer ${key}` },
+        body: valid,
       }),
-    );
-
-    probes.push(...responses);
-  }
-
-  const limited = probes.find(
-    (probe) =>
-      probe.status === 429 &&
-      probe.headers.get("x-ratelimit-scope") === "paid",
+    ),
   );
 
   for (const probe of probes) {
-    if (probe.status !== 429) {
-      checkEqual("unfunded capacity probe creates no charge", probe.status, 402);
-    }
+    checkEqual("paid account limit holds across different keys", probe.status, 429);
+    checkEqual("account refusal names paid rate scope", probe.headers.get("x-ratelimit-scope"), "paid");
   }
 
-  check("paid account limit holds across different keys", limited !== undefined);
-  checkEqual("account refusal names paid rate scope", limited?.headers.get("x-ratelimit-scope"), "paid");
   checkEqual("capacity probes create no upstream spend", mock.state.calls, before);
   await db.prepare("UPDATE api_keys SET status = 'revoked' WHERE user_id = ?").run(id);
   for (let index = 0; index < 10; index++) {

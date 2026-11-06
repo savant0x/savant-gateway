@@ -19,6 +19,7 @@ import {
   closeSubscriptionPeriod,
   openSubscriptionPeriod,
 } from "./subscription-access.ts";
+import { lockSubscription, lockUser } from "./subscription-locks.ts";
 
 /**
  * Subscription lifecycle, ported to the async handle (FID-086 Batch A).
@@ -63,8 +64,17 @@ export async function attachStripeCheckout(
     stripeSubscriptionId: string;
   },
 ) {
+  const owner = await db
+    .prepare("SELECT user_id FROM subscriptions WHERE id = ?")
+    .get<{ user_id: string }>(input.subscriptionId);
+
+  if (!owner) return;
+
   await db
     .transaction(async () => {
+      if (!(await lockUser(db, owner.user_id))) return;
+      if (!(await lockSubscription(db, input.subscriptionId))) return;
+
       await db
         .prepare(
           `UPDATE subscriptions
@@ -84,10 +94,9 @@ export async function attachStripeCheckout(
       await db
         .prepare(
           `UPDATE users SET stripe_customer_id = ?
-            WHERE id = (SELECT user_id FROM subscriptions WHERE id = ?)
-              AND stripe_customer_id IS NULL`,
+            WHERE id = ? AND stripe_customer_id IS NULL`,
         )
-        .run(input.stripeCustomerId, input.subscriptionId);
+        .run(input.stripeCustomerId, owner.user_id);
     })
     .immediate();
 }
@@ -130,39 +139,50 @@ export async function activateSubscription(
   if (!row) return null;
   if (row.status === "canceled") return null;
 
-  if (
-    input.invoice.providerInvoiceId &&
-    (await invoiceStatus(db, input.invoice.providerInvoiceId)) === "paid"
-  ) {
-    return getSubscriptionSummary(db, row.id);
-  }
-
-  const entitled = await db
-    .prepare(
-      "SELECT COUNT(*) AS count FROM subscription_models WHERE subscription_id = ?",
-    )
-    .get<{ count: number | string }>(row.id);
-
   await db
     .transaction(async () => {
+      if (!(await lockUser(db, row.user_id))) return;
+
+      const locked = await lockSubscription(db, row.id);
+
+      if (!locked || locked.status === "canceled") return;
+
+      // Two distinct events can name the same invoice. The subscription lock
+      // serializes them; this recheck inside the effect transaction is what
+      // prevents the later one from opening a second period.
+      if (
+        input.invoice.providerInvoiceId &&
+        (await invoiceStatus(db, input.invoice.providerInvoiceId)) === "paid"
+      ) {
+        return;
+      }
+
+      const entitled = await db
+        .prepare(
+          "SELECT COUNT(*) AS count FROM subscription_models WHERE subscription_id = ?",
+        )
+        .get<{ count: number | string }>(locked.id);
+
       // An incomplete checkout has no entitlements yet; a renewal of a live
       // subscription keeps the ones it already has, because refreshing them
       // here would quietly grant models added to the plan after purchase.
       if (Number(entitled?.count ?? 0) === 0) {
         await insertEntitlements(
           db,
-          row.id,
-          await planEntitlementIds(db, row.plan_id),
+          locked.id,
+          await planEntitlementIds(db, locked.plan_id),
         );
       }
 
-      await recordSubscriptionInvoice(db, row.id, input.invoice);
+      await recordSubscriptionInvoice(db, locked.id, input.invoice);
 
       await openSubscriptionPeriod(db, {
-        subscriptionId: row.id,
+        subscriptionId: locked.id,
         start: input.periodStart,
         end: input.periodEnd,
-        includedWeightedTokens: Number(row.included_weighted_tokens_snapshot),
+        includedWeightedTokens: Number(
+          locked.included_weighted_tokens_snapshot,
+        ),
       });
 
       await db
@@ -180,7 +200,7 @@ export async function activateSubscription(
           input.periodStart,
           input.periodEnd,
           new Date().toISOString(),
-          row.id,
+          locked.id,
         );
     })
     .immediate();
@@ -200,17 +220,23 @@ export async function markSubscriptionPastDue(
 
   if (!row) return null;
 
-  if (
-    input.invoice?.providerInvoiceId &&
-    (await invoiceStatus(db, input.invoice.providerInvoiceId)) === "paid"
-  ) {
-    return getSubscriptionSummary(db, row.id);
-  }
-
   await db
     .transaction(async () => {
+      if (!(await lockUser(db, row.user_id))) return;
+
+      const locked = await lockSubscription(db, row.id);
+
+      if (!locked) return;
+
+      if (
+        input.invoice?.providerInvoiceId &&
+        (await invoiceStatus(db, input.invoice.providerInvoiceId)) === "paid"
+      ) {
+        return;
+      }
+
       if (input.invoice) {
-        await recordSubscriptionInvoice(db, row.id, input.invoice);
+        await recordSubscriptionInvoice(db, locked.id, input.invoice);
       }
 
       await db
@@ -218,7 +244,7 @@ export async function markSubscriptionPastDue(
           `UPDATE subscriptions SET status = 'past_due', updated_at = ?
             WHERE id = ? AND status IN ('active', 'past_due', 'incomplete')`,
         )
-        .run(new Date().toISOString(), row.id);
+        .run(new Date().toISOString(), locked.id);
     })
     .immediate();
 
@@ -245,16 +271,34 @@ export async function reconcileStripeSubscription(
 
   if (!row) return null;
 
-  const mapped = mapStripeSubscriptionStatus(
-    input.status,
-    input.cancelAtPeriodEnd,
-    input.periodEnd ?? row.current_period_end,
-  );
-  const nextStatus =
-    row.status === "incomplete" && mapped === "active" ? "incomplete" : mapped;
-
   await db
     .transaction(async () => {
+      if (!(await lockUser(db, row.user_id))) return;
+
+      const locked = await lockSubscription(db, row.id);
+
+      if (!locked) return;
+
+      const mapped = mapStripeSubscriptionStatus(
+        input.status,
+        input.cancelAtPeriodEnd,
+        input.periodEnd ?? locked.current_period_end,
+      );
+      const nextStatus =
+        locked.status === "incomplete" && mapped === "active"
+          ? "incomplete"
+          : mapped;
+
+      // A late non-terminal Stripe event must not resurrect a row this gateway
+      // already revoked or expired. A terminal event may still finish the job.
+      if (
+        (locked.status === "canceled" || locked.status === "expired") &&
+        nextStatus !== "canceled" &&
+        nextStatus !== "expired"
+      ) {
+        return;
+      }
+
       await db
         .prepare(
           `UPDATE subscriptions
@@ -271,11 +315,11 @@ export async function reconcileStripeSubscription(
           input.periodEnd,
           input.cancelAtPeriodEnd ? 1 : 0,
           new Date().toISOString(),
-          row.id,
+          locked.id,
         );
 
       if (nextStatus === "canceled" || nextStatus === "expired") {
-        await closeSubscriptionPeriod(db, row.id);
+        await closeSubscriptionPeriod(db, locked.id);
       }
     })
     .immediate();
@@ -310,6 +354,9 @@ export async function revokeSubscription(
 
   await db
     .transaction(async () => {
+      if (!(await lockUser(db, row.user_id))) return;
+      if (!(await lockSubscription(db, subscriptionId))) return;
+
       await closeSubscriptionPeriod(db, subscriptionId);
 
       await db

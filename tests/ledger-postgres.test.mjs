@@ -355,7 +355,11 @@ test("an event is claimed once and answered as in-flight while recent", async ()
   const { db, pglite } = await fixture();
 
   try {
-    assert.deepEqual(await claim(db), { ok: true, attempt: 1 });
+    assert.deepEqual(await claim(db), {
+      ok: true,
+      attempt: 1,
+      generation: 1,
+    });
     assert.deepEqual(await claim(db), { ok: false, reason: "in_flight" });
 
     const row = await db
@@ -377,6 +381,7 @@ test("a stale claim can be retried after a crash", async () => {
 
     assert.equal(retry.ok, true);
     assert.equal(retry.attempt, 2);
+    assert.equal(retry.generation, 2);
 
     const row = await db.prepare("SELECT status, attempts FROM billing_events").get();
 
@@ -392,7 +397,7 @@ test("a processed event is terminal", async () => {
 
   try {
     await claim(db);
-    await completePaymentEvent(db, "evt_1", "2026-10-30T12:00:01.000Z");
+    await completePaymentEvent(db, "evt_1", 1, "2026-10-30T12:00:01.000Z");
 
     assert.deepEqual(await claim(db, { now: STALE_MS }), {
       ok: false,
@@ -408,7 +413,7 @@ test("a failed handler keeps evidence and is retried immediately", async () => {
 
   try {
     await claim(db);
-    await failPaymentEvent(db, "evt_1", "database unavailable");
+    await failPaymentEvent(db, "evt_1", 1, "database unavailable");
 
     const row = await db
       .prepare("SELECT status, last_error FROM billing_events")
@@ -421,6 +426,7 @@ test("a failed handler keeps evidence and is retried immediately", async () => {
 
     assert.equal(retry.ok, true);
     assert.equal(retry.attempt, 2);
+    assert.equal(retry.generation, 2);
 
     const cleared = await db
       .prepare("SELECT last_error FROM billing_events")
@@ -437,7 +443,7 @@ test("a quarantined event is never reclaimed", async () => {
 
   try {
     await claim(db);
-    await quarantinePaymentEvent(db, "evt_1", "amount mismatch");
+    await quarantinePaymentEvent(db, "evt_1", 1, "amount mismatch");
 
     assert.deepEqual(await claim(db, { now: STALE_MS }), {
       ok: false,
@@ -502,7 +508,7 @@ test("the operator view lists durable state", async () => {
 
   try {
     await claim(db);
-    await completePaymentEvent(db, "evt_1", "2026-10-30T12:00:01.000Z");
+    await completePaymentEvent(db, "evt_1", 1, "2026-10-30T12:00:01.000Z");
 
     const rows = await listPaymentEvents(db);
 

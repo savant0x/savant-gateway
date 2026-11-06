@@ -8,9 +8,8 @@ import {
 } from "@/lib/nowpayments";
 import {
   claimPaymentEvent,
-  completePaymentEvent,
   failPaymentEvent,
-  quarantinePaymentEvent,
+  processPaymentEvent,
 } from "@/lib/storage/ledger/payment-events";
 import { redactSecrets } from "@/lib/redaction";
 import { readBoundedText, requestBodyError } from "@/lib/request-limits";
@@ -102,8 +101,9 @@ export async function POST(request: Request) {
   }
 
   const db = await storeRuntime();
+  const id = eventId(payment.paymentId);
   const claim = await claimPaymentEvent(db, {
-    id: eventId(payment.paymentId),
+    id,
     type: "nowpayments_payment",
     livemode: null,
     expectedLivemode: null,
@@ -111,78 +111,94 @@ export async function POST(request: Request) {
   });
 
   if (!claim.ok) {
-    // A recent claim is in flight, a decided event is terminal, and a mode
-    // mismatch is quarantined: none of them may reach the financial writer.
+    if (claim.reason === "in_flight") {
+      return Response.json(
+        { error: "IPN is already in flight.", state: claim.reason },
+        { status: 409, headers: { "Retry-After": "30" } },
+      );
+    }
+
     return Response.json({
       received: true,
-      replay: claim.reason !== "environment_mismatch",
+      replay: true,
       state: claim.reason,
     });
   }
 
   try {
-    const topup = await getTopupById(payment.orderId);
+    const outcome = await processPaymentEvent<{
+      result: string;
+      topup: Awaited<ReturnType<typeof getTopupById>>;
+    }>(db, { id, generation: claim.generation }, async () => {
+      const topup = await getTopupById(payment.orderId);
 
-    if (!topup) {
-      await quarantinePaymentEvent(
-        db,
-        eventId(payment.paymentId),
-        `Unknown order ${payment.orderId}; no credit was issued.`,
-      );
+      if (!topup) {
+        return {
+          value: { result: "missing" as const, topup: null },
+          quarantine: `Unknown order ${payment.orderId}; no credit was issued.`,
+        };
+      }
 
-      return Response.json({
-        received: true,
-        credited: false,
-        quarantined: true,
+      const result = await fulfillTopup({
+        topupId: topup.id,
+        providerRef: id,
+        expectedAmountMicros: expectedAmountMicros(payment.priceAmount),
+        expectedCurrency: payment.priceCurrency,
+        expectedUserId: topup.userId,
       });
-    }
 
-    const result = await fulfillTopup({
-      topupId: topup.id,
-      providerRef: eventId(payment.paymentId),
-      expectedAmountMicros: expectedAmountMicros(payment.priceAmount),
-      expectedCurrency: payment.priceCurrency,
-      expectedUserId: topup.userId,
+      if (result === "mismatch" || result === "missing") {
+        return {
+          value: { result, topup },
+          quarantine: `IPN top-up ${result}; no credit was issued.`,
+        };
+      }
+
+      return { value: { result, topup } };
     });
 
-    if (result === "mismatch" || result === "missing") {
-      await quarantinePaymentEvent(
-        db,
-        eventId(payment.paymentId),
-        `IPN top-up ${result}; no credit was issued.`,
+    if (!outcome.ok) {
+      return Response.json(
+        { error: "IPN ownership was lost.", state: outcome.reason },
+        { status: 409, headers: { "Retry-After": "30" } },
       );
+    }
 
+    if (outcome.quarantined) {
       return Response.json({
         received: true,
         credited: false,
         quarantined: true,
-        topup: result,
+        topup: outcome.value.result,
       });
     }
-
-    await completePaymentEvent(
-      db,
-      eventId(payment.paymentId),
-      new Date().toISOString(),
-    );
 
     return Response.json({
       received: true,
-      credited: result === "paid",
+      credited: outcome.value.result === "paid",
     });
   } catch (error) {
-    // Keep the claim with a failed state so an operator can see it and a
-    // NOWPayments retry can reclaim it; never delete the evidence.
-    await failPaymentEvent(
+    // The effect transaction rolled back. Keep a failed claim with the same
+    // generation so a retry can reclaim it; a stale owner cannot flip it.
+    const failed = await failPaymentEvent(
       db,
-      eventId(payment.paymentId),
+      id,
+      claim.generation,
       error instanceof Error ? error.message : "unknown",
-    );
+    ).catch(() => false);
+
     // eslint-disable-next-line no-console
     console.error("NOWPayments IPN failed", {
       paymentId: payment.paymentId,
       error: redactSecrets(error instanceof Error ? error.message : "unknown"),
     });
+
+    if (!failed) {
+      return Response.json(
+        { error: "IPN ownership was lost." },
+        { status: 409, headers: { "Retry-After": "30" } },
+      );
+    }
 
     return Response.json(
       { error: "Webhook processing failed." },

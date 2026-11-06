@@ -27,6 +27,8 @@ const TEST_FILES = [
   "tests/admission-concurrency.test.mjs",
   "tests/content-job-concurrency.test.mjs",
   "tests/content-link-concurrency.test.mjs",
+  "tests/subscription-admission-concurrency.test.mjs",
+  "tests/payment-claim-concurrency.test.mjs",
 ];
 
 function fail(message) {
@@ -69,7 +71,7 @@ try {
     console.log(`postgres-concurrency: using ${redactPostgresUrl(supplied)}`);
     runProof(supplied);
     console.log(
-      "postgres-concurrency: PASS — no double-debit and no doubled admission",
+      "postgres-concurrency: PASS — no double-debit, doubled admission or unfenced payment",
     );
   } else {
     disposable = await startDisposablePostgres();
@@ -78,7 +80,7 @@ try {
     );
     runProof(disposable.connectionString);
     console.log(
-      "postgres-concurrency: PASS — no double-debit and no doubled admission",
+      "postgres-concurrency: PASS — no double-debit, doubled admission or unfenced payment",
     );
   }
 } catch (error) {

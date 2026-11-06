@@ -5,7 +5,8 @@ import { createStorageDatabase } from "../lib/storage/database.ts";
 import { openCallSettlement } from "../lib/storage/store/settlements.ts";
 import { settleCall } from "../lib/storage/gateway/settle.ts";
 import { streamCompletion } from "../lib/storage/gateway/stream.ts";
-import { usagePrices } from "../lib/gateway-usage.ts";
+import { completionText, usagePrices } from "../lib/gateway-usage.ts";
+import { estimateTokensFromText } from "../lib/pricing.ts";
 import { estimatedUsage, resolveUsage } from "../lib/usage.ts";
 import { createPgliteDatabase } from "./pglite-pool.mjs";
 
@@ -396,6 +397,50 @@ test("an included subscription call moves the hold into used and bills nothing",
       .get();
 
     assert.equal(Number(holds.n), 0);
+  } finally {
+    await db.close();
+  }
+});
+
+test("a tool-only completion settles the fallback including its arguments", async () => {
+  const db = await fixture();
+  const data = {
+    choices: [
+      {
+        message: {
+          content: "",
+          tool_calls: [
+            {
+              id: "call_1",
+              type: "function",
+              function: { name: "write", arguments: "x".repeat(16_000) },
+            },
+          ],
+        },
+      },
+    ],
+  };
+  const fallback = estimateTokensFromText(completionText(data));
+
+  try {
+    const settlementId = await admit(db);
+    const charged = await settleCall(
+      db,
+      context(settlementId),
+      resolveUsage({
+        usage: null,          fallbackInputTokens: 10,
+        fallbackOutputTokens: fallback,
+      }),
+      "ok",
+    );
+    const event = await db
+      .prepare("SELECT output_tokens, usage_source FROM usage_events")
+      .get();
+
+    assert.ok(charged > 0);
+    assert.equal(Number(event.output_tokens), fallback);
+    assert.ok(fallback >= 4_000, "the 16,000 argument characters are counted");
+    assert.equal(event.usage_source, "estimated");
   } finally {
     await db.close();
   }

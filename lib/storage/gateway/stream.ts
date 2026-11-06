@@ -6,7 +6,10 @@ import {
   MAX_STREAM_BYTES,
   MAX_STREAM_FRAME_BYTES,
 } from "../../request-limits.ts";
-import { streamDeltaChars } from "../../gateway-usage.ts";
+import {
+  streamDeltaCounts,
+  type StreamDeltaChars,
+} from "../../gateway-usage.ts";
 import {
   classifyStreamCancellation,
   createStreamTelemetryEvent,
@@ -95,7 +98,7 @@ export function streamCompletion(
   };
   let buffer = "";
   let usage: ProviderUsage | null = null;
-  let outputChars = 0;
+  const outputChars: StreamDeltaChars = { text: 0, modern: 0, legacy: 0 };
   let settled = false;
   let terminalLine: string | null = null;
   let responseBytes = 0;
@@ -106,10 +109,13 @@ export function streamCompletion(
   ) => {
     if (settled) return;
 
+    const fallbackChars =
+      outputChars.text +
+      (outputChars.modern > 0 ? outputChars.modern : outputChars.legacy);
     const resolved = resolveUsage({
       usage,
       fallbackInputTokens: context.promptTokens,
-      fallbackOutputTokens: estimateTokensFromChars(outputChars),
+      fallbackOutputTokens: estimateTokensFromChars(fallbackChars),
     });
 
     settled = true;
@@ -160,7 +166,11 @@ export function streamCompletion(
       // Usage can arrive split across frames; merging keeps a later frame that
       // carries one component from erasing the other.
       usage = mergeProviderUsage(usage, readProviderUsage(parsed));
-      outputChars += streamDeltaChars(parsed);
+      const delta = streamDeltaCounts(parsed);
+
+      outputChars.text += delta.text;
+      outputChars.modern += delta.modern;
+      outputChars.legacy += delta.legacy;
     } catch {
       // Keep forwarding malformed provider chunks; only accounting is best-effort.
     }

@@ -3,13 +3,20 @@ import type { PostgresDatabase } from "../pg-adapter.ts";
 import { randomUUID } from "node:crypto";
 
 import { decideAllowance } from "../../plans.ts";
-import { quarantineHold } from "../ledger/settlements.ts";
 
 import {
   activeSubscriptionRow,
   openPeriodRow,
   type PeriodRow,
 } from "./subscription-rows.ts";
+import {
+  lockOpenPeriod,
+  lockPeriod,
+  lockSubscription,
+  lockSubscriptionHold,
+  lockUser,
+} from "./subscription-locks.ts";
+import { sweepSubscriptions } from "./subscription-sweep.ts";
 
 /**
  * Subscription admission, ported to the async handle (FID-085 step 4).
@@ -59,92 +66,6 @@ export type SubscriptionAccess =
     };
 
 const HOLD_TTL_MS = 15 * 60 * 1000;
-const INCOMPLETE_TTL_MS = 24 * 60 * 60 * 1000;
-
-/** Expired allowance holds are quarantined, not silently returned. */
-async function quarantineExpiredHolds(db: PostgresDatabase, now: number) {
-  const cutoff = new Date(now).toISOString();
-  const expired = await db
-    .prepare(
-      `SELECT id, period_id, user_id, api_key_id, model_id, weighted_tokens,
-              created_at, expires_at
-         FROM subscription_holds WHERE expires_at <= ?`,
-    )
-    .all<{
-      id: string;
-      period_id: string;
-      user_id: string;
-      api_key_id: string | null;
-      model_id: string | null;
-      weighted_tokens: number;
-      created_at: string;
-      expires_at: string;
-    }>(cutoff);
-
-  if (expired.length === 0) return;
-
-  await db
-    .transaction(async () => {
-      for (const hold of expired) {
-        await quarantineHold(db, {
-          id: hold.id,
-          kind: "subscription",
-          userId: hold.user_id,
-          keyId: hold.api_key_id,
-          modelId: hold.model_id,
-          periodId: hold.period_id,
-          reserved: Number(hold.weighted_tokens),
-          createdAt: hold.created_at,
-          expiredAt: hold.expires_at,
-        });
-
-        await db
-          .prepare("DELETE FROM subscription_holds WHERE id = ?")
-          .run(hold.id);
-      }
-    })
-    .immediate();
-}
-
-/** Local safety net for missed Stripe events and manual grants. */
-export async function sweepSubscriptions(
-  db: PostgresDatabase,
-  now = Date.now(),
-) {
-  const stamp = new Date(now).toISOString();
-  const incompleteCutoff = new Date(now - INCOMPLETE_TTL_MS).toISOString();
-
-  await db
-    .transaction(async () => {
-      await quarantineExpiredHolds(db, now);
-
-      await db
-        .prepare(
-          `UPDATE subscription_periods SET status = 'closed'
-            WHERE status = 'open' AND subscription_id IN (
-              SELECT id FROM subscriptions
-               WHERE (status IN ('active', 'past_due') AND current_period_end <= ?)
-                  OR (status = 'incomplete' AND created_at <= ?)
-            )`,
-        )
-        .run(stamp, incompleteCutoff);
-
-      await db
-        .prepare(
-          `UPDATE subscriptions SET status = 'expired', updated_at = ?
-            WHERE status IN ('active', 'past_due') AND current_period_end <= ?`,
-        )
-        .run(stamp, stamp);
-
-      await db
-        .prepare(
-          `UPDATE subscriptions SET status = 'expired', updated_at = ?
-            WHERE status = 'incomplete' AND created_at <= ?`,
-        )
-        .run(stamp, incompleteCutoff);
-    })
-    .immediate();
-}
 
 async function coveredByPlan(
   db: PostgresDatabase,
@@ -205,7 +126,28 @@ export async function resolveSubscriptionAccess(
 
   return db
     .transaction(async () => {
-      const period = await openPeriodRow(db, subscription.id);
+      if (!(await lockUser(db, input.userId))) return { kind: "none" as const };
+
+      const lockedSubscription = await lockSubscription(db, subscription.id);
+
+      if (!lockedSubscription) return { kind: "none" as const };
+
+      if (lockedSubscription.status === "past_due") {
+        return blocked(
+          "subscription_past_due",
+          "This subscription is past due. Update payment in the billing portal.",
+        );
+      }
+
+      if (lockedSubscription.status !== "active") {
+        return { kind: "none" as const };
+      }
+
+      if (!(await coveredByPlan(db, lockedSubscription.id, input.modelId))) {
+        return { kind: "none" as const };
+      }
+
+      const period = await lockOpenPeriod(db, lockedSubscription.id);
 
       if (!period) {
         return blocked(
@@ -220,7 +162,7 @@ export async function resolveSubscriptionAccess(
         usedWeightedTokens: Number(period.weighted_tokens_used),
         heldWeightedTokens: Number(period.weighted_tokens_held),
         estimateWeightedTokens: estimate,
-        overageMode: subscription.overage_mode_snapshot,
+        overageMode: lockedSubscription.overage_mode_snapshot,
       });
 
       if (next.kind === "block") {
@@ -233,10 +175,27 @@ export async function resolveSubscriptionAccess(
       if (next.kind === "credit") {
         return {
           kind: "overage" as const,
-          subscriptionId: subscription.id,
+          subscriptionId: lockedSubscription.id,
           periodId: period.id,
-          markupBps: Number(subscription.overage_markup_bps_snapshot),
+          markupBps: Number(lockedSubscription.overage_markup_bps_snapshot),
         };
+      }
+
+      const updated = await db
+        .prepare(
+          `UPDATE subscription_periods
+              SET weighted_tokens_held = weighted_tokens_held + ?
+            WHERE id = ? AND status = 'open'
+            RETURNING id`,
+        )
+        .all<{ id: string }>(estimate, period.id);
+
+      if (updated.length === 0) {
+        return blocked(
+          "subscription_period_missing",
+          "This subscription has no open allowance period. Contact the operator.",
+          503,
+        );
       }
 
       await db
@@ -248,7 +207,7 @@ export async function resolveSubscriptionAccess(
         )
         .run(
           holdId,
-          subscription.id,
+          lockedSubscription.id,
           period.id,
           input.userId,
           input.keyId,
@@ -258,17 +217,9 @@ export async function resolveSubscriptionAccess(
           expiresAt,
         );
 
-      await db
-        .prepare(
-          `UPDATE subscription_periods
-              SET weighted_tokens_held = weighted_tokens_held + ?
-            WHERE id = ?`,
-        )
-        .run(estimate, period.id);
-
       return {
         kind: "included" as const,
-        subscriptionId: subscription.id,
+        subscriptionId: lockedSubscription.id,
         periodId: period.id,
         holdId,
         weightedTokens: estimate,
@@ -284,12 +235,28 @@ export async function settleSubscriptionHoldWithin(
   holdId: string,
   actualWeightedTokens: number,
 ) {
-  const hold = await db
+  const seed = await db
     .prepare(
-      `SELECT id, period_id, weighted_tokens FROM subscription_holds
-        WHERE id = ?`,
+      `SELECT id, subscription_id, period_id, user_id
+         FROM subscription_holds WHERE id = ?`,
     )
-    .get<{ id: string; period_id: string; weighted_tokens: number }>(holdId);
+    .get<{
+      id: string;
+      subscription_id: string;
+      period_id: string;
+      user_id: string;
+    }>(holdId);
+
+  if (!seed) return 0;
+
+  // recordUsage's transaction already holds the settlement and user locks in
+  // the shared order. Re-taking the user lock is a no-op when held and makes
+  // this helper safe when a caller settles a hold directly.
+  if (!(await lockUser(db, seed.user_id))) return 0;
+  if (!(await lockSubscription(db, seed.subscription_id))) return 0;
+  if (!(await lockPeriod(db, seed.period_id))) return 0;
+
+  const hold = await lockSubscriptionHold(db, holdId);
 
   if (!hold) return 0;
 
@@ -322,12 +289,18 @@ export async function openSubscriptionPeriod(
 ): Promise<PeriodRow | undefined> {
   const id = `period_${randomUUID()}`;
 
-  await db
-    .prepare(
-      `UPDATE subscription_periods SET status = 'closed'
-        WHERE subscription_id = ? AND status = 'open'`,
-    )
-    .run(input.subscriptionId);
+  if (!(await lockSubscription(db, input.subscriptionId))) return undefined;
+
+  const current = await lockOpenPeriod(db, input.subscriptionId);
+
+  if (current) {
+    await db
+      .prepare(
+        `UPDATE subscription_periods SET status = 'closed'
+          WHERE id = ? AND status = 'open'`,
+      )
+      .run(current.id);
+  }
 
   await db
     .prepare(
@@ -353,10 +326,18 @@ export async function closeSubscriptionPeriod(
   db: PostgresDatabase,
   subscriptionId: string,
 ) {
+  if (!(await lockSubscription(db, subscriptionId))) return;
+
+  const period = await lockOpenPeriod(db, subscriptionId);
+
+  if (!period) return;
+
   await db
     .prepare(
       `UPDATE subscription_periods SET status = 'closed'
-        WHERE subscription_id = ? AND status = 'open'`,
+        WHERE id = ? AND status = 'open'`,
     )
-    .run(subscriptionId);
+    .run(period.id);
 }
+
+export { sweepSubscriptions };

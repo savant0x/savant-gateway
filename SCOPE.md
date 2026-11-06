@@ -1,5 +1,33 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-05 (billing concurrency and tool fallback implementation: 009–011)
+
+Operator supplied the converged design records and the
+`2026-11-05-billing-concurrency-and-tool-fallback-handoff.md` handoff for
+implementation. Automation level 3; strict; single agent. The session was
+limited to repository code, disposable PostgreSQL and local HTTP fixtures. No
+funded inference, live payment, provider transfer, deployment or remote
+database change was authorized or performed.
+
+- [x] **BC1 — Serialize subscription allowance admission.** Added shared lock
+  helpers and applied settlement → user → subscription → period → hold →
+  quarantine across admission, sweep, lifecycle, admin, checkout, settlement
+  and quarantine release. Revalidate after locking; preserve block, overage,
+  past-due and quarantine semantics.
+- [x] **BC2 — Fence payment claims.** Added `claim_generation`, one atomic
+  claim/reclaim statement, terminal-state protection and a transaction-scoped
+  event fence. Both signed webhook routes use the same authority; distinct
+  events for one invoice serialize on the subscription.
+- [x] **BC3 — Count tool output fallback.** Buffered and streamed extraction now
+  counts generated text, reasoning, modern tool names/arguments and legacy
+  function calls without counting IDs or metadata; reported usage still wins.
+- [x] **BC4 — Prove and close.** Registered the two concurrency suites in the
+  fail-closed PostgreSQL runner, added the tool-output suite, and extended the
+  named settlement/usage suites. `npm run verify` PASS (11/11 gates,
+  1,096/1,096 tests, 15/15 PostgreSQL races, 718 main HTTP checks plus trial,
+  recovery 14/14, quality and build). Implementation commit `9f6548f`; FIDs
+  009–011 archived.
+
 ## Session — 2026-11-05 (admin economics planning program: 005–008)
 
 Operator supplied a planning-only master, `FID-2026-1105-008`, with children

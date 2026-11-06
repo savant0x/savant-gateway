@@ -2,7 +2,7 @@
 
 **Last folder audit:** 2026-11-05 (register reconciliation). This page indexes the
 working set; each FID owns its own status, evidence and resolution. Current
-counts: 15 active / 20 slots, 168 archived, 183 allocated.
+counts: 15 active / 20 slots, 171 archived, 186 allocated.
 
 ## Layout
 
@@ -35,8 +35,8 @@ counts: 15 active / 20 slots, 168 archived, 183 allocated.
 
 ### 2026-11-05 register audit
 
-- 15 active records match the 15 table rows above; 168 records are archived, for
-  183 allocated FIDs. No active record is unlisted, split or duplicated.
+- 15 active records match the 15 table rows above; 171 records are archived, for
+  186 allocated FIDs. No active record is unlisted, split or duplicated.
 - Every filename matches its `**ID:**` field. Three archived 2026-10-31 records
   (077–079) predated that metadata field and now carry it; their status,
   resolution and evidence text is unchanged.
@@ -110,6 +110,20 @@ hosted restore, delivered alert and the release decision stay with
 [062](FID-2026-1030-062-launch-acceptance-and-rollout.md). Funded paid
 inference was withdrawn from the required test scope on 2026-11-04 and remains
 unverified.
+
+### Closed in the 2026-11-05 billing concurrency implementation
+
+[2026-1105-009](archive/FID-2026-1105-009-subscription-allowance-concurrency.md),
+[2026-1105-010](archive/FID-2026-1105-010-payment-claim-fencing.md) and
+[2026-1105-011](archive/FID-2026-1105-011-tool-output-fallback-accounting.md)
+are `closed` with implementation commit `9f6548f`. Admission, lifecycle, admin,
+settlement and quarantine paths share one lock order; payment claims carry a
+fenced generation; tool and function output enters the existing fallback. The
+fail-closed PostgreSQL proof now runs 15 races, including four subscription
+admission races and four payment/invoice races. `npm run verify` passed 11/11
+gates with 1,096/1,096 tests, 718 main HTTP checks plus trial, recovery 14/14,
+quality (650 files) and build. No live payment, funded inference, provider
+transfer, deployment or remote database change is claimed.
 
 ### Closed in the 2026-11-05 admin economics implementation
 

@@ -3,6 +3,35 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-05 — Billing concurrency and tool-output fallback (009, 010, 011)
+
+- **FID-2026-1105-009 — high —** subscription admission, sweep, lifecycle,
+  admin grant/extend/refresh, checkout and quarantined-hold release now share
+  one documented lock order: settlement → user → subscription → period → hold →
+  quarantine. The allowance decision, hold insert and held-counter increment
+  commit in one transaction, and each path revalidates after its locks. This
+  removes the stale-read window that could admit two holds against one
+  remaining allowance.
+- **FID-2026-1105-010 — high —** payment events use one atomic claim authority
+  with a monotonically increasing `claim_generation`. Every financial or
+  entitlement effect and its terminal transition run under the event-row lock;
+  processed and quarantined states cannot be overwritten, a stale owner cannot
+  mutate state, and distinct events for one invoice serialize on the
+  subscription. Both signed webhook routes return bounded retry guidance for
+  in-flight or lost ownership. No live payment was made.
+- **FID-2026-1105-011 — medium —** fallback usage now counts generated tool and
+  function names plus argument fragments in buffered and streamed responses,
+  including translated Anthropic streams. Modern tool calls take precedence
+  over legacy function calls per choice, stream counters stay separate until
+  finalization, IDs and metadata are excluded, and provider-reported usage
+  (including zero) remains authoritative.
+- **Verification:** `npm run verify` PASS — 11/11 gates, 1,096/1,096 tests with
+  zero skips, 15/15 real PostgreSQL races across six suites, quality PASS (650
+  files), build PASS, 718 main HTTP checks plus the trial suite on real
+  PostgreSQL, recovery 14/14. Implementation commit `9f6548f`. No funded
+  inference, live payment, provider transfer, deployment or remote database
+  change is claimed.
+
 ## 2026-11-05 — Pricing command center and provider capital (005, 006)
 
 - **FID-2026-1105-005 — medium —** added a realized pricing command center to

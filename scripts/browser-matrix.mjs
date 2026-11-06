@@ -51,6 +51,92 @@ const COMMENT_ID = "browser-suite-comment";
 const HOSTILE_BUILD_ID = "bld_browser_hostile";
 const HOSTILE_REVISION_ID = "rev_browser_hostile";
 const HOSTILE_TITLE = "Hostile browser probe";
+const COVERAGE_MODEL_ID = "mock-paid";
+const COVERAGE_EMPTY_MODEL_ID = "free/mock-free";
+const COVERAGE_FIXTURES = [
+  {
+    id: "browser-coverage-video",
+    title: "Coverage Video With Player",
+    kind: "video",
+    relation: "release",
+    thumbnailUrl: "/images/og.png",
+    videoId: "dQw4w9WgXcQ",
+    github: null,
+    reason: "The fixture title exactly names the paid model.",
+  },
+  {
+    id: "browser-coverage-invalid-video",
+    title: "Coverage Invalid Video",
+    kind: "video",
+    relation: "hands_on",
+    thumbnailUrl: "/images/banner.png",
+    videoId: "bad/id",
+    github: null,
+    reason: "A malformed video id must stay a detail link.",
+  },
+  {
+    id: "browser-coverage-article",
+    title: "Coverage Article Fallback",
+    kind: "article",
+    relation: "mention",
+    thumbnailUrl: null,
+    videoId: null,
+    github: null,
+    reason: "A missing image must use the shared Signal fallback.",
+  },
+  {
+    id: "browser-coverage-repo",
+    title: "Coverage Repository Image",
+    kind: "repo",
+    relation: "repository",
+    thumbnailUrl: null,
+    videoId: null,
+    github: {
+      slug: "savant-gateway/coverage-fixture",
+      description: "Browser fixture repository.",
+      stars: 1200,
+      forks: 80,
+      language: "TypeScript",
+      topics: ["ai"],
+      license: "MIT",
+      homepage: null,
+      pushedAt: null,
+      ogImageUrl: "/images/icon-192.png",
+      readmeHtml: null,
+    },
+    reason: "The GitHub image is used when no stored thumbnail exists.",
+  },
+  {
+    id: "browser-coverage-paper",
+    title: "Coverage Paper Thumbnail",
+    kind: "paper",
+    relation: "paper",
+    thumbnailUrl: "/images/icon-512.png",
+    videoId: null,
+    github: null,
+    reason: "A paper with a stored thumbnail must render it.",
+  },
+  {
+    id: "browser-coverage-discussion",
+    title: "Coverage Discussion Fallback",
+    kind: "discussion",
+    relation: "discussion",
+    thumbnailUrl: null,
+    videoId: null,
+    github: null,
+    reason: "A discussion without an image still renders a row.",
+  },
+  {
+    id: "browser-coverage-older",
+    title: "Coverage Older Article",
+    kind: "article",
+    relation: "benchmark",
+    thumbnailUrl: "/images/banner.png",
+    videoId: null,
+    github: null,
+    reason: "This seventh item must fall outside the six-row limit.",
+  },
+];
 
 function edgePath() {
   if (process.platform !== "win32") return null;
@@ -254,6 +340,61 @@ async function seedContent(db, commenterId) {
        VALUES (?, ?, ?, NULL, ?, ?)`,
     )
     .run(COMMENT_ID, ITEM_ID, commenterId, COMMENT_BODY, now);
+}
+
+async function seedCoverage(db) {
+  const now = Date.now();
+  const nowIso = new Date(now).toISOString();
+  const insertItem = db.prepare(
+    `INSERT INTO content.items
+      (id, source_id, kind, title, url, external_url, excerpt, body_html,
+       author, published_at, fetched_at, thumbnail_url, video_id, external_id,
+       github_json, content_hash, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, NULL, ?, NULL, 'Browser Suite', ?, ?, ?, ?, ?,
+       ?, ?, ?, ?)`,
+  );
+  const insertLink = db.prepare(
+    `INSERT INTO content.model_links
+      (item_id, model_id, relation, relation_source, confidence, reason,
+       reviewed, created_at, updated_at, state, decision_at,
+       decision_source, revision)
+     VALUES (?, ?, ?, 'operator', 1, ?, 1, ?, ?, 'accepted', ?,
+       'operator', 1)`,
+  );
+
+  // Index 0 is newest; the seventh item is deliberately older than the six-item
+  // model-page limit so total and displayed counts cannot be confused.
+  for (const [index, fixture] of COVERAGE_FIXTURES.entries()) {
+    const publishedAt = new Date(now - index * 60_000).toISOString();
+    const githubJson = fixture.github ? JSON.stringify(fixture.github) : null;
+
+    await insertItem.run(
+      fixture.id,
+      SOURCE_ID,
+      fixture.kind,
+      fixture.title,
+      `https://example.test/coverage/${fixture.id}`,
+      `${fixture.title} fixture for the coverage browser check.`,
+      publishedAt,
+      nowIso,
+      fixture.thumbnailUrl,
+      fixture.videoId,
+      `external-${fixture.id}`,
+      githubJson,
+      `hash-${fixture.id}`,
+      publishedAt,
+      nowIso,
+    );
+    await insertLink.run(
+      fixture.id,
+      COVERAGE_MODEL_ID,
+      fixture.relation,
+      fixture.reason,
+      publishedAt,
+      nowIso,
+      publishedAt,
+    );
+  }
 }
 
 async function assertTheme(page, theme) {
@@ -500,6 +641,172 @@ async function reactionJourney(page, baseUrl) {
 
     return button?.getAttribute("aria-pressed") === "true";
   });
+}
+
+function coverageSection(page) {
+  return page
+    .getByRole("heading", { level: 2, name: "Coverage", exact: true })
+    .locator("xpath=ancestor::section[1]");
+}
+
+async function coverageJourney(page, baseUrl, theme) {
+  const valid = COVERAGE_FIXTURES[0];
+  const invalid = COVERAGE_FIXTURES[1];
+  const fallback = COVERAGE_FIXTURES[2];
+  const repository = COVERAGE_FIXTURES[3];
+  const older = COVERAGE_FIXTURES[6];
+  const displayed = COVERAGE_FIXTURES.slice(0, 6);
+
+  for (const viewport of [MOBILE, DESKTOP]) {
+    await page.setViewportSize(viewport);
+    await page.goto(`${baseUrl}/models/${COVERAGE_MODEL_ID}`, {
+      waitUntil: "domcontentloaded",
+    });
+
+    const section = coverageSection(page);
+
+    await section
+      .getByRole("heading", { level: 2, name: "Coverage", exact: true })
+      .waitFor();
+    await assertTheme(page, theme);
+    await assertNoHorizontalOverflow(page);
+
+    const rows = section.locator("ul > li");
+
+    assert.equal(
+      await rows.count(),
+      6,
+      "the model page renders exactly six coverage rows",
+    );
+    assert.equal(
+      await section.getByText(older.title, { exact: true }).count(),
+      0,
+      "the seventh, older item is outside the limit",
+    );
+    assert.equal(
+      await section.getByText("Benchmark", { exact: true }).count(),
+      0,
+      "relation counts describe displayed rows, not all linked pieces",
+    );
+    await section
+      .getByText(/Showing the newest 6 of 7 linked pieces\./)
+      .waitFor();
+    assert.equal(
+      await section.locator("iframe").count(),
+      0,
+      "no video iframe exists before activation",
+    );
+    assert.equal(
+      await section.locator("a a, button a, a button, button button").count(),
+      0,
+      "coverage rows do not nest interactive controls",
+    );
+
+    for (const fixture of displayed) {
+      const title = section.getByRole("link", {
+        name: fixture.title,
+        exact: true,
+      });
+
+      assert.equal(await title.count(), 1, `${fixture.title} has one title link`);
+      assert.equal(await title.getAttribute("href"), `/signal/${fixture.id}`);
+    }
+
+    const storedStyle = await rows
+      .filter({ hasText: valid.title })
+      .locator('span[style*="background-image"]')
+      .first()
+      .getAttribute("style");
+    const fallbackStyle = await rows
+      .filter({ hasText: fallback.title })
+      .locator('span[style*="background-image"]')
+      .first()
+      .getAttribute("style");
+    const repoStyle = await rows
+      .filter({ hasText: repository.title })
+      .locator('span[style*="background-image"]')
+      .first()
+      .getAttribute("style");
+
+    assert.match(storedStyle ?? "", /\/images\/og\.png/);
+    assert.match(fallbackStyle ?? "", /thumb/);
+    assert.match(repoStyle ?? "", /\/images\/icon-192\.png/);
+
+    const invalidRow = rows.filter({ hasText: invalid.title });
+
+    assert.equal(
+      await invalidRow.getByRole("button").count(),
+      0,
+      "an invalid video id has no play trigger",
+    );
+    assert.equal(
+      await invalidRow
+        .getByRole("link", { name: `Open ${invalid.title}` })
+        .getAttribute("href"),
+      `/signal/${invalid.id}`,
+    );
+
+    const trigger = rows
+      .filter({ hasText: valid.title })
+      .getByRole("button", { name: `Play ${valid.title}` });
+
+    await trigger.waitFor({ state: "visible" });
+
+    if (viewport.width === MOBILE.width) {
+      await trigger.click();
+    } else {
+      await trigger.focus();
+      await page.keyboard.press("Enter");
+    }
+
+    const dialog = page.getByRole("dialog", { name: valid.title });
+
+    await dialog.waitFor({ state: "visible" });
+    assert.equal(await dialog.locator("iframe").count(), 1);
+    await page.keyboard.press("Escape");
+    await dialog.waitFor({ state: "hidden" });
+    await page.waitForFunction(
+      (title) =>
+        document.activeElement?.getAttribute("aria-label") === `Play ${title}`,
+      valid.title,
+    );
+
+    if (viewport.width === MOBILE.width) {
+      await rows
+        .filter({ hasText: fallback.title })
+        .getByRole("link", { name: `Open ${fallback.title}` })
+        .click();
+      await page.waitForURL(`**/signal/${fallback.id}`, { timeout: 15_000 });
+      await page.goBack({ waitUntil: "domcontentloaded" });
+      await page
+        .getByRole("heading", { level: 2, name: "Coverage", exact: true })
+        .waitFor();
+    }
+
+    await page.goto(`${baseUrl}/models/${COVERAGE_EMPTY_MODEL_ID}`, {
+      waitUntil: "domcontentloaded",
+    });
+
+    const emptySection = coverageSection(page);
+
+    await emptySection.getByText(/No coverage yet\./).waitFor();
+    assert.equal(await emptySection.locator("ul > li").count(), 0);
+    assert.equal(
+      await emptySection.getByText(/Showing the newest/).count(),
+      0,
+      "an empty model does not show a total message",
+    );
+
+    const emptyWidth = await emptySection.evaluate((element) => ({
+      client: element.clientWidth,
+      scroll: element.scrollWidth,
+    }));
+
+    assert.ok(
+      emptyWidth.scroll <= emptyWidth.client + 1,
+      `the empty coverage section overflows by ${emptyWidth.scroll - emptyWidth.client}px`,
+    );
+  }
 }
 
 async function catalogJourney(page, baseUrl) {
@@ -941,6 +1248,11 @@ async function runTheme(browser, baseUrl, theme, account) {
     });
     completed.push("catalog filter and Back");
 
+    await journey(theme, "model coverage rows and empty state", page, errors, async () => {
+      await coverageJourney(page, baseUrl, theme);
+    });
+    completed.push("model coverage rows and empty state");
+
     return { theme, completed };
   } finally {
     await context.close();
@@ -1014,6 +1326,7 @@ async function main() {
       );
 
       await seedContent(database, commenter.id);
+      await seedCoverage(database);
 
       accounts = [
         {

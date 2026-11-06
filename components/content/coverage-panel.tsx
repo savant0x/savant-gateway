@@ -3,6 +3,7 @@ import type { Coverage } from "@/lib/content/types";
 
 import Link from "next/link";
 
+import { ContentMedia } from "@/components/content/content-media";
 import { WatchButton } from "@/components/content/watch-button";
 import { contentDate, relationLabel } from "@/lib/content/format";
 import { CONTENT_RELATIONS } from "@/lib/content/types";
@@ -64,22 +65,40 @@ export function CoveragePanel({
 
           <ul className="mt-4 divide-y divide-black/10 dark:divide-white/10">
             {coverage.items.map((item) => (
-              <li key={item.id} className="py-3 first:pt-0 last:pb-0">
-                <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted">
-                  <span className="rounded-full bg-accent/10 px-2 py-0.5 text-accent">
-                    {relationLabel(item.relation)}
-                  </span>
-                  <span>{item.sourceLabel}</span>
-                  <span aria-hidden>·</span>
-                  <span>{contentDate(item.publishedAt)}</span>
+              <li key={item.id} className="py-4 first:pt-0 last:pb-0">
+                <div className="flex min-w-0 gap-3 sm:gap-4">
+                  <div className="w-24 shrink-0 sm:w-40">
+                    <ContentMedia
+                      itemId={item.id}
+                      sourceLabel={item.sourceLabel}
+                      thumbnailUrl={
+                        item.thumbnailUrl ?? item.github?.ogImageUrl ?? null
+                      }
+                      title={item.title}
+                      variant="row"
+                      videoId={item.videoId}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted">
+                      <span className="rounded-full bg-accent/10 px-2 py-0.5 text-accent">
+                        {relationLabel(item.relation)}
+                      </span>
+                      <span>{item.sourceLabel}</span>
+                      <span aria-hidden>·</span>
+                      <span>{contentDate(item.publishedAt)}</span>
+                    </div>
+                    <Link
+                      className="mt-1 block text-sm font-medium underline-offset-4 hover:underline"
+                      href={`/signal/${item.id}`}
+                    >
+                      {item.title}
+                    </Link>
+                    <p className="mt-1 text-[11px] leading-5 text-muted">
+                      {item.reason}
+                    </p>
+                  </div>
                 </div>
-                <Link
-                  className="mt-1 block text-sm font-medium underline-offset-4 hover:underline"
-                  href={`/signal/${item.id}`}
-                >
-                  {item.title}
-                </Link>
-                <p className="mt-1 text-[11px] text-muted">{item.reason}</p>
               </li>
             ))}
           </ul>

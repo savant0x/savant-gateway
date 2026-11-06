@@ -23,12 +23,14 @@ export function ContentMedia({
   videoId,
   thumbnailUrl,
   sourceLabel,
+  variant = "card",
 }: {
   itemId: string;
   title: string;
   videoId: string | null;
   thumbnailUrl: string | null;
   sourceLabel: string;
+  variant?: "card" | "row";
 }) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -66,10 +68,13 @@ export function ContentMedia({
   }, [close, open]);
 
   const imageUrl = thumbnailUrl || SIGNAL_FALLBACK_IMAGE;
+  const row = variant === "row";
   const media = (
     <span
       aria-hidden
-      className="relative block h-36 w-full overflow-hidden bg-neutral-900"
+      className={`relative block w-full overflow-hidden bg-neutral-900 ${
+        row ? "aspect-video rounded-lg" : "h-36"
+      }`}
       style={{
         backgroundImage: `url(${imageUrl})`,
         backgroundPosition: "center",
@@ -77,15 +82,21 @@ export function ContentMedia({
       }}
     >
       <span className="absolute inset-0 bg-black/10 transition-colors group-hover:bg-black/25" />
-      {sourceLabel ? (
+      {sourceLabel && !row ? (
         <span className="absolute left-2.5 top-2.5 z-10 max-w-[75%] truncate rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-white/90 backdrop-blur-sm">
           {sourceLabel}
         </span>
       ) : null}
-      {videoId ? (
+      {embed ? (
         <span className="absolute inset-0 flex items-center justify-center bg-black/20 transition-colors group-hover:bg-black/35">
           <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/70 text-white shadow-lg">
-            <span className="ml-1 block h-0 w-0 border-y-[7px] border-l-[12px] border-y-transparent border-l-white" />
+            <span
+              className={`ml-1 block h-0 w-0 border-y-transparent border-l-white ${
+                row
+                  ? "border-y-[5px] border-l-[9px]"
+                  : "border-y-[7px] border-l-[12px]"
+              }`}
+            />
           </span>
         </span>
       ) : null}

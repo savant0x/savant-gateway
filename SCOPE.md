@@ -1,5 +1,30 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-06 (model coverage visual rows: 001)
+
+Operator requested a FID and handoff for visual coverage on model pages, then
+asked for the Perfection Loop, registration and implementation. Automation
+level 3; strict; single agent.
+
+- [x] **MC1 — Converge FID-2026-1106-001.** Reused the existing validated media
+  player with an optional row variant; kept media and title as separate
+  interactive elements; preserved the six-row limit, metadata and counts over
+  displayed rows. Three measured convergence passes changed 6,575 → 11,169
+  bytes (+13.66%, +20.86%, +23.66%). All exceeded the 10% cap because the draft
+  lacked the required evidence and test contract; the FID discloses the
+  deviation. Focused `tests/content-format.test.mjs` passed 6/6.
+- [x] **MC2 — Implement and record browser evidence.** Added the optional
+  `ContentMedia` row variant, six visual coverage rows with stored → GitHub →
+  Signal fallback image precedence, and a seven-link mixed fixture plus empty
+  free-model route. `npm run test:browser` passed 14/14 journeys on build
+  `tkJp85sx5BXKQNoi4rlas`; focused tests 7/7; `npm run verify` passed 12/12
+  gates, 1,124 tests, PostgreSQL 20/20, 758 HTTP plus trial, recovery 15/15,
+  176.6 s. Implementation commit `95ed201`; closure is recorded below.
+- [x] **MC3 — Commit and close.** Implementation commit `95ed201`; the FID moved
+  to `archive/` as `closed` with the measured receipt, the register moved to
+  12 active / 176 archived / 188 allocated, and the changelog plus current
+  status page now carry the implementation evidence.
+
 ## Session — 2026-11-06 (Pelican visual-builds implementation: 013A)
 
 Operator granted automation level 3 for the accepted roadmap and instructed the

@@ -1,8 +1,8 @@
 # FID register
 
-**Last folder audit:** 2026-11-06 (FID-013 closure). This page indexes the
+**Last folder audit:** 2026-11-06 (FID-001 closure). This page indexes the
 working set; each FID owns its own status, evidence and resolution. Current
-counts: 12 active / 20 slots, 175 archived, 187 allocated.
+counts: 12 active / 20 slots, 176 archived, 188 allocated.
 
 ## Layout
 
@@ -32,15 +32,19 @@ counts: 12 active / 20 slots, 175 archived, 187 allocated.
 
 ### 2026-11-06 register audit
 
+- FID-2026-1106-001 closed at implementation commit `95ed201` and moved to
+  `archive/`. The current count is 12 active records, 176 archived, 188
+  allocated. Its convergence reconstruction exceeded the 10% per-pass cap in
+  all three passes; the record discloses the measured deltas.
 - FID-2026-1104-013 closed and moved to `archive/` at implementation commit
-  `de4dfbc`. The current count is 12 active records, 175 archived, 187
-  allocated; no active record is unlisted, split or duplicated.
+  `de4dfbc`. At that point the count was 12 active records, 175 archived, 187
+  allocated; no active record was unlisted, split or duplicated.
 - At the 2026-11-05 audit, 13 active records matched the 13 table rows; 174
   records were archived, for 187 allocated FIDs.
 - Every filename matches its `**ID:**` field. Three archived 2026-10-31 records
   (077–079) predated that metadata field and now carry it; their status,
   resolution and evidence text is unchanged.
-- `npm run repository:check` passes: 15 active FIDs, closure commit references,
+- `npm run repository:check` passes: 12 active FIDs, closure commit references,
   root links and current-doc links are consistent.
 - 005–008 are closed and archived after implementation. 005 and 006 landed in
   `59341a4`; 007 landed in `0a74353`; the master closed with all three children.
@@ -58,6 +62,16 @@ counts: 12 active / 20 slots, 175 archived, 187 allocated.
 - The 2026-11-04 note's `8/20` count was accurate at that point; four content
   records (015–018) were added afterwards. With 009 archived, the current count
   is 12/20.
+
+### Closed in the 2026-11-06 model coverage implementation
+
+[2026-1106-001](archive/FID-2026-1106-001-model-coverage-thumbnails.md) is
+`closed` at implementation commit `95ed201`. Model pages render up to six
+compact coverage rows with stored → GitHub → Signal fallback images, validated
+video playback and separate title links. `npm run verify` passed 12/12 gates
+with 1,124/1,124 tests, PostgreSQL 20/20, 758 main HTTP checks plus trial and
+recovery 15/15; the separate full browser matrix passed 14/14 journeys. No live
+payment, funded inference or deployment is claimed.
 
 ### Closed in the 2026-11-06 visual-builds implementation
 

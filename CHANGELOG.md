@@ -3,6 +3,28 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-06 — Visual model coverage rows (001)
+
+- **FID-2026-1106-001 — low —** model pages now render up to six compact
+  coverage rows using the existing validated `ContentMedia` player through an
+  optional row variant. Rows show the stored thumbnail, then the GitHub OG
+  image, then the shared Signal fallback; valid videos open the existing modal
+  on activation, while invalid video ids and every row title link to
+  `/signal/{id}`. Source, date, relation, matching reason, newest-first order,
+  the six-row limit and display-scoped relation counts are preserved. No iframe
+  is created before activation and the media trigger and title link remain
+  separate controls.
+- **Verification:** `npm run verify` PASS — 12/12 gates, 1,124/1,124 tests with
+  zero skips, PostgreSQL 20/20, 758 main HTTP checks plus the trial suite,
+  recovery 15/15, quality 687 files, build PASS and 176.6 s. The separate full
+  browser matrix passes 14/14 journeys in both themes at 390 and 1280 widths,
+  covering pointer and keyboard playback, Escape/focus return, fallback images,
+  invalid ids, the six-row limit, the empty free-model route and the existing
+  Signal player regression. Implementation commit `95ed201`.
+- **Not claimed:** no live payment, funded inference or deployment. The empty
+  free-model page retains a pre-existing, unrelated allocation-code overflow at
+  390px; the new empty Coverage section itself is width-clean.
+
 ## 2026-11-06 — Pelican and OpenRouter visual builds (013A/013B)
 
 - **FID-2026-1104-013A — medium —** added the Pelican-first visual-build

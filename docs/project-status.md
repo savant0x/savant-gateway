@@ -30,6 +30,15 @@ the trial suite, recovery 15/15, quality 687 files, build PASS and 177.7 s.
 gate hardening). No real source publication, funded inference, payment or
 deployment is claimed.
 
+## Verification — 2026-11-06 (FID-001 closure)
+
+`npm run verify` PASS on the model-coverage tree — 12/12 gates, 1,124/1,124
+tests with zero skips, mandatory PostgreSQL 20/20, 758 main HTTP checks plus the
+trial suite, recovery 15/15, quality 687 files, build PASS and 176.6 s. The
+separate full browser matrix passes 14/14 journeys in both themes at 390 and
+1280 widths. Implementation commit `95ed201`. No live payment, funded inference
+or deployment is claimed.
+
 ## Verification — 2026-11-05 (FID-009 closure)
 
 Measured locally on Windows x64 with Node 24.21.0. The closure run is based on
@@ -110,7 +119,10 @@ FID-2026-1104-009 closed on 2026-11-05 at `0052734` with the 12/12 browser
 receipt above. FID-2026-1104-013 closed on 2026-11-06 at `de4dfbc`: the browser
 journey, mandatory PostgreSQL store wiring, showcase recovery assertions and
 OpenRouter fixture are present and verified. The operator approved the MIT
-source use; no external rights blocker remains.
+source use; no external rights blocker remains. FID-2026-1106-001 closed on
+2026-11-06 at `95ed201`: model pages now render six compact coverage rows with
+validated playback, fallback images and separate detail links; the full browser
+matrix passes 14/14 and the gate set passes 12/12.
 
 FID-127 remains active because the operator receipt does not exist yet. The
 dated receipts in [the 2026-10-31 record](project-status-2026-10-31.md) remain

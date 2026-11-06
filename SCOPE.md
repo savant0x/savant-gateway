@@ -1,5 +1,30 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-05 (policy read, route retries and load baseline: 012)
+
+Operator granted automation level 3 for the accepted roadmap. The bounded load
+preflight exposed a real operator-route defect; this session fixes it, adds
+route-level retry coverage and records the candidate load measurement. No real
+provider request, funded inference, live payment or deployment is performed.
+
+- [x] **RH1 — Resolve the policy summary.** Awaited `getAllocationSummary` in
+  both `/api/admin/gateway` responses and added HTTP assertions for the resolved
+  object, numeric pool, allocation basis, account cap and capacity state.
+- [x] **RH2 — Prove in-flight retries.** Seeded claimed payment events and
+  delivered signed Stripe and NOWPayments payloads. Both return 409 with
+  `Retry-After: 30`; credit, top-up status and ledger counts are unchanged.
+- [x] **RH3 — Bound the gap honestly.** The route's event-row lock prevents a
+  reachable lost-owner HTTP interleaving; that branch remains covered by the
+  existing two-connection payment test. The checkout route remains policy-gated
+  off, so no checkout-versus-grant route test is claimed.
+- [x] **RH4 — Measure the candidate load baseline.** PASS, 123/123 checks on
+  `efd8cb5`: 118.44 steady rps, p95 175.36 ms, p99 188.50 ms, peak RSS 225.7 MB,
+  zero ledger difference, five expected quarantines. Candidate envelope only;
+  operator approval and hosted acceptance remain open.
+- [x] **RH5 — Verify and close.** `npm run verify` PASS (11/11 gates, 1,100 tests,
+  PostgreSQL 2/2, 736 HTTP checks plus trial, recovery 14/14, 148.7 s). FID-012
+  archived with the load receipt and audit.
+
 ## Session — 2026-11-05 (customer and offering economics implementation: 007–008)
 
 Operator accepted the full recommendation and granted automation level 3. This

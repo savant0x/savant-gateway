@@ -1,0 +1,1460 @@
+{
+  "kind": "savant-load-acceptance",
+  "generatedAt": "2026-11-06T03:00:07.414Z",
+  "commit": "efd8cb5db6744b99c763d6444504e3fa24657a9d",
+  "node": "v24.21.0",
+  "platform": "win32/x64",
+  "artifact": {
+    "buildId": "IAM3O7lEMQpsmxODr2pu4",
+    "storage": "PostgreSQL, disposable database",
+    "databasePath": "disposable PostgreSQL endpoint",
+    "databaseBytes": 12727987,
+    "envelope": "config/load-envelope.json",
+    "envelopeStatus": "candidate",
+    "operatorApproval": {
+      "approved": false,
+      "by": null,
+      "at": null,
+      "note": "Candidate envelope measured on a disposable production build. The operator accepted the targets on 2026-11-01; the PostgreSQL rerun, production-equivalent host measurement and release approval remain FID-2026-1030-060-LIVE."
+    },
+    "approvalProblem": "The load envelope has no dated operator approval; this run is a local measurement, not accepted production capacity."
+  },
+  "configuration": {
+    "providerRpm": 6000,
+    "providerConcurrency": 8,
+    "upstreamDelayMs": 25,
+    "completionBodyBytes": 2097152,
+    "streamBytes": 33554432,
+    "offeredCallBudget": 387,
+    "maxOfferedCalls": 500,
+    "effectiveFreePoolPolicy": {
+      "enabled": true,
+      "dailyPoolTokens": 20000000,
+      "allocationBps": 9000,
+      "accountDailyCapTokens": 100000,
+      "effectivePerAccountTokens": 100000,
+      "observedDailyWeightedTokens": 20000000
+    }
+  },
+  "workload": {
+    "ramp": {
+      "levels": [
+        1,
+        2,
+        4,
+        8,
+        16
+      ],
+      "requestsPerLevel": 24
+    },
+    "steady": {
+      "concurrency": 8,
+      "requests": 120
+    },
+    "burst": {
+      "concurrency": 24,
+      "requests": 48
+    },
+    "streams": {
+      "concurrency": 6,
+      "long": 16,
+      "cancelled": 8,
+      "frames": 12,
+      "frameDelayMs": 10
+    },
+    "mixedBilling": {
+      "concurrency": 6,
+      "free": 12,
+      "paid": 12
+    },
+    "reservations": {
+      "concurrency": 16,
+      "requests": 16,
+      "creditMicros": 500,
+      "maxTokens": 64
+    },
+    "keyChurn": {
+      "attempts": 12
+    },
+    "faults": {
+      "repeats": 2
+    },
+    "drain": {
+      "streams": 4,
+      "frames": 20,
+      "frameDelayMs": 20
+    },
+    "crash": {
+      "inFlight": 4
+    },
+    "storageFailure": {
+      "requests": 1
+    }
+  },
+  "resources": {
+    "peakRssMb": 225.7,
+    "databaseBytes": 12727987
+  },
+  "results": {
+    "ramp": [
+      {
+        "label": "ramp-1",
+        "offered": 24,
+        "statuses": {
+          "200": 24
+        },
+        "unexpected": 0,
+        "unexpectedExamples": [],
+        "p50Ms": 16.04,
+        "p95Ms": 154.9,
+        "p99Ms": 165.06,
+        "maxLatencyMs": 165,
+        "dispatched": 24,
+        "refused": 0,
+        "admittedBps": 10000,
+        "usageDelta": 24,
+        "settlementDelta": 24,
+        "unresolvedDelta": 0,
+        "holdDelta": 0,
+        "settled": true,
+        "unexpectedDetails": [],
+        "wallMs": 937,
+        "rps": 25.62,
+        "level": 1,
+        "saturation": false,
+        "providerRefusalScopes": [],
+        "honestSaturation": true
+      },
+      {
+        "label": "ramp-2",
+        "offered": 24,
+        "statuses": {
+          "200": 24
+        },
+        "unexpected": 0,
+        "unexpectedExamples": [],
+        "p50Ms": 14.45,
+        "p95Ms": 162.8,
+        "p99Ms": 165.71,
+        "maxLatencyMs": 166,
+        "dispatched": 24,
+        "refused": 0,
+        "admittedBps": 10000,
+        "usageDelta": 24,
+        "settlementDelta": 24,
+        "unresolvedDelta": 0,
+        "holdDelta": 0,
+        "settled": true,
+        "unexpectedDetails": [],
+        "wallMs": 497,
+        "rps": 48.27,
+        "level": 2,
+        "saturation": false,
+        "providerRefusalScopes": [],
+        "honestSaturation": true
+      },
+      {
+        "label": "ramp-4",
+        "offered": 24,
+        "statuses": {
+          "200": 24
+        },
+        "unexpected": 0,
+        "unexpectedExamples": [],
+        "p50Ms": 15.36,
+        "p95Ms": 218.87,
+        "p99Ms": 220.22,
+        "maxLatencyMs": 220,
+        "dispatched": 24,
+        "refused": 0,
+        "admittedBps": 10000,
+        "usageDelta": 24,
+        "settlementDelta": 24,
+        "unresolvedDelta": 0,
+        "holdDelta": 0,
+        "settled": true,
+        "unexpectedDetails": [],
+        "wallMs": 283,
+        "rps": 84.84,
+        "level": 4,
+        "saturation": false,
+        "providerRefusalScopes": [],
+        "honestSaturation": true
+      },
+      {
+        "label": "ramp-8",
+        "offered": 24,
+        "statuses": {
+          "200": 24
+        },
+        "unexpected": 0,
+        "unexpectedExamples": [],
+        "p50Ms": 31.46,
+        "p95Ms": 191.71,
+        "p99Ms": 194.91,
+        "maxLatencyMs": 195,
+        "dispatched": 24,
+        "refused": 0,
+        "admittedBps": 10000,
+        "usageDelta": 24,
+        "settlementDelta": 24,
+        "unresolvedDelta": 0,
+        "holdDelta": 0,
+        "settled": true,
+        "unexpectedDetails": [],
+        "wallMs": 247,
+        "rps": 97.09,
+        "level": 8,
+        "saturation": false,
+        "providerRefusalScopes": [],
+        "honestSaturation": true
+      },
+      {
+        "label": "ramp-16",
+        "offered": 24,
+        "statuses": {
+          "200": 17,
+          "429": 7
+        },
+        "unexpected": 0,
+        "unexpectedExamples": [],
+        "p50Ms": 174.43,
+        "p95Ms": 196.27,
+        "p99Ms": 210.08,
+        "maxLatencyMs": 210,
+        "dispatched": 17,
+        "refused": 7,
+        "admittedBps": 7083,
+        "usageDelta": 17,
+        "settlementDelta": 17,
+        "unresolvedDelta": 0,
+        "holdDelta": 0,
+        "settled": true,
+        "unexpectedDetails": [],
+        "wallMs": 219,
+        "rps": 77.63,
+        "level": 16,
+        "saturation": true,
+        "providerRefusalScopes": [
+          "provider"
+        ],
+        "honestSaturation": true
+      }
+    ],
+    "steady": {
+      "label": "steady",
+      "offered": 120,
+      "statuses": {
+        "200": 120
+      },
+      "unexpected": 0,
+      "unexpectedExamples": [],
+      "p50Ms": 29.96,
+      "p95Ms": 175.36,
+      "p99Ms": 188.5,
+      "maxLatencyMs": 189,
+      "dispatched": 120,
+      "refused": 0,
+      "admittedBps": 10000,
+      "usageDelta": 120,
+      "settlementDelta": 120,
+      "unresolvedDelta": 0,
+      "holdDelta": 0,
+      "settled": true,
+      "unexpectedDetails": [],
+      "wallMs": 1013,
+      "rps": 118.44
+    },
+    "burst": {
+      "label": "burst",
+      "offered": 48,
+      "statuses": {
+        "200": 19,
+        "429": 29
+      },
+      "unexpected": 0,
+      "unexpectedExamples": [],
+      "p50Ms": 94.59,
+      "p95Ms": 225.4,
+      "p99Ms": 233.05,
+      "maxLatencyMs": 233,
+      "dispatched": 19,
+      "refused": 29,
+      "admittedBps": 3958,
+      "usageDelta": 19,
+      "settlementDelta": 19,
+      "unresolvedDelta": 0,
+      "holdDelta": 0,
+      "settled": true,
+      "unexpectedDetails": [],
+      "wallMs": 295,
+      "rps": 64.46,
+      "providerRefusalScopes": [
+        "provider"
+      ],
+      "honestShedding": true
+    },
+    "streams": {
+      "long": {
+        "label": "streams-long",
+        "offered": 16,
+        "statuses": {
+          "200": 16
+        },
+        "unexpected": 0,
+        "unexpectedExamples": [],
+        "p50Ms": 458.14,
+        "p95Ms": 492.57,
+        "p99Ms": 492.57,
+        "maxLatencyMs": 493,
+        "dispatched": 16,
+        "refused": 0,
+        "admittedBps": 10000,
+        "usageDelta": 16,
+        "settlementDelta": 16,
+        "unresolvedDelta": 0,
+        "holdDelta": 0,
+        "settled": true,
+        "unexpectedDetails": [],
+        "wallMs": 1284,
+        "rps": 12.47,
+        "allCompleted": true
+      },
+      "cancelled": {
+        "label": "streams-cancelled",
+        "offered": 8,
+        "statuses": {
+          "200": 8
+        },
+        "unexpected": 0,
+        "unexpectedExamples": [],
+        "p50Ms": 24.18,
+        "p95Ms": 166.56,
+        "p99Ms": 166.56,
+        "maxLatencyMs": 167,
+        "dispatched": 8,
+        "refused": 0,
+        "admittedBps": 10000,
+        "usageDelta": 8,
+        "settlementDelta": 8,
+        "unresolvedDelta": 0,
+        "holdDelta": 0,
+        "settled": true,
+        "unexpectedDetails": [],
+        "wallMs": 189,
+        "rps": 42.28,
+        "allCancelled": true,
+        "cancelledUsage": 8
+      }
+    },
+    "mixedBilling": {
+      "label": "mixed-billing",
+      "offered": 24,
+      "statuses": {
+        "200": 24
+      },
+      "unexpected": 0,
+      "unexpectedExamples": [],
+      "p50Ms": 59.78,
+      "p95Ms": 203.38,
+      "p99Ms": 204.67,
+      "maxLatencyMs": 205,
+      "dispatched": 24,
+      "refused": 0,
+      "admittedBps": 10000,
+      "usageDelta": 24,
+      "settlementDelta": 24,
+      "unresolvedDelta": 0,
+      "holdDelta": 0,
+      "settled": true,
+      "unexpectedDetails": [],
+      "wallMs": 466,
+      "rps": 51.47,
+      "billingSources": {
+        "free": 12,
+        "credit": 12
+      },
+      "freeChargedMicros": 0
+    },
+    "reservations": {
+      "label": "competing-reservations",
+      "offered": 16,
+      "statuses": {
+        "200": 2,
+        "402": 14
+      },
+      "unexpected": 0,
+      "unexpectedExamples": [],
+      "p50Ms": 29.37,
+      "p95Ms": 156.51,
+      "p99Ms": 156.51,
+      "maxLatencyMs": 157,
+      "dispatched": 2,
+      "refused": 14,
+      "admittedBps": 1250,
+      "usageDelta": 2,
+      "settlementDelta": 2,
+      "unresolvedDelta": 0,
+      "holdDelta": 0,
+      "settled": true,
+      "unexpectedDetails": [],
+      "wallMs": 182,
+      "rps": 10.99,
+      "concurrency": 8,
+      "account": {
+        "credit_micros": 100,
+        "held_micros": 0
+      },
+      "activeHolds": 0,
+      "noOverAdmission": true,
+      "noOverdraft": true
+    },
+    "keyChurn": {
+      "label": "key-churn",
+      "offered": 12,
+      "created": 9,
+      "refused": 3,
+      "unexpected": 0,
+      "revoked": 9,
+      "activeAfterRevoke": 1
+    },
+    "faults": [
+      {
+        "name": "provider-429",
+        "attempt": 1,
+        "status": 429,
+        "expectedStatus": 429,
+        "statusOk": true,
+        "dispatched": 1,
+        "settled": true,
+        "usageStatus": "error",
+        "usageOk": true,
+        "chargedMicros": 0,
+        "noCharge": true,
+        "chargeOk": true,
+        "completed": null,
+        "transportError": null,
+        "latencyMs": 24,
+        "latencyOk": true,
+        "completedOk": true
+      },
+      {
+        "name": "provider-429",
+        "attempt": 2,
+        "status": 429,
+        "expectedStatus": 429,
+        "statusOk": true,
+        "dispatched": 1,
+        "settled": true,
+        "usageStatus": "error",
+        "usageOk": true,
+        "chargedMicros": 0,
+        "noCharge": true,
+        "chargeOk": true,
+        "completed": null,
+        "transportError": null,
+        "latencyMs": 31,
+        "latencyOk": true,
+        "completedOk": true
+      },
+      {
+        "name": "provider-500",
+        "attempt": 1,
+        "status": 502,
+        "expectedStatus": 502,
+        "statusOk": true,
+        "dispatched": 1,
+        "settled": true,
+        "usageStatus": "error",
+        "usageOk": true,
+        "chargedMicros": 0,
+        "noCharge": true,
+        "chargeOk": true,
+        "completed": null,
+        "transportError": null,
+        "latencyMs": 31,
+        "latencyOk": true,
+        "completedOk": true
+      },
+      {
+        "name": "provider-500",
+        "attempt": 2,
+        "status": 502,
+        "expectedStatus": 502,
+        "statusOk": true,
+        "dispatched": 1,
+        "settled": true,
+        "usageStatus": "error",
+        "usageOk": true,
+        "chargedMicros": 0,
+        "noCharge": true,
+        "chargeOk": true,
+        "completed": null,
+        "transportError": null,
+        "latencyMs": 13,
+        "latencyOk": true,
+        "completedOk": true
+      },
+      {
+        "name": "malformed-json",
+        "attempt": 1,
+        "status": 502,
+        "expectedStatus": 502,
+        "statusOk": true,
+        "dispatched": 1,
+        "settled": true,
+        "usageStatus": "error",
+        "usageOk": true,
+        "chargedMicros": 0,
+        "noCharge": true,
+        "chargeOk": true,
+        "completed": null,
+        "transportError": null,
+        "latencyMs": 13,
+        "latencyOk": true,
+        "completedOk": true
+      },
+      {
+        "name": "malformed-json",
+        "attempt": 2,
+        "status": 502,
+        "expectedStatus": 502,
+        "statusOk": true,
+        "dispatched": 1,
+        "settled": true,
+        "usageStatus": "error",
+        "usageOk": true,
+        "chargedMicros": 0,
+        "noCharge": true,
+        "chargeOk": true,
+        "completed": null,
+        "transportError": null,
+        "latencyMs": 13,
+        "latencyOk": true,
+        "completedOk": true
+      },
+      {
+        "name": "provider-disconnect",
+        "attempt": 1,
+        "status": 502,
+        "expectedStatus": 502,
+        "statusOk": true,
+        "dispatched": 1,
+        "settled": true,
+        "usageStatus": "error",
+        "usageOk": true,
+        "chargedMicros": 0,
+        "noCharge": true,
+        "chargeOk": true,
+        "completed": null,
+        "transportError": null,
+        "latencyMs": 11,
+        "latencyOk": true,
+        "completedOk": true
+      },
+      {
+        "name": "provider-disconnect",
+        "attempt": 2,
+        "status": 502,
+        "expectedStatus": 502,
+        "statusOk": true,
+        "dispatched": 1,
+        "settled": true,
+        "usageStatus": "error",
+        "usageOk": true,
+        "chargedMicros": 0,
+        "noCharge": true,
+        "chargeOk": true,
+        "completed": null,
+        "transportError": null,
+        "latencyMs": 11,
+        "latencyOk": true,
+        "completedOk": true
+      },
+      {
+        "name": "provider-slow",
+        "attempt": 1,
+        "status": 200,
+        "expectedStatus": 200,
+        "statusOk": true,
+        "dispatched": 1,
+        "settled": true,
+        "usageStatus": "ok",
+        "usageOk": true,
+        "chargedMicros": 200,
+        "noCharge": false,
+        "chargeOk": false,
+        "completed": null,
+        "transportError": null,
+        "latencyMs": 273,
+        "latencyOk": true,
+        "completedOk": true
+      },
+      {
+        "name": "provider-slow",
+        "attempt": 2,
+        "status": 200,
+        "expectedStatus": 200,
+        "statusOk": true,
+        "dispatched": 1,
+        "settled": true,
+        "usageStatus": "ok",
+        "usageOk": true,
+        "chargedMicros": 200,
+        "noCharge": false,
+        "chargeOk": false,
+        "completed": null,
+        "transportError": null,
+        "latencyMs": 424,
+        "latencyOk": true,
+        "completedOk": true
+      },
+      {
+        "name": "truncated-stream",
+        "attempt": 1,
+        "status": 200,
+        "expectedStatus": 200,
+        "statusOk": true,
+        "dispatched": 1,
+        "settled": true,
+        "usageStatus": "error",
+        "usageOk": true,
+        "chargedMicros": 200,
+        "noCharge": false,
+        "chargeOk": true,
+        "completed": false,
+        "transportError": "terminated",
+        "latencyMs": 66,
+        "latencyOk": true,
+        "completedOk": true
+      },
+      {
+        "name": "truncated-stream",
+        "attempt": 2,
+        "status": 200,
+        "expectedStatus": 200,
+        "statusOk": true,
+        "dispatched": 1,
+        "settled": true,
+        "usageStatus": "error",
+        "usageOk": true,
+        "chargedMicros": 200,
+        "noCharge": false,
+        "chargeOk": true,
+        "completed": false,
+        "transportError": "terminated",
+        "latencyMs": 182,
+        "latencyOk": true,
+        "completedOk": true
+      }
+    ],
+    "databaseContention": {
+      "label": "database-contention",
+      "status": 200,
+      "latencyMs": 303,
+      "waitedForWriter": true,
+      "settled": true,
+      "honest": true
+    },
+    "alertFailure": {
+      "label": "alert-failure",
+      "exitCode": 1,
+      "attempts": 1,
+      "deliveryHeader": "inc_0df119d3-6db5-4ca7-8e6b-94c285cd4d38:alert:1",
+      "incident": {
+        "fingerprint": "settlement:unresolved",
+        "delivery_state": "failed",
+        "delivery_attempts": 1,
+        "last_delivery_error": "Webhook returned HTTP 500: fixture alert receiver failure"
+      },
+      "errorRedacted": true,
+      "stdoutTail": "{\n  \"at\": \"2026-11-06T03:00:03.841Z\",\n  \"admission\": \"open\",\n  \"traffic\": {\n    \"requests\": 315,\n    \"errors\": 18,\n    \"errorRateBps\": 571,\n    \"noTraffic\": false\n  },\n  \"active\": 1,\n  \"opened\": 1,\n  \"reopened\": 0,\n  \"resolved\": 0,\n  \"delivered\": 0,\n  \"failed\": 1,\n  \"unconfigured\": 0\n}",
+      "stderrTail": "operations-monitor FAIL: 1 configured alert delivery attempt(s) failed; see /admin/operations for the recorded error.",
+      "honest": true
+    },
+    "drain": {
+      "label": "drain",
+      "drainStatus": 200,
+      "refusedStatus": 503,
+      "refusedRetryAfter": "30",
+      "refusalCreatedNoFinancialRows": true,
+      "streamsCompleted": 4,
+      "streamsSettled": true,
+      "resumeStatus": 200,
+      "acceptedStatus": 200,
+      "honest": true
+    },
+    "crashRecovery": {
+      "label": "process-crash",
+      "inFlight": 4,
+      "admittedBeforeRestart": 4,
+      "holdsBeforeRestart": 4,
+      "accountBeforeRestart": {
+        "credit_micros": 1000000,
+        "held_micros": 0
+      },
+      "accountAfterCrash": {
+        "credit_micros": 1000000,
+        "held_micros": 592
+      },
+      "accountAfterQuarantine": {
+        "credit_micros": 1000000,
+        "held_micros": 592
+      },
+      "accountStatus": 200,
+      "usageBefore": 0,
+      "usageAfter": 0,
+      "quarantined": 4,
+      "quarantineRows": 4,
+      "noDoubleDebit": true,
+      "explicitQuarantine": true,
+      "honest": true
+    },
+    "storageFailure": {
+      "label": "storage-write-failure",
+      "status": 500,
+      "admitted": 1,
+      "holds": 1,
+      "usageBefore": 306,
+      "usageAfterFailure": 306,
+      "quarantined": 1,
+      "quarantineRows": 1,
+      "accountBefore": {
+        "credit_micros": 9941792,
+        "held_micros": 0
+      },
+      "accountAfter": {
+        "credit_micros": 9941792,
+        "held_micros": 149
+      },
+      "accountStatus": 200,
+      "honest": true
+    },
+    "quotaReset": {
+      "label": "quota-reset",
+      "currentStatus": 200,
+      "expiredStatus": 503,
+      "recoveredStatus": 200,
+      "freeCallStatus": 200,
+      "freeRefusalReason": null,
+      "freeMessage": null,
+      "effectiveAllowance": 100000,
+      "effectivePoolTokens": 20000000,
+      "freeBillingSource": "free",
+      "freeChargedMicros": 0,
+      "honest": true
+    }
+  },
+  "reconciliation": {
+    "users": [
+      {
+        "id": "load-crash-user",
+        "creditMicros": 1000000,
+        "ledgerMicros": 1000000,
+        "heldMicros": 592,
+        "heldRows": 0,
+        "quarantinedRows": 592
+      },
+      {
+        "id": "load-free-user",
+        "creditMicros": 0,
+        "ledgerMicros": 0,
+        "heldMicros": 0,
+        "heldRows": 0,
+        "quarantinedRows": 0
+      },
+      {
+        "id": "load-keychurn-user",
+        "creditMicros": 0,
+        "ledgerMicros": 0,
+        "heldMicros": 0,
+        "heldRows": 0,
+        "quarantinedRows": 0
+      },
+      {
+        "id": "load-paid-user",
+        "creditMicros": 9941792,
+        "ledgerMicros": 9941792,
+        "heldMicros": 149,
+        "heldRows": 0,
+        "quarantinedRows": 149
+      },
+      {
+        "id": "load-reserved-user",
+        "creditMicros": 100,
+        "ledgerMicros": 100,
+        "heldMicros": 0,
+        "heldRows": 0,
+        "quarantinedRows": 0
+      }
+    ],
+    "settlements": {
+      "admitted": 0,
+      "committed": 321,
+      "quarantined": 5
+    },
+    "usage": {
+      "total": 321,
+      "committedMismatch": 0,
+      "billingSources": {
+        "credit": 308,
+        "free": 13
+      },
+      "statuses": {
+        "cancelled": 8,
+        "error": 10,
+        "ok": 303
+      }
+    },
+    "quarantined": {
+      "total": 5,
+      "groups": [
+        {
+          "kind": "credit",
+          "status": "quarantined",
+          "total": 5
+        }
+      ]
+    },
+    "ledgerDifferenceMicros": 0,
+    "heldDifferenceMicros": 0,
+    "negativeCreditUsers": 0,
+    "integrity": "ok"
+  },
+  "verdict": {
+    "checks": [
+      {
+        "name": "ramp-1 response classification",
+        "ok": true,
+        "detail": "0 unexpected response(s)"
+      },
+      {
+        "name": "ramp-1 every dispatch settled",
+        "ok": true,
+        "detail": "24 settlement(s), 0 unresolved"
+      },
+      {
+        "name": "ramp-1 admits within the target",
+        "ok": true,
+        "detail": "10000 bps admitted"
+      },
+      {
+        "name": "ramp-1 latency target",
+        "ok": true,
+        "detail": "p95 154.9ms, p99 165.06ms"
+      },
+      {
+        "name": "ramp-2 response classification",
+        "ok": true,
+        "detail": "0 unexpected response(s)"
+      },
+      {
+        "name": "ramp-2 every dispatch settled",
+        "ok": true,
+        "detail": "24 settlement(s), 0 unresolved"
+      },
+      {
+        "name": "ramp-2 admits within the target",
+        "ok": true,
+        "detail": "10000 bps admitted"
+      },
+      {
+        "name": "ramp-2 latency target",
+        "ok": true,
+        "detail": "p95 162.8ms, p99 165.71ms"
+      },
+      {
+        "name": "ramp-4 response classification",
+        "ok": true,
+        "detail": "0 unexpected response(s)"
+      },
+      {
+        "name": "ramp-4 every dispatch settled",
+        "ok": true,
+        "detail": "24 settlement(s), 0 unresolved"
+      },
+      {
+        "name": "ramp-4 admits within the target",
+        "ok": true,
+        "detail": "10000 bps admitted"
+      },
+      {
+        "name": "ramp-4 latency target",
+        "ok": true,
+        "detail": "p95 218.87ms, p99 220.22ms"
+      },
+      {
+        "name": "ramp-8 response classification",
+        "ok": true,
+        "detail": "0 unexpected response(s)"
+      },
+      {
+        "name": "ramp-8 every dispatch settled",
+        "ok": true,
+        "detail": "24 settlement(s), 0 unresolved"
+      },
+      {
+        "name": "ramp-8 admits within the target",
+        "ok": true,
+        "detail": "10000 bps admitted"
+      },
+      {
+        "name": "ramp-8 latency target",
+        "ok": true,
+        "detail": "p95 191.71ms, p99 194.91ms"
+      },
+      {
+        "name": "ramp-16 response classification",
+        "ok": true,
+        "detail": "0 unexpected response(s)"
+      },
+      {
+        "name": "ramp-16 every dispatch settled",
+        "ok": true,
+        "detail": "17 settlement(s), 0 unresolved"
+      },
+      {
+        "name": "ramp-16 sheds honestly instead of dropping work",
+        "ok": true,
+        "detail": "17 dispatched, scopes provider"
+      },
+      {
+        "name": "steady admitted rate",
+        "ok": true,
+        "detail": "10000 bps"
+      },
+      {
+        "name": "steady throughput",
+        "ok": true,
+        "detail": "118.44 admitted rps"
+      },
+      {
+        "name": "steady latency",
+        "ok": true,
+        "detail": "p95 175.36ms, p99 188.5ms"
+      },
+      {
+        "name": "steady has no unexpected response or unresolved call",
+        "ok": true,
+        "detail": "0 unexpected, 0 unresolved"
+      },
+      {
+        "name": "burst sheds with provider 429 rather than 5xx",
+        "ok": true,
+        "detail": "0 unexpected, 29 refused"
+      },
+      {
+        "name": "burst dispatches within the serving concurrency",
+        "ok": true,
+        "detail": "19 dispatched, concurrency 8"
+      },
+      {
+        "name": "burst settlements reconcile",
+        "ok": true,
+        "detail": "19 usage / 19 dispatched"
+      },
+      {
+        "name": "long streams complete and settle",
+        "ok": true,
+        "detail": "16 dispatched, 16 settled"
+      },
+      {
+        "name": "client cancellations settle once as cancelled",
+        "ok": true,
+        "detail": "8 cancelled usage rows"
+      },
+      {
+        "name": "mixed billing admits both modes",
+        "ok": true,
+        "detail": "{\"200\":24}"
+      },
+      {
+        "name": "mixed billing records free and credit sources",
+        "ok": true,
+        "detail": "{\"free\":12,\"credit\":12}"
+      },
+      {
+        "name": "free calls never debit credit",
+        "ok": true,
+        "detail": "0 micros charged"
+      },
+      {
+        "name": "mixed billing settles every dispatch",
+        "ok": true,
+        "detail": "24 settled"
+      },
+      {
+        "name": "competing reservations cannot over-admit",
+        "ok": true,
+        "detail": "2 dispatched from 500 micros"
+      },
+      {
+        "name": "competing reservations cannot overdraw",
+        "ok": true,
+        "detail": "{\"credit_micros\":100,\"held_micros\":0}"
+      },
+      {
+        "name": "competing reservations settle or refuse explicitly",
+        "ok": true,
+        "detail": "{\"200\":2,\"402\":14}"
+      },
+      {
+        "name": "key churn reaches the active-key ceiling and revokes",
+        "ok": true,
+        "detail": "{\"label\":\"key-churn\",\"offered\":12,\"created\":9,\"refused\":3,\"unexpected\":0,\"revoked\":9,\"activeAfterRevoke\":1}"
+      },
+      {
+        "name": "provider-429 #1 status",
+        "ok": true,
+        "detail": "429"
+      },
+      {
+        "name": "provider-429 #1 durable settlement",
+        "ok": true,
+        "detail": "error"
+      },
+      {
+        "name": "provider-429 #1 usage status",
+        "ok": true,
+        "detail": "error"
+      },
+      {
+        "name": "provider-429 #1 charge policy",
+        "ok": true,
+        "detail": "0 micros"
+      },
+      {
+        "name": "provider-429 #1 latency",
+        "ok": true,
+        "detail": "24ms"
+      },
+      {
+        "name": "provider-429 #1 completion marker",
+        "ok": true,
+        "detail": "null"
+      },
+      {
+        "name": "provider-429 #2 status",
+        "ok": true,
+        "detail": "429"
+      },
+      {
+        "name": "provider-429 #2 durable settlement",
+        "ok": true,
+        "detail": "error"
+      },
+      {
+        "name": "provider-429 #2 usage status",
+        "ok": true,
+        "detail": "error"
+      },
+      {
+        "name": "provider-429 #2 charge policy",
+        "ok": true,
+        "detail": "0 micros"
+      },
+      {
+        "name": "provider-429 #2 latency",
+        "ok": true,
+        "detail": "31ms"
+      },
+      {
+        "name": "provider-429 #2 completion marker",
+        "ok": true,
+        "detail": "null"
+      },
+      {
+        "name": "provider-500 #1 status",
+        "ok": true,
+        "detail": "502"
+      },
+      {
+        "name": "provider-500 #1 durable settlement",
+        "ok": true,
+        "detail": "error"
+      },
+      {
+        "name": "provider-500 #1 usage status",
+        "ok": true,
+        "detail": "error"
+      },
+      {
+        "name": "provider-500 #1 charge policy",
+        "ok": true,
+        "detail": "0 micros"
+      },
+      {
+        "name": "provider-500 #1 latency",
+        "ok": true,
+        "detail": "31ms"
+      },
+      {
+        "name": "provider-500 #1 completion marker",
+        "ok": true,
+        "detail": "null"
+      },
+      {
+        "name": "provider-500 #2 status",
+        "ok": true,
+        "detail": "502"
+      },
+      {
+        "name": "provider-500 #2 durable settlement",
+        "ok": true,
+        "detail": "error"
+      },
+      {
+        "name": "provider-500 #2 usage status",
+        "ok": true,
+        "detail": "error"
+      },
+      {
+        "name": "provider-500 #2 charge policy",
+        "ok": true,
+        "detail": "0 micros"
+      },
+      {
+        "name": "provider-500 #2 latency",
+        "ok": true,
+        "detail": "13ms"
+      },
+      {
+        "name": "provider-500 #2 completion marker",
+        "ok": true,
+        "detail": "null"
+      },
+      {
+        "name": "malformed-json #1 status",
+        "ok": true,
+        "detail": "502"
+      },
+      {
+        "name": "malformed-json #1 durable settlement",
+        "ok": true,
+        "detail": "error"
+      },
+      {
+        "name": "malformed-json #1 usage status",
+        "ok": true,
+        "detail": "error"
+      },
+      {
+        "name": "malformed-json #1 charge policy",
+        "ok": true,
+        "detail": "0 micros"
+      },
+      {
+        "name": "malformed-json #1 latency",
+        "ok": true,
+        "detail": "13ms"
+      },
+      {
+        "name": "malformed-json #1 completion marker",
+        "ok": true,
+        "detail": "null"
+      },
+      {
+        "name": "malformed-json #2 status",
+        "ok": true,
+        "detail": "502"
+      },
+      {
+        "name": "malformed-json #2 durable settlement",
+        "ok": true,
+        "detail": "error"
+      },
+      {
+        "name": "malformed-json #2 usage status",
+        "ok": true,
+        "detail": "error"
+      },
+      {
+        "name": "malformed-json #2 charge policy",
+        "ok": true,
+        "detail": "0 micros"
+      },
+      {
+        "name": "malformed-json #2 latency",
+        "ok": true,
+        "detail": "13ms"
+      },
+      {
+        "name": "malformed-json #2 completion marker",
+        "ok": true,
+        "detail": "null"
+      },
+      {
+        "name": "provider-disconnect #1 status",
+        "ok": true,
+        "detail": "502"
+      },
+      {
+        "name": "provider-disconnect #1 durable settlement",
+        "ok": true,
+        "detail": "error"
+      },
+      {
+        "name": "provider-disconnect #1 usage status",
+        "ok": true,
+        "detail": "error"
+      },
+      {
+        "name": "provider-disconnect #1 charge policy",
+        "ok": true,
+        "detail": "0 micros"
+      },
+      {
+        "name": "provider-disconnect #1 latency",
+        "ok": true,
+        "detail": "11ms"
+      },
+      {
+        "name": "provider-disconnect #1 completion marker",
+        "ok": true,
+        "detail": "null"
+      },
+      {
+        "name": "provider-disconnect #2 status",
+        "ok": true,
+        "detail": "502"
+      },
+      {
+        "name": "provider-disconnect #2 durable settlement",
+        "ok": true,
+        "detail": "error"
+      },
+      {
+        "name": "provider-disconnect #2 usage status",
+        "ok": true,
+        "detail": "error"
+      },
+      {
+        "name": "provider-disconnect #2 charge policy",
+        "ok": true,
+        "detail": "0 micros"
+      },
+      {
+        "name": "provider-disconnect #2 latency",
+        "ok": true,
+        "detail": "11ms"
+      },
+      {
+        "name": "provider-disconnect #2 completion marker",
+        "ok": true,
+        "detail": "null"
+      },
+      {
+        "name": "provider-slow #1 status",
+        "ok": true,
+        "detail": "200"
+      },
+      {
+        "name": "provider-slow #1 durable settlement",
+        "ok": true,
+        "detail": "ok"
+      },
+      {
+        "name": "provider-slow #1 usage status",
+        "ok": true,
+        "detail": "ok"
+      },
+      {
+        "name": "provider-slow #1 charge policy",
+        "ok": true,
+        "detail": "200 micros"
+      },
+      {
+        "name": "provider-slow #1 latency",
+        "ok": true,
+        "detail": "273ms"
+      },
+      {
+        "name": "provider-slow #1 completion marker",
+        "ok": true,
+        "detail": "null"
+      },
+      {
+        "name": "provider-slow #2 status",
+        "ok": true,
+        "detail": "200"
+      },
+      {
+        "name": "provider-slow #2 durable settlement",
+        "ok": true,
+        "detail": "ok"
+      },
+      {
+        "name": "provider-slow #2 usage status",
+        "ok": true,
+        "detail": "ok"
+      },
+      {
+        "name": "provider-slow #2 charge policy",
+        "ok": true,
+        "detail": "200 micros"
+      },
+      {
+        "name": "provider-slow #2 latency",
+        "ok": true,
+        "detail": "424ms"
+      },
+      {
+        "name": "provider-slow #2 completion marker",
+        "ok": true,
+        "detail": "null"
+      },
+      {
+        "name": "truncated-stream #1 status",
+        "ok": true,
+        "detail": "200"
+      },
+      {
+        "name": "truncated-stream #1 durable settlement",
+        "ok": true,
+        "detail": "error"
+      },
+      {
+        "name": "truncated-stream #1 usage status",
+        "ok": true,
+        "detail": "error"
+      },
+      {
+        "name": "truncated-stream #1 charge policy",
+        "ok": true,
+        "detail": "200 micros"
+      },
+      {
+        "name": "truncated-stream #1 latency",
+        "ok": true,
+        "detail": "66ms"
+      },
+      {
+        "name": "truncated-stream #1 completion marker",
+        "ok": true,
+        "detail": "false"
+      },
+      {
+        "name": "truncated-stream #2 status",
+        "ok": true,
+        "detail": "200"
+      },
+      {
+        "name": "truncated-stream #2 durable settlement",
+        "ok": true,
+        "detail": "error"
+      },
+      {
+        "name": "truncated-stream #2 usage status",
+        "ok": true,
+        "detail": "error"
+      },
+      {
+        "name": "truncated-stream #2 charge policy",
+        "ok": true,
+        "detail": "200 micros"
+      },
+      {
+        "name": "truncated-stream #2 latency",
+        "ok": true,
+        "detail": "182ms"
+      },
+      {
+        "name": "truncated-stream #2 completion marker",
+        "ok": true,
+        "detail": "false"
+      },
+      {
+        "name": "quota reset is observed and refuses stale capacity",
+        "ok": true,
+        "detail": "{\"current\":200,\"expired\":503,\"recovered\":200,\"free\":200,\"reason\":null,\"effectiveAllowance\":100000,\"effectivePoolTokens\":20000000}"
+      },
+      {
+        "name": "database contention waits and settles",
+        "ok": true,
+        "detail": "200 in 303ms"
+      },
+      {
+        "name": "alert delivery failure is recorded, not hidden",
+        "ok": true,
+        "detail": "exit 1, 1 attempt(s)"
+      },
+      {
+        "name": "drain refuses new work while streams finish",
+        "ok": true,
+        "detail": "503, 4 stream(s)"
+      },
+      {
+        "name": "crash leaves durable quarantine, not a second debit",
+        "ok": true,
+        "detail": "{\"admitted\":4,\"quarantined\":4,\"usage\":0}"
+      },
+      {
+        "name": "storage write failure retains its reservation and quarantines",
+        "ok": true,
+        "detail": "500, 1 quarantined"
+      },
+      {
+        "name": "only expected crash/storage quarantine remains",
+        "ok": true,
+        "detail": "5 quarantined"
+      },
+      {
+        "name": "no admitted call is left unresolved",
+        "ok": true,
+        "detail": "0 admitted"
+      },
+      {
+        "name": "credit balance equals the durable ledger",
+        "ok": true,
+        "detail": "0 micros difference"
+      },
+      {
+        "name": "held credit equals live and quarantined reservations",
+        "ok": true,
+        "detail": "0 micros difference"
+      },
+      {
+        "name": "every committed settlement has one usage row",
+        "ok": true,
+        "detail": "0 mismatch"
+      },
+      {
+        "name": "no fixture account has negative credit",
+        "ok": true,
+        "detail": "0 account(s)"
+      },
+      {
+        "name": "PostgreSQL foreign-key integrity",
+        "ok": true,
+        "detail": "ok"
+      },
+      {
+        "name": "peak server RSS is within the budget",
+        "ok": true,
+        "detail": "225.7 MB"
+      },
+      {
+        "name": "database size is within the budget",
+        "ok": true,
+        "detail": "12727987 bytes"
+      }
+    ],
+    "failures": [],
+    "pass": true,
+    "envelopeApproved": false,
+    "approvalProblem": "The load envelope has no dated operator approval; this run is a local measurement, not accepted production capacity.",
+    "measuredSafeRps": 82.91,
+    "measuredRps": 118.44,
+    "peakRampRps": 97.09,
+    "headroomFactor": 0.7,
+    "bottleneck": "provider concurrency 8 (burst refusals); sustained 118.44 rps at steady p95 175.36ms"
+  },
+  "limitations": [
+    "The upstream is a local fixture. No real provider request, account, budget or network latency is measured.",
+    "The database is a disposable PostgreSQL database, not the selected production host or a production-sized dataset.",
+    "ENOSPC was not reproduced. A storage-write rejection was injected at the usage INSERT, which exercises the same durable rollback/quarantine path.",
+    "Actual provider deadline timeouts (120s JSON, 300s stream) were not waited out; provider disconnect and truncated stream are covered.",
+    "No hosted proxy, TLS ingress or CDN behavior is exercised.",
+    "The envelope is candidate, not operator-approved. The local pass is not accepted production capacity."
+  ]
+}

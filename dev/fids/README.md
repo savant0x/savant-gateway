@@ -2,7 +2,7 @@
 
 **Last folder audit:** 2026-11-05 (register reconciliation). This page indexes the
 working set; each FID owns its own status, evidence and resolution. Current
-counts: 14 active / 20 slots, 173 archived, 187 allocated.
+counts: 13 active / 20 slots, 174 archived, 187 allocated.
 
 ## Layout
 
@@ -17,7 +17,6 @@ counts: 14 active / 20 slots, 173 archived, 187 allocated.
 
 | ID | Title | Status | Next action |
 | --- | --- | --- | --- |
-| [2026-1105-012](FID-2026-1105-012-gateway-policy-read-and-webhook-retries.md) | Gateway policy read and webhook retries | converged | Fix the unresolved admin summary and add signed in-flight 409 checks. |
 | [2026-1105-004](FID-2026-1105-004-scheduled-provider-sync.md) | Scheduled provider sync and AIO trigger | fixed | Deployed at `dpl_53PM1vwqGkVk61xzaCWXfruwL2CC`; `CRON_SECRET` set; unauth `401`, auth and Vercel-triggered run `200` (nothing due). Next: observe a scheduled due-provider refresh. |
 | [2026-1105-003](FID-2026-1105-003-router-cheap-provider.md) | router.cheap reseller integration | fixed | Implementation commit `6cdfc80`; archive after the remaining closure acceptance. No inference, reseller customer or management write. |
 | [043](FID-2026-1030-043-launch-master.md) | Master launch contract and dependency register | converged | Keep coverage, ordering and release decisions current. |
@@ -34,7 +33,7 @@ counts: 14 active / 20 slots, 173 archived, 187 allocated.
 
 ### 2026-11-05 register audit
 
-- 14 active records match the 14 table rows above; 173 records are archived, for
+- 13 active records match the 13 table rows above; 174 records are archived, for
   187 allocated FIDs. No active record is unlisted, split or duplicated.
 - Every filename matches its `**ID:**` field. Three archived 2026-10-31 records
   (077–079) predated that metadata field and now carry it; their status,
@@ -109,6 +108,15 @@ hosted restore, delivered alert and the release decision stay with
 [062](FID-2026-1030-062-launch-acceptance-and-rollout.md). Funded paid
 inference was withdrawn from the required test scope on 2026-11-04 and remains
 unverified.
+
+### Closed in the 2026-11-05 policy-read and load-baseline session
+
+[2026-1105-012](archive/FID-2026-1105-012-gateway-policy-read-and-webhook-retries.md)
+is `closed` with implementation commit `efd8cb5`. The admin gateway summary is
+awaited, the HTTP suite proves both signed in-flight 409 paths, and the candidate
+load baseline passes 123/123 checks. The load receipt is
+`dev/receipts/2026-11-05-load-baseline/load-acceptance.json`; operator approval
+and hosted acceptance remain open.
 
 ### Closed in the 2026-11-05 customer and offering economics implementation
 

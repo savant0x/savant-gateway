@@ -3,6 +3,24 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-05 — Gateway policy read, webhook retries and load baseline (012)
+
+- **FID-2026-1105-012 — high —** fixed `GET /api/admin/gateway` and its PATCH
+  response to await the asynchronous allocation summary; they previously
+  serialized a promise as `allocation: {}`, which made the operator preflight
+  unreadable. Added authenticated HTTP assertions for the resolved policy shape.
+  Added signed in-flight Stripe and NOWPayments checks: each returns 409 with
+  `Retry-After: 30` and leaves credit, top-up status and ledger counts unchanged.
+- **Bounded load baseline —** `npm run test:load` PASS, 123/123 checks on commit
+  `efd8cb5`. Steady 118.44 admitted rps, p95 175.36 ms, p99 188.50 ms, peak RSS
+  225.7 MB, exact ledger/held reconciliation and five expected quarantines. The
+  candidate envelope has no dated operator approval; hosted acceptance remains
+  open. Receipt `dev/receipts/2026-11-05-load-baseline/load-acceptance.json` and
+  analysis `dev/audits/2026-11-05-load-baseline-012.md`.
+- **Verification:** `npm run verify` PASS — 11/11 gates, 1,100/1,100 tests,
+  PostgreSQL 2/2, 736 main HTTP checks plus trial, recovery 14/14, 148.7 s.
+  Implementation commit `efd8cb5`.
+
 ## 2026-11-05 — Customer and offering economics (007, 008)
 
 - **FID-2026-1105-007 — high —** added `/admin/economics` with paginated

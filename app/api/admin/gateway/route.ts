@@ -35,7 +35,7 @@ export async function GET(request: Request) {
 
   return Response.json(
     {
-      allocation: getAllocationSummary(utcDay(), provider),
+      allocation: await getAllocationSummary(utcDay(), provider),
       banner: getBannerConfig(),
       bannerMaxChars: CONTEXT_BANNER_MAX_CHARS,
     },
@@ -154,7 +154,7 @@ export async function PATCH(request: Request) {
 
   return Response.json(
     {
-      allocation: getAllocationSummary(utcDay()),
+      allocation: await getAllocationSummary(utcDay()),
       banner: getBannerConfig(),
       bannerMaxChars: CONTEXT_BANNER_MAX_CHARS,
     },

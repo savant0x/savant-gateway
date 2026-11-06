@@ -11,9 +11,11 @@ import {
 import {
   countPaidTopups,
   countTopupLedger,
+  deletePaymentEvent,
   getTopupStatus,
   readLatestErrorRow,
   readUsageRows,
+  seedClaimedPaymentEvent,
   seedPendingTopup,
 } from "./seed.mjs";
 import { runSystemsChecks } from "./systems-checks.mjs";
@@ -493,6 +495,103 @@ async function runWebhookChecks(context, alpha) {
     (await me(context, alpha.cookie)).json?.account?.creditMicros,
     50_000_000,
   );
+
+  const stripeInflightId = "evt_http_suite_stripe_inflight";
+
+  await seedClaimedPaymentEvent(context.db, { id: stripeInflightId });
+
+  try {
+    const inflightCreated = created + 2;
+    const inflight = await sendWebhook(
+      context,
+      buildCheckoutEvent({
+        eventId: stripeInflightId,
+        topupId: CREDIT_TOPUP_ID,
+        userId: alpha.id,
+        amountTotal: 5000,
+        sessionId: "cs_test_http_suite_stripe_inflight",
+        created: inflightCreated,
+      }),
+      inflightCreated,
+    );
+
+    checkEqual("an in-flight Stripe event returns 409", inflight.status, 409);
+    checkEqual(
+      "an in-flight Stripe event reports its state",
+      inflight.json?.state,
+      "in_flight",
+    );
+    checkEqual(
+      "an in-flight Stripe event asks for a bounded retry",
+      inflight.headers.get("retry-after"),
+      "30",
+    );
+    checkEqual(
+      "an in-flight Stripe event does not credit",
+      (await me(context, alpha.cookie)).json?.account?.creditMicros,
+      50_000_000,
+    );
+    checkEqual(
+      "an in-flight Stripe event does not duplicate the top-up",
+      await countPaidTopups(context.db, alpha.id),
+      1,
+    );
+    checkEqual(
+      "an in-flight Stripe event does not duplicate the ledger",
+      await countTopupLedger(context.db, alpha.id),
+      1,
+    );
+  } finally {
+    await deletePaymentEvent(context.db, stripeInflightId);
+  }
+
+  const npInflightId = "np_http_suite_ipn_inflight";
+
+  await seedClaimedPaymentEvent(context.db, {
+    id: npInflightId,
+    type: "nowpayments_payment",
+  });
+
+  try {
+    const inflightIpn = await sendIpn(
+      context,
+      buildIpn({
+        paymentId: "http_suite_ipn_inflight",
+        status: "finished",
+        priceAmount: 50,
+        orderId: CREDIT_TOPUP_ID,
+      }),
+    );
+
+    checkEqual("an in-flight NOWPayments IPN returns 409", inflightIpn.status, 409);
+    checkEqual(
+      "an in-flight NOWPayments IPN reports its state",
+      inflightIpn.json?.state,
+      "in_flight",
+    );
+    checkEqual(
+      "an in-flight NOWPayments IPN asks for a bounded retry",
+      inflightIpn.headers.get("retry-after"),
+      "30",
+    );
+    checkEqual(
+      "an in-flight NOWPayments IPN does not credit",
+      (await me(context, alpha.cookie)).json?.account?.creditMicros,
+      50_000_000,
+    );
+    checkEqual(
+      "an in-flight NOWPayments IPN does not duplicate the top-up",
+      await countPaidTopups(context.db, alpha.id),
+      1,
+    );
+    checkEqual(
+      "an in-flight NOWPayments IPN does not duplicate the ledger",
+      await countTopupLedger(context.db, alpha.id),
+      1,
+    );
+  } finally {
+    await deletePaymentEvent(context.db, npInflightId);
+  }
 }
 
 async function runSettlementChecks(context, alpha, beta) {
@@ -656,6 +755,42 @@ async function runAdminChecks(context) {
   check(
     "admin customer page renders its heading",
     customers.text.includes("Who holds credit"),
+  );
+
+  const gateway = await request(
+    context.baseUrl,
+    "/api/admin/gateway?provider=mock",
+    { cookie: `sg_admin=${adminCookie}` },
+  );
+
+  checkEqual("the operator gateway policy answers", gateway.status, 200);
+  check(
+    "the operator gateway policy is a resolved object",
+    gateway.json?.allocation !== null &&
+      typeof gateway.json?.allocation === "object" &&
+      !Array.isArray(gateway.json?.allocation),
+    gateway.text,
+  );
+  check(
+    "the operator gateway policy reports a numeric daily pool",
+    Number.isSafeInteger(gateway.json?.allocation?.dailyPoolTokens) &&
+      gateway.json.allocation.dailyPoolTokens >= 0,
+    gateway.text,
+  );
+  checkEqual(
+    "the operator gateway policy reports its allocation basis",
+    gateway.json?.allocation?.allocationBps,
+    9_000,
+  );
+  checkEqual(
+    "the operator gateway policy reports the account cap",
+    gateway.json?.allocation?.accountDailyCapTokens,
+    100_000,
+  );
+  checkEqual(
+    "the operator gateway policy reports capacity state",
+    typeof gateway.json?.allocation?.capacityAvailable,
+    "boolean",
   );
 
   return adminCookie;

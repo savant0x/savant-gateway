@@ -94,6 +94,34 @@ export async function seedPendingTopup(database, input) {
     );
 }
 
+export async function seedClaimedPaymentEvent(
+  database,
+  { id, type = "checkout.session.completed" },
+) {
+  const now = new Date().toISOString();
+
+  await database
+    .prepare(
+      `INSERT INTO billing_events
+        (id, type, processed_at, status, attempts, livemode, claimed_at,
+         last_error, claim_generation)
+       VALUES (?, ?, ?, 'claimed', 1, NULL, ?, NULL, 1)
+       ON CONFLICT (id) DO UPDATE SET
+         type = excluded.type,
+         processed_at = excluded.processed_at,
+         status = 'claimed',
+         attempts = 1,
+         claimed_at = excluded.claimed_at,
+         last_error = NULL,
+         claim_generation = 1`,
+    )
+    .run(id, type, now, now);
+}
+
+export async function deletePaymentEvent(database, id) {
+  await database.prepare("DELETE FROM billing_events WHERE id = ?").run(id);
+}
+
 export async function readUsageRows(database, userId) {
   return database
     .prepare(

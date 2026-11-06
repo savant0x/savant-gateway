@@ -2,7 +2,7 @@
 
 **Last folder audit:** 2026-11-05 (register reconciliation). This page indexes the
 working set; each FID owns its own status, evidence and resolution. Current
-counts: 13 active / 20 slots, 173 archived, 186 allocated.
+counts: 14 active / 20 slots, 173 archived, 187 allocated.
 
 ## Layout
 
@@ -17,6 +17,7 @@ counts: 13 active / 20 slots, 173 archived, 186 allocated.
 
 | ID | Title | Status | Next action |
 | --- | --- | --- | --- |
+| [2026-1105-012](FID-2026-1105-012-gateway-policy-read-and-webhook-retries.md) | Gateway policy read and webhook retries | converged | Fix the unresolved admin summary and add signed in-flight 409 checks. |
 | [2026-1105-004](FID-2026-1105-004-scheduled-provider-sync.md) | Scheduled provider sync and AIO trigger | fixed | Deployed at `dpl_53PM1vwqGkVk61xzaCWXfruwL2CC`; `CRON_SECRET` set; unauth `401`, auth and Vercel-triggered run `200` (nothing due). Next: observe a scheduled due-provider refresh. |
 | [2026-1105-003](FID-2026-1105-003-router-cheap-provider.md) | router.cheap reseller integration | fixed | Implementation commit `6cdfc80`; archive after the remaining closure acceptance. No inference, reseller customer or management write. |
 | [043](FID-2026-1030-043-launch-master.md) | Master launch contract and dependency register | converged | Keep coverage, ordering and release decisions current. |
@@ -33,8 +34,8 @@ counts: 13 active / 20 slots, 173 archived, 186 allocated.
 
 ### 2026-11-05 register audit
 
-- 13 active records match the 13 table rows above; 173 records are archived, for
-  186 allocated FIDs. No active record is unlisted, split or duplicated.
+- 14 active records match the 14 table rows above; 173 records are archived, for
+  187 allocated FIDs. No active record is unlisted, split or duplicated.
 - Every filename matches its `**ID:**` field. Three archived 2026-10-31 records
   (077–079) predated that metadata field and now carry it; their status,
   resolution and evidence text is unchanged.

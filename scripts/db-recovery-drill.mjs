@@ -36,11 +36,18 @@ import {
 } from "../lib/storage/backup.ts";
 import { createStorageDatabase } from "../lib/storage/database.ts";
 import { availableCredit } from "../lib/storage/store/credit.ts";
+import { sha256Hex } from "../lib/visual-builds/types.ts";
 
 const NOW = new Date().toISOString();
 const EXPIRES = new Date(Date.now() + 60_000).toISOString();
 const RECOVERY_USER = "recovery-user";
 const WRITER_USER = "writer-user";
+const SHOWCASE_SOURCE = "showcase-drill-source";
+const SHOWCASE_ASSET = "showcase-drill-asset";
+const SHOWCASE_BUILD = "showcase-drill-build";
+const SHOWCASE_REVISION = "showcase-drill-revision";
+const SHOWCASE_ARTIFACT = "export function createPelicanSdf(canvas) {}\n";
+const SHOWCASE_SHA = sha256Hex(Buffer.from(SHOWCASE_ARTIFACT, "utf8"));
 
 let failures = 0;
 
@@ -141,6 +148,66 @@ async function seed(db) {
     .run(NOW);
 }
 
+async function seedShowcase(db) {
+  const bytes = Buffer.from(SHOWCASE_ARTIFACT, "utf8");
+
+  await db
+    .prepare(
+      `INSERT INTO showcase.sources
+        (id, kind, label, base_url, revision, enabled, max_storage_bytes,
+         created_at, updated_at)
+       VALUES (?, 'pelican_sdf', 'Recovery Showcase',
+               'https://example.test/pelican/', 'recovery-revision', 1,
+               67108864, ?, ?)`,
+    )
+    .run(SHOWCASE_SOURCE, NOW, NOW);
+  await db
+    .prepare(
+      `INSERT INTO showcase.assets
+        (id, source_id, sha256, mime, kind, bytes, byte_size, created_at)
+       VALUES (?, ?, ?, 'text/javascript; charset=utf-8', 'artifact', ?, ?, ?)`,
+    )
+    .run(SHOWCASE_ASSET, SHOWCASE_SOURCE, SHOWCASE_SHA, bytes, bytes.length, NOW);
+  await db
+    .prepare(
+      `INSERT INTO showcase.builds
+        (id, source_id, external_id, visibility, created_at, updated_at)
+       VALUES (?, ?, 'recovery-run', 'published', ?, ?)`,
+    )
+    .run(SHOWCASE_BUILD, SHOWCASE_SOURCE, NOW, NOW);
+  await db
+    .prepare(
+      `INSERT INTO showcase.revisions
+        (id, build_id, revision_key, source_id, source_url, source_revision,
+         title, description, original_model_id, original_model_label, creator,
+         provider, task, effort, harness, source_status, validation_state,
+         source_created_at, prompt_text, prompt_sha256, raw_record_json,
+         raw_record_sha256, cost_usd_micros, generation_ms, artifact_asset_id,
+         thumbnail_asset_id, license_text, license_sha256, created_at)
+       VALUES (?, ?, 'recovery-key', ?, 'https://example.test/run',
+               'recovery-revision', 'Recovery run', '', 'recovery-model',
+               'Recovery model', 'Recovery creator', 'Recovery provider',
+               'one-shot', 'high', 'drill', 'unverified', 'passed', ?, 'prompt',
+               ?, '{}', ?, NULL, NULL, ?, NULL, 'MIT License', ?, ?)`,
+    )
+    .run(
+      SHOWCASE_REVISION,
+      SHOWCASE_BUILD,
+      SHOWCASE_SOURCE,
+      NOW,
+      sha256Hex("prompt"),
+      sha256Hex("{}"),
+      SHOWCASE_ASSET,
+      sha256Hex("MIT License"),
+      NOW,
+    );
+  await db
+    .prepare(
+      "UPDATE showcase.builds SET published_revision_id = ? WHERE id = ?",
+    )
+    .run(SHOWCASE_REVISION, SHOWCASE_BUILD);
+}
+
 /** Rewrites one row in a table's dump file without touching the manifest. */
 function tamperRow(directory, schema, table, predicate, change) {
   const path = join(directory, `${schema}.${table}.jsonl`);
@@ -183,6 +250,7 @@ try {
   });
 
   await seed(source);
+  await seedShowcase(source);
 
   const { manifest } = await dumpDatabase(source, dumpDirectory);
 
@@ -196,8 +264,14 @@ try {
     ),
   );
   check(
-    "dump covers the content and identity schemas",
-    ["content.sources", "identity.protocols"].every((name) =>
+    "dump covers the content, identity and showcase schemas",
+    [
+      "content.sources",
+      "identity.protocols",
+      "showcase.assets",
+      "showcase.revisions",
+      "showcase.builds",
+    ].every((name) =>
       manifest.tables.some((entry) => `${entry.schema}.${entry.table}` === name),
     ),
   );
@@ -251,6 +325,42 @@ try {
   ).get();
 
   check("unresolved settlements survive", Number(pending.count) === 1);
+
+  const showcaseAsset = await restored
+    .prepare(
+      `SELECT sha256, byte_size, encode(bytes, 'hex') AS hex
+         FROM showcase.assets WHERE id = ?`,
+    )
+    .get(SHOWCASE_ASSET);
+  const restoredArtifact = Buffer.from(showcaseAsset?.hex ?? "", "hex");
+
+  check(
+    "the restored showcase asset bytes match",
+    showcaseAsset?.sha256 === SHOWCASE_SHA &&
+      Number(showcaseAsset?.byte_size) ===
+        Buffer.byteLength(SHOWCASE_ARTIFACT, "utf8") &&
+      restoredArtifact.toString("utf8") === SHOWCASE_ARTIFACT,
+    showcaseAsset?.sha256 ?? "missing",
+  );
+
+  const showcaseRevision = await restored
+    .prepare(
+      `SELECT r.title, r.artifact_asset_id, b.visibility,
+              b.published_revision_id
+         FROM showcase.revisions r
+         JOIN showcase.builds b ON b.id = r.build_id
+        WHERE r.id = ?`,
+    )
+    .get(SHOWCASE_REVISION);
+
+  check(
+    "the restored showcase revision keeps its artifact and publication",
+    showcaseRevision?.title === "Recovery run" &&
+      showcaseRevision?.artifact_asset_id === SHOWCASE_ASSET &&
+      showcaseRevision?.visibility === "published" &&
+      showcaseRevision?.published_revision_id === SHOWCASE_REVISION,
+    JSON.stringify(showcaseRevision ?? null),
+  );
 
   let replayError = null;
 

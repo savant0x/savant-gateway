@@ -10,9 +10,10 @@ import { check, checkEqual, request } from "./harness.mjs";
 
 const ROOT = path.join(process.cwd(), "tests", "fixtures", "pelican");
 const RESULT_PATH = "results/gpt-6-1-sol-high-run-01.json";
-const SOURCE_ID = "src_http_suite_pelican";
-const BUILD_ID = "bld_http_suite_pelican";
-const REVISION_ID = "rev_http_suite_pelican";
+export const SOURCE_ID = "src_http_suite_pelican";
+export const BUILD_ID = "bld_http_suite_pelican";
+export const REVISION_ID = "rev_http_suite_pelican";
+export const SHOWCASE_MODEL_ID = "showcase-http-model";
 const RIGHTS_ID = "rgt_http_suite_pelican";
 const NOW = "2026-11-05T12:00:00.000Z";
 
@@ -25,7 +26,7 @@ function readFixture(relative) {
  * exercises the public projection and withdrawal behavior without making the
  * HTTP gate spend a third-party request.
  */
-async function seedPublishedBuild(db) {
+export async function seedPublishedBuild(db) {
   const raw = readFixture(RESULT_PATH).toString("utf8");
   const record = JSON.parse(raw);
   const prompt = readFixture("prompt.txt").toString("utf8");

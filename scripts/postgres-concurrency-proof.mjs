@@ -29,6 +29,7 @@ const TEST_FILES = [
   "tests/content-link-concurrency.test.mjs",
   "tests/subscription-admission-concurrency.test.mjs",
   "tests/payment-claim-concurrency.test.mjs",
+  "tests/visual-builds-store.test.mjs",
 ];
 
 function fail(message) {

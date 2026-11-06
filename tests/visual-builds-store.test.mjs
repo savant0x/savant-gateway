@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import path from "node:path";
 import test from "node:test";
 
+import { createPostgresDatabase } from "../lib/storage/pg-adapter.ts";
+import { createPostgresPool } from "../lib/storage/pg-pool.ts";
+import { migrateDatabase } from "../lib/storage/schema/index.ts";
 import { createStorageDatabase } from "../lib/storage/database.ts";
 import {
   getAdminShowcaseBuild,
@@ -26,29 +30,56 @@ const ROOT = path.join(process.cwd(), "tests", "fixtures", "pelican");
 const RESULT = "results/gpt-6-1-sol-high-run-01.json";
 const SOURCE = pelicanFixtureSource();
 const NOW = "2026-11-05T12:00:00.000Z";
+const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL?.trim();
 
-async function fixture() {
-  const { pool } = await createPgliteDatabase();
-  const db = await createStorageDatabase({ env: {}, pool });
-
+async function seed(
+  db,
+  source = SOURCE,
+  modelId = "gpt-6.1-sol",
+  upstreamId = modelId,
+) {
   await upsertShowcaseSource(db, {
-    id: SOURCE.id,
-    label: SOURCE.label,
-    baseUrl: SOURCE.baseUrl,
-    revision: SOURCE.revision,
+    id: source.id,
+    label: source.label,
+    baseUrl: source.baseUrl,
+    revision: source.revision,
     enabled: true,
-    maxStorageBytes: SOURCE.maxStorageBytes,
+    maxStorageBytes: source.maxStorageBytes,
   });
   await db
     .prepare(
       `INSERT INTO models
         (id, upstream_id, name, provider, context_window, synced_at,
          in_catalog, status, cost_source)
-       VALUES (?, ?, ?, ?, '200k', ?, 1, 'active', 'synced')`,
+       VALUES (?, ?, 'GPT-6.1 Sol', 'OpenAI', '200k', ?, 1, 'active', 'synced')`,
     )
-    .run("gpt-6.1-sol", "gpt-6.1-sol", "GPT-6.1 Sol", "OpenAI", NOW);
+    .run(modelId, upstreamId, NOW);
+}
+
+async function fixture() {
+  const { pool } = await createPgliteDatabase();
+  const db = await createStorageDatabase({ env: {}, pool });
+
+  await seed(db);
 
   return { db, snapshot: await loadPelicanFixture(ROOT, SOURCE, RESULT) };
+}
+
+function pgHandles(suffix) {
+  return [
+    createPostgresDatabase({
+      pool: createPostgresPool({
+        connectionString: TEST_DATABASE_URL,
+        applicationName: `showcase_publish_${suffix}_a`,
+      }),
+    }),
+    createPostgresDatabase({
+      pool: createPostgresPool({
+        connectionString: TEST_DATABASE_URL,
+        applicationName: `showcase_publish_${suffix}_b`,
+      }),
+    }),
+  ];
 }
 
 function rights(state, overrides = {}) {
@@ -208,6 +239,79 @@ test("a second import of the same record reuses its revision and cannot double-p
     );
   } finally {
     await db.close();
+  }
+});
+
+test("two connections cannot publish the same revision twice", async (context) => {
+  if (!TEST_DATABASE_URL) {
+    context.skip(
+      "TEST_DATABASE_URL is required for the showcase publication race",
+    );
+
+    return;
+  }
+
+  const suffix = randomUUID().slice(0, 8);
+  const [first, second] = pgHandles(suffix);
+  const source = { ...SOURCE, id: `src_showcase_race_${suffix}` };
+  const modelId = `model_showcase_race_${suffix}`;
+
+  try {
+    await migrateDatabase(first);
+    await seed(first, source, modelId, "gpt-6.1-sol");
+
+    const snapshot = await loadPelicanFixture(ROOT, source, RESULT);
+    const persisted = await persistShowcaseSnapshot(first, source.id, snapshot);
+
+    await appendShowcaseRights(
+      first,
+      rights("approved", { sourceId: source.id }),
+    );
+
+    const outcomes = await Promise.all([
+      publishShowcaseBuild(first, {
+        buildId: persisted.buildId,
+        reviewer: "operator",
+        note: "race a",
+      }),
+      publishShowcaseBuild(second, {
+        buildId: persisted.buildId,
+        reviewer: "operator",
+        note: "race b",
+      }),
+    ]);
+
+    assert.equal(
+      outcomes.filter((outcome) => outcome.code === "published").length,
+      1,
+    );
+    assert.equal(
+      outcomes.filter((outcome) => outcome.code === "already_published").length,
+      1,
+    );
+
+    const reviews = await first
+      .prepare(
+        "SELECT COUNT(*)::int AS total FROM showcase.reviews WHERE revision_id = ?",
+      )
+      .get(persisted.revisionId);
+    const build = await first
+      .prepare("SELECT visibility FROM showcase.builds WHERE id = ?")
+      .get(persisted.buildId);
+
+    assert.equal(Number(reviews.total), 1);
+    assert.equal(build.visibility, "published");
+  } finally {
+    await first
+      .prepare("DELETE FROM showcase.sources WHERE id = ?")
+      .run(source.id)
+      .catch(() => undefined);
+    await first
+      .prepare("DELETE FROM models WHERE id = ?")
+      .run(modelId)
+      .catch(() => undefined);
+    await first.close();
+    await second.close();
   }
 });
 

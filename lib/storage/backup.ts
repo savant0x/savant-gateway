@@ -78,11 +78,51 @@ export class BackupRefused extends Error {
   }
 }
 
-/** `JSON.stringify` throws on a bigint; the driver can return one for BIGINT. */
+/**
+ * `JSON.stringify` throws on a bigint and expands a Buffer into a lossy
+ * `{type:"Buffer",data:[...]}` before the replacer sees it. Byte columns need an
+ * explicit base64 envelope so a restore can pass bytes rather than an object to
+ * the driver. This is additive: every other column keeps its previous shape.
+ */
+function byteaEnvelope(value: unknown): { $bytea: string } | null {
+  if (value instanceof Uint8Array) {
+    return { $bytea: Buffer.from(value).toString("base64") };
+  }
+  if (
+    value &&
+    typeof value === "object" &&
+    (value as { type?: unknown }).type === "Buffer" &&
+    Array.isArray((value as { data?: unknown }).data)
+  ) {
+    return {
+      $bytea: Buffer.from((value as { data: number[] }).data).toString(
+        "base64",
+      ),
+    };
+  }
+
+  return null;
+}
+
 function serialize(row: Record<string, unknown>) {
-  return JSON.stringify(row, (_key, value) =>
-    typeof value === "bigint" ? value.toString() : value,
-  );
+  return JSON.stringify(row, (_key, value) => {
+    if (typeof value === "bigint") return value.toString();
+
+    return byteaEnvelope(value) ?? value;
+  });
+}
+
+/** Reverses the `$bytea` envelope for a restore parameter. */
+function restoreValue(value: unknown) {
+  if (
+    value &&
+    typeof value === "object" &&
+    typeof (value as { $bytea?: unknown }).$bytea === "string"
+  ) {
+    return Buffer.from((value as { $bytea: string }).$bytea, "base64");
+  }
+
+  return value ?? null;
 }
 
 function checksumOf(lines: string[]) {
@@ -308,7 +348,7 @@ export async function restoreDatabase(
           const row = JSON.parse(line) as Record<string, unknown>;
 
           await insert.run(
-            ...entry.columns.map((column) => row[column] ?? null),
+            ...entry.columns.map((column) => restoreValue(row[column])),
           );
         }
       }

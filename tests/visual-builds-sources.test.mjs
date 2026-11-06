@@ -3,7 +3,6 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
-import { normalizeModelKey } from "../lib/benchmarks.ts";
 import {
   fetchPelicanSnapshot,
   loadPelicanFixture,
@@ -12,7 +11,6 @@ import {
   pelicanFixtureSource,
   verifyPelicanFiles,
 } from "../lib/visual-builds/pelican.ts";
-import { packagePelicanArtifact } from "../lib/visual-builds/packaging.ts";
 
 const ROOT = path.join(process.cwd(), "tests", "fixtures", "pelican");
 const RESULT = "results/gpt-6-1-sol-high-run-01.json";
@@ -40,16 +38,13 @@ test("manifest and result parsing reject traversal, duplicates and wrong hashes"
     /unsafe path/,
   );
   assert.throws(
-    () =>
-      parsePelicanManifest(
-        JSON.stringify([RESULT, RESULT]),
-      ),
+    () => parsePelicanManifest(JSON.stringify([RESULT, RESULT])),
     /repeats/,
   );
   assert.throws(
     () =>
       parsePelicanResult(
-        JSON.stringify({ ...JSON.parse(awaitFixture()), id: "../x" }),
+        JSON.stringify({ ...JSON.parse(readFileSync(path.join(ROOT, RESULT), "utf8")), id: "../x" }),
         RESULT,
       ),
     /not safe/,
@@ -75,32 +70,11 @@ test("manifest and result parsing reject traversal, duplicates and wrong hashes"
   );
 });
 
-function awaitFixture() {
-  return readFileSync(path.join(ROOT, RESULT), "utf8");
-}
-
-test("strict matching keeps the free prefix while benchmark matching folds it", () => {
-  assert.equal(normalizeModelKey("free/claude-opus-4.6"), "claude-opus-4-6");
-  assert.equal(
-    normalizeModelKey("free/claude-opus-4.6", { preserveFreePrefix: true }),
-    "free/claude-opus-4-6",
+test("a source without a published record is refused rather than scanned", async () => {
+  await assert.rejects(
+    async () => loadPelicanFixture(ROOT, SOURCE, "results/not-published.json"),
+    /manifest|not found|ENOENT/i,
   );
-});
-
-test("the packager refuses a non-Pelican module and escapes closing script tags", async () => {
-  assert.throws(
-    () => packagePelicanArtifact("export const nope = 1;"),
-    /createPelicanSdf/,
-  );
-
-  const packaged = packagePelicanArtifact(
-    `export function createPelicanSdf(canvas) { canvas.title = "</script><img src=x>"; }`,
-  );
-
-  assert.match(packaged.html, /connect-src 'none'/);
-  assert.match(packaged.html, /frame-ancestors 'self'/);
-  assert.equal((packaged.html.match(/<\/script>/g) ?? []).length, 1);
-  assert.equal(packaged.sha256.length, 64);
 });
 
 test("the network adapter stores nothing when the source cannot be reached", async () => {

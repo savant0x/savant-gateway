@@ -16,17 +16,27 @@ distinguish verified behavior from unverified claims.
   withdraw. Every public read rechecks source enablement, current rights,
   accepted binding, active catalog identity and published state. The flag
   defaults off in `.env.example`.
-- **Verification:** `npm run verify` PASS — 11/11 gates, 1,113/1,113 tests,
-  2/2 PostgreSQL proofs, 758 main HTTP checks plus the trial suite (including
-  showcase gallery/detail/bundle/preview, rights withdrawal/restoration and
-  catalog-rename invalidation), recovery 14/14, quality 682 files, 154.4 s.
-  Focused visual-builds suites 13/13; lint and typecheck clean; build PASS.
-- **Implementation commit:** `a73960f`.
-- **Not closed:** 013A remains active. No browser journey receipt exists; the
-  store suite is not in `test:postgres`; the recovery drill does not assert
-  showcase rows; and no real source-output redistribution right is evidenced.
-  013B remains blocked on a lawful OpenRouter fixture and rights. No real source
-  publication, funded inference, live payment or deployment is claimed.
+- **Verification:** `npm run verify` PASS — 12/12 gates, 1,117/1,117 tests
+  with zero skips, browser 4/4 journeys on bundled Chromium, 758 main HTTP
+  checks plus the trial suite (including showcase gallery/detail/bundle/preview,
+  rights withdrawal/restoration and catalog-rename invalidation), recovery
+  15/15, quality 682 files, build PASS, 167.8 s. A standalone `test:postgres`
+  executes the showcase store 5/5 including the two-connection publish race;
+  lint and typecheck are clean.
+- **013A local completion:** added the showcase-only browser gate (4/4 journeys
+  on bundled Chromium, both themes, 320/1024/1440 widths, WebGL pixels,
+  keyboard/touch/pointer, hostile-origin isolation and teardown), registered
+  the store suite in the mandatory PostgreSQL proof (5/5, including a real
+  two-connection publish race), extended the recovery drill to restore showcase
+  asset bytes and publication (15/15), and split the tests into the five
+  design-named suites. Backup/restore now carries a `$bytea` base64 envelope;
+  `showcase.assets` exposed that it previously handed an object to the driver.
+- **Implementation commit:** `a73960f`; durability/browser follow-up commits
+  follow this entry.
+- **Not closed:** 013A remains active only for the external source-output
+  redistribution right and the separately gated 013B track. No real source
+  publication, funded inference, live payment or deployment is claimed. 013B
+  remains blocked on a lawful OpenRouter fixture and rights.
 
 ## 2026-11-05 — Gateway policy read, webhook retries and load baseline (012)
 

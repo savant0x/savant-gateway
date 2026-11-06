@@ -32,6 +32,9 @@ commands:
   # Route-level HTTP gate. Requires a completed production build and boots
   # `next start` against a disposable database; it is not part of `npm test`.
   test_http: 'npm run test:http'
+  # Showcase browser receipt. Extends the FID-009 matrix in showcase-only mode
+  # and fails rather than skipping when no browser is installed.
+  test_visual_builds_browser: 'npm run test:visual-builds-browser'
   # Mandatory two-connection debit proof. Runs against TEST_DATABASE_URL when
   # supplied, otherwise starts a pinned native PostgreSQL 17 cluster under
   # ignored .scratch/postgres and removes it; it fails closed rather than

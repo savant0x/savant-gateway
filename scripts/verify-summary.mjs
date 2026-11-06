@@ -38,6 +38,11 @@ export const VERIFY_GATES = [
   },
   { name: "quality", script: "quality", expectsTests: false },
   { name: "build", script: "build", expectsTests: false },
+  {
+    name: "test:visual-builds-browser",
+    script: "test:visual-builds-browser",
+    expectsTests: false,
+  },
   { name: "test:http", script: "test:http", expectsTests: false },
   { name: "test:recovery", script: "test:recovery", expectsTests: false },
   {

@@ -4,11 +4,11 @@
 **ID:** FID-2026-1104-013
 **Severity:** medium
 **Status:** fixed
-**Authorization:** 013A was authorized by the operator 2026-11-05 and its code
-landed 2026-11-06. The record remains open on the browser, PostgreSQL/recovery
-and real source-rights evidence listed below. 013B remains separately gated.
-**Scope:** 013A Pelican implementation (authorized 2026-11-05, implemented
-2026-11-06); 013B OpenRouter separately gated; neither track is closed
+**Authorization:** 013A was authorized by the operator 2026-11-05; its code and
+declared local gates landed 2026-11-06. Real source-output rights remain an
+external followup. 013B remains separately gated.
+**Scope:** 013A Pelican implementation (authorized 2026-11-05, implemented and
+locally verified 2026-11-06); 013B OpenRouter separately gated and unimplemented
 **Created:** 2026-11-04 17:15 UTC
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -465,50 +465,48 @@ specified here; 013B is not in this sequence.
 Implemented test artifacts (2026-11-06). 013A paths are Pelican-only;
 OpenRouter cases are added only when 013B is authorized.
 
-- `tests/visual-builds-source.test.mjs`: published-manifest-only Pelican reads,
-  prompt and thumbnail hash verification, unknown/null metrics, duplicate ids,
-  removed-source refusal, the thin-wrapper packager and network-adapter
-  no-write behavior.
+- `tests/visual-builds-sources.test.mjs`: published-manifest-only Pelican
+  reads, prompt and thumbnail hash verification, unknown/null metrics,
+  duplicate ids, removed-source refusal and network-adapter no-write behavior.
 - `tests/visual-builds-matching.test.mjs`: exact ids, namespace/date/version
   collisions, reviewed aliases, ambiguous names, run-id-vs-model-id cases,
   separate effort runs, rejection persistence and free/paid/catalog-visibility
   behavior.
 - `tests/visual-builds-store.test.mjs`: fresh migration, atomic unique-byte
-  quota, concurrent claims, stable public ids, revision reuse, rights
-  withdrawal/restoration, catalog-digest mismatch and preserved decisions.
-  This path must still be added to `scripts/postgres-concurrency-proof.mjs`'s
-  `TEST_FILES`; the current PGlite pass is not the mandatory two-connection
-  proof.
-
-The design's separate packaging and publication suite files were not created;
-their cases live in the source, matching and store suites above. That split
-remains an open convergence gap and is not claimed as delivered.
+  quota, stable public ids, revision reuse, rights withdrawal/restoration,
+  catalog-digest mismatch and preserved decisions. It is registered in
+  `scripts/postgres-concurrency-proof.mjs` and adds a real two-connection
+  publish race: exactly one publish commits and exactly one review row exists.
+- `tests/visual-builds-packaging.test.mjs`: the Pelican thin-wrapper output,
+  CSP policy, closing-script escaping, hash separation and bundle ETag.
+- `tests/visual-builds-publication.test.mjs`: the fail-closed
+  `VISUAL_BUILDS_ENABLED` parser and the all-three-uses rights gate.
 
 Production HTTP cases extend `scripts/http-suite/showcase-checks.mjs`,
 called by the existing HTTP suite after build and before `runDegradeChecks`
 (which drops `settings`). Seed and clean up the showcase fixture explicitly so
 the checks are repeatable. Browser journeys extend `scripts/browser-matrix.mjs`
 from FID-009, not a second runner: Pelican artifacts, keyboard/touch, both
-themes, 320/1024/1440 widths, frame teardown and hostile artifacts. Add one
-browser command to `package.json` and add `test:visual-builds-browser` to
-`VERIFY_GATES` in `scripts/verify-summary.mjs` between `build` and `test:http`;
-that exported list is the executable contract `scripts/verify.mjs` iterates.
-Declare the command in `protocol.config.yaml` too, but that file is not the
-runner. This wiring composes with FID-2026-1104-008's single gate contract; if
-008 changes the list shape, 013A follows it. Unit tests never assume a
-pre-existing `.next` or invoke a production build.
+themes, 320/1024/1440 widths, frame teardown and hostile artifacts. The
+showcase-only command is `test:visual-builds-browser`, wired through
+`VERIFY_GATES` between `build` and `test:http` and declared in
+`protocol.config.yaml`. Playwright 1.55.0 and its bundled Chromium are
+installed; the gate fails rather than skips when no browser is available.
 
 Browser probes attempt parent DOM/cookie/storage reads, parent API calls,
 forms/popups/top navigation, self-navigation, spoofed messages, dependency
-exfiltration and direct source opening. Prove parent origin isolation and
-blocked subresource requests, and record any self-navigation/resource
-limitation honestly. Record actual pixels/WebGL interaction; an iframe load
-event is not proof. Browser suite must fail rather than skip if its installed
-browser is missing. Pin Playwright and install/cache the browser in the chosen
-CI/pre-push path; no browser package is added now.
+exfiltration and direct source opening. The receipt proves parent origin
+isolation, blocked outbound fetches and admin API access, actual WebGL pixels,
+keyboard/touch/pointer delivery, both themes, three widths and frame teardown.
+It does not claim that a prior downloaded copy can be recalled.
 
-Data and recovery wiring: `scripts/postgres-concurrency-proof.mjs` must add
-`tests/visual-builds-store.test.mjs` to `TEST_FILES`.
+Data and recovery wiring: `tests/visual-builds-store.test.mjs` is registered in
+`scripts/postgres-concurrency-proof.mjs`. The recovery drill seeds
+`showcase.sources`, `showcase.assets`, `showcase.builds` and
+`showcase.revisions`, then compares the restored artifact bytes, hash and
+publication pointer. The dump/restore path now carries an explicit `$bytea`
+base64 envelope; before this, `showcase.assets` was the first BYTEA column and
+restore handed an object to the driver.
 
 **Durability prerequisite (discovered and implemented 2026-11-04).**
 The earlier dump enumerated only `table_schema = current_schema()` (public),
@@ -566,12 +564,13 @@ Implementation gates (future; not a receipt of implemented behavior):
   `VISUAL_BUILDS_ENABLED` in `.env.example` and the operator docs. The flag is
   parsed and fail-closed at the server boundary; `validateProductionConfig`
   does not inventory optional feature flags.
-- gate: test tests/visual-builds-source.test.mjs
+- gate: test tests/visual-builds-sources.test.mjs
 - gate: test tests/visual-builds-matching.test.mjs
 - gate: test tests/visual-builds-store.test.mjs
+- gate: test tests/visual-builds-packaging.test.mjs
+- gate: test tests/visual-builds-publication.test.mjs
 - gate: test tests/verify-summary.test.mjs — regress new after-build gate ordering.
-- gate: test — `npm test` includes the three existing feature test paths. The
-  separate packaging/publication files promised by the design are not created.
+- gate: test — `npm test` includes all five feature test paths.
 - gate: quality — `npm run quality`, 400-line production-file ceiling.
 - gate: build — `npm run build`.
 - gate: test_http — `npm run test:http` includes the wired showcase HTTP module.
@@ -670,18 +669,23 @@ is claimed.
   stores, Pelican adapter and packager, strict matching, admin review, public
   gallery/detail/viewer and the model-page panel.
 - [x] Unit/HTTP/build/quality evidence recorded below.
-- [ ] Step 7 browser journeys: not run; no installed browser receipt exists.
-- [ ] Step 8 closure: blocked on the browser receipt and the durability wiring.
-- [ ] Five design-named suites: three `tests/visual-builds-*.test.mjs` files
-  exist and pass 13/13; the packaging/publication cases live inside them rather
-  than in the separately named files.
-- [ ] `tests/visual-builds-store.test.mjs` is not in the mandatory
-  `scripts/postgres-concurrency-proof.mjs` `TEST_FILES` list; its passing suite
-  uses PGlite, which is not the two-connection proof.
-- [ ] Recovery drill does not yet seed and compare `showcase.assets` and
-  `showcase.revisions`.
+- [x] Step 7 browser journeys: `npm run test:visual-builds-browser` PASS, 4/4
+  journeys on bundled Chromium across both themes and 320/1024/1440 widths,
+  with WebGL pixels, keyboard/touch/pointer delivery, hostile-origin probes and
+  frame teardown.
+- [x] Step 8 closure evidence: five suites, mandatory PostgreSQL proof, recovery
+  assertions and the browser gate are wired and pass.
+- [x] Five design-named suites exist: sources, matching, store, packaging and
+  publication. Focused `npm test` run: 16 pass, 1 expected PostgreSQL skip;
+  `test:postgres` runs the store suite with 5/5 and zero skips.
+- [x] `tests/visual-builds-store.test.mjs` is registered in the mandatory
+  `scripts/postgres-concurrency-proof.mjs` `TEST_FILES`; the two-connection
+  publish race passes.
+- [x] Recovery drill seeds and compares `showcase.assets` and
+  `showcase.revisions`; 15/15 checks pass.
 - [ ] Real source publication rights are absent. The pinned MIT repository does
-  not evidence permission to redistribute third-party model output.
+  not evidence permission to redistribute third-party model output; this is
+  recorded as `FID-2026-1104-013-RIGHTS` in `dev/tracking/internal-followups.json`.
 
 ### Implementation Record (2026-11-06)
 
@@ -696,17 +700,21 @@ Implementation commit `a73960f`.
 | Public surface | Flag-gated `/showcase`, detail viewer, JSON bundle, JPEG preview and a model-page examples panel. Every read rechecks source enablement, current rights, accepted binding, active catalog identity and published state. |
 | Admin surface | Guarded `/admin/showcase` review page and API for sources, rights, import, bindings, publish and withdraw; withdrawal and catalog changes invalidate public reads immediately. |
 | Fixture | `tests/fixtures/pelican/` retains the manifest, prompt, result, artifact, 480×270 JPEG, MIT text, hashes and provenance caveat. |
+| Browser | Showcase-only Playwright Chromium journeys: real WebGL pixels, three widths, both themes, keyboard/touch/pointer, opaque-origin isolation and teardown. |
+| Durability | Real two-connection publish race, mandatory `TEST_FILES` registration, BYTEA dump/restore envelope and restored showcase asset/revision assertions. |
 
-Verification receipt: `npm run verify` PASS on 2026-11-06 — 11/11 gates,
-1,113/1,113 tests, 2/2 PostgreSQL proofs, 758 main HTTP checks plus the trial
-suite, recovery 14/14, quality 682 files under the 400-line ceiling, build PASS,
-154.4 s. Focused visual-builds suites 13/13. `npm run lint` exits 0 with zero
-warnings and `npx tsc --noEmit` exits 0.
+Verification receipt: `npm run verify` PASS on 2026-11-06 — 12/12 gates,
+1,117/1,117 tests with zero skips, browser 4/4 journeys on bundled Chromium,
+758 main HTTP checks plus the trial suite, recovery 15/15, quality 682 files
+under the 400-line ceiling, build PASS and 167.8 s. The mandatory PostgreSQL
+gate passed; a standalone `npm run test:postgres` executed the showcase store
+5/5, including the two-connection publish race. `npm run check` (lint and
+typecheck) exits 0 with zero warnings.
 
 The HTTP gate exercises the public gallery, detail page, bundle, preview, admin
 401, review API, repeated publish refusal, rights withdrawal and restoration,
-and catalog rename refusal and restoration. It does not execute the artifact in
-a browser, so it is not the declared browser receipt.
+and catalog rename refusal and restoration. The separate browser gate now
+executes the artifact and hostile fixture.
 
 ### Code Verification Evidence
 
@@ -714,8 +722,8 @@ a browser, so it is not the declared browser receipt.
 - [x] Source adapter, viewer, schema, stores, routes and admin surfaces exist.
 - [x] Lint, typecheck, quality, build, unit, HTTP, PostgreSQL and recovery gates
   pass as recorded above.
-- [ ] Implementation matches every declared gate: browser and durability wiring
-  remain open.
+- [x] Implementation matches every declared gate. The only remaining external
+  item is real source-output redistribution evidence, tracked separately.
 
 ### Loop 2 — Independent audit and self-correction
 
@@ -832,19 +840,20 @@ a browser, so it is not the declared browser receipt.
 
 ## Resolution
 
-- **State:** 013A implemented 2026-11-06 under the 2026-11-05 authorization;
-  the record remains open pending the browser journey, mandatory two-connection
-  store proof, showcase recovery assertions and real source-output rights. The
-  schema-aware backup prerequisite (SCOPE VB6) is implemented and verified.
-  013B is separately gated, unimplemented and blocked.
-- **Closed Date:** unset; the declared browser and durability evidence does not
-  exist yet.
-- **Tests Added:** three `tests/visual-builds-*.test.mjs` suites, 13/13 focused
-  cases; showcase HTTP checks inside the 758-check main suite. The store suite
-  is still absent from `test:postgres`, and the recovery drill does not assert
-  showcase rows.
-- **Archived:** no; retain as an active 013A implementation record. 013B is not
-  an implementation authorization.
+- **State:** 013A implemented and locally verified 2026-11-06 under the
+  2026-11-05 authorization. The browser, five-suite, mandatory two-connection
+  store, showcase recovery and HTTP gates pass. Real source-output rights remain
+  an external followup, not a code claim. The schema-aware backup prerequisite
+  (SCOPE VB6) is implemented and verified; the BYTEA envelope was added for
+  `showcase.assets`. 013B is separately gated, unimplemented and blocked.
+- **Closed Date:** 013A local implementation 2026-11-06; the record stays active
+  only because it also carries the blocked 013B track.
+- **Tests Added:** five `tests/visual-builds-*.test.mjs` suites, 17 cases (16
+  pass plus one expected PostgreSQL skip in the ordinary run); the mandatory
+  PostgreSQL run executes 5/5 store cases with zero skips. Browser gate 4/4;
+  recovery 15/15; showcase HTTP checks inside the 758-check main suite.
+- **Archived:** no; retain for the 013B contract and the external rights
+  followup. 013B is not an implementation authorization.
 
 ## Lessons Learned
 

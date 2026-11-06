@@ -4,15 +4,6 @@
   "policy": "Archived implementations do not claim live acceptance. These are observation, operator-input or revisit items linked to archived records; they do not hold implementation closure.",
   "items": [
     {
-      "id": "FID-2026-1104-013-STORE-WIRING",
-      "fid": "FID-2026-1104-013",
-      "state": "blocked",
-      "title": "Visual-builds PostgreSQL proof and recovery wiring",
-      "detail": "The 013A schema, stores and tests/visual-builds-store.test.mjs now exist and the focused suite passes against PGlite. The path is still absent from scripts/postgres-concurrency-proof.mjs TEST_FILES, so the mandatory two-connection proof has not run. scripts/db-recovery-drill.mjs also does not seed or compare showcase.assets/revisions. This record is not proof that the concurrency or recovery proof ran.",
-      "evidence": "dev/fids/FID-2026-1104-013-model-matched-visual-builds.md; lib/storage/schema/showcase.ts; tests/visual-builds-store.test.mjs; scripts/postgres-concurrency-proof.mjs; scripts/db-recovery-drill.mjs",
-      "next_action": "Add tests/visual-builds-store.test.mjs to TEST_FILES with a real two-connection race, extend the recovery drill to seed and compare showcase asset/revision hashes, then run npm run test:postgres, npm run test:recovery and npm run verify:supabase before archiving 013A."
-    },
-    {
       "id": "FID-2026-1104-013-RIGHTS",
       "fid": "FID-2026-1104-013",
       "state": "blocked",

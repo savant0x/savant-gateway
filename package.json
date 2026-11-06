@@ -19,6 +19,7 @@
 		"config:check:prod": "node scripts/production-config-check.mjs --production",
 		"test": "node --test \"tests/*.test.mjs\"",
 		"test:browser": "node scripts/browser-matrix.mjs",
+		"test:visual-builds-browser": "node scripts/browser-matrix.mjs --showcase",
 		"test:http": "node scripts/http-suite.mjs && node scripts/trial-http-suite.mjs",
 		"test:postgres": "node scripts/postgres-concurrency-proof.mjs",
 		"push:postgres": "node scripts/with-disposable-postgres.mjs -- git push",

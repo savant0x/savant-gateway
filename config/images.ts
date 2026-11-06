@@ -18,7 +18,7 @@ export const brandImages = {
     src: "/images/og.png",
     width: 1200,
     height: 630,
-    alt: "Savant Gateway — an independent inference gateway with one OpenAI-compatible API",
+    alt: "Savant Gateway — an independent inference gateway for models across multiple families",
   },
   logo: "/images/logo.png",
   logoSmall: "/images/logo-32.png",

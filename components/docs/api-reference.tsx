@@ -102,11 +102,12 @@ export function ApiReference() {
               Your models. One connection.
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-muted">
-              Savant Gateway exposes an OpenAI-compatible surface. Read the
-              model object to choose a row, then send its id to the chat
-              endpoint. All paths below are relative to your deployment origin;{" "}
-              <code className="mono text-foreground">$GATEWAY_URL</code> stands
-              for that origin in the examples.
+              Savant Gateway exposes an OpenAI-compatible Chat Completions API
+              for available models across families, including Claude when
+              listed. Read the model object to choose a row, then send its id to
+              the chat endpoint. All paths below are relative to your deployment
+              origin; <code className="mono text-foreground">$GATEWAY_URL</code>{" "}
+              stands for that origin in the examples.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-2 text-xs">
@@ -258,8 +259,8 @@ export function ApiReference() {
               <CodeSample code={MODELS_RESPONSE} label="Response · example" />
 
               <p className="text-xs leading-6 text-muted">
-                Example values come from the current local catalog. Call the
-                endpoint for live names, prices, and availability.
+                Example values are illustrative. Call the endpoint for live
+                names, prices, and availability.
               </p>
             </section>
 
@@ -317,8 +318,7 @@ export function ApiReference() {
                   <code className="mono text-foreground">
                     text/event-stream
                   </code>
-                  . Frames use the provider&apos;s OpenAI-style chunk shape and
-                  end with{" "}
+                  . Frames use the OpenAI-style chunk shape and end with{" "}
                   <code className="mono text-foreground">data: [DONE]</code>.
                   Usage is settled after the response or stream closes.
                 </p>

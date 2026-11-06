@@ -20,7 +20,7 @@ export function Hero({ provider }: { provider: ProviderStatus }) {
             Credit settled
           </Chip>
           <Chip color="default" size="sm" variant="soft">
-            SQLite
+            PostgreSQL
           </Chip>
         </div>
         <h1 className="mt-4 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
@@ -28,8 +28,9 @@ export function Hero({ provider }: { provider: ProviderStatus }) {
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
           Sync the provider, price the paid rows, and route the whole catalog
-          through one OpenAI-compatible endpoint. Free calls stay free; paid
-          calls settle against tenant credit.
+          through one Chat Completions endpoint, including available GPT and
+          Claude models. Free calls stay free; paid calls settle against tenant
+          credit.
         </p>
       </div>
 

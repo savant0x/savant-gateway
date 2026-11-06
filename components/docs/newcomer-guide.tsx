@@ -144,6 +144,9 @@ export function NewcomerGuide() {
             families. You bring an account key; the gateway resolves the public
             model id to its provider, applies the billing group, and settles the
             call. You do not manage upstream provider accounts or credentials.
+            Available families can include OpenAI GPT and Anthropic Claude:
+            choose a current model id from the live catalog and use the same
+            request format.
           </p>
           <ul className="mt-5 space-y-2">
             <CheckItem>
@@ -155,7 +158,8 @@ export function NewcomerGuide() {
               <code className="mono text-foreground">x-api-key</code>.
             </CheckItem>
             <CheckItem>
-              Chat Completions only; native provider APIs are not exposed.
+              OpenAI-compatible Chat Completions for models across families;
+              native provider APIs are not exposed.
             </CheckItem>
           </ul>
         </section>

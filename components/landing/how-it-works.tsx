@@ -9,7 +9,7 @@ const STEPS = [
   },
   {
     title: "Call any model",
-    body: "Send requests through the OpenAI-compatible endpoint. Review your recorded usage and charges from your account.",
+    body: "Send requests to available GPT, Claude, and other models through the OpenAI-compatible Chat Completions endpoint. Review usage and charges in your account.",
   },
 ];
 

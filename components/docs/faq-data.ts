@@ -47,7 +47,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
       {
         question: "Which models can I call?",
         answer:
-          "Every active, in-catalog model visible to your account is listed by GET /v1/models and on /models. A model is servable only when it has a live provider route and, for paid rows, a sell price. The public catalog is the honest list; an empty catalog means the operator has not synced a provider yet, not that a hidden model exists.",
+          "Available models span multiple families and can include OpenAI GPT and Anthropic Claude. Use an id from GET /v1/models or /models with the OpenAI-compatible Chat Completions API. Availability changes with provider routes and pricing; a listing does not guarantee your account has the required credit or subscription.",
         link: { href: "/models", label: "Browse the catalog" },
       },
     ],
@@ -99,7 +99,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
         question:
           "Do you support the Anthropic Messages or OpenAI Responses API?",
         answer:
-          "No. The downstream surface is OpenAI-compatible Chat Completions only. Anthropic Messages is used internally as an upstream protocol and translated to the Chat Completions shape; /v1/messages and /v1/responses are not implemented. Embeddings, image generation, audio and batch endpoints are also absent; the model endpoints are /v1/models and /v1/chat/completions. Pointing an Anthropic-native or Responses-native client at this gateway will not work.",
+          "Claude models can be called when they appear in the catalog, using the OpenAI-compatible Chat Completions API. The native Anthropic Messages and OpenAI Responses APIs are not exposed: /v1/messages and /v1/responses are not implemented. Some upstream providers use Anthropic Messages internally, which the gateway translates. Anthropic-native and Responses-native clients cannot use those native endpoints here. Embeddings, image generation, audio and batch endpoints are also absent.",
         link: { href: "/docs#chat", label: "Read the chat contract" },
       },
       {
@@ -234,7 +234,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
       {
         question: "Is there an SLA or uptime commitment?",
         answer:
-          "No. This is a pre-launch deployment with no uptime guarantee or service-level credit. It runs as one persistent process on one volume, has no automatic failover, and a deploy or host failure can cause downtime. /api/health reports liveness and /api/ready reports whether configuration and storage can serve.",
+          "No. This is a pre-launch deployment with no uptime guarantee or service-level credit. A deployment or host failure can cause downtime. /api/health reports liveness and /api/ready reports whether configuration and storage can serve.",
         link: { href: "/terms", label: "Read the terms" },
       },
       {

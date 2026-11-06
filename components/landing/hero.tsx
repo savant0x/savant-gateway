@@ -17,8 +17,8 @@ export function Hero({ data }: { data: LandingData }) {
             </h1>
             <p className="hero-description">
               The intelligence your work deserves, with costs you can see.
-              Compare models, choose your price point, and build through one
-              API.
+              Compare available OpenAI GPT, Anthropic Claude, and other model
+              families, and build through one Chat Completions API.
             </p>
             <div className="hero-actions">
               <Link className={primaryCta} href="#models">

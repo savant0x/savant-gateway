@@ -13,7 +13,7 @@ export const siteConfig = {
   },
   tagline: "Frontier models. Grounded prices.",
   description:
-    "Compare model prices, choose the intelligence for your workload, and connect through one OpenAI-compatible API. Prepaid usage and account-owned keys.",
+    "Compare available GPT, Claude, and other model families through one OpenAI-compatible Chat Completions API.",
   url: siteUrl,
   navItems: [
     { label: "Models & pricing", href: "/models" },

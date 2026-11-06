@@ -1,8 +1,8 @@
 # FID register
 
-**Last folder audit:** 2026-11-05 (register reconciliation). This page indexes the
+**Last folder audit:** 2026-11-06 (FID-013 closure). This page indexes the
 working set; each FID owns its own status, evidence and resolution. Current
-counts: 13 active / 20 slots, 174 archived, 187 allocated.
+counts: 12 active / 20 slots, 175 archived, 187 allocated.
 
 ## Layout
 
@@ -25,16 +25,18 @@ counts: 13 active / 20 slots, 174 archived, 187 allocated.
 | [127](FID-2026-1103-127-real-launch-acceptance-receipt.md) | Real launch acceptance receipt | fixed | Operator records the five observations (`payment`, `recovery`, `alert`, `load`, `rollback`) and a go pinned to the release SHA, then runs `npm run receipt:launch`. |
 | [137](FID-2026-1103-137-product-hardening-and-install-order-master.md) | Product hardening and install-order master | converged | Closes only after 127 has its required operator evidence; 126 is already closed. |
 | [2026-1104-011](FID-2026-1104-011-policy-v1-2-publication.md) | Policy v1.2 for the current service surface | converged | Operator approves the recipient inventory; worker drafts v1.2 and the acceptance bump. |
-| [2026-1104-013](FID-2026-1104-013-model-matched-visual-builds.md) | Pelican-first model-matched visual builds with a gated OpenRouter track | fixed | 013A implemented and locally verified 2026-11-06, including browser 4/4, PostgreSQL 5/5 and recovery 15/15. Not archived: real source-output rights and 013B remain blocked. |
 | [2026-1104-015](FID-2026-1104-015-content-fetch-automation-and-history.md) | Dashboard-configured fetching and durable history | converged | Planning only; coding reserved and scheduler backend unconfirmed. |
 | [2026-1104-016](FID-2026-1104-016-persistent-content-model-decisions.md) | Persistent content/model acceptance and dismissal | converged | Planning only; accepted links remain attached across automatic work. |
 | [2026-1104-017](FID-2026-1104-017-content-matching-controls-and-review.md) | Full linked-content management, settings and rematch | converged | Implement after 015 and 016 in a coding session. |
 | [2026-1104-018](FID-2026-1104-018-content-automation-master.md) | Content automation and persistent matching master | converged | Planning handoff ready; no coding or hosted activation authorized. |
 
-### 2026-11-05 register audit
+### 2026-11-06 register audit
 
-- 13 active records match the 13 table rows above; 174 records are archived, for
-  187 allocated FIDs. No active record is unlisted, split or duplicated.
+- FID-2026-1104-013 closed and moved to `archive/` at implementation commit
+  `de4dfbc`. The current count is 12 active records, 175 archived, 187
+  allocated; no active record is unlisted, split or duplicated.
+- At the 2026-11-05 audit, 13 active records matched the 13 table rows; 174
+  records were archived, for 187 allocated FIDs.
 - Every filename matches its `**ID:**` field. Three archived 2026-10-31 records
   (077–079) predated that metadata field and now carry it; their status,
   resolution and evidence text is unchanged.
@@ -56,6 +58,16 @@ counts: 13 active / 20 slots, 174 archived, 187 allocated.
 - The 2026-11-04 note's `8/20` count was accurate at that point; four content
   records (015–018) were added afterwards. With 009 archived, the current count
   is 12/20.
+
+### Closed in the 2026-11-06 visual-builds implementation
+
+[2026-1104-013](archive/FID-2026-1104-013-model-matched-visual-builds.md) is
+`closed` with implementation commits `a73960f` (013A), `4009b21` (013A
+browser/durability evidence) and `de4dfbc` (013B OpenRouter lane, `/3` backup
+and gate hardening). `npm run verify` PASS: 12/12 gates, 1,123/1,123 tests,
+mandatory PostgreSQL 20/20, browser 4/4, recovery 15/15, quality 687 files,
+build PASS, 177.7 s. The OpenRouter fixture suite passes 4/4. No real source
+publication, funded inference, payment or deployment is claimed.
 
 [2026-1105-001](archive/FID-2026-1105-001-youtube-description-model-matching.md)
 is closed with implementation commit `84189f8` and local verification evidence.

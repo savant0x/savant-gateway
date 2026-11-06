@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-013-model-matched-visual-builds.md`
 **ID:** FID-2026-1104-013
 **Severity:** medium
-**Status:** fixed
+**Status:** closed
 **Authorization:** 013A was authorized 2026-11-05 and 013B on 2026-11-06. The
 operator approved the MIT-licensed Pelican/OpenRouter source use and accepted
 the related publication responsibility. Both tracks are implemented and locally
@@ -704,7 +704,8 @@ is claimed.
 
 ### Implementation Record (2026-11-06)
 
-Implementation commit `a73960f`.
+Implementation commits `a73960f` (013A), `4009b21` (013A browser/durability
+evidence) and `de4dfbc` (013B OpenRouter lane, `/3` backup and gate hardening).
 
 | Area | Implemented behavior |
 | --- | --- |
@@ -855,19 +856,20 @@ executes the artifact and hostile fixture.
 
 ## Resolution
 
-- **State:** 013A and 013B implemented and locally verified 2026-11-06 under the
-  operator's authorization and source approval. The browser, six-suite,
-  mandatory two-connection store, showcase recovery and HTTP gates pass. The
-  schema-aware backup prerequisite (SCOPE VB6) is implemented and verified; the
-  BYTEA envelope is column-aware and format `/3`. No external source-rights
-  blocker remains.
-- **Closed Date:** 2026-11-06. Final verification and commit are recorded in
-  CHANGELOG; archive after that commit.
+- **State:** 013A and 013B implemented, locally verified and closed 2026-11-06
+  under the operator's authorization and source approval. The browser,
+  six-suite, mandatory two-connection store, showcase recovery and HTTP gates
+  pass. The schema-aware backup prerequisite (SCOPE VB6) is implemented and
+  verified; the BYTEA envelope is column-aware and format `/3`. No external
+  source-rights blocker remains.
+- **Closed Date:** 2026-11-06.
 - **Tests Added:** six `tests/visual-builds-*.test.mjs` suites, including the
-  OpenRouter fixture; the mandatory PostgreSQL run executes 5/5 store cases with
-  zero skips. Browser gate 4/4; recovery 15/15; showcase HTTP checks inside the
-  758-check main suite.
-- **Archived:** pending the final verified commit for both tracks.
+  OpenRouter fixture; the mandatory PostgreSQL run executes 20/20 overall with
+  5/5 store cases and zero skips. Browser gate 4/4; recovery 15/15; showcase
+  HTTP checks inside the 758-check main suite.
+- **Archived:** `dev/fids/archive/FID-2026-1104-013-model-matched-visual-builds.md`,
+  at implementation commit `de4dfbc`. No real source publication, funded
+  inference, payment or deployment is claimed.
 
 ## Lessons Learned
 

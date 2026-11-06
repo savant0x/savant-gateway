@@ -1,6 +1,6 @@
 # Current project status
 
-**Index date: 2026-11-05.** This page is a dated index, not a receipt. Each claim
+**Index date: 2026-11-06.** This page is a dated index, not a receipt. Each claim
 links to the record that owns it; a record can be newer than this page. The
 previous index is preserved as [the 2026-10-31 record](project-status-2026-10-31.md).
 
@@ -20,7 +20,17 @@ remains the dated release review.
 | How is real acceptance recorded? | [launch-receipt.md](launch-receipt.md) |
 | How is the app installed and deployed? | [getting-started.md](getting-started.md), [README](../README.md) |
 
-## Verification — 2026-11-05
+## Verification — 2026-11-06 (FID-013 closure)
+
+`npm run verify` PASS on the 013B tree — 12/12 gates, 1,123/1,123 tests with
+zero skips, mandatory PostgreSQL 20/20, browser 4/4, 758 main HTTP checks plus
+the trial suite, recovery 15/15, quality 687 files, build PASS and 177.7 s.
+`npm run check` exits 0. Implementation commits: `a73960f` (013A), `4009b21`
+(013A browser/durability) and `de4dfbc` (013B OpenRouter lane, `/3` backup and
+gate hardening). No real source publication, funded inference, payment or
+deployment is claimed.
+
+## Verification — 2026-11-05 (FID-009 closure)
 
 Measured locally on Windows x64 with Node 24.21.0. The closure run is based on
 implementation commit `0052734`; the pre-push hook repeats it on the pushed tree:
@@ -59,7 +69,7 @@ no hosted re-observation is claimed here.
 
 ## Active queue
 
-Thirteen records are active. The [register](../dev/fids/README.md) owns the exact
+Twelve records are active. The [register](../dev/fids/README.md) owns the exact
 next action and evidence edges; this table is the current summary.
 
 | ID | Status | Open obligation |
@@ -72,7 +82,6 @@ next action and evidence edges; this table is the current summary.
 | [127](../dev/fids/FID-2026-1103-127-real-launch-acceptance-receipt.md) | fixed | `npm run receipt:launch` reports INCOMPLETE until the operator records the five required observations (`payment`, `recovery`, `alert`, `load`, `rollback`) and a go decision pinned to the release SHA. |
 | [137](../dev/fids/FID-2026-1103-137-product-hardening-and-install-order-master.md) | converged | Sequencing register; closes only after FID-127 has its operator evidence. FID-126 is already closed. |
 | [011](../dev/fids/FID-2026-1104-011-policy-v1-2-publication.md) | converged | Operator approves the recipient inventory; draft and publish policy `v1.2` with the acceptance bump. |
-| [013](../dev/fids/FID-2026-1104-013-model-matched-visual-builds.md) | fixed | 013A implemented and locally verified 2026-11-06: browser 4/4, PostgreSQL 5/5, recovery 15/15, five suites. Not archived; real source-output rights and 013B wait on external evidence. |
 | [015](../dev/fids/FID-2026-1104-015-content-fetch-automation-and-history.md) | converged | Planning only; coding is reserved and the scheduler backend is unconfirmed. |
 | [016](../dev/fids/FID-2026-1104-016-persistent-content-model-decisions.md) | converged | Planning only; accepted links must remain attached across automatic work. |
 | [017](../dev/fids/FID-2026-1104-017-content-matching-controls-and-review.md) | converged | Implement after 015 and 016; management, settings and rematch are not shipped. |
@@ -98,10 +107,10 @@ recovery drill; it does not claim Linux CI, a clean install with postinstall
 scripts enabled, the load gate or hosted delivery.
 
 FID-2026-1104-009 closed on 2026-11-05 at `0052734` with the 12/12 browser
-receipt above. FID-2026-1104-013A was implemented on 2026-11-06 and remains
-active: its browser journey, mandatory PostgreSQL store wiring, showcase
-recovery assertions and real source-output rights are still missing. 013B
-remains blocked.
+receipt above. FID-2026-1104-013 closed on 2026-11-06 at `de4dfbc`: the browser
+journey, mandatory PostgreSQL store wiring, showcase recovery assertions and
+OpenRouter fixture are present and verified. The operator approved the MIT
+source use; no external rights blocker remains.
 
 FID-127 remains active because the operator receipt does not exist yet. The
 dated receipts in [the 2026-10-31 record](project-status-2026-10-31.md) remain

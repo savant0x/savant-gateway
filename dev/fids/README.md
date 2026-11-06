@@ -2,7 +2,7 @@
 
 **Last folder audit:** 2026-11-05 (register reconciliation). This page indexes the
 working set; each FID owns its own status, evidence and resolution. Current
-counts: 15 active / 20 slots, 171 archived, 186 allocated.
+counts: 13 active / 20 slots, 173 archived, 186 allocated.
 
 ## Layout
 
@@ -17,8 +17,6 @@ counts: 15 active / 20 slots, 171 archived, 186 allocated.
 
 | ID | Title | Status | Next action |
 | --- | --- | --- | --- |
-| [2026-1105-008](FID-2026-1105-008-admin-economics-master.md) | Admin economics systems master | converged | Planning handoff ready; implementation of 005 → 006 → 007 requires a coding session. |
-| [2026-1105-007](FID-2026-1105-007-customer-and-offering-economics.md) | Customer and offering economics | converged | Implement after 005 and 006; no plan, ledger or entitlement write is authorized by the design. |
 | [2026-1105-004](FID-2026-1105-004-scheduled-provider-sync.md) | Scheduled provider sync and AIO trigger | fixed | Deployed at `dpl_53PM1vwqGkVk61xzaCWXfruwL2CC`; `CRON_SECRET` set; unauth `401`, auth and Vercel-triggered run `200` (nothing due). Next: observe a scheduled due-provider refresh. |
 | [2026-1105-003](FID-2026-1105-003-router-cheap-provider.md) | router.cheap reseller integration | fixed | Implementation commit `6cdfc80`; archive after the remaining closure acceptance. No inference, reseller customer or management write. |
 | [043](FID-2026-1030-043-launch-master.md) | Master launch contract and dependency register | converged | Keep coverage, ordering and release decisions current. |
@@ -35,18 +33,18 @@ counts: 15 active / 20 slots, 171 archived, 186 allocated.
 
 ### 2026-11-05 register audit
 
-- 15 active records match the 15 table rows above; 171 records are archived, for
+- 13 active records match the 13 table rows above; 173 records are archived, for
   186 allocated FIDs. No active record is unlisted, split or duplicated.
 - Every filename matches its `**ID:**` field. Three archived 2026-10-31 records
   (077–079) predated that metadata field and now carry it; their status,
   resolution and evidence text is unchanged.
 - `npm run repository:check` passes: 15 active FIDs, closure commit references,
   root links and current-doc links are consistent.
-- 005–008 are `converged` as of the 2026-11-05 admin-economics planning pass:
-  template-conformant records, six unique operator items assigned to three
-  children, and shared economics definitions. No implementation, test, price,
-  provider funding or deployment is claimed; the planned test files do not
-  exist until a coding session implements them.
+- 005–008 are closed and archived after implementation. 005 and 006 landed in
+  `59341a4`; 007 landed in `0a74353`; the master closed with all three children.
+  `npm run verify` PASS on the final tree: 11/11 gates, 1,100 tests, PostgreSQL
+  2/2, build, HTTP and recovery. No provider funding, live payment, price
+  publication or deployment is claimed.
 - FID-2026-1105-004 is implemented, gated and committed at `15d01b4`; the Hobby
   daily schedule is written, but no deployment, secret or scheduler activation
   exists yet.
@@ -110,6 +108,15 @@ hosted restore, delivered alert and the release decision stay with
 [062](FID-2026-1030-062-launch-acceptance-and-rollout.md). Funded paid
 inference was withdrawn from the required test scope on 2026-11-04 and remains
 unverified.
+
+### Closed in the 2026-11-05 customer and offering economics implementation
+
+[2026-1105-007](archive/FID-2026-1105-007-customer-and-offering-economics.md)
+and [2026-1105-008](archive/FID-2026-1105-008-admin-economics-master.md) are
+`closed` with implementation commit `0a74353` for 007 and child commits
+`59341a4`/`0a74353` for the master. The customer contribution, free cohort and
+read-only simulator surfaces pass the full 11-gate verification. No plan, ledger
+or entitlement write path was added.
 
 ### Closed in the 2026-11-05 billing concurrency implementation
 

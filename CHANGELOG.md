@@ -3,6 +3,29 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-05 — Customer and offering economics (007, 008)
+
+- **FID-2026-1105-007 — high —** added `/admin/economics` with paginated
+  customer contribution, free-tier conversion cohorts and a read-only plan
+  simulator. Top-up principal stays a liability, credit charges are settled
+  usage revenue, plan cash is observed at the paid-invoice date, and recorded
+  upstream cost is an estimate; fees and refunds remain unavailable rather than
+  zero. Cohorts use explicit UTC signup and observation windows, report
+  denominator-qualified rates and do not claim acquisition causality. The
+  simulator consumes only a plan snapshot, active catalog models and
+  operator-entered workloads; it has no database handle and labels overage
+  allocation as a simulated assumption. The abnormal customer-spend signal
+  reuses FID-006's existing operations alert path.
+- **FID-2026-1105-008 — high —** the economics master closed with its three
+  children: pricing command center (`59341a4`), provider capital and alerts
+  (`59341a4`), and customer/offering economics (`0a74353`).
+- **Verification:** `npm run verify` PASS — 11/11 gates, 1,100/1,100 tests with
+  zero skips, 2/2 mandatory PostgreSQL proofs, quality PASS (658 files), build
+  PASS, 718 main HTTP checks plus the trial suite, recovery 14/14, 154.1 s. New
+  suite `tests/customer-offering-economics.test.mjs` (4/4). No plan, ledger or
+  entitlement write path was added; no live payment, funding or deployment is
+  claimed.
+
 ## 2026-11-05 — Billing concurrency and tool-output fallback (009, 010, 011)
 
 - **FID-2026-1105-009 — high —** subscription admission, sweep, lifecycle,

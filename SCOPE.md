@@ -1,5 +1,33 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-05 (customer and offering economics implementation: 007–008)
+
+Operator accepted the full recommendation and granted automation level 3. This
+session implements the remaining child of the admin-economics program and closes
+the master. Work is limited to repository code, disposable PostgreSQL and local
+HTTP fixtures. No plan, ledger or entitlement write, funded inference, live
+payment, provider transfer, price publication or deployment is authorized or
+performed.
+
+- [x] **CE1 — Customer contribution.** Added a bounded, paginated read model over
+  settled credit usage, paid subscription invoices and top-up principal. The UI
+  reports contribution and coverage separately, keeps top-ups out of revenue and
+  never fills absent fees or refunds with zero.
+- [x] **CE2 — Free cohorts.** Added explicit UTC signup and observation windows,
+  first-free-use and later-paid counts, denominator-qualified conversion rates,
+  an unknown-history bucket and an explicit no-causal-attribution label.
+- [x] **CE3 — Plan simulator.** Added a pure, read-only what-if over a plan
+  snapshot, active catalog models and light/normal/heavy workloads. It uses the
+  shared weighted-token, markup, margin and monthly-run-rate math and cannot
+  publish a plan or mutate a subscription.
+- [x] **CE4 — Reuse the alert authority.** The abnormal customer-spend rule
+  remains FID-006's `OPERATIONS_CUSTOMER_SPEND_MICROS` path; no second incident
+  pipeline was created.
+- [x] **CE5 — Prove and close.** New suite 4/4; `npm run verify` PASS (11/11
+  gates, 1,100/1,100 tests, PostgreSQL 2/2, 718 main HTTP checks plus trial,
+  recovery 14/14, 154.1 s). Implementation commit `0a74353`; FIDs 007 and 008
+  archived.
+
 ## Session — 2026-11-05 (billing concurrency and tool fallback implementation: 009–011)
 
 Operator supplied the converged design records and the
@@ -68,9 +96,9 @@ remains provider working capital, not infrastructure budget.
   outside the guarded approval path, no provider was funded, and no ledger or
   entitlement was mutated. Evidence: `npm run verify` PASS, 11/11 gates,
   1,075/1,075 tests; implementation commit `59341a4`.
-- [ ] **AE5 — Implement 007.** Customer and offering economics remains
-  unimplemented. It needs its own coding session and may not infer a plan,
-  ledger or entitlement write from this pass.
+- [x] **AE5 — Implement 007.** Customer and offering economics landed in
+  `0a74353`; the read-only contribution, cohort and simulator surfaces pass the
+  full verification set recorded in the 2026-11-05 CE session above.
 
 ## Session — 2026-11-05 (scheduled provider sync design: 004)
 

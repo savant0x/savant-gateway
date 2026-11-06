@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1106-002-responsive-allocation-and-related-rows.md`
 **ID:** FID-2026-1106-002
 **Severity:** low
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-06 18:15
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — two existing surfaces gain the smallest layout
@@ -146,12 +146,28 @@ components/content/content-detail-aside.tsx   compact cards, no media
 - [x] **Reproducibility:** `npm run build && npm run test:browser`; the matrix
   fails with the offender list if the overflow returns.
 - [x] **Full verify:** PASS, 191.4 s, on the same build.
-- [ ] **Commit:** pending; the record stays `fixed` until a real commit exists.
+- [x] **Commit:** `64a30f0bdf496f27a17a6f17e140e57ee4911c0e`.
+
+## Resolution
+
+- **Closed Date:** 2026-11-06 18:25
+- **Fix Description:** added `min-w-0` to the model detail content column and the
+  free-allocation walkthrough rows, so the `curl` block scrolls in its own box;
+  rendered Signal related reading with the existing `ContentMedia` row variant
+  and a separate title link.
+- **Tests Added:** the browser matrix now reports the offending elements on a
+  width failure, asserts the whole empty free-model page at 390 px and asserts a
+  seeded related-reading row's thumbnail, title link and zero pre-activation
+  iframes.
+- **Verification Evidence:** commit `64a30f0`; production build
+  `0zm_Bb4Z79zlK7_rqLpy1`; full browser matrix 14/14; `npm run verify` PASS with
+  12/12 gates, 1,124/1,124 tests, PostgreSQL 20/20 and 191.4 s.
+- **Archived:** 2026-11-06 18:25
 
 ## Related audit
 
 The separate archived-receipt audit is
-[`dev/audits/2026-11-06-archived-fid-receipt-audit.md`](../audits/2026-11-06-archived-fid-receipt-audit.md).
+[`dev/audits/2026-11-06-archived-fid-receipt-audit.md`](../../audits/2026-11-06-archived-fid-receipt-audit.md).
 It found no stale build citation, one mislabeled commit, and four absent test
 filenames that are planning, rejected or explicitly skipped references rather
 than passing claims.

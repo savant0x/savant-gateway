@@ -137,6 +137,12 @@ without checking the selected topology and open gates.
   superseded 2026-10-30 by the Fly decision.
 - [launch-readiness.md](launch-readiness.md) — 2026-10-29 prerequisite inventory;
   the launch plan is the current execution order.
+- [../dev/audits/2026-11-06-archived-fid-receipt-audit.md](../dev/audits/2026-11-06-archived-fid-receipt-audit.md)
+  — archived FID receipts checked for stale build citations, missing test names
+  and path drift.
+- [../dev/audits/2026-11-06-fid-folder-audit.md](../dev/audits/2026-11-06-fid-folder-audit.md)
+  — FID folder reconciliation: counts, IDs, register links and legacy format
+  deviations.
 - `dev/audits/` and `dev/session-summaries/` — dated review and handoff receipts.
 - `dev/fids/archive/` — closed FID records; live acceptance gaps may remain and
   are tracked in `dev/tracking/internal-followups.json`.

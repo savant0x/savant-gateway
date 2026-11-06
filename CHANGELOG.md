@@ -20,6 +20,7 @@ distinguish verified behavior from unverified claims.
   scanned 176 archived records. No stale build citation was found; one commit
   was mislabeled as a build and is corrected. Four absent test filenames are
   planning, rejected or explicitly skipped references, not passing claims.
+- **Closure:** commit `64a30f0`; FID-2026-1106-002 is closed and archived.
 
 ## 2026-11-06 — Visual model coverage rows (001)
 

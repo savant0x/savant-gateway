@@ -1,8 +1,8 @@
 # FID register
 
-**Last folder audit:** 2026-11-06 (FID-001 closure). This page indexes the
+**Last folder audit:** 2026-11-06 (FID-002 closure). This page indexes the
 working set; each FID owns its own status, evidence and resolution. Current
-counts: 13 active / 20 slots, 176 archived, 189 allocated.
+counts: 12 active / 20 slots, 177 archived, 189 allocated.
 
 ## Layout
 
@@ -17,7 +17,6 @@ counts: 13 active / 20 slots, 176 archived, 189 allocated.
 
 | ID | Title | Status | Next action |
 | --- | --- | --- | --- |
-| [2026-1106-002](FID-2026-1106-002-responsive-allocation-and-related-rows.md) | Responsive free allocation and related rows | fixed | Full gate and browser matrix pass on `0zm_Bb4Z79zlK7_rqLpy1`; commit the verified tree, then archive after the closure commit exists. |
 | [2026-1105-004](FID-2026-1105-004-scheduled-provider-sync.md) | Scheduled provider sync and AIO trigger | fixed | Deployed at `dpl_53PM1vwqGkVk61xzaCWXfruwL2CC`; `CRON_SECRET` set; unauth `401`, auth and Vercel-triggered run `200` (nothing due). Next: observe a scheduled due-provider refresh. |
 | [2026-1105-003](FID-2026-1105-003-router-cheap-provider.md) | router.cheap reseller integration | fixed | Implementation commit `6cdfc80`; archive after the remaining closure acceptance. No inference, reseller customer or management write. |
 | [043](FID-2026-1030-043-launch-master.md) | Master launch contract and dependency register | converged | Keep coverage, ordering and release decisions current. |
@@ -33,10 +32,9 @@ counts: 13 active / 20 slots, 176 archived, 189 allocated.
 
 ### 2026-11-06 register audit
 
-- FID-2026-1106-002 registered for the 390 px free-model overflow and the
-  Signal related-reading rows. The count is now 13 active, 176 archived and 189
-  allocated. It stays `fixed`, not archived, until a full gate run and a real
-  commit exist.
+- FID-2026-1106-002 closed at commit `64a30f0` and moved to `archive/`. The
+  count is 12 active, 177 archived and 189 allocated. The folder audit is
+  [`../audits/2026-11-06-fid-folder-audit.md`](../audits/2026-11-06-fid-folder-audit.md).
 - FID-2026-1106-001 was reopened after its first archive because the browser
   journey did not assert newest-first order or stored-over-GitHub image
   precedence. It closed again at implementation commit `95ed201` with a fresh
@@ -70,6 +68,14 @@ counts: 13 active / 20 slots, 176 archived, 189 allocated.
 - The 2026-11-04 note's `8/20` count was accurate at that point; four content
   records (015–018) were added afterwards. With 009 archived, the current count
   is 12/20.
+
+### Closed in the 2026-11-06 responsive allocation repair
+
+[2026-1106-002](archive/FID-2026-1106-002-responsive-allocation-and-related-rows.md)
+is `closed` at commit `64a30f0`. The free-model page no longer overflows at
+390 px, Signal related reading uses the thumbnail row variant, and the browser
+matrix passes 14/14 journeys on build `0zm_Bb4Z79zlK7_rqLpy1`. `npm run verify`
+passes 12/12 gates with 1,124/1,124 tests and PostgreSQL 20/20.
 
 ### Closed in the 2026-11-06 model coverage implementation
 

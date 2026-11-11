@@ -3,6 +3,36 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-10 — Research document integrity repair (001)
+
+- **FID-2026-1110-001 — medium —** the two research documents were repaired
+  rather than adopted. Both now carry a provenance header and an evidence-status
+  table that separates vendor self-claims, secondary reports and unmeasured
+  figures. The strategy P&L is recomputed by one stated method (the net column
+  had been GMV minus hosting, omitting wholesale cost, and was wrong in all
+  three rows), its `$0.850 / 2.12x` retail price is reconciled to `$0.800 / 2.00x`
+  so it matches the executive summary, and its SQLite/Map-ledger and crypto-only
+  recommendations are marked superseded against the implemented PostgreSQL
+  ledger and Stripe/NOWPayments lanes. The market document's equations are now
+  text, its listings are fenced and de-escaped, and the Python "canary daemon"
+  was deleted: its verification function discarded the signature and returned a
+  length check. A new supply-tier section records that the cost basis assumes a
+  supply class the companion document itself classifies as fraud and
+  Terms-of-Service violation.
+- **Verification:** lint 0, typecheck 0, `npm test` 1,118 pass / 0 fail / 16
+  environment-gated skips, attribution PASS, repository check PASS. New
+  `tests/research-documents.test.mjs` is 7/7 and asserts provenance, absence of
+  placeholder targets, fencing, escape cleanliness and the P&L reconciliation.
+- **Discovered defect:** `tests/store-customer-batch-postgres.test.mjs` pinned
+  its clock to 2026-10-31 while session expiry compares against the real clock
+  with a 7-day TTL, so the fixture aged out and failed. It is now relative to
+  the run clock; no assertion was weakened.
+- **Operator ruling:** asked to authorize removal of 13 orphan base64 image
+  definitions (~24 KB) or keep them, the operator ruled: "Keep them; record the
+  residual." No scripted edit was run. Nothing is carried as an image any more;
+  the definitions are unreferenced data and the record says so.
+- **Closure:** implementation commit `f6ecba3`; the record is archived.
+
 ## 2026-11-06 — router.cheap review evidence closure (003)
 
 - **FID-2026-1105-003 — high —** router.cheap eligibility enforcement is

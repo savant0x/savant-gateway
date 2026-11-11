@@ -2,7 +2,7 @@
 
 **Last folder audit:** 2026-11-06 (FID-002 closure). This page indexes the
 working set; each FID owns its own status, evidence and resolution. Current
-counts: 10 active / 20 slots, 179 archived, 189 allocated.
+counts: 11 active / 20 slots, 180 archived, 191 allocated.
 
 ## Layout
 
@@ -27,6 +27,20 @@ counts: 10 active / 20 slots, 179 archived, 189 allocated.
 | [2026-1104-016](FID-2026-1104-016-persistent-content-model-decisions.md) | Persistent content/model acceptance and dismissal | converged | Planning only; accepted links remain attached across automatic work. |
 | [2026-1104-017](FID-2026-1104-017-content-matching-controls-and-review.md) | Full linked-content management, settings and rematch | converged | Implement after 015 and 016 in a coding session. |
 | [2026-1104-018](FID-2026-1104-018-content-automation-master.md) | Content automation and persistent matching master | converged | Planning handoff ready; no coding or hosted activation authorized. |
+| [2026-1110-002](FID-2026-1110-002-identity-calibration-lab.md) | Identity calibration lab and measured certificate | converged | Freeze the v3 manifest and power calculation before collecting any arm, then wire the certificate into the verdict path. |
+
+### Closed in the 2026-11-10 research document repair
+
+[2026-1110-001](archive/FID-2026-1110-001-research-document-integrity.md) is
+`closed` at implementation commit `f6ecba3`. Both research documents carry
+provenance and an evidence-status table; the strategy P&L is recomputed by one
+method and its retail price reconciled; the persistence and payment sections are
+marked superseded against the implemented design; the non-verifying canary daemon
+is deleted; and `tests/research-documents.test.mjs` (7/7) guards provenance,
+placeholder targets, fences, escape cleanliness and the P&L identity.
+`npm test` PASS with 1,118 passing and zero failures. Thirteen orphan base64
+image definitions remain at the ends of the two files and are recorded as an
+operator-approved residual; no formula is carried as an image any more.
 
 ### Closed in the 2026-11-06 router.cheap evidence closure
 

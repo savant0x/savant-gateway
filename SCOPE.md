@@ -1,5 +1,71 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-10 (identity calibration lab: 002)
+
+Operator instruction: "Turn the AIO review's calibration lab into a FID,
+following the repository's ECHO/FID rules." Automation level 3; strict; single
+agent. Registration and convergence only — no code, schema, test, configuration
+or research document was edited, and no inference, payment or publication is
+claimed.
+
+- [ ] **CL1 — Register and converge the calibration lab.**
+  [FID-2026-1110-002](dev/fids/FID-2026-1110-002-identity-calibration-lab.md)
+  is `converged`. The shipped identity decision is uncalibrated: a route is
+  `consistent` at `1.5 × noise` and `divergent` above `3 × noise`, with `noise`
+  a split-half JSD spread and both multipliers sealed as invented constants
+  (`lib/identity/battery.ts:28-29`, `lib/identity/fingerprint.ts:105-114`). No
+  code computes, stores or requires a calibration certificate, and the identity
+  schema has no certificate table. The record defines a sealed, API-only,
+  free-quota lab: pre-registered manifest, per-cell e-process at `α/6` with a
+  union bound, 299 zero-false-positive controls for a 0.00997 exact upper
+  bound, and 35 held-out positives per class for a 0.9011 Wilson lower bound.
+  Two defects in the research gate are corrected rather than inherited: 20
+  positives cannot certify TPR ≥ 0.90 (20/20 = 0.8389), and 400 verdict-level
+  controls cost 77,200 requests / 128.7 h at 10 RPM. The full corrected matrix
+  is 44,910 requests / 74.85 h at 10 RPM and fits the 7-day reference TTL. No
+  certificate, no fingerprint-derived verdict; quantization stays `not_tested`.
+  The certificate is valid for 90 days and voids on any sealed-input change;
+  the 7-day TTL constrains only the reference used by the matrix run.
+
+## Session — 2026-11-10 (research document integrity: 001)
+
+Operator instruction: "Register a documentation FID to fix the P&L arithmetic,
+the broken code blocks, the placeholder citations, and the contradictions in
+both research documents." Automation level 3; strict; single agent. Registration
+and RED analysis only — no document was edited, no test written, and no price,
+provider, credential or code path was touched.
+
+- [x] **RI1 — Repair the two research documents.** FID-2026-1110-001 is
+  `closed` at implementation commit `f6ecba3`: nine defect classes (E1–E9) are cataloged against
+  `docs/research/Wholesale AI Inference Reseller Market.md` and
+  `research/AI Inference Reseller Strategy.md`. The strategy document's P&L net
+  column is wrong in all three rows ($6, $24, $70 against a gross-profit
+  method), its executive retail price contradicts its own pricing table, and its
+  sole source for the margin argument is a placeholder
+  (`unknown_url`). The market document's equations are base64 blobs, its two
+  code listings cannot execute, and one of them is a verification function that
+  verifies nothing. The strategy document additionally contradicts this
+  repository (better-sqlite3 in-memory reservations vs the PostgreSQL
+  two-connection debit proof; Stripe declared rejected while it ships alongside
+  NOWPayments; model ids the catalog does not produce). The two documents also
+  contradict each other on the supply tier. The strategy document is tracked and
+  dirty (117 uncommitted insertions), so `git diff` is its baseline; the market
+  document is **untracked** and has no baseline. Both must be committed in the
+  implementation slice. **Completed in `f6ecba3`.** Both documents now carry
+  provenance and an evidence-status table; the P&L is recomputed by one stated
+  method (gross profit minus fixed cost) and its retail price reconciled to
+  `$0.800 / 2.00x`; the SQLite/Map-ledger and crypto-only sections are marked
+  superseded against the implemented PostgreSQL ledger and the Stripe/
+  NOWPayments lanes; the equations are text; the non-verifying Python canary
+  daemon is deleted; and a supply-tier disclosure records that the cost basis
+  assumes a supply class the companion document classifies as fraud and
+  Terms-of-Service violation. `tests/research-documents.test.mjs` passes 7/7 and
+  the full suite is 1,118 pass / 0 fail. Discovered in the same pass: the
+  customer-session fixture had been pinned to a date that aged past the 7-day
+  session TTL, failing `store-customer-batch-postgres`; it is now relative to the
+  run clock and passes 12/12. Operator ruling on the 13 orphan base64
+  definitions: "Keep them; record the residual" — no scripted edit was run.
+
 ## Session — 2026-11-06 (model coverage visual rows: 001)
 
 Operator requested a FID and handoff for visual coverage on model pages, then

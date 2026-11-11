@@ -1,5 +1,19 @@
 # **Commercial AI Inference Gateway Strategy: Operational Architecture, Economic Defense, and Developer Acquisition**
 
+> **Provenance.** Generated strategy synthesis, dated 2026-11-10. No figure in
+> this document is a measurement; every financial number is a projection and
+> every market observation is a vendor self-claim or a secondary report, as
+> classified in *Evidence status* at the end.
+>
+> **Status: unverified draft.** Sections marked **superseded** describe a system
+> that is not the one implemented in this repository; they are retained so the
+> reasoning is visible, not as guidance. The implemented design is named inline.
+>
+> **What this is not.** Not a legal opinion, not a price list, not a commitment
+> to any supplier, and not a plan this repository has adopted. Model names and
+> wholesale rates below are illustrative unless a section says otherwise; the
+> authoritative catalog is whatever provider-scoped sync publishes.
+
 ## **Executive Strategic Blueprint**
 
 The transition of an artificial intelligence inference reseller from a low-margin token arbitrage proxy into a durable, capital-efficient infrastructure gateway requires establishing technical defensibility, protocol fidelity, and financial safeguards1. A solo operator working with \$150 in initial working capital cannot rely on paid client acquisition, headcount-intensive support, or loss-leading price wars3. Long-term viability depends on five decisive strategic choices:
@@ -7,8 +21,8 @@ The transition of an artificial intelligence inference reseller from a low-margi
 > 1. **Reposition Exclusively as Dedicated Infrastructure for Autonomous Coding Agents**: The enterprise must reject generic "cheaper token" marketplace positioning4. The gateway will optimize specifically for programmatic, high-volume terminal harnesses and IDE coding tools, specifically Cursor, Claude Code CLI, Cline, Roo Code, and Aider6. Autonomous coding loops consume between 5M and 20M tokens per single debugging task, generating predictable volume from developers who are actively seeking alternatives to consumer seat limits and prohibitive direct frontier pricing7.  
 > 2. **Elevate Pricing from the 1.3x Baseline to a Differentiated 2.0x–2.5x Value Multiplier**: The current 30% markup (1.3x cost-plus) delivers an effective gross margin of only 23.08%, which is mathematically insufficient to absorb unpaid stream disconnects, network transaction fees, infrastructure overhead, and upstream rate changes9. Implementing a 2.0x to 2.5x multiplier establishes a 50.0% to 60.0% gross margin while preserving a 70% to 88% retail discount relative to direct vendor list prices from Anthropic, OpenAI, and Google8.  
 > 3. **Impose Cryptographic Proof-of-Work and Subnet Clamping on the 20M Free Tier**: The upstream allocation of 20M daily weighted tokens must not be treated as an open, unauthenticated proxy endpoint2. To prevent automated scraping scripts from consuming the daily allocation within minutes, access must be gated behind an Altcha Proof-of-Work challenge, an account ceiling of 100,000 weighted tokens per day, an account concurrency clamp of 1 in-flight request, and dynamic throughput shedding when provider reserves approach 1.0M tokens2.  
-> 4. **Decouple Database I/O from the Streaming Request Path via In-Memory Reservations**: The application stack (Next.js 16 App Router and better-sqlite3 on a single persistent Node.js process) cannot run synchronous disk writes during active streaming without inducing severe event-loop lag and inter-chunk jitter14. Balance reservation, admission control, and usage metering must execute atomically in memory via Node.js Map collections, while SQLite operates in Write-Ahead Logging (WAL) mode with PRAGMA synchronous \= NORMAL exclusively for periodic balance commits and audit logging16.  
-> 5. **Enforce Non-Custodial Layer-2 USDC Settlement with Mandatory Pre-Flight Balance Holds**: The gateway will remain crypto-only, standardizing on direct USDC deposits on Polygon and Base19. Credit card processing will remain disabled to eliminate chargebacks, rolling reserve holds, and merchant account freezes on resold inference19. To eliminate negative wallet balances caused by mid-stream disconnections, the gateway will hold a pre-flight balance lock equal to the worst-case max\_tokens cost prior to opening the upstream streaming socket2.
+> 4. **~~Decouple Database I/O from the Streaming Request Path via In-Memory Reservations~~ — SUPERSEDED by the implemented design**: The original recommendation (better-sqlite3 with an in-process Map ledger) is **not** the shipped architecture. The implementation is PostgreSQL over `pg`, with balance, reservation, settlement and the ledger in `lib/storage/` and `lib/storage/gateway/`, proven by a two-connection debit test (`npm run test:postgres`) that a process-local Map cannot pass. The latency concern the bullet raised is addressed by keeping database work off the relay path, not by moving balances into process memory.  
+> 5. **~~Enforce Non-Custodial Layer-2 USDC Settlement~~ — partially SUPERSEDED**: The implemented system is **not** crypto-only. It ships Stripe-confirmed top-ups and NOWPayments, both fulfilled by signature-verified webhooks (`lib/stripe.ts`, `lib/nowpayments.ts`, `app/api/webhooks/`). The crypto-only argument below is retained as reasoning about chargeback exposure; it is not a description of the code. To eliminate negative wallet balances caused by mid-stream disconnections, the gateway will hold a pre-flight balance lock equal to the worst-case max\_tokens cost prior to opening the upstream streaming socket2.
 
 ## **Competitor Matrix**
 
@@ -40,14 +54,14 @@ To build an economically durable operation with \$150 in capital and a single wh
 
 * **Target Audience**: Developers, software engineers, and technical founders operating automated coding agents (Cursor, Claude Code CLI, Cline, Roo Code, Aider) who regularly exhaust consumer subscriptions and cannot afford direct API pricing from Anthropic or OpenAI6.  
 * **Acquisition Wedge**: A 60-second integration process that reduces token expenditures by up to 80% using a standard OpenAI-compatible base URL, complete with verified prompt caching and transparent telemetry1.  
-* **Economics**: Retail markup established at 2.0x (yielding a 50.0% gross margin)9. Under this structure, Claude Sonnet 5.5 retails at \$0.80 per 1M tokens (compared to official Anthropic pricing of \$3.00 blended), while DeepSeek V4.1 Flash retails at \$0.12 per 1M tokens (compared to \$0.70 blended direct)8. A developer consuming 15M tokens monthly generates \$12.00 in gross merchandise volume (GMV) and \$6.00 in gross profit7.  
+* **Economics**: Retail markup established at 2.0x (yielding a 50.0% gross margin)9. Under this structure, a mid-tier Anthropic-family model retails at \$0.80 per 1M tokens (2.00x against \$0.40 wholesale; official blended list is \$3.00), while an economy open-weight model retails at \$0.12 per 1M tokens (compared to \$0.70 blended direct)8. A developer consuming 15M tokens monthly generates \$12.00 in gross merchandise volume (GMV) and \$6.00 in gross profit7.  
 * **Prerequisites for Success**: High protocol fidelity, reliable Server-Sent Events (SSE) streaming, context window support up to 1M tokens, correct tool-call serialization, and consistent upstream availability1.
 
 ### **Strategy 2: The Sovereign Privacy Gateway**
 
 * **Target Audience**: International developers, privacy-conscious engineers, and Web3 builders in regions lacking access to Stripe-supported credit cards, as well as teams requiring complete operational privacy1.  
 * **Acquisition Wedge**: Instant API access funded via USDC on Polygon and Base, requiring no identity verification, no credit card records, and a verifiable zero-data-retention policy1.  
-* **Economics**: Retail markup established at 2.5x to 3.0x (yielding a 60.0% to 66.7% gross margin)9. Claude Sonnet 5.5 retails at \$1.00 to \$1.20 per 1M tokens, capturing higher margins from users who prioritize frictionless global access and financial privacy8.  
+* **Economics**: Retail markup established at 2.5x to 3.0x (yielding a 60.0% to 66.7% gross margin)9. A mid-tier Anthropic-family model retails at \$1.00 to \$1.20 per 1M tokens, capturing higher margins from users who prioritize frictionless global access and financial privacy8.  
 * **Prerequisites for Success**: Non-custodial crypto payment verification, robust RPC event listening, automated wallet balance reconciliation, and compliance with US sanctions screening at the blockchain network layer19.
 
 ### **Strategy 3: The High-Throughput Batch Arbitrageur**
@@ -96,6 +110,14 @@ Engineering resources must focus on features that directly safeguard against fin
 
 The wholesale provider provides an account allowance of 20M weighted tokens per day, resetting at 00:00 UTC2. Free models carry weight multipliers of x2 to x4, meaning the 20M weighted pool yields between 5M and 10M raw tokens of actual model output2. This shared pool must be operated as a controlled conversion funnel rather than an open public utility22.
 
+> **Partially implemented / superseded.** The repository already has admission
+> control in a different shape: `lib/gateway-rate-limit.ts` bounds admitted
+> calls, and the `free` group billing mode scopes access without per-account
+> token ceilings. The Altcha proof-of-work, the 100,000-token account cap, the
+> `/24` registration limit and the pool-state headers described below are
+> **proposals that do not exist in the code**. Read them as design options, not
+> as features.
+
 ### **Operational Rules of Engagement**
 
 > 1. **Dynamic Pool Partitioning**: Allocate 90% of the daily pool (18M weighted tokens) for active user distribution2. Retain 10% (2M weighted tokens) as an operational reserve2. The gateway must immediately halt free-tier admissions whenever upstream remaining tokens drop below 1.0M to safeguard core system operations2.  
@@ -122,14 +144,15 @@ The following model evaluates daily token consumption, pool duration, upstream o
 | **Direct Upstream Token Cost**9 | \$0.00 | \$0.00 | \$0.00 (Hard Cap) / \$1.00 (Sub Tier) |
 | **Breakeven Conversion Rate**9 | 10.0% (1 paid user) | 4.0% (4 paid users) | 2.5% (25 paid users) |
 | **Monthly Paid GMV Generated**7 | \$12.00 | \$48.00 | \$300.00 |
-| **Net Operating Margin (Post-Hosting)**9 | \-\$3.00 (Hosting shortfall) | \+\$33.00 (Self-sustaining) | \+\$185.00 (Profitable) |
+| **Gross profit (GMV × 50% margin)** | \$6.00 | \$24.00 | \$150.00 |
+| **Net after hosting and upstream cost**9 | \-$9.00 (shortfall) | \+$9.00 (self-sustaining) | \+$100.00 (profitable) |
 
 ### **Free Tier Unit Economics and the Financial Inversion Point**
 
-* **10 Active Users**: Daily demand consumes 1.0M weighted tokens (5.5% of the allocable pool)2. Direct upstream token expense is \$0.0011. However, fixed VPS hosting costs (\$15.00 per month) result in a net deficit of \$3.00 unless at least 1 user converts to a paid balance9.  
-* **100 Active Users**: Daily demand reaches 10.0M weighted tokens (55.5% of allocation), fitting comfortably within the upstream free allowance without triggering throttling mechanisms2. A 4% conversion rate yields 4 paying customers consuming 15M tokens monthly at a 2.0x markup, generating \$48.00 in GMV and \$24.00 in gross profit7. After covering the \$15.00 hosting expense, the operation nets \$33.00 monthly profit9.  
+* **10 Active Users**: Daily demand consumes 1.0M weighted tokens (5.5% of the allocable pool)2. Direct upstream token expense for that volume is roughly \$0.06–\$0.40 at the wholesale rates in the pricing table, depending on model mix — the earlier \$0.0011 figure was wrong by roughly three orders of magnitude. Fixed VPS hosting of \$15.00 per month against \$6.00 gross profit from one converted user gives a net deficit of \$9.00, so hosting needs at least three paying users at this GMV.  
+* **100 Active Users**: Daily demand reaches 10.0M weighted tokens (55.5% of allocation), fitting comfortably within the upstream free allowance without triggering throttling mechanisms2. A 4% conversion rate yields 4 paying customers consuming 15M tokens monthly at a 2.0x markup, generating \$48.00 in GMV and \$24.00 in gross profit7. After covering the \$15.00 hosting expense, the operation nets \$9.00 monthly profit9 — the earlier \$33.00 counted GMV as profit and omitted wholesale cost.  
 * **1,000 Active Users**: Uncapped aggregate demand reaches 100M weighted tokens daily, exceeding available pool capacity by over 5x2. If unmitigated, the pool exhausts before 05:00 UTC, frustrating legitimate developers and causing integration failures53.  
-* **The P\&L Inversion Point**: To maintain service continuity at 1,000 users without daily lockouts, the operator must purchase an upstream subscription package (\$30 per 30 days for 5B tokens, providing \~166M tokens daily at \$1.00 per day)9. **At this threshold, the free tier shifts from an acquisition asset to a direct cash expense of \$30.00 per month**9. To maintain profitability, the conversion rate must stay above 2.5% (25 paying customers generating \$300.00 in GMV and \$150.00 in gross margin), which covers the \$30.00 token package and \$20.00 in infrastructure costs to yield \$185.00 in net profit9.
+* **The P\&L Inversion Point**: To maintain service continuity at 1,000 users without daily lockouts, the operator must purchase an upstream subscription package (\$30 per 30 days for 5B tokens, providing \~166M tokens daily at \$1.00 per day)9. **At this threshold, the free tier shifts from an acquisition asset to a direct cash expense of \$30.00 per month**9. To maintain profitability, the conversion rate must stay above 2.5% (25 paying customers generating \$300.00 in GMV and \$150.00 in gross margin), which covers the \$30.00 token package and \$20.00 in infrastructure costs to yield \$100.00 in net profit9 — the earlier \$185.00 was this document's own gross margin with the two costs not subtracted.
 
 ## **Benchmark and Telemetry Specification**
 
@@ -142,13 +165,13 @@ To address developer skepticism regarding wholesale token reselling, the gateway
   * *Latency Probe*: Measures HTTP handshake, connection time, and Time To First Token (TTFT) using a standardized single-token prompt ("Respond with 'OK'.", max\_tokens: 1, temperature: 0\)4.  
   * *Throughput Probe*: Measures chunk arrival regularity and sustained tokens per second using a fixed generation workload ("Count from 1 to 100.", max\_tokens: 250, temperature: 0\)4.  
   * *Reasoning Probe*: Tests pass rates on standardized code refactoring and AST analysis tasks across frontier reasoning endpoints6.  
-* **Storage and Distribution Architecture**: Probe measurements are recorded in a local SQLite table, aggregated into 1-minute, 1-hour, and 24-hour summary views17. Rolling percentiles (![][image1], ![][image2], ![][image3]) are computed and exported every 60 seconds to a static JSON document (/v1/telemetry/summary.json), allowing public dashboard queries to be served without querying the operational database17.
+* **Storage and Distribution Architecture**: Probe measurements are recorded in a local SQLite table, aggregated into 1-minute, 1-hour, and 24-hour summary views17. Rolling percentiles (p50, p95, p99) are computed and exported every 60 seconds to a static JSON document (/v1/telemetry/summary.json), allowing public dashboard queries to be served without querying the operational database17.
 
 ### **Monitored Metrics and Supported Claims**
 
 | Telemetry Metric | Sampling Interval | Empirical Measurement Definition | Verifiable Product Claim |
 | :---- | :---- | :---- | :---- |
-| **TTFT (![][image4])**4 | Every 300 seconds per model tier | Duration between HTTP request dispatch and receipt of the initial SSE chunk containing delta content. | "Empirical proxy-to-upstream transit latency." |
+| **TTFT (p50)**4 | Every 300 seconds per model tier | Duration between HTTP request dispatch and receipt of the initial SSE chunk containing delta content. | "Empirical proxy-to-upstream transit latency." |
 | **Streaming Jitter**4 | Every 300 seconds on 250-token streams | Standard deviation of arrival intervals across streamed response chunks within an active connection. | "Chunk streaming consistency without gateway event-loop blocking." |
 | **Catalog Availability**6 | Continuous 24-hour rolling window | Proportion of HTTP 200 responses relative to total automated probe runs, excluding client-side 4xx errors. | "End-to-end service availability across upstream routes." |
 | **Fallback Invocation Rate**1 | 1-hour rolling window | Percentage of production calls automatically rerouted to backup credentials or models due to upstream rate limits. | "System resilience against wholesale rate limit spikes." |
@@ -157,7 +180,7 @@ To address developer skepticism regarding wholesale token reselling, the gateway
 ### **Telemetry Claim Boundaries**
 
 * **Supported Claims**:  
-  1. The proxy layer introduces minimal network overhead (measured at ![][image5] processing latency)1.  
+  1. The proxy layer introduces minimal network overhead (measured at the gateway's own processing latency)1.  
   2. Immediate uptime, HTTP error distribution, and transient failure rates for all catalog entries6.  
   3. Verifiable cost savings per completed programming task compared to direct hyperscaler pricing4.  
 * **Unsupported Claims**:  
@@ -178,16 +201,28 @@ Deploying an API gateway proxy on Node.js requires understanding the performance
 | **Synchronous SQLite Disk Contention**14 | 15ms – 85ms+ (Under concurrent load) | **Critical** (Blocks event loop) | Run SQLite in WAL mode with PRAGMA synchronous \= NORMAL; handle active reservations in memory16. |
 | **SSE Inter-Chunk Streaming Passthrough**1 | \<0.5ms per chunk | Low (Negligible) | Pipe upstream response chunks directly via Node.js TransformStream without array buffering. |
 
-Upstream inference generation averages 250ms to 2,000ms for TTFT4. The \~3ms overhead introduced by Node.js is imperceptible to downstream developers4. However, **synchronous disk writes via better-sqlite3 on the active streaming path will block the single-threaded Node.js event loop**, stalling all concurrent connections and introducing noticeable streaming jitter14. To eliminate this bottleneck, database configuration must enforce:
+Upstream inference generation averages 250ms to 2,000ms for TTFT4, so the roughly 3ms of Node.js overhead is imperceptible to downstream developers4.
 
-SQL  
-PRAGMA journal\_mode \= WAL;  
-PRAGMA synchronous \= NORMAL;  
-PRAGMA cache\_size \= \-64000;  
-PRAGMA temp\_store \= MEMORY;  
-PRAGMA busy\_timeout \= 5000;
+> **Premise superseded.** The paragraph that stood here argued that synchronous
+> better-sqlite3 writes would block the event loop, and prescribed WAL pragmas.
+> This repository uses PostgreSQL, not SQLite, and no database write occurs on
+> the streaming relay path: reservation and settlement run through
+> `lib/storage/gateway/` outside the chunk loop, and `npm run test:postgres`
+> proves concurrent debits serialize in the database. The pragma block below is
+> retained only as a record of the superseded recommendation. It is not
+> configuration for this project.
 
-(Database tuning parameters verified for high-concurrency Node.js SQLite deployments16).
+```sql
+-- SQLite tuning from the superseded recommendation. Not used by this
+-- repository; kept for the record only.
+PRAGMA journal_mode = WAL;
+PRAGMA synchronous = NORMAL;
+PRAGMA cache_size = -64000;
+PRAGMA temp_store = MEMORY;
+PRAGMA busy_timeout = 5000;
+```
+
+The cited source (16) is a blog post about Node's built-in SQLite module, not a measurement of this gateway.
 
 ### **Protocol Fidelity and SSE Streaming Edge Cases**
 
@@ -206,10 +241,10 @@ OpenAI SDK compatibility requires strict conformance with the Server-Sent Events
 A reseller operating with \$150 in capital cannot absorb losses caused by client disconnections or mid-stream overdraft exploits2.
 
 * **The In-Memory Reservation Workflow**:  
-  1. *Admission Check*: When a request arrives, the gateway computes the maximum potential financial exposure: ![][image6]. The gateway checks whether the account's available in-memory balance covers the hold2. If the balance is insufficient, the request is rejected with HTTP 402 Payment Required12.  
+  1. *Admission Check*: When a request arrives, the gateway computes the maximum potential financial exposure: `max_tokens × retail price per completion token`. The gateway checks whether the account's available in-memory balance covers the hold2. If the balance is insufficient, the request is rejected with HTTP 402 Payment Required12.  
   2. *Active Balance Reservation*: The hold amount is deducted from available memory balance and assigned a temporary reservation\_id, after which the upstream connection is initiated2.  
   3. *In-Flight Usage Metering*: As SSE chunks pass through the gateway, an internal accumulator tracks output tokens2.  
-  4. *Final Settlement*: Upon receiving the final usage chunk or stream completion, actual usage is calculated: ![][image7]2. The temporary hold is cleared, the precise amount is deducted from user balance, and the transaction is queued for batched SQLite persistence2.  
+  4. *Final Settlement*: Upon receiving the final usage chunk or stream completion, actual usage is calculated: `(prompt_tokens + completion_tokens) × retail rate`2. The temporary hold is cleared, the precise amount is deducted from user balance, and the transaction is queued for batched SQLite persistence2.  
   5. *Handling Client Disconnections*: If the downstream client aborts the connection mid-stream, the gateway triggers an immediate AbortController signal to terminate the upstream socket, halting token consumption12. The account is billed for tokens received up to the abort signal plus a 10% safety margin, and unspent hold funds are credited back to the available balance2.
 
 ### **Model Verification and Anti-Quantization Auditing**
@@ -233,16 +268,16 @@ Technical developer acquisition relies on concrete integration recipes, debuggin
 | :---- | :---- | :---- | :---- | :---- |
 | **W01** | "Connecting Custom OpenAI-Compatible Endpoints to Cursor: The Complete BYOK Guide"7 | Informational / Transactional (cursor custom openai base url) | Active Cursor developers seeking relief from seat pricing7. | **Immediate**: Generates initial key creations from active coding agent users7. |
 | **W02** | "Running Claude Code CLI Without an Anthropic Account: Step-by-Step Setup"6 | Commercial / Technical (claude code custom endpoint base url) | Developers encountering Anthropic API card payment rejections7. | **Immediate**: Captures developers seeking alternative access to Claude Code6. |
-| **W03** | "How to Slash Aider Token Spend by 80% with DeepSeek V4.1 and Sonnet Routing"7 | Commercial (aider cheap api keys deepseek sonnet) | Autonomous coding agent users managing large codebases7. | **Fast**: Converts users running high-frequency coding loops7. |
+| **W03** | "How to Slash Aider Token Spend by 80% with Economy and Mid-Tier Routing"7 | Commercial (aider cheap api keys deepseek sonnet) | Autonomous coding agent users managing large codebases7. | **Fast**: Converts users running high-frequency coding loops7. |
 | **W04** | "Fixing Streaming JSON Parsing Errors in OpenAI-Compatible Gateway Proxies"42 | Troubleshooting / Technical (openai streaming unexpected end of json) | Full-stack developers building custom AI integrations46. | **Fast**: Positions the gateway as a reliable, production-tested proxy1. |
 | **W05** | "Building Zero-Downtime Agent Fleets: Handling 429 Errors with Fallback Routing"1 | Technical Guide (llm handle 429 fallback routing agent) | Engineers managing multi-agent systems and production bots1. | **Compounding**: Attracts high-volume agent developers seeking reliable routing1. |
 | **W06** | "Funding Production AI Inference with Pure USDC: Zero KYC, Instant Deployment"19 | Commercial (crypto ai inference api usdc no kyc) | Web3 developers and international software teams19. | **Compounding**: Converts international developers seeking cardless billing19. |
-| **W07** | "Mastering 1M Context Windows: Latency and Cost Trade-offs Across 44 Models"6 | In-Depth Analysis (1m token context cost benchmark llm) | Enterprise RAG developers and document processing teams56. | **Compounding**: Builds domain authority for long-context workloads6. |
+| **W07** | "Long-Context Workloads: Latency and Cost Trade-offs Across the Catalog"6 | In-Depth Analysis (1m token context cost benchmark llm) | Enterprise RAG developers and document processing teams56. | **Compounding**: Builds domain authority for long-context workloads6. |
 | **W08** | "Optimizing Cline (VS Code) for Coding: The Sub-\$5/Day Frontier Model Setup"6 | Practical Tutorial (cline vs code cheapest api configuration) | Independent programmers and open-source contributors7. | **Steady**: Drives adoption through open-source tooling ecosystems6. |
-| **W09** | "DeepSeek V4.1 Flash vs. GPT-6 Luna: Which Low-Cost Model Leads on Code Refactoring?"6 | Comparative Analysis (deepseek v4.1 vs gpt 6 luna coding) | Technical leads evaluating cost-performance trade-offs8. | **Steady**: Establishes ranking authority on budget frontier models8. |
+| **W09** | "Economy Open-Weight vs. Economy Proprietary: Which Low-Cost Tier Leads on Code Refactoring?"6 | Comparative Analysis (deepseek v4.1 vs gpt 6 luna coding) | Technical leads evaluating cost-performance trade-offs8. | **Steady**: Establishes ranking authority on budget frontier models8. |
 | **W10** | "Why We Replaced Stripe with Non-Custodial USDC: Insights from an Infrastructure Reseller"19 | Case Study / Editorial (stripe vs crypto payment developer saas) | Indie Hackers and open-source builder communities19. | **Viral Potential**: Drives discovery across Hacker News and X19. |
 | **W11** | "Preventing Uncapped Bill Shock in Agentic Tool-Use Workflows"24 | Architectural Tutorial (llm agent prevent infinite loop cost) | Engineering managers managing API budgets50. | **Steady**: Highlights per-key spend caps and risk controls3. |
-| **W12** | "Q4 Empirical Latency Report: Benchmarking TTFT Across 44 Commercial Endpoints"6 | Benchmark Industry Report (llm inference ttft benchmark report) | Senior software engineers and AI platform architects4. | **High Long-Term Return**: Creates backlink authority and industry recognition4. |
+| **W12** | "Latency Report: Benchmarking TTFT Across the Catalog"6 | Benchmark Industry Report (llm inference ttft benchmark report) | Senior software engineers and AI platform architects4. | **High Long-Term Return**: Creates backlink authority and industry recognition4. |
 
 ## **90-Day Execution Plan**
 
@@ -273,7 +308,7 @@ The execution roadmap divides into three consecutive 30-day phases, each focused
 ### **Phase 3: Protocol Expansion, Telemetry Dashboard, and Retention Scaling (Months 2–3)**
 
 * **Core Objective**: Remove integration friction and drive conversion through transparent platform telemetry1.  
-* **Primary Target**: Reach \$500 monthly GMV at ![][image8] gross margin while maintaining a ![][image9] free-to-paid conversion rate9.  
+* **Primary Target**: Reach \$500 monthly GMV at 50% gross margin while maintaining the free-to-paid conversion rate projected in the cohort table above9.  
 * **Operational Tasks**:  
   1. Implement and release the native Anthropic /v1/messages translation layer to support Claude Code CLI without wrappers1.  
   2. Deploy the public telemetry dashboard displaying real-time TTFT percentiles and service availability4.  
@@ -289,11 +324,11 @@ Operating at a 30% markup (1.3x) is financially precarious for a solo reseller: 
 
 | Model Class & ID | Wholesale Cost / 1M | Proposed Retail (2.0x–2.5x) | Gross Margin % | Retail Savings vs. Official List |
 | :---- | :---- | :---- | :---- | :---- |
-| **DeepSeek V4.1 Flash**8 | \$0.060 | \$0.120 (2.0x) | 50.0% | 82.9% OFF (vs. \$0.70 blended direct) |
-| **GPT-6 Luna**8 | \$0.075 | \$0.150 (2.0x) | 50.0% | 75.0% OFF (vs. \$0.60 blended direct) |
-| **GPT-6.1 Sol**8 | \$0.300 | \$0.650 (2.17x) | 53.8% | 74.0% OFF (vs. \$2.50 blended direct) |
-| **Claude Sonnet 5.5**8 | \$0.400 | \$0.850 (2.12x) | 52.9% | 71.7% OFF (vs. \$3.00 blended direct) |
-| **Claude Opus 5.5**8 | \$0.500 | \$1.250 (2.50x) | 60.0% | 75.0% OFF (vs. \$5.00 blended direct) |
+| **Economy open-weight (DeepSeek-class)**8 | \$0.060 | \$0.120 (2.0x) | 50.0% | 82.9% OFF (vs. \$0.70 blended direct) |
+| **Economy proprietary (OpenAI-class)**8 | \$0.075 | \$0.150 (2.0x) | 50.0% | 75.0% OFF (vs. \$0.60 blended direct) |
+| **Mid proprietary (OpenAI-class)**8 | \$0.300 | \$0.650 (2.17x) | 53.8% | 74.0% OFF (vs. \$2.50 blended direct) |
+| **Mid proprietary (Anthropic-class)**8 | \$0.400 | \$0.800 (2.00x) | 50.0% | 73.3% OFF (vs. \$3.00 blended direct) |
+| **Frontier proprietary (Anthropic-class)**8 | \$0.500 | \$1.250 (2.50x) | 60.0% | 75.0% OFF (vs. \$5.00 blended direct) |
 
 Wholesale subscription packages provide bundled RPM allocations (15 to 200 RPM) alongside token allowances11. **The gateway should pool these RPM allocations internally rather than assigning them to individual users**2. By managing this pooled capacity at the proxy layer, the gateway can multiplex concurrent requests efficiently across all paid users while maintaining standard 5 RPM limits on free accounts2.
 
@@ -310,6 +345,18 @@ Traditional card checkout was evaluated and set aside: standard merchant acquire
 | **Direct USDC on Layer 2 (Selected)**19 | **\$0.00** (Payer covers \~\$0.01 network gas) | **Self-Hosted** (Direct to non-custodial wallet) | **Zero** (On-chain cryptographic finality) | **Low** (Simple JSON-RPC balance monitor on Base/Polygon) |
 
 *Implications of Crypto-Only Billing*: Restricting settlement exclusively to USDC reduces initial signup conversion by an estimated 50% to 70% compared to standard credit card workflows19. Corporate engineering teams with company credit cards will not adopt the platform1. However, this choice completely eliminates payment chargebacks, prevents merchant account freezing, opens access to international developers lacking US credit cards, and requires zero initial capital to deploy19.
+
+## **Supply-Tier Assumption (Disclosure)**
+
+This document's cost basis is a wholesale rate of roughly \$0.40 per 1M tokens for a mid-tier frontier model. That rate does not occur in legitimate pass-through channels. The companion survey classifies the supply tiers that produce it as credit-arbitrage farming, reverse-engineered developer-tool sessions, and pooled consumer subscriptions, and rates them as fraud and Terms-of-Service violation with upstream termination as the expected outcome.
+
+The strategy above never names which tier it assumes. It must be read against that gap, for three reasons:
+
+1. **The cheapest tier is the one that cannot be relied on.** The same survey documents that it fails with notice measured in days, and that its operators strip model identity, which is exactly what the "verifiable model integrity" differentiation in this document claims to detect.
+2. **The chosen customer is the one the survey says to exclude.** Autonomous coding agents send proprietary source code on every request. The companion survey's own segmentation rule forbids putting that traffic through an unverified relay. The two documents therefore cannot both govern one plan.
+3. **The posture is unfunded.** Integrity probes, uptime telemetry and contractual fallbacks all cost money and engineering time; the \$150 working capital assumed here does not cover them at the user volumes modeled.
+
+This disclosure is a constraint on the strategy, not a sourcing recommendation. No supplier is endorsed by this document, and no tier identified here has been verified by this project.
 
 ## **Threat Model and Kill Criteria**
 
@@ -352,6 +399,25 @@ Before investing operational capital and commencing execution, five critical emp
 | **4** | **Baseline Sybil Volume**: What baseline volume of automated abuse targets an unprotected, publicly exposed free token endpoint13? | Deploy an unlisted test endpoint with standard rate limits for 48 hours to measure automated bot traffic and IP distribution patterns13. |
 | **5** | **Target Audience Crypto Adoption**: What proportion of developers running Claude Code CLI, Cursor, and Cline maintain active Web3 wallets with available USDC7? | Conduct a focused poll across r/Cursor, r/LocalLLaMA, and the Aider Discord community to evaluate willingness to pay using USDC on Base or Polygon7. |
 
+## **Evidence Status**
+
+No claim in this document is a primary measurement. Every citation number resolves to one of four classes, and a sentence inherits the class of the source it cites:
+
+| Class | What it establishes | Examples here |
+| :---- | :---- | :---- |
+| **Vendor self-claim** | What the supplier advertises. Never what it delivers. | Sources 1, 2, 6, 7, 8, 10, 11 and 47 are the wholesale supplier's own pages (guides, pricing, benchmarks, status). |
+| **Secondary report** | A third-party write-up. Useful for vocabulary and reported practice; not measured by this project. | Sources 4, 5, 14, 15, 16, 17, 22. |
+| **Reference documentation** | How a tool or standard behaves. | Sources 13, 33, 44. |
+| **Unsupported** | No usable source: reproduced arithmetic or an estimate. | Source 9, plus every conversion, uptake and adoption rate below. |
+
+What follows from that table:
+
+- The 70–95% discount band, the wholesale per-token rates, the 20M daily allowance and the 1M context claim are **vendor self-claims**. They are not observations, and this document did not call any endpoint to check them.
+- The free-tier conversion rates (10%, 4%, 2.5%) and the claim that crypto-only billing costs 50–70% of signups are **estimates with no sample, date or method**. They are the weakest inputs in the model and they drive every conclusion below.
+- The P&L figures are arithmetic recomputed over those estimates. Correct arithmetic over an unmeasured input is still a projection, and correcting the arithmetic (as this version does) makes the projection legible, not true.
+- The companion survey cites the same supplier's pages for the same claims. Two documents quoting one vendor are not corroboration.
+- Model names and prices here are illustrative. The authoritative catalog is whatever provider-scoped sync publishes; this document does not define it.
+
 #### **Works cited**
 
 > 1. One Endpoint for Every Model: Building with a Unified OpenAI, [https\://apinex.bond/guides/unified-openai-compatible-gateway](https://apinex.bond/guides/unified-openai-compatible-gateway)  
@@ -362,7 +428,9 @@ Before investing operational capital and commencing execution, five critical emp
 > 6. Resources & Developer Hub \| APInex, [https\://apinex.bond/resources](https://apinex.bond/resources)  
 > 7. Autonomous Coding Agents on a Budget: Cost Guide for Cursor, [https\://apinex.bond/guides/autonomous-coding-agents-cost-guide](https://apinex.bond/guides/autonomous-coding-agents-cost-guide)  
 > 8. LLM Inference Price-to-Performance Index (Q4 2026\) \- APInex, [https\://apinex.bond/benchmarks/llm-price-performance-index-q4-2026](https://apinex.bond/benchmarks/llm-price-performance-index-q4-2026)  
-> 9. [unknown\_url](http://docs.google.com/unknown_url)  
+> 9. **Unsupported — no source.** This slot held a broken placeholder in the
+>    original draft. Every figure that cites 9 is arithmetic reproduced in this
+>    document, not a measurement.  
 > 10. APInexGate — Open-Source AI API Gateway & Reseller Storefront, [https\://apinex.bond/resell](https://apinex.bond/resell)  
 > 11. Pricing — subscriptions and pay as you go \- APInex, [https\://apinex.bond/pricing](https://apinex.bond/pricing)  
 > 12. Balance API — APInex, [https\://apinex.bond/developers/balance](https://apinex.bond/developers/balance)  
@@ -419,6 +487,123 @@ Before investing operational capital and commencing execution, five critical emp
 > 63. What is Money Transmission and Why Does it Matter? \- Coin Center, [https\://coincenter.org/education/policy-and-regulation/money-transmission/](https://coincenter.org/education/policy-and-regulation/money-transmission/)  
 > 64. New FinCEN Cryptocurrency Guidance Provides Comprehensive, [https\://www\.moneylaunderingnews.com/2019/05/new-fincen-cryptocurrency-guidance-provides-comprehensive-overview-of-bsa-application-to-crypto-businesses/](https://www.moneylaunderingnews.com/2019/05/new-fincen-cryptocurrency-guidance-provides-comprehensive-overview-of-bsa-application-to-crypto-businesses/)  
 > 65. FinCEN Issues New Guidance Regarding Cryptocurrency, [https\://www\.consumerfinancialserviceslawmonitor.com/2019/05/fincen-issues-new-guidance-regarding-cryptocurrency/](https://www.consumerfinancialserviceslawmonitor.com/2019/05/fincen-issues-new-guidance-regarding-cryptocurrency/)
+
+
+further links:
+The report's inline references map to the official URLs, open-source repositories, and investigation pages listed below, categorized by ecosystem function:
+
+### 1. Alternative Reseller Panels, Relay Endpoints & Probes
+
+* **APInex Portal:** [https://apinex.bond/](https://apinex.bond/)
+
+
+* **APInex API Integration Documentation:** [https://context7.com/websites/apinex_bond](https://context7.com/websites/apinex_bond)
+
+
+* **APInex Relay Measurement Probe (BazaarLink):** [https://bazaarlink.ai/en/probe/relay/api.apinex.bond](https://bazaarlink.ai/en/probe/relay/api.apinex.bond)
+
+
+* **APInex Domain Infrastructure Profile:** [https://www.usercheck.com/domain/apinex.bond](https://www.usercheck.com/domain/apinex.bond)
+
+
+* **APInex Security Analysis & Footprint:** [https://gridinsoft.com/online-virus-scanner/url/apinex-bond](https://gridinsoft.com/online-virus-scanner/url/apinex-bond)
+
+
+* **Apixo Portal:** [https://apixoai.online/](https://apixoai.online/)
+
+
+* **Apixo User & Community Evaluation:** [https://www.trustpilot.com/review/apixoai.online](https://www.trustpilot.com/review/apixoai.online)
+
+
+* **Mintpop Model Verification Audit:** [https://mintpop.ai/](https://mintpop.ai/)
+
+
+
+---
+
+### 2. Verification Frameworks, Auditing Tools & Benchmarks
+
+* **Veridrop Open-Source Detector Repository:** [https://github.com/canarybyte/veridrop](https://github.com/canarybyte/veridrop)
+
+
+* **Veridrop Architecture & Security Policy:** [https://veridrop.org/about](https://veridrop.org/about)
+
+
+* **Veridrop Claude Thinking-Signature Verification Engine:** [https://veridrop.org/claude](https://veridrop.org/claude)
+
+
+* **Veridrop vs. CCTest Comparison & Technical Audit:** [https://veridrop.org/compare/veridrop-vs-cctest](https://veridrop.org/compare/veridrop-vs-cctest)
+
+
+* **Veridrop Community Leaderboard (Linux.do Relay Audit):** [https://veridrop.org/leaderboard/hub.linux.do](https://veridrop.org/leaderboard/hub.linux.do)
+
+
+* **Veridrop Public Sample Audit Report:** [https://veridrop.org/r/ID2lUBLt](https://veridrop.org/r/ID2lUBLt)
+
+
+* **Relay Watch Cryptographic Signature Methodology:** [https://relay-watch.com/methodology/thinking-signature/](https://relay-watch.com/methodology/thinking-signature/)
+
+
+
+---
+
+### 3. Industry Deep Dives, Supply Chain Analyses & Community Investigations
+
+* **Claude API Proxy Market & Supply Chain Deep Dive (MakerJackie):** [https://makerjackie.com/blog/2026-05-06-claude-api-proxy-deep-dive](https://makerjackie.com/blog/2026-05-06-claude-api-proxy-deep-dive)
+
+
+* **Technical Sourcing Channels, Terminology & Multipliers (Tencent Cloud Developer):** [https://cloud.tencent.com/developer/article/2657436](https://cloud.tencent.com/developer/article/2657436)
+
+
+* **Investigation into Relay Billing & Model Substitution (Medium):** [https://medium.com/@submit2geo/the-claude-invoice-nobody-could-explain-d569f3c332d3](https://medium.com/@submit2geo/the-claude-invoice-nobody-could-explain-d569f3c332d3)
+
+
+* **The Relay Economy Investigation (Slopfluencer):** [https://slopfluencer.com/research/the-relay-economy-2026-10/](https://slopfluencer.com/research/the-relay-economy-2026-10/)
+
+
+* **Kiro & AWS Q Gateway Protocol De-obfuscation (SegmentFault):** [https://segmentfault.com/a/1190000047701019](https://segmentfault.com/a/1190000047701019)
+
+
+* **One-API Multiplier Math & Sourcing Jargon (CSDN):** [https://blog.csdn.net/u012723183/article/details/143064062](https://blog.csdn.net/u012723183/article/details/143064062)
+
+
+* **Account Farming, Key Pooling & Resale Risk Analyses:** [https://deepseek.csdn.net/6a320a2ac4c55d4c9e8fb402.html](https://deepseek.csdn.net/6a320a2ac4c55d4c9e8fb402.html) and [https://fast.v2ex.com/t/1167604](https://fast.v2ex.com/t/1167604)
+
+
+
+---
+
+### 4. Gateway Software, Routing Engines & Reverse-Engineering Repositories
+
+* **New-API Repository (QuantumNous / Calcium-Ion):** [https://github.com/QuantumNous/new-api](https://github.com/QuantumNous/new-api)
+
+
+* **New-API Plugin, Hook, and Routing Architecture:** [https://github.com/QuantumNous/new-api/blob/main/docs/plugin-api/v1.md](https://github.com/QuantumNous/new-api/blob/main/docs/plugin-api/v1.md)
+
+
+* **New-API Multi-Channel Distribution Mechanics (Bilibili):** [https://www.bilibili.com/read/cv51395906](https://www.bilibili.com/read/cv51395906)
+
+
+* **Multi-Provider Channel Configuration (StackOverflow):** [https://stackoverflow.com/questions/79444424/how-to-add-api-key-for-deepseek-installed-on-my-server-for-others-to-use-this-se](https://stackoverflow.com/questions/79444424/how-to-add-api-key-for-deepseek-installed-on-my-server-for-others-to-use-this-se)
+
+
+* **Clove Claude OAuth Reverse Proxy:** [https://github.com/mirrorange/clove/blob/main/README_en.md](https://github.com/mirrorange/clove/blob/main/README_en.md)
+
+
+* **Awesome Reverse-Engineered AI APIs Index:** [https://github.com/alexgaoth/awesome-reverse-engineered/blob/main/SOURCES.md](https://github.com/alexgaoth/awesome-reverse-engineered/blob/main/SOURCES.md)
+
+
+* **Chat2API Project Overview:** [https://www.sourcepulse.org/projects/1838797](https://www.sourcepulse.org/projects/1838797)
+
+
+* **DeepSeek & Free GPT Protocol Wrappers:** [https://github.com/topics/deepseek-chat](https://github.com/topics/deepseek-chat) and [https://github.com/topics/free-gpt-api](https://github.com/topics/free-gpt-api)
+
+
+* **LiteLLM Official Router Fallback & Reliability Reference:** [https://docs.litellm.ai/docs/router/api_reference/configuration](https://docs.litellm.ai/docs/router/api_reference/configuration)
+
+
+* **Production LLM Multi-Provider Gateway Deployment Architecture:** [https://devopsboys.com/blog/llm-gateway-litellm-multi-provider-routing-production-2026](https://devopsboys.com/blog/llm-gateway-litellm-multi-provider-routing-production-2026)
+
 
 [image1]: <data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB8AAAAVCAYAAAC+NTVfAAACJElEQVR4Xu2UQUgWURSFj5RQWJoEqWhILox2RRQU0SqEEEVSSVKkCCpa1kLSTRBBtAnKEESQVoK6dZVQrhQEV2qrwCJ0pW4Moig957/v+b954xh/YCsPfMzMfXfefXPvnQvsa1+7q51cJkdIETlBusjZ0Ik6TG6RQfKSnE4uF66DZJRsRoyRssBP9+/JM9ghdbBF0hr4/JOGyDz5SsZJIzmQ8AB6yCwpD2yd5BOpCGwF6w05HxsDKaACv4vsF8gGaY7sOZWS6+Skey4hDbBA4Zf9LfgZsop0cL3znTyP7LnmeEt6yTJ5AUupUqWrmqbY+faTV2SOfCPT5Jxbk3yQrOCxHddIH/KnVl11IEnpWnc+0jB5gnw21Olr5KJ7boI1YRwkM/ht2Muqx2/kA0lXyC/yyD0fRbIMNbAMjMD+BpWuoOBeqscSqQ5s92Gb3QhsoarIF/IZ1slZQbLsOanBJmE11hdIuupZpVBJ7pA/5IFbl3xwofs6soJ0EB9cfZWSf0n/qNcpWEoHYAfRmrIQBvdp/wgbKEL3E+TQtpeV8qe7pqR6a+On7rkINqE0UGqd7RKs233nSzfJDySnl5pQQ0iHl/xeM0hOwm2p3upqOWhcTsFSXhn4aJPH5AO5S17DSvLQrXnpcMqW/FpggReQnv85hanSL3bc2bKkQaRNNYR2/BLYYepJG7mKZLYS2qne/033YPXuJseitT2XxqenI1rbU20B3qtycwPvM0gAAAAASUVORK5CYII=>
 

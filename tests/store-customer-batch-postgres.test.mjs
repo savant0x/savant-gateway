@@ -43,7 +43,11 @@ import {
 } from "../lib/storage/store/topups.ts";
 import { createPgliteDatabase } from "./pglite-pool.mjs";
 
-const NOW = "2026-10-31T12:00:00.000Z";
+// Relative to the run clock. `resolveCustomerSession` compares session expiry
+// against the real clock with a 7-day TTL, so a pinned past timestamp silently
+// expires mid-run and turns this file into a date-dependent failure (observed
+// 2026-11-10, ten days after the previous constant).
+const NOW = new Date(Date.now() - 60_000).toISOString();
 const NOW_MS = Date.parse(NOW);
 
 /**

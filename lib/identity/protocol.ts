@@ -53,19 +53,36 @@ export function protocolSeal(sealedAt: string) {
   };
 }
 
-export function buildProtocol(sealedAt: string): IdentityProtocolRecord {
-  const batteryJson = canonicalJson(BATTERY);
+export type ProtocolRecordInput = {
+  id: string;
+  version: string;
+  seal: unknown;
+  sealedAt: string;
+};
 
+/** One record assembly for every sealed protocol version. */
+export function buildProtocolRecord(
+  input: ProtocolRecordInput,
+): IdentityProtocolRecord {
   return {
-    id: PROTOCOL_ID,
-    version: PROTOCOL_VERSION,
-    probeSha256: sha256Hex(canonicalJson(protocolSeal(sealedAt))),
+    id: input.id,
+    version: input.version,
+    probeSha256: sha256Hex(canonicalJson(input.seal)),
     systemPromptSha256: sha256Hex(SYSTEM_PROMPT),
-    batteryJson,
+    batteryJson: canonicalJson(BATTERY),
     samplingJson: canonicalJson(SAMPLING),
     normalizerVersion: NORMALIZER_VERSION,
-    sealedAt,
+    sealedAt: input.sealedAt,
   };
+}
+
+export function buildProtocol(sealedAt: string): IdentityProtocolRecord {
+  return buildProtocolRecord({
+    id: PROTOCOL_ID,
+    version: PROTOCOL_VERSION,
+    seal: protocolSeal(sealedAt),
+    sealedAt,
+  });
 }
 
 export type ProtocolCheck = { ok: true } | { ok: false; reason: string };

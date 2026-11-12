@@ -424,34 +424,61 @@ provenance change.
 
 ## Verification Gates
 
-Run for this registration:
+Run at registration (2026-11-10):
 
 - gate: repository:check — `npm run repository:check`, for the active-FID
   registration, ID/filename equality, status and root-link contract.
 - gate: attribution — `npm run attribution`, because this record is inside the
   governed document surface.
 
-Planned for the implementation slice (not run here; the paths do not exist yet):
+Run for step 1 (2026-11-11, commit `d66a538`):
 
-- gate: lint
-- gate: typecheck
-- gate: test tests/identity-calibration-bounds.test.mjs
+- gate: lint — `npm run lint`, zero warnings. PASS.
+- gate: typecheck — `npm run typecheck`, `next typegen && tsc --noEmit`. PASS.
+- gate: test tests/identity-calibration-bounds.test.mjs — 10/10 pass, zero
+  skips. Covers the four published numbers, the rejection paths, the frozen
+  manifest hash and the v3 seal.
+- gate: quality — `npm run quality`, PASS over 692 files; `lib/identity/` is in
+  the 400-line scan.
+- gate: test — `npm test`, 1,128 pass / 0 fail / 16 environment-gated skips
+  (1,144 total, including the 10 new tests).
+- gate: repository:check — re-run after the FID receipt: `PASS (Node 24, 12
+  gates, 11 active FIDs, root links and current docs consistent)`.
+- gate: attribution — re-run after the FID receipt: both guards PASS.
+
+Pending for steps 2–9 (those paths do not exist yet):
+
 - gate: test tests/identity-calibration-certificate.test.mjs
 - gate: test tests/identity-calibration-consume.test.mjs
 - gate: test tests/identity-calibration-proxy.test.mjs
-- gate: quality — mandatory because `lib/identity/` is in the 400-line scan.
-- gate: build
-- gate: verify — the full set, only if the matrix receipt and the feature gates
-  both pass.
+- gate: build — required once the certificate path is wired into the app.
+- gate: verify — the full set, only after the matrix receipt and the feature
+  gates both pass.
 
 ### Verification Receipt
 
-- verified: 2026-11-10T19:32:00-05:00
+**Registration (2026-11-10T19:32:00-05:00):**
+
 - repository:check: exit 0 — `repository-check: PASS (Node 24, 12 gates, 12
   active FIDs, root links and current docs consistent)`.
 - attribution: exit 0 — `attribution-guard: PASS (no coding-agent credit
   found)` and `attribution-document-guard: PASS (no governed credit line)`.
-- Implementation gates: not run; no code exists.
+
+**Step 1 (2026-11-11, commit `d66a538`):**
+
+- lint: exit 0, zero warnings.
+- typecheck: exit 0.
+- `node --test tests/identity-calibration-bounds.test.mjs`: 10/10 pass, 0 fail,
+  0 skipped.
+- quality: PASS, 692 files under the 400-line ceiling.
+- `npm test`: 1,128 pass / 0 fail / 16 environment-gated skips.
+- repository:check: exit 0 — `PASS (Node 24, 12 gates, 11 active FIDs, root
+  links and current docs consistent)`.
+- attribution: exit 0 — both guards PASS.
+- Manifest hash:
+  `5ec520a2ec1c75e10f05b23144bf73caa3e609c1a6ed081d968de5badb6b9a83`.
+- Steps 2–9: pending; no certificate, proxy, arm collection or consumption gate
+  exists.
 
 ## Perfection Loop
 

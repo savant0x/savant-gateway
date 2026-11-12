@@ -8,12 +8,13 @@
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
 
-> This record is **registration plus convergence**. The defect inventory is
-> complete and the calibration contract has passed the Perfection Loop.
-> **No code, schema, test, configuration or research document is edited by this
-> record.** The four test paths named under Verification Gates do not exist yet;
-> the repository contract exempts `converged` records from the on-disk test-path
-> rule and the exemption is stated rather than hidden. No inference, payment,
+> This record was **registered and converged before implementation**. The
+> defect inventory is complete and the calibration contract has passed the
+> Perfection Loop. **Step 1 is now implemented**: the frozen `aio-identity-v3`
+> candidate, its manifest seal, the exact bounds and the power proof exist.
+> Steps 2–9 remain, so the status stays `converged`; only one of the four
+> planned test paths exists yet, and the repository contract exempts
+> `converged` records from the on-disk test-path rule. No inference, payment,
 > provider transfer or publication is authorized or claimed.
 
 ---
@@ -578,13 +579,28 @@ Planned for the implementation slice (not run here; the paths do not exist yet):
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-Not started. Status is `converged`; no step has been actioned.
+Step 1 is implemented; steps 2–9 are not started. The status stays `converged`
+until the certificate consumption gate and the remaining test paths land.
 
-- [ ] **Commit SHA:** pending implementation.
-- [ ] **File:line ranges:** pending implementation.
-- [ ] **Gate output:** pending implementation.
-- [ ] **Reproducibility:** pending implementation.
-- [ ] **Step statuses:** nine steps; all not started.
+- [x] **Commit SHA:** step 1 is `d66a538`.
+- [x] **File:line ranges:** `lib/identity/calibration/manifest.ts` (frozen
+  manifest, hash, seal, protocol verification),
+  `lib/identity/calibration/bounds.ts` (Wilson lower, exact zero-event upper,
+  rule of three, acceptance predicate), `lib/identity/calibration/power.ts`
+  (minimum sample sizes and the request matrix), `lib/identity/protocol.ts`
+  (`buildProtocolRecord`, shared by v2 and v3), and
+  `tests/identity-calibration-bounds.test.mjs` (10 tests).
+- [x] **Gate output:** `node --test tests/identity-calibration-bounds.test.mjs`
+  10/10; `npm run typecheck` exit 0; `npm run lint` exit 0; `npm run quality`
+  PASS over 692 files; `npm test` 1,128 pass / 0 fail / 16 environment-gated
+  skips; existing `identity-protocol` + `identity-stats` 22/22.
+- [x] **Reproducibility:** the manifest hash is
+  `5ec520a2ec1c75e10f05b23144bf73caa3e609c1a6ed081d968de5badb6b9a83`;
+  `CALIBRATION_POWER` reports 35 positives (0.9010957 lower), 299 controls
+  (0.0099691 upper), 44,910 requests, 74.85 h at 10 RPM and 12.475 h at 60 RPM.
+  The hash is pinned in the test, so a changed manifest fails until the hash is
+  re-recorded deliberately.
+- [ ] **Step statuses:** step 1 `implemented`; steps 2–9 not started.
 
 ### Code Verification Evidence
 
@@ -596,14 +612,17 @@ Not started. Status is `converged`; no step has been actioned.
 - [x] The seven identity test suites were enumerated by glob.
 - [x] Register contracts accept the record: `npm run repository:check` PASS and
   `npm run attribution` PASS.
-- [ ] Implementation audit: pending implementation.
+- [x] Step 1 implementation audit: the frozen manifest hash, the sample sizes
+  and the protocol seal were reproduced by command before the commit; the four
+  published numbers are asserted by the new test.
 
 ## Resolution
 
 - **Convergence Date:** 2026-11-10 19:32 EST
-- **Next action:** implement steps 1–9 in order. Step 1 (freeze the manifest and
-  prove the power calculation) must land before any arm is collected; step 7
-  must land before any `consistent` verdict is published.
+- **Next action:** step 1 is committed at `d66a538`. Implement step 2 (the pure
+  statistics, including `lib/identity/stats/betting.ts`) next. No arm may be
+  collected before step 3 freezes δ, and step 7 must land before any
+  `consistent` verdict is published.
 - **Archived:** no.
 
 ## Lessons Learned

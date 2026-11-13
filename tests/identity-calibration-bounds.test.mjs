@@ -24,8 +24,28 @@ import {
   verifyCalibrationManifest,
   verifyCalibrationProtocol,
 } from "../lib/identity/calibration/manifest.ts";
-import { BATTERY, FINGERPRINT_CELLS } from "../lib/identity/battery.ts";
+import { BATTERY, FINGERPRINT_CELLS, SMOOTHING } from "../lib/identity/battery.ts";
 import { canonicalJson } from "../lib/identity/protocol.ts";
+import {
+  DEFAULT_ALPHA_CELL,
+  DEFAULT_DELTA,
+  DEFAULT_EPROCESS,
+  DEFAULT_LAMBDA,
+  OTHER_CATEGORY,
+  OTHER_FLOOR_CAP,
+  buildPrevisible,
+  buildReference,
+  cellAlpha,
+  goodTuringOtherFloor,
+  isRejected,
+  previsibleMass,
+  referenceMass,
+  runEProcess,
+  updateLogWealth,
+  verdictRejects,
+  wealthFactor,
+  wealthThreshold,
+} from "../lib/identity/stats/betting.ts";
 
 const MANIFEST_HASH =
   "5ec520a2ec1c75e10f05b23144bf73caa3e609c1a6ed081d968de5badb6b9a83";
@@ -231,4 +251,189 @@ test("a record sealed against a different manifest is refused", () => {
     ok: false,
     reason: "protocol seal changed",
   });
+});
+
+test("the per-cell threshold is 1/alpha and composes to the verdict budget", () => {
+  assert.equal(wealthThreshold(0.01 / 6), 600);
+  assert.equal(wealthThreshold(0.01), 100);
+  assert.equal(cellAlpha(0.01, 6), 0.01 / 6);
+  assert.equal(cellAlpha(0.01, 6) * 6, 0.01);
+  assert.equal(DEFAULT_ALPHA_CELL, CALIBRATION_MANIFEST.eprocess.alphaCell);
+  assert.equal(wealthThreshold(DEFAULT_ALPHA_CELL), 600);
+  assert.equal(DEFAULT_LAMBDA, CALIBRATION_MANIFEST.eprocess.lambda);
+  assert.equal(DEFAULT_DELTA, CALIBRATION_MANIFEST.eprocess.delta);
+  assert.equal(DEFAULT_EPROCESS.smoothing, SMOOTHING);
+  assert.throws(() => wealthThreshold(0), RangeError);
+  assert.throws(() => wealthThreshold(1.5), RangeError);
+  assert.throws(() => cellAlpha(0.01, 0), RangeError);
+});
+
+test("an empty stream reports unit wealth and never rejects", () => {
+  const result = runEProcess([], { a: 10, b: 6, c: 3, d: 1 });
+
+  assert.equal(result.rejected, false);
+  assert.equal(result.rejectedAt, null);
+  assert.equal(result.steps, 0);
+  assert.equal(result.logWealth, 0);
+  assert.equal(result.wealth, 1);
+  assert.equal(result.threshold, 600);
+});
+
+test("the Good-Turing floor keeps every unseen answer reachable", () => {
+  assert.equal(goodTuringOtherFloor({}), 1);
+  assert.equal(goodTuringOtherFloor({ a: 1, b: 1 }), OTHER_FLOOR_CAP);
+  assert.equal(goodTuringOtherFloor({ a: 10, b: 6, c: 3, d: 1 }), 1 / 20);
+  assert.equal(goodTuringOtherFloor({ a: 5 }), SMOOTHING);
+  assert.equal(goodTuringOtherFloor({ a: 1, b: 3 }), 1 / 4);
+
+  const reference = buildReference({ a: 5 });
+
+  assert.ok(referenceMass(reference, "a") > 0);
+  assert.equal(referenceMass(reference, "never-seen"), reference.other);
+  close(reference.observedMass + reference.other, 1, 1e-12);
+  assert.equal(referenceMass(reference, "never-seen"), SMOOTHING);
+});
+
+test("the reference and the previsible estimate are distributions", () => {
+  const counts = { a: 10, b: 6, c: 3, d: 1 };
+  const reference = buildReference(counts);
+  const estimate = buildPrevisible({ a: 4, b: 2, unknown: 1 }, reference);
+
+  const referenceTotal =
+    reference.categories.reduce(
+      (total, category) => total + referenceMass(reference, category),
+      0,
+    ) + reference.other;
+  const estimateTotal =
+    reference.categories.reduce(
+      (total, category) => total + previsibleMass(estimate, category),
+      0,
+    ) + estimate.other;
+
+  close(referenceTotal, 1, 1e-12);
+  close(estimateTotal, 1, 1e-12);
+  assert.equal(previsibleMass(estimate, "unknown"), estimate.other);
+  assert.equal(previsibleMass(estimate, "never-seen"), estimate.other);
+  assert.ok(previsibleMass(estimate, "a") > previsibleMass(estimate, "d"));
+});
+
+test("the Kelly factor is fair under the reference distribution", () => {
+  const counts = { a: 10, b: 6, c: 3, d: 1 };
+  const reference = buildReference(counts);
+  const estimate = buildPrevisible({ a: 4, b: 2 }, reference);
+
+  const expected =
+    reference.categories.reduce(
+      (total, category) =>
+        total +
+        referenceMass(reference, category) *
+          wealthFactor(reference, estimate, category, DEFAULT_LAMBDA),
+      0,
+    ) +
+    reference.other *
+      wealthFactor(reference, estimate, OTHER_CATEGORY, DEFAULT_LAMBDA);
+
+  // The drift is subtracted outside the factor, so the factor itself is fair.
+  close(expected, 1, 1e-12);
+  assert.ok(expected <= 1 + 1e-9);
+  assert.throws(() => wealthFactor(reference, estimate, "a", 0), RangeError);
+});
+
+test("a route answering off the reference rejects early", () => {
+  const result = runEProcess(
+    Array.from({ length: 10 }, () => "phantom-answer"),
+    { a: 18, b: 2 },
+  );
+
+  assert.equal(result.rejected, true);
+  assert.equal(result.rejectedAt, 1);
+  assert.equal(result.steps, 1);
+  assert.ok(result.wealth >= result.threshold);
+});
+
+test("an honest stream and an all-same stream stay under the threshold", () => {
+  const counts = { a: 10, b: 6, c: 3, d: 1 };
+  const reference = buildReference(counts);
+  const draws = [];
+  let seed = 2_026_1112;
+
+  // Draw from the reference itself: this is the H0 route.
+  for (let index = 0; index < 20; index += 1) {
+    seed = (seed * 1_664_525 + 1_013_904_223) >>> 0;
+
+    const target = seed / 4_294_967_296;
+    let cumulative = 0;
+    let picked = OTHER_CATEGORY;
+
+    for (const category of reference.categories) {
+      cumulative += referenceMass(reference, category);
+
+      if (target <= cumulative) {
+        picked = category;
+        break;
+      }
+    }
+
+    draws.push(picked);
+  }
+
+  const honest = runEProcess(draws, counts);
+  const identical = runEProcess(
+    Array.from({ length: 20 }, () => "a"),
+    { a: 30 },
+  );
+
+  assert.equal(honest.rejected, false);
+  assert.equal(honest.rejectedAt, null);
+  assert.equal(honest.steps, 20);
+  assert.equal(identical.rejected, false);
+  assert.ok(identical.wealth < 1);
+});
+
+test("wealth exactly at the threshold rejects, one epsilon below does not", () => {
+  const threshold = wealthThreshold(DEFAULT_ALPHA_CELL);
+
+  assert.equal(isRejected(Math.log(threshold)), true);
+  assert.equal(isRejected(Math.log(threshold) - 1e-9), false);
+  assert.equal(isRejected(0), false);
+  assert.equal(verdictRejects([]), false);
+  assert.equal(
+    verdictRejects([
+      runEProcess([], { a: 1 }),
+      runEProcess(["out-of-reference"], { a: 18, b: 2 }),
+    ]),
+    true,
+  );
+});
+
+test("an invalid configuration or count is refused, not run", () => {
+  assert.throws(
+    () => runEProcess(["a"], { a: 1 }, { ...DEFAULT_EPROCESS, alpha: 0 }),
+    RangeError,
+  );
+  assert.throws(
+    () => runEProcess(["a"], { a: 1 }, { ...DEFAULT_EPROCESS, lambda: 2 }),
+    RangeError,
+  );
+  assert.throws(
+    () => runEProcess(["a"], { a: 1 }, { ...DEFAULT_EPROCESS, delta: -1 }),
+    RangeError,
+  );
+  assert.throws(
+    () =>
+      runEProcess(["a"], { a: 1 }, { ...DEFAULT_EPROCESS, smoothing: 0 }),
+    RangeError,
+  );
+  assert.throws(() => runEProcess(["a"], { a: -1 }), RangeError);
+  assert.throws(
+    () =>
+      updateLogWealth({
+        logWealth: 0,
+        prior: { a: Number.NaN },
+        category: "a",
+        reference: buildReference({ a: 1 }),
+        config: DEFAULT_EPROCESS,
+      }),
+    RangeError,
+  );
 });

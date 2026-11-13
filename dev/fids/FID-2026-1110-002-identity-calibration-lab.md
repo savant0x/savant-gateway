@@ -10,12 +10,13 @@
 
 > This record was **registered and converged before implementation**. The
 > defect inventory is complete and the calibration contract has passed the
-> Perfection Loop. **Step 1 is now implemented**: the frozen `aio-identity-v3`
-> candidate, its manifest seal, the exact bounds and the power proof exist.
-> Steps 2–9 remain, so the status stays `converged`; only one of the four
-> planned test paths exists yet, and the repository contract exempts
-> `converged` records from the on-disk test-path rule. No inference, payment,
-> provider transfer or publication is authorized or claimed.
+> Perfection Loop. **Steps 1–2 are now implemented**: the frozen
+> `aio-identity-v3` candidate, its manifest seal, the exact bounds, the power
+> proof and the per-cell betting e-process exist. Steps 3–9 remain, so the
+> status stays `converged`; only one of the four planned test paths exists yet,
+> and the repository contract exempts `converged` records from the on-disk
+> test-path rule. No inference, payment, provider transfer or publication is
+> authorized or claimed.
 
 ---
 
@@ -431,6 +432,17 @@ Run at registration (2026-11-10):
 - gate: attribution — `npm run attribution`, because this record is inside the
   governed document surface.
 
+Run for step 2 (2026-11-12, commit `b884984`):
+
+- gate: lint — `npm run lint`, zero warnings. PASS.
+- gate: typecheck — `npm run typecheck`, `next typegen && tsc --noEmit`. PASS.
+- gate: test tests/identity-calibration-bounds.test.mjs — 19/19 pass, zero
+  skips (the 10 step-1 cases plus 9 e-process cases).
+- gate: quality — `npm run quality`, PASS (400-line ceiling, 693 files).
+- gate: test — `npm test`, 1,137 pass / 0 fail / 16 environment-gated skips
+  (1,153 total).
+- gate: attribution — the commit hook ran the guard: PASS.
+
 Run for step 1 (2026-11-11, commit `d66a538`):
 
 - gate: lint — `npm run lint`, zero warnings. PASS.
@@ -446,7 +458,7 @@ Run for step 1 (2026-11-11, commit `d66a538`):
   gates, 11 active FIDs, root links and current docs consistent)`.
 - gate: attribution — re-run after the FID receipt: both guards PASS.
 
-Pending for steps 2–9 (those paths do not exist yet):
+Pending for steps 3–9 (those paths do not exist yet):
 
 - gate: test tests/identity-calibration-certificate.test.mjs
 - gate: test tests/identity-calibration-consume.test.mjs
@@ -477,8 +489,22 @@ Pending for steps 2–9 (those paths do not exist yet):
 - attribution: exit 0 — both guards PASS.
 - Manifest hash:
   `5ec520a2ec1c75e10f05b23144bf73caa3e609c1a6ed081d968de5badb6b9a83`.
-- Steps 2–9: pending; no certificate, proxy, arm collection or consumption gate
-  exists.
+- Steps 2–9: pending at that commit; no certificate, proxy, arm collection or
+  consumption gate existed.
+
+**Step 2 (2026-11-12, commit `b884984`):**
+
+- lint: exit 0, zero warnings.
+- typecheck: exit 0.
+- `node --test tests/identity-calibration-bounds.test.mjs`: 19/19 pass, 0 fail,
+  0 skipped.
+- quality: PASS, 693 files under the 400-line ceiling.
+- `npm test`: 1,137 pass / 0 fail / 16 environment-gated skips.
+- `lib/identity/stats/betting.ts` takes its defaults from the sealed manifest:
+  `alphaCell = 0.01 / 6`, `lambda = 0.5`, `delta = 0.05` (still
+  `provisional_until_step_3_simulation`), threshold 600.
+- Steps 3–9: pending; no δ simulation, arm registry, proxy, certificate,
+  collection or consumption gate exists.
 
 ## Perfection Loop
 
@@ -606,28 +632,35 @@ Pending for steps 2–9 (those paths do not exist yet):
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-Step 1 is implemented; steps 2–9 are not started. The status stays `converged`
-until the certificate consumption gate and the remaining test paths land.
+Steps 1–2 are implemented; steps 3–9 are not started. The status stays
+`converged` until the certificate consumption gate and the remaining test paths
+land.
 
-- [x] **Commit SHA:** step 1 is `d66a538`.
+- [x] **Commit SHA:** step 1 is `d66a538`; step 2 is `b884984`.
 - [x] **File:line ranges:** `lib/identity/calibration/manifest.ts` (frozen
   manifest, hash, seal, protocol verification),
   `lib/identity/calibration/bounds.ts` (Wilson lower, exact zero-event upper,
   rule of three, acceptance predicate), `lib/identity/calibration/power.ts`
   (minimum sample sizes and the request matrix), `lib/identity/protocol.ts`
-  (`buildProtocolRecord`, shared by v2 and v3), and
-  `tests/identity-calibration-bounds.test.mjs` (10 tests).
-- [x] **Gate output:** `node --test tests/identity-calibration-bounds.test.mjs`
-  10/10; `npm run typecheck` exit 0; `npm run lint` exit 0; `npm run quality`
-  PASS over 692 files; `npm test` 1,128 pass / 0 fail / 16 environment-gated
-  skips; existing `identity-protocol` + `identity-stats` 22/22.
+  (`buildProtocolRecord`, shared by v2 and v3),
+  `lib/identity/stats/betting.ts` (Good-Turing `<other>` floor, reference and
+  previsible masses, mixture-Kelly factor, log-wealth update, anytime-valid
+  stopping, verdict union bound) and
+  `tests/identity-calibration-bounds.test.mjs` (19 tests).
+- [x] **Gate output:** step 2: `node --test
+  tests/identity-calibration-bounds.test.mjs` 19/19; `npm run typecheck` exit 0;
+  `npm run lint` exit 0; `npm run quality` PASS over 693 files; `npm test` 1,137
+  pass / 0 fail / 16 environment-gated skips. Step 1: the same file 10/10,
+  quality 692 files, `npm test` 1,128 pass; existing `identity-protocol` +
+  `identity-stats` 22/22.
 - [x] **Reproducibility:** the manifest hash is
   `5ec520a2ec1c75e10f05b23144bf73caa3e609c1a6ed081d968de5badb6b9a83`;
   `CALIBRATION_POWER` reports 35 positives (0.9010957 lower), 299 controls
   (0.0099691 upper), 44,910 requests, 74.85 h at 10 RPM and 12.475 h at 60 RPM.
   The hash is pinned in the test, so a changed manifest fails until the hash is
-  re-recorded deliberately.
-- [ ] **Step statuses:** step 1 `implemented`; steps 2–9 not started.
+  re-recorded deliberately. The e-process defaults are asserted against that
+  manifest by test, so a sealed constant that drifts fails the suite.
+- [ ] **Step statuses:** steps 1–2 `implemented`; steps 3–9 not started.
 
 ### Code Verification Evidence
 
@@ -646,10 +679,12 @@ until the certificate consumption gate and the remaining test paths land.
 ## Resolution
 
 - **Convergence Date:** 2026-11-10 19:32 EST
-- **Next action:** step 1 is committed at `d66a538`. Implement step 2 (the pure
-  statistics, including `lib/identity/stats/betting.ts`) next. No arm may be
-  collected before step 3 freezes δ, and step 7 must land before any
-  `consistent` verdict is published.
+- **Next action:** steps 1–2 are committed at `d66a538` and `b884984`.
+  Implement step 3 (`lib/identity/calibration/delta.ts`, the posterior
+  predictive δ calibration) next; the manifest's `delta = 0.05` is provisional
+  until that simulation freezes a measured value. No arm may be collected
+  before δ is frozen, and step 7 must land before any `consistent` verdict is
+  published.
 - **Archived:** no.
 
 ## Lessons Learned

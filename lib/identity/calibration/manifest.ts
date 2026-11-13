@@ -11,6 +11,10 @@
  * It deliberately does not carry `consistentMultiplier`,
  * `divergentMultiplier` or `controlMultiplier` as sealed values: those are the
  * measured outputs, not inputs.
+ *
+ * `delta` was provisional at the step-1 seal. Step 3 replaced it with the
+ * posterior-predictive simulation output and re-recorded the hash; the hash in
+ * that seal was valid for that commit, not for this one.
  */
 
 import type { IdentityProtocolRecord } from "../types.ts";
@@ -19,6 +23,7 @@ import {
   BATTERY,
   CONTROL_REQUESTS,
   FINGERPRINT_CELLS,
+  FINGERPRINT_SAMPLES,
   NORMALIZER_VERSION,
   REQUEST_COUNTS,
   SAMPLING,
@@ -31,6 +36,7 @@ import {
   type ProtocolCheck,
 } from "../protocol.ts";
 
+import { DEFAULT_DELTA_SIMULATION, DESIGN_REFERENCE_ID } from "./delta.ts";
 import {
   minimumControlsForFpr,
   minimumPositivesForTpr,
@@ -40,6 +46,14 @@ import {
 const FROZEN_ON = "2026-11-11";
 const POSITIVES_PER_CLASS = 35;
 const CONTROL_COMPARISONS = 299;
+
+/**
+ * The step-3 simulation output, recorded as literals so importing the manifest
+ * stays cheap. `calibrateDelta()` reproduces both numbers exactly and
+ * `verifyFrozenDelta()` refuses a manifest that disagrees.
+ */
+const FROZEN_DELTA_RAW = 0.15950630216299225;
+const FROZEN_DELTA = 0.20735819281188994;
 
 export const CALIBRATION_MANIFEST = {
   schema: 1,
@@ -123,8 +137,10 @@ export const CALIBRATION_MANIFEST = {
     cellCount: FINGERPRINT_CELLS.length,
     alphaCell: 0.01 / FINGERPRINT_CELLS.length,
     lambda: 0.5,
-    delta: 0.05,
-    deltaStatus: "provisional_until_step_3_simulation",
+    delta: FROZEN_DELTA,
+    deltaRaw: FROZEN_DELTA_RAW,
+    deltaStatus: "frozen_step_3_simulation",
+    deltaSimulation: DEFAULT_DELTA_SIMULATION,
     wealthThreshold: 600,
     controlPercentile: 0.05,
   },
@@ -229,6 +245,26 @@ export function verifyCalibrationManifest(value: unknown): ManifestCheck {
     manifest.eprocess.wealthThreshold
   ) {
     return { ok: false, reason: "wealth threshold does not match alpha" };
+  }
+
+  if (manifest.eprocess.deltaStatus !== "frozen_step_3_simulation") {
+    return { ok: false, reason: "delta is not frozen by the simulation" };
+  }
+
+  const simulation = manifest.eprocess.deltaSimulation;
+
+  if (
+    simulation.designReferenceId !== DESIGN_REFERENCE_ID ||
+    simulation.horizon !== FINGERPRINT_SAMPLES
+  ) {
+    return { ok: false, reason: "delta simulation inputs changed" };
+  }
+
+  if (
+    manifest.eprocess.delta < simulation.floor ||
+    manifest.eprocess.delta > simulation.ceiling
+  ) {
+    return { ok: false, reason: "delta is outside the clamped range" };
   }
 
   if (

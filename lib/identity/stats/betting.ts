@@ -16,10 +16,11 @@
  *
  * Two limits are stated rather than hidden:
  *
- * 1. `delta` is provisional. The manifest records
- *    `deltaStatus: "provisional_until_step_3_simulation"`; step 3 replaces 0.05
- *    with the posterior-predictive calibration. Nothing here measures a
- *    false-positive rate — the lab's control arm does that.
+ * 1. `delta` is frozen by the step-3 posterior-predictive simulation rather
+ *    than chosen here. The manifest records the simulation inputs and
+ *    `deltaStatus: "frozen_step_3_simulation"`, and
+ *    `calibration/delta.ts` recomputes the value from them. Nothing here
+ *    measures a false-positive rate — the lab's control arm does that.
  * 2. The estimate is a distribution over the reference's support plus one
  *    `<other>` slot. Every answer the reference never saw lands in that one
  *    slot, which is what keeps both `p0` and `qhat` normalised and the
@@ -42,7 +43,13 @@ export const OTHER_CATEGORY = "<other>";
 export const OTHER_FLOOR_CAP = 0.5;
 
 export const DEFAULT_LAMBDA = 0.5;
-export const DEFAULT_DELTA = 0.05;
+
+/**
+ * The step-3 simulation output. Recorded as a literal because the statistics
+ * layer must not import the calibration manifest; a test pins it to the
+ * manifest's `eprocess.delta` so the two cannot drift.
+ */
+export const DEFAULT_DELTA = 0.20735819281188994;
 
 /**
  * Splits the verdict-level budget across the fingerprint cells. Six cells at

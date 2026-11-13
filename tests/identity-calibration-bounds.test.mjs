@@ -24,7 +24,20 @@ import {
   verifyCalibrationManifest,
   verifyCalibrationProtocol,
 } from "../lib/identity/calibration/manifest.ts";
-import { BATTERY, FINGERPRINT_CELLS, SMOOTHING } from "../lib/identity/battery.ts";
+import {
+  BATTERY,
+  FINGERPRINT_CELLS,
+  FINGERPRINT_SAMPLES,
+  SMOOTHING,
+} from "../lib/identity/battery.ts";
+import {
+  DEFAULT_DELTA_SIMULATION,
+  DESIGN_REFERENCE,
+  DESIGN_REFERENCE_ID,
+  calibrateDelta,
+  smallestDelta,
+  verifyFrozenDelta,
+} from "../lib/identity/calibration/delta.ts";
 import { canonicalJson } from "../lib/identity/protocol.ts";
 import {
   DEFAULT_ALPHA_CELL,
@@ -48,7 +61,7 @@ import {
 } from "../lib/identity/stats/betting.ts";
 
 const MANIFEST_HASH =
-  "5ec520a2ec1c75e10f05b23144bf73caa3e609c1a6ed081d968de5badb6b9a83";
+  "bdd152ba2db5bb1bafe702a531f660f014517782011f21ec927d7b00dafdc9ba";
 const SEALED_AT = "2026-11-11T00:00:00.000Z";
 
 function close(actual, expected, epsilon = 5e-5) {
@@ -436,4 +449,137 @@ test("an invalid configuration or count is refused, not run", () => {
       }),
     RangeError,
   );
+});
+
+test("the frozen delta is the simulation's output, not a chosen constant", () => {
+  const receipt = calibrateDelta();
+
+  assert.equal(receipt.cells, FINGERPRINT_CELLS.length);
+  assert.equal(receipt.streams, FINGERPRINT_CELLS.length * 256);
+  assert.equal(receipt.config.horizon, FINGERPRINT_SAMPLES);
+  assert.equal(receipt.bound, 300);
+  assert.equal(receipt.delta, CALIBRATION_MANIFEST.eprocess.delta);
+  assert.equal(receipt.delta, DEFAULT_DELTA);
+  assert.equal(receipt.rawDelta, CALIBRATION_MANIFEST.eprocess.deltaRaw);
+  assert.equal(receipt.clampedTo, null);
+  assert.equal(receipt.withinBound, true);
+  assert.ok(receipt.delta >= DEFAULT_DELTA_SIMULATION.floor);
+  assert.ok(receipt.delta <= DEFAULT_DELTA_SIMULATION.ceiling);
+  assert.equal(
+    CALIBRATION_MANIFEST.eprocess.deltaStatus,
+    "frozen_step_3_simulation",
+  );
+  assert.deepEqual(
+    CALIBRATION_MANIFEST.eprocess.deltaSimulation,
+    DEFAULT_DELTA_SIMULATION,
+  );
+  assert.deepEqual(verifyFrozenDelta(CALIBRATION_MANIFEST), { ok: true });
+});
+
+test("the recorded seed reproduces the delta exactly", () => {
+  const first = calibrateDelta();
+  const second = calibrateDelta();
+
+  assert.equal(first.rawDelta, second.rawDelta);
+  assert.equal(first.delta, second.delta);
+  assert.equal(first.streams, second.streams);
+});
+
+test("a stricter bound raises the drift and a looser one lowers it", () => {
+  const base = calibrateDelta();
+  const stricter = calibrateDelta(DESIGN_REFERENCE, {
+    ...DEFAULT_DELTA_SIMULATION,
+    margin: 4,
+  });
+  const looser = calibrateDelta(DESIGN_REFERENCE, {
+    ...DEFAULT_DELTA_SIMULATION,
+    margin: 1,
+  });
+
+  assert.ok(stricter.rawDelta > base.rawDelta);
+  assert.ok(looser.rawDelta < base.rawDelta);
+  assert.ok(stricter.delta > base.delta);
+  assert.ok(looser.delta < base.delta);
+});
+
+test("the smallest feasible drift solves the linear constraint", () => {
+  const bound = Math.log(300);
+
+  assert.equal(smallestDelta([], bound), 0);
+  assert.equal(smallestDelta([1, 2, 3], bound), 0);
+  close(smallestDelta([1, 2, 9], bound), (9 - bound) / 3, 1e-12);
+  close(smallestDelta([-1, 40], bound), (40 - bound) / 2, 1e-12);
+});
+
+test("the design reference is the declared shape on every cell", () => {
+  assert.equal(DESIGN_REFERENCE_ID, DEFAULT_DELTA_SIMULATION.designReferenceId);
+  assert.equal(
+    DEFAULT_DELTA_SIMULATION.alpha,
+    CALIBRATION_MANIFEST.eprocess.alphaCell,
+  );
+  assert.equal(Object.keys(DESIGN_REFERENCE).length, FINGERPRINT_CELLS.length);
+
+  for (const cell of FINGERPRINT_CELLS) {
+    const counts = DESIGN_REFERENCE[cell.id];
+
+    assert.ok(counts, `missing design counts for ${cell.id}`);
+    assert.equal(Object.keys(counts).length, 8);
+    assert.equal(
+      Object.values(counts).reduce((total, count) => total + count, 0),
+      200,
+    );
+  }
+});
+
+test("a hand-edited delta or simulation input is refused", () => {
+  const manifest = CALIBRATION_MANIFEST;
+  const editedDelta = {
+    ...manifest,
+    eprocess: { ...manifest.eprocess, delta: 0.05 },
+  };
+  const editedSeed = {
+    ...manifest,
+    eprocess: {
+      ...manifest.eprocess,
+      deltaSimulation: { ...DEFAULT_DELTA_SIMULATION, seed: 1 },
+    },
+  };
+  const editedStatus = {
+    ...manifest,
+    eprocess: {
+      ...manifest.eprocess,
+      deltaStatus: "provisional_until_step_3_simulation",
+    },
+  };
+
+  assert.deepEqual(verifyFrozenDelta(editedDelta), {
+    ok: false,
+    reason: "delta does not match the simulation",
+  });
+  assert.deepEqual(verifyFrozenDelta(editedSeed), {
+    ok: false,
+    reason: "delta simulation inputs changed",
+  });
+  assert.deepEqual(verifyFrozenDelta(editedStatus), {
+    ok: false,
+    reason: "delta is not frozen by the simulation",
+  });
+  assert.deepEqual(verifyCalibrationManifest(editedSeed), {
+    ok: false,
+    reason: "manifest changed",
+  });
+});
+
+test("an invalid simulation or empty reference is refused, not run", () => {
+  const run = (patch) =>
+    calibrateDelta(DESIGN_REFERENCE, { ...DEFAULT_DELTA_SIMULATION, ...patch });
+
+  assert.throws(() => run({ horizon: 0 }), RangeError);
+  assert.throws(() => run({ simulations: 1.5 }), RangeError);
+  assert.throws(() => run({ drift: 1 }), RangeError);
+  assert.throws(() => run({ margin: 0 }), RangeError);
+  assert.throws(() => run({ multiplier: 0.5 }), RangeError);
+  assert.throws(() => run({ floor: 0.6 }), RangeError);
+  assert.throws(() => calibrateDelta({}), RangeError);
+  assert.throws(() => calibrateDelta({ empty: {} }), RangeError);
 });

@@ -197,3 +197,41 @@ test("the shape layer and the sync port carry no provider-name branches", () => 
     );
   }
 });
+test("a provider that forbids free-pool resale imports no free/ row at all", () => {
+  const restricted = { ...PROVIDER, resaleFreePool: false };
+  const entries = [
+    { id: "free/tiny" },
+    { id: "gpt-6-luna", dollarsPer1M: 0.4, outputDollarsPer1M: 1.6 },
+  ];
+
+  const { rows, skippedFreePool } = buildSyncedCatalog(
+    restricted,
+    entries,
+    new Map(),
+  );
+
+  assert.deepEqual(
+    rows.map((row) => row.upstreamId),
+    ["gpt-6-luna"],
+    "the paid row is untouched and the free row is refused",
+  );
+  assert.deepEqual(skippedFreePool, ["free/tiny"]);
+});
+
+test("a provider that permits free-pool resale keeps its free rows", () => {
+  const permissive = { ...PROVIDER, resaleFreePool: true };
+
+  const { rows, skippedFreePool } = buildSyncedCatalog(
+    permissive,
+    [{ id: "free/tiny" }, { id: "free/alpha", weight: 2 }],
+    new Map(),
+  );
+
+  assert.equal(rows.length, 2);
+  assert.equal(skippedFreePool.length, 0);
+  assert.deepEqual(
+    rows.map((row) => row.tokenWeight).sort(),
+    [1, 2],
+    "the declared weight survives and an undeclared one defaults to 1",
+  );
+});

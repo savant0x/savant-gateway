@@ -25,6 +25,7 @@ export async function catalogSchema(db: PostgresDatabase) {
       supports_subscription INTEGER NOT NULL DEFAULT 0,
       supports_pricing INTEGER NOT NULL DEFAULT 0,
       requires_model_review INTEGER NOT NULL DEFAULT 0,
+      resale_free_pool INTEGER NOT NULL DEFAULT 1,
       enabled INTEGER NOT NULL DEFAULT 1,
       sort_order INTEGER NOT NULL DEFAULT 0,
       status TEXT NOT NULL DEFAULT 'unconfigured',
@@ -145,6 +146,7 @@ async function providerColumns(db: PostgresDatabase) {
     ["runtime_lease_id", "TEXT"],
     ["runtime_lease_until", "TEXT"],
     ["requires_model_review", "INTEGER NOT NULL DEFAULT 0"],
+    ["resale_free_pool", "INTEGER NOT NULL DEFAULT 1"],
   ] as const) {
     await ensureColumn(db, "providers", column, definition);
   }

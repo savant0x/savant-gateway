@@ -16,6 +16,7 @@ export type ProviderDraft = {
   balance: boolean;
   subscription: boolean;
   pricing: boolean;
+  resaleFreePool: boolean;
 };
 
 export const EMPTY_PROVIDER: ProviderDraft = {
@@ -28,6 +29,7 @@ export const EMPTY_PROVIDER: ProviderDraft = {
   balance: true,
   subscription: true,
   pricing: true,
+  resaleFreePool: true,
 };
 
 export function draftFromProvider(provider: ProviderSummary): ProviderDraft {
@@ -41,6 +43,7 @@ export function draftFromProvider(provider: ProviderSummary): ProviderDraft {
     balance: provider.capabilities.balance,
     subscription: provider.capabilities.subscription,
     pricing: provider.capabilities.pricing,
+    resaleFreePool: provider.resaleFreePool,
   };
 }
 
@@ -52,6 +55,7 @@ export function providerPayload(draft: ProviderDraft) {
     baseUrl: draft.baseUrl,
     keyEnvVar: draft.keyEnvVar,
     defaultHeaders: draft.defaultHeaders,
+    resaleFreePool: draft.resaleFreePool,
     capabilities: {
       balance: draft.balance,
       subscription: draft.subscription,
@@ -140,7 +144,23 @@ export function ProviderForm({
               {label}
             </label>
           ))}
+          <label className="flex items-center gap-2">
+            <input
+              checked={draft.resaleFreePool}
+              type="checkbox"
+              onChange={(event) =>
+                onChange({ ...draft, resaleFreePool: event.target.checked })
+              }
+            />
+            Free-pool resale permitted
+          </label>
         </div>
+        <p className="text-xs text-muted">
+          Uncheck <strong>Free-pool resale permitted</strong> when the
+          provider&apos;s terms forbid reselling its free allocation. No
+          <code className="mx-1">free/</code> row is imported for that provider,
+          and the sync warning reports how many were refused.
+        </p>
 
         <div className="flex flex-wrap gap-2">
           <Button

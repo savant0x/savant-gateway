@@ -11,6 +11,8 @@ export type ProviderInput = {
   keyEnvVar: string;
   defaultHeaders: Record<string, string>;
   capabilities: { balance: boolean; subscription: boolean; pricing: boolean };
+  /** Whether the provider's terms allow reselling free-pool ids. */
+  resaleFreePool: boolean;
   enabled: boolean;
   sortOrder: number;
 };
@@ -145,6 +147,7 @@ export function readProviderInput(value: unknown) {
         pricing: capabilities.pricing === true,
       },
       enabled: input.enabled !== false,
+      resaleFreePool: input.resaleFreePool !== false,
       sortOrder:
         typeof input.sortOrder === "number" && Number.isFinite(input.sortOrder)
           ? Math.round(input.sortOrder)

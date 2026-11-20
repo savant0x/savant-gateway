@@ -32,6 +32,15 @@ the provider key remains on the server.
    disabled and at `$0.00`; set a cost for each, then activate it. A synced row
    with an unknown cost is never published.
 
+   **Free-pool resale.** The registry carries `resale_free_pool` (default `1`).
+   Uncheck *Free-pool resale permitted* when the provider's terms forbid
+   reselling its free allocation — some marketplaces allow reselling paid models
+   and forbid the free pool in the same sentence. With the flag off the importer
+   refuses every `free/` row and reports the count in the sync warnings; no row
+   is created, so nothing can be published, priced or served by accident. The
+   default is `1` (`NOT NULL DEFAULT 1` on the column), so an upgrade cannot
+   silently delete an existing provider's free rows.
+
 ## What routing does
 
 Every synced row carries a provider-neutral `route_group` derived from the
@@ -125,7 +134,9 @@ the shared builder.
 Two classes are dropped and reported in the sync warnings rather than imported: an
 **alias** (it shares a route key with the provider-pinned rows while naming no provider, so
 no budget can bound it) and a **non-text output** row (a chat gateway cannot serve image,
-audio or video output). Unpriced text rows are kept — they import disabled, and deleting
+audio or video output). A third class is conditional on the registry: a `free/` row is
+refused when the provider's `resale_free_pool` is `0`. Unpriced text rows are kept — they
+import disabled, and deleting
 them would discard an operator's manual cost on the next sync. The provider that owns a
 public overlay is chosen in `lib/providers/sync.ts`, where the URL lives, so a second
 provider's rows can never inherit the default provider's prices by id collision.

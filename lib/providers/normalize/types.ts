@@ -56,12 +56,20 @@ export type CatalogShape = {
 
 export type RawEntry = Record<string, unknown>;
 
+/** Facts about the provider that decide what may be imported at all. */
+export type NormalizeOptions = {
+  /** When false, every `free/` row is refused: the terms forbid reselling it. */
+  resaleFreePool: boolean;
+};
+
 export type NormalizeResult = {
   models: NormalizedModel[];
   /** Ids dropped because they name no provider (an upstream alias). */
   skippedAliases: string[];
   /** Ids dropped because they do not output text (image/audio/video rows). */
   skippedMedia: string[];
+  /** Ids dropped because this provider forbids reselling its free pool. */
+  skippedFreePool: string[];
 };
 
 export function emptyFacts(): RawFacts {

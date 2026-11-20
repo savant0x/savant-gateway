@@ -122,8 +122,11 @@ export function buildSyncedCatalog(
   rows: SyncedModel[];
   skippedAliases: string[];
   skippedMedia: string[];
+  skippedFreePool: string[];
 } {
-  const normalized = normalizeCatalog(models, metadata);
+  const normalized = normalizeCatalog(models, metadata, {
+    resaleFreePool: provider.resaleFreePool !== false,
+  });
   const rows: Omit<SyncedModel, "sortOrder">[] = [];
 
   for (const model of normalized.models) {
@@ -146,6 +149,7 @@ export function buildSyncedCatalog(
     rows: rows.map((row, index) => ({ ...row, sortOrder: (index + 1) * 10 })),
     skippedAliases: normalized.skippedAliases,
     skippedMedia: normalized.skippedMedia,
+    skippedFreePool: normalized.skippedFreePool,
   };
 }
 

@@ -9,6 +9,7 @@
 import type { UpstreamModel } from "../types.ts";
 import type {
   NormalizedModel,
+  NormalizeOptions,
   NormalizeResult,
   RawEntry,
   RawFacts,
@@ -117,15 +118,22 @@ function isAliasEntry(entry: RawEntry) {
  * **non-text output** row cannot be served by a chat gateway. Unpriced text rows
  * are kept — dropping one would discard an operator's manual cost on the next
  * sync.
+ *
+ * A third class is conditional: a `free/` row is refused outright when the
+ * operator records that the provider's terms forbid reselling its free-pool
+ * allocation (`resaleFreePool: false`). The default is `true`, so a provider
+ * whose terms are silent keeps today's behaviour.
  */
 export function normalizeCatalog(
   entries: UpstreamModel[],
   overlay: Map<string, UpstreamModel> = new Map(),
+  options: NormalizeOptions = { resaleFreePool: true },
 ): NormalizeResult {
   const seen = new Set<string>();
   const models: NormalizedModel[] = [];
   const skippedAliases: string[] = [];
   const skippedMedia: string[] = [];
+  const skippedFreePool: string[] = [];
 
   for (const raw of entries) {
     const entry = recordOf(raw);
@@ -145,6 +153,11 @@ export function normalizeCatalog(
     const overlayEntry = recordOf(overlay.get(upstreamId)) ?? null;
     const facts = readFacts(entry, overlayEntry);
 
+    if (facts.freePool && !options.resaleFreePool) {
+      skippedFreePool.push(upstreamId);
+      continue;
+    }
+
     if (outputsNonText(facts)) {
       skippedMedia.push(upstreamId);
       continue;
@@ -153,5 +166,5 @@ export function normalizeCatalog(
     models.push(toModel(entry, facts));
   }
 
-  return { models, skippedAliases, skippedMedia };
+  return { models, skippedAliases, skippedMedia, skippedFreePool };
 }

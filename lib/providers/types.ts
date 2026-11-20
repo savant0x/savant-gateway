@@ -19,6 +19,12 @@ export type ProviderRecord = {
   capabilities: ProviderCapabilities;
   /** Only an explicit per-model `chat` decision may publish or serve. */
   requiresModelReview: boolean;
+  /**
+   * Whether this provider's terms allow reselling its free-pool allocation.
+   * When false the importer refuses every `free/` row, because serving one
+   * would break the upstream contract regardless of what we charge.
+   */
+  resaleFreePool: boolean;
   enabled: boolean;
   sortOrder: number;
   createdAt: string;

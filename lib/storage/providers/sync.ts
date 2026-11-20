@@ -172,6 +172,7 @@ export async function syncProvider(
     rows: synced,
     skippedAliases,
     skippedMedia,
+    skippedFreePool,
   } = buildSyncedCatalog(provider, models, metadata);
 
   await replaceModels(db, synced, await getMarkupBps(db), slug);
@@ -205,6 +206,10 @@ export async function syncProvider(
       ...warnings,
       ...droppedRowsWarning("alias", skippedAliases),
       ...droppedRowsWarning("non-text output", skippedMedia),
+      ...droppedRowsWarning(
+        "free-pool (resale not permitted)",
+        skippedFreePool,
+      ),
     ],
     balance,
     subscription,

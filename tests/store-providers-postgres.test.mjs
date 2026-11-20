@@ -179,3 +179,47 @@ test("an unknown provider cannot be updated", async () => {
 
   assert.equal(await updateProvider(db, "missing", input(), NOW), undefined);
 });
+
+test("free-pool resale is recorded, defaults to permitted, and can be revoked", async () => {
+  const db = await fixture();
+
+  const permissive = await createProvider(db, input({ slug: "silent" }), NOW);
+
+  assert.equal(
+    permissive?.resaleFreePool,
+    true,
+    "a provider whose terms are silent keeps today's behaviour",
+  );
+
+  const restricted = await createProvider(
+    db,
+    input({ slug: "restricted", resaleFreePool: false }),
+    NOW,
+  );
+
+  assert.equal(restricted?.resaleFreePool, false);
+
+  const revoked = await updateProvider(
+    db,
+    "silent",
+    input({ slug: "silent", resaleFreePool: false }),
+    NOW,
+  );
+
+  assert.equal(revoked?.resaleFreePool, false);
+  assert.equal((await getProvider(db, "silent"))?.resaleFreePool, false);
+
+  const restored = await updateProvider(
+    db,
+    "silent",
+    input({ slug: "silent", resaleFreePool: true }),
+    NOW,
+  );
+
+  assert.equal(restored?.resaleFreePool, true);
+  assert.equal(
+    (await getProvider(db, "savant"))?.resaleFreePool,
+    true,
+    "the seeded default provider still permits its free pool",
+  );
+});

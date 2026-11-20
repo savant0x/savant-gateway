@@ -48,6 +48,8 @@ export function providerSchema(database: DatabaseHandle) {
     ["quota_error", "TEXT"],
     ["runtime_lease_id", "TEXT"],
     ["runtime_lease_until", "TEXT"],
+    ["requires_model_review", "INTEGER NOT NULL DEFAULT 0"],
+    ["resale_free_pool", "INTEGER NOT NULL DEFAULT 1"],
   ]) {
     ensureColumn(database, "providers", column, definition);
   }

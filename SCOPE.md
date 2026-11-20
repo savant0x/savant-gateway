@@ -23,8 +23,14 @@ code, test, schema or provider row was written by this record.
   and a whole-row parity test proves it.
 - **NH4. Unpriced is not deleted.** A row with no declared price imports `unknown` +
   `disabled`; dropping it would discard an operator's manual cost on the next sync.
-- **Open:** implementation of steps 1–8 is authorised in principle by NH1 and needs no
-  credential or spend; nothing has been written yet.
+- **Closed 2026-11-20 at `b159ba0`.** Steps 1–8 landed: `lib/providers/normalize/` owns the
+  shapes, `buildSyncedCatalog` only assembles, the sync port carries no provider-name branch, and
+  families derive from the leaf. `tests/catalog-normalize.test.mjs` is 12/12 with a whole-row
+  parity fixture. Two behaviours changed as declared in NH3, and one further change was made
+  during implementation: a row declaring a non-text output is **dropped and reported**, not
+  imported disabled, because a chat gateway cannot serve it and a disabled row can still be
+  priced into service. Modality became its own enrichment shape after that test exposed a row
+  with `output_modality` and no price.
 
 ## Session — 2026-11-20 (InferHub upstream onboarding: 001)
 

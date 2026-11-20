@@ -28,8 +28,20 @@ Current counts: 13 active / 21, 180 archived, 193 allocated.
 | [2026-1104-017](FID-2026-1104-017-content-matching-controls-and-review.md) | Full linked-content management, settings and rematch | converged | Core landed in `6cb7486` and `1c4c2a5`; closure still needs pinned job snapshots, per-item retry scopes and HTTP/browser receipts. |
 | [2026-1104-018](FID-2026-1104-018-content-automation-master.md) | Content automation and persistent matching master | converged | Planning handoff ready; no coding or hosted activation authorized. |
 | [2026-1110-002](FID-2026-1110-002-identity-calibration-lab.md) | Identity calibration lab and measured certificate | converged | Steps 1–3 are committed (`d66a538`, `b884984`, `1f75c44`); step 4, the arm registry and loopback proxy, is next, then the certificate path. |
-| [2026-1120-001](FID-2026-1120-001-inferhub-upstream-onboarding.md) | InferHub upstream onboarding | converged | Catalog evidence is in (540 rows, 299 priced, 241 aliases, 0 `free/` ids, balance empty). Steps 1, 2, 4, 8 need no credential; step 3 is owned by 2026-1120-002; the usage-frame question stays blocked on funding. |
-| [2026-1120-002](FID-2026-1120-002-catalog-normalization-layer.md) | Upstream catalog normalization layer | converged | Ready to implement: canonical row type, content-detected shape registry, alias drop, leaf-first family. No credential or spend required. |
+| [2026-1120-001](FID-2026-1120-001-inferhub-upstream-onboarding.md) | InferHub upstream onboarding | converged | Catalog evidence is in (540 rows, 299 priced, 241 aliases, 0 `free/` ids, balance empty). Steps 1, 2, 4, 8 need no credential; step 3 is discharged by the now-closed 2026-1120-002; the usage-frame question stays blocked on funding. |
+
+### Closed in the upstream catalog normalization (2026-11-20)
+
+[2026-1120-002](archive/FID-2026-1120-002-catalog-normalization-layer.md) is `closed` at
+implementation commit `b159ba0`. The import path normalizes before it builds: shape knowledge
+lives in `lib/providers/normalize/`, matched by content rather than provider slug; upstream
+aliases and declared non-text rows are dropped and reported in the sync warnings; families
+derive from the leaf id; and the metadata overlay's owner is chosen in the wiring where its URL
+lives. `tests/catalog-normalize.test.mjs` is 12/12 and includes a whole-row parity test against
+the recorded default-provider payload. `npm test` PASS with 1,169 passing and zero failures;
+`test:http` PASS across both suites. Two behaviours changed deliberately and are documented in
+the record: alias rows are no longer imported, and `cc/claude-opus-5-5` is family Claude rather
+than "Cc".
 
 ### Closed in the 2026-11-10 research document repair
 

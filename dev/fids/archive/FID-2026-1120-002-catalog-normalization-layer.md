@@ -3,10 +3,11 @@
 **Filename:** `FID-2026-1120-002-catalog-normalization-layer.md`
 **ID:** FID-2026-1120-002
 **Severity:** high
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-20 18:30
 **Automation level:** 3
-**YAGNI-Compliance:** Pending
+**YAGNI-Compliance:** Compliant — one canonical type, four primary/enrichment shape readers, no
+new schema, no new fetch, no new provider row.
 
 > **Project application (savant-gateway).** This repository uses npm and the gates declared in
 > `protocol.config.yaml`; there is no `fid:verify` or `validate:repository` target. `converged`
@@ -330,19 +331,57 @@ recorded for FID-2026-1120-001 and guarded only by the provider-level review fla
 
 ## Implementation Evidence (REQUIRED for `closed`)
 
+Implementation commit **`b159ba0`** — `refactor(providers): normalize upstream catalogs before
+building rows`.
+
 | Step | Status | Evidence |
 |---|---|---|
-| 1 canonical types | pending | — |
-| 2 shape registry + fixtures | pending | — |
-| 3 `normalizeCatalog` | pending | — |
-| 4 builder consumes canonical row | pending | — |
-| 5 sync: drop slug gate | pending | — |
-| 6 family leaf-first + seeds re-verify | pending | — |
-| 7 normalize + parity + invariant tests | pending | — |
-| 8 `docs/providers.md` shape table | pending | — |
+| 1 canonical types | done | `lib/providers/normalize/types.ts` — `NormalizedModel`, `RawFacts`, `CatalogShape`, `mergeFacts` |
+| 2 shape registry + fixtures | done | `lib/providers/normalize/shapes.ts` — `ask-ladder`, `free-pool`, `flat-usd`, `declared-modalities`, `public-overlay`, `alias` |
+| 3 `normalizeCatalog` | done | `lib/providers/normalize/index.ts` — primary precedence, enrichment merge, alias/media drop reporting |
+| 4 builder consumes canonical row | done | `lib/providers/catalog.ts` — `buildSyncedCatalog` assembles; `buildSyncedModels` kept as the compatibility wrapper for existing tests |
+| 5 sync: drop slug gate | done | `lib/storage/providers/sync.ts` calls `deps.fetchMetadata(provider)` with no slug test; the overlay's owner is chosen in `lib/providers/sync.ts` |
+| 6 family leaf-first + seeds re-verify | done | `lib/model-family.ts` `leafId` / `publisherPrefix`; the `catalog-seeds.ts` call site is improved by the same rule |
+| 7 normalize + parity + invariant tests | done | `tests/catalog-normalize.test.mjs` 12/12; parity fixture `tests/fixtures/catalog-parity.json` |
+| 8 `docs/providers.md` shape table | done | new "Catalog shapes (normalization)" section; onboarding checklist item 4 rewritten |
 
-Nothing here is blocked on a credential or on spending: this record is implementable as soon as
-the operator authorises code. No provider row, price, schema change or commit exists yet.
+Verification (real output, this tree):
+
+```text
+npm run typecheck    PASS (next typegen + tsc --noEmit clean)
+npm run lint         PASS (0 errors, 0 warnings)
+npm test             tests 1185  pass 1169  fail 0  skipped 16
+npm run quality      PASS (400-line ceiling, 700 files scanned)
+npm run config:check PASS (non-production)
+npm run build        PASS
+npm run test:http    807 PASS lines across both suites, 0 FAIL
+repository:check     PASS (12 gates)
+attribution-guard    PASS
+```
+
+### Deviations from the converged text, and why
+
+1. **A non-text output row is dropped, not imported disabled.** The record said `routable: false`
+   would feed `importedModelStatus`; that function takes no per-row capability input, and a
+   disabled row is still one an operator can price and activate, after which every call fails.
+   Dropping and reporting is honest, so the Rules bullet above was corrected to match the code.
+2. **Modality became a sixth shape.** The media test exposed a row that declares
+   `output_modality` and no price: no primary shape matched, so the modality was never read and
+   the row imported as chat. `declared-modalities` is an enrichment shape for that reason.
+3. **The overlay's owner is chosen in the wiring, not the port.** `lib/providers/sync.ts` compares
+   the slug against `DEFAULT_PROVIDER_SLUG` where its URL lives; the port and the shape layer
+   carry no provider-name branch, which is exactly what the invariant test asserts.
+
+## Resolution
+
+- **Closed Date:** 2026-11-20
+- **Fix Description:** One normalization stage between the upstream read and the row builder.
+  Shape knowledge lives in `lib/providers/normalize/`; aliases and non-text rows are dropped and
+  reported; families derive from the leaf id; the overlay's owner is chosen in the wiring.
+- **Tests Added:** `tests/catalog-normalize.test.mjs` (12 cases) and
+  `tests/fixtures/catalog-parity.json` (whole-row parity fixture).
+- **Verification Evidence:** the gate block above, at commit `b159ba0`.
+- **Archived:** `dev/fids/archive/FID-2026-1120-002-catalog-normalization-layer.md`
 
 ## Lessons Learned
 

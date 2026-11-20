@@ -357,6 +357,9 @@ npm run build        PASS
 npm run test:http    807 PASS lines across both suites, 0 FAIL
 repository:check     PASS (12 gates)
 attribution-guard    PASS
+npm run verify       PASS (11 gates, 165.3s) — receipt at .verify/summary.json
+                     test 1185/1185 · test:postgres 20/20 · test:http ·
+                     test:recovery · quality · build · deployment:receipt
 ```
 
 ### Deviations from the converged text, and why

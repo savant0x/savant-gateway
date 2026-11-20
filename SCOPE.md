@@ -1,5 +1,31 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-20 (Catalog normalization layer: 002)
+
+Operator instruction: "we need a system to normalize/fix the shape of the data so we can
+have everything uniform." Automation level 3; strict; single agent. **Convergence only** — no
+code, test, schema or provider row was written by this record.
+
+- **NH1. Scope approved.** A normalization stage between the upstream read and
+  `buildSyncedModels`, so a provider is a **shape** (a data declaration plus a fixture) rather
+  than a branch in the shared builder. Registering a provider must stop requiring edits to
+  price, family or capability logic that every other provider also runs through.
+- **NH2. Uniformity is a contract, not a convention.** The accepted shapes are the three
+  payloads we have evidence for — the default provider's flat overlay, InferHub's nested
+  `pricing.min_ask_in` ladder, and a `free/` usage pool — plus the `alias` class InferHub
+  publishes. A fourth vendor's shape is a new table entry and a fixture, never a new
+  `provider.slug ===` condition; a source-level invariant test enforces that.
+- **NH3. Two behaviours change deliberately, and only two.** (a) A `canonicalModelKey` alias
+  row is **dropped and counted** instead of imported disabled, because it shares its group with
+  real provider rows while naming no provider. (b) Family derives from the **leaf** id, so a
+  marketplace prefix (`cc/`, `ag/`) stops becoming a family label. Everything else — manual
+  cost override, the declared-`$0`-output rule, tier separation, overlay-wins — is preserved,
+  and a whole-row parity test proves it.
+- **NH4. Unpriced is not deleted.** A row with no declared price imports `unknown` +
+  `disabled`; dropping it would discard an operator's manual cost on the next sync.
+- **Open:** implementation of steps 1–8 is authorised in principle by NH1 and needs no
+  credential or spend; nothing has been written yet.
+
 ## Session — 2026-11-20 (InferHub upstream onboarding: 001)
 
 Operator instruction: "we only have limited 'free' models via some providers and it's

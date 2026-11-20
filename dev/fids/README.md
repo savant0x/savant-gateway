@@ -1,8 +1,8 @@
 # FID register
 
-**Last folder audit:** 2026-11-20 (FID-2026-1120-001 registration). This page
+**Last folder audit:** 2026-11-20 (FID-2026-1120-002 registration). This page
 indexes the working set; each FID owns its own status, evidence and resolution.
-Current counts: 12 active / 20, 180 archived, 192 allocated.
+Current counts: 13 active / 21, 180 archived, 193 allocated.
 
 ## Layout
 
@@ -28,7 +28,8 @@ Current counts: 12 active / 20, 180 archived, 192 allocated.
 | [2026-1104-017](FID-2026-1104-017-content-matching-controls-and-review.md) | Full linked-content management, settings and rematch | converged | Core landed in `6cb7486` and `1c4c2a5`; closure still needs pinned job snapshots, per-item retry scopes and HTTP/browser receipts. |
 | [2026-1104-018](FID-2026-1104-018-content-automation-master.md) | Content automation and persistent matching master | converged | Planning handoff ready; no coding or hosted activation authorized. |
 | [2026-1110-002](FID-2026-1110-002-identity-calibration-lab.md) | Identity calibration lab and measured certificate | converged | Steps 1–3 are committed (`d66a538`, `b884984`, `1f75c44`); step 4, the arm registry and loopback proxy, is next, then the certificate path. |
-| [2026-1120-001](FID-2026-1120-001-inferhub-upstream-onboarding.md) | InferHub upstream onboarding | converged | Steps 1–8 are blocked on `INFERHUB_API_KEY` and the operator's spending decision; step 2 (`resale_free_pool`) needs no key and is the first implementation slice. |
+| [2026-1120-001](FID-2026-1120-001-inferhub-upstream-onboarding.md) | InferHub upstream onboarding | converged | Catalog evidence is in (540 rows, 299 priced, 241 aliases, 0 `free/` ids, balance empty). Steps 1, 2, 4, 8 need no credential; step 3 is owned by 2026-1120-002; the usage-frame question stays blocked on funding. |
+| [2026-1120-002](FID-2026-1120-002-catalog-normalization-layer.md) | Upstream catalog normalization layer | converged | Ready to implement: canonical row type, content-detected shape registry, alias drop, leaf-first family. No credential or spend required. |
 
 ### Closed in the 2026-11-10 research document repair
 

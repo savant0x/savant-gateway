@@ -24,13 +24,18 @@ Add **InferHub** (`https://api.inferhub.dev/v1`) as a fourth registered upstream
 catalog can carry the model ids our current providers do not sell, and so the flash/commodity
 tier can be served at a cost materially below the incumbent's. The wire contract fits the
 existing OpenAI adapter, but three properties of this provider are **not** expressible in the
-current registry and sync code: it publishes **no price inside `/v1/models`** and the public
-metadata overlay is wired to the default provider only; it **forbids resale of its free-pool
+current registry and sync code: its prices arrive in a **shape** (`pricing.min_ask_in`, nested)
+that the fallback-chain reader cannot see, and the public metadata overlay that adds fields is
+wired to the default provider only; it **forbids resale of its free-pool
 ids** in its Terms of Service while our importer treats any `free/` prefix as a billable-free
 row; and the price it charges is **routing-dependent** (its router optimises provider score,
 not price, unless a per-model bid is set), so a static micros-per-1M cost basis is wrong
 unless the bid is pinned on their side. Registration alone would import a catalog we cannot
 price, cannot legally resell in part, and could not bill at the rate we actually pay.
+
+The price-shape half of this record is now **owned by FID-2026-1120-002**, which adds the
+normalization stage step 3 needs; this record keeps the registration, the resale control and the
+bid-bounded cost basis.
 
 This FID is **registration plus the three code changes that make the row honest**. No
 inference, deposit, or publication is claimed; the paid-call and catalog-shape verifications

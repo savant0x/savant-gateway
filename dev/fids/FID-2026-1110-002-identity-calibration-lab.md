@@ -10,11 +10,12 @@
 
 > This record was **registered and converged before implementation**. The
 > defect inventory is complete and the calibration contract has passed the
-> Perfection Loop. **Steps 1–3 are now implemented**: the frozen
+> Perfection Loop. **Steps 1–4 are now implemented**: the frozen
 > `aio-identity-v3` candidate, its manifest seal, the exact bounds, the power
-> proof, the per-cell betting e-process and the simulated drift calibration
-> exist. Steps 4–9 remain, so the status stays `converged`; only one of the four
-> planned test paths exists yet, and the repository contract exempts `converged`
+> proof, the per-cell betting e-process, the simulated drift calibration, the
+> arm registry and the loopback adversary exist. Steps 5–9 remain, so the status
+> stays `converged`; two of the four planned test paths exist yet, and the
+> repository contract exempts `converged`
 > records from the on-disk test-path rule. No inference, payment, provider
 > transfer or publication is authorized or claimed.
 
@@ -467,16 +468,24 @@ Run for step 1 (2026-11-11, commit `d66a538`):
   (1,144 total, including the 10 new tests).
 - gate: repository:check — re-run after the FID receipt: `PASS (Node 24, 12
   gates, 11 active FIDs, root links and current docs consistent)`.
-- gate: attribution — re-run after the FID receipt: both guards PASS.
+- gate: attribution — re-run after the FID receipt: both guards PASS.Run for step 4 (2026-11-13, working tree at `52eab59`):
 
-Pending for steps 4–9 (those paths do not exist yet):
+- gate: lint — `npm run lint`, zero warnings. PASS.
+- gate: typecheck — `npm run typecheck`. PASS.
+- gate: test tests/identity-calibration-proxy.test.mjs — 13/13 pass, zero
+  skips, including a real loopback forward against a stub upstream and a
+  forged non-loopback `Host` refusal.
+- gate: quality — `npm run quality`, PASS (400-line ceiling, 696 files).
+- gate: verify — `npm run verify`, 12/12 gates PASS, 1,173/1,173 tests,
+  PostgreSQL 20/20, 156.4 s at `52eab59` with the step-4 files in the tree.
+
+Pending for steps 5–9 (those paths do not exist yet):
 
 - gate: test tests/identity-calibration-certificate.test.mjs
 - gate: test tests/identity-calibration-consume.test.mjs
-- gate: test tests/identity-calibration-proxy.test.mjs
 - gate: build — required once the certificate path is wired into the app.
 - gate: verify — the full set, only after the matrix receipt and the feature
-  gates both pass.
+gates both pass.
 
 ### Verification Receipt
 
@@ -530,7 +539,20 @@ Pending for steps 4–9 (those paths do not exist yet):
   recorded δ 0.20735819281188994, not clamped, bound held.
 - Manifest hash re-recorded:
   `bdd152ba2db5bb1bafe702a531f660f014517782011f21ec927d7b00dafdc9ba`.
-- Steps 4–9: pending; no arm registry, proxy, certificate, collection or
+**Step 4 (2026-11-13, working tree at `52eab59`):**
+
+- lint: exit 0, zero warnings.
+- typecheck: exit 0.
+- `node --test tests/identity-calibration-proxy.test.mjs`: 13/13 pass, 0 fail,
+  0 skipped.
+- quality: PASS, 696 files under the 400-line ceiling.
+- `npm run verify`: PASS 12/12 gates, 1,173/1,173 tests, PostgreSQL 20/20,
+  156.4 s.
+- Implemented: `lib/identity/calibration/arms.ts`,
+  `lib/identity/calibration/proxy.ts`,
+  `scripts/identity-calibration-proxy.mjs` and
+  `tests/identity-calibration-proxy.test.mjs`.
+- Steps 5–9: pending; no collection CLI, certificate, store table or
   consumption gate exists.
 
 ## Perfection Loop
@@ -659,7 +681,7 @@ Pending for steps 4–9 (those paths do not exist yet):
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-Steps 1–3 are implemented; steps 4–9 are not started. The status stays
+Steps 1–4 are implemented; steps 5–9 are not started. The status stays
 `converged` until the certificate consumption gate and the remaining test paths
 land.
 
@@ -692,7 +714,13 @@ land.
   frozen δ is reproducible by command. The hash and both numbers are pinned in
   the tests, and `verifyFrozenDelta` refuses a manifest whose δ or simulation
   inputs disagree.
-- [ ] **Step statuses:** steps 1–3 `implemented`; steps 4–9 not started.
+- [ ] **Step statuses:** steps 1–4 `implemented`; steps 5–9 not started.
+- [x] **Step 4 files:** `lib/identity/calibration/arms.ts` (arm registry, one
+  transform per arm, hashed transform spec, coverage assertion),
+  `lib/identity/calibration/proxy.ts` (loopback admission, credential
+  stripping, URL join) and `scripts/identity-calibration-proxy.mjs` (loopback
+  server with one declared transform, no redirect, no cache), guarded by
+  `tests/identity-calibration-proxy.test.mjs` (13 tests).
 
 ### Code Verification Evidence
 
@@ -711,12 +739,15 @@ land.
 ## Resolution
 
 - **Convergence Date:** 2026-11-10 19:32 EST
-- **Next action:** steps 1–3 are committed at `d66a538`, `b884984` and
-  `1f75c44`. δ is frozen at 0.20735819281188994, so step 4 (the arm registry and
-  the loopback proxy) is next; it needs an operator-supplied upstream and
-  credential, and it sends no probe until an operator starts a collection. Step
-  4 must land before step 5 can spend the 74.85-hour matrix, and step 7 must
-  land before any `consistent` verdict is published.
+- **Next action:** steps 1–4 are implemented. Steps 1–3 are committed at
+  `d66a538`, `b884984` and `1f75c44`; step 4 is in the working tree at
+  `52eab59` and passed lint, typecheck, its 13-test suite, quality and the full
+  12-gate verify. Step 5 (collection) is next and cannot start without an
+  operator-supplied upstream, credential and two declared routing model ids,
+  because the matrix is 44,910 requests / 74.85 h at 10 RPM. Steps 6–8
+  implement compute/issue, activation/consumption and the published method;
+  step 9 closes only with the live receipt and an active certificate. No probe
+  has been sent.
 - **Archived:** no.
 
 ## Lessons Learned

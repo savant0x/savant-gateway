@@ -211,4 +211,20 @@ function seedProviders(database: DatabaseHandle) {
                'unconfigured', ?, ?)`,
     )
     .run(now, now);
+
+  // InferHub permits reselling its paid marketplace models and forbids its free
+  // pool, proves identifiers but not chat capability, and publishes no balance
+  // endpoint. It starts disabled and with free-pool resale refused.
+  database
+    .prepare(
+      `INSERT OR IGNORE INTO providers
+        (slug, label, kind, base_url, key_env_var, default_headers,
+         supports_balance, supports_subscription, supports_pricing,
+         requires_model_review, resale_free_pool, enabled, sort_order, status,
+         created_at, updated_at)
+       VALUES ('inferhub', 'InferHub', 'openai',
+               'https://api.inferhub.dev/v1', 'INFERHUB_API_KEY', ?,
+               0, 0, 0, 1, 0, 0, 50, 'unconfigured', ?, ?)`,
+    )
+    .run(JSON.stringify({ "X-InferHub-No-Queue": "1" }), now, now);
 }

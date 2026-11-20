@@ -54,8 +54,8 @@ test("the seeded registry is listed in sort order", async () => {
 
   assert.deepEqual(
     records.map((provider) => provider.slug),
-    ["savant", "commandcode", "apixo", "router-cheap"],
-    "the migration seeds all four, ordered by sort_order",
+    ["savant", "commandcode", "apixo", "router-cheap", "inferhub"],
+    "the migration seeds all five, ordered by sort_order",
   );
   assert.equal(records[0].label, "Savant");
   assert.equal(records[0].defaultHeaders.src, "gate");
@@ -221,5 +221,37 @@ test("free-pool resale is recorded, defaults to permitted, and can be revoked", 
     (await getProvider(db, "savant"))?.resaleFreePool,
     true,
     "the seeded default provider still permits its free pool",
+  );
+});
+
+test("InferHub is seeded disabled, review-required and without free-pool resale", async () => {
+  const db = await fixture();
+  const inferhub = await getProvider(db, "inferhub");
+
+  assert.ok(inferhub, "the registry row exists after the migration");
+  assert.equal(inferhub.label, "InferHub");
+  assert.equal(inferhub.kind, "openai");
+  assert.equal(inferhub.baseUrl, "https://api.inferhub.dev/v1");
+  assert.equal(inferhub.keyEnvVar, "INFERHUB_API_KEY");
+  assert.deepEqual(inferhub.defaultHeaders, { "X-InferHub-No-Queue": "1" });
+  assert.equal(
+    inferhub.enabled,
+    false,
+    "enabling before the key exists would fail every sync",
+  );
+  assert.equal(
+    inferhub.requiresModelReview,
+    true,
+    "the catalog proves identifiers, not chat capability",
+  );
+  assert.equal(
+    inferhub.resaleFreePool,
+    false,
+    "the terms forbid reselling the free pool",
+  );
+  assert.equal(
+    inferhub.capabilities.balance,
+    false,
+    "no balance endpoint is published",
   );
 });

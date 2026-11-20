@@ -49,6 +49,18 @@ margin can be attributed by upstream rather than guessed at.
   [`docs/data/provider-prices.json`](data/provider-prices.json) with the capture
   date. It documents no balance or subscription endpoint, so those capabilities
   stay off and credit has to be checked in its dashboard.
+- **InferHub** — registered at install with base URL `https://api.inferhub.dev/v1`,
+  OpenAI wire format, key variable `INFERHUB_API_KEY`. It ships **disabled**,
+  review-required, and with free-pool resale refused (`resale_free_pool = 0`)
+  because its terms permit reselling paid marketplace models only. No balance
+  endpoint exists: it is funded in USDC on Solana, and the price actually charged
+  depends on a per-model bid set in its own dashboard. Nothing from it is
+  published, priced or served until an operator enables it and approves bids.
+
+No catalog row or cost figure from InferHub is claimed here yet: its key is
+present locally, its catalog has been read once (540 rows, 299 priced, 241
+aliases), and one probe returned `402 insufficient_balance`, which means no
+paid call has ever succeeded.
 
 The point of three upstreams is not redundancy for its own sake. It is that the
 same model is often cheaper at one of them, so the sell price can stay fixed

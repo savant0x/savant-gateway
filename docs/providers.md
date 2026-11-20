@@ -243,6 +243,44 @@ provider adapter. Provider sync flows from the admin sync route through
 `lib/storage/store/model-sync.ts`; route reconciliation then chooses a serving
 candidate. Follow these paths and the applicable FID before changing contracts.
 
+## InferHub (registered, disabled)
+
+`https://api.inferhub.dev/v1` is registered as slug `inferhub` with key variable
+`INFERHUB_API_KEY`, and it ships **disabled**. What the registry encodes, and why:
+
+- **`requires_model_review = 1`** — `/v1/models` proves identifiers, prices and
+  modalities but not chat capability. 540 rows: 299 provider-pinned rows that all
+  carry `pricing.min_ask_in` / `min_ask_out`, and 241 `owned_by: "alias"` rows with
+  no price and no provider pin. The aliases are dropped at import and counted; nothing
+  is published until a per-id `chat` decision exists.
+- **`resale_free_pool = 0`** — its Terms permit reselling paid marketplace models and
+  forbid reselling, sub-accounting or proxying the free pool. With the flag off no
+  `free/` row imports at all. This account's catalog currently exposes zero `free/` ids,
+  so the control is latent protection, not a live restriction.
+- **`default_headers: {"X-InferHub-No-Queue": "1"}** — without it a capacity-blocked
+  request queues for up to 30 s. This gateway has no cross-provider failover, so a fast
+  unbilled `429 capacity_saturated` (with `Retry-After: 2`) is the only failure our error
+  path can act on. `X-InferHub-Strict-Status` is deliberately **not** set: it suppresses
+  the heartbeat that keeps a slow first token from looking like a dead connection, and
+  stream behaviour is unverified until a funded call.
+- **No balance or subscription capability** — no balance endpoint is published. It is
+  funded by USDC on Solana mainnet to a per-account address; balances are non-refundable.
+  Admission therefore relies on `PROVIDER_SHARED_RPM` or a current upstream RPM, and a
+  call fails when the wallet is empty.
+- **The charge is bid-dependent.** Its router selects by provider score, not price,
+  unless a per-model bid is set with `PUT /api/budgets/{modelId}` (with
+  `floorMinProviders`). The imported figure is the cheapest open ask, not a guarantee:
+  the recorded manual cost must be the bid we accept, which is why the operator sets the
+  bid on their side before a row is published.
+
+Observed on 2026-11-20 with a live key: `GET /v1/models` returned 200 with 540 rows and
+no pagination; `GET /api/catalog` is 404 for an API key; and a chat probe with the
+gateway's own `stream_options.include_usage` returned
+`402 {"type":"insufficient_balance"}` because the balance is empty. The settlement-critical
+question — whether a usage frame comes back on a streamed completion — is therefore still
+**unverified**. `no_capacity` is 89.9% of its API-surface errors (95.17% 24 h availability),
+so this provider can never be the only route for a published model.
+
 ## Adding Twigpine (research only)
 
 `https://twigpine.com/opengateway/docs` documents an OpenAI- and

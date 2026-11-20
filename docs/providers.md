@@ -105,6 +105,35 @@ observable reserve: the gateway admits against `PROVIDER_SHARED_RPM` and the cal
 fails when the wallet is empty. The admin overview reports that boundary next to
 the per-provider sync state.
 
+## Catalog shapes (normalization)
+
+Every provider publishes its catalog in its own vocabulary. `lib/providers/normalize/`
+is the single place that knows those vocabularies: it maps a provider's fields onto one
+canonical row, and `buildSyncedCatalog` only assembles. A shape is matched by **content**,
+never by provider slug, so a new provider is a table entry plus a fixture — not a branch in
+the shared builder.
+
+| Kind | Shape | Recognized by | Reads |
+| --- | --- | --- | --- |
+| primary | `ask-ladder` | numeric `pricing.min_ask_in` / `min_ask_out` | cheapest open ask as the cost; `official_in`/`official_out` are **not** used (list price, not the charge) |
+| primary | `free-pool` | an id under `free/`, or a declared `allowFree` | a $0 free row with a weighted allowance, weight 1 when the upstream gives none |
+| primary | `flat-usd` | `dollarsPer1M` / `outputDollarsPer1M` | declared USD per 1M tokens |
+| enrichment | `declared-modalities` | `modality` / `output_modality` | vision support, and whether the row outputs text at all |
+| enrichment | `public-overlay` | a metadata map supplied for that provider | extra fields the envelope omits; wins over an envelope-declared figure |
+| label | `alias` | `owned_by: "alias"` | nothing — the row is dropped |
+
+Two classes are dropped and reported in the sync warnings rather than imported: an
+**alias** (it shares a route key with the provider-pinned rows while naming no provider, so
+no budget can bound it) and a **non-text output** row (a chat gateway cannot serve image,
+audio or video output). Unpriced text rows are kept — they import disabled, and deleting
+them would discard an operator's manual cost on the next sync. The provider that owns a
+public overlay is chosen in `lib/providers/sync.ts`, where the URL lives, so a second
+provider's rows can never inherit the default provider's prices by id collision.
+
+A family is derived from the **leaf** id: `cc/claude-opus-5-5` is Claude, not "Cc". A
+declared label is used only when it is neither a group word (`free`, `paid`, `subscription`)
+nor the publisher prefix itself.
+
 ## Providers that require model review
 
 A provider whose catalog proves only identifiers — not chat capability — is
@@ -165,12 +194,13 @@ public catalog stays white-label, so provider identity never appears there.
    `supported_endpoints` list is interpreted by the existing protocol mapper;
    unrecognized endpoint labels can be excluded. Check source data before
    publication and do not assume the full catalog is usable for chat.
-4. **Check prices and billing.** The importer understands `dollarsPer1M` and
-   `outputDollarsPer1M`. An absent or zero output value currently falls back to
-   the input value; that assumption must be verified for the upstream. Unknown
-   paid costs start disabled. Other price schemas, cached-token charges,
-   request-based pricing and context or time tiers require an explicit design;
-   do not infer a safe flat rate from a base tier.
+4. **Check prices and billing.** The importer understands the shapes in
+   [Catalog shapes](#catalog-shapes-normalization): flat `dollarsPer1M` /
+   `outputDollarsPer1M`, a nested cheapest-ask ladder, and a `free/` allowance pool. An
+   absent or zero output value currently falls back to the input value; that assumption
+   must be verified for the upstream. Unknown paid costs start disabled. Cached-token
+   charges, request-based pricing and context or time tiers require an explicit design; do
+   not infer a safe flat rate from a base tier.
 5. **Set capacity deliberately.** The balance and subscription flags cause
    provider checks against `/balance` and `/subscription`; enable them only
    after confirming those paths and response shapes. The pricing flag is stored

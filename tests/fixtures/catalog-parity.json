@@ -1,0 +1,93 @@
+{
+  "note": "Recorded shape of the default provider's public catalog overlay (`provider`/`weight`/`allowFree`/`dollarsPer1M`), used as the parity fixture for the normalization refactor. `expected` is the row set the pre-refactor builder produced for these three entries; the builder must still produce it.",
+  "models": [
+    {
+      "id": "free/gpt-6-luna",
+      "provider": "GPT",
+      "weight": 3,
+      "allowFree": true,
+      "supportsVision": true,
+      "supportsTools": true,
+      "health": "healthy",
+      "contextWindow": "400000",
+      "dollarsPer1M": 0.4,
+      "outputDollarsPer1M": 1.6
+    },
+    {
+      "id": "gpt-6-astra",
+      "provider": "GPT",
+      "weight": 0,
+      "allowFree": false,
+      "contextWindow": 200000,
+      "dollarsPer1M": 1.1,
+      "outputDollarsPer1M": 4.4
+    },
+    {
+      "id": "claude-opus-5.5",
+      "provider": "Claude",
+      "weight": 2,
+      "allowFree": false,
+      "dollarsPer1M": 0.5,
+      "outputDollarsPer1M": 0.5
+    }
+  ],
+  "expected": [
+    {
+      "id": "inferhub/free/gpt-6-luna",
+      "upstreamId": "free/gpt-6-luna",
+      "upstreamSlug": "inferhub",
+      "routeGroup": "gpt-6-luna",
+      "name": "Gpt 6 Luna",
+      "family": "GPT",
+      "protocol": "chat",
+      "costSource": "synced",
+      "contextWindow": "400000",
+      "tokenWeight": 3,
+      "costInputMicros": 0,
+      "costOutputMicros": 0,
+      "allowFree": true,
+      "supportsTools": true,
+      "supportsVision": true,
+      "health": "healthy",
+      "sortOrder": 10
+    },
+    {
+      "id": "inferhub/claude-opus-5.5",
+      "upstreamId": "claude-opus-5.5",
+      "upstreamSlug": "inferhub",
+      "routeGroup": "claude-opus-5-5",
+      "name": "Claude Opus 5.5",
+      "family": "Claude",
+      "protocol": "chat",
+      "costSource": "synced",
+      "contextWindow": "—",
+      "tokenWeight": 2,
+      "costInputMicros": 500000,
+      "costOutputMicros": 500000,
+      "allowFree": false,
+      "supportsTools": false,
+      "supportsVision": false,
+      "health": null,
+      "sortOrder": 20
+    },
+    {
+      "id": "inferhub/gpt-6-astra",
+      "upstreamId": "gpt-6-astra",
+      "upstreamSlug": "inferhub",
+      "routeGroup": "gpt-6-astra",
+      "name": "Gpt 6 Astra",
+      "family": "GPT",
+      "protocol": "chat",
+      "costSource": "synced",
+      "contextWindow": "200000",
+      "tokenWeight": 0,
+      "costInputMicros": 1100000,
+      "costOutputMicros": 4400000,
+      "allowFree": false,
+      "supportsTools": false,
+      "supportsVision": false,
+      "health": null,
+      "sortOrder": 30
+    }
+  ]
+}

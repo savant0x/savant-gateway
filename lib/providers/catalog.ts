@@ -1,10 +1,12 @@
 import type { SyncedModel } from "../types";
 import type { ProviderRecord, UpstreamModel } from "./types";
+import type { NormalizedModel } from "./normalize/types.ts";
 
-import { normalizeFamilyName } from "../model-family.ts";
+import { priceToMicros } from "../pricing.ts";
 import { canonicalModelKey } from "../model-identity.ts";
 
 import { inferModelProtocol, publicModelId } from "./registry.ts";
+import { normalizeCatalog } from "./normalize/index.ts";
 
 export type ModelSpec = UpstreamModel & {
   dollarsPer1M?: unknown;
@@ -14,35 +16,6 @@ export type ModelSpec = UpstreamModel & {
   allowFree?: unknown;
   supported_endpoints?: unknown;
 };
-
-function numberOrNull(value: unknown): number | null {
-  if (
-    (typeof value !== "number" && typeof value !== "string") ||
-    (typeof value === "string" && !value.trim())
-  ) {
-    return null;
-  }
-
-  const parsed = Number(value);
-
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
-}
-
-function contextWindow(spec: ModelSpec, item: UpstreamModel) {
-  for (const value of [
-    spec.contextWindow,
-    spec.context_window,
-    item.contextWindow,
-    item.context_window,
-  ]) {
-    if (typeof value === "string" && value.trim()) return value.trim();
-    if (typeof value === "number" && Number.isFinite(value) && value > 0) {
-      return String(value);
-    }
-  }
-
-  return "—";
-}
 
 function displayNameFromId(modelId: string) {
   const leaf = modelId.includes("/")
@@ -74,87 +47,89 @@ export function importedModelStatus(input: {
 }
 
 /**
+ * A published output rate of zero is a missing figure, not a free one: no
+ * upstream sells completion tokens for nothing, and accepting it billed output
+ * at $0. Fall back to the input rate and let the operator override. A malformed
+ * figure still makes the row unknown; only an absent or zero figure falls back.
+ */
+function resolveOutputPer1M(model: NormalizedModel) {
+  if (model.outputPer1M === null || model.outputPer1M === 0) {
+    return model.inputPer1M;
+  }
+
+  return model.outputPer1M;
+}
+
+function isPriced(model: NormalizedModel) {
+  return model.inputPer1M !== null && resolveOutputPer1M(model) !== null;
+}
+
+function costMicros(model: NormalizedModel, side: "input" | "output") {
+  if (model.freePool) return 0;
+
+  const usd = side === "input" ? model.inputPer1M : resolveOutputPer1M(model);
+
+  return usd === null ? 0 : Math.max(0, priceToMicros(usd));
+}
+
+function toRow(
+  provider: ProviderRecord,
+  model: NormalizedModel,
+): Omit<SyncedModel, "sortOrder"> | null {
+  const protocol = inferModelProtocol({
+    kind: provider.kind,
+    upstreamId: model.upstreamId,
+    family: model.family,
+    supportedEndpoints: model.supportedEndpoints,
+  });
+
+  if (!protocol) return null;
+
+  return {
+    id: publicModelId(provider.slug, model.upstreamId),
+    upstreamId: model.upstreamId,
+    upstreamSlug: provider.slug,
+    routeGroup: canonicalModelKey(model.upstreamId),
+    name: model.name.trim() || displayNameFromId(model.upstreamId),
+    family: model.family,
+    protocol,
+    costSource: model.freePool || isPriced(model) ? "synced" : "unknown",
+    contextWindow: model.contextWindow,
+    tokenWeight: model.tokenWeight,
+    costInputMicros: costMicros(model, "input"),
+    costOutputMicros: costMicros(model, "output"),
+    allowFree: model.freePool,
+    supportsTools: model.supportsTools,
+    supportsVision: model.supportsVision,
+    health: model.health,
+  };
+}
+
+/**
  * Builds one provider's catalog rows. Identity is scoped to the provider:
  * public ids are namespaced for non-default providers, and rows the provider
  * cannot serve over a supported protocol are excluded rather than failing at
  * call time. Only this provider's models are ever emitted, so one sync cannot
  * affect another provider's catalog.
+ *
+ * The vendor vocabulary is read in `normalize/`; this builder only assembles.
  */
-export function buildSyncedModels(
+export function buildSyncedCatalog(
   provider: ProviderRecord,
   models: UpstreamModel[],
   metadata: Map<string, ModelSpec>,
-): SyncedModel[] {
-  const seen = new Set<string>();
+): {
+  rows: SyncedModel[];
+  skippedAliases: string[];
+  skippedMedia: string[];
+} {
+  const normalized = normalizeCatalog(models, metadata);
   const rows: Omit<SyncedModel, "sortOrder">[] = [];
 
-  for (const item of models) {
-    const upstreamId = String(item.id ?? "").trim();
+  for (const model of normalized.models) {
+    const row = toRow(provider, model);
 
-    if (!upstreamId || seen.has(upstreamId)) continue;
-    seen.add(upstreamId);
-
-    const spec = metadata.get(upstreamId) ?? item;
-    const family = normalizeFamilyName(
-      upstreamId,
-      String(spec.provider ?? item.provider ?? ""),
-    );
-    const protocol = inferModelProtocol({
-      kind: provider.kind,
-      upstreamId,
-      family,
-      supportedEndpoints: item.supported_endpoints ?? spec.supported_endpoints,
-    });
-
-    if (!protocol) continue;
-
-    const allowFree = spec.allowFree ?? item.allowFree;
-    const isFreePool =
-      upstreamId.startsWith("free/") &&
-      (typeof allowFree === "boolean" ? allowFree : true);
-    const upstreamWeight = numberOrNull(spec.weight ?? item.weight);
-    const weight =
-      upstreamWeight !== null && upstreamWeight > 0
-        ? Math.max(1, Math.round(upstreamWeight))
-        : isFreePool
-          ? 1
-          : 0;
-    const inputUsd = numberOrNull(spec.dollarsPer1M ?? item.dollarsPer1M);
-    const outputRaw = spec.outputDollarsPer1M ?? item.outputDollarsPer1M;
-    const outputParsed = numberOrNull(outputRaw);
-    // A published output rate of zero is a missing figure, not a free one: no
-    // upstream sells completion tokens for nothing, and accepting it billed
-    // output at $0. Fall back to the input rate and let the operator override.
-    // A malformed figure (negative, non-numeric) still makes the row unknown;
-    // only an absent or zero figure falls back to the input rate.
-    const outputUsd =
-      outputRaw == null || outputParsed === 0 ? inputUsd : outputParsed;
-    const priced = inputUsd !== null && outputUsd !== null;
-
-    rows.push({
-      id: publicModelId(provider.slug, upstreamId),
-      upstreamId,
-      upstreamSlug: provider.slug,
-      routeGroup: canonicalModelKey(upstreamId),
-      name:
-        String(spec.name ?? item.name ?? "").trim() ||
-        displayNameFromId(upstreamId),
-      family,
-      protocol,
-      costSource: isFreePool || priced ? "synced" : "unknown",
-      contextWindow: contextWindow(spec, item),
-      tokenWeight: weight,
-      costInputMicros: isFreePool
-        ? 0
-        : Math.max(0, Math.round((inputUsd ?? 0) * 1_000_000)),
-      costOutputMicros: isFreePool
-        ? 0
-        : Math.max(0, Math.round((outputUsd ?? 0) * 1_000_000)),
-      allowFree: isFreePool,
-      supportsTools: Boolean(spec.supportsTools ?? item.supportsTools),
-      supportsVision: Boolean(spec.supportsVision ?? item.supportsVision),
-      health: String(spec.health ?? item.health ?? "").trim() || null,
-    });
+    if (row) rows.push(row);
   }
 
   rows.sort((a, b) => {
@@ -167,5 +142,17 @@ export function buildSyncedModels(
     );
   });
 
-  return rows.map((row, index) => ({ ...row, sortOrder: (index + 1) * 10 }));
+  return {
+    rows: rows.map((row, index) => ({ ...row, sortOrder: (index + 1) * 10 })),
+    skippedAliases: normalized.skippedAliases,
+    skippedMedia: normalized.skippedMedia,
+  };
+}
+
+export function buildSyncedModels(
+  provider: ProviderRecord,
+  models: UpstreamModel[],
+  metadata: Map<string, ModelSpec>,
+): SyncedModel[] {
+  return buildSyncedCatalog(provider, models, metadata).rows;
 }

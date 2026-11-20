@@ -22,24 +22,39 @@ function titleCase(value: string) {
     .join(" ");
 }
 
+function leafId(modelId: string) {
+  const trimmed = modelId.trim();
+
+  return trimmed.includes("/")
+    ? trimmed.slice(trimmed.lastIndexOf("/") + 1)
+    : trimmed;
+}
+
+/** The path segment a marketplace catalog puts its publisher in (`cc/`, `ag/`). */
+function publisherPrefix(modelId: string) {
+  const index = modelId.indexOf("/");
+
+  return index === -1 ? "" : modelId.slice(0, index).trim().toLowerCase();
+}
+
 /**
  * Derives the model family from an upstream id. The `free/` prefix is the
- * provider's price-group scope, not part of the family.
+ * provider's price-group scope and a marketplace prefix is a publisher, so the
+ * family comes from the **leaf**: `free/gpt-6-luna` and `cc/claude-opus-5-5` are
+ * GPT and Claude, never "Free" or "Cc".
  */
 export function familyFromModelId(modelId: string) {
-  const scoped = modelId.startsWith("free/") ? modelId.slice(5) : modelId;
-  const segment = scoped.includes("/")
-    ? scoped.slice(0, scoped.indexOf("/"))
-    : scoped;
-  const prefix = segment.split("-")[0]?.trim().toLowerCase() ?? "";
-  const fallback = titleCase(segment.split("-")[0] ?? "") || "Other";
+  const leaf = leafId(modelId);
+  const segment = leaf.split("-")[0]?.trim().toLowerCase() ?? "";
+  const fallback = titleCase(leaf.split("-")[0] ?? "") || "Other";
 
-  return FAMILY_LABELS[prefix] ?? fallback;
+  return FAMILY_LABELS[segment] ?? fallback;
 }
 
 /**
  * Normalizes the provider metadata value into a family label. The upstream
- * `Free` value (and group words) are not families; derive those from the id.
+ * `Free` value, group words and a bare publisher prefix are not families;
+ * derive those from the id.
  */
 export function normalizeFamilyName(
   modelId: string,
@@ -48,6 +63,10 @@ export function normalizeFamilyName(
   const trimmed = provider?.trim() ?? "";
 
   if (!trimmed || GROUP_LABELS.has(trimmed.toLowerCase())) {
+    return familyFromModelId(modelId);
+  }
+
+  if (trimmed.toLowerCase() === publisherPrefix(modelId)) {
     return familyFromModelId(modelId);
   }
 

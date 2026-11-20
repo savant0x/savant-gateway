@@ -3,6 +3,38 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-20 — Upstream catalog normalization (002)
+
+- **FID-2026-1120-002 — high —** the import path now normalizes before it builds.
+  `lib/providers/normalize/` holds the only knowledge of a provider's catalog
+  vocabulary: a canonical `NormalizedModel`, a shape registry detected by
+  **content** rather than provider slug, and the resolution rules for cost, family,
+  modality and routability. `buildSyncedCatalog` assembles rows from canonical fields,
+  so a new provider is a table entry plus a fixture instead of more fallback chains in
+  the shared builder. Shapes shipped: `ask-ladder` (nested `pricing.min_ask_in` / `min_ask_out`,
+  the cheapest open ask — never `official_*`), `free-pool` (`free/` or `allowFree`),
+  `flat-usd` (`dollarsPer1M`), plus `declared-modalities`, `public-overlay` enrichment
+  and an `alias` label.
+- **Behaviour changes, both deliberate and tested.** An upstream alias
+  (`owned_by: "alias"`) is dropped and reported in the sync warnings instead of being
+  imported as a provider-less member of a live route group, and a row declaring non-text
+  output (`image`/`audio`/`video`) is dropped rather than imported as a chat model. A
+  family now derives from the leaf id, so a marketplace prefix stops becoming a family:
+  `cc/claude-opus-5-5` is Claude, not "Cc".
+- **Preserved:** the metadata overlay is no longer gated to one slug inside the sync port;
+  the provider that owns a public overlay is chosen in `lib/providers/sync.ts` where the
+  URL lives, and the overlay still wins over an envelope-declared figure. Manual cost
+  overrides, the declared-$0-output fallback, free/paid tier separation and the
+  `importedModelStatus` gate are unchanged.
+- **Verification:** lint 0 warnings, typecheck 0, `npm test` 1,185 tests / 1,169 pass /
+  0 fail / 16 environment-gated skips (12 new in `tests/catalog-normalize.test.mjs`,
+  including a whole-row parity test against the recorded default-provider payload),
+  `test:http` both suites PASS with 0 failures, `quality` PASS at the 400-line ceiling,
+  `config:check` PASS, `build` PASS, attribution PASS, repository check PASS.
+- **Not claimed:** that the four shapes are exhaustive, that any specific provider imports
+  correctly without its own fixture, and that the capability gap for a row that declares no
+  output modality is closed — it is still guarded only by the provider-level review flag.
+
 ## 2026-11-10 — Research document integrity repair (001)
 
 - **FID-2026-1110-001 — medium —** the two research documents were repaired

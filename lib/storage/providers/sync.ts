@@ -8,7 +8,7 @@ import type {
 import type { ModelSpec } from "../../providers/catalog.ts";
 
 import { redactSecrets } from "../../redaction.ts";
-import { buildSyncedModels } from "../../providers/catalog.ts";
+import { buildSyncedCatalog } from "../../providers/catalog.ts";
 import { readProviderError } from "../../providers/error-text.ts";
 import { readUpstreamModelPage } from "../../providers/model-list.ts";
 import { providerKeyConfigured } from "../../providers/registry.ts";
@@ -53,8 +53,12 @@ export type ProviderRequest = (
 
 export type ProviderSyncDeps = ProviderRuntimeDeps & {
   request?: ProviderRequest;
-  /** Public metadata overlay, used for the default provider's family labels. */
-  fetchMetadata?: () => Promise<Map<string, ModelSpec>>;
+  /**
+   * Extra fields a provider publishes outside its `/models` envelope. The
+   * provider is passed in because the URL belongs to one catalog, not to the
+   * sync loop; returning an empty map means "this provider has no overlay".
+   */
+  fetchMetadata?: (provider: ProviderRecord) => Promise<Map<string, ModelSpec>>;
 };
 
 function transport(deps: ProviderSyncDeps) {
@@ -116,6 +120,17 @@ export async function fetchUpstreamModels(
   );
 }
 
+/** Reports dropped upstream rows instead of letting them vanish silently. */
+function droppedRowsWarning(kind: string, ids: string[]) {
+  if (ids.length === 0) return [];
+
+  const sample = ids.slice(0, 5).join(", ");
+
+  return [
+    `${ids.length} upstream ${kind} row(s) not imported (${sample}${ids.length > 5 ? ", …" : ""}).`,
+  ];
+}
+
 function unconfiguredSummary(provider: ProviderRecord): ProviderSyncSummary {
   return {
     slug: provider.slug,
@@ -148,11 +163,16 @@ export async function syncProvider(
     deps,
   );
   const models = await fetchUpstreamModels(provider, deps);
-  const metadata =
-    provider.slug === "savant" && deps.fetchMetadata
-      ? await deps.fetchMetadata().catch(() => new Map<string, ModelSpec>())
-      : new Map<string, ModelSpec>();
-  const synced = buildSyncedModels(provider, models, metadata);
+  const metadata = deps.fetchMetadata
+    ? await deps
+        .fetchMetadata(provider)
+        .catch(() => new Map<string, ModelSpec>())
+    : new Map<string, ModelSpec>();
+  const {
+    rows: synced,
+    skippedAliases,
+    skippedMedia,
+  } = buildSyncedCatalog(provider, models, metadata);
 
   await replaceModels(db, synced, await getMarkupBps(db), slug);
 
@@ -181,7 +201,11 @@ export async function syncProvider(
     free,
     paid,
     subscriptionOnly: synced.length - free - paid,
-    warnings,
+    warnings: [
+      ...warnings,
+      ...droppedRowsWarning("alias", skippedAliases),
+      ...droppedRowsWarning("non-text output", skippedMedia),
+    ],
     balance,
     subscription,
   };

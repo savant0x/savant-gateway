@@ -17,6 +17,7 @@ import {
   fetchProviderSubscription,
   providerFetch,
 } from "./request.ts";
+import { DEFAULT_PROVIDER_SLUG } from "./registry.ts";
 
 /**
  * Provider catalog sync, wired to the real database and the real transport
@@ -29,7 +30,10 @@ import {
  *
  * The public metadata overlay stays here because it is specific to the default
  * provider and is a best-effort read: a failure must not stop a sync whose real
- * input is the provider's own catalog.
+ * input is the provider's own catalog. Which provider owns the overlay is
+ * decided here, where the URL is known, so the sync port carries no
+ * provider-name branch and a second provider's rows can never be priced or
+ * labelled by the default provider's map.
  */
 
 const DEFAULT_PUBLIC_MODELS_URL = "https://apinex.bond/api/public/models";
@@ -61,7 +65,12 @@ function deps(): ProviderSyncDeps {
     request: (provider, path, init) => providerFetch(provider, path, init),
     fetchBalance: fetchProviderBalance,
     fetchSubscription: fetchProviderSubscription,
-    fetchMetadata: fetchPublicMetadata,
+    // The overlay describes one catalog. Every other provider gets no overlay,
+    // so an id that happens to collide cannot inherit this provider's price.
+    fetchMetadata: (provider) =>
+      provider.slug === DEFAULT_PROVIDER_SLUG
+        ? fetchPublicMetadata()
+        : Promise.resolve(new Map<string, ModelSpec>()),
   };
 }
 

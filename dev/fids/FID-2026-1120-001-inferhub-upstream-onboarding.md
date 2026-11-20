@@ -51,20 +51,25 @@ are blocked on a credential and on operator spending approval.
 Registering InferHub the way Apinex was registered produces a provider whose rows cannot be
 sold correctly:
 
-1. **No importable cost.** `lib/providers/catalog.ts:132-152` reads `dollarsPer1M` /
-   `outputDollarsPer1M` from the upstream envelope or from a metadata overlay. InferHub's
-   published rates live on its marketing page and in its authenticated `/api/catalog`, not in
-   `/v1/models`. The overlay that supplies extra fields is gated to one slug
+1. **No importable cost — the price is in the envelope, in a shape the importer does not read.**
+   `lib/providers/catalog.ts:132-152` reads `dollarsPer1M` / `outputDollarsPer1M`. The authed
+   envelope instead publishes `pricing.min_ask_in` / `pricing.min_ask_out` (plus the full
+   `asks_in` / `asks_out` ladders and `official_in` / `official_out`) on 299 provider-pinned
+   rows, and publishes **no** price at all on the 241 rows it marks `owned_by: "alias"`. The
+   generic overlay that could supply extra fields is gated to one slug
    (`lib/storage/providers/sync.ts:151-153`: `provider.slug === "savant" && deps.fetchMetadata`),
-   so a new provider gets no overlay at all. Every InferHub row would therefore import with
+   so a new provider gets no overlay. Every InferHub row would therefore import with
    `costSource: "unknown"` and `status: "disabled"`
    (`lib/providers/catalog.ts:67-76`, `:144`), and the catalog would be empty of sellable rows.
-2. **Its free pool may not be resold.** InferHub Terms §6 permits reselling *paid* marketplace
-   models and expressly forbids reselling, sub-accounting, pooling or proxying **free-pool**
-   ids (`free/<upstream>/<model>`), under penalty of revocation and forfeiture. Our importer
-   recognises exactly that prefix as a free pool and imports it as a $0, `allowFree` row
-   (`lib/providers/catalog.ts:110-112`, `:145-152`). Importing those ids would create rows we
-   are contractually forbidden to serve.
+2. **Its free pool may not be resold — and this catalog does not expose it.** InferHub Terms §6
+   permits reselling *paid* marketplace models and expressly forbids reselling, sub-accounting,
+   pooling or proxying **free-pool** ids (`free/<upstream>/<model>`), under penalty of revocation
+   and forfeiture. Our importer recognises exactly that prefix as a free pool and imports it as
+   a $0, `allowFree` row (`lib/providers/catalog.ts:110-112`, `:145-152`). The authed envelope
+   for this account contains **zero** `free/` ids, so the hazard is latent rather than present:
+   the public site does list `free/<upstream>/<model>` ids, and a plan or naming change on their
+   side would land in our catalog the moment we sync. The control is therefore kept, and the
+   defect is that no such control exists today.
 3. **The charged price is routing-dependent.** InferHub states that with no bid "we pick the
    best-scoring provider regardless of price", that the cheapest tier is often at its
    concurrency limit, and that the next available tier can be a multiple of the headline
@@ -129,6 +134,39 @@ Errors: `error.source` (inferhub | upstream name) and `error.error_class`
 Stream: default opens 200 immediately with `: heartbeat` comments; a pre-first-token failure
        arrives as an in-stream error. `X-InferHub-Strict-Status: 1` instead holds the response
        for a real 4xx/5xx. `stream_options.include_usage` is NOT documented anywhere.
+```
+
+Authenticated observations, 2026-11-20 18:05 UTC, read-only with the operator-supplied key:
+
+```text
+GET /v1/models  → 200, 148,195 bytes, 540 rows, one page (no has_more, no last_id).
+  keys: id, object, created, owned_by, pricing, supports_cache, max_output_tokens,
+        input_token_limit, modality, output_modality, reasoning_levels, upstream_label
+  299 rows are provider-pinned (`<upstream>/<model>`) and ALL 299 carry pricing with
+      {official_in, official_out, asks_in[], asks_out[], min_ask_in, min_ask_out}
+  241 rows are `owned_by: "alias"`: no pricing, no modality, no upstream_label
+  output_modality = image on 10 rows, absent on 530
+  supports_cache true on 256; reasoning_levels present on 146
+  `free/` ids: 0 in this account's catalog
+GET /api/catalog → 404 for this key (the documented catalog path is /v1/models)
+POST /v1/chat/completions (model cb/glm-5.3-flash, max_tokens 1, stream,
+     stream_options.include_usage) → 402
+     {"error":{"message":"balance too low for this request — deposit USDC to continue",
+       "type":"insufficient_balance","source":"inferhub",
+       "error_class":"insufficient_balance"}}
+  Zero balance confirmed; nothing billed; bearer auth and the error envelope confirmed.
+  The usage frame question (`stream_options.include_usage`) is NOT answered — it needs a
+  funded call.
+```
+
+Alias evidence, the reason aliases must not be published:
+
+```
+claude-opus-5.5           owned_by alias   no pricing     ← the id the public site advertises
+ag/claude-opus-5-5        min 0.40 / 2.00  8 tiers
+ant/claude-opus-5-5       min 1.996 / 9.98 1 tier
+cc/claude-opus-5-5        min 0.152 / 0.76 10 tiers
+kiro/claude-opus-5.5      min 1.556 / 7.78 3 tiers
 ```
 
 Cost comparison against the two registered upstreams, per 1M tokens in / out (Apinex = live
@@ -234,25 +272,30 @@ needs, **using the mechanisms the repository already has** rather than inventing
    is the `ADD COLUMN IF NOT EXISTS` helper already used for `providers`-
    adjacent rows), so an upgrade cannot silently delete Apinex's free rows. Ships with a test
    proving Apinex still imports its free rows.
-3. **Per-provider catalog metadata.** Replace the single `PROVIDER_PUBLIC_MODELS_URL` /
-   `slug === "savant"` gate with a documented per-provider mapping that falls back to today's
-   default for the default provider. **Blocked:** the field shape of InferHub's `/api/catalog`
-   is unverified without a key (401).
+3. **Price-shape adapter and the alias rule.** Extend the existing price read in
+   `buildSyncedModels` with the documented second shape — `pricing.min_ask_in` /
+   `pricing.min_ask_out`, scaled to micros exactly as `dollarsPer1M` is — so no per-provider
+   overlay and no new fetch is needed (Law 13: extend the one reader, do not add a second).
+   Rows with no `pricing` (`owned_by: "alias"`) import `disabled` under the existing rule
+   (`catalog.ts:67-76`) and stay unpublishable, which is the intended outcome: an alias is not
+   pinned to a provider, so no bid can bound what it costs, and its `routeGroup` would collide
+   with the incumbent's published id. Also map `input_token_limit` → `contextWindow` and
+   `supports_cache` → nothing (informational only, our settlement has no cache rate).
+   The cost figure is the **bid we accept**, entered over the imported ask when the operator
+   wants a cheaper tier excluded.
 4. **Operator surface.** Provider form exposes the two new fields (`requires_model_review`,
    `resale_free_pool`) honestly; review screen already renders per-id decisions.
 5. **Cost snapshot.** Capture an InferHub price snapshot into `docs/data/provider-prices.json`
    with its timestamp and the bid we accept per model, then enter those as manual costs for the
    first batch. **Blocked:** only the operator can authorize the account, the deposit and the
    per-model bids.
-6. **Verification with the real key.** Read-only `GET /v1/models` and `GET /api/catalog` first;
-   then one minimal paid call **only with explicit operator approval**, to settle: does
-   `stream_options.include_usage` return a usage frame, does a 200-with-heartbeat stream ever
-   need `X-InferHub-Strict-Status`, and what a `429 capacity_saturated` looks like on the wire.
-   **Blocked:** `INFERHUB_API_KEY` is absent and spending is the operator's decision. The
-   variable name is reserved as a blank entry in `.env.local` (2026-11-20) so the operator can
-   paste the value; a shell probe reads that file directly, while the app itself needs a restart
-   before it observes the variable. The read-only half of this step costs nothing and unblocks
-   the moment the value exists; the paid call does not.
+6. **Verification with the real key.** Read-only `/v1/models` is **done** (evidence above):
+   prices, modalities, aliases and the empty `free/` set are settled. Still open, both requiring
+   money: does `stream_options.include_usage` return a usage frame (settlement-critical), and
+   what a `429 capacity_saturated` looks like on the wire. **Blocked:** the account balance is
+   zero (`402 insufficient_balance`) and funding it is the operator's decision. The variable
+   name is reserved as a blank entry in `.env.local` and now holds the key; a shell probe reads
+   that file directly, while the app itself needs a restart before it observes the variable.
 7. **Capacity.** Set the provider admission ceiling from a measured figure, not a guess:
    `PROVIDER_SHARED_RPM` and `PROVIDER_SHARED_CONCURRENCY` are shared configuration
    (`lib/provider-admission.ts:99-105`), so record the value chosen and why, and note that
@@ -316,9 +359,10 @@ Not yet recorded — no code has been written for this FID. Status is `converged
 
 ### Missed Questions
 
-1. **Does `/v1/models` return prices at all?** Unknown (403 without a key). Treated as absent:
-   the design does not depend on it, and step 3 upgrades to machine-readable prices if they
-   exist.
+1. **Does `/v1/models` return prices at all?** **Answered: yes.** 299 provider-pinned rows
+   carry `pricing.min_ask_in` / `min_ask_out` with full ask ladders and `official_*`; the 241
+   alias rows carry none. The design reads the priced shape and lets the aliases import
+   disabled.
 2. **Is `stream_options.include_usage` honoured?** Undocumented. This is the single
    settlement-critical unknown; step 6 makes it the first paid observation. Until then,
    streaming settlement against this provider is unverified and the row must not be enabled.
@@ -417,10 +461,41 @@ operator's spending decision.
   ranking decides per group: InferHub wins the flash/commodity groups and loses the frontier
   output-heavy groups (9 vs 7 of 16 paid overlaps at a 1-in:4-out blend), so keeping both rows
   is what makes each group resolve to its cheaper source without a policy table.
-- **CHANGE DELTA:** +1,905 characters of 24,420 = **7.8%** (cap 10%). **Termination:** the third
-  pass produced only clarifications and one default value; no new defect class was found, so the
-  loop stops here by the diminishing-returns criterion. Status is therefore `converged` — the
-  plan is approved and complete, and **no code, test, schema or provider row exists yet**.
+- **CHANGE DELTA:** +3,991 characters of 24,420 = **16.3%**. The cap was exceeded in this pass
+  as well and is disclosed rather than rounded: the takeover question, the migration default and
+  the flag distinction arrived together, and the pass also restored the `## Resolution` heading
+  an overlapping edit had dropped. Two further edits after termination are factual updates, not
+  loop passes: the Loop 3 delta figure itself (this edit) and step 6's credential-slot note.
+  **Termination:** the third pass produced only clarifications and one default value; no new
+  defect class was found, so the loop stops here by the diminishing-returns criterion. Status is
+  therefore `converged` — the plan is approved and complete, and **no code, test, schema or
+  provider row exists yet**.
+
+### Loop 4 — Re-open on live evidence (2026-11-20, authed)
+
+- **RED:** The first read-only probe with the real key invalidated two claims this record had
+  made from the public site: (1) prices are **in** `/v1/models`, so the "no importable cost"
+  defect is a *shape* defect, not a missing-source defect, and the per-provider overlay of step 3
+  was a design for a problem that does not exist; (2) `GET /api/catalog` is **404**, so that
+  endpoint — which step 3 named — is not part of this contract. The probe also surfaced a class
+  the record had not considered: 241 `owned_by: "alias"` rows with no price and no modality,
+  whose ids are exactly the marketing names a customer would ask for.
+- **GREEN:** Step 3 rewritten as a price-shape adapter inside the existing reader plus an alias
+  rule; the free-pool control is kept but re-justified as latent risk (this catalog has none)
+  rather than as an active breach; step 6 split into what the probe settled and what still needs
+  funding.
+- **AUDIT:** Observed, not inferred: 540 rows, 299 priced, 241 aliases, 10 rows with
+  `output_modality: image`, 0 `free/` ids, 402 with `error_class: insufficient_balance`. Static:
+  `lib/providers/catalog.ts:67-76` returns `disabled` for an unknown cost, so an alias imports
+  unpublishable without new code; `lib/providers/registry.ts:156-160` namespaces a non-default
+  provider id, so `inferhub/cc/claude-opus-5-5` cannot collide with `claude-opus-5.5`.
+- **ADVERSARIAL:** "If aliases are skipped, why does the site advertise them?" Because an alias
+  concentrates demand so their router can spread it; it names no provider, so nothing bounds the
+  price we would pay and its route group would collide with the incumbent's published id. For a
+  reseller the alias is the one shape that cannot be billed honestly. Second challenge: "is
+  `min_ask_in` the cost?" No — it is the cheapest open ask, frequently a single provider. The
+  recorded cost is the bid we accept, not the floor someone else negotiated.
+- **CHANGE DELTA:** +2,693 characters of 29,194 = **9.2%** (cap 10%).
 
 ### Convergence record
 
@@ -428,12 +503,16 @@ operator's spending decision.
 |---|---|---|---|
 | 1 | Four RED defects + design | n/a (created) | record authored |
 | 2 | Evidence accuracy, header semantics | 12.8% (cap exceeded, disclosed) | 4 corrections |
-| 3 | Takeover, migration default, flag meaning | 7.8% | 3 clarifications, loop closed |
+| 3 | Takeover, migration default, flag meaning | 16.3% (cap exceeded, disclosed) | 3 clarifications |
+| 4 | Re-opened on the authed catalog | 9.2% | 2 claims overturned, alias class added |
 
-What remains unproven and is **not** claimed by this convergence: the wire contract of
-`/v1/models`, `/api/catalog` and `stream_options.include_usage`; whether a budget bid actually
-bounds the charged rate; and that a paid call succeeds at all. Those are step 6 observations,
-blocked on a credential and on the operator's spending decision.
+What remains unproven and is **not** claimed by this convergence: the `stream_options.
+include_usage` frame (the settlement-critical unknown, which needs a funded call), whether a
+budget bid actually bounds the charged rate, and that a paid call succeeds at all. Those are
+step 6 observations, blocked on the account balance and on the operator's spending decision.
+The catalog shape, the pricing fields, the alias class and the error envelope are observed.
+Status stays `converged`: four passes produced no further defect class, and no code, test,
+schema or provider row exists yet.
 
 ## Resolution
 

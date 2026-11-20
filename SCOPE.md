@@ -31,9 +31,19 @@ only while the allowance holds, and no surface may describe it as "fully free".
   at one provider, `$0.986/$4.93` at the next). The record reuses shipped mechanisms
   (`requires_model_review` for capability, manual cost with the 30-day freshness window,
   a new `resale_free_pool` provider column, budgets set on the provider side) and
-  registers the row disabled. Steps 1–8 are all `blocked` on the missing
-  `INFERHUB_API_KEY` or on the operator's spending decision; nothing is dropped.
-  **Open.** Implementation has not started.
+  registers the row disabled. **Credential supplied 2026-11-20 and the read-only probe is
+done.** `GET /v1/models` returns 540 rows in one page: 299 provider-pinned rows that all
+carry `pricing.min_ask_in` / `min_ask_out` with full ask ladders and `official_*`, and 241
+`owned_by: "alias"` rows with no price and no modality. That overturns two of the record's
+RED claims — the price is present, only in a shape the importer does not read (so step 3 is
+now a price-shape adapter, not a per-provider overlay), and `GET /api/catalog` is 404, so
+that endpoint is not part of the contract. This account's catalog contains zero `free/` ids,
+so the resale prohibition is latent rather than active and the control is retained on that
+basis. A stream probe with the gateway's own `stream_options.include_usage` returned
+`402 insufficient_balance`: the balance is zero, nothing was billed, and bearer auth plus the
+error envelope are confirmed. **Open:** steps 1, 2, 4 and 8 need no credential; the
+settlement-critical usage-frame question and the `429` wire shape remain `blocked` on funding
+the account and on the operator's spending decision. Nothing is dropped.
 
 - [ ] **IH2 — Keep the provider how-to current.** The existing walkthrough is
   [`docs/providers.md`](docs/providers.md); this session adds no provider behaviour to it

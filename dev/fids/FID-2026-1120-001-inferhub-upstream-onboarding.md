@@ -331,9 +331,11 @@ needs, **using the mechanisms the repository already has** rather than inventing
   publish, outside it do not.
 - `tests/allocation.test.mjs` — the free tier remains a daily allowance; no code path presents
   an unmetered free claim.
-- `tests/provider-inferhub-sync.test.mjs` (new) — a fixture with `free/x/y`, a text row, an
-  image row and an unpriced row imports exactly one row (whichever the fixture declares
-  billable), never the `free/` or media ones, and never at $0.
+- `tests/provider-inferhub-sync.test.mjs` (new, **exists and passes 2/2**) — a fixture with
+  `free/…`, a priced ask-ladder row, an alias, a media row and an unpriced row through the real
+  `syncProvider` on a disposable database, using the migration's seeded `inferhub` row: imports
+  exactly the billable and unpriced text rows, never the `free/`, media or alias ones, and never
+  at $0. The second test flips the flag to `1` and proves the free row then imports with weight
 - No test can prove the wire contract; step 6's live probe is the only evidence for it, and it
   is recorded as an observation, not as a gate.
 
@@ -350,7 +352,10 @@ needs, **using the mechanisms the repository already has** rather than inventing
 
 ### Verification Receipt
 
-Not yet recorded — no code has been written for this FID. Status is `converged`.
+`npm run verify` PASS (11 gates) at `8e1ec9e`: `npm test` 1,191 tests / 0 fail (including
+`tests/provider-inferhub-sync.test.mjs` 2/2), `test:postgres` 20/20, `test:http` PASS,
+`test:recovery` PASS, quality/build/config/repository PASS, attribution PASS. Status is `fixed`:
+steps 1–4 and 8 are implemented, steps 5–7 remain blocked on funding and a measured figure.
 
 ## Perfection Loop
 

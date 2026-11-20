@@ -1,5 +1,45 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-20 (InferHub upstream onboarding: 001)
+
+Operator instruction: "we only have limited 'free' models via some providers and it's
+not 'fully free' it's daily capacity that we are allowed to use. Let's make a fid to add
+the provider." Automation level 3; strict; single agent. Registration and convergence
+only — no provider row, schema, migration, credential, price or test was written, and no
+inference, deposit or publication is claimed.
+
+Recorded correction to the earlier cost analysis: the free tier in this gateway is a
+**daily weighted-token allowance**, not unmetered access — a 20,000,000 weighted-token
+pool per UTC day, 90% allocatable, with a 100,000-token per-account daily cap
+(`lib/allocation.ts:13`, `lib/allocation.ts:24`). A `$0` free row is therefore sellable
+only while the allowance holds, and no surface may describe it as "fully free".
+
+- [ ] **IH1 — Register and converge InferHub upstream onboarding.**
+  [FID-2026-1120-001](dev/fids/FID-2026-1120-001-inferhub-upstream-onboarding.md) is
+  `converged`. InferHub (`https://api.inferhub.dev/v1`, `INFERHUB_API_KEY`) is a
+  subscription-reselling marketplace: OpenAI + Anthropic wire formats, USDC on Solana,
+  27 upstreams and 359 routable ids, 13.09M requests/24h at 81% cache reads. Its wire
+  contract fits our OpenAI adapter, but three properties do not fit the registry as it
+  stands: it publishes no price in `/v1/models` while the public metadata overlay is
+  gated to slug `savant` (`lib/storage/providers/sync.ts:151-153`), so every row would
+  import `costSource: "unknown"` and `disabled`; its Terms §6 permits reselling **paid**
+  marketplace models but forbids reselling `free/<upstream>/<model>` ids while our
+  importer treats that prefix as a $0 `allowFree` row
+  (`lib/providers/catalog.ts:110-112`); and the price it charges is bid-dependent — its
+  router picks by provider score, not price, unless a per-model budget is pinned — so a
+  cheapest-tier basis understates cost by up to 16× (`claude-sonnet-5.5`: `$0.06/$0.30`
+  at one provider, `$0.986/$4.93` at the next). The record reuses shipped mechanisms
+  (`requires_model_review` for capability, manual cost with the 30-day freshness window,
+  a new `resale_free_pool` provider column, budgets set on the provider side) and
+  registers the row disabled. Steps 1–8 are all `blocked` on the missing
+  `INFERHUB_API_KEY` or on the operator's spending decision; nothing is dropped.
+  **Open.** Implementation has not started.
+
+- [ ] **IH2 — Keep the provider how-to current.** The existing walkthrough is
+  [`docs/providers.md`](docs/providers.md); this session adds no provider behaviour to it
+  until step 8 of IH1 lands, because no code exists yet to describe.
+  **Open**, coupled to IH1 steps 1–3.
+
 ## Session — 2026-11-10 (identity calibration lab: 002)
 
 Operator instruction: "Turn the AIO review's calibration lab into a FID,
@@ -8,7 +48,7 @@ agent. Registration and convergence only — no code, schema, test, configuratio
 or research document was edited, and no inference, payment or publication is
 claimed.
 
-- [ ] **CL1 — Register and converge the calibration lab.**
+- [x] **CL1 — Register and converge the calibration lab.**
   [FID-2026-1110-002](dev/fids/FID-2026-1110-002-identity-calibration-lab.md)
   is `converged`. The shipped identity decision is uncalibrated: a route is
   `consistent` at `1.5 × noise` and `divergent` above `3 × noise`, with `noise`
@@ -26,6 +66,9 @@ claimed.
   certificate, no fingerprint-derived verdict; quantization stays `not_tested`.
   The certificate is valid for 90 days and voids on any sealed-input change;
   the 7-day TTL constrains only the reference used by the matrix run.
+  **Completed.** Registration and convergence are done; steps 1–3 landed in
+  `d66a538`, `b884984` and `1f75c44`. The record stays active for steps 4–9, and
+  the shipped fingerprint multipliers are still uncalibrated until step 7.
 
 ## Session — 2026-11-10 (research document integrity: 001)
 

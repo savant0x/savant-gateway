@@ -3,6 +3,31 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-20 — InferHub registry row (001 steps 1 and 8)
+
+- **FID-2026-1120-001 steps 1 and 8 — high —** `inferhub` is now seeded in both schema paths:
+  `kind: openai`, `https://api.inferhub.dev/v1`, key variable `INFERHUB_API_KEY`,
+  `default_headers: {"X-InferHub-No-Queue": "1"}`, capabilities all false,
+  `requires_model_review: 1`, `resale_free_pool: 0`, `enabled: 0`, `sort_order: 50`. It ships
+  **disabled**, so no sync, publication or spend can follow from the row alone. The single
+  default header is the one behavioural change: a capacity-blocked request would otherwise
+  queue for up to 30 s, and this gateway has no cross-provider failover.
+- **Docs:** `docs/providers.md` gains an *InferHub (registered, disabled)* section covering the
+  three registry flags and why each is set, the free-pool prohibition, the per-model bid
+  requirement, `no_capacity` as 89.9% of its API-surface errors, USDC-on-Solana funding, the
+  absence of a balance endpoint, and the observation that a funded call has never succeeded
+  (the probe answered `402 insufficient_balance`). `docs/business-model.md` names the provider
+  in its hand-written upstream list with the same caveat.
+- **Verification:** `npm run verify` PASS (11 gates) — `npm test` 1,189 tests / 0 fail,
+  `test:postgres` 20/20, `test:recovery` PASS, `test:http` PASS, build PASS, lint 0 warnings,
+  typecheck clean, repository check PASS, attribution PASS. New
+  `tests/store-providers-postgres.test.mjs` asserts all nine seeded values on a freshly
+  migrated database, and the seeded-registry ordering test now expects five providers.
+- **Not claimed:** no catalog row, cost, price or free-pool allowance from InferHub exists in
+  any database; the row is a registration, not a working upstream. Steps 5–7 (cost snapshot and
+  bids, the streamed usage-frame observation, the admission ceiling) remain blocked on the
+  operator's funding decision and a measured figure.
+
 ## 2026-11-20 — Free-pool resale gate (001 step 2)
 
 - **FID-2026-1120-001 step 2 — high —** the provider registry now carries

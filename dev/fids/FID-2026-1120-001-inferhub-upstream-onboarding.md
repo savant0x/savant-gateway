@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1120-001-inferhub-upstream-onboarding.md`
 **ID:** FID-2026-1120-001
 **Severity:** high
-**Status:** converged
+**Status:** fixed
 **Created:** 2026-11-20 17:55
 **Automation level:** 3
 **YAGNI-Compliance:** Pending
@@ -260,17 +260,20 @@ needs, **using the mechanisms the repository already has** rather than inventing
 
 ### Steps
 
-1. **Registry row.** Seed `inferhub` — `label: InferHub`, `kind: "openai"`, `base_url:
-   https://api.inferhub.dev/v1`, `key_env_var: INFERHUB_API_KEY`, `default_headers:
-   {"X-InferHub-No-Queue": "1"}`, capabilities all false, `requires_model_review: 1`,
-   `resale_free_pool: 0`, `enabled: 0`. `enabled: 0` follows the Apixo precedent: enabling
-   before the key exists fails every sync. The single default header is deliberate: their
+1. **Registry row — done** (commit `ed8812a`). Seeded in both seed paths
+   (`lib/storage/schema/catalog-seeds.ts`, `lib/schema/providers.ts`): `inferhub` /
+   `InferHub` / `kind: "openai"` / `https://api.inferhub.dev/v1` / `INFERHUB_API_KEY` /
+   `default_headers: {"X-InferHub-No-Queue": "1"}` / capabilities all false /
+   `requires_model_review: 1` / `resale_free_pool: 0` / `enabled: 0` / `sort_order: 50`.
+   `enabled: 0` follows the Apixo precedent: enabling before the key is usable in a given
+   runtime fails every sync. The single default header is deliberate: their
    router otherwise queues a capacity-blocked request for up to 30 s, and this gateway has no
    cross-provider failover, so a fast unbilled `429` is the only failure mode our own error
    path can act on (`docs/providers.md`, "Not implemented — Automatic failover").
    `X-InferHub-Strict-Status` is deliberately **not** set: it suppresses the heartbeat that
    keeps a slow first token from looking like a dead connection, and stream behaviour is
-   unverified until step 6.
+   unverified until step 6. `tests/store-providers-postgres.test.mjs` asserts every one of
+   those values on a freshly migrated database.
 2. **`resale_free_pool` column — done** (commit `495e8b3`). Schema + migration + the importer
    filter + admin toggle + docs. The column is `NOT NULL DEFAULT 1` in both schema paths
    (`lib/storage/schema/catalog.ts`, `lib/schema/providers.ts`) via `ensureColumn`, so an upgrade
@@ -311,9 +314,14 @@ needs, **using the mechanisms the repository already has** rather than inventing
    `PROVIDER_SHARED_RPM` and `PROVIDER_SHARED_CONCURRENCY` are shared configuration
    (`lib/provider-admission.ts:99-105`), so record the value chosen and why, and note that
    InferHub's own failure mode is an unbilled `429`, not a charge.
-8. **Docs.** Extend `docs/providers.md` with an InferHub subsection: free-pool prohibition, bid
-   requirement, `no_capacity` behaviour, USDC/Solana funding and the absence of a balance API;
-   add the provider to the `docs/business-model.md` upstream table.
+8. **Docs — done** (commit `ed8812a`). `docs/providers.md` has an **InferHub (registered,
+   disabled)** section: the three registry flags and why each is set, the free-pool prohibition,
+   the bid requirement and `PUT /api/budgets/{modelId}`, `no_capacity` as 89.9% of its API-surface
+   errors, USDC-on-Solana funding, the absence of a balance API, and the probe result
+   (`540` rows observed, `402 insufficient_balance`, usage frame still unverified).
+   `docs/business-model.md` names it in the hand-written upstream list with the same caveat.
+   Its row in that document's **generated** upstream table appears the next time the operator
+   runs the generator against their database; the generated block is not hand-edited.
 
 ### Verification
 
@@ -415,13 +423,12 @@ Not yet recorded — no code has been written for this FID. Status is `converged
   dump including `providers.resale_free_pool`
 - [ ] **Step statuses:** see below
 
-**Step statuses:** 1 `blocked` (operator account/key/enable decision), **2 `done`
-(`resale_free_pool` gate, commit `495e8b3`)**, 3 `done by FID-2026-1120-002` (price shape
-adapter + alias rule), 4 `done` (admin form already exposes the two review flags; the
-free-pool toggle shipped with step 2), 5 `blocked` (operator spend + bids), 6 `blocked`
-(funding only; catalog shape is settled), 7 `blocked` (needs the funded call or operator
-numbers), 8 `blocked` pending 1–3. Nothing is dropped from this record; every block is
-gated by the missing credential, the funding decision, or both.
+**Step statuses:** **1 `done`** (registry row seeded disabled, `ed8812a`), **2 `done`**
+(`resale_free_pool` gate, `495e8b3`), 3 `done by FID-2026-1120-002` (price shape
+adapter + alias rule), 4 `done` (admin form carries both review flags), 5 `blocked`
+(operator spend + per-model bids), 6 `blocked` (funding only; catalog shape is settled),
+7 `blocked` (needs a funded measurement), **8 `done`** (`ed8812a`). Nothing is dropped from
+this record; every remaining block is money or a measured figure, not code.
 
 ### Code Verification Evidence
 

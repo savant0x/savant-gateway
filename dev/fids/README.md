@@ -28,7 +28,7 @@ Current counts: 13 active / 21, 180 archived, 193 allocated.
 | [2026-1104-017](FID-2026-1104-017-content-matching-controls-and-review.md) | Full linked-content management, settings and rematch | converged | Core landed in `6cb7486` and `1c4c2a5`; closure still needs pinned job snapshots, per-item retry scopes and HTTP/browser receipts. |
 | [2026-1104-018](FID-2026-1104-018-content-automation-master.md) | Content automation and persistent matching master | converged | Planning handoff ready; no coding or hosted activation authorized. |
 | [2026-1110-002](FID-2026-1110-002-identity-calibration-lab.md) | Identity calibration lab and measured certificate | converged | Steps 1–3 are committed (`d66a538`, `b884984`, `1f75c44`); step 4, the arm registry and loopback proxy, is next, then the certificate path. |
-| [2026-1120-001](FID-2026-1120-001-inferhub-upstream-onboarding.md) | InferHub upstream onboarding | converged | Catalog evidence is in (540 rows, 299 priced, 241 aliases, 0 `free/` ids, balance empty). Steps 1, 2, 4, 8 need no credential; step 3 is discharged by the now-closed 2026-1120-002; the usage-frame question stays blocked on funding. |
+| [2026-1120-001](FID-2026-1120-001-inferhub-upstream-onboarding.md) | InferHub upstream onboarding | fixed | Steps 1, 2, 3, 4 and 8 are done (`ed8812a`, `495e8b3`, `b159ba0`): the row is seeded disabled, review-required and resale-restricted. Steps 5–7 stay blocked on funding and a measured figure. |
 
 ### Closed in the upstream catalog normalization (2026-11-20)
 

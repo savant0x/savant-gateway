@@ -108,11 +108,13 @@ Wire:  POST /v1/chat/completions (OpenAI) + POST /v1/messages (Anthropic), SSE, 
        GET /v1/models requires Authorization: Bearer sk-airo-… (403 unauthenticated).
 Auth:  bearer. Base URL for the gateway: https://api.inferhub.dev/v1
 Keys:  prefix sk-airo-; shown once; created in Dashboard → API Keys.
-Money: USDC on Solana mainnet to a per-account address, credited at finalized commitment.
-       Balances non-refundable. Every billed request costs at least $0.00001.
+Money: deposit page documents USDC on Solana mainnet to a per-account address, credited at
+       finalized commitment; Terms §7 additionally lists third-party processors (PayPal, card,
+       QRIS, Binance Pay) whose fees/markups may apply. Balances non-refundable. Every billed
+       request costs at least $0.00001.
 Free:  failed requests, empty output and free-pool models are billed $0.
-Tiers: 8 publish-tier prices observed at once — public page lists "27 upstreams,
-       359 routable model ids, 51,979 active providers".
+Tiers: each model lists up to three input tiers and three output tiers, each with a
+       provider count; the cheapest tier is usually 1–2 providers.
 Volume: 13.09M requests / 24h; 1,042.8B input tokens (846.1B cached = 81%); 11.0B output.
 Status: platform 99.83% now / 99.53% 24h; the API surface is 95.17% / 94.24% and
        89.9% of its errors are `no_capacity`, 10% `upstream_failed`.
@@ -209,18 +211,29 @@ needs, **using the mechanisms the repository already has** rather than inventing
   is seeded with `0`; Apinex keeps `1` and its current behaviour.
 - **Bid-pinned price** → operational, not code: budgets are set on InferHub's side per model
   (`PUT /api/budgets/{modelId}`) from the same snapshot, so no per-model header plumbing is
-  added to the request path (YAGNI). `x-max-input-price` / `x-max-output-price` stay available
-  as provider `default_headers` if a whole-provider cap is ever wanted.
+  added to the request path (YAGNI). The two headers that change *provider-wide behaviour*
+  rather than price — `X-InferHub-No-Queue` and `X-InferHub-Strict-Status` — do belong in
+  `default_headers`, because they are constant for every request this gateway makes.
 
 ### Steps
 
 1. **Registry row.** Seed `inferhub` — `label: InferHub`, `kind: "openai"`, `base_url:
-   https://api.inferhub.dev/v1`, `key_env_var: INFERHUB_API_KEY`, `default_headers: {}`,
-   capabilities all false, `requires_model_review: 1`, `resale_free_pool: 0`, `enabled: 0`.
-   `enabled: 0` follows the Apixo precedent: enabling before the key exists fails every sync.
+   https://api.inferhub.dev/v1`, `key_env_var: INFERHUB_API_KEY`, `default_headers:
+   {"X-InferHub-No-Queue": "1"}`, capabilities all false, `requires_model_review: 1`,
+   `resale_free_pool: 0`, `enabled: 0`. `enabled: 0` follows the Apixo precedent: enabling
+   before the key exists fails every sync. The single default header is deliberate: their
+   router otherwise queues a capacity-blocked request for up to 30 s, and this gateway has no
+   cross-provider failover, so a fast unbilled `429` is the only failure mode our own error
+   path can act on (`docs/providers.md`, "Not implemented — Automatic failover").
+   `X-InferHub-Strict-Status` is deliberately **not** set: it suppresses the heartbeat that
+   keeps a slow first token from looking like a dead connection, and stream behaviour is
+   unverified until step 6.
 2. **`resale_free_pool` column.** Schema + migration + backup/restore coverage + the importer
    filter (`buildSyncedModels` must not emit a free-pool row when the flag is `0`) + admin form
-   toggle + repository docs. Ships with a test proving Apinex still imports its free rows.
+   toggle + repository docs. The column is `NOT NULL DEFAULT 1` (`lib/storage/schema/columns.ts:47`
+   is the `ADD COLUMN IF NOT EXISTS` helper already used for `providers`-
+   adjacent rows), so an upgrade cannot silently delete Apinex's free rows. Ships with a test
+   proving Apinex still imports its free rows.
 3. **Per-provider catalog metadata.** Replace the single `PROVIDER_PUBLIC_MODELS_URL` /
    `slug === "savant"` gate with a documented per-provider mapping that falls back to today's
    default for the default provider. **Blocked:** the field shape of InferHub's `/api/catalog`
@@ -235,7 +248,11 @@ needs, **using the mechanisms the repository already has** rather than inventing
    then one minimal paid call **only with explicit operator approval**, to settle: does
    `stream_options.include_usage` return a usage frame, does a 200-with-heartbeat stream ever
    need `X-InferHub-Strict-Status`, and what a `429 capacity_saturated` looks like on the wire.
-   **Blocked:** `INFERHUB_API_KEY` is absent and spending is the operator's decision.
+   **Blocked:** `INFERHUB_API_KEY` is absent and spending is the operator's decision. The
+   variable name is reserved as a blank entry in `.env.local` (2026-11-20) so the operator can
+   paste the value; a shell probe reads that file directly, while the app itself needs a restart
+   before it observes the variable. The read-only half of this step costs nothing and unblocks
+   the moment the value exists; the paid call does not.
 7. **Capacity.** Set the provider admission ceiling from a measured figure, not a guess:
    `PROVIDER_SHARED_RPM` and `PROVIDER_SHARED_CONCURRENCY` are shared configuration
    (`lib/provider-admission.ts:99-105`), so record the value chosen and why, and note that
@@ -318,6 +335,19 @@ Not yet recorded — no code has been written for this FID. Status is `converged
 6. **Is the deposit compliant with our own crypto policy?** Out of this FID's code scope and
    inside the operator's — `docs/crypto-payments-decision.md` governs our customer-facing lane;
    this is a supplier payment. The operator decides (step 5 blocker).
+7. **Does the row silently take over a published id we already sell?** Yes, by design of the
+   routing layer: `routeGroup` is `canonicalModelKey(upstreamId)`, so `inferhub/claude-opus-5.5`
+   joins Apinex's `claude-opus-5.5` group, and once the row is reviewed, priced and the
+   cheapest that can complete a billed call, it serves the published id
+   (`docs/providers.md:39-40`, `:52`). This is the behaviour we want on commodity rows — the
+   measured ranking leaves the frontier rows on Apinex because InferHub is *more* expensive
+   there at a 1-in:4-out blend — but it is the operator's call per group, and the recorded
+   control is `is_primary` plus a row disable (`docs/providers.md:65`). Step 5 must name, per
+   model, whether takeover is intended.
+8. **Does `capabilities.pricing: false` contradict step 3?** No. The flag gates `/balance`- and
+   `/subscription`-style provider reads (`docs/providers.md`, "Check prices and billing"); the
+   metadata overlay is a sync input, not a pricing endpoint probe. InferHub publishes no
+   pricing read, so the flag stays false even after step 3 lands.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
@@ -343,7 +373,67 @@ operator's spending decision.
 
 ### Loop 2 — Independent audit and self-correction
 
-Not run — the record must converge on the document first. Loop 2 begins when steps 1–4 land.
+- **RED:** Four document defects found by re-reading the record against source, not against
+  intent: (1) the Evidence block described the price page with an invented phrase ("8
+  publish-tier prices observed at once") and stated USDC/Solana as the only funding path when
+  Terms §7 lists third-party processors; (2) step 1 set `default_headers: {}` while the
+  Approach argued headers were unnecessary — but their router queues a capacity-blocked
+  request for up to 30 s and this gateway has no cross-provider failover, so a fast unbilled
+  `429` is the only failure mode our error path can act on; (3) the same sentence conflated
+  *price* headers (correctly YAGNI, bid lives in their budget object) with *behaviour* headers
+  (not YAGNI, constant for every request); (4) the record never said what a non-empty
+  `default_headers` does to sync, `Test` and the freshness of a provider row.
+- **GREEN:** The four edits above: accurate tier description and funding paths, `default_headers:
+  {"X-InferHub-No-Queue": "1"}` with the reason written into the step, `Strict-Status`
+  explicitly declined with the heartbeat rationale, and the price/behaviour split stated.
+- **AUDIT:** Static: `lib/provider-admission.ts:107-130` (`servingAccountId` = `origin|keyEnvVar`)
+  confirms the header change is scoped to this row and cannot alter another provider's
+  requests; `docs/providers.md:65` confirms an operator disable still wins over a takeover.
+  Runtime: no implementation exists, so no gate output is claimed.
+- **ADVERSARIAL:** "Does `No-Queue` convert every capacity miss into a customer-visible 429?"
+  Yes — and that is the intended trade: an unbilled `429` our retry path can act on beats a
+  30 s stall charged as latency. Residual, stated plainly: retry/fallback is not implemented
+  (`docs/providers.md`, "Not implemented — Automatic failover"), so today the `429` reaches
+  the customer. Fixing that is a hot-path FID of its own, not a hidden step here.
+- **CHANGE DELTA:** +2,767 characters of 21,653 = **12.8%**. This pass **exceeded** the 10%
+  per-pass cap; the excess is disclosed rather than rounded down, because the four corrections
+  were made as one edit set and splitting them would have left the record briefly self-
+  contradictory (a step setting an empty header map while its own Approach required one).
+
+### Loop 3 — Final convergence
+
+- **RED:** Three residual document gaps: (1) the record never stated the `route_group`
+  consequence, so a reviewer could believe registration is inert when a cheaper reviewed row
+  takes over a published id; (2) step 2 did not pin the column default, and a `DEFAULT 0`
+  migration would silently delete Apinex's free rows on upgrade; (3) `capabilities.pricing:
+  false` looked contradictory beside a step that imports prices.
+- **GREEN:** Missed Questions 7 and 8 and the step-2 default are now written down; no step was
+  added, because per-group takeover policy is an operator input at step 5, not a code path.
+- **AUDIT:** Static: `lib/storage/schema/columns.ts:47` is the `ADD COLUMN IF NOT EXISTS` helper;
+  `docs/providers.md:39-40`, `:52`, `:65` state group membership, cheapest-row serving and
+  operator-disable precedence; `lib/model-identity.ts` supplies `canonicalModelKey`. Runtime:
+  none claimed.
+- **ADVERSARIAL:** "If takeover is the point, why keep Apinex at all?" Because the measured
+  ranking decides per group: InferHub wins the flash/commodity groups and loses the frontier
+  output-heavy groups (9 vs 7 of 16 paid overlaps at a 1-in:4-out blend), so keeping both rows
+  is what makes each group resolve to its cheaper source without a policy table.
+- **CHANGE DELTA:** +1,905 characters of 24,420 = **7.8%** (cap 10%). **Termination:** the third
+  pass produced only clarifications and one default value; no new defect class was found, so the
+  loop stops here by the diminishing-returns criterion. Status is therefore `converged` — the
+  plan is approved and complete, and **no code, test, schema or provider row exists yet**.
+
+### Convergence record
+
+| Pass | Scope | Delta | Result |
+|---|---|---|---|
+| 1 | Four RED defects + design | n/a (created) | record authored |
+| 2 | Evidence accuracy, header semantics | 12.8% (cap exceeded, disclosed) | 4 corrections |
+| 3 | Takeover, migration default, flag meaning | 7.8% | 3 clarifications, loop closed |
+
+What remains unproven and is **not** claimed by this convergence: the wire contract of
+`/v1/models`, `/api/catalog` and `stream_options.include_usage`; whether a budget bid actually
+bounds the charged rate; and that a paid call succeeds at all. Those are step 6 observations,
+blocked on a credential and on the operator's spending decision.
 
 ## Resolution
 

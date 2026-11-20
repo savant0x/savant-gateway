@@ -3,6 +3,26 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-20 — Free-pool resale gate (001 step 2)
+
+- **FID-2026-1120-001 step 2 — high —** the provider registry now carries
+  `resale_free_pool` (`INTEGER NOT NULL DEFAULT 1`) in both schema paths, so an upgrade cannot
+  silently delete an existing provider's free rows. When the flag is `0` the importer refuses
+  every `free/` row for that provider and reports how many were refused in the sync warnings,
+  because serving a free-pool id a provider's terms forbid reselling breaches the upstream
+  contract regardless of the price charged. `ProviderRecord.resaleFreePool` is the type
+  contract, `createProvider`/`updateProvider` persist it (absent means permitted), and
+  `/admin/providers` exposes a *Free-pool resale permitted* toggle with copy describing exactly
+  what unchecked does.
+- **Verification:** `npm run verify` PASS (11 gates) — `npm test` 1,188 tests / 0 fail,
+  `test:postgres` 20/20, `test:recovery` PASS (the restored dump contains the new column),
+  `test:http` PASS, build PASS, lint 0 warnings, typecheck clean, repository check PASS,
+  attribution PASS. New assertions: a forbidden provider imports no `free/` row and a permitted
+  one keeps its declared weights (`tests/catalog-normalize.test.mjs`), plus default/revoke/
+  seeded-provider coverage (`tests/store-providers-postgres.test.mjs`).
+- **Not claimed:** no provider row is registered and no free-pool data has been imported for
+  InferHub — the registry row itself is still step 1, blocked on the operator's account decision.
+
 ## 2026-11-20 — Upstream catalog normalization (002)
 
 - **FID-2026-1120-002 — high —** the import path now normalizes before it builds.

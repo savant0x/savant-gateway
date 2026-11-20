@@ -271,12 +271,18 @@ needs, **using the mechanisms the repository already has** rather than inventing
    `X-InferHub-Strict-Status` is deliberately **not** set: it suppresses the heartbeat that
    keeps a slow first token from looking like a dead connection, and stream behaviour is
    unverified until step 6.
-2. **`resale_free_pool` column.** Schema + migration + backup/restore coverage + the importer
-   filter (`buildSyncedModels` must not emit a free-pool row when the flag is `0`) + admin form
-   toggle + repository docs. The column is `NOT NULL DEFAULT 1` (`lib/storage/schema/columns.ts:47`
-   is the `ADD COLUMN IF NOT EXISTS` helper already used for `providers`-
-   adjacent rows), so an upgrade cannot silently delete Apinex's free rows. Ships with a test
-   proving Apinex still imports its free rows.
+2. **`resale_free_pool` column — done** (commit `495e8b3`). Schema + migration + the importer
+   filter + admin toggle + docs. The column is `NOT NULL DEFAULT 1` in both schema paths
+   (`lib/storage/schema/catalog.ts`, `lib/schema/providers.ts`) via `ensureColumn`, so an upgrade
+   cannot silently delete an existing provider's free rows; `normalizeCatalog` refuses every
+   `free/` row when the flag is off and reports `skippedFreePool` through the sync warnings;
+   `createProvider`/`updateProvider` persist it (`input.resaleFreePool === false ? 0 : 1`, so an
+   absent field means permitted); `ProviderRecord.resaleFreePool` is the type contract; and the
+   admin form carries the *Free-pool resale permitted* toggle with honest copy. Tests:
+   `tests/catalog-normalize.test.mjs` (a forbidden provider imports no `free/` row; a permitted one
+   keeps them with their declared weight) and `tests/store-providers-postgres.test.mjs` (default
+   permitted, revocable, the seeded default stays permitted).`backup/restore coverage` is the
+   existing recovery drill, which now restores a dump containing the column.
 3. **Price-shape adapter and the alias rule.** Extend the existing price read in
    `buildSyncedModels` with the documented second shape — `pricing.min_ask_in` /
    `pricing.min_ask_out`, scaled to micros exactly as `dollarsPer1M` is — so no per-provider
@@ -400,17 +406,22 @@ Not yet recorded — no code has been written for this FID. Status is `converged
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [ ] **Commit SHA:** none — no implementation started
-- [ ] **File:line ranges:** none
-- [ ] **Gate output:** none
-- [ ] **Reproducibility:** n/a
+- [ ] **Commit SHA:** none for this whole record — **but step 2 is implemented at
+  `495e8b3`:** `feat(providers): add the free-pool resale gate (FID-2026-1120-001 step 2)`
+- [ ] **File:line ranges:** step 2 evidence, in full, in this commit
+- [ ] **Gate output:** `npm run verify` PASS (11 gates) — test 1188/1188, test:postgres
+  20/20, test:http, test:recovery, build, deployment:receipt
+- [ ] **Reproducibility:** fresh disposable database; the recovery drill restores a full
+  dump including `providers.resale_free_pool`
 - [ ] **Step statuses:** see below
 
-**Step statuses:** 1 `blocked` (operator account/key), 2 `blocked` pending 1, 3 `blocked`
-(catalog shape needs the key), 4 `blocked` pending 2, 5 `blocked` (operator spend), 6
-`blocked` (key + spend), 7 `blocked` (needs a measured figure), 8 `blocked` pending 1–3.
-Nothing is dropped from this record; every step is either gated by the missing credential or by the
-operator's spending decision.
+**Step statuses:** 1 `blocked` (operator account/key/enable decision), **2 `done`
+(`resale_free_pool` gate, commit `495e8b3`)**, 3 `done by FID-2026-1120-002` (price shape
+adapter + alias rule), 4 `done` (admin form already exposes the two review flags; the
+free-pool toggle shipped with step 2), 5 `blocked` (operator spend + bids), 6 `blocked`
+(funding only; catalog shape is settled), 7 `blocked` (needs the funded call or operator
+numbers), 8 `blocked` pending 1–3. Nothing is dropped from this record; every block is
+gated by the missing credential, the funding decision, or both.
 
 ### Code Verification Evidence
 

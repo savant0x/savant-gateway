@@ -352,7 +352,7 @@ needs, **using the mechanisms the repository already has** rather than inventing
 
 ### Verification Receipt
 
-`npm run verify` PASS (11 gates) at `8e1ec9e`: `npm test` 1,191 tests / 0 fail (including
+`npm run verify` PASS (11 gates) at `7664f4b`: `npm test` 1,191 tests / 0 fail (including
 `tests/provider-inferhub-sync.test.mjs` 2/2), `test:postgres` 20/20, `test:http` PASS,
 `test:recovery` PASS, quality/build/config/repository PASS, attribution PASS. Status is `fixed`:
 steps 1–4 and 8 are implemented, steps 5–7 remain blocked on funding and a measured figure.

@@ -23,6 +23,11 @@ distinguish verified behavior from unverified claims.
   typecheck clean, repository check PASS, attribution PASS. New
   `tests/store-providers-postgres.test.mjs` asserts all nine seeded values on a freshly
   migrated database, and the seeded-registry ordering test now expects five providers.
+  A follow-up slice (`7664f4b`) added the test the FID promised:
+  `tests/provider-inferhub-sync.test.mjs` 2/2 pushes the real InferHub payload shape through
+  the seeded row end-to-end — priced and unpriced text rows import, `free/`, media and alias
+  rows are refused and reported, and flipping the flag to `1` restores the free row. Full
+  suite: 1,191 tests.
 - **Not claimed:** no catalog row, cost, price or free-pool allowance from InferHub exists in
   any database; the row is a registration, not a working upstream. Steps 5–7 (cost snapshot and
   bids, the streamed usage-frame observation, the admission ceiling) remain blocked on the

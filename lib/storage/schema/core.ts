@@ -68,6 +68,7 @@ export async function coreSchema(db: PostgresDatabase) {
       output_tokens INTEGER NOT NULL DEFAULT 0,
       weighted_tokens INTEGER NOT NULL DEFAULT 0,
       cost_micros BIGINT NOT NULL DEFAULT 0,
+      provider_cost_micros BIGINT,
       status TEXT NOT NULL,
       latency_ms INTEGER NOT NULL DEFAULT 0,
       error TEXT,
@@ -165,6 +166,7 @@ export async function coreSchema(db: PostgresDatabase) {
   for (const [column, definition] of [
     ["charged_micros", "BIGINT NOT NULL DEFAULT 0"],
     ["estimated", "INTEGER NOT NULL DEFAULT 0"],
+    ["provider_cost_micros", "BIGINT"],
   ] as const) {
     await ensureColumn(db, "usage_events", column, definition);
   }

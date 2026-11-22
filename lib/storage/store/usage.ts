@@ -66,6 +66,8 @@ export type UsageSettlement = {
   cacheWriteInputTokens?: number | null;
   reasoningOutputTokens?: number | null;
   usageSource?: "reported" | "partial" | "estimated" | null;
+  /** The provider's own charge in micro-dollars, for reconciliation only. */
+  providerCostMicros?: number | null;
   /** Durable admitted-call identity; a replay is a no-op. */
   settlementId?: string | null;
 };
@@ -221,9 +223,9 @@ export async function recordUsage(
              created_at, billing_source, subscription_id,
              subscription_period_id, included_weighted_tokens,
              cached_input_tokens, cache_write_input_tokens,
-             reasoning_output_tokens, usage_source)
+             reasoning_output_tokens, usage_source, provider_cost_micros)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                   ?, ?, ?, ?, ?, ?)`,
+                   ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(
           `usage_${randomUUID()}`,
@@ -251,6 +253,7 @@ export async function recordUsage(
           component(input.cacheWriteInputTokens),
           component(input.reasoningOutputTokens),
           input.usageSource ?? null,
+          component(input.providerCostMicros),
         );
 
       return chargedMicros;
@@ -263,7 +266,8 @@ const USAGE_COLUMNS = `
   u.input_tokens, u.output_tokens, u.weighted_tokens, u.charged_micros,
   u.cached_input_tokens, u.cache_write_input_tokens,
   u.reasoning_output_tokens, u.usage_source,
-  u.cost_micros, u.status, u.latency_ms, u.error, u.created_at
+  u.cost_micros, u.provider_cost_micros, u.status, u.latency_ms, u.error,
+  u.created_at
 `;
 
 function numeric(row: UsageRow): UsageRow {
@@ -277,6 +281,7 @@ function numeric(row: UsageRow): UsageRow {
     weighted_tokens: Number(row.weighted_tokens),
     charged_micros: Number(row.charged_micros),
     cost_micros: Number(row.cost_micros),
+    provider_cost_micros: count(row.provider_cost_micros),
     latency_ms: Number(row.latency_ms),
     cached_input_tokens: count(row.cached_input_tokens),
     cache_write_input_tokens: count(row.cache_write_input_tokens),

@@ -7,7 +7,7 @@ import { settleCall } from "../lib/storage/gateway/settle.ts";
 import { streamCompletion } from "../lib/storage/gateway/stream.ts";
 import { completionText, usagePrices } from "../lib/gateway-usage.ts";
 import { estimateTokensFromText } from "../lib/pricing.ts";
-import { estimatedUsage, resolveUsage } from "../lib/usage.ts";
+import { estimatedUsage, readProviderUsage, resolveUsage } from "../lib/usage.ts";
 import { createPgliteDatabase } from "./pglite-pool.mjs";
 
 const NOW = "2026-10-31T12:00:00.000Z";
@@ -705,6 +705,101 @@ test("an empty estimated usage is not fabricated into a charge", async () => {
     const ledger = await db.prepare("SELECT COUNT(*) AS n FROM credit_ledger").get();
 
     assert.equal(Number(ledger.n), 0);
+  } finally {
+    await db.close();
+  }
+});
+
+test("the provider's reported charge is stored beside ours, not instead of it", async () => {
+  const db = await fixture();
+
+  try {
+    const settlementId = await admit(db);
+    const reported = resolveUsage({
+      usage: readProviderUsage({
+        usage: {
+          prompt_tokens: 1_000,
+          completion_tokens: 500,
+          cost: 0.000612,
+        },
+      }),
+      fallbackInputTokens: 0,
+      fallbackOutputTokens: 0,
+    });
+
+    await settleCall(db, context(settlementId), reported, "ok");
+
+    const event = await db
+      .prepare(
+        "SELECT cost_micros, provider_cost_micros, charged_micros FROM usage_events",
+      )
+      .get();
+
+    assert.equal(Number(event.provider_cost_micros), 612);
+    assert.equal(
+      Number(event.cost_micros),
+      usagePrices(model(), 1_000, 500).costMicros,
+      "our price table still decides the recorded cost",
+    );
+    assert.notEqual(Number(event.provider_cost_micros), Number(event.cost_micros));
+  } finally {
+    await db.close();
+  }
+});
+
+test("a call the provider did not price stores no reported cost, not zero", async () => {
+  const db = await fixture();
+
+  try {
+    const settlementId = await admit(db);
+
+    await settleCall(db, context(settlementId), usage(1_000, 500), "ok");
+
+    const event = await db
+      .prepare("SELECT provider_cost_micros FROM usage_events")
+      .get();
+
+    assert.equal(event.provider_cost_micros, null);
+  } finally {
+    await db.close();
+  }
+});
+
+test("a streamed charge in the final chunk is settled with the call", async () => {
+  const db = await fixture();
+  const encoder = new TextEncoder();
+
+  try {
+    const settlementId = await admit(db);
+    const upstream = new Response(
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue(
+            encoder.encode(
+              `data: {"choices":[{"delta":{"content":"hello"}}]}\n\n`,
+            ),
+          );
+          controller.enqueue(
+            encoder.encode(
+              `data: {"choices":[{"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":10,"completion_tokens":5,"cost":0.000042}}\n\n`,
+            ),
+          );
+          controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
+          controller.close();
+        },
+      }),
+      { status: 200 },
+    );
+    const response = streamCompletion(db, upstream, context(settlementId));
+
+    await response.text();
+
+    const event = await db
+      .prepare("SELECT status, provider_cost_micros FROM usage_events")
+      .get();
+
+    assert.equal(event.status, "ok");
+    assert.equal(Number(event.provider_cost_micros), 42);
   } finally {
     await db.close();
   }

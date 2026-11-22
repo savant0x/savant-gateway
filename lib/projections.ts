@@ -98,6 +98,8 @@ export type UsageRow = {
   reasoning_output_tokens: number | null;
   usage_source: string | null;
   cost_micros: number;
+  /** The provider's own charge; null when it reported none. */
+  provider_cost_micros: number | null;
   status: string;
   latency_ms: number;
   error: string | null;
@@ -329,5 +331,6 @@ export function toAdminUsageSummary(row: UsageRow): AdminUsageSummary {
   return {
     ...toUsageSummary(row),
     costMicros: row.cost_micros,
+    providerCostMicros: row.provider_cost_micros,
   };
 }

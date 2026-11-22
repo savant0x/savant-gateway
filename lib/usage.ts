@@ -23,6 +23,8 @@ export type ProviderUsage = {
   cacheWriteInputTokens: number | null;
   /** Subset of `outputTokens` spent on reasoning. */
   reasoningOutputTokens: number | null;
+  /** What the provider says it charged, in micro-dollars; null if it did not say. */
+  costMicros: number | null;
 };
 
 export type ResolvedUsage = {
@@ -31,6 +33,12 @@ export type ResolvedUsage = {
   cachedInputTokens: number | null;
   cacheWriteInputTokens: number | null;
   reasoningOutputTokens: number | null;
+  /**
+   * The provider's own charge, in micro-dollars, kept for reconciliation only.
+   * It never becomes a billing basis: the price table decides what is charged,
+   * because a figure the upstream controls cannot set our margin.
+   */
+  providerCostMicros: number | null;
   /** Both totals came from the provider. */
   complete: boolean;
   /** The provider reported something, but one total had to be estimated. */
@@ -57,6 +65,29 @@ function record(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
+}
+
+/**
+ * A reported charge is dollars, so it is fractional where the token counts are
+ * not, and it is converted to the integer micro-dollars every money column uses.
+ * The ceiling rejects a field that carries something other than a per-request
+ * charge (a credit balance, a lifetime total) instead of storing it as one.
+ */
+const MAX_REPORTED_COST_MICROS = 1_000_000_000;
+
+function costMicros(value: unknown): number | null {
+  const dollars =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && value.trim()
+        ? Number(value)
+        : null;
+
+  if (dollars === null || !Number.isFinite(dollars) || dollars < 0) return null;
+
+  const micros = Math.round(dollars * 1_000_000);
+
+  return micros <= MAX_REPORTED_COST_MICROS ? micros : null;
 }
 
 /** A subset larger than its total is out of domain and is not stored. */
@@ -95,6 +126,7 @@ export function readProviderUsage(value: unknown): ProviderUsage | null {
       count(completionDetails?.reasoning_tokens),
       outputTokens,
     ),
+    costMicros: costMicros(usage.cost) ?? costMicros(usage.total_cost),
   };
 }
 
@@ -118,6 +150,7 @@ export function mergeProviderUsage(
       next.cacheWriteInputTokens ?? previous.cacheWriteInputTokens,
     reasoningOutputTokens:
       next.reasoningOutputTokens ?? previous.reasoningOutputTokens,
+    costMicros: next.costMicros ?? previous.costMicros,
   };
 }
 
@@ -148,6 +181,7 @@ export function resolveUsage(input: {
     cachedInputTokens: usage?.cachedInputTokens ?? null,
     cacheWriteInputTokens: usage?.cacheWriteInputTokens ?? null,
     reasoningOutputTokens: usage?.reasoningOutputTokens ?? null,
+    providerCostMicros: usage?.costMicros ?? null,
     complete,
     partial: usage !== null && !complete,
     reported: usage !== null,

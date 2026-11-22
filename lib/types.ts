@@ -114,6 +114,8 @@ export type UsageSummary = {
 
 export type AdminUsageSummary = UsageSummary & {
   costMicros: number;
+  /** The provider's own reported charge, in micro-dollars; null if unreported. */
+  providerCostMicros: number | null;
 };
 
 export type OverviewStats = {

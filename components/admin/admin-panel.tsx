@@ -275,7 +275,9 @@ export function AdminPanel({
             <Card.Title>Recent usage</Card.Title>
             <Card.Description>
               Revenue, upstream cost, latency, and status for the latest
-              requests. Full detail lives in analytics.
+              requests. Full detail lives in analytics. A second figure under
+              Cost is the provider&rsquo;s own reported charge, shown when it
+              disagrees with our price table.
             </Card.Description>
           </Card.Header>
           <Card.Content className="px-0 pb-0">
@@ -320,6 +322,15 @@ export function AdminPanel({
                         </td>
                         <td className="text-right text-muted">
                           {formatMicros(row.costMicros)}
+                          {row.providerCostMicros !== null &&
+                          row.providerCostMicros !== row.costMicros ? (
+                            <div
+                              className="mono mt-0.5 text-[11px] text-warning"
+                              title={`The provider reported ${formatMicros(row.providerCostMicros)} for this request. Charged and cost figures still come from the price table.`}
+                            >
+                              prov {formatMicros(row.providerCostMicros)}
+                            </div>
+                          ) : null}
                         </td>
                         <td className="text-muted">{row.status}</td>
                       </tr>

@@ -28,6 +28,7 @@ test("complete usage keeps totals and provider subsets apart", () => {
     cachedInputTokens: 40,
     cacheWriteInputTokens: null,
     reasoningOutputTokens: 20,
+    costMicros: null,
   });
 
   const resolved = resolveUsage({

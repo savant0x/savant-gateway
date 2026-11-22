@@ -281,6 +281,12 @@ candidate. Follow these paths and the applicable FID before changing contracts.
   frame, stops relaying from that point, settles `error` (billing nothing) and sends an
   `event: error` frame instead of `[DONE]`. This provider reports failures that way and still
   closes the response cleanly, which is why the terminator alone cannot decide a settlement.
+- **The charge it reports is stored, never billed.** Its final chunk carries `usage.cost` in
+  dollars, which the parser now keeps as `usage_events.provider_cost_micros` (nullable: a provider
+  that reports nothing stores `NULL`, never `0`) beside the price-table `cost_micros`. Settled
+  billing still comes from the price table, because a figure the upstream controls cannot set our
+  margin; the admin overview flags a request whose two figures disagree, which is how a silently
+  expensive publisher tier becomes visible after the fact.
 - **The charge is bid-dependent.** Its router selects by provider score, not price,
   unless a per-model bid is set with `PUT /api/budgets/{modelId}` (with
   `floorMinProviders`). The imported figure is the cheapest open ask, not a guarantee:

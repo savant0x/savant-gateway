@@ -46,9 +46,11 @@ changed.
   per-provider `balance_url` with the wallet-shape parser, upstream 402 mapped to our 503,
   in-stream error frames settled as failures, migration serialisation found by the gate, and the
   admin field. Verified by `npm run verify` PASS (1203/1203 tests), commit `a1b51d4`.
-- [ ] **IA5 — Persist the provider-reported cost after settlement (audit F-2).** Owned. Next
-  action: add the settled-cost column and its reconciliation against `cost_micros`, behind the
-  same gate order as IA4. Not a side effect of IA4: it changes what the ledger records as true.
+- [x] **IA5 — Persist the provider-reported cost after settlement (audit F-2).** **Completed** as
+  `dev/fids/FID-2026-1122-003-provider-cost-persistence.md`. `usage.cost` is parsed into
+  micro-dollars, stored as `usage_events.provider_cost_micros` beside the price-table figure,
+  exposed on the admin usage row and flagged when the two disagree; billing still comes from the
+  price table. Verified by `tests/usage-provider-cost.test.mjs` and the settlement suite.
 - [ ] **IA6 — Import group notes and pooled capacity from `/api/catalog` (audit F-8, F-20).**
   Owned. Next action: sync the `systemPromptNote` and `activeProviders` fields into the provider
   snapshot and surface them in the admin catalog, after IA5.

@@ -3,6 +3,20 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-22 — Provider-reported cost (1122-003)
+
+- **FID-2026-1122-003 — medium —** a provider that reports what a request cost in its
+  final `usage` object is now recorded instead of discarded. `ProviderUsage.costMicros` parses
+  `usage.cost` (or `total_cost`) in dollars into integer micro-dollars, refuses a negative,
+  non-finite or over-$1,000 figure rather than storing it, and merges like the token
+  components so a later frame that omits it cannot erase it. Settlement writes it to
+  `usage_events.provider_cost_micros` (nullable: unreported is `NULL`, never `0`) beside the
+  price-table `cost_micros`, and the admin overview marks a request whose two figures disagree.
+  **Billing is unchanged on purpose:** the price table still decides what a customer is charged,
+  because a number the upstream controls cannot set our margin. Verified by
+  `tests/usage-provider-cost.test.mjs` (10 cases) and three settlement cases in
+  `tests/gateway-settlement-postgres.test.mjs`, including a streamed charge in the final chunk.
+
 ## 2026-11-22 — InferHub upstream audit
 
 - **InferHub contract re-read — high —** the vendor published a machine-readable reference

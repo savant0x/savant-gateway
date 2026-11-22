@@ -106,6 +106,7 @@ export async function settleCall(
     chargedMicros:
       context.subscription?.kind === "included" ? 0 : prices.chargedMicros,
     costMicros: prices.costMicros,
+    providerCostMicros: usage.providerCostMicros,
     estimated,
     cachedInputTokens: usage.cachedInputTokens,
     cacheWriteInputTokens: usage.cacheWriteInputTokens,

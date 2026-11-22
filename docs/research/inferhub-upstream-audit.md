@@ -34,6 +34,13 @@ re-implementation: `scripts/upstream-catalog-probe.mjs` imports
 { resaleFreePool: false })`, which is the exact call `buildSyncedCatalog` makes
 (`lib/providers/catalog.ts:114`).
 
+Cost comparisons in §5.5 use two dated figures besides today's InferHub ask: our
+current upstream cost recorded live on 2026-11-20 in FID-2026-1120-001, and
+Apixo's published rates from the committed snapshot
+`docs/data/provider-prices.json` (captured 2026-10-31). No live database was
+read: the local PGlite directory holds zero catalog rows, so there is no newer
+cost figure in this tree to quote.
+
 **Not verified, and not claimed:** any funded inference call, the runtime shape
 of a `429 capacity_saturated`, whether a pinned bid actually bounds the charged
 rate, the `usage.cost` value for a real request, streaming round-trip behaviour
@@ -231,6 +238,89 @@ this request — deposit USDC to continue"* — our supplier's wallet, described
 our customer, with a funding method we do not offer. `402 no_provider_under_bid`
 similarly advises re-bidding in headers the customer cannot see.
 
+## 5.5 Price comparison, and what the entry gate costs
+
+Two comparisons, each with both sides dated, because one of them moved.
+
+### 5.5.1 Against our current cost (Apinex, flat rate)
+
+Apinex prices are the live synced costs recorded on 2026-11-20 in
+FID-2026-1120-001; InferHub prices are today's cheapest ask, measured at a
+1-in:4-out token mix, which is the blend a coding workload produces.
+
+| Model | Our cost /1M in-out | InferHub ask | InferHub tier 2 | Blended ours | Blended ask | Blended tier 2 |
+| --- | --- | --- | --- | ---: | ---: | ---: |
+| `glm-5.3-flash` | 0.050 / 0.050 | 0.00015 / 0.0005 | 0.0071 / 0.0235 | 0.050 | **0.0002** | 0.020 |
+| `glm-5.3` | 0.150 / 0.150 | 0.0014 / 0.0044 | 0.035 / 0.110 | 0.150 | **0.004** | 0.095 |
+| `gpt-6-luna` | 0.075 / 0.075 | 0.0018 / 0.0090 | 0.0020 / 0.0100 | 0.075 | **0.008** | 0.008 |
+| `hy4-preview` | 0.300 / 0.300 | 0.0200 / 0.0600 | 0.0209 / 0.0625 | 0.300 | **0.052** | 0.054 |
+| `gpt-6.1-terra` | 0.170 / 0.170 | 0.0180 / 0.0900 | 0.0190 / 0.0950 | 0.170 | **0.076** | 0.080 |
+| `grok-4.7` | 0.300 / 0.300 | 0.0380 / 0.1140 | 0.578 / 1.734 | 0.300 | **0.099** | 1.503 |
+| `deepseek-v4-flash` | 0.050 / 0.050 | 0.0220 / 0.0660 | 0.0264 / 0.0792 | 0.050 | 0.057 | 0.069 |
+| `gpt-6.2-astra` | 0.500 / 0.500 | 0.144 / 0.720 | 0.152 / 0.760 | 0.500 | 0.605 | 0.638 |
+| `claude-sonnet-5.5` | 0.400 / 0.400 | 0.136 / 0.680 | 0.484 / 2.420 | 0.400 | 0.571 | 2.033 |
+| `gemini-4-hydrogen` | 0.300 / 0.300 | 0.168 / 0.840 | 0.299 / 1.493 | 0.300 | 0.706 | 1.254 |
+| `kimi-k3.1-pro` | 0.300 / 0.300 | 0.230 / 1.150 | 0.400 / 2.000 | 0.300 | 0.966 | 1.680 |
+| `claude-opus-5.5` | 0.500 / 0.500 | 0.272 / 1.360 | 0.520 / 2.600 | 0.500 | 1.142 | 2.184 |
+| `gemini-4-argon` | 0.500 / 0.500 | 0.266 / 1.596 | 0.398 / 2.388 | 0.500 | 1.330 | 1.990 |
+| `muse-spark-1.3` | 0.300 / 0.300 | 0.499 / 1.696 | 0.625 / 2.125 | 0.300 | 1.456 | 1.825 |
+| `claude-fable-5.2` | 1.000 / 1.000 | 3.840 / 19.20 | 3.992 / 19.96 | 1.000 | 16.128 | 16.766 |
+
+`gemini-3.8-flash` is gone from the catalog since 2026-11-20, which is its own
+small lesson about id churn.
+
+**Score at a 1-in:4-out blend: InferHub is cheaper on 6 of 15 rows at its
+cheapest ask, and on 5 of 15 once the cheapest publisher is busy.** The reason
+is structural, not incidental: Apinex bills flat (`in = out`), InferHub bills
+output at 4–5× input. Every output-heavy frontier row therefore flips to our
+current cost, and `claude-fable-5.2` flips by 16×. The 2026-11-20 note that
+InferHub won "9 of 16" does not survive today's prices and today's blend.
+
+**What that means commercially:** InferHub is a commodity and flash supplier for
+this gateway. It can fund a deep public discount on the cheap tiers, and it can
+widen the long tail. It cannot replace the flat-rate upstream on frontier
+output, and it must never be the only route.
+
+### 5.5.2 Against Apixo's published retail rate
+
+Apixo rates are from `docs/data/provider-prices.json` (captured 2026-10-31, the
+snapshot the business model already uses). 31 ids match exactly by identity key.
+At a 1-in:4-out blend:
+
+| Reading | Value |
+| --- | --- |
+| InferHub cheaper at its cheapest ask | **22 of 31** |
+| Apixo cheaper | 9 of 31 |
+| Median blended cost, InferHub | **$0.151** |
+| Median blended cost, Apixo | $0.250 (49.6% higher) |
+| InferHub's **tier 2** is more expensive than Apixo's flat rate | **17 of 31** |
+
+Apixo's flat rate wins the same class it wins against Apinex — Claude Opus 4.6
+through 5, `claude-fable-5`, `gemini-4-argon`, `kimi-k3.1-pro`, `mimo-v2.6-flash`
+— because a flat rate is a *ceiling* you can plan against, while InferHub's
+cheapest ask is a *floor* that a busy publisher removes. Counting on the floor
+turns InferHub's 49.6% median advantage into a loss on the majority of rows.
+
+### 5.5.3 The entry gate
+
+| Term | Apixo (recorded in [apixo-provider-review.md](apixo-provider-review.md)) | InferHub (docs/api, terms, faq, pricing) |
+| --- | --- | --- |
+| Application fee | **$50 one-time, non-refundable once activated** | none published |
+| First top-up | **$100 minimum**, "100% usable credit, not a fee" | no minimum published; USDC on Solana to a per-account address |
+| Cash to first paid call | **$150** ($50 of it sunk) | whatever you deposit, from a few dollars |
+| Cost basis | Apixo's **public** retail price — no wholesale discount | marketplace asks, bounded by a bid you set |
+| Wallet floor | $5; below it customer keys get `503` | none published; a billed call fails `402 insufficient_balance` |
+| Refunds | top-up is credit; fee is non-refundable | balance non-refundable except duplicate deposit or clear error |
+| Minimum charge | per published rate | $0.00001 per billed request; failures and empty output are $0 |
+
+The complaint behind "$50 then $100" is not the $100 — that is spendable
+credit. It is that **$50 buys no wholesale advantage at all**: Apixo's reseller
+wallet pays Apixo's own retail price, so the fee is the price of becoming a
+retail customer under your own brand. InferHub charges nothing to enter and its
+cost basis can sit below list — but it asks for USDC on a chain, publishes no
+invoice, and cannot refund a balance. Neither is a supplier contract; both are
+prepaid retail access with different gates.
+
 ## 6. Operational audit
 
 | Property | Reading |
@@ -322,6 +412,7 @@ documentation or efficiency.
 | F-16 | low | The "50% of official" cap is real as a ceiling: 0/255 violations, max ask exactly 50%, median cheapest ask 29.8% | measurement | corrects the earlier "contradiction" note |
 | F-17 | info | Key kinds and allowlists let us mint an `inference_only` key restricted to chosen upstreams; `/v1/models` with that key lists only what it may use | docs/api "Key types", `PATCH /api/keys/{id}` | operator: mint a scoped key, not the account key |
 | F-18 | info | `/v1/messages` is available and we deliberately do not register it; `kind: "openai"` keeps one adapter and one settlement path | `lib/providers/registry.ts:174-202` | unchanged decision |
+| F-19 | high | Commercially it wins only the commodity, flash and input-heavy rows: cheaper on 6 of 15 overlaps at its floor and 5 at its next tier against our flat-rate cost, while its tier 2 is dearer than Apixo's flat retail rate on 17 of 31. Entry gate is $0 against Apixo's $50 non-refundable fee plus a $100 minimum top-up | §5.5 | operator: buy the cheap groups only and keep the flat-rate upstream for frontier output |
 
 ## 10. Verdict
 

@@ -52,10 +52,14 @@ margin can be attributed by upstream rather than guessed at.
 - **InferHub** — registered at install with base URL `https://api.inferhub.dev/v1`,
   OpenAI wire format, key variable `INFERHUB_API_KEY`. It ships **disabled**,
   review-required, and with free-pool resale refused (`resale_free_pool = 0`)
-  because its terms permit reselling paid marketplace models only. No balance
-  endpoint exists: it is funded in USDC on Solana, and the price actually charged
-  depends on a per-model bid set in its own dashboard. Nothing from it is
-  published, priced or served until an operator enables it and approves bids.
+  because its terms permit reselling paid marketplace models only. Its balance is not
+  readable from the inference host this adapter probes — `GET
+  https://inferhub.dev/api/me` publishes it instead — so it is unchecked; it is funded in
+  USDC on Solana, and the price actually charged depends on a per-model bid set in its own
+  dashboard. Nothing from it is published, priced or served until an operator enables it
+  and approves bids. On the measured overlap it is cheaper than our current cost only on
+  cheap and input-heavy rows: see
+  [`research/inferhub-upstream-audit.md`](research/inferhub-upstream-audit.md) §5.5.
 
 No catalog row or cost figure from InferHub is claimed here yet: its key is
 present locally, its catalog has been read once (540 rows, 299 priced, 241

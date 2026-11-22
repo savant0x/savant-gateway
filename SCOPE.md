@@ -17,6 +17,13 @@ changed.
   5.76× at p90, 480× worst) and confirmed the 50%-of-official cap holds on all 255 priced
   rows. Record:
   [`docs/research/inferhub-upstream-audit.md`](docs/research/inferhub-upstream-audit.md).
+- [x] **IA1b — Compare prices against our current cost and against Apixo.**
+  **Completed.** At a 1-in:4-out blend InferHub is cheaper than our flat-rate Apinex cost on
+  6 of 15 overlapping models at the cheapest ask and 5 of 15 at the next tier; against
+  Apixo's published rates it is cheaper on 22 of 31 at the floor (median $0.151 vs $0.250)
+  but dearer on 17 of 31 at its next tier. Entry gate: $0 versus Apixo's $50 non-refundable
+  fee plus $100 minimum top-up, whose cost basis is Apixo's own retail price. Recorded in
+  §5.5 of the audit; `docs/business-model.md`'s InferHub bullet is corrected.
 - [x] **IA2 — Correct the stale provider documentation.** **Completed.** `docs/providers.md`
   gains a dated 2026-11-22 re-observation (public `/v1/models`, `/api/catalog` no longer
   404, `usage`/`usage.cost` in the final chunk, `/api/me` balance read, current

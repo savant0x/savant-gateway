@@ -22,6 +22,13 @@ distinguish verified behavior from unverified claims.
   an upstream `402 insufficient_balance` reaches customers as advice to deposit USDC
   (`lib/gateway-refusal.ts:21-33`); and provider-reported `usage.cost` is neither read nor
   stored. Recorded with recommendations; no code changed.
+- **Price comparison —** at a 1-in:4-out blend InferHub is cheaper than our current
+  flat-rate cost on 6 of 15 overlapping models at its cheapest ask and 5 of 15 at its next
+  tier, and its 49.6% median advantage against Apixo's published rate disappears on 17 of
+  31 rows once the cheapest publisher is busy. Entry gate: no fee and no published
+  minimum, against Apixo's $50 non-refundable fee plus a $100 minimum top-up whose cost
+  basis is Apixo's own retail price. So it is a commodity/flash supplier, not a
+  replacement for the flat-rate upstream on frontier output.
 - **Docs —** new [docs/research/inferhub-upstream-audit.md](docs/research/inferhub-upstream-audit.md)
   (method, measurements, 18 findings, verdict, ordered actions).
   [docs/providers.md](docs/providers.md) gains the dated 2026-11-22 re-observation and no longer

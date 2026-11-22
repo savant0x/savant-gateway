@@ -26,6 +26,7 @@ export async function catalogSchema(db: PostgresDatabase) {
       supports_pricing INTEGER NOT NULL DEFAULT 0,
       requires_model_review INTEGER NOT NULL DEFAULT 0,
       resale_free_pool INTEGER NOT NULL DEFAULT 1,
+      balance_url TEXT,
       enabled INTEGER NOT NULL DEFAULT 1,
       sort_order INTEGER NOT NULL DEFAULT 0,
       status TEXT NOT NULL DEFAULT 'unconfigured',
@@ -147,6 +148,7 @@ async function providerColumns(db: PostgresDatabase) {
     ["runtime_lease_until", "TEXT"],
     ["requires_model_review", "INTEGER NOT NULL DEFAULT 0"],
     ["resale_free_pool", "INTEGER NOT NULL DEFAULT 1"],
+    ["balance_url", "TEXT"],
   ] as const) {
     await ensureColumn(db, "providers", column, definition);
   }
@@ -182,6 +184,21 @@ async function providerColumns(db: PostgresDatabase) {
       `UPDATE models SET family = provider WHERE family IS NULL OR family = ''`,
     )
     .run();
+
+  // InferHub's wallet lives on the vendor host, not under its inference base
+  // URL. A database seeded before the row carried that URL keeps reporting no
+  // balance at all, so the read is filled in once — and only while the row still
+  // looks untouched, so an operator edit is never overwritten.
+  await db
+    .prepare(
+      `UPDATE providers
+          SET balance_url = 'https://inferhub.dev/api/me',
+              supports_balance = 1,
+              updated_at = ?
+        WHERE slug = 'inferhub' AND balance_url IS NULL
+          AND supports_balance = 0`,
+    )
+    .run(new Date().toISOString());
 
   await db.exec(`
     CREATE UNIQUE INDEX IF NOT EXISTS models_upstream_idx

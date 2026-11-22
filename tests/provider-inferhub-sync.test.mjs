@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { createStorageDatabase } from "../lib/storage/database.ts";
+import { catalogSchema } from "../lib/storage/schema/catalog.ts";
+import { getProvider } from "../lib/storage/store/providers.ts";
 import { setProviderEnabled } from "../lib/storage/store/providers.ts";
 import { syncProvider } from "../lib/storage/providers/sync.ts";
 import { createPgliteDatabase } from "./pglite-pool.mjs";
@@ -164,6 +166,43 @@ test("the same catalog on a provider that may resell its free pool keeps the fre
     assert.equal(free[0].status, "active");
   } finally {
     delete process.env.INFERHUB_API_KEY;
+    await db.close();
+  }
+});
+
+/**
+ * The registered row's wallet read (FID-2026-1122-002).
+ *
+ * This provider publishes its balance on the vendor host, not under its
+ * inference base URL, and the seeded row has to say so — otherwise the capital
+ * panel reports "unavailable" for a provider whose wallet is the whole economic
+ * question. The migration may fill that in once, but must never overwrite an
+ * operator's edit.
+ */
+test("the seeded row names its balance URL and survives an operator edit", async () => {
+  const db = await fixture();
+
+  try {
+    const seeded = await getProvider(db, "inferhub");
+
+    assert.equal(seeded?.capabilities.balance, true);
+    assert.equal(seeded?.balanceUrl, "https://inferhub.dev/api/me");
+    assert.equal(seeded?.capabilities.subscription, false);
+
+    await db
+      .prepare(
+        `UPDATE providers SET balance_url = 'https://example.test/wallet'
+          WHERE slug = 'inferhub'`,
+      )
+      .run();
+
+    await catalogSchema(db);
+
+    const edited = await getProvider(db, "inferhub");
+
+    assert.equal(edited?.balanceUrl, "https://example.test/wallet");
+    assert.equal(edited?.capabilities.balance, true);
+  } finally {
     await db.close();
   }
 });

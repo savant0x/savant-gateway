@@ -25,6 +25,7 @@ import {
   resolveUsage,
   type ProviderUsage,
 } from "../../usage.ts";
+import { readStreamFailure } from "../../stream-failure.ts";
 
 import { settleCall, type GatewaySettlementContext } from "./settle.ts";
 
@@ -101,6 +102,7 @@ export function streamCompletion(
   const outputChars: StreamDeltaChars = { text: 0, modern: 0, legacy: 0 };
   let settled = false;
   let terminalLine: string | null = null;
+  let streamFailure: string | null = null;
   let responseBytes = 0;
 
   const finish = async (
@@ -154,11 +156,11 @@ export function streamCompletion(
   const processLine = (raw: string) => {
     const line = raw.replace(/\r$/, "");
 
-    if (!line.startsWith("data:")) return;
+    if (!line.startsWith("data:")) return false;
 
     const payload = line.slice(5).trim();
 
-    if (!payload || payload === "[DONE]") return;
+    if (!payload || payload === "[DONE]") return false;
 
     try {
       const parsed = JSON.parse(payload) as unknown;
@@ -166,6 +168,18 @@ export function streamCompletion(
       // Usage can arrive split across frames; merging keeps a later frame that
       // carries one component from erasing the other.
       usage = mergeProviderUsage(usage, readProviderUsage(parsed));
+
+      // A provider can report a failure as an event and still close cleanly. The
+      // first one decides the settlement: a failed call is never billed as a
+      // completed one, whatever arrives after it.
+      const failure = readStreamFailure(parsed);
+
+      if (failure !== null) {
+        streamFailure ??= failure;
+
+        return true;
+      }
+
       const delta = streamDeltaCounts(parsed);
 
       outputChars.text += delta.text;
@@ -174,6 +188,8 @@ export function streamCompletion(
     } catch {
       // Keep forwarding malformed provider chunks; only accounting is best-effort.
     }
+
+    return false;
   };
 
   const stream = new ReadableStream<Uint8Array>({
@@ -186,6 +202,12 @@ export function streamCompletion(
         }
 
         processLine(line);
+
+        // A failure frame and everything after it are not relayed: the frame's
+        // own text is the provider's, and the customer gets our error event
+        // once the settlement is committed instead of a partial answer.
+        if (streamFailure !== null) return;
+
         controller.enqueue(encoder.encode(`${line}\n`));
       };
 
@@ -233,6 +255,33 @@ export function streamCompletion(
         // would acknowledge a partial answer and charge an estimate for it.
         if (terminalLine === null) {
           throw new Error("Provider stream ended without a completion marker.");
+        }
+
+        if (streamFailure !== null) {
+          try {
+            await finish("error", streamFailure);
+          } catch (error) {
+            report("unexpected", "settle");
+            controller.error(error);
+
+            return;
+          }
+
+          // The customer gets an error event instead of the terminator, so a
+          // partial answer cannot be read as a completed one.
+          controller.enqueue(
+            encoder.encode(
+              `event: error\ndata: ${JSON.stringify({
+                error: {
+                  message: "Provider reported an error mid-stream",
+                  type: "upstream_error",
+                },
+              })}\n\n`,
+            ),
+          );
+          controller.close();
+
+          return;
         }
 
         try {

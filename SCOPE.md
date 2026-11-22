@@ -40,6 +40,12 @@ changed.
 - [ ] **IA3 — Fund the wallet and pin one bid.** Blocked on the deposit and on the
   provenance ruling: a cheap group (e.g. `zai/glm-5.3-flash` at 0.00015/0.0005) proves the
   bid/billing path and closes FID-2026-1120-001 step 5.
+- [x] **IA4 — Make the provider operable before funding.** **Completed** as
+  `dev/fids/FID-2026-1122-002-inferhub-operational-integration.md` (`verified`). In scope:
+  per-provider `balance_url` with the wallet-shape parser, upstream 402 mapped to our 503,
+  in-stream error frames settled as failures, migration serialisation found by the gate, and the
+  admin field. Out of scope and named: `usage.cost` persistence, `/api/catalog` group notes and
+  keyless preview. Verified by `npm run verify` PASS (1203/1203 tests).
 - [x] **IA2 — Correct the stale provider documentation.** **Completed.** `docs/providers.md`
   gains a dated 2026-11-22 re-observation (public `/v1/models`, `/api/catalog` no longer
   404, `usage`/`usage.cost` in the final chunk, `/api/me` balance read, current

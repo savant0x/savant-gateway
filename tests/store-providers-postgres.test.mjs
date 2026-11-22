@@ -250,8 +250,18 @@ test("InferHub is seeded disabled, review-required and without free-pool resale"
     "the terms forbid reselling the free pool",
   );
   assert.equal(
-    inferhub.capabilities.balance,
+    inferhub.capabilities.subscription,
     false,
-    "no balance endpoint is published",
+    "the usage read answers 403 for a consumer role",
+  );
+  assert.equal(
+    inferhub.capabilities.balance,
+    true,
+    "the wallet is readable on the vendor host",
+  );
+  assert.equal(
+    inferhub.balanceUrl,
+    "https://inferhub.dev/api/me",
+    "the balance is not under the inference base URL",
   );
 });

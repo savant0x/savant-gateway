@@ -25,6 +25,11 @@ export type ProviderRecord = {
    * would break the upstream contract regardless of what we charge.
    */
   resaleFreePool: boolean;
+  /**
+   * Absolute URL for the balance read when the provider publishes it on another
+   * host or path than its inference base URL. Null means `${baseUrl}/balance`.
+   */
+  balanceUrl: string | null;
   enabled: boolean;
   sortOrder: number;
   createdAt: string;

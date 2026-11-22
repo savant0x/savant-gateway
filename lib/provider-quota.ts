@@ -69,8 +69,34 @@ function timestamp(value: unknown): string | null {
   return new Date(value).toISOString();
 }
 
+/**
+ * Two documented envelopes are accepted. The first is the default provider's,
+ * which publishes `balance_usd` plus its key limits. The second is a
+ * marketplace wallet, which publishes `balances.consumer_balance` as a USD
+ * string and no limits. An empty `balances` object is a wallet funded at zero —
+ * that is how an unfunded account is published — while a present value that
+ * cannot be read still throws, so a broken provider never looks like `$0`.
+ */
 export function parseProviderBalance(value: unknown): ProviderBalance {
-  if (!isProviderObject(value) || providerNumber(value.balance_usd) === null) {
+  if (!isProviderObject(value)) {
+    throw new Error("Provider returned an unknown balance.");
+  }
+
+  const wallet = walletBalance(value);
+
+  if (wallet !== null) {
+    return {
+      balanceUsd: wallet,
+      rpm: null,
+      rpmPlan: null,
+      spendLimitUsd: null,
+      spentUsd: null,
+      remainingUsd: null,
+      limitReached: false,
+    };
+  }
+
+  if (providerNumber(value.balance_usd) === null) {
     throw new Error("Provider returned an unknown balance.");
   }
 
@@ -85,6 +111,25 @@ export function parseProviderBalance(value: unknown): ProviderBalance {
     remainingUsd: providerNumber(apiKey.remaining_usd),
     limitReached: apiKey.limit_reached === true,
   };
+}
+
+/** `null` means "not this shape", so the primary reader can decide. */
+function walletBalance(value: Record<string, unknown>): number | null {
+  if (!isProviderObject(value.balances)) return null;
+
+  const published = value.balances.consumer_balance;
+
+  if (published === undefined || published === null || published === "") {
+    return 0;
+  }
+
+  const parsed = providerNumber(published);
+
+  if (parsed === null) {
+    throw new Error("Provider returned an unknown balance.");
+  }
+
+  return parsed;
 }
 
 export function parseProviderSubscription(

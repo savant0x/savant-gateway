@@ -545,6 +545,63 @@ test("a stream that ends without a terminator settles as an error", async () => 
   }
 });
 
+test("a stream failure event is an error, not a billed completion", async () => {
+  const db = await fixture();
+  const encoder = new TextEncoder();
+
+  try {
+    const settlementId = await admit(db);
+    const upstream = new Response(
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue(
+            encoder.encode(
+              `data: {"choices":[{"delta":{"content":"par"}}]}\n\n`,
+            ),
+          );
+          controller.enqueue(
+            encoder.encode(
+              `data: {"error":{"message":"upstream exploded","error_class":"server_error","source":"inferhub"}}\n\n`,
+            ),
+          );
+          controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
+          controller.close();
+        },
+      }),
+      { status: 200 },
+    );
+    const response = streamCompletion(db, upstream, context(settlementId));
+    const body = await response.text();
+
+    assert.match(body, /event: error/, "the customer sees a failure event");
+    assert.equal(
+      body.includes("[DONE]"),
+      false,
+      "a failed stream never gets a completion marker",
+    );
+    assert.equal(
+      body.includes("upstream exploded"),
+      false,
+      "the provider's own text is not relayed",
+    );
+
+    const event = await db
+      .prepare("SELECT status, charged_micros FROM usage_events")
+      .get();
+
+    assert.equal(event.status, "error");
+    assert.equal(Number(event.charged_micros), 0, "a failed call bills nothing");
+
+    const settlement = await db
+      .prepare("SELECT status FROM settlements WHERE id = ?")
+      .get(settlementId);
+
+    assert.equal(settlement.status, "committed");
+  } finally {
+    await db.close();
+  }
+});
+
 test("a client disconnect is one informational event and still settles", async () => {
   const db = await fixture();
   const encoder = new TextEncoder();

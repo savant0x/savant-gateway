@@ -264,14 +264,23 @@ candidate. Follow these paths and the applicable FID before changing contracts.
   path can act on. `X-InferHub-Strict-Status` is deliberately **not** set: it suppresses
   the heartbeat that keeps a slow first token from looking like a dead connection, and
   stream behaviour is unverified until a funded call.
-- **No balance or subscription capability** — funded by USDC on Solana mainnet to a
-  per-account address; balances are non-refundable. Admission therefore relies on
-  `PROVIDER_SHARED_RPM` or a current upstream RPM, and a call fails when the wallet is
-  empty. A balance read does exist, but not where this adapter looks: `GET
-  https://inferhub.dev/api/me` answers `balances.consumer_balance`, while
-  `fetchProviderBalance` calls `${baseUrl}/balance` (`lib/providers/request.ts:74`), i.e.
-  `https://api.inferhub.dev/v1/balance`. Watching the balance is manual until a provider
-  record can name a separate balance path.
+- **`balance_url` is set, `supports_balance = 1`** — funded by USDC on Solana mainnet to a
+  per-account address, and balances are non-refundable. The wallet is not published under the
+  inference base URL: `fetchProviderBalance` first tries `provider.balanceUrl`, an absolute URL
+  fetched with this provider's own key and `redirect: "error"`, and only falls back to
+  `${baseUrl}/balance` when it is null. The account document is
+  `GET https://inferhub.dev/api/me` and its wallet is `balances.consumer_balance`; an empty
+  `balances` object is a funded-at-zero wallet and reads `$0`, which is what an unfunded account
+  publishes. `supports_subscription` stays off: `GET /v1/me/usage` answers `403 access denied`
+  for a `consumer` role, so there is no subscription read to make.
+- **A 402 from this provider is our outage, not the customer's credit.** `failureStatus` maps an
+  upstream 402 to `503` and `safeUpstreamMessage` replaces its body, so a customer is never told
+  to deposit USDC at a domain they have no account on. Our own insufficient-credit 402 is a
+  different path and is unchanged.
+- **Its streamed failures are settled as failures.** The relay reads an `error` event in a data
+  frame, stops relaying from that point, settles `error` (billing nothing) and sends an
+  `event: error` frame instead of `[DONE]`. This provider reports failures that way and still
+  closes the response cleanly, which is why the terminator alone cannot decide a settlement.
 - **The charge is bid-dependent.** Its router selects by provider score, not price,
   unless a per-model bid is set with `PUT /api/budgets/{modelId}` (with
   `floorMinProviders`). The imported figure is the cheapest open ask, not a guarantee:

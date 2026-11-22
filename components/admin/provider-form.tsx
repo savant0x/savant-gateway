@@ -13,6 +13,7 @@ export type ProviderDraft = {
   baseUrl: string;
   keyEnvVar: string;
   defaultHeaders: Record<string, string>;
+  balanceUrl: string;
   balance: boolean;
   subscription: boolean;
   pricing: boolean;
@@ -26,6 +27,7 @@ export const EMPTY_PROVIDER: ProviderDraft = {
   baseUrl: "https://",
   keyEnvVar: "",
   defaultHeaders: {},
+  balanceUrl: "",
   balance: true,
   subscription: true,
   pricing: true,
@@ -40,6 +42,7 @@ export function draftFromProvider(provider: ProviderSummary): ProviderDraft {
     baseUrl: provider.baseUrl,
     keyEnvVar: provider.keyEnvVar,
     defaultHeaders: provider.defaultHeaders,
+    balanceUrl: provider.balanceUrl ?? "",
     balance: provider.capabilities.balance,
     subscription: provider.capabilities.subscription,
     pricing: provider.capabilities.pricing,
@@ -55,6 +58,7 @@ export function providerPayload(draft: ProviderDraft) {
     baseUrl: draft.baseUrl,
     keyEnvVar: draft.keyEnvVar,
     defaultHeaders: draft.defaultHeaders,
+    balanceUrl: draft.balanceUrl.trim(),
     resaleFreePool: draft.resaleFreePool,
     capabilities: {
       balance: draft.balance,
@@ -109,6 +113,7 @@ export function ProviderForm({
           {field("label", "Label", draft.label)}
           {field("baseUrl", "Base URL", draft.baseUrl)}
           {field("keyEnvVar", "Key environment variable", draft.keyEnvVar)}
+          {field("balanceUrl", "Balance URL (optional)", draft.balanceUrl)}
           <label className="text-xs text-muted">
             Protocol
             <select
@@ -160,6 +165,12 @@ export function ProviderForm({
           provider&apos;s terms forbid reselling its free allocation. No
           <code className="mx-1">free/</code> row is imported for that provider,
           and the sync warning reports how many were refused.
+        </p>
+        <p className="text-xs text-muted">
+          Set <strong>Balance URL</strong> only when the provider publishes its
+          balance somewhere other than <code>/balance</code> on the base URL. It
+          is called with this provider&apos;s key and must not carry a
+          credential of its own.
         </p>
 
         <div className="flex flex-wrap gap-2">

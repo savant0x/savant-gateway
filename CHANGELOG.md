@@ -55,6 +55,13 @@ distinguish verified behavior from unverified claims.
   notes describe upstream system-prompt rewrites nothing here imports.
 - **Verification:** the four reads above plus the committed probe over the authenticated
   payload; no funded call, no write.
+- **InferHub becomes operable without a deposit —** FID-2026-1122-002 (`verified`) adds a
+  per-provider `balance_url` so the wallet is read at `https://inferhub.dev/api/me` and parsed
+  from `balances.consumer_balance`; maps an upstream 402 to our own `503` instead of relaying the
+  provider's deposit instructions; settles an in-stream error event as `error`, charges nothing
+  and sends `event: error` instead of `[DONE]`; and serialises schema migrations per process after
+  the gate caught a deadlocked `ensureColumn` race. `npm run verify` PASS, 1203/1203 tests.
+  Funding, a pinned bid and the live `429` shape stay blocked with FID-2026-1120-001 step 6.
 
 ### Price sheet
 

@@ -56,16 +56,32 @@ export async function applySchema(
  * Call this from the caller, never from `createPostgresDatabase`'s own `migrate`
  * callback: that callback runs while initialization is still in flight, and
  * awaiting `ready()` from inside it would deadlock.
+ *
+ * Two handles in one process migrate in turn. Concurrent `ALTER TABLE` from two
+ * connections takes catalogue locks in whatever order each statement reaches
+ * them, which PostgreSQL resolves by aborting one transaction with a deadlock,
+ * or by raising a duplicate-type error when both try to create the same table.
+ * The queue is per process because this gateway is one process; a second process
+ * would need an advisory lock, which is not claimed here.
  */
+let migrationQueue: Promise<void> = Promise.resolve();
+
 export async function migrateDatabase(
   db: PostgresDatabase,
   options: { seedDevelopmentUser?: boolean } = {},
 ) {
-  await db.ready();
+  const run = migrationQueue.then(async () => {
+    await db.ready();
 
-  await db.transaction(async () => {
-    await applySchema(db, options);
-  })();
+    await db.transaction(async () => {
+      await applySchema(db, options);
+    })();
+  });
+
+  // A failed migration must not block every later one behind a rejected promise.
+  migrationQueue = run.catch(() => undefined);
+
+  return run;
 }
 
 /**

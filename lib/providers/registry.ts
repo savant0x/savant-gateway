@@ -13,6 +13,8 @@ export type ProviderInput = {
   capabilities: { balance: boolean; subscription: boolean; pricing: boolean };
   /** Whether the provider's terms allow reselling free-pool ids. */
   resaleFreePool: boolean;
+  /** Absolute balance URL when the provider publishes it off-base; null = default. */
+  balanceUrl: string | null;
   enabled: boolean;
   sortOrder: number;
 };
@@ -62,6 +64,44 @@ function parseProviderUrl(value: string): URL | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * The balance read may live on another host than the inference base URL, and it
+ * is fetched with the provider's own credential, so it is held to the same
+ * rules: http(s) only and no embedded credentials. An empty value means the
+ * default `${baseUrl}/balance`.
+ */
+function parseBalanceUrl(value: unknown) {
+  if (value === undefined || value === null || value === "") {
+    return { ok: true, value: null } as const;
+  }
+
+  if (typeof value !== "string") {
+    return {
+      ok: false,
+      error: "balanceUrl must be a URL or empty.",
+    } as const;
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) return { ok: true, value: null } as const;
+
+  const url = parseProviderUrl(trimmed);
+
+  if (!url) {
+    return { ok: false, error: "balanceUrl must be an http(s) URL." } as const;
+  }
+
+  if (url.username || url.password) {
+    return {
+      ok: false,
+      error: "balanceUrl must not contain credentials.",
+    } as const;
+  }
+
+  return { ok: true, value: url.toString() } as const;
 }
 
 /**
@@ -127,6 +167,10 @@ export function readProviderInput(value: unknown) {
 
   if (!headers.ok) return headers;
 
+  const balanceUrl = parseBalanceUrl(input.balanceUrl);
+
+  if (!balanceUrl.ok) return balanceUrl;
+
   const capabilities =
     input.capabilities && typeof input.capabilities === "object"
       ? (input.capabilities as Record<string, unknown>)
@@ -148,6 +192,7 @@ export function readProviderInput(value: unknown) {
       },
       enabled: input.enabled !== false,
       resaleFreePool: input.resaleFreePool !== false,
+      balanceUrl: balanceUrl.value,
       sortOrder:
         typeof input.sortOrder === "number" && Number.isFinite(input.sortOrder)
           ? Math.round(input.sortOrder)

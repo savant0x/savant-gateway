@@ -212,17 +212,20 @@ async function seedProviders(db: PostgresDatabase) {
   // its catalog proves identifiers but not chat capability, and enabling it
   // before INFERHUB_API_KEY exists would fail every sync. The one default header
   // is deliberate — without it a capacity-blocked request queues for up to 30s,
-  // and this gateway has no cross-provider failover to spend that time on.
+  // and this gateway has no cross-provider failover to spend that time on. Its
+  // wallet is readable, but not at `${baseUrl}/balance`: the account document is
+  // on the vendor host, so the row names that URL instead of appending a path.
   await db
     .prepare(
       `INSERT INTO providers
         (slug, label, kind, base_url, key_env_var, default_headers,
          supports_balance, supports_subscription, supports_pricing,
-         requires_model_review, resale_free_pool, enabled, sort_order, status,
-         created_at, updated_at)
+         requires_model_review, resale_free_pool, balance_url, enabled,
+         sort_order, status, created_at, updated_at)
        VALUES ('inferhub', 'InferHub', 'openai',
                'https://api.inferhub.dev/v1', 'INFERHUB_API_KEY', ?,
-               0, 0, 0, 1, 0, 0, 50, 'unconfigured', ?, ?)
+               1, 0, 0, 1, 0, 'https://inferhub.dev/api/me', 0, 50,
+               'unconfigured', ?, ?)
        ON CONFLICT DO NOTHING`,
     )
     .run(JSON.stringify({ "X-InferHub-No-Queue": "1" }), now, now);

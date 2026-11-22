@@ -68,13 +68,27 @@ export function providerFetch(
 export async function fetchProviderBalance(
   provider: ProviderRecord,
 ): Promise<ProviderBalance> {
-  const response = await providerFetch(provider, "/balance", {
-    cache: "no-store",
-  });
+  const response = provider.balanceUrl
+    ? await fetchBalanceUrl(provider, provider.balanceUrl)
+    : await providerFetch(provider, "/balance", { cache: "no-store" });
 
   if (!response.ok) throw new Error(await readProviderError(response));
 
   return parseProviderBalance(await response.json());
+}
+
+/**
+ * A balance URL is absolute and may sit on another host, so it is fetched
+ * directly rather than appended to the base URL. The credential and headers are
+ * the provider's own, and a redirect is still a configuration error to report.
+ */
+function fetchBalanceUrl(provider: ProviderRecord, url: string) {
+  return fetch(url, {
+    cache: "no-store",
+    headers: providerHeaders(provider),
+    redirect: "error",
+    signal: AbortSignal.timeout(20_000),
+  });
 }
 
 export async function fetchProviderSubscription(

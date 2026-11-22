@@ -249,10 +249,11 @@ candidate. Follow these paths and the applicable FID before changing contracts.
 `INFERHUB_API_KEY`, and it ships **disabled**. What the registry encodes, and why:
 
 - **`requires_model_review = 1`** — `/v1/models` proves identifiers, prices and
-  modalities but not chat capability. 540 rows: 299 provider-pinned rows that all
-  carry `pricing.min_ask_in` / `min_ask_out`, and 241 `owned_by: "alias"` rows with
-  no price and no provider pin. The aliases are dropped at import and counted; nothing
-  is published until a per-id `chat` decision exists.
+  modalities but not chat capability. On 2026-11-20 it published 540 rows: 299
+  provider-pinned rows that all carry `pricing.min_ask_in` / `min_ask_out`, and 241
+  `owned_by: "alias"` rows with no price and no provider pin. The aliases are dropped at
+  import and counted; nothing is published until a per-id `chat` decision exists. The
+  public catalog on 2026-11-22 held 507 rows (265 priced, 242 aliases, 10 media).
 - **`resale_free_pool = 0`** — its Terms permit reselling paid marketplace models and
   forbid reselling, sub-accounting or proxying the free pool. With the flag off no
   `free/` row imports at all. This account's catalog currently exposes zero `free/` ids,
@@ -263,23 +264,45 @@ candidate. Follow these paths and the applicable FID before changing contracts.
   path can act on. `X-InferHub-Strict-Status` is deliberately **not** set: it suppresses
   the heartbeat that keeps a slow first token from looking like a dead connection, and
   stream behaviour is unverified until a funded call.
-- **No balance or subscription capability** — no balance endpoint is published. It is
-  funded by USDC on Solana mainnet to a per-account address; balances are non-refundable.
-  Admission therefore relies on `PROVIDER_SHARED_RPM` or a current upstream RPM, and a
-  call fails when the wallet is empty.
+- **No balance or subscription capability** — funded by USDC on Solana mainnet to a
+  per-account address; balances are non-refundable. Admission therefore relies on
+  `PROVIDER_SHARED_RPM` or a current upstream RPM, and a call fails when the wallet is
+  empty. A balance read does exist, but not where this adapter looks: `GET
+  https://inferhub.dev/api/me` answers `balances.consumer_balance`, while
+  `fetchProviderBalance` calls `${baseUrl}/balance` (`lib/providers/request.ts:74`), i.e.
+  `https://api.inferhub.dev/v1/balance`. Watching the balance is manual until a provider
+  record can name a separate balance path.
 - **The charge is bid-dependent.** Its router selects by provider score, not price,
   unless a per-model bid is set with `PUT /api/budgets/{modelId}` (with
   `floorMinProviders`). The imported figure is the cheapest open ask, not a guarantee:
   the recorded manual cost must be the bid we accept, which is why the operator sets the
-  bid on their side before a row is published.
+  bid on their side before a row is published. Measured on the live ladder, the next
+  price tier is 5.76× the cheapest at p90 and 480× at worst, so an ask-based cost basis
+  understates a call as soon as the cheapest publisher is busy.
 
 Observed on 2026-11-20 with a live key: `GET /v1/models` returned 200 with 540 rows and
-no pagination; `GET /api/catalog` is 404 for an API key; and a chat probe with the
-gateway's own `stream_options.include_usage` returned
-`402 {"type":"insufficient_balance"}` because the balance is empty. The settlement-critical
-question — whether a usage frame comes back on a streamed completion — is therefore still
-**unverified**. `no_capacity` is 89.9% of its API-surface errors (95.17% 24 h availability),
-so this provider can never be the only route for a published model.
+no pagination; a chat probe with the gateway's own `stream_options.include_usage`
+returned `402 {"type":"insufficient_balance"}` because the balance is empty.
+`no_capacity` was 89.9% of its API-surface errors (95.17% 24 h availability), so this
+provider can never be the only route for a published model.
+
+Re-observed 2026-11-22, without a credential, when the vendor published its
+machine-readable reference (`/api/openapi.json`):
+
+- `GET /v1/models` is **public** — 200 and 507 rows with no `Authorization` header; with a
+  key it lists only what that key may use. The catalog shape is therefore verifiable
+  without a credential, though `syncProvider` still needs a configured key.
+- `GET /api/catalog` is no longer 404. It answers 401 without a key and, with one, returns
+  per-upstream cards including `systemPromptNote` (null when the system prompt is forwarded
+  as sent) and `activeProviders`. Nothing imports it yet.
+- The settlement question is answered on paper: the final streamed chunk carries `usage`,
+  including `usage.cost` in USD, just before `data: [DONE]`. Only a funded call can prove
+  it at runtime.
+- API-surface availability was 97.17% current / 97.44% 24 h, with `no_capacity` at 67.9% of
+  API errors.
+
+Full audit, findings and the ordered actions:
+[research/inferhub-upstream-audit.md](research/inferhub-upstream-audit.md).
 
 ## Adding Twigpine (research only)
 

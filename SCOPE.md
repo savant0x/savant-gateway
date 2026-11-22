@@ -1,5 +1,45 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-22 (InferHub upstream audit: IA)
+
+Operator instruction: "read single agent echo 0-end, ground yourself. Then i want you to
+deeply review https://inferhub.dev/docs/api, to see if they can be another upstream
+provider, audit everything and create a full report." Automation level 3; strict; single
+agent. Documentation and research only: no application code, schema, test or provider row
+changed.
+
+- [x] **IA1 — Review the live InferHub contract and audit it against this gateway.**
+  **Completed.** Captured `docs/api`, `openapi.json` (79 paths), `docs`, `terms`, `privacy`,
+  `faq`, `pricing` and `/api/status`, and fetched `GET /v1/models` **without a credential**
+  (200, 507 rows) where the 2026-11-20 record observed 403. Ran that payload through the
+  shipped `normalizeCatalog`: 255 imported, 242 aliases and 10 media rows refused, zero
+  `free/` ids, 116 route groups with 63 collisions. Measured the price ladder (next tier
+  5.76× at p90, 480× worst) and confirmed the 50%-of-official cap holds on all 255 priced
+  rows. Record:
+  [`docs/research/inferhub-upstream-audit.md`](docs/research/inferhub-upstream-audit.md).
+- [x] **IA2 — Correct the stale provider documentation.** **Completed.** `docs/providers.md`
+  gains a dated 2026-11-22 re-observation (public `/v1/models`, `/api/catalog` no longer
+  404, `usage`/`usage.cost` in the final chunk, `/api/me` balance read, current
+  availability) and drops the two claims the live surface disproved. `docs/README.md`
+  links the audit; `CHANGELOG.md` records it.
+- [ ] **IA3 — Operator decisions the audit blocks on.** Each item states its blocker; none
+  is dropped.
+  - **Provenance ruling** — paid resale is permitted by Terms §6, but the supply is
+    OAuth-pooled subscription capacity that nobody verifies, so reselling it makes the
+    model-identity claim ours. **Blocked** pending an operator ruling; no ruling exists in
+    this register. The row stays disabled until one is recorded.
+  - **Funded account and per-model bids** — cost basis must be the bid we accept, not the
+    cheapest ask (measured 5.76× p90 / 480× worst gap). **Blocked** on the operator's USDC
+    deposit and per-model `PUT /api/budgets/{modelId}` decisions.
+  - **Scoped key** — mint `kind: inference_only` with `allowedUpstreams` for the prefixes we
+    intend to sell instead of the account key. **Blocked** on the account existing.
+  - **Processor-review entry** — provider-side content screening with 14-day screened-text,
+    7-day request-scaffolding and 90-day flag retention, against a published "up to 30
+days" log position. **Blocked** on the operator decision the privacy notice already
+    reserves at `docs/policies/drafts/privacy.md:39-42`.
+  - **Measured admission ceiling** — the 4-slot local default is unmeasured. **Blocked** on
+    a funded minute (FID-2026-1120-001 step 7).
+
 ## Session — 2026-11-22 (Committed calibration proxy: 001)
 
 Operator instruction: "register the work item and commit

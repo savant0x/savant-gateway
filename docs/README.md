@@ -82,6 +82,11 @@ same answer data the page renders.
   cheapest-provider routing and stable published ids work.
 - [research/apixo-provider-review.md](research/apixo-provider-review.md) —
   verified Apixo API, image catalog, resale economics and the onboarding gaps.
+- [research/inferhub-upstream-audit.md](research/inferhub-upstream-audit.md) —
+  the live InferHub contract against this registry, importer and settlement:
+  507 public rows through the real normalizer, the bid/floors price risk, an
+  in-stream failure that settles as `ok`, provider-side screening and retention,
+  and the operator decisions that gate the row.
 - [research/aio-source-review.md](research/aio-source-review.md) — static review
   of the ten identity/fingerprint reference repositories, corrections to the
   Gemini research report, and the operator-scoped AIO architecture and build

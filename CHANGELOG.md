@@ -3,6 +3,34 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-22 — InferHub upstream audit
+
+- **InferHub contract re-read — high —** the vendor published a machine-readable reference
+  (`https://inferhub.dev/api/openapi.json`, OpenAPI 3.1, 79 paths) and made
+  `GET /v1/models` **public**: it answers 200 with 507 rows and no credential, where the
+  2026-11-20 record observed 403 and 540 rows with a key. `GET /api/catalog` is no longer
+  404, `/v1/responses` and an image/video/embeddings surface exist, and the stream contract
+  now states that the final chunk carries `usage` including `usage.cost`, which answers
+  FID-2026-1120-001's settlement-critical question on paper.
+- **Catalog measured, not assumed —** the shipped `normalizeCatalog` run over that payload
+  imports 255 of 507 rows: 242 aliases and 10 media rows refused, zero `free/` ids to
+  refuse, 116 route groups with 63 holding 2–9 rows. The imported figure is
+  `pricing.min_ask_in`, a floor: the next price tier is 5.76× at p90 and 480× at worst.
+  The "50% of official" cap holds as a ceiling on all 255 priced rows (0 violations).
+- **Settlement gaps found —** an in-stream provider error is followed by `[DONE]`, so the
+  relay settles `ok` and bills an estimate (`lib/storage/gateway/stream.ts:181-190,234-249`);
+  an upstream `402 insufficient_balance` reaches customers as advice to deposit USDC
+  (`lib/gateway-refusal.ts:21-33`); and provider-reported `usage.cost` is neither read nor
+  stored. Recorded with recommendations; no code changed.
+- **Docs —** new [docs/research/inferhub-upstream-audit.md](docs/research/inferhub-upstream-audit.md)
+  (method, measurements, 18 findings, verdict, ordered actions).
+  [docs/providers.md](docs/providers.md) gains the dated 2026-11-22 re-observation and no longer
+  claims `/api/catalog` is 404 or that no balance endpoint exists; the doc index links the audit.
+- **Not claimed:** no funded call, no `429` observed on the wire, no bid pinned, no balance,
+  and no provenance ruling. Steps 5–7 of FID-2026-1120-001 stay blocked.
+- **Verification:** `npm run check`, `npm run quality`, `npm run repository:check`,
+  `npm run attribution` and `npm test` (see the session summary for the pasted output).
+
 ## 2026-11-22 — FID register reconciled with commits
 
 - **FID-2026-1110-002 step 4 —** already reconciled by `3c4975d`; its pointer to

@@ -28,6 +28,33 @@ Captured 2026-11-22 13:0x UTC by direct read-only HTTP, no credential used:
 | `GET https://inferhub.dev/api/catalog`, `/api/me`, `/v1/me/usage` | 401 (key required) |
 | `https://inferhub.dev/{terms,privacy,faq,pricing}` | 200 |
 
+### 1.1 Authenticated observation (2026-11-22 18:52 UTC)
+
+The operator key in `.env.local` was tested read-only. No funded call was made
+and nothing was written upstream.
+
+| Source | Result |
+| --- | --- |
+| `GET https://inferhub.dev/api/me` | **200** — account `active`, `roles: ["consumer"]`, **`balances: {}`** (no funds) |
+| `GET https://api.inferhub.dev/v1/models` (Bearer) | **200, 138,187 bytes, 520 rows** — 507 public plus **14 `ant/*` rows** and minus one public id (`ag/gemini-4-argon`), which is catalog churn inside a day |
+| `GET https://inferhub.dev/api/catalog` (Bearer) | **200, 193,050 bytes** — **27 prefix groups**, not models; each carries `slug`, `prefix`, `status`, `enabled`, `activeProviders`, `models[]`, and `systemPromptNote` on five of them (`claude-code`, `codebuddy`, `codebuddy-cn`, `kiro`, `codex`) |
+| `GET https://inferhub.dev/v1/me/usage` (Bearer) | **403 `access denied`** for a `consumer` role |
+| Shipped normalizer over the authenticated payload | **520 received → 268 imported**, 242 aliases, 10 media, 0 free-pool refusals, 114 route groups |
+| Free or zero-ask rows in the authenticated payload | **0 of 278 priced rows**; no `free/` id exists for this account |
+
+The group payload is the most useful number in this block, because
+`activeProviders` is pooled capacity, not a count of marketplace sellers:
+`qwencloud-alibaba` **22,466**, `mistral-vibe` **17,787**, `codebuddy` **4,222**,
+`codebuddy-cn` 741, `antigravity` 1,063, `qwencloud-alibaba-cn` 22 — against
+`anthropic` and `openai` at **0**, `claude-code` 21 and `kimi-code-ai` 4. That is
+the shape of a subscription-pooling scheme at scale, and it is what makes the
+provenance ruling the gate on enabling this provider rather than a formality.
+The five `systemPromptNote` values are the other finding: `claude-code` states it
+adds a client header as the first system block and leaves the caller's system
+prompt unchanged, which is a system-prompt transformation we neither import nor
+display.
+
+
 The complete public catalog payload was then run through the shipped importer, not a
 re-implementation: `scripts/upstream-catalog-probe.mjs` imports
 `lib/providers/normalize/index.ts` and calls `normalizeCatalog(rows, new Map(),
@@ -361,6 +388,14 @@ measures a funded minute.
   and the importer refuses the whole prefix
   (`lib/providers/normalize/index.ts:156`), so a future naming change cannot
   silently re-import it.
+- **The scale of the pooling is now measured.** The authenticated catalog reports
+  `activeProviders` per group: `qwencloud-alibaba` 22,466, `mistral-vibe` 17,787,
+  `codebuddy` 4,222, `antigravity` 1,063, against `anthropic` and `openai` at 0.
+  Terms §6 permits reselling *paid marketplace* capacity, and this is what that
+  capacity is: thousands of pooled subscription accounts per group. The exposure
+  is vendor-side detection and revocation under those upstreams' own terms,
+  which is a business risk no gateway code can mitigate, so the operator ruling
+  in §11 item 1 is the real gate.
 - **Provider-side content screening and retention are new information.** The
   privacy policy states that before forwarding, InferHub screens "your messages
   and system prompt" against a keyword and pattern list inside its own
@@ -418,6 +453,8 @@ documentation or efficiency.
 | F-17 | info | Key kinds and allowlists let us mint an `inference_only` key restricted to chosen upstreams; `/v1/models` with that key lists only what it may use | docs/api "Key types", `PATCH /api/keys/{id}` | operator: mint a scoped key, not the account key |
 | F-18 | info | `/v1/messages` is available and we deliberately do not register it; `kind: "openai"` keeps one adapter and one settlement path | `lib/providers/registry.ts:174-202` | unchanged decision |
 | F-19 | high | Commercially it wins only the commodity, flash and input-heavy rows: cheaper on 6 of 15 overlaps at its floor and 5 at its next tier against our flat-rate cost, while its tier 2 is dearer than Apixo's flat retail rate on 17 of 31. Entry gate is $0 against Apixo's $50 non-refundable fee plus a $100 minimum top-up | §5.5 | operator: buy the cheap groups only and keep the flat-rate upstream for frontier output |
+| F-20 | high | The authenticated `/api/catalog` reports pooled capacity per group at a scale that settles what kind of supplier this is: `qwencloud-alibaba` 22,466 `activeProviders`, `mistral-vibe` 17,787, `codebuddy` 4,222, while `anthropic` and `openai` report 0. Reselling that capacity is what its Terms §6 permits and what a vendor-side revocation would strand | §1.1, §8 | operator: record the provenance ruling before the row is enabled; no engineering change |
+| F-21 | medium | The account is an active `consumer` with `balances: {}` — the key authenticates and the catalog syncs, but nothing can be billed until it is funded, and `GET /v1/me/usage` returns `403 access denied` for that role, so usage cannot be read back the way the adapter expects | §1.1, F-9 | operator: fund, then re-test; engineering: F-9 stands |
 
 ## 10. Verdict
 
@@ -483,6 +520,15 @@ node scripts/upstream-catalog-probe.mjs .scratch/inh-models.json
 # machine-readable contract and vendor status
 curl -sS https://inferhub.dev/api/openapi.json -o .scratch/inh-openapi.json
 curl -sS https://inferhub.dev/api/status
+
+# authenticated reads (export the key first; it is never echoed)
+export INFERHUB_API_KEY=...  # .env.local, never a literal here
+curl -sS -H "Authorization: Bearer $INFERHUB_API_KEY" https://inferhub.dev/api/me
+curl -sS -H "Authorization: Bearer $INFERHUB_API_KEY" https://inferhub.dev/api/catalog \
+  -o .scratch/inh-live/catalog.json
+curl -sS -H "Authorization: Bearer $INFERHUB_API_KEY" https://api.inferhub.dev/v1/models \
+  -o .scratch/inh-live/models.json
+node scripts/upstream-catalog-probe.mjs .scratch/inh-live/models.json
 ```
 
 The probe is committed and writes nothing; `.scratch/` is gitignored, so the

@@ -38,6 +38,24 @@ distinguish verified behavior from unverified claims.
 - **Verification:** `npm run check`, `npm run quality`, `npm run repository:check`,
   `npm run attribution` and `npm test` (see the session summary for the pasted output).
 
+### Authenticated observation
+
+- **The key is valid and the account is empty —** `GET /api/me` returns 200 with
+  `status: active`, `roles: ["consumer"]` and `balances: {}`. Nothing can be billed until
+  the wallet is funded; `GET /v1/me/usage` returns `403 access denied` for that role, so the
+  usage read-back the adapter would want does not exist for a consumer key.
+- **Authenticated catalog is 520 rows, not 507 —** 14 `ant/*` Anthropic-native ids appear
+  only with a key (`ant/claude-opus-5-5` at 1.98/9.9, one provider each) and
+  `ag/gemini-4-argon` disappeared inside the same day. The shipped importer takes
+  **268 of 520**: 242 aliases and 10 media refused, zero free-pool rows, 114 route groups.
+- **`/api/catalog` is 27 prefix groups, not models —** each with `activeProviders` and
+  `systemPromptNote` on five. `activeProviders` is pooled capacity at scale
+  (`qwencloud-alibaba` 22,466, `mistral-vibe` 17,787, `codebuddy` 4,222; `anthropic` and
+  `openai` 0), which is the provenance exposure the operator ruling has to weigh, and the
+  notes describe upstream system-prompt rewrites nothing here imports.
+- **Verification:** the four reads above plus the committed probe over the authenticated
+  payload; no funded call, no write.
+
 ### Price sheet
 
 - **Two committed sheets —** [docs/data/inferhub-offers.csv](docs/data/inferhub-offers.csv)

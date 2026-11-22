@@ -31,6 +31,15 @@ changed.
   cheaper per token than our cheapest paid row. Written into
   `docs/research/inferhub-price-sheet.md` §4 and the CHANGELOG; the earlier framing that
   read the allowance as system-wide is withdrawn.
+- [x] **IA2 — Test the operator key read-only.**
+  **Completed.** `GET /api/me` 200 (`active`, `roles: ["consumer"]`, `balances: {}`),
+  `/api/catalog` 200 (27 prefix groups, `systemPromptNote` on five, pooled capacity up to
+  22,466 `activeProviders`), authenticated `/v1/models` 520 rows importing 268,
+  `/v1/me/usage` 403 for a consumer role. Recorded in the audit §1.1 and
+  `docs/providers.md`; the account holds no funds, so no call can be billed yet.
+- [ ] **IA3 — Fund the wallet and pin one bid.** Blocked on the deposit and on the
+  provenance ruling: a cheap group (e.g. `zai/glm-5.3-flash` at 0.00015/0.0005) proves the
+  bid/billing path and closes FID-2026-1120-001 step 5.
 - [x] **IA2 — Correct the stale provider documentation.** **Completed.** `docs/providers.md`
   gains a dated 2026-11-22 re-observation (public `/v1/models`, `/api/catalog` no longer
   404, `usage`/`usage.cost` in the final chunk, `/api/me` balance read, current

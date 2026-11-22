@@ -289,15 +289,29 @@ provider can never be the only route for a published model.
 Re-observed 2026-11-22, without a credential, when the vendor published its
 machine-readable reference (`/api/openapi.json`):
 
-- `GET /v1/models` is **public** — 200 and 507 rows with no `Authorization` header; with a
-  key it lists only what that key may use. The catalog shape is therefore verifiable
-  without a credential, though `syncProvider` still needs a configured key.
+- `GET /v1/models` is **public** — 200 and 507 rows with no `Authorization` header. With
+  the operator key it returns **520** rows: the public set plus 14 `ant/*` Anthropic-native
+  ids and minus `ag/gemini-4-argon`. The catalog shape is therefore verifiable without a
+  credential, though `syncProvider` still needs a configured key.
 - `GET /api/catalog` is no longer 404. It answers 401 without a key and, with one, returns
-  per-upstream cards including `systemPromptNote` (null when the system prompt is forwarded
-  as sent) and `activeProviders`. Nothing imports it yet.
+  **27 prefix groups** (`slug`, `prefix`, `status`, `enabled`, `activeProviders`,
+  `models[]`) rather than a flat model list, with `systemPromptNote` on five of them —
+  `claude-code` states it prepends a client header as the first system block. That note is
+  a system-prompt transformation nothing here imports or displays, and `activeProviders`
+  reports pooled capacity at four-figure scale (`qwencloud-alibaba` 22,466,
+  `mistral-vibe` 17,787), which is the provenance risk rather than a catalog statistic.
 - The settlement question is answered on paper: the final streamed chunk carries `usage`,
   including `usage.cost` in USD, just before `data: [DONE]`. Only a funded call can prove
   it at runtime.
+
+Authenticated observation, 2026-11-22 18:52 UTC (read-only, no funded call):
+`GET /api/me` answers 200 with `status: "active"`, `roles: ["consumer"]` and
+**`balances: {}`** — the key is valid and the account holds nothing. `GET /v1/me/usage`
+returns **403 `access denied`** for that role, so the usage read-back this adapter would
+want does not exist for a consumer key. The shipped importer over the authenticated
+payload imports **268 of 520** rows (242 aliases, 10 media, no free-pool rows, 114 route
+groups). Nothing can be billed until the wallet is funded, so the remaining unverified
+items all need a deposit rather than a code change.
 - API-surface availability was 97.17% current / 97.44% 24 h, with `no_capacity` at 67.9% of
   API errors.
 

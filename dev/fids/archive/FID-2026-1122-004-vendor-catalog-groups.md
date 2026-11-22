@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1122-004-vendor-catalog-groups.md`
 **ID:** FID-2026-1122-004
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-22 23:05
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -160,7 +160,21 @@ a sync whose real input is `/v1/models`.
 
 ### Verification Receipt
 
-- verified: (filled at closure)
+- verified: 2026-11-22T23:58:00Z
+- `npm run verify`: **PASS**, 12/12 gates, 172.2s
+- check: exit 0
+- storage:check: exit 0
+- config:check: exit 0
+- repository:check: exit 0 (13 active FIDs at run time)
+- test: exit 0 — **1231/1231 pass, 0 skipped**
+- test:postgres: exit 0 — 20/20
+- quality: exit 0 (400-line ceiling, 703 files)
+- build: exit 0
+- test:visual-builds-browser: exit 0
+- test:http: exit 0
+- test:recovery: exit 0
+- deployment:receipt: exit 0
+- summary: `.verify/summary.json`
 
 ## Perfection Loop
 
@@ -197,44 +211,82 @@ a sync whose real input is `/v1/models`.
 
 ### Implementation Evidence
 
-- [ ] **Commit SHA:** (filled at closure)
-- [ ] **File:line ranges:** (filled at closure)
-- [ ] **Gate output:** (filled at closure)
-- [ ] **Reproducibility:** (filled at closure)
-- [ ] **Step statuses:** (filled at closure)
+- [x] **Commit SHA:** `4bdc562` (`feat(catalog): import the vendor's prefix-group document and
+  show its pools`), pushed to `main`; pre-push gates passed.
+- [x] **File:line ranges:** parser `lib/providers/catalog-groups.ts:28,68-97`; URL field and
+  validator `lib/providers/registry.ts` (`parseOptionalProviderUrl`), record
+  `lib/providers/types.ts`, column `lib/storage/schema/catalog.ts:30,153`; one-time fill
+  `lib/storage/schema/catalog.ts:205-214`; seed `lib/storage/schema/catalog-seeds.ts`; transport
+  `lib/providers/request.ts` (`fetchProviderUrl`); read wiring `lib/providers/sync.ts:73-82` and
+  `lib/storage/providers/sync.ts:204-219`; store `lib/storage/store/provider-catalog-groups.ts:26`;
+  display `components/admin/provider-catalog-sections.tsx:9-63,164-166` and
+  `app/admin/(panel)/catalog/page.tsx:20-27,56-59`; admin field
+  `components/admin/provider-form.tsx`.
+- [x] **Gate output:** `npm run verify` PASS, 1231/1231 tests (receipt above).
+- [x] **Reproducibility:** `grep -rn catalog_url lib` names the column, record, store and seed;
+  `grep -rn replaceProviderCatalogGroups lib` returns the store and its one caller.
+- [x] **Step statuses:** 1-7 `implemented`.
 
 ### Code Verification Evidence
 
-- [ ] Files referenced in Affected Components exist
-- [ ] Implementation matches the Proposed Solution
-- [ ] Typecheck/tests/lint pass with pasted tool output
-- [ ] Production call-graph evidence is present for new or repaired wiring
-- [ ] FID status reflects the actual implementation state
+- [x] Files referenced in Affected Components exist and carry the change.
+- [x] Implementation matches the Proposed Solution, step by step.
+- [x] Typecheck/tests/lint pass with the pasted output above.
+- [x] Production call-graph evidence: `syncProvider` (`lib/storage/providers/sync.ts:204`) →
+  `deps.fetchCatalogGroups` (`lib/providers/sync.ts:73`) → `fetchProviderUrl` →
+  `readCatalogGroups` → `replaceProviderCatalogGroups`; the display hop is
+  `listProviderCatalogGroups` (`lib/store-facade/catalog.ts`) → page →
+  `components/admin/provider-catalog-sections.tsx:165`. Both ends are reachable from a shipped route.
+- [x] FID status reflects the implementation state.
 
 ### Loop 2 — Independent audit and self-correction
 
-- **RED:** (filled at closure)
-- **GREEN:** (filled at closure)
-- **AUDIT:** (filled at closure)
-- **ADVERSARIAL:** (filled at closure)
-- **CHANGE DELTA:** (filled at closure)
+- **RED:** Two defects found by the gates and by reading my own diff. (1) `npm run lint` failed with
+  a prettier warning on the new component's parameter list — zero warnings is the bar. (2) The admin
+  provider form did not carry `catalogUrl`, so saving a provider from `/admin/providers` would have
+  written `NULL` over the seeded document URL: a silent data loss the tests would not have caught,
+  because the store test writes through the store rather than the form.
+- **GREEN:** Reformatted the signature; added `catalogUrl` to `ProviderDraft`, `EMPTY_PROVIDER`,
+  `draftFromProvider`, `providerPayload` and a "Catalog groups URL (optional)" field, mirroring the
+  balance field exactly.
+- **AUDIT:** `npm run lint` exit 0 with zero warnings; `tests/provider-inferhub-sync.test.mjs`
+  proves the seeded row keeps its URL through an operator edit, and the store test now asserts the
+  seeded `catalogUrl` too.
+- **ADVERSARIAL:** "Does an unsaved blank field wipe the URL?" `parseOptionalProviderUrl` turns an
+  empty string into `null`, so clearing the field deliberately removes the document; the field shows
+  the current value, so an operator sees what they would clear.
+- **CHANGE DELTA:** ~10% of the FID text (two findings, the field, this loop).
 
 ### Loop 3 — Final convergence
 
-- **RED:** (filled at closure)
-- **GREEN:** (filled at closure)
-- **AUDIT:** (filled at closure)
-- **ADVERSARIAL:** (filled at closure)
-- **CHANGE DELTA:** (filled at closure)
+- **RED:** Residual limits, named: the snapshot only exists after a sync, so a disabled or
+  unreachable provider shows none; the parser reads one shape family, so a vendor with a different
+  document produces a warning rather than a snapshot; and pooled capacity is the vendor's own claim,
+  not something this gateway verifies.
+- **GREEN:** No code change. All three are stated in `docs/providers.md` and on the card ("Vendor
+  metadata, read at the last sync. Not a routing, admission or pricing input").
+- **AUDIT:** `grep -rn provider_catalog_groups lib app` shows only the schema, the store and the page
+  read — no gateway, pricing or prompt path imports it, which is the boundary this record claims.
+- **ADVERSARIAL:** "Could a note reach a customer?" No: the card is in `/admin`, and the only stored
+  text is rendered in an admin `title` attribute.
+- **CHANGE DELTA:** 0% (documentation only).
 
 ## Resolution
 
-- **Closed Date:** (filled at closure)
-- **Fix Description:** (filled at closure)
-- **Tests Added:** (filled at closure)
-- **Verification Evidence:** (filled at closure)
-- **Archived:** (filled at closure)
+- **Closed Date:** 2026-11-22 24:05
+- **Fix Description:** A provider names its prefix-group document in `catalog_url`; sync reads it,
+  stores a per-prefix snapshot in `provider_catalog_groups` (replaced wholesale, failure keeps the
+  old one and warns), and `/admin/catalog` shows group count, pooled slots, largest pools and every
+  prefix whose system prompt is rewritten upstream. Nothing else reads it.
+- **Tests Added:** Yes — `tests/provider-catalog-groups.test.mjs` (9),
+  `tests/provider-catalog-groups-postgres.test.mjs` (4), a sync wiring case in
+  `tests/provider-sync-postgres.test.mjs`, a validator case in `tests/providers.test.mjs`, and the
+  seeded URL in `tests/store-providers-postgres.test.mjs`.
+- **Verification Evidence:** `npm run verify` PASS — 12/12 gates, 1231/1231 tests, 0 skipped.
+- **Archived:** 2026-11-22 24:10 EST — implementation `4bdc562`, pushed to `main`.
 
 ## Lessons Learned
-
-(filled at closure)
+The defect worth remembering is the one no test covered: a new registry field that the admin form
+row does not carry is silently erased the first time an operator saves that provider. An additive
+field is not finished at the schema and the store — the form is a writer too, and it was found by
+reading the diff rather than by a failing gate.

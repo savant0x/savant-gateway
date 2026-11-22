@@ -17,6 +17,10 @@ distinguish verified behavior from unverified claims.
   cases), `tests/provider-catalog-groups-postgres.test.mjs` (4), the sync wiring case in
   `tests/provider-sync-postgres.test.mjs`, and the registry validator case in
   `tests/providers.test.mjs`.
+- **FID-2026-1122-004 — medium — closed and archived.** Implementation `4bdc562`. Residual limits
+  are named in the record: no snapshot exists before a sync, the parser reads one shape family (a
+  different document produces a sync warning rather than a snapshot), and pooled capacity is the
+  vendor's own claim.
 
 ## 2026-11-22 — Provider-reported cost (1122-003)
 

@@ -77,8 +77,29 @@ Instruction: "fix any session echo violations you made, then proceed with build.
 Remaining: IA6 (`/api/catalog` notes and pooled capacity), IA7 (keyless preview); IA3 stays
 blocked on the deposit and the provenance ruling.
 
+## IA6 — vendor catalog groups (same session)
+
+Instruction: "resume."
+
+1. **FID first.** `FID-2026-1122-004-vendor-catalog-groups.md` written and converged before code;
+   Loop 1 AUDIT named the real insertion points (`lib/storage/providers/sync.ts:188`,
+   `request.ts:85-94`, the catalog page's single caller).
+2. **Build.** `providers.catalog_url` (validated by the same `parseOptionalProviderUrl` helper as the
+   balance URL), one content-shaped parser, a `provider_catalog_groups` snapshot replaced wholesale
+   per sync, a best-effort read that warns instead of failing the catalog upload, and an admin card
+   showing group count, pooled slots, largest pools and prompt-rewrite prefixes.
+3. **Gate between the steps.** `npm run lint` failed on a prettier warning (fixed). Reading the diff
+   caught what no test covered: the admin provider form did not carry the new field, so saving a
+   provider would have written `NULL` over it — found by review, then fixed and recorded in Loop 2.
+4. **Verified.** `npm run verify` PASS, 12/12 gates, 1231/1231 tests, 0 skipped. Committed
+   `4bdc562`, pushed; pre-push gates passed.
+5. **Closed.** Archived at `4bdc562` with the three residual limits named: no snapshot before a
+   sync, one shape family, vendor-reported capacity.
+
+Remaining: IA7 (keyless catalog preview); IA3 stays blocked on the deposit and the provenance
+ruling.
+
 ## Next
 
-IA6 and IA7 are the open work items; each gets a FID before code. IA3 remains blocked on the
-deposit and the provenance ruling, and the funded-call evidence (`usage.cost` on the wire, the
-live `429 capacity_saturated` shape) cannot be produced without it.
+IA7 is the open item; it gets a FID before code. IA3 remains blocked on the deposit and the
+provenance ruling, and the funded-call evidence cannot be produced without it.

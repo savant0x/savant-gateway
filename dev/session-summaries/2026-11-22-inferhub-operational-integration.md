@@ -53,10 +53,32 @@ Automation level 3; `strict_mode: true`; single agent. Register:
    remedy — running the gates between writing the steps and claiming them — is the lesson
    recorded in the FID.
 
+## IA5 — provider-reported cost (same session, later slice)
+
+Instruction: "fix any session echo violations you made, then proceed with build."
+
+1. **Violations fixed.** FID-2026-1122-002 was still `fixed` in the active queue although its
+   implementation was committed and verified, which the auto-archive ruling forbids: moved to
+   `dev/fids/archive/`, status `closed`, register counts 12 active / 184 archived, closure entry in
+   the changelog. The earlier scripted-edit breach stays recorded above; no new scripted edit was
+   made in this slice.
+2. **FID first.** `FID-2026-1122-003-provider-cost-persistence.md` was written and converged before
+   any code, with its Loop 1 AUDIT naming the producers it claims (`call.ts:385-389`,
+   `stream.ts:116-120`, `usage.ts:132-160`) instead of assuming them.
+3. **Build.** `usage.cost`/`total_cost` parses to integer micro-dollars with a negative/non-finite/
+   $1,000-ceiling refusal; `provider_cost_micros` is written beside `cost_micros` and left `NULL`
+   when unreported; the admin overview flags a disagreement; billing stays on the price table.
+4. **Gate between steps, not after.** `npm run verify` failed once
+   (`tests/usage-fidelity.test.mjs:15`, the exact-shape assertion), the fixture was updated, and
+   the second run is PASS with 1216/1216 tests. Recorded as Loop 2 in the FID, not repaired
+   silently.
+5. **Closed.** FID-2026-1122-003 archived at implementation `16588ef`.
+
+Remaining: IA6 (`/api/catalog` notes and pooled capacity), IA7 (keyless preview); IA3 stays
+blocked on the deposit and the provenance ruling.
+
 ## Next
 
-Archived. FID-2026-1122-002 moved to `dev/fids/archive/` at 2026-11-22 21:05 EST with
-implementation `a1b51d4` and records `07894b6`; the active queue is 12 FIDs and the register
-records 183 archived / 195 allocated. IA5 (persist the provider-reported cost), IA6
-(`/api/catalog` notes and pooled capacity), IA7 (keyless preview); IA3 stays blocked on the
-deposit and the provenance ruling.
+IA6 and IA7 are the open work items; each gets a FID before code. IA3 remains blocked on the
+deposit and the provenance ruling, and the funded-call evidence (`usage.cost` on the wire, the
+live `429 capacity_saturated` shape) cannot be produced without it.

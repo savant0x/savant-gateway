@@ -16,6 +16,10 @@ distinguish verified behavior from unverified claims.
   because a number the upstream controls cannot set our margin. Verified by
   `tests/usage-provider-cost.test.mjs` (10 cases) and three settlement cases in
   `tests/gateway-settlement-postgres.test.mjs`, including a streamed charge in the final chunk.
+- **FID-2026-1122-003 — medium — closed and archived.** Implementation `16588ef`. Residual limits
+  are stated in the record: the figure is proven by fixtures and one PGlite settlement rather than
+  a funded upstream, the $1,000 ceiling is a heuristic, and no analytics roll-up aggregates the
+  drift yet.
 
 ## 2026-11-22 — InferHub upstream audit
 

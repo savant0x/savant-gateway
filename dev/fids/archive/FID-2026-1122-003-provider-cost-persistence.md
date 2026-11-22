@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1122-003-provider-cost-persistence.md`
 **ID:** FID-2026-1122-003
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-22 21:20
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -164,7 +164,21 @@ on a figure we do not control. The operator surface shows a marker only when the
 
 ### Verification Receipt
 
-- verified: (filled at closure)
+- verified: 2026-11-22T22:31:00Z
+- `npm run verify`: **PASS**, 12/12 gates, 161.1s
+- check: exit 0
+- storage:check: exit 0
+- config:check: exit 0
+- repository:check: exit 0 (13 active FIDs at run time)
+- test: exit 0 — **1216/1216 pass, 0 skipped**
+- test:postgres: exit 0 — 20/20
+- quality: exit 0 (400-line ceiling, 701 files)
+- build: exit 0
+- test:visual-builds-browser: exit 0
+- test:http: exit 0
+- test:recovery: exit 0
+- deployment:receipt: exit 0
+- summary: `.verify/summary.json`
 
 ## Perfection Loop
 
@@ -203,44 +217,77 @@ on a figure we do not control. The operator surface shows a marker only when the
 
 ### Implementation Evidence
 
-- [ ] **Commit SHA:** (filled at closure)
-- [ ] **File:line ranges:** (filled at closure)
-- [ ] **Gate output:** (filled at closure)
-- [ ] **Reproducibility:** (filled at closure)
-- [ ] **Step statuses:** (filled at closure)
+- [x] **Commit SHA:** `16588ef` (`feat(gateway): record the provider's own charge beside the
+  computed cost`), pushed to `main`; pre-push gates passed.
+- [x] **File:line ranges:** parse `lib/usage.ts:27,41,76-90,184`; write
+  `lib/storage/store/usage.ts:226,269,284`; column `lib/storage/schema/core.ts:71,169`; pass-through
+  `lib/storage/gateway/settle.ts:109`; admin shape `lib/types.ts:118`, `lib/projections.ts:102,334`;
+  surface `components/admin/admin-panel.tsx:325-331`.
+- [x] **Gate output:** `npm run verify` PASS, 1216/1216 tests (receipt above; first run failed one
+  assertion in `tests/usage-fidelity.test.mjs`, see Loop 2).
+- [x] **Reproducibility:** `grep -rn provider_cost_micros lib` returns the schema, write, read and
+  projection above; `grep -rn providerCostMicros lib components` returns the four consumers.
+- [x] **Step statuses:** 1-7 `implemented`. No step is blocked or deferred.
 
 ### Code Verification Evidence
 
-- [ ] Files referenced in Affected Components exist
-- [ ] Implementation matches the Proposed Solution
-- [ ] Typecheck/tests/lint pass with pasted tool output
-- [ ] Production call-graph evidence is present for new or repaired wiring
-- [ ] FID status reflects the actual implementation state
+- [x] Files referenced in Affected Components exist and carry the change.
+- [x] Implementation matches the Proposed Solution, step by step.
+- [x] Typecheck/tests/lint pass with the pasted output above.
+- [x] Production call-graph evidence: `readProviderUsage` → `resolveUsage`
+  (`lib/storage/gateway/call.ts:385-389`, `lib/storage/gateway/stream.ts:116-120`) → `settleCall`
+  (`lib/storage/gateway/settle.ts:109`) → `recordUsage` (`lib/storage/store/usage.ts:226`) →
+  `listAdminUsage` (`lib/storage/store/overview.ts:158`) → `AdminPanel`
+  (`components/admin/admin-panel.tsx:325`). The last hop is the reachability proof: the column is
+  written and read by the shipped panel, not only by tests.
+- [x] FID status reflects the implementation state.
 
 ### Loop 2 — Independent audit and self-correction
 
-- **RED:** (filled at closure)
-- **GREEN:** (filled at closure)
-- **AUDIT:** (filled at closure)
-- **ADVERSARIAL:** (filled at closure)
-- **CHANGE DELTA:** (filled at closure)
+- **RED:** The first full `npm run verify` after implementation **failed the test gate**:
+  `tests/usage-fidelity.test.mjs:15` compared the provider-usage object with `assert.deepEqual`, and
+  the new `costMicros` member made it fail (`+ costMicros: null`). The suite named the exact shape,
+  which is correct behaviour for it.
+- **GREEN:** Updated the expectation rather than weakening the parser: the field is intended, so the
+  fixture names it (`tests/usage-fidelity.test.mjs:25-31`).
+- **AUDIT:** `node --test tests/usage-fidelity.test.mjs tests/usage-provider-cost.test.mjs` — 20/20
+  pass. The second full `npm run verify` is PASS with 1216/1216 tests.
+- **ADVERSARIAL:** "Is `provider_cost_micros` written on the buffered path too?" Yes:
+  `call.ts:385` resolves the same usage and `settleCall` writes it once, for both paths. "Can a
+  replay write it twice?" No: the durable settlement claim returns before the insert
+  (`lib/storage/store/usage.ts:145-152`).
+- **CHANGE DELTA:** ~6% of the FID text.
 
 ### Loop 3 — Final convergence
 
-- **RED:** (filled at closure)
-- **GREEN:** (filled at closure)
-- **AUDIT:** (filled at closure)
-- **ADVERSARIAL:** (filled at closure)
-- **CHANGE DELTA:** (filled at closure)
+- **RED:** Residual limits, named: the figure is proven by fixtures and one PGlite settlement, not
+  by a funded upstream; the ceiling is a heuristic that would also refuse a genuine $1,000 request;
+  and no analytics roll-up consumes it, so drift is visible per request but not yet aggregated.
+- **GREEN:** No code change. The ceiling and the per-request (not aggregate) scope are stated in
+  `docs/providers.md` and in the changelog entry rather than implied.
+- **AUDIT:** Claim-to-code check quoted above; `grep -c provider_cost_micros` across `lib/` is 6
+  matches, all intended; nothing in `lib/analytics.ts` reads it, which matches the stated scope.
+- **ADVERSARIAL:** "Does a hostile provider gain anything by lying here?" Only an operator-visible
+  warning: the value never reaches billing, and the column is written inside the same transaction
+  that already succeeded.
+- **CHANGE DELTA:** 0% (documentation only).
 
 ## Resolution
 
-- **Closed Date:** (filled at closure)
-- **Fix Description:** (filled at closure)
-- **Tests Added:** (filled at closure)
-- **Verification Evidence:** (filled at closure)
-- **Archived:** (filled at closure)
+- **Closed Date:** 2026-11-22 22:35
+- **Fix Description:** A provider's own reported charge is parsed into micro-dollars, stored as
+  `usage_events.provider_cost_micros` beside the price-table `cost_micros`, carried on the admin
+  usage row, and flagged in the admin overview when the two disagree. Absent is `NULL`, and billing
+  still comes from the price table.
+- **Tests Added:** Yes — `tests/usage-provider-cost.test.mjs` (10 cases) and three settlement cases
+  in `tests/gateway-settlement-postgres.test.mjs`, including the streamed final-chunk charge.
+- **Verification Evidence:** `npm run verify` PASS — 12/12 gates, 1216/1216 tests, 0 skipped.
+- **Archived:** 2026-11-22 22:40 EST — implementation `16588ef`, pushed to `main`.
 
 ## Lessons Learned
 
-(filled at closure)
+A fixture that asserts a whole object is a maintenance cost and a safety net at once: it failed
+here for the right reason and told us exactly which consumer needed updating. The billing decision
+was the harder half — persisting a provider-controlled number is only safe while nothing bills
+from it, so that boundary is written into the code comment, the docs and the changelog rather than
+left to be rediscovered.

@@ -41,7 +41,8 @@ changed.
   provenance ruling: a cheap group (e.g. `zai/glm-5.3-flash` at 0.00015/0.0005) proves the
   bid/billing path and closes FID-2026-1120-001 step 5.
 - [x] **IA4 — Make the provider operable before funding.** **Completed** as
-  `dev/fids/FID-2026-1122-002-inferhub-operational-integration.md` (`fixed`). In scope:
+  `dev/fids/archive/FID-2026-1122-002-inferhub-operational-integration.md` (`closed`,
+  implementation `a1b51d4`). In scope:
   per-provider `balance_url` with the wallet-shape parser, upstream 402 mapped to our 503,
   in-stream error frames settled as failures, migration serialisation found by the gate, and the
   admin field. Verified by `npm run verify` PASS (1203/1203 tests), commit `a1b51d4`.

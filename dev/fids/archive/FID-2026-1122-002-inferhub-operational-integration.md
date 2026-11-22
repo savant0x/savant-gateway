@@ -3,10 +3,10 @@
 **Filename:** `FID-2026-1122-002-inferhub-operational-integration.md`
 **ID:** FID-2026-1122-002
 **Severity:** high
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-22 19:10
 **Automation level:** 3
-**YAGNI-Compliance:** Pending
+**YAGNI-Compliance:** Verified
 
 > **Project application (savant-gateway).** This repository uses npm, not Bun, and it does
 > **not** ship `fid:verify`, `quality:report` beyond `npm run quality`, `scope:check` or
@@ -273,8 +273,7 @@ trimmed by this record:
   `tests/provider-inferhub-sync.test.mjs`, `tests/gateway-settlement-postgres.test.mjs` and
   `tests/store-providers-postgres.test.mjs`.
 - **Verification Evidence:** `npm run verify` PASS — 12/12 gates, 1203/1203 tests, 0 skipped.
-- **Archived:** not yet: the record is `fixed` and moves to `archive/` with the commit that
-  closes it.
+- **Archived:** 2026-11-22 21:05 EST — implementation `a1b51d4`, records `07894b6`, pushed to `main`; `npm run verify` PASS (12/12 gates, 1203/1203 tests).
 
 ### Loop 2 — Independent audit and self-correction
 

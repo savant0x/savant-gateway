@@ -62,6 +62,11 @@ distinguish verified behavior from unverified claims.
   and sends `event: error` instead of `[DONE]`; and serialises schema migrations per process after
   the gate caught a deadlocked `ensureColumn` race. `npm run verify` PASS, 1203/1203 tests.
   Funding, a pinned bid and the live `429` shape stay blocked with FID-2026-1120-001 step 6.
+- **FID-2026-1122-002 — high — closed and archived.** Implementation `a1b51d4`, records
+  `07894b6`. Residual limits are stated in the record rather than implied away: the second
+  balance shape is proven by fixtures, the stream-failure rule by a synthetic upstream, and
+  `balance_url` is operator-supplied. The audit findings this record did not implement are
+  IA5-IA7 in [SCOPE.md](SCOPE.md), not dropped items.
 
 ### Price sheet
 

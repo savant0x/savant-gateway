@@ -55,5 +55,8 @@ Automation level 3; `strict_mode: true`; single agent. Register:
 
 ## Next
 
-IA5 (persist the provider-reported cost), IA6 (`/api/catalog` notes and pooled capacity), IA7
-(keyless preview); IA3 stays blocked on the deposit and the provenance ruling.
+Archived. FID-2026-1122-002 moved to `dev/fids/archive/` at 2026-11-22 21:05 EST with
+implementation `a1b51d4` and records `07894b6`; the active queue is 12 FIDs and the register
+records 183 archived / 195 allocated. IA5 (persist the provider-reported cost), IA6
+(`/api/catalog` notes and pooled capacity), IA7 (keyless preview); IA3 stays blocked on the
+deposit and the provenance ruling.

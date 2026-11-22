@@ -1,5 +1,24 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-22 (Committed calibration proxy: 001)
+
+Operator instruction: "register the work item and commit
+`scripts/identity-calibration-proxy.mjs` so a clean clone of `main` passes `npm test`."
+Automation level 3; strict; single agent.
+
+- [x] **CP1 — Commit the loopback calibration proxy its test imports.**
+  [FID-2026-1122-001](dev/fids/FID-2026-1122-001-commit-calibration-proxy.md) is
+  `fixed`. `tests/identity-calibration-proxy.test.mjs:21` imports
+  `../scripts/identity-calibration-proxy.mjs`; the test, `arms.ts`, `proxy.ts` and
+  `manifest.ts` were committed in `495e8b3` (an InferHub free-pool commit) while the script
+  stayed untracked on disk. `git cat-file -e HEAD:scripts/identity-calibration-proxy.mjs`
+  exited 128 at `15b41fa`, and the path is not ignored, so a clean checkout of `main` would
+  fail the declared test gate — the 1,191-test verify receipt was earned in a working tree
+  that held the untracked file. **Completed:** the script is committed with no source-line
+  change, its 13 tests pass with the import in the tree of record, and the register, this
+  item, the changelog and the owning FID's step-4 row are corrected. No gateway behaviour
+  changes: the script is a loopback CLI and is imported only by the test.
+
 ## Session — 2026-11-20 (Catalog normalization layer: 002)
 
 Operator instruction: "we need a system to normalize/fix the shape of the data so we can

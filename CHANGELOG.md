@@ -3,6 +3,23 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-22 — Committed calibration proxy (1122-001)
+
+- **FID-2026-1122-001 — high —** `scripts/identity-calibration-proxy.mjs` is committed.
+  Commit `495e8b3` (the InferHub free-pool gate, FID-2026-1120-001) added
+  `lib/identity/calibration/arms.ts`, `lib/identity/calibration/proxy.ts` and
+  `tests/identity-calibration-proxy.test.mjs` from FID-2026-1110-002 step 4 but left the
+  script that test imports at line 21 untracked, so `main` carried a suite that could not
+  resolve its import and a clean checkout would have failed `npm test`. No source line
+  changed; the verified artifact is committed and the register, scope and owning FID record
+  the commit. The FID-2026-1110-002 row no longer says step 4 is only "in the working tree".
+- **Verification:** `node --test tests/identity-calibration-proxy.test.mjs` 13/13 in a
+  worktree created from the new commit with no untracked files; `npm test` PASS; `npm run
+  check` (lint 0 warnings + typegen + typecheck), `repository:check`, `quality` and
+  `attribution` PASS. No gateway, schema, price or provider behaviour changes.
+- **Not claimed:** no calibration run, certificate or probe is part of this entry. Steps 5–9
+  of FID-2026-1110-002 remain blocked on an operator-supplied upstream.
+
 ## 2026-11-20 — InferHub registry row (001 steps 1 and 8)
 
 - **FID-2026-1120-001 steps 1 and 8 — high —** `inferhub` is now seeded in both schema paths:

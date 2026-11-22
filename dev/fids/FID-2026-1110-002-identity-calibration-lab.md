@@ -714,7 +714,9 @@ land.
   frozen δ is reproducible by command. The hash and both numbers are pinned in
   the tests, and `verifyFrozenDelta` refuses a manifest whose δ or simulation
   inputs disagree.
-- [ ] **Step statuses:** steps 1–4 `implemented`; steps 5–9 not started.
+- [ ] **Step statuses:** steps 1–4 `implemented` and committed; steps 5–9
+  `blocked` on the operator-supplied upstream, credential and two routing model
+  ids named in the resolution.
 - [x] **Step 4 files:** `lib/identity/calibration/arms.ts` (arm registry, one
   transform per arm, hashed transform spec, coverage assertion),
   `lib/identity/calibration/proxy.ts` (loopback admission, credential
@@ -739,10 +741,13 @@ land.
 ## Resolution
 
 - **Convergence Date:** 2026-11-10 19:32 EST
-- **Next action:** steps 1–4 are implemented. Steps 1–3 are committed at
-  `d66a538`, `b884984` and `1f75c44`; step 4 is in the working tree at
-  `52eab59` and passed lint, typecheck, its 13-test suite, quality and the full
-  12-gate verify. Step 5 (collection) is next and cannot start without an
+- **Next action:** steps 1–4 are implemented and committed. Steps 1–3 are at
+  `d66a538`, `b884984` and `1f75c44`; step 4 is at `495e8b3` for `arms.ts`,
+  `proxy.ts` and its test, and its `scripts/identity-calibration-proxy.mjs`
+  wrapper was left untracked there and committed under
+  [FID-2026-1122-001](FID-2026-1122-001-commit-calibration-proxy.md). The
+  13-test suite, lint, typecheck, quality and the full 12-gate verify passed on
+  the step-4 tree at `52eab59`. Step 5 (collection) is next and cannot start without an
   operator-supplied upstream, credential and two declared routing model ids,
   because the matrix is 44,910 requests / 74.85 h at 10 RPM. Steps 6–8
   implement compute/issue, activation/consumption and the published method;

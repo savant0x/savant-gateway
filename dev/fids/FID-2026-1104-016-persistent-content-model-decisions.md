@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-016-persistent-content-model-decisions.md`
 **ID:** FID-2026-1104-016
 **Severity:** high
-**Status:** converged
+**Status:** fixed
 **Created:** 2026-11-04 23:20 America/New_York
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -14,7 +14,8 @@ Make explicit operator acceptance a durable association between stored content
 and an exact catalog model. Dismissal removes the association from active/public
 use and prevents automatic recreation; it does not delete the content. Separate
 machine publication from human acceptance, reconcile only machine-owned links,
-and use one visibility policy everywhere. Design-only child of FID-2026-1104-018.
+and use one visibility policy everywhere. Design-only child of FID-2026-1104-018 when
+written; implemented at `3f5a045`.
 
 ## Environment
 
@@ -149,11 +150,18 @@ Do not duplicate model links in topic tags or use the recent list as storage.
 
 ### Steps
 
-1. **blocked — coding reserved:** additive schema, migration and state types.
-2. **blocked — coding reserved:** transactional reconcile/decision/event store.
-3. **blocked — coding reserved:** guarded APIs and explicit Accept/Dismiss/Restore.
-4. **blocked — coding reserved:** common public projections and all callers.
-5. **blocked — coding reserved:** migration, persistence, race and render proofs.
+1. **implemented:** additive schema, migration and state types (`3f5a045`:
+   `lib/storage/schema/content-decisions.ts`).
+2. **implemented:** transactional reconcile/decision/event store (`3f5a045`:
+   `lib/content/store/link-writes.ts`).
+3. **implemented:** guarded APIs and explicit Accept/Dismiss/Restore (`3f5a045`).
+4. **implemented:** common public projections and all callers (`3f5a045`:
+   `lib/content/visibility.ts`).
+5. **blocked:** migration, persistence and race proofs. The migration and
+   decision suites pass; the two-connection race
+   (`tests/content-link-concurrency.test.mjs`, 2 cases) needs
+   `TEST_DATABASE_URL` and skips without it, and no real-browser exercise of the
+   controls exists.
 
 ### Verification
 
@@ -215,8 +223,15 @@ race proof, migration or accepted link behavior is implemented by this pass.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-All five implementation steps are blocked by the operator's planning-only
-instruction. No implementation commit or closure claim exists.
+Implementation landed at `3f5a045`
+(`feat(content): make model-link decisions durable (FID-2026-1104-016)`) after the
+planning pass, which had recorded all five steps as reserved. That commit adds
+`lib/storage/schema/content-decisions.ts`, `lib/content/store/link-writes.ts`,
+`lib/content/visibility.ts`, the guarded decision path and
+`tests/content-link-decisions.test.mjs` plus `tests/content-link-concurrency.test.mjs`.
+The 2026-11-04 CHANGELOG records `npm test` 1,021 pass / 0 fail / 6 PostgreSQL-only skips
+with build, lint, typecheck and quality green. The two-connection race and a real-browser
+exercise remain unrun, so the record is `fixed`, not `closed`.
 
 ### Code Verification Evidence
 
@@ -245,8 +260,22 @@ passes and their hashes/deltas are recorded in the planning session receipt.
 
 ## Resolution
 
-Design-only; no closed/archive date or implementation commit. FID-017 must not
-ship a second interpretation of accepted or dismissed.
+- **Closed Date:** — (not closed)
+- **Implementation:** `3f5a045` (2026-11-05). Durable `suggested` /
+  `auto_published` / `accepted` / `dismissed` / `retired` states, revision-guarded
+  decisions, an append-only decision log, machine-only reconciliation and one
+  shared public visibility predicate are in the tree.
+- **Verification:** recorded in the 2026-11-04 CHANGELOG — `npm test` 1,021 pass
+  / 0 fail / 6 PostgreSQL-only skips; build, lint, typecheck and quality pass.
+  Focused suites re-run 2026-11-22 with FID-017's: 7/7 across
+  `tests/content-link-decisions.test.mjs` and the two matching suites;
+  `tests/content-link-concurrency.test.mjs` skips its 2 cases without a real
+  database handle.
+- **Not verified:** the two-connection Accept/Dismiss-versus-reconcile race and a
+  real-browser exercise of the controls.
+- **Archived:** no — closure awaits those two proofs.
+- **Boundary:** FID-017 consumes these decision APIs; it must not ship a second
+  interpretation of accepted or dismissed.
 
 ## Lessons Learned
 

@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-015-content-fetch-automation-and-history.md`
 **ID:** FID-2026-1104-015
 **Severity:** high
-**Status:** converged
+**Status:** fixed
 **Created:** 2026-11-04 23:20 America/New_York
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -12,8 +12,9 @@
 
 Connect the existing due-source ingestion engine to an actual scheduler, expose
 its policy and health in the dashboard, and make historical fetch outcomes
-browsable. A stored interval alone does not cause work. This is a design-only
-contract under FID-2026-1104-018; no scheduler has been activated.
+browsable. A stored interval alone does not cause work. Design contract under
+FID-2026-1104-018; implemented at `dbaa033`, with no scheduler activated and no
+hosted heartbeat observed.
 
 ## Environment
 
@@ -152,10 +153,12 @@ upstream errors using the existing redaction authority; never store URL tokens.
 
 ### Steps
 
-1. **blocked — coding reserved:** additive policy/history schema and store APIs.
-2. **blocked — coding reserved:** bounded shared runner, ownership and cron/API.
-3. **blocked — coding reserved:** dashboard policy, source timing and history.
-4. **blocked — coding reserved:** backend artifacts, runbook and automated proofs.
+1. **implemented:** additive policy/history schema and store APIs (`dbaa033`).
+2. **implemented:** bounded shared runner, ownership and cron/API (`dbaa033`).
+3. **implemented:** dashboard policy, source timing and history (`dbaa033`).
+4. **implemented; proofs partial:** backend artifacts and runbook landed in
+   `dbaa033`; the two-connection ownership proof and a full HTTP gate pass are
+   recorded as open in the resolution.
 5. **blocked — operator activation inputs:** confirm backend/tier, provision its
    secret and authorize hosted deployment; observe two heartbeats without a
    browser. This observation is distinct from committed implementation closure.
@@ -221,8 +224,16 @@ Future tests above do not exist yet; no new behavior or hosted tick is verified.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-All implementation steps are blocked by the planning-only instruction. There
-is no implementation commit, runtime proof or closure claim.
+Implementation landed after the planning pass: `dbaa033`
+(`feat(content): automate source fetching with durable runs (FID-2026-1104-015)`) adds the
+policy and run stores, the shared bounded runner, the authenticated GET/POST heartbeat and
+paged history, and `tests/content-automation.test.mjs` plus
+`tests/content-job-concurrency.test.mjs` (registered in
+`scripts/postgres-concurrency-proof.mjs`). The 2026-11-04 CHANGELOG entry records `npm test`
+1,019 pass / 0 fail / 5 PostgreSQL-only skips with build, config check, lint, typecheck and
+quality green; the full HTTP gate stopped later at the pre-existing paid-burst probe and
+`test:postgres` could not run without a database. Those two proofs and the hosted heartbeat
+are why the record is `fixed`, not `closed`.
 
 ### Code Verification Evidence
 
@@ -251,8 +262,19 @@ passes and their hashes/deltas are recorded in the planning session receipt.
 
 ## Resolution
 
-Design only. No closed date, archive move, implementation SHA or live scheduler
-receipt. The master retains the operator's coding and deployment boundaries.
+- **Closed Date:** — (not closed)
+- **Implementation:** `dbaa033` (2026-11-04). Policy, durable runs, owner lease,
+  whole-run budget, shared GET/POST heartbeat and paged history are in the tree.
+- **Verification:** recorded in the 2026-11-04 CHANGELOG — `npm test` 1,019
+  pass / 0 fail / 5 PostgreSQL-only skips; build, `config:check`, lint,
+  typecheck and quality pass. Focused suites re-run 2026-11-22:
+  `node --test tests/content-automation.test.mjs tests/content-policy.test.mjs
+  tests/content-fetch-all.test.mjs` is 10/10.
+- **Not verified:** the disposable-PostgreSQL ownership proof, a full HTTP gate
+  pass, and any hosted heartbeat. No scheduler is activated; "enabled" is not a
+  heartbeat.
+- **Archived:** no — closure awaits those proofs and the operator's scheduler
+  backend/tier ruling.
 
 ## Lessons Learned
 

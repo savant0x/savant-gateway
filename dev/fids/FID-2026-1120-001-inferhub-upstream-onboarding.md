@@ -544,11 +544,26 @@ schema or provider row exists yet.
 
 ## Resolution
 
-- **Closed Date:** —
-- **Fix Description:** —
-- **Tests Added:** —
-- **Verification Evidence:** —
-- **Archived:** —
+- **Closed Date:** — (not closed)
+- **Fix Description:** steps 1, 2, 3, 4 and 8 are implemented: the registry row
+  is seeded disabled and review-required (`ed8812a`), the `resale_free_pool`
+  gate refuses `free/` rows when resale is prohibited (`495e8b3`), the catalog
+  price shape and alias rule are owned by the normalization layer
+  (FID-2026-1120-002, `b159ba0`), and the admin provider form carries both
+  review flags.
+- **Tests Added:** Yes — `tests/store-providers-postgres.test.mjs` asserts the
+  seeded values, `tests/provider-inferhub-sync.test.mjs` pushes the real payload
+  shape through the row, and the free-pool gate is covered by the catalog suite.
+- **Verification Evidence:** recorded in the 2026-11-20 CHANGELOG entries —
+  `npm run verify` PASS (11 gates) at 1,189 tests, then 1,191 after the sync
+  suite; `test:postgres` 20/20; HTTP, recovery, build and the repository checks
+  green. The record `fixed` state means implemented, not accepted: no inference
+  has been funded or observed.
+- **Blocked:** steps 5 (operator spend decision plus per-model bids), 6 (funded
+  usage-frame observation; the catalog shape is settled) and 7 (admission
+  ceiling from a measured figure). The zero balance answered
+  `402 insufficient_balance`; nothing was billed.
+- **Archived:** no.
 
 ## Lessons Learned
 

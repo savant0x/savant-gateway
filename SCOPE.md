@@ -23,6 +23,22 @@ Automation level 3; strict; single agent.
   empty `git status`, plus `npm test` 1,191 tests / 0 fail, `check`, `repository:check`,
   `quality` and `attribution` PASS. The record is archived at
   [`dev/fids/archive/FID-2026-1122-001-commit-calibration-proxy.md`](dev/fids/archive/FID-2026-1122-001-commit-calibration-proxy.md).
+- [x] **RR1 — Reconcile the FID register and record bodies with the commits.**
+  Operator instruction: "Reconcile `dev/fids/README.md` rows against commits and
+  the FID bodies, starting with FID-2026-1110-002 step 4." Automation level 3;
+  strict; single agent. Documentation only: no application code, schema or test
+  changed. **Completed.** FID-2026-1110-002 step 4 is already reconciled by
+  `3c4975d` and its link now points at the archived
+  [FID-2026-1122-001](dev/fids/archive/FID-2026-1122-001-commit-calibration-proxy.md).
+  Four further records still claimed design-only after their code shipped:
+  FID-2026-1104-015 (`dbaa033`), 016 (`3f5a045`), 017 (`6cb7486`, `1c4c2a5`) and
+  the 018 master. Their step lines and resolutions now record the commits, and
+  015–017 move `converged` → `fixed`; 018 stays `converged` because it authored
+  no code. The register rows for 015, 016, 017, 018, 062 and 137 are rewritten to
+  match those bodies and git, and FID-2026-1120-001's empty resolution is filled
+  from its own step evidence. Verified by `npm run repository:check`, `npm run
+  attribution`, `npm run check` and `npm run quality`, plus focused re-runs of the
+  content suites named in the records.
 
 ## Session — 2026-11-20 (Catalog normalization layer: 002)
 

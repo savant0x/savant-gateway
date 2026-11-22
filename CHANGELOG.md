@@ -3,6 +3,29 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-22 — FID register reconciled with commits
+
+- **FID-2026-1110-002 step 4 —** already reconciled by `3c4975d`; its pointer to
+  FID-2026-1122-001 now targets the archived record instead of an active-folder path.
+- **FID-2026-1104-015 / 016 / 017 — high/medium —** their bodies still said "design-only, no
+  implementation commit" while `dbaa033`, `3f5a045` and `6cb7486`/`1c4c2a5` had shipped the
+  behaviour the 2026-11-04 changelog entries describe. The step lines now record which steps
+  landed and which proofs are still missing, the resolutions name the commits and limits, and
+  the records move `converged` → `fixed`. They are not closed: 015 owes the PostgreSQL
+  ownership proof and a full HTTP pass, 016 the two-connection link race and a browser
+  exercise, 017 pinned job snapshots, retry scopes and HTTP/browser receipts.
+- **FID-2026-1104-018 —** the master records that its three children are implemented while
+  remaining unclosed, and that step 5 stays blocked on the operator's scheduler backend,
+  secret and hosted-tick authorization.
+- **Register and records —** the rows for 015–018, 062 and 137 now match their bodies and git;
+  FID-2026-1120-001's empty resolution is filled from its own step evidence (1, 2, 3, 4, 8
+  done; 5–7 blocked on money and a measured figure).
+- **Verification:** `npm run repository:check` PASS, `npm run attribution` PASS, `npm run
+  check` exit 0, `npm run quality` PASS. Focused content suites re-run: 10/10
+  (`content-automation`, `content-policy`, `content-fetch-all`) and 7/7
+  (`content-link-decisions`, `content-match-management`, `content-rematch`); the two
+  concurrency cases skip without `TEST_DATABASE_URL`. No behaviour, schema or price changed.
+
 ## 2026-11-22 — Committed calibration proxy (1122-001)
 
 - **FID-2026-1122-001 — high —** `scripts/identity-calibration-proxy.mjs` is committed.

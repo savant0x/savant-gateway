@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-017-content-matching-controls-and-review.md`
 **ID:** FID-2026-1104-017
 **Severity:** medium
-**Status:** converged
+**Status:** fixed
 **Created:** 2026-11-04 23:20 America/New_York
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -13,7 +13,8 @@
 Provide a complete operator inventory of content/model associations, explicit
 matching controls and a durable job that can rematch stored items without
 refetching publishers. Use FID-016's decision authority and FID-015's scheduler
-and history conventions. This contract is design-only under FID-2026-1104-018.
+and history conventions. Design contract under FID-2026-1104-018; implemented at
+`6cb7486` and `1c4c2a5`.
 
 ## Environment
 
@@ -173,12 +174,18 @@ shows unavailable/deleted catalog references with preserved ids and decisions.
 
 ### Steps
 
-1. **blocked — coding reserved:** matching settings/aliases, validators and
-   shared literal engine with overlap/ambiguity handling.
-2. **blocked — coding reserved:** complete link inventory API/page and actions.
-3. **blocked — coding reserved:** durable rematch store/runner and policy snapshots.
-4. **blocked — coding reserved:** catalog/settings invalidation and scheduler drain.
-5. **blocked — coding reserved:** behavioral, race, HTTP and browser verification.
+1. **implemented:** matching settings/aliases, validators and the shared literal
+   engine with overlap/ambiguity handling (`6cb7486`:
+   `lib/content/matching-policy.ts`).
+2. **implemented:** complete link inventory API/page and actions (`6cb7486`,
+   `1c4c2a5`: keyset inventory, `/admin/content/links`).
+3. **implemented:** durable rematch store/runner and policy snapshots
+   (`6cb7486`: `lib/content/store/rematch.ts`).
+4. **implemented:** catalog/settings invalidation and scheduler drain
+   (`6cb7486`, `1c4c2a5`).
+5. **blocked:** behavioral, race, HTTP and browser verification. The inventory,
+   matching and rematch suites pass; pinned job snapshots, per-item retry
+   scopes, the shared HTTP probes and a browser receipt remain open.
 
 ### Verification
 
@@ -244,8 +251,16 @@ are not implemented or verified in this pass.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-All five implementation steps are blocked by the operator's planning-only
-instruction. No application/schema/UI code, implementation commit or closure.
+Implementation landed after the planning pass: `6cb7486`
+(`feat(content): add matching inventory and bounded rematch (FID-2026-1104-017)`) and
+`1c4c2a5` (`feat(content): keyset link inventory and rematch cancellation`). They add
+`lib/content/matching-policy.ts`, `lib/content/store/link-inventory.ts`,
+`lib/content/store/rematch.ts`, `lib/storage/schema/content-matching.ts`,
+`app/admin/(panel)/content/links/page.tsx`, the matching and rematch routes, and
+`tests/content-match-management.test.mjs` plus `tests/content-rematch.test.mjs`. The
+2026-11-04 CHANGELOG records `npm test` 1,026 pass / 0 fail / 6 PostgreSQL-only skips; it
+also states what does not close this record: pinned job snapshots, per-item retry scopes,
+the HTTP/browser receipts and an unrun PostgreSQL race proof.
 
 ### Code Verification Evidence
 
@@ -274,8 +289,22 @@ passes and their hashes/deltas are recorded in the planning session receipt.
 
 ## Resolution
 
-Design-only, no closed/archive date or implementation SHA. Build/test receipts
-for existing code do not verify this future management feature.
+- **Closed Date:** — (not closed)
+- **Implementation:** `6cb7486` and `1c4c2a5` (2026-11-05). Keyset all-state
+  inventory with filters and counts, versioned matching policy and model-scoped
+  aliases, a cancellable stored-content rematch that resumes by cursor, and
+  catalog/policy invalidation drained by the scheduler are in the tree.
+- **Verification:** recorded in the 2026-11-04 CHANGELOG — `npm test` 1,026 pass
+  / 0 fail / 6 PostgreSQL-only skips; build, config check, lint, typecheck and
+  quality pass; the content HTTP probes pass while the overall HTTP gate stopped
+  at the pre-existing paid-burst probe. Focused suites re-run 2026-11-22 with
+  FID-016's: 7/7 across `tests/content-link-decisions.test.mjs`,
+  `tests/content-match-management.test.mjs` and `tests/content-rematch.test.mjs`.
+- **Not verified:** pinned job snapshots, per-item retry scopes, the shared HTTP
+  probes inside a full passing gate, the two-connection race and a browser
+  receipt.
+- **Archived:** no — closure awaits those items. Build/test receipts for the
+  older code are not evidence for them.
 
 ## Lessons Learned
 

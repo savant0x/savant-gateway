@@ -745,7 +745,7 @@ land.
   `d66a538`, `b884984` and `1f75c44`; step 4 is at `495e8b3` for `arms.ts`,
   `proxy.ts` and its test, and its `scripts/identity-calibration-proxy.mjs`
   wrapper was left untracked there and committed under
-  [FID-2026-1122-001](FID-2026-1122-001-commit-calibration-proxy.md). The
+  [FID-2026-1122-001](archive/FID-2026-1122-001-commit-calibration-proxy.md). The
   13-test suite, lint, typecheck, quality and the full 12-gate verify passed on
   the step-4 tree at `52eab59`. Step 5 (collection) is next and cannot start without an
   operator-supplied upstream, credential and two declared routing model ids,

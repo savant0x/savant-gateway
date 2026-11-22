@@ -149,8 +149,11 @@ Capacity/freshness targets remain measurable claims, never invented guarantees.
 3. **implemented (design):** structure/reference/test-gate review passes 163
    checks; baseline check, tests, quality and build pass. The session receipt
    distinguishes four PostgreSQL-only skips and future implementation gates.
-4. **blocked — coding reserved:** implement children in the stated order with
-   regression proofs and logical path-scoped commits, then close/archive each.
+4. **implemented (code); child closure not done:** children landed in the stated
+   order under their own records — 015 `dbaa033`, 016 `3f5a045`, 017 `6cb7486`
+   and `1c4c2a5`. Each child still owes the proofs named in its own resolution
+   (PostgreSQL ownership/link races, HTTP probes, browser receipts), so none is
+   closed or archived and this master stays active.
 5. **blocked — external activation inputs:** operator confirms scheduler backend,
    secret provisioning and deployment permission; record two real hosted ticks
    independently of implementation closure. Never invent live acceptance.
@@ -272,8 +275,17 @@ or hosted activation is inferred from document convergence.
 
 ## Resolution
 
-Design-only. Do not set closed, archive or claim that the requested features
-exist until the children have implementation commits and their required gates.
+- **Closed Date:** — (not closed)
+- **Design:** complete and converged 2026-11-04; this record authored no code.
+- **Children:** 015, 016 and 017 are implemented and committed (`dbaa033`,
+  `3f5a045`, `6cb7486`, `1c4c2a5`) and now sit at `fixed`, not `converged`. None
+  is closed: 015 needs the PostgreSQL ownership proof and a full HTTP gate pass,
+  016 the two-connection link-decision race and a browser exercise, 017 the
+  pinned job snapshots, per-item retry scopes and HTTP/browser receipts.
+- **Step 5 (activation):** blocked on the operator's scheduler backend/tier,
+  secret provisioning and deployment authorization. No hosted heartbeat has been
+  observed, so no automatic fetching is claimed in production.
+- **Archived:** no.
 
 ## Lessons Learned
 

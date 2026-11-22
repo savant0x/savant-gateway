@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1122-001-commit-calibration-proxy.md`
 **ID:** FID-2026-1122-001
 **Severity:** high
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-22 09:10
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -144,7 +144,17 @@ verified artifact with an unverified rewrite to solve a version-control omission
 ### Verification Receipt
 
 ```text
-pending — recorded below after the commit exists
+verified: 2026-11-22T14:20Z (before the commit, in the working tree)
+- npm run check: exit 0 (eslint . --max-warnings=0 zero warnings; next typegen; tsc --noEmit clean)
+- npm run repository:check: exit 0 — "repository-check: PASS (Node 24, 12 gates, 13 active FIDs, root links and current docs consistent)"
+- npm run attribution: exit 0 — guard PASS, document guard PASS
+- npm run quality: exit 0 — "quality: PASS (400-line ceiling, 700 files scanned)"
+- node --test tests/identity-calibration-proxy.test.mjs: exit 0 — tests 13, pass 13, fail 0, skipped 0
+- npm test: exit 0 — tests 1191, pass 1175, fail 0, skipped 16 (PostgreSQL-gated, TEST_DATABASE_URL unset), duration 90.1 s
+
+clean-worktree proof (2026-11-22T14:24Z, worktree of commit 3c4975d, `git status --short` empty):
+- git cat-file -e HEAD:scripts/identity-calibration-proxy.mjs: exit 0
+- node --test tests/identity-calibration-proxy.test.mjs: exit 0 — tests 13, pass 13, fail 0
 ```
 
 ## Perfection Loop
@@ -178,7 +188,8 @@ pending — recorded below after the commit exists
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [x] **Commit SHA:** `pending` — filled at closure
+- [x] **Commit SHA:** `3c4975d` — `fix(calibration): commit the loopback calibration proxy
+  (FID-2026-1122-001)`
 - [x] **File:line ranges:** `scripts/identity-calibration-proxy.mjs:1-330` (whole file
   committed); consumer `tests/identity-calibration-proxy.test.mjs:21`
 - [x] **Gate output:** see the receipt above and the session summary
@@ -217,14 +228,15 @@ pending — recorded below after the commit exists
 
 ## Resolution
 
-- **Closed Date:** 2026-11-22 (at closure)
+- **Closed Date:** 2026-11-22 14:30 EST (implementation commit `3c4975d`, verified by the
+  commit-only worktree run)
 - **Fix Description:** `scripts/identity-calibration-proxy.mjs` is committed, so the tracked
   step-4 test resolves its import on a clean checkout. No source line changed.
 - **Tests Added:** No — `tests/identity-calibration-proxy.test.mjs` (13 tests) already
   existed and now has its import in the tree of record.
 - **Verification Evidence:** `npm test` and the commit-only worktree run, pasted in the
   receipt.
-- **Archived:** at closure
+- **Archived:** 2026-11-22 14:30 EST
 
 ## Lessons Learned
 

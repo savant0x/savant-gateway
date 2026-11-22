@@ -7,8 +7,8 @@ Operator instruction: "register the work item and commit
 Automation level 3; strict; single agent.
 
 - [x] **CP1 — Commit the loopback calibration proxy its test imports.**
-  [FID-2026-1122-001](dev/fids/FID-2026-1122-001-commit-calibration-proxy.md) is
-  `fixed`. `tests/identity-calibration-proxy.test.mjs:21` imports
+  [FID-2026-1122-001](dev/fids/archive/FID-2026-1122-001-commit-calibration-proxy.md)
+  is `closed`. `tests/identity-calibration-proxy.test.mjs:21` imports
   `../scripts/identity-calibration-proxy.mjs`; the test, `arms.ts`, `proxy.ts` and
   `manifest.ts` were committed in `495e8b3` (an InferHub free-pool commit) while the script
   stayed untracked on disk. `git cat-file -e HEAD:scripts/identity-calibration-proxy.mjs`
@@ -17,7 +17,12 @@ Automation level 3; strict; single agent.
   that held the untracked file. **Completed:** the script is committed with no source-line
   change, its 13 tests pass with the import in the tree of record, and the register, this
   item, the changelog and the owning FID's step-4 row are corrected. No gateway behaviour
-  changes: the script is a loopback CLI and is imported only by the test.
+  changes: the script is a loopback CLI and is imported only by the test. **Closed
+  2026-11-22 at `3c4975d`**, verified by `node --test
+  tests/identity-calibration-proxy.test.mjs` 13/13 inside a worktree of that commit with an
+  empty `git status`, plus `npm test` 1,191 tests / 0 fail, `check`, `repository:check`,
+  `quality` and `attribution` PASS. The record is archived at
+  [`dev/fids/archive/FID-2026-1122-001-commit-calibration-proxy.md`](dev/fids/archive/FID-2026-1122-001-commit-calibration-proxy.md).
 
 ## Session — 2026-11-20 (Catalog normalization layer: 002)
 

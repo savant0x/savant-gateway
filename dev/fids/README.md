@@ -2,7 +2,7 @@
 
 **Last folder audit:** 2026-11-20 (FID-2026-1120-002 registration). This page
 indexes the working set; each FID owns its own status, evidence and resolution.
-Current counts: 13 active / 21, 181 archived, 194 allocated.
+Current counts: 12 active / 21, 182 archived, 194 allocated.
 
 ## Layout
 
@@ -27,11 +27,19 @@ Current counts: 13 active / 21, 181 archived, 194 allocated.
 | [2026-1104-016](FID-2026-1104-016-persistent-content-model-decisions.md) | Persistent content/model acceptance and dismissal | converged | Implementation landed in `3f5a045`; the record stays converged until its closure evidence is recorded. |
 | [2026-1104-017](FID-2026-1104-017-content-matching-controls-and-review.md) | Full linked-content management, settings and rematch | converged | Core landed in `6cb7486` and `1c4c2a5`; closure still needs pinned job snapshots, per-item retry scopes and HTTP/browser receipts. |
 | [2026-1104-018](FID-2026-1104-018-content-automation-master.md) | Content automation and persistent matching master | converged | Planning handoff ready; no coding or hosted activation authorized. |
-| [2026-1110-002](FID-2026-1110-002-identity-calibration-lab.md) | Identity calibration lab and measured certificate | converged | Steps 1–4 are committed (`d66a538`, `b884984`, `1f75c44`; step 4 in `495e8b3` plus its proxy script at `FID-2026-1122-001`). Step 5, collection, is next and needs an operator-supplied upstream; then the certificate path. |
+| [2026-1110-002](FID-2026-1110-002-identity-calibration-lab.md) | Identity calibration lab and measured certificate | converged | Steps 1–4 are committed (`d66a538`, `b884984`, `1f75c44`; step 4 in `495e8b3`, plus its proxy script under [2026-1122-001](archive/FID-2026-1122-001-commit-calibration-proxy.md)). Step 5, collection, is next and needs an operator-supplied upstream; then the certificate path. |
 | [2026-1120-001](FID-2026-1120-001-inferhub-upstream-onboarding.md) | InferHub upstream onboarding | fixed | Steps 1, 2, 3, 4 and 8 are done (`ed8812a`, `495e8b3`, `b159ba0`): the row is seeded disabled, review-required and resale-restricted. Steps 5–7 stay blocked on funding and a measured figure. |
-| [2026-1122-001](FID-2026-1122-001-commit-calibration-proxy.md) | Commit the loopback calibration proxy | fixed | The step-4 test was committed in `495e8b3` without `scripts/identity-calibration-proxy.mjs`, so HEAD could not pass `npm test`; the script is committed with this record. |
 
-### Closed in the upstream catalog normalization (2026-11-20)
+### Closed in the 2026-11-22 calibration proxy commit
+
+[2026-1122-001](archive/FID-2026-1122-001-commit-calibration-proxy.md) is `closed` at
+implementation commit `3c4975d`. `tests/identity-calibration-proxy.test.mjs` was committed in
+`495e8b3` while `scripts/identity-calibration-proxy.mjs`, which it imports at line 21, stayed
+untracked, so `main` failed the test gate from a clean checkout. The script is committed with
+no source-line change; `node --test tests/identity-calibration-proxy.test.mjs` is 13/13 in a
+worktree of `3c4975d` with an empty `git status`, `npm test` is 1,191 tests / 0 fail. The
+committed test had been counted in the 1,191-test receipts, so those receipts were sound only
+in a tree that held the untracked file; this fixes the tree, not the claims.
 
 [2026-1120-002](archive/FID-2026-1120-002-catalog-normalization-layer.md) is `closed` at
 implementation commit `b159ba0`. The import path normalizes before it builds: shape knowledge

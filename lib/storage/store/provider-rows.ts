@@ -36,6 +36,7 @@ export type ProviderRow = {
   requires_model_review: number;
   resale_free_pool: number;
   balance_url: string | null;
+  catalog_url: string | null;
   enabled: number;
   sort_order: number;
   status: ProviderStatus["status"];
@@ -97,6 +98,7 @@ export function toRecord(row: ProviderRow): ProviderRecord {
     requiresModelReview: Number(row.requires_model_review) === 1,
     resaleFreePool: Number(row.resale_free_pool ?? 1) === 1,
     balanceUrl: row.balance_url ?? null,
+    catalogUrl: row.catalog_url ?? null,
     enabled: Number(row.enabled) === 1,
     sortOrder: Number(row.sort_order),
     createdAt: row.created_at,
@@ -188,6 +190,7 @@ export function emptyRow(slug: string): ProviderRow {
     requires_model_review: 0,
     resale_free_pool: 1,
     balance_url: null,
+    catalog_url: null,
     enabled: 0,
     sort_order: 0,
     status: "unconfigured",

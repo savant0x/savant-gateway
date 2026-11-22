@@ -44,6 +44,30 @@ test("provider input rejects unsafe slugs, kinds, URLs, and key names", () => {
   }
 });
 
+test("a vendor document URL is optional, absolute and credential-free", () => {
+  const empty = readProviderInput({ ...VALID, catalogUrl: "  " });
+
+  assert.equal(empty.ok, true);
+  assert.equal(empty.value.catalogUrl, null, "empty means no document");
+
+  const absolute = readProviderInput({
+    ...VALID,
+    catalogUrl: "https://vendor.example/api/catalog",
+  });
+
+  assert.equal(absolute.value.catalogUrl, "https://vendor.example/api/catalog");
+
+  for (const catalogUrl of [
+    "ftp://vendor.example/api/catalog",
+    "https://user:pass@vendor.example/api/catalog",
+    42,
+  ]) {
+    const result = readProviderInput({ ...VALID, catalogUrl });
+
+    assert.equal(result.ok, false, String(catalogUrl));
+  }
+});
+
 test("provider input rejects non-string header values", () => {
   const result = readProviderInput({
     ...VALID,

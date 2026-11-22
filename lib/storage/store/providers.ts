@@ -102,9 +102,9 @@ export async function createProvider(
       `INSERT INTO providers
         (slug, label, kind, base_url, key_env_var, default_headers,
          supports_balance, supports_subscription, supports_pricing, enabled,
-         resale_free_pool, balance_url, sort_order, status, created_at,
-         updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unconfigured', ?, ?)`,
+         resale_free_pool, balance_url, catalog_url, sort_order, status,
+         created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unconfigured', ?, ?)`,
     )
     .run(
       input.slug,
@@ -119,6 +119,7 @@ export async function createProvider(
       input.enabled ? 1 : 0,
       input.resaleFreePool === false ? 0 : 1,
       input.balanceUrl ?? null,
+      input.catalogUrl ?? null,
       input.sortOrder,
       now,
       now,
@@ -139,7 +140,8 @@ export async function updateProvider(
           SET label = ?, kind = ?, base_url = ?, key_env_var = ?,
               default_headers = ?, supports_balance = ?,
               supports_subscription = ?, supports_pricing = ?, enabled = ?,
-              resale_free_pool = ?, balance_url = ?, sort_order = ?,
+              resale_free_pool = ?, balance_url = ?, catalog_url = ?,
+              sort_order = ?,
               updated_at = ?,
               quota_observed_at = NULL, balance_observed_at = NULL,
               runtime_lease_id = NULL, runtime_lease_until = NULL
@@ -157,6 +159,7 @@ export async function updateProvider(
       input.enabled ? 1 : 0,
       input.resaleFreePool === false ? 0 : 1,
       input.balanceUrl ?? null,
+      input.catalogUrl ?? null,
       input.sortOrder,
       now,
       slug,

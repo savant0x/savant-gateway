@@ -15,9 +15,11 @@ import {
 import {
   fetchProviderBalance,
   fetchProviderSubscription,
+  fetchProviderUrl,
   providerFetch,
 } from "./request.ts";
 import { DEFAULT_PROVIDER_SLUG } from "./registry.ts";
+import { readCatalogGroups } from "./catalog-groups.ts";
 
 /**
  * Provider catalog sync, wired to the real database and the real transport
@@ -65,6 +67,20 @@ function deps(): ProviderSyncDeps {
     request: (provider, path, init) => providerFetch(provider, path, init),
     fetchBalance: fetchProviderBalance,
     fetchSubscription: fetchProviderSubscription,
+    // The group document is absolute and provider-scoped, like the wallet: it is
+    // read only when the row names a URL, and a shape change throws so the sync
+    // reports it instead of storing an empty snapshot.
+    fetchCatalogGroups: async (provider) => {
+      if (!provider.catalogUrl) return [];
+
+      const response = await fetchProviderUrl(provider, provider.catalogUrl);
+
+      if (!response.ok) {
+        throw new Error(`catalog groups answered ${response.status}`);
+      }
+
+      return readCatalogGroups(await response.json());
+    },
     // The overlay describes one catalog. Every other provider gets no overlay,
     // so an id that happens to collide cannot inherit this provider's price.
     fetchMetadata: (provider) =>

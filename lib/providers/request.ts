@@ -69,7 +69,7 @@ export async function fetchProviderBalance(
   provider: ProviderRecord,
 ): Promise<ProviderBalance> {
   const response = provider.balanceUrl
-    ? await fetchBalanceUrl(provider, provider.balanceUrl)
+    ? await fetchProviderUrl(provider, provider.balanceUrl)
     : await providerFetch(provider, "/balance", { cache: "no-store" });
 
   if (!response.ok) throw new Error(await readProviderError(response));
@@ -78,11 +78,12 @@ export async function fetchProviderBalance(
 }
 
 /**
- * A balance URL is absolute and may sit on another host, so it is fetched
- * directly rather than appended to the base URL. The credential and headers are
- * the provider's own, and a redirect is still a configuration error to report.
+ * A provider document beside the catalog (`balanceUrl`, `catalogUrl`) is absolute
+ * and may sit on another host, so it is fetched directly rather than appended to
+ * the base URL. The credential and headers are the provider's own, and a redirect
+ * is still a configuration error to report.
  */
-function fetchBalanceUrl(provider: ProviderRecord, url: string) {
+export function fetchProviderUrl(provider: ProviderRecord, url: string) {
   return fetch(url, {
     cache: "no-store",
     headers: providerHeaders(provider),

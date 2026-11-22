@@ -264,4 +264,9 @@ test("InferHub is seeded disabled, review-required and without free-pool resale"
     "https://inferhub.dev/api/me",
     "the balance is not under the inference base URL",
   );
+  assert.equal(
+    inferhub.catalogUrl,
+    "https://inferhub.dev/api/catalog",
+    "the prefix-group document sits on the vendor host too",
+  );
 });

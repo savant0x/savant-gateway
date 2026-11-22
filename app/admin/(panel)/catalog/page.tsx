@@ -8,6 +8,7 @@ import {
   getBenchmarkStatus,
   listAllModels,
   listModelGroups,
+  listProviderCatalogGroups,
   listProviderCatalogSummary,
 } from "@/lib/store";
 
@@ -19,10 +20,11 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminCatalogPage() {
-  const [models, groups, providers] = await Promise.all([
+  const [models, groups, providers, catalogGroups] = await Promise.all([
     listAllModels(),
     listModelGroups(),
     listProviderCatalogSummary(),
+    listProviderCatalogGroups(),
   ]);
   const benchmarkStatus = await getBenchmarkStatus(
     models.length,
@@ -53,7 +55,10 @@ export default async function AdminCatalogPage() {
       </div>
 
       <div className="space-y-6">
-        <ProviderCatalogSections providers={providers} />
+        <ProviderCatalogSections
+          catalogGroups={catalogGroups}
+          providers={providers}
+        />
         <BenchmarkPanel status={benchmarkStatus} />
         <AdminModelsTable groups={groups} models={models} />
       </div>

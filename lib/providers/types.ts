@@ -30,6 +30,8 @@ export type ProviderRecord = {
    * host or path than its inference base URL. Null means `${baseUrl}/balance`.
    */
   balanceUrl: string | null;
+  /** The vendor's prefix-group document, when it publishes one. */
+  catalogUrl: string | null;
   enabled: boolean;
   sortOrder: number;
   createdAt: string;

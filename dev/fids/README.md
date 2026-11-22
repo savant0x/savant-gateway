@@ -1,8 +1,8 @@
 # FID register
 
-**Last folder audit:** 2026-11-22 (FID-2026-1122-003 closure). This page
+**Last folder audit:** 2026-11-22 (FID-2026-1122-004 registration). This page
 indexes the working set; each FID owns its own status, evidence and resolution.
-Current counts: 12 active / 21, 184 archived, 195 allocated.
+Current counts: 13 active / 21, 184 archived, 195 allocated.
 
 ## Layout
 
@@ -29,6 +29,7 @@ Current counts: 12 active / 21, 184 archived, 195 allocated.
 | [2026-1104-018](FID-2026-1104-018-content-automation-master.md) | Content automation and persistent matching master | converged | Children 015–017 are implemented (`dbaa033`, `3f5a045`, `6cb7486`, `1c4c2a5`) and still owe their closure proofs. The master closes on those plus the operator's scheduler backend, secret and hosted-tick authorization. |
 | [2026-1110-002](FID-2026-1110-002-identity-calibration-lab.md) | Identity calibration lab and measured certificate | converged | Steps 1–4 are committed (`d66a538`, `b884984`, `1f75c44`; step 4 in `495e8b3`, plus its proxy script under [2026-1122-001](archive/FID-2026-1122-001-commit-calibration-proxy.md)). Step 5, collection, is next and needs an operator-supplied upstream; then the certificate path. |
 | [2026-1120-001](FID-2026-1120-001-inferhub-upstream-onboarding.md) | InferHub upstream onboarding | fixed | Steps 1, 2, 3, 4 and 8 are done (`ed8812a`, `495e8b3`, `b159ba0`): the row is seeded disabled, review-required and resale-restricted. Steps 5–7 stay blocked on funding and a measured figure. |
+| [2026-1122-004](FID-2026-1122-004-vendor-catalog-groups.md) | Vendor catalog group notes and pooled capacity | converged | Steps 1–7 in the record; implementation next with the gates between the steps. |
 
 ### Closed in the 2026-11-22 provider-cost commit
 

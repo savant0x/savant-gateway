@@ -6,6 +6,7 @@ import type {
   UpstreamModel,
 } from "../../providers/types.ts";
 import type { ModelSpec } from "../../providers/catalog.ts";
+import type { ProviderCatalogGroup } from "../../providers/catalog-groups.ts";
 
 import { redactSecrets } from "../../redaction.ts";
 import { buildSyncedCatalog } from "../../providers/catalog.ts";
@@ -13,6 +14,7 @@ import { readProviderError } from "../../providers/error-text.ts";
 import { readUpstreamModelPage } from "../../providers/model-list.ts";
 import { providerKeyConfigured } from "../../providers/registry.ts";
 import { replaceModels } from "../store/model-sync.ts";
+import { replaceProviderCatalogGroups } from "../store/provider-catalog-groups.ts";
 import {
   getProvider,
   listProviderRecords,
@@ -59,6 +61,13 @@ export type ProviderSyncDeps = ProviderRuntimeDeps & {
    * sync loop; returning an empty map means "this provider has no overlay".
    */
   fetchMetadata?: (provider: ProviderRecord) => Promise<Map<string, ModelSpec>>;
+  /**
+   * The vendor's prefix-group document, when it publishes one. Optional: a
+   * provider without such a document keeps whatever snapshot it already has.
+   */
+  fetchCatalogGroups?: (
+    provider: ProviderRecord,
+  ) => Promise<ProviderCatalogGroup[]>;
 };
 
 function transport(deps: ProviderSyncDeps) {
@@ -187,6 +196,27 @@ export async function syncProvider(
 
   await saveProviderCatalogSync(db, slug);
 
+  // The group document is vendor metadata: pools and prompt notes, never a
+  // routing or pricing input. A failed read keeps the previous snapshot and
+  // says so, because the catalog itself did sync.
+  const groupWarnings: string[] = [];
+
+  if (provider.catalogUrl && deps.fetchCatalogGroups) {
+    try {
+      await replaceProviderCatalogGroups(
+        db,
+        slug,
+        await deps.fetchCatalogGroups(provider),
+      );
+    } catch (error) {
+      groupWarnings.push(
+        `catalog groups unavailable: ${redactSecrets(
+          error instanceof Error ? error.message : "read failed",
+        )}`,
+      );
+    }
+  }
+
   // A catalog change is an invalidation signal for stored content matching.
   // Queueing is bounded and never fetches a publisher. Content storage is
   // optional for a catalog sync, so a content-schema failure must not fail it.
@@ -210,6 +240,7 @@ export async function syncProvider(
         "free-pool (resale not permitted)",
         skippedFreePool,
       ),
+      ...groupWarnings,
     ],
     balance,
     subscription,

@@ -15,6 +15,7 @@ export type ProviderInput = {
   resaleFreePool: boolean;
   /** Absolute balance URL when the provider publishes it off-base; null = default. */
   balanceUrl: string | null;
+  catalogUrl: string | null;
   enabled: boolean;
   sortOrder: number;
 };
@@ -67,21 +68,18 @@ function parseProviderUrl(value: string): URL | null {
 }
 
 /**
- * The balance read may live on another host than the inference base URL, and it
- * is fetched with the provider's own credential, so it is held to the same
- * rules: http(s) only and no embedded credentials. An empty value means the
- * default `${baseUrl}/balance`.
+ * An optional absolute URL a provider publishes outside its inference base URL
+ * (`balanceUrl`, `catalogUrl`). It is fetched with the provider's own credential,
+ * so it is held to the same rules as the base URL: http(s) only and no embedded
+ * credentials. One validator serves both fields, so they cannot drift apart.
  */
-function parseBalanceUrl(value: unknown) {
+function parseOptionalProviderUrl(value: unknown, field: string) {
   if (value === undefined || value === null || value === "") {
     return { ok: true, value: null } as const;
   }
 
   if (typeof value !== "string") {
-    return {
-      ok: false,
-      error: "balanceUrl must be a URL or empty.",
-    } as const;
+    return { ok: false, error: `${field} must be a URL or empty.` } as const;
   }
 
   const trimmed = value.trim();
@@ -91,17 +89,27 @@ function parseBalanceUrl(value: unknown) {
   const url = parseProviderUrl(trimmed);
 
   if (!url) {
-    return { ok: false, error: "balanceUrl must be an http(s) URL." } as const;
+    return { ok: false, error: `${field} must be an http(s) URL.` } as const;
   }
 
   if (url.username || url.password) {
     return {
       ok: false,
-      error: "balanceUrl must not contain credentials.",
+      error: `${field} must not contain credentials.`,
     } as const;
   }
 
   return { ok: true, value: url.toString() } as const;
+}
+
+/** The balance read may live on another host than the inference base URL. */
+function parseBalanceUrl(value: unknown) {
+  return parseOptionalProviderUrl(value, "balanceUrl");
+}
+
+/** The vendor's prefix-group document may live on another host too. */
+function parseCatalogUrl(value: unknown) {
+  return parseOptionalProviderUrl(value, "catalogUrl");
 }
 
 /**
@@ -171,6 +179,10 @@ export function readProviderInput(value: unknown) {
 
   if (!balanceUrl.ok) return balanceUrl;
 
+  const catalogUrl = parseCatalogUrl(input.catalogUrl);
+
+  if (!catalogUrl.ok) return catalogUrl;
+
   const capabilities =
     input.capabilities && typeof input.capabilities === "object"
       ? (input.capabilities as Record<string, unknown>)
@@ -193,6 +205,7 @@ export function readProviderInput(value: unknown) {
       enabled: input.enabled !== false,
       resaleFreePool: input.resaleFreePool !== false,
       balanceUrl: balanceUrl.value,
+      catalogUrl: catalogUrl.value,
       sortOrder:
         typeof input.sortOrder === "number" && Number.isFinite(input.sortOrder)
           ? Math.round(input.sortOrder)

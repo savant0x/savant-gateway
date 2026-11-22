@@ -51,6 +51,7 @@ export function providerSchema(database: DatabaseHandle) {
     ["requires_model_review", "INTEGER NOT NULL DEFAULT 0"],
     ["resale_free_pool", "INTEGER NOT NULL DEFAULT 1"],
     ["balance_url", "TEXT"],
+    ["catalog_url", "TEXT"],
   ]) {
     ensureColumn(database, "providers", column, definition);
   }

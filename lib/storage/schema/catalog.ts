@@ -27,6 +27,7 @@ export async function catalogSchema(db: PostgresDatabase) {
       requires_model_review INTEGER NOT NULL DEFAULT 0,
       resale_free_pool INTEGER NOT NULL DEFAULT 1,
       balance_url TEXT,
+      catalog_url TEXT,
       enabled INTEGER NOT NULL DEFAULT 1,
       sort_order INTEGER NOT NULL DEFAULT 0,
       status TEXT NOT NULL DEFAULT 'unconfigured',
@@ -149,6 +150,7 @@ async function providerColumns(db: PostgresDatabase) {
     ["requires_model_review", "INTEGER NOT NULL DEFAULT 0"],
     ["resale_free_pool", "INTEGER NOT NULL DEFAULT 1"],
     ["balance_url", "TEXT"],
+    ["catalog_url", "TEXT"],
   ] as const) {
     await ensureColumn(db, "providers", column, definition);
   }
@@ -199,6 +201,36 @@ async function providerColumns(db: PostgresDatabase) {
           AND supports_balance = 0`,
     )
     .run(new Date().toISOString());
+
+  // The prefix-group document sits beside the wallet: a vendor fact sheet, not a
+  // routing or pricing input, so only the URL is filled in and only while the
+  // row still looks untouched.
+  await db
+    .prepare(
+      `UPDATE providers
+          SET catalog_url = 'https://inferhub.dev/api/catalog',
+              updated_at = ?
+        WHERE slug = 'inferhub' AND catalog_url IS NULL`,
+    )
+    .run(new Date().toISOString());
+
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS provider_catalog_groups (
+      provider_slug TEXT NOT NULL REFERENCES providers(slug) ON DELETE CASCADE,
+      prefix TEXT NOT NULL,
+      slug TEXT,
+      label TEXT,
+      status TEXT,
+      enabled INTEGER NOT NULL DEFAULT 0,
+      active_providers INTEGER,
+      system_prompt_note TEXT,
+      model_count INTEGER NOT NULL DEFAULT 0,
+      synced_at TEXT NOT NULL,
+      PRIMARY KEY (provider_slug, prefix)
+    );
+    CREATE INDEX IF NOT EXISTS provider_catalog_groups_capacity_idx
+      ON provider_catalog_groups(provider_slug, active_providers DESC);
+  `);
 
   await db.exec(`
     CREATE UNIQUE INDEX IF NOT EXISTS models_upstream_idx

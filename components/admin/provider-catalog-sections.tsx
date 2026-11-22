@@ -1,14 +1,72 @@
 import type { ProviderCatalogSummary } from "@/lib/provider-catalog";
+import type { ProviderCatalogGroupSnapshot } from "@/lib/storage/store/provider-catalog-groups";
 
 import { Card, Chip } from "@heroui/react";
 
 import { formatNumber } from "@/components/dashboard/format";
 import { LocalTime } from "@/components/local-time";
 
+function VendorGroups({ groups }: { groups: ProviderCatalogGroupSnapshot[] }) {
+  const pooled = groups.reduce(
+    (total, group) => total + (group.activeProviders ?? 0),
+    0,
+  );
+  const largest = groups.filter((group) => group.activeProviders).slice(0, 3);
+  const notes = groups.filter((group) => group.systemPromptNote);
+
+  return (
+    <div className="space-y-2 border-t border-black/5 pt-3 text-xs dark:border-white/5">
+      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted">
+        Vendor catalog groups
+      </p>
+      <p className="text-muted">
+        <span className="font-semibold text-foreground">
+          {formatNumber(groups.length)}
+        </span>{" "}
+        prefix groups publishing{" "}
+        <span className="font-semibold text-foreground">
+          {formatNumber(pooled)}
+        </span>{" "}
+        pooled publisher slots
+      </p>
+      {largest.length > 0 ? (
+        <p className="text-muted">
+          Largest pools:{" "}
+          {largest
+            .map(
+              (group) =>
+                `${group.prefix} ${formatNumber(group.activeProviders ?? 0)}`,
+            )
+            .join(" · ")}
+        </p>
+      ) : null}
+      {notes.length > 0 ? (
+        <p
+          className="text-warning"
+          title={notes
+            .map((group) => `${group.prefix}: ${group.systemPromptNote}`)
+            .join("\n")}
+        >
+          {formatNumber(notes.length)}{" "}
+          {notes.length === 1 ? "group rewrites" : "groups rewrite"} the system
+          prompt upstream ({notes.map((group) => group.prefix).join(", ")}).
+        </p>
+      ) : null}
+      <p className="text-[11px] text-muted">
+        Vendor metadata, read at the last sync. Not a routing, admission or
+        pricing input. Snapshot:{" "}
+        <LocalTime value={groups[0]?.syncedAt ?? null} />
+      </p>
+    </div>
+  );
+}
+
 export function ProviderCatalogSections({
   providers,
+  catalogGroups,
 }: {
   providers: ProviderCatalogSummary[];
+  catalogGroups?: Record<string, ProviderCatalogGroupSnapshot[]>;
 }) {
   if (providers.length === 0) return null;
 
@@ -103,6 +161,9 @@ export function ProviderCatalogSections({
               <p className="text-[11px] text-muted">
                 Last sync: <LocalTime value={provider.syncedAt} />
               </p>
+              {catalogGroups?.[provider.slug]?.length ? (
+                <VendorGroups groups={catalogGroups[provider.slug]} />
+              ) : null}
             </Card.Content>
           </Card>
         ))}

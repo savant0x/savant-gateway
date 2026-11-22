@@ -10,6 +10,7 @@ import * as pricingCommand from "../storage/store/pricing-command.ts";
 import * as pricingDecisions from "../storage/store/pricing-decisions.ts";
 import * as providerCapital from "../storage/store/provider-capital.ts";
 import * as providerCatalog from "../storage/store/provider-catalog.ts";
+import * as catalogGroups from "../storage/store/provider-catalog-groups.ts";
 import * as providers from "../storage/store/providers.ts";
 import * as routes from "../storage/store/routes.ts";
 import * as settings from "../storage/store/settings.ts";
@@ -78,6 +79,9 @@ export const getProviderCapital = bound(providerCapital.getProviderCapital);
 
 export const listProviderCatalogSummary = bound(
   providerCatalog.listProviderCatalogSummary,
+);
+export const listProviderCatalogGroups = bound(
+  catalogGroups.listProviderCatalogGroups,
 );
 
 export const listProviders = bound(providers.listProviders);

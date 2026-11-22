@@ -3,6 +3,21 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-22 — Vendor catalog groups (1122-004)
+
+- **FID-2026-1122-004 — medium —** a provider that publishes a document beside its catalog can
+  now name it (`providers.catalog_url`) and have it read on sync. The prefix-group snapshot lands
+  in `provider_catalog_groups`, one row per group per provider, replaced wholesale on every sync so
+  a removed group disappears; a failed read keeps the previous snapshot and adds a sync warning
+  instead of failing a catalog upload that succeeded. `/admin/catalog` shows the group count,
+  pooled publisher slots, the three largest pools, and a warning naming every prefix whose
+  `systemPromptNote` means the vendor rewrites the system prompt. **It is a fact sheet:** nothing
+  joins it to `models`, admission, pricing or the prompt we send — those boundaries are stated on
+  the card and in `docs/providers.md`. Verified by `tests/provider-catalog-groups.test.mjs` (9
+  cases), `tests/provider-catalog-groups-postgres.test.mjs` (4), the sync wiring case in
+  `tests/provider-sync-postgres.test.mjs`, and the registry validator case in
+  `tests/providers.test.mjs`.
+
 ## 2026-11-22 — Provider-reported cost (1122-003)
 
 - **FID-2026-1122-003 — medium —** a provider that reports what a request cost in its

@@ -14,6 +14,7 @@ export type ProviderDraft = {
   keyEnvVar: string;
   defaultHeaders: Record<string, string>;
   balanceUrl: string;
+  catalogUrl: string;
   balance: boolean;
   subscription: boolean;
   pricing: boolean;
@@ -28,6 +29,7 @@ export const EMPTY_PROVIDER: ProviderDraft = {
   keyEnvVar: "",
   defaultHeaders: {},
   balanceUrl: "",
+  catalogUrl: "",
   balance: true,
   subscription: true,
   pricing: true,
@@ -43,6 +45,7 @@ export function draftFromProvider(provider: ProviderSummary): ProviderDraft {
     keyEnvVar: provider.keyEnvVar,
     defaultHeaders: provider.defaultHeaders,
     balanceUrl: provider.balanceUrl ?? "",
+    catalogUrl: provider.catalogUrl ?? "",
     balance: provider.capabilities.balance,
     subscription: provider.capabilities.subscription,
     pricing: provider.capabilities.pricing,
@@ -59,6 +62,7 @@ export function providerPayload(draft: ProviderDraft) {
     keyEnvVar: draft.keyEnvVar,
     defaultHeaders: draft.defaultHeaders,
     balanceUrl: draft.balanceUrl.trim(),
+    catalogUrl: draft.catalogUrl.trim(),
     resaleFreePool: draft.resaleFreePool,
     capabilities: {
       balance: draft.balance,
@@ -114,6 +118,11 @@ export function ProviderForm({
           {field("baseUrl", "Base URL", draft.baseUrl)}
           {field("keyEnvVar", "Key environment variable", draft.keyEnvVar)}
           {field("balanceUrl", "Balance URL (optional)", draft.balanceUrl)}
+          {field(
+            "catalogUrl",
+            "Catalog groups URL (optional)",
+            draft.catalogUrl,
+          )}
           <label className="text-xs text-muted">
             Protocol
             <select

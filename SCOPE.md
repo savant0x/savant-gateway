@@ -51,9 +51,13 @@ changed.
   micro-dollars, stored as `usage_events.provider_cost_micros` beside the price-table figure,
   exposed on the admin usage row and flagged when the two disagree; billing still comes from the
   price table. Verified by `tests/usage-provider-cost.test.mjs` and the settlement suite.
-- [ ] **IA6 — Import group notes and pooled capacity from `/api/catalog` (audit F-8, F-20).**
-  Owned. Next action: sync the `systemPromptNote` and `activeProviders` fields into the provider
-  snapshot and surface them in the admin catalog, after IA5.
+- [x] **IA6 — Import group notes and pooled capacity from `/api/catalog` (audit F-8, F-20).**
+  **Completed** as `dev/fids/FID-2026-1122-004-vendor-catalog-groups.md`. A provider names the
+  document in `catalog_url`; the sync stores a per-prefix snapshot in `provider_catalog_groups`
+  (replaced wholesale, failure keeps the old one and warns); `/admin/catalog` shows group count,
+  pooled slots, largest pools and a prompt-rewrite warning. Verified by
+  `tests/provider-catalog-groups.test.mjs`, `tests/provider-catalog-groups-postgres.test.mjs` and
+  the sync wiring case.
 - [ ] **IA7 — Keyless catalog preview (audit F-1).** Owned. Next action: make `syncProviderModels`
   read the public catalog when no key is configured, without enabling a provider.
 - [x] **IA2 — Correct the stale provider documentation.** **Completed.** `docs/providers.md`

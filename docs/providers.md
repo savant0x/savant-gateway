@@ -214,7 +214,11 @@ public catalog stays white-label, so provider identity never appears there.
    not infer a safe flat rate from a base tier.
 5. **Set capacity deliberately.** The balance and subscription flags cause
    provider checks against `/balance` and `/subscription`; enable them only
-   after confirming those paths and response shapes. The pricing flag is stored
+   after confirming those paths and response shapes. A provider that publishes a
+   document beside its catalog — pools, prefix groups, prompt notes — names it in
+   `catalog_url`, which is read with the provider's own credential on every sync
+   and stored per prefix as vendor metadata; it never joins `models`, admission
+   or pricing. The pricing flag is stored
    in the registry but does not itself import a separate pricing API. Admission
    uses a current upstream RPM or the configured
    `PROVIDER_SHARED_RPM` fallback; absent both, it refuses before dispatch.
@@ -287,6 +291,15 @@ candidate. Follow these paths and the applicable FID before changing contracts.
   billing still comes from the price table, because a figure the upstream controls cannot set our
   margin; the admin overview flags a request whose two figures disagree, which is how a silently
   expensive publisher tier becomes visible after the fact.
+- **Its prefix-group document is a snapshot, not an input.** `catalog_url` names
+  `https://inferhub.dev/api/catalog`, which answers 401 without a key and, with one, returns 27
+  prefix groups carrying `activeProviders` (pooled publishers: `qwencloud-alibaba` 22,466,
+  `mistral-vibe` 17,787) and `systemPromptNote` on five of them (`claude-code` prepends a client
+  header as the first system block). A sync replaces the provider's rows in
+  `provider_catalog_groups` inside the same upload as the catalog; `/admin/catalog` shows the group
+  count, the three largest pools and a warning naming every prefix that rewrites the system prompt.
+  It is displayed as the vendor's own statement: nothing joins it to `models`, and no request path
+  reads it.
 - **The charge is bid-dependent.** Its router selects by provider score, not price,
   unless a per-model bid is set with `PUT /api/budgets/{modelId}` (with
   `floorMinProviders`). The imported figure is the cheapest open ask, not a guarantee:

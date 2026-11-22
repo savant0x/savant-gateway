@@ -469,3 +469,75 @@ test("one failing provider does not stop the others", async () => {
     delete process.env.KEY_P2;
   }
 });
+
+test("a sync stores the vendor's group document and survives its failure", async () => {
+  const db = await fixture();
+
+  process.env.KEY_P1 = "secret";
+
+  try {
+    await addProvider(db, "p1", { keyEnvVar: "KEY_P1" });
+    await db
+      .prepare("UPDATE providers SET catalog_url = ? WHERE slug = 'p1'")
+      .run("https://vendor.example/api/catalog");
+
+    const request = async () =>
+      catalog([{ id: "alpha", name: "Alpha", dollarsPer1M: 1 }]);
+    const group = (prefix, overrides = {}) => ({
+      prefix,
+      slug: prefix,
+      label: prefix,
+      status: "available",
+      enabled: true,
+      activeProviders: 12,
+      systemPromptNote: null,
+      modelCount: 1,
+      ...overrides,
+    });
+
+    await syncProvider(db, "p1", {
+      request,
+      fetchBalance: async () => BALANCE,
+      fetchSubscription: async () => SUBSCRIPTION,
+      fetchCatalogGroups: async () => [group("alpha")],
+    });
+
+    const stored = await db
+      .prepare(
+        "SELECT prefix, active_providers FROM provider_catalog_groups WHERE provider_slug = 'p1'",
+      )
+      .all();
+
+    assert.equal(stored.length, 1);
+    assert.equal(stored[0].prefix, "alpha");
+    assert.equal(Number(stored[0].active_providers), 12);
+
+    const failed = await syncProvider(db, "p1", {
+      request,
+      fetchBalance: async () => BALANCE,
+      fetchSubscription: async () => SUBSCRIPTION,
+      fetchCatalogGroups: async () => {
+        throw new Error("catalog groups answered 502");
+      },
+    });
+
+    assert.ok(
+      failed.warnings.some((warning) => /catalog groups unavailable/.test(warning)),
+      "a failed group read is reported",
+    );
+    assert.equal(failed.imported, 1, "the catalog itself still synced");
+
+    const preserved = await db
+      .prepare("SELECT prefix FROM provider_catalog_groups WHERE provider_slug = 'p1'")
+      .all();
+
+    assert.deepEqual(
+      preserved.map((row) => row.prefix),
+      ["alpha"],
+      "the previous snapshot is kept, not cleared",
+    );
+  } finally {
+    await db.close();
+    delete process.env.KEY_P1;
+  }
+});

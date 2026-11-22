@@ -41,11 +41,18 @@ changed.
   provenance ruling: a cheap group (e.g. `zai/glm-5.3-flash` at 0.00015/0.0005) proves the
   bid/billing path and closes FID-2026-1120-001 step 5.
 - [x] **IA4 — Make the provider operable before funding.** **Completed** as
-  `dev/fids/FID-2026-1122-002-inferhub-operational-integration.md` (`verified`). In scope:
+  `dev/fids/FID-2026-1122-002-inferhub-operational-integration.md` (`fixed`). In scope:
   per-provider `balance_url` with the wallet-shape parser, upstream 402 mapped to our 503,
   in-stream error frames settled as failures, migration serialisation found by the gate, and the
-  admin field. Out of scope and named: `usage.cost` persistence, `/api/catalog` group notes and
-  keyless preview. Verified by `npm run verify` PASS (1203/1203 tests).
+  admin field. Verified by `npm run verify` PASS (1203/1203 tests), commit `a1b51d4`.
+- [ ] **IA5 — Persist the provider-reported cost after settlement (audit F-2).** Owned. Next
+  action: add the settled-cost column and its reconciliation against `cost_micros`, behind the
+  same gate order as IA4. Not a side effect of IA4: it changes what the ledger records as true.
+- [ ] **IA6 — Import group notes and pooled capacity from `/api/catalog` (audit F-8, F-20).**
+  Owned. Next action: sync the `systemPromptNote` and `activeProviders` fields into the provider
+  snapshot and surface them in the admin catalog, after IA5.
+- [ ] **IA7 — Keyless catalog preview (audit F-1).** Owned. Next action: make `syncProviderModels`
+  read the public catalog when no key is configured, without enabling a provider.
 - [x] **IA2 — Correct the stale provider documentation.** **Completed.** `docs/providers.md`
   gains a dated 2026-11-22 re-observation (public `/v1/models`, `/api/catalog` no longer
   404, `usage`/`usage.cost` in the final chunk, `/api/me` balance read, current

@@ -162,13 +162,18 @@ introduced anywhere.
    is correct for a single-process gateway; a second process would need an advisory lock and is
    not claimed.
 
-### Out of scope, named rather than deferred
+### Registered work items (owned, active, not dropped)
 
-- **`usage.cost` persistence (audit F-2)** — needs a schema column plus reconciliation against
-  `cost_micros`; its own FID. This FID does not claim cost reconciliation.
-- **`/api/catalog` group notes and pooled-capacity display (audit F-8, F-20)** — an enrichment
-  and display FID; nothing here imports them.
-- **Keyless catalog preview (audit F-1)** — a sync-gate change with no bearing on serving.
+The audit's remaining findings are work items this session owns. They are registered in
+`SCOPE.md` as IA5-IA7 with their next action and evidence, and none is reclassified, deferred or
+trimmed by this record:
+
+- **IA5 — `usage.cost` persistence (audit F-2)** — a schema column plus reconciliation against
+  `cost_micros`. It changes the billing truth after settlement, so it is the next engineering item
+  and not a side effect of this FID.
+- **IA6 — `/api/catalog` group notes and pooled-capacity display (audit F-8, F-20)** — an
+  enrichment and display item; nothing in this record imports them.
+- **IA7 — Keyless catalog preview (audit F-1)** — a sync-gate change with no bearing on serving.
 
 ### Blocked
 

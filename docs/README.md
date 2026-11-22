@@ -87,6 +87,11 @@ same answer data the page renders.
   507 public rows through the real normalizer, the bid/floors price risk, an
   in-stream failure that settles as `ok`, provider-side screening and retention,
   and the operator decisions that gate the row.
+- [research/inferhub-price-sheet.md](research/inferhub-price-sheet.md) —
+  the cross-upstream price sheet: 265 InferHub offers and 135 model identities
+  side by side with our own cost and Apixo's published rate, the tier-2 risk
+  behind every floor, and what an 18M-token/day free tier costs to fund.
+  Regenerate with `scripts/inferhub-price-sheet.mjs`.
 - [research/aio-source-review.md](research/aio-source-review.md) — static review
   of the ten identity/fingerprint reference repositories, corrections to the
   Gemini research report, and the operator-scoped AIO architecture and build

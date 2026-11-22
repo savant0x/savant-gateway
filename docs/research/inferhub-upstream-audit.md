@@ -240,6 +240,11 @@ similarly advises re-bidding in headers the customer cannot see.
 
 ## 5.5 Price comparison, and what the entry gate costs
 
+The full sheet — 265 InferHub offers and 135 model identities with every
+upstream side by side, plus the tier-2 risk and the free-tier funding cost — is
+[`inferhub-price-sheet.md`](inferhub-price-sheet.md), regenerated from the
+committed data by `scripts/inferhub-price-sheet.mjs`. The summary follows.
+
 Two comparisons, each with both sides dated, because one of them moved.
 
 ### 5.5.1 Against our current cost (Apinex, flat rate)

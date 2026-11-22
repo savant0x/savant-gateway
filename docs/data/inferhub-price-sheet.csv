@@ -1,0 +1,136 @@
+key,family,inferhub_id,publishers,inh_in,inh_out,inh_tier2_in,inh_tier2_out,inh_worst_in,inh_worst_out,official_in,official_out,off_list_pct,ctx,cache,reasoning,apinex_in,apinex_out,apixo_in,apixo_out,blend_inh,blend_inh_tier2,blend_apinex,blend_apixo,cheapest_1in4out,cheapest_value
+claude-fable-5,cc,cc/claude-fable-5,1,4.8,24,5,25,5,25,10,50,48,1000000,yes,,,,0.9,0.9,20.16,21,,0.9,apixo,0.9
+claude-fable-5-1,Claude Fable 5.1,cc/claude-fable-5-1,1,4.8,24,5,25,5,25,10,50,48,1000000,yes,,,,,,20.16,21,,,inferhub,20.16
+claude-fable-5-2,Claude Fable 5.2,cc/claude-fable-5-2,1,3.84,19.2,4,20,4,20,8,40,48,1000000,yes,,1,1,,,16.128,16.8,1,,apinex,1
+claude-haiku-4-5,cc,cc/claude-haiku-4-5,2,0.068,0.34,0.48,2.4,0.5,2.5,1,5,6.8,200000,yes,none/low/medium/high,,,,,0.2856,2.016,,,inferhub,0.2856
+claude-haiku-5-5,Claude Haiku 5.5,cc/claude-haiku-5-5,1,0.0068,0.034,0.048,0.24,0.05,0.25,0.1,0.5,6.8,1000000,yes,none/low/medium/high,,,0.09,0.09,0.02856,0.2016,,0.09,inferhub,0.02856
+claude-opus-4-5,Claude Opus 4.5,cc/claude-opus-4-5,2,0.34,1.7,2.4,12,2.5,12.5,5,25,6.8,200000,yes,none/low/medium/high,,,,,1.428,10.08,,,inferhub,1.428
+claude-opus-4-6,Claude Opus 4.6,cc/claude-opus-4-6,2,0.34,1.7,2.4,12,2.5,12.5,5,25,6.8,1000000,yes,none/low/medium/high,,,0.9,0.9,1.428,10.08,,0.9,apixo,0.9
+claude-opus-4-6-thinking,Claude Opus 4.6,ag/claude-opus-4-6-thinking,1,0.115,0.575,0.255,1.275,2.5,12.5,5,25,2.3,1000000,yes,,,,,,0.483,1.071,,,inferhub,0.483
+claude-opus-4-7,Claude Opus 4.7,cc/claude-opus-4-7,2,0.34,1.7,2.4,12,2.5,12.5,5,25,6.8,1000000,yes,none/low/medium/high,,,0.9,0.9,1.428,10.08,,0.9,apixo,0.9
+claude-opus-4-8,Claude Opus 4.8,cc/claude-opus-4-8,2,0.34,1.7,2.4,12,2.5,12.5,5,25,6.8,1000000,yes,none/low/medium/high,,,0.9,0.9,1.428,10.08,,0.9,apixo,0.9
+claude-opus-5,Claude Opus 5,cc/claude-opus-5,2,0.34,1.7,0.99,4.95,2.5,12.5,5,25,6.8,1000000,yes,none/low/medium/high,,,0.9,0.9,1.428,4.158,,0.9,apixo,0.9
+claude-opus-5-5,Claude Opus 5.5,cc/claude-opus-5-5,3,0.272,1.36,0.52,2.6,2,10,4,20,6.8,1000000,yes,low/medium/high,0.5,0.5,1.6,1.6,1.1424,2.184,0.5,1.6,apinex,0.5
+claude-sonnet-4-6,Claude Sonnet 4.6,ag/claude-sonnet-4-6,3,0.069,0.345,0.138,0.69,1.5,7.5,3,15,2.3,1000000,yes,,,,,,0.2898,0.5796,,,inferhub,0.2898
+claude-sonnet-5,cc,cc/claude-sonnet-5,2,0.136,0.68,0.784,3.92,1,5,2,10,6.8,1000000,yes,none/low/medium/high,,,0.9,0.9,0.5712,3.2928,,0.9,inferhub,0.5712
+claude-sonnet-5-5,Claude Sonnet 5.5,cc/claude-sonnet-5-5,3,0.136,0.68,0.484,2.42,1,5,2,10,6.8,1000000,yes,low/medium/high,0.4,0.4,1.5,1.5,0.5712,2.0328,0.4,1.5,apinex,0.4
+deepseek-3-2,DeepSeek V3.2 (Kiro),kiro/deepseek-3.2,1,0.11452,0.17178,0.14,0.21,0.14,0.21,0.28,0.42,40.9,164000,,,,,,,0.16033,0.196,,,inferhub,0.16033
+deepseek-flash,DeepSeek V4.1 Flash (1017),ds/deepseek-flash,1,0.024,0.096,0.06,0.24,0.15,0.6,0.3,1.2,8,1000000,yes,none/low/high/max,,,,,0.0816,0.204,,,inferhub,0.0816
+deepseek-v4-1-flash,DeepSeek V4.1 Flash,cb/deepseek-v4.1-flash,8,0.00345,0.0138,0.0036,0.0144,0.075,0.3,0.15,0.6,2.3,1000000,yes,,,,0.04,0.04,0.01173,0.01224,,0.04,inferhub,0.01173
+deepseek-v4-1-flash-1017-abliterated,,,0,,,,,,,,,,,,,,,0.3,0.3,,,,0.3,apixo,0.3
+deepseek-v4-1-flash-abliterated,,,0,,,,,,,,,,,,,,,0.3,0.3,,,,0.3,apixo,0.3
+deepseek-v4-1-flash-abliterated-fast,,,0,,,,,,,,,,,,,,,1.4,1.4,,,,1.4,apixo,1.4
+deepseek-v4-1-flash-fast,DeepSeek V4.1 Flash Fast,cmc/deepseek/deepseek-v4.1-flash-fast,1,0.06112,0.22156,0.06384,0.23142,0.08,0.29,0.16,0.58,38.2,1000000,yes,none/low/high/max,,,,,0.18947,0.1979,,,inferhub,0.18947
+deepseek-v4-1-flash-sg,DeepSeek V4.1 Flash SG,cb/deepseek-v4.1-flash-sg,1,0.00345,0.0138,0.0036,0.0144,0.075,0.3,0.15,0.6,2.3,1000000,yes,,,,,,0.01173,0.01224,,,inferhub,0.01173
+deepseek-v4-flash,DeepSeek V4 Flash 0731,alicn/deepseek-v4-flash-0731,5,0.022,0.066,0.0264,0.0792,0.11,0.33,0.22,0.66,10,1000000,yes,,0.05,0.05,0.06,0.06,0.0572,0.06864,0.05,0.06,apinex,0.05
+deepseek-v4-pro,DeepSeek V4 Pro 0813,alicn/deepseek-v4-pro-0813,7,0.066,0.198,0.0792,0.2376,0.33,0.99,0.66,1.98,10,1000000,yes,,,,0.5,0.5,0.1716,0.20592,,0.5,inferhub,0.1716
+deepseek-v4-pro-uncensored,,,0,,,,,,,,,,,,,,,0.5,0.5,,,,0.5,apixo,0.5
+deepseek-v4p1-flash,DeepSeek V4.1 Flash 1017,fw/deepseek-v4p1-flash-1017,2,0.075,0.3,0.15,0.6,0.15,0.6,0.3,1.2,25,1000000,yes,,,,,,0.255,0.51,,,inferhub,0.255
+ember-1,Ember-1,fw/ember-1,1,1.497,7.485,1.5,7.5,1.5,7.5,3,15,49.9,1000000,yes,,,,,,6.2874,6.3,,,inferhub,6.2874
+gemini-3-8-flash-high,Gemini 3.8 Flash,ag/gemini-3.8-flash-high,1,0.01725,0.08625,0.042,0.21,0.375,1.875,0.75,3.75,2.3,1000000,yes,low/medium/high,,,,,0.07245,0.1764,,,inferhub,0.07245
+gemini-4-argon,Gemini 4 Argon,ag/gemini-4-argon,1,0.92,5.52,0.996,5.976,1,6,2,12,46,1000000,yes,low/medium/high,0.5,0.5,0.3,0.3,4.6,4.98,0.5,0.3,apixo,0.3
+gemini-4-argon-contributor,Gemini 4 Argon Contributor,ocg/gemini-4-argon-contributor,1,1.8,9,2,10,2,10,4,20,45,1048576,yes,low/medium/high,,,,,7.56,8.4,,,inferhub,7.56
+gemini-4-hydrogen,Gemini 4 Hydrogen,ag/gemini-4-hydrogen,1,0.15,0.75,0.168,0.84,0.2055,1.0275,1.5,7.5,10,1048576,yes,low/medium/high/xhigh,0.3,0.3,,,0.63,0.7056,0.3,,apinex,0.3
+gemini-4-neon,Gemini 4 Neon,ag/gemini-4-neon,1,0.264,1.32,0.3,1.5,1.5,7.5,3,15,8.8,1048576,yes,low/medium/high/xhigh,,,,,1.1088,1.26,,,inferhub,1.1088
+gemma-4-31b-abliterated,,,0,,,,,,,,,,,,,,,0.24,0.72,,,,0.624,apixo,0.624
+glm-4-6v,GLM-4.6V (vision),zai/glm-4.6v,1,0.0003,0.0009,0.03,0.09,0.15,0.45,0.3,0.9,0.1,200000,yes,,,,,,0.00078,0.078,,,inferhub,0.00078
+glm-5,GLM-5 (Kiro),kiro/glm-5,1,0.499,1.5968,0.5,1.6,0.5,1.6,1,3.2,49.9,200000,,,,,,,1.37724,1.38,,,inferhub,1.37724
+glm-5-1,GLM 5.1,cbcn/glm-5.1,1,0.2226,0.6996,0.266,0.836,0.7,2.2,1.4,4.4,15.9,200000,yes,,,,,,0.6042,0.722,,,inferhub,0.6042
+glm-5-2,GLM 5.2,cb/glm-5.2,5,0.0336,0.1056,0.035,0.11,0.7,2.2,1.4,4.4,2.4,1000000,yes,high/max,,,0.2,0.2,0.0912,0.095,,0.2,inferhub,0.0912
+glm-5-3,GLM 5.3,zai/glm-5.3,7,0.0014,0.0044,0.0322,0.1012,0.7,2.2,1.4,4.4,0.1,1000000,yes,low/high/max,0.15,0.15,0.2,0.2,0.0038,0.0874,0.15,0.2,inferhub,0.0038
+glm-5-3-abliterated,,,0,,,,,,,,,,,,,,,1.4,1.4,,,,1.4,apixo,1.4
+glm-5-3-flash,GLM 5.3 Flash,zai/glm-5.3-flash,5,0.00015,0.0005,0.012,0.04,0.075,0.25,0.15,0.5,0.1,1000000,yes,low/high/max,0.05,0.05,0.1,0.1,0.00043,0.0344,0.05,0.1,inferhub,0.00043
+glm-5-3-flash-abliterated,,,0,,,,,,,,,,,,,,,0.336,0.336,,,,0.336,apixo,0.336
+glm-5-3-flash-uncensored,,,0,,,,,,,,,,,,,,,0.1,0.1,,,,0.1,apixo,0.1
+glm-5-3-flashx,GLM 5.3 FlashX,cmc/z-ai/glm-5.3-flashx,1,0.185,0.625,0.185,0.625,0.185,0.625,0.37,1.25,50,1000000,yes,low/high/max,,,,,0.537,0.537,,,inferhub,0.537
+glm-5-3-uncensored,,,0,,,,,,,,,,,,,,,0.35,0.35,,,,0.35,apixo,0.35
+glm-5p3,GLM-5.3,fw/glm-5p3,1,0.0602,0.1892,0.7,2.2,0.7,2.2,1.4,4.4,4.3,1000000,yes,,,,,,0.1634,1.9,,,inferhub,0.1634
+glm-5p3-flash,GLM-5.3 Flash,fw/glm-5p3-flash,1,0.075,0.25,0.075,0.25,0.075,0.25,0.15,0.5,50,1000000,yes,,,,,,0.215,0.215,,,inferhub,0.215
+gpt-5-3-codex,GPT 5.3 Codex,cb/gpt-5.3-codex,1,0.042,0.336,0.04375,0.35,0.875,7,1.75,14,2.4,272000,yes,low/medium/high,,,,,0.2772,0.28875,,,inferhub,0.2772
+gpt-5-5,,,0,,,,,,,,,,,,,,,0.9,0.9,,,,0.9,apixo,0.9
+gpt-5-6-luna,GPT 5.6 Luna,cx/gpt-5.6-luna,4,0.0036,0.0216,0.0038,0.0228,0.1,0.6,0.2,1.2,1.8,272000,yes,none/low/medium/high/xhigh/max,,,0.9,0.9,0.018,0.019,,0.9,inferhub,0.018
+gpt-5-6-sol,GPT 5.6 Sol,cx/gpt-5.6-sol,2,0.09,0.54,0.095,0.57,2.5,15,5,30,1.8,272000,yes,none/low/medium/high/xhigh/max,,,0.9,0.9,0.45,0.475,,0.9,inferhub,0.45
+gpt-5-6-terra,Terra,cx/gpt-5.6-terra,2,0.036,0.216,0.038,0.228,1,6,2,12,1.8,272000,yes,none/low/medium/high/xhigh/max,,,0.9,0.9,0.18,0.19,,0.9,inferhub,0.18
+gpt-6-1-sol,GPT 6.1 Sol,cx/gpt-6.1-sol,1,0.036,0.18,0.038,0.19,1,5,2,10,1.8,500000,yes,low/medium/high/xhigh/max,,,0.2,0.2,0.1512,0.1596,,0.2,inferhub,0.1512
+gpt-6-1-terra,GPT 6.1 Terra,cx/gpt-6.1-terra,1,0.018,0.09,0.019,0.095,0.5,2.5,1,5,1.8,500000,yes,none/low/medium/high/xhigh/max,0.17,0.17,,,0.0756,0.0798,0.17,,inferhub,0.0756
+gpt-6-2-astra,GPT 6.2 Astra,cx/gpt-6.2-astra,1,0.144,0.72,0.152,0.76,4,20,8,40,1.8,272000,yes,low/medium/high/xhigh/max,0.5,0.5,,,0.6048,0.6384,0.5,,apinex,0.5
+gpt-6-2-sol,GPT 6.2 Sol,cx/gpt-6.2-sol,1,0.036,0.18,0.038,0.19,1,5,2,10,1.8,500000,yes,low/medium/high/xhigh/max,,,,,0.1512,0.1596,,,inferhub,0.1512
+gpt-6-astra,GPT 6 Astra,cx/gpt-6-astra,1,0.18,0.9,0.19,0.95,5,25,10,50,1.8,272000,yes,low/medium/high/xhigh/max,,,0.9,0.9,0.756,0.798,,0.9,inferhub,0.756
+gpt-6-luna,GPT 6 Luna,cx/gpt-6-luna,3,0.0018,0.009,0.002,0.01,0.05,0.25,0.1,0.5,1.8,272000,yes,none/low/medium/high/xhigh/max,0.075,0.075,0.1,0.1,0.00756,0.0084,0.075,0.1,inferhub,0.00756
+gpt-6-sol,GPT 6 Sol,cx/gpt-6-sol,1,0.036,0.18,0.038,0.19,1,5,2,10,1.8,272000,yes,none/low/medium/high/xhigh/max,,,0.3,0.3,0.1512,0.1596,,0.3,inferhub,0.1512
+gpt-image-2-codex,GPT Image 2 (Codex),cx/gpt-image-2-codex,1,0.009,0.018,0.0095,0.019,0.25,0.5,0,1,,,,,,,,,0.0162,0.0171,,,inferhub,0.0162
+grok-4-5,Grok 4.5,grok/grok-4.5,2,0.038,0.114,0.578,1.734,1,3,2,6,1.9,500000,yes,low/medium/high,,,0.2,0.2,0.0988,1.5028,,0.2,inferhub,0.0988
+grok-4-6,Grok 4.6,grok/grok-4.6,3,0.038,0.114,0.578,1.734,1,3,2,6,1.9,500000,yes,,,,0.2,0.2,0.0988,1.5028,,0.2,inferhub,0.0988
+grok-4-7,Grok 4.7,grok/grok-4.7,3,0.038,0.114,0.578,1.734,1,3,2,6,1.9,500000,yes,,0.3,0.3,0.2,0.2,0.0988,1.5028,0.3,0.2,inferhub,0.0988
+grok-4-7-build-fast,Grok 4.7 Fast,grok/grok-4.7-build-fast,1,0.076,0.228,1.156,3.468,2,6,4,12,1.9,500000,yes,low/medium/high/xhigh,,,,,0.1976,3.0056,,,inferhub,0.1976
+hunyuan-image-alpha,Hunyuan Image Alpha,cbcn/hunyuan-image-alpha,1,0.0445,0.089,0.0795,0.159,0.25,0.5,0,1,,,,,,,,,0.0801,0.1431,,,inferhub,0.0801
+hunyuan-image-alpha-edit,Hunyuan Image Alpha Edit,cbcn/hunyuan-image-alpha-edit,1,0.0445,0.089,0.0795,0.159,0.25,0.5,0,1,,,,,,,,,0.0801,0.1431,,,inferhub,0.0801
+hy3,Hy3,cb/hy3,2,0.00336,0.01392,0.0035,0.0145,0.07,0.29,0.14,0.58,2.4,192000,yes,low/high,,,,,0.01181,0.0123,,,inferhub,0.01181
+hy4,Hy4,ocg/hy4,1,0.2919,0.87535,0.3753,1.12545,0.417,1.2505,0.834,2.501,35,1048576,yes,,,,,,0.75866,0.97542,,,inferhub,0.75866
+hy4-preview,Hy4 Preview,cb/hy4-preview,4,0.020016,0.060024,0.02085,0.062525,0.417,1.2505,0.834,2.501,2.4,1000000,yes,,0.3,0.3,,,0.05202,0.05419,0.3,,inferhub,0.05202
+hy4flash-free,Hy4 Flash,cbcn/hy4flash-free,1,0.013674,0.041181,0.01634,0.04921,0.043,0.1295,0.086,0.259,15.9,1000000,yes,,,,,,0.03568,0.04264,,,inferhub,0.03568
+hy4std,Hy4,cbcn/hy4std,1,0.132606,0.397659,0.15846,0.47519,0.417,1.2505,0.834,2.501,15.9,1000000,yes,,,,,,0.34465,0.41184,,,inferhub,0.34465
+k3,Kimi K3,kcai/k3,2,0.579,2.895,1.05,5.25,1.5,7.5,3,15,19.3,262144,yes,low/high/max,,,,,2.4318,4.41,,,inferhub,2.4318
+k3-1-pro,Kimi K3.1 Pro,kcai/k3.1-pro,2,0.386,1.93,0.7,3.5,1,5,2,10,19.3,262144,yes,low/high/max,,,,,1.6212,2.94,,,inferhub,1.6212
+k3-1-pro-highspeed,Kimi K3.1 Pro HighSpeed,kcai/k3.1-pro-highspeed,2,0.772,3.86,1.4,7,2,10,4,20,19.3,262144,yes,low/high/max,,,,,3.2424,5.88,,,inferhub,3.2424
+k3-256k,Kimi K3 (256K),kcai/k3-256k,2,0.579,2.895,1.05,5.25,1.5,7.5,3,15,19.3,262144,yes,low/high/max,,,,,2.4318,4.41,,,inferhub,2.4318
+kimi-for-coding,Kimi For Coding (K2.8 Preview),kcai/kimi-for-coding,2,0.18335,0.772,0.3325,1.4,0.475,2,0.95,4,19.3,1048576,yes,none/low/high/max,,,,,0.65427,1.1865,,,inferhub,0.65427
+kimi-for-coding-highspeed,Kimi For Coding HighSpeed (K2.7 Code),kcai/kimi-for-coding-highspeed,2,0.3667,1.544,0.665,2.8,0.95,4,1.9,8,19.3,262144,yes,,,,,,1.30854,2.373,,,inferhub,1.30854
+kimi-k2-5,Kimi K2.5,cb/kimi-k2.5,2,0.0144,0.072,0.015,0.075,0.3,1.5,0.6,3,2.4,164000,yes,,,,,,0.06048,0.063,,,inferhub,0.06048
+kimi-k2-6,Kimi K2.6,cb/kimi-k2.6,6,0.0228,0.096,0.02375,0.1,0.475,2,0.95,4,2.4,262144,yes,,,,,,0.08136,0.08475,,,inferhub,0.08136
+kimi-k2-7,Kimi K2.7 Code,cb/kimi-k2.7,2,0.0228,0.096,0.02375,0.1,0.475,2,0.95,4,2.4,262144,yes,,,,,,0.08136,0.08475,,,inferhub,0.08136
+kimi-k2-7-code,Kimi K2.7 Code,alicn/kimi-k2.7-code,4,0.114,0.48,0.18905,0.796,0.475,2,0.95,4,12,262144,yes,,,,,,0.4068,0.67461,,,inferhub,0.4068
+kimi-k2-7-code-highspeed,Kimi K2.7 Code HighSpeed,moon/kimi-k2.7-code-highspeed,2,0.57,2.4,0.95,4,0.95,4,1.9,8,30,262144,yes,,,,,,2.034,3.39,,,inferhub,2.034
+kimi-k2-8-preview,Kimi K2.8 Preview,cb/kimi-k2.8-preview,2,0.0228,0.096,0.02375,0.1,0.475,2,0.95,4,2.4,1000000,yes,none/low/high/max,,,,,0.08136,0.08475,,,inferhub,0.08136
+kimi-k3,Kimi K3,cb/kimi-k3,9,0.069,0.345,0.072,0.36,1.5,7.5,3,15,2.3,1000000,yes,low/high/max,,,0.2,0.2,0.2898,0.3024,,0.2,apixo,0.2
+kimi-k3-1-pro,Kimi K3.1 Pro,alicn/kimi-k3.1-pro,7,0.23,1.15,0.24,1.2,1,5,2,10,11.5,1000000,yes,low/high/max,0.3,0.3,0.25,0.25,0.966,1.008,0.3,0.25,apixo,0.25
+kimi-k3-1-pro-highspeed,Kimi K3.1 Pro HighSpeed,alicn/kimi/kimi-k3.1-pro-highspeed,1,0.468,2.34,1.96,9.8,2,10,4,20,11.7,1000000,yes,low/high/max,,,,,1.9656,8.232,,,inferhub,1.9656
+kimi-k3p1-pro,Kimi K3.1 Pro,fw/kimi-k3p1-pro,1,0.316,1.58,1,5,1,5,2,10,15.8,1000000,yes,,,,,,1.3272,4.2,,,inferhub,1.3272
+ling-3-1-flash,Ling 3.1 Flash,cmc/inclusionai/ling-3.1-flash,2,0.028425,0.085275,0.0285,0.0855,0.0375,0.1125,0.075,0.225,37.9,262144,yes,low/medium/high/max,,,,,0.07391,0.0741,,,inferhub,0.07391
+longcat-2-0,LongCat 2.0,cmc/meituan/LongCat-2.0,2,0.1197,0.4788,0.1434,0.5736,0.15,0.6,0.3,1.2,39.9,1048576,,,,,,,0.40698,0.48756,,,inferhub,0.40698
+mimo-v2-5,MiMo V2.5,ocg/mimo-v2.5,1,0.063,0.126,0.07,0.14,0.07,0.14,0.14,0.28,45,1000000,yes,,,,,,0.1134,0.126,,,inferhub,0.1134
+mimo-v2-6-flash,MiMo V2.6 Flash,cmc/xiaomi/mimo-v2.6-flash,4,0.05586,0.11172,0.07,0.14,0.07,0.14,0.14,0.28,39.9,1000000,yes,,,,0.06,0.06,0.10055,0.126,,0.06,apixo,0.06
+mimo-v2-6-pro,MiMo V2.6 Pro,cbcn/mimo-v2.6-pro,4,0.069165,0.13833,0.08265,0.1653,0.2175,0.435,0.435,0.87,15.9,1000000,yes,,,,0.2,0.2,0.1245,0.14877,,0.2,inferhub,0.1245
+minimax-h3-image,MiniMax H3 Image,mmcn/MiniMax-H3-Image,2,0.03,0.06,0.0995,0.199,0.25,0.5,0,1,,,,,,,,,0.054,0.1791,,,inferhub,0.054
+minimax-h3-image-highspeed,MiniMax H3 Image Highspeed,mmcn/MiniMax-H3-Image-Highspeed,2,0.03,0.06,0.0995,0.199,0.25,0.5,0,1,,,,,,,,,0.054,0.1791,,,inferhub,0.054
+minimax-m2-1,MiniMax M2.1 (Kiro),kiro/minimax-m2.1,1,0.1497,0.5988,0.1497,0.5988,0.1497,0.5988,0.3,1.2,49.9,196000,,,,,,,0.50898,0.50898,,,inferhub,0.50898
+minimax-m2-5,MiniMax M2.5,mm/MiniMax-M2.5,3,0.0003,0.0012,0.1437,0.5748,0.15,0.6,0.3,1.2,0.1,204800,yes,,,,,,0.00102,0.48858,,,inferhub,0.00102
+minimax-m2-5-highspeed,MiniMax M2.5 HighSpeed,mm/MiniMax-M2.5-highspeed,2,0.0006,0.0024,0.2874,1.1496,0.3,1.2,0.6,2.4,0.1,204800,yes,,,,,,0.00204,0.97716,,,inferhub,0.00204
+minimax-m2-7,MiniMax M2.7,mm/MiniMax-M2.7,3,0.0003,0.0012,0.1437,0.5748,0.15,0.6,0.3,1.2,0.1,204800,yes,,,,,,0.00102,0.48858,,,inferhub,0.00102
+minimax-m2-7-highspeed,MiniMax M2.7 HighSpeed,mm/MiniMax-M2.7-highspeed,2,0.0006,0.0024,0.2874,1.1496,0.3,1.2,0.6,2.4,0.1,204800,yes,,,,,,0.00204,0.97716,,,inferhub,0.00204
+minimax-m3,MiniMax M3,mm/MiniMax-M3,7,0.0003,0.0012,0.1437,0.5748,0.15,0.6,0.3,1.2,0.1,1000000,yes,,,,,,0.00102,0.48858,,,inferhub,0.00102
+minimax-m3-1-flash,MiniMax M3.1 Flash,mm/MiniMax-M3.1-Flash,5,0.00015,0.0006,0.07185,0.2874,0.075,0.3,0.15,0.6,0.1,1000000,yes,low/medium/high/xhigh/max,,,,,0.00051,0.24429,,,inferhub,0.00051
+minimax-m3-1-flash-preview,MiniMax M3.1 Flash Preview,mm/MiniMax-M3.1-Flash-Preview,2,0.00015,0.0006,0.07185,0.2874,0.075,0.3,0.15,0.6,0.1,1000000,yes,low/medium/high/xhigh/max,,,,,0.00051,0.24429,,,inferhub,0.00051
+minimax-m3p1-flash,MiniMax M3.1 Flash,fw/minimax-m3p1-flash,1,0.075,0.3,0.075,0.3,0.075,0.3,0.15,0.6,50,1000000,yes,,,,,,0.255,0.255,,,inferhub,0.255
+mistral-large-4,Mistral Large 4,mv/mistral-large-4,2,0.07,0.21,0.14,0.42,0.35,1.05,0.7,2.1,10,1000000,yes,low/medium/high,,,,,0.182,0.364,,,inferhub,0.182
+mistral-medium-3-5,Mistral Medium 3.5,mv/mistral-medium-3-5,1,0.0015,0.0075,0.006,0.03,0.75,3.75,1.5,7.5,0.1,262144,yes,none/high,,,,,0.0063,0.0252,,,inferhub,0.0063
+muse-ember,Muse Ember 1.0,cmc/meta/muse-ember,1,0.05,0.25,0.05,0.25,0.05,0.25,0.1,0.5,50,1048576,yes,,,,,,0.21,0.21,,,inferhub,0.21
+muse-ember-1-0,Muse Ember 1.0,mai/muse-ember-1.0,1,0.047,0.235,0.048,0.24,0.05,0.25,0.1,0.5,47,1048576,yes,minimal/low/medium/high/xhigh/max,,,,,0.1974,0.2016,,,inferhub,0.1974
+muse-spark-1-1,Muse Spark 1.1,mai/muse-spark-1.1,1,0.5875,1.9975,0.6,2.04,0.625,2.125,1.25,4.25,47,1048576,yes,minimal/low/medium/high/xhigh,,,,,1.7155,1.752,,,inferhub,1.7155
+muse-spark-1-2,Muse Spark 1.2,cmc/meta/muse-spark-1.2,2,0.49875,1.69575,0.625,2.125,0.625,2.125,1.25,4.25,39.9,1000000,yes,,,,,,1.45635,1.825,,,inferhub,1.45635
+muse-spark-1-2-contributor,Muse Spark 1.2 Contributor,cmc/meta/muse-spark-1.2-contributor,2,0.0399,0.0798,0.05,0.1,0.05,0.1,0.1,0.2,39.9,1000000,yes,,,,,,0.07182,0.09,,,inferhub,0.07182
+muse-spark-1-3,Muse Spark 1.3,cmc/meta/muse-spark-1.3,2,0.49875,1.69575,0.625,2.125,0.625,2.125,1.25,4.25,39.9,1000000,yes,,0.3,0.3,,,1.45635,1.825,0.3,,apinex,0.3
+muse-spark-1-3-contributor,Muse Spark 1.3 Contributor,cmc/meta/muse-spark-1.3-contributor,2,0.038,0.076,0.0399,0.0798,0.05,0.1,0.1,0.2,38,1000000,yes,,,,,,0.0684,0.07182,,,inferhub,0.0684
+muse-spark-open,Muse Spark Open,fw/muse-spark-open,1,0.625,2.125,0.625,2.125,0.625,2.125,1.25,4.25,50,1000000,yes,,,,,,1.825,1.825,,,inferhub,1.825
+muse-wonder-1-0,Muse Wonder 1.0,mai/muse-wonder-1.0,1,1.88,9.4,1.92,9.6,2,10,4,20,47,1048576,yes,minimal/low/medium/high/xhigh/max,,,,,7.896,8.064,,,inferhub,7.896
+qwen-image-3-0-pro,Qwen Image 3.0 Pro,alitp/qwen-image-3.0-pro,1,0.21,0.42,0.247,0.494,0.25,0.5,0,1,,,,,,,,,0.378,0.4446,,,inferhub,0.378
+qwen3-6-flash,Qwen3.6 Flash,alitp/qwen3.6-flash,1,0.122,0.732,0.1235,0.741,0.125,0.75,0.25,1.5,48.8,1000000,,,,,,,0.61,0.6175,,,inferhub,0.61
+qwen3-7-max,Qwen3.7 Max,ocg/qwen3.7-max,3,1.08,4.32,1.2,4.8,1.2,4.8,2.4,9.6,45,1000000,,,,,,,3.672,4.08,,,inferhub,3.672
+qwen3-7-plus,Qwen3.7 Plus,ocg/qwen3.7-plus,3,0.42,1.68,0.4788,1.9152,0.6,2.4,1.2,4.8,35,1000000,,,,,,,1.428,1.62792,,,inferhub,1.428
+qwen3-8-2-4t-a95b,Qwen3.8 2.4T-A95B,ali/qwen3.8-2.4t-a95b,1,0.384,1.152,0.5,1.5,1,3,2,6,19.2,1000000,yes,,,,,,0.9984,1.3,,,inferhub,0.9984
+qwen3-8-27b,Qwen3.8 27B,ali/qwen3.8-27b,1,0.249,1.494,0.2495,1.497,0.25,1.5,0.5,3,49.8,1000000,yes,,,,,,1.245,1.2475,,,inferhub,1.245
+qwen3-8-flash,Qwen3.8 Flash,alicn/qwen3.8-flash,5,0.01725,0.05405,0.018,0.0564,0.075,0.235,0.15,0.47,11.5,1000000,yes,,,,,,0.04669,0.04872,,,inferhub,0.04669
+qwen3-8-max,Qwen 3.8 Max,alicn/qwen3.8-max,6,0.224,0.672,0.24,0.72,1,3,2,6,11.2,1000000,yes,,,,,,0.5824,0.624,,,inferhub,0.5824
+qwen3-8-omni-flash,Qwen3.8 Omni Flash,alicn/qwen3.8-omni-flash,2,0.01725,0.05405,0.018,0.0564,0.075,0.235,0.15,0.47,11.5,1000000,yes,,,,,,0.04669,0.04872,,,inferhub,0.04669
+qwen3-abliterated,,,0,,,,,,,,,,,,,,,0.4896,2.3664,,,,1.99104,apixo,1.99104
+qwen3-coder-next,Qwen3 Coder Next (Kiro),kiro/qwen3-coder-next,1,0.1497,0.7485,0.1497,0.7485,0.1497,0.7485,0.3,1.5,49.9,256000,,,,,,,0.62874,0.62874,,,inferhub,0.62874
+qwen3-uncensored,,,0,,,,,,,,,,,,,,,0.4896,2.3664,,,,1.99104,apixo,1.99104
+qwen3p8-max,Qwen3.8 Max,fw/qwen3p8-max,1,1,3,1,3,1,3,2,6,50,1000000,yes,,,,,,2.6,2.6,,,inferhub,2.6
+qwen4-max,Qwen4 Max,ali/qwen4-max,2,0.15,0.45,0.288,0.864,0.75,2.25,1.5,4.5,10,1000000,yes,none/low/high/xhigh,,,,,0.39,0.7488,,,inferhub,0.39
+qwen4-max-preview,Qwen4 Max Preview,alitp/qwen4-max-preview,1,0.492,1.476,0.494,1.482,1,3,2,6,24.6,1000000,yes,none/low/medium/xhigh,,,,,1.2792,1.2844,,,inferhub,1.2792
+space-bunny,Space Bunny,cbcn/space-bunny,2,0.02385,0.0954,0.0285,0.114,0.075,0.3,0.15,0.6,15.9,1000000,yes,low/medium/high/xhigh/max,,,,,0.08109,0.0969,,,inferhub,0.08109
+step-5-preview,Step 5 Preview,cbcn/step-5-preview,2,0.159,0.4293,0.19,0.513,0.5,1.35,1,2.7,15.9,1000000,yes,low/medium/high,,,,,0.37524,0.4484,,,inferhub,0.37524
+wan2-7-image,Wan 2.7 Image,alitp/wan2.7-image,1,0.21,0.42,0.247,0.494,0.25,0.5,0,1,,,,,,,,,0.378,0.4446,,,inferhub,0.378
+wan2-7-image-pro,Wan 2.7 Image Pro,alitp/wan2.7-image-pro,1,0.21,0.42,0.247,0.494,0.25,0.5,0,1,,,,,,,,,0.378,0.4446,,,inferhub,0.378
+zai-glm-5-3,GLM-5.3,mv/zai-glm-5-3,1,0.14,0.44,0.5586,1.7556,0.7,2.2,1.4,4.4,10,1000000,yes,low/high/max,,,,,0.38,1.5162,,,inferhub,0.38
+zai-glm-5-3-flash,GLM-5.3 Flash,mv/zai-glm-5-3-flash,1,0.015,0.05,0.04485,0.1495,0.075,0.25,0.15,0.5,10,1000000,yes,,,,,,0.043,0.12857,,,inferhub,0.043

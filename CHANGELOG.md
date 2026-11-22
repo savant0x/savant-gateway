@@ -38,6 +38,29 @@ distinguish verified behavior from unverified claims.
 - **Verification:** `npm run check`, `npm run quality`, `npm run repository:check`,
   `npm run attribution` and `npm test` (see the session summary for the pasted output).
 
+### Price sheet
+
+- **Two committed sheets —** [docs/data/inferhub-offers.csv](docs/data/inferhub-offers.csv)
+  holds 265 publisher-pinned offers (ask, next tier, worst tier, list discount, context,
+  cache, reasoning); [docs/data/inferhub-price-sheet.csv](docs/data/inferhub-price-sheet.csv)
+  holds 135 model identities with InferHub, our Apinex cost and Apixo side by side plus the
+  winner at a 1-in:4-out blend. Apinex's measured 2026-11-20 cost joins the committed
+  snapshot so both sides of the comparison have a source in the tree, and
+  `scripts/inferhub-price-sheet.mjs` regenerates both from a credential-free capture.
+- **Tier risk quantified —** of 265 offers, 236 have a price ladder and 29 do not, so the
+  cheap figure is provisional on most rows: the next tier is 1.0× on `cb/deepseek-v4.1-flash`
+  and 479× on `mm/MiniMax-M3`. 108 identities exist only on InferHub, all priced below
+  $0.03/1M blended.
+- **Free allowance is provider-scoped, not system-wide —** the 20M weighted-token/day pool is
+  a term of the current upstream's plan and reaches only the 11 rows that plan flags
+  (`models.allow_free`, `lib/providers/catalog.ts:101`, `lib/model-groups.ts:80`). No
+  InferHub row can join the `free` group, and a giveaway on one is a subsidy we buy rather
+  than an allowance we spend. The legitimate intersection is free-pool overflow: $21.60/month
+  on our cheapest paid row versus $0.23/month at InferHub's cheap floor for the same 18M
+  tokens/day, and only for models present on both sides.
+- **Verification:** `npm run check`, `npm run lint`, `npm run quality`,
+  `npm run repository:check`, `npm run attribution`, `npm test`, both sheet builds.
+
 ## 2026-11-22 — FID register reconciled with commits
 
 - **FID-2026-1110-002 step 4 —** already reconciled by `3c4975d`; its pointer to

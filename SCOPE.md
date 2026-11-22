@@ -24,6 +24,13 @@ changed.
   but dearer on 17 of 31 at its next tier. Entry gate: $0 versus Apixo's $50 non-refundable
   fee plus $100 minimum top-up, whose cost basis is Apixo's own retail price. Recorded in
   §5.5 of the audit; `docs/business-model.md`'s InferHub bullet is corrected.
+- [x] **IA1c — Record that the free allocation is provider-scoped.**
+  **Completed.** The 20M weighted-token/day pool is the current upstream's plan term and
+  reaches only its 11 flagged rows (`models.allow_free`); no InferHub row can be free, and
+  the only legitimate intersection is free-pool overflow, which InferHub can serve ~94×
+  cheaper per token than our cheapest paid row. Written into
+  `docs/research/inferhub-price-sheet.md` §4 and the CHANGELOG; the earlier framing that
+  read the allowance as system-wide is withdrawn.
 - [x] **IA2 — Correct the stale provider documentation.** **Completed.** `docs/providers.md`
   gains a dated 2026-11-22 re-observation (public `/v1/models`, `/api/catalog` no longer
   404, `usage`/`usage.cost` in the final chunk, `/api/me` balance read, current

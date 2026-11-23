@@ -118,6 +118,28 @@ function parseCatalogUrl(value: unknown) {
  * must not smuggle a second credential that would be sent to the upstream and
  * could appear in a diagnostics string.
  */
+/**
+ * The rejection message for a key name that is not a name.
+ *
+ * The field takes a variable name, never the secret. An operator holding a key
+ * in the clipboard pastes it where it fits, so the message has to say that the
+ * value is not wrong — only misplaced — and where it belongs instead.
+ */
+export function keyEnvVarError(value: string) {
+  const looksLikeSecret =
+    value.length >= 20 && !ENV_VAR.test(value) && /[a-z-]/.test(value);
+
+  if (looksLikeSecret) {
+    return (
+      "That is the key value itself, not a variable name. This field takes the " +
+      "variable name, for example INFERHUB_API_KEY; put the value in " +
+      ".env.local and restart the runtime."
+    );
+  }
+
+  return "keyEnvVar must be an upper-snake-case environment variable name.";
+}
+
 export function readProviderInput(value: unknown) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return { ok: false, error: "A provider object is required." } as const;
@@ -165,10 +187,7 @@ export function readProviderInput(value: unknown) {
   }
 
   if (!ENV_VAR.test(keyEnvVar)) {
-    return {
-      ok: false,
-      error: "keyEnvVar must be an upper-snake-case environment variable name.",
-    } as const;
+    return { ok: false, error: keyEnvVarError(keyEnvVar) } as const;
   }
 
   const headers = parseDefaultHeaders(input.defaultHeaders);

@@ -44,6 +44,31 @@ test("provider input rejects unsafe slugs, kinds, URLs, and key names", () => {
   }
 });
 
+test("a pasted key is named as a key, not rejected by a rule", () => {
+  const result = readProviderInput({
+    ...VALID,
+    keyEnvVar: "sk-live-8f2b1c9d4e7a6b3f5c0d1e2f3a4b5c6d",
+  });
+
+  assert.equal(result.ok, false);
+  assert.match(result.error, /key value itself/);
+  assert.match(result.error, /\.env\.local/);
+  assert.match(
+    result.error,
+    /INFERHUB_API_KEY/,
+    "the message names the variable shape it wants",
+  );
+
+  const short = readProviderInput({ ...VALID, keyEnvVar: "sk-abc" });
+
+  assert.equal(short.ok, false);
+  assert.match(
+    short.error,
+    /upper-snake-case/,
+    "a short value is still refused by the shape rule",
+  );
+});
+
 test("a vendor document URL is optional, absolute and credential-free", () => {
   const empty = readProviderInput({ ...VALID, catalogUrl: "  " });
 

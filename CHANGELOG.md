@@ -3,6 +3,24 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-22 — Provider key operability and sync on enable (1122-005)
+
+- **FID-2026-1122-005 — medium —** an operator who pasted a key value into the
+  *Key environment variable* field got `400 keyEnvVar must be an
+  upper-snake-case environment variable name.` and concluded, reasonably, that
+  the key would not take. The field takes a variable **name**; nothing said so.
+  The rejection now names the mistake and where the value belongs (`.env.local`
+  plus a restart), the form and the providers table both say where the value
+  lives, and the row reports `this runtime sees the key` instead of a bare
+  `configured`. **Enabling a provider now reads its catalog once in that request**,
+  and so does a save that moves the key variable, base URL, document URL or
+  default headers; an unrelated edit touches no upstream, and a failed read
+  saves the configuration and reports `the catalog could not be read`. Verified
+  live against a funded-agnostic dev runtime — enabling imported 277 InferHub
+  rows with 245 alias and 14 media refusals in the same response — by
+  `tests/provider-enable-sync.test.mjs` (8 cases) and the paste-detection case in
+  `tests/providers.test.mjs`.
+
 ## 2026-11-22 — Vendor catalog groups (1122-004)
 
 - **FID-2026-1122-004 — medium —** a provider that publishes a document beside its catalog can

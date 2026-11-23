@@ -60,6 +60,14 @@ changed.
   the sync wiring case.
 - [ ] **IA7 — Keyless catalog preview (audit F-1).** Owned. Next action: make `syncProviderModels`
   read the public catalog when no key is configured, without enabling a provider.
+- [x] **IA8 — Provider key operability and sync on enable (operator report 2026-11-22).**
+  **Completed** as `dev/fids/FID-2026-1122-005-provider-key-operability.md`. The operator reported
+  that adding the InferHub key "never sticks". Nothing stores a secret by design, but no surface
+  said that, and a pasted key was refused by a rule rather than by name. The message now names the
+  mistake and where the value belongs, both surfaces say where the key lives, the row reports
+  whether this runtime sees it, and a save that makes a provider able to serve reads its catalog
+  once in that request. Verified live (enable imported 277 rows in the enable response) and by
+  `tests/provider-enable-sync.test.mjs`.
 - [x] **IA2 — Correct the stale provider documentation.** **Completed.** `docs/providers.md`
   gains a dated 2026-11-22 re-observation (public `/v1/models`, `/api/catalog` no longer
   404, `usage`/`usage.cost` in the final chunk, `/api/me` balance read, current

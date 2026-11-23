@@ -1,6 +1,10 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
+import { sanitizeError } from "@/lib/http";
+import { syncAfterSave } from "@/lib/providers/enable-sync";
+import { syncProvider } from "@/lib/providers/sync";
 import {
   providerEnableRefusal,
+  providerKeyConfigured,
   readProviderInput,
 } from "@/lib/providers/registry";
 import { readJsonObject, requestBodyError } from "@/lib/request-limits";
@@ -48,7 +52,31 @@ export async function PATCH(request: Request, context: Context) {
 
   if (!provider) return adminError(404, "Provider not found.");
 
-  return Response.json({ ok: true, provider }, { headers: NO_STORE });
+  const configured = providerKeyConfigured(provider.keyEnvVar);
+  const sync = syncAfterSave({ before: existing, after: provider, configured })
+    ? await readCatalogOnce(slug)
+    : {};
+
+  return Response.json({ ok: true, provider, ...sync }, { headers: NO_STORE });
+}
+
+/**
+ * The save that makes a provider able to serve also reads its catalog, so the
+ * operator sees the models that prove the key took. A vendor failure is
+ * reported beside the saved configuration instead of undoing it.
+ */
+async function readCatalogOnce(slug: string) {
+  try {
+    return { sync: await syncProvider(slug) };
+  } catch (error) {
+    return {
+      syncError: sanitizeError(
+        "admin.provider.update-sync",
+        error,
+        "The catalog could not be read; the configuration was saved. Retry with Sync.",
+      ),
+    };
+  }
 }
 
 export async function DELETE(request: Request, context: Context) {

@@ -80,6 +80,17 @@ daily run. Writes are idempotent, but upstream metadata reads can be duplicated.
 A scheduler tick and a manual sync also bypass only the render path's
 five-minute floor, never the due interval or the durable lease.
 
+## The enable-time read
+
+Saving a provider so that it becomes able to serve — enabled, with a key this
+runtime can see — reads that provider's catalog once inside the admin request,
+and so does a save that moves its key variable, base URL, document URL or
+default headers. This is what makes the first screen after enabling show models
+rather than a zero that reads as a broken key. It is not a scheduler: it runs
+only for an authenticated admin save, it does not advance the due clock for
+anything else, and a failure leaves the configuration saved and says so. The
+next cron tick follows the normal due rule.
+
 ## Generic scheduler
 
 Use the scheduler's secret store; never put the value on a command line where

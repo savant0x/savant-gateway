@@ -89,11 +89,15 @@ export function AdminProvidersPanel({
 
   function toggle(provider: ProviderSummary) {
     return run(`toggle:${provider.slug}`, async () => {
-      await send(`/api/admin/providers/${provider.slug}`, "PATCH", {
-        enabled: !provider.enabled,
-      });
+      const result = await send(
+        `/api/admin/providers/${provider.slug}`,
+        "PATCH",
+        {
+          enabled: !provider.enabled,
+        },
+      );
 
-      return `${provider.label} ${provider.enabled ? "disabled" : "enabled"}.`;
+      return `${provider.label} ${provider.enabled ? "disabled" : "enabled"}.${syncNote(result)}`;
     });
   }
 
@@ -115,23 +119,39 @@ export function AdminProvidersPanel({
 
   function submit() {
     return run("save", async () => {
-      if (editing) {
-        await send(
-          `/api/admin/providers/${editing}`,
-          "PATCH",
-          providerPayload(draft),
-        );
-      } else {
-        await send("/api/admin/providers", "POST", providerPayload(draft));
-      }
+      const result = editing
+        ? await send(
+            `/api/admin/providers/${editing}`,
+            "PATCH",
+            providerPayload(draft),
+          )
+        : await send("/api/admin/providers", "POST", providerPayload(draft));
 
       const saved = editing ? "updated" : "created";
 
       setDraft(EMPTY_PROVIDER);
       setEditing(null);
 
-      return `Provider ${saved}.`;
+      return `Provider ${saved}.${syncNote(result)}`;
     });
+  }
+
+  /**
+   * The save may have read the catalog on its own (a provider that can now
+   * serve). Saying so is the difference between "the key took" and a zero the
+   * operator reads as a broken key.
+   */
+  function syncNote(result: Record<string, unknown> | null) {
+    const error =
+      typeof result?.syncError === "string" ? result.syncError : null;
+
+    if (error) return ` Catalog not read: ${error}`;
+
+    const sync = result?.sync as Record<string, unknown> | undefined;
+
+    if (!sync) return "";
+
+    return ` Imported ${formatNumber(Number(sync.imported ?? 0))} models.`;
   }
 
   function edit(provider: ProviderSummary) {
@@ -163,8 +183,10 @@ export function AdminProvidersPanel({
         <Card.Header>
           <Card.Title>Upstream providers</Card.Title>
           <Card.Description>
-            Each provider names the environment variable that holds its key.
-            Secrets are never stored here or returned by this page.
+            Each provider names the environment variable that holds its key; the
+            value lives in <span className="mono">.env.local</span> and is never
+            stored here or returned by this page. Enabling a provider reads its
+            catalog once, immediately.
           </Card.Description>
         </Card.Header>
         <Card.Content>
@@ -212,8 +234,8 @@ export function AdminProvidersPanel({
                       <span className="mono text-xs">{provider.keyEnvVar}</span>
                       <p className="mt-1 text-[11px] text-muted">
                         {provider.configured
-                          ? "configured"
-                          : "missing key — add it before enabling"}
+                          ? "this runtime sees the key"
+                          : `missing: set ${provider.keyEnvVar || "its variable"} in .env.local, then restart`}
                       </p>
                     </td>
                     <td>

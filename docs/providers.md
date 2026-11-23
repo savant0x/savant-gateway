@@ -18,12 +18,21 @@ the provider key remains on the server.
    same base URL; the gateway sends both credential headers and picks the wire
    format per model.
 2. **Key** — put `THE_VAR=...` in `.env.local` (never in the form, never in the
-   database) and restart. The row shows `configured` once the variable exists.
+   database) and restart. The row shows `this runtime sees the key` once the
+   variable exists. The form field takes the variable's **name**: pasting the
+   value itself is refused with a message that says so, because the server
+   cannot store it and the browser must never receive it.
 3. **Review before enabling** — the registration form does not expose an
    initial enabled toggle; creating a row defaults to enabled and requires a
    configured key. Enabling can affect automatic sync and route selection. Use
    a disposable fixture to validate a new provider first. **Test** reads the
    catalog and reports the count; it does not import it or test inference.
+   **Enabling reads the catalog once, in the same request**, and the notice
+   reports the imported count; a save that only renames a label does not, so an
+   unrelated edit never costs a vendor round trip. A save that changes the key
+   variable, base URL, document URL or default headers counts as a move and
+   re-reads. If the read fails the configuration is still saved and the message
+   says the catalog could not be read and to retry with **Sync**.
 4. **Sync** — imports the catalog for that provider only. It never touches
    another provider's rows, never overwrites a manual price and never deletes a
    row: a model that vanished upstream is marked delisted.

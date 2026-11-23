@@ -112,11 +112,22 @@ export function ProviderForm({
         </Card.Description>
       </Card.Header>
       <Card.Content className="space-y-4">
+        <p className="text-xs text-muted">
+          The field above takes the variable&apos;s <em>name</em>. The value
+          itself lives in <span className="mono">.env.local</span> as
+          <span className="mono"> {draft.keyEnvVar || "VARIABLE_NAME"}=…</span>;
+          this page never stores or returns it. Adding or changing the value
+          needs a restart of the runtime that reads it.
+        </p>
         <div className="grid gap-3 md:grid-cols-2">
           {!editing ? field("slug", "Slug", draft.slug) : null}
           {field("label", "Label", draft.label)}
           {field("baseUrl", "Base URL", draft.baseUrl)}
-          {field("keyEnvVar", "Key environment variable", draft.keyEnvVar)}
+          {field(
+            "keyEnvVar",
+            "Key environment variable name (not the key)",
+            draft.keyEnvVar,
+          )}
           {field("balanceUrl", "Balance URL (optional)", draft.balanceUrl)}
           {field(
             "catalogUrl",

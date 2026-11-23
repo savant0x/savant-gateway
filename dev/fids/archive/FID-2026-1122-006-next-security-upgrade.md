@@ -68,6 +68,13 @@ version will hit the same block, and the two test suites that need those native
 builds (`test:postgres`, and the sqlite-backed tests) cannot run until the
 scripts are approved.
 
+## Follow-up (same day)
+
+`@next/eslint-plugin-next` was still pinned at 16.4.3 while `next`, `@next/env`
+and `@next/swc-win32-x64-msvc` were 16.4.6 — the one member of the Next family the
+version bump missed. Aligned to 16.4.6 on 2026-11-22; `npm run lint` clean and
+`npm run verify` PASS (12/12 gates, 1240/1240 tests) afterwards.
+
 ## Resolution
 
 - **Closed Date:** 2026-11-22 25:35

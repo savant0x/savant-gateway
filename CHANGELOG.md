@@ -15,6 +15,10 @@ distinguish verified behavior from unverified claims.
   clean install needs `npm install-scripts approve` for `better-sqlite3`,
   `@embedded-postgres/windows-x64` and `unrs-resolver` before the native-backed
   test suites can run.
+- **`@next/eslint-plugin-next` aligned to 16.4.6** the same day: it was the last
+  member of the Next family still at 16.4.3 while `next`, `@next/env` and
+  `@next/swc-win32-x64-msvc` were already 16.4.6. Verified with `npm run lint`
+  (zero warnings) and `npm run verify` (12/12 gates, 1240/1240 tests).
 
 ## 2026-11-22 — Provider key operability and sync on enable (1122-005)
 

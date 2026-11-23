@@ -141,8 +141,29 @@ the gate costs one request per model.
 
 ## Resolution
 
-- **Closed Date:** (filled at closure)
-- **Fix Description:** (filled at closure)
-- **Tests Added:** (filled at closure)
-- **Verification Evidence:** (filled at closure)
-- **Archived:** (filled at closure)
+- **Closed Date:** 2026-11-22
+- **Fix Description:** `setModelEligibilityBulk` in `lib/storage/store/eligibility.ts`
+  dedupes and caps the request, refuses an unknown provider (`provider_not_found`)
+  and an empty list (`empty`), resolves the served ids with one `SELECT … WHERE
+  upstream_slug = ? AND upstream_id IN (…)`, writes one decision row per served id
+  inside a single transaction, calls `reconcileRoutes` once, and returns
+  `{ written, skipped }`. `PATCH /api/admin/providers/{slug}/eligibility` now takes
+  either a single `upstreamId` or an `upstreamIds` list through the same decision
+  validator. `components/admin/eligibility-bulk-actions.tsx` shows the undecided
+  count and offers *All N undecided → chat*, *All M rows → chat* and *Undecided →
+  unsupported*, each confirmed with its count and sent as one request; the per-row
+  buttons stay for the exceptions. The read-only evidence block moved to
+  `components/admin/eligibility-evidence.tsx` so the panel stays under the 400-line
+  ceiling (463 → 380). No schema change; no decision is inferred.
+- **Tests Added:** `tests/model-eligibility-bulk-postgres.test.mjs` (5 cases: a
+  200-model call writes 200 dated operator rows, an unserved id is reported and
+  nothing is written for it, a duplicate id is written once, empty/unknown-provider
+  refusals, a later single decision overrides only its own row, a bulk decision
+  survives a delisting). Suite total 1240 → 1245.
+- **Verification Evidence:** `npm run verify` PASS — 12/12 gates, 1245/1245 tests, 0
+  skipped, 177.8s (`.verify/summary.json`). Live against the running server with a
+  real admin session: empty list `400`, unknown id `200 {written: 0, skipped:
+  ["does-not-exist"]}`, `decision: "maybe"` `400`, catalog reading 281 rows with 1
+  `chat` decision (the operator's single click) and nothing approved by the probe.
+  Implementation commit `f66cc25`.
+- **Archived:** 2026-11-22

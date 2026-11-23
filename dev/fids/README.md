@@ -1,8 +1,8 @@
 # FID register
 
-**Last folder audit:** 2026-11-22 (FID-2026-1122-007 registration). This page
+**Last folder audit:** 2026-11-22 (FID-2026-1122-007 closure). This page
 indexes the working set; each FID owns its own status, evidence and resolution.
-Current counts: 13 active / 21, 187 archived, 196 allocated.
+Current counts: 12 active / 21, 188 archived, 196 allocated.
 
 ## Layout
 
@@ -31,7 +31,7 @@ Current counts: 13 active / 21, 187 archived, 196 allocated.
 | [2026-1120-001](FID-2026-1120-001-inferhub-upstream-onboarding.md) | InferHub upstream onboarding | fixed | Steps 1, 2, 3, 4 and 8 are done (`ed8812a`, `495e8b3`, `b159ba0`): the row is seeded disabled, review-required and resale-restricted. Steps 5–7 stay blocked on funding and a measured figure. |
 | [2026-1122-005](archive/FID-2026-1122-005-provider-key-operability.md) | Provider key operability and sync on enable | closed | Archived at `ce6cad7`: the paste message, the two `.env.local` statements and the enable-time catalog read, with 1240/1240 tests. |
 | [2026-1122-006](archive/FID-2026-1122-006-next-security-upgrade.md) | Next.js security upgrade 16.4.3 → 16.4.6 | closed | `next upgrade --agent=security`; duplicate checks empty, 12/12 gates and 1240/1240 tests in the upgrade worktree. |
-| [2026-1122-007](FID-2026-1122-007-bulk-chat-decisions.md) | Bulk chat decisions for a review-required provider | converged | Steps implemented; gates and closure next. |
+| [2026-1122-007](archive/FID-2026-1122-007-bulk-chat-decisions.md) | Bulk chat decisions for a review-required provider | closed | One request records a decision for the whole catalog; 5 postgres cases, 12/12 gates and 1245/1245 tests. |
 
 ### Closed in the 2026-11-22 provider-key commit
 

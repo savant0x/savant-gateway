@@ -130,3 +130,21 @@ nothing should look purchasable until it is funded.
 IA7 (keyless catalog preview) is the open work item; it gets a FID before code. IA3 remains blocked
 on the deposit and the provenance ruling, and the funded-call evidence cannot be produced without
 it.
+
+## Pass 6 — bulk chat decisions (FID-2026-1122-007, IA9)
+
+1. **Report:** the eligibility type did not arrive with the catalog and there was no way to set it
+   for 281 rows except one press per row. The review panel wrote exactly one decision per click,
+   each with its own reconcile.
+2. **RED/GREEN in the FID before code:** one store function, one route branch, one toolbar, no
+   schema change; the evidence standard (one dated operator row per model) explicitly preserved.
+3. **Implemented:** `setModelEligibilityBulk` (dedupe, cap 1000, existence check, one `SELECT … IN`,
+   one transaction, one `reconcileRoutes`, `{ written, skipped }`), the `upstreamIds` branch on the
+   same PATCH route, and a toolbar that shows the undecided count and confirms with it.
+4. **Gate failures, recorded not hidden:** TS2802 on `Set` iteration twice (fixed by `Array.from`
+   for the request list and by iterating the `SELECT` result for the writes), three prettier
+   warnings, and the 400-line ceiling breached at 463 lines — the evidence block and the toolbar
+   were split into `eligibility-evidence.tsx` and `eligibility-bulk-actions.tsx`, leaving 380 lines.
+5. **Proof:** `npm run verify` PASS, 12/12 gates, 1245/1245 tests, 0 skipped; live with a real admin
+   session the empty list returned 400, an unserved id returned `200 {written: 0, skipped: […]}` and
+   a bad decision returned 400, with nothing approved by the probe.

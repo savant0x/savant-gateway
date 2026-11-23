@@ -168,6 +168,17 @@ cost. Record `chat` only for the exact upstream id you have verified;
 and exact upstream id, survives a refetch and a delisting, and is never inferred
 from a family name, a price or an OpenAI list envelope.
 
+**Approving a whole catalog.** The review panel counts the rows that still have no
+`chat` decision and offers three bulk actions — *All N undecided → chat*, *All M
+rows → chat*, *Undecided → unsupported* — each confirmed with its count. One press
+sends the list to `PATCH /api/admin/providers/{slug}/eligibility` as `upstreamIds`,
+which writes one decision row per model in a single transaction with one route
+republish, and reports `written` plus any id the provider does not serve
+(`skipped`). The evidence standard is unchanged: still one dated, operator-sourced
+row per model, still overridable individually afterwards. Nothing infers a
+decision from the vendor's catalog — the bulk action records the operator's own
+judgement once instead of two hundred times.
+
 For a review-required paid row, activation and publication also require positive
 input and output costs, positive sell prices, and — when the cost is manual — an
 observation inside `PROVIDER_PRICE_MAX_AGE_DAYS`. The same rule is enforced in

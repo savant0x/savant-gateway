@@ -75,6 +75,88 @@ export async function listProviderReviewModels(
 export type SetEligibilityResult =
   "ok" | "provider_not_found" | "model_not_found";
 
+export type BulkEligibilityResult =
+  "provider_not_found" | "empty" | { written: number; skipped: string[] };
+
+/** The largest list one call may carry; the panel never approaches it. */
+export const MAX_BULK_ELIGIBILITY = 1000;
+
+/**
+ * The same decision for many models, written once.
+ *
+ * A review-required provider publishes nothing until each model carries a dated
+ * chat decision, and an imported catalog can be two hundred rows. Recording them
+ * one request at a time is the operator's whole afternoon, so the write is batched
+ * — but the evidence is unchanged: one row per model, the same source and date,
+ * and the republish that follows it happens once.
+ */
+export async function setModelEligibilityBulk(
+  db: PostgresDatabase,
+  input: {
+    providerSlug: string;
+    upstreamIds: string[];
+    decision: EligibilityDecision;
+    source?: string;
+    note?: string;
+  },
+  now = new Date().toISOString(),
+): Promise<BulkEligibilityResult> {
+  const requested = Array.from(
+    new Set(input.upstreamIds.filter(Boolean)),
+  ).slice(0, MAX_BULK_ELIGIBILITY);
+
+  if (requested.length === 0) return "empty";
+
+  const provider = await db
+    .prepare("SELECT 1 FROM providers WHERE slug = ?")
+    .get(input.providerSlug);
+
+  if (!provider) return "provider_not_found";
+
+  const placeholders = requested.map(() => "?").join(", ");
+  const known = await db
+    .prepare(
+      `SELECT upstream_id FROM models
+        WHERE upstream_slug = ? AND upstream_id IN (${placeholders})`,
+    )
+    .all<{ upstream_id: string }>(input.providerSlug, ...requested);
+  const served = new Set(known.map((row) => row.upstream_id));
+  const skipped = requested.filter((id) => !served.has(id));
+
+  if (served.size === 0) return { written: 0, skipped };
+
+  const source = input.source?.trim().slice(0, 80) || "operator";
+  const note = input.note?.trim().slice(0, 500) || null;
+
+  await db.transaction(async () => {
+    const write = db.prepare(
+      `INSERT INTO model_eligibility
+        (provider_slug, upstream_id, decision, source, observed_at, note)
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT (provider_slug, upstream_id) DO UPDATE SET
+         decision = excluded.decision,
+         source = excluded.source,
+         observed_at = excluded.observed_at,
+         note = excluded.note`,
+    );
+
+    for (const row of known) {
+      await write.run(
+        input.providerSlug,
+        row.upstream_id,
+        input.decision,
+        source,
+        now,
+        note,
+      );
+    }
+  })();
+
+  await reconcileRoutes(db);
+
+  return { written: known.length, skipped };
+}
+
 export async function setModelEligibility(
   db: PostgresDatabase,
   input: {

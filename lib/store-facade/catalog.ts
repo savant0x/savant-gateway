@@ -62,6 +62,9 @@ export const listProviderReviewModels = bound(
   eligibility.listProviderReviewModels,
 );
 export const setModelEligibility = bound(eligibility.setModelEligibility);
+export const setModelEligibilityBulk = bound(
+  eligibility.setModelEligibilityBulk,
+);
 
 export const getMarkupBps = bound(settings.getMarkupBps);
 export const saveMarkupBps = bound(settings.saveMarkupBps);

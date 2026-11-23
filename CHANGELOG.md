@@ -3,6 +3,21 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-22 — Bulk chat decisions (1122-007)
+
+- **FID-2026-1122-007 — medium —** a review-required provider publishes nothing
+  until each model carries a dated `chat` decision, and the review panel wrote
+  exactly one per click: an imported 281-row catalog meant 281 requests, each with
+  its own route republish. The panel now counts the undecided rows and offers *All
+  N undecided → chat*, *All M rows → chat* and *Undecided → unsupported*; one press
+  sends the list to the same endpoint as `upstreamIds`, writes one decision row per
+  model in one transaction with one republish, and reports `written` and any id the
+  provider does not serve. The evidence standard is untouched — one dated,
+  operator-sourced row per model — because nothing infers a decision from the
+  vendor's own catalog. Verified by `tests/model-eligibility-bulk-postgres.test.mjs`
+  (5 cases incl. a 200-model call) and live: empty list `400`, unknown id `200`
+  with `written: 0, skipped: [...]`, bad decision `400`.
+
 ## 2026-11-22 — Next.js 16.4.6 (1122-006)
 
 - **Next.js 16.4.3 → 16.4.6**, the version `next upgrade --agent=security`

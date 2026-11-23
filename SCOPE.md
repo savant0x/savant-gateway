@@ -58,6 +58,12 @@ changed.
   pooled slots, largest pools and a prompt-rewrite warning. Verified by
   `tests/provider-catalog-groups.test.mjs`, `tests/provider-catalog-groups-postgres.test.mjs` and
   the sync wiring case.
+- [x] **IA9 — Bulk chat decisions for a review-required provider (operator report 2026-11-22).**
+  **Completed** as `dev/fids/FID-2026-1122-007-bulk-chat-decisions.md`. The review panel wrote one
+  decision per click, so the 281-row InferHub catalog could not realistically be approved. The
+  panel now counts undecided rows and offers bulk actions that write one row per model in a single
+  transaction with one republish, still operator-sourced and individually overridable. Verified by
+  `tests/model-eligibility-bulk-postgres.test.mjs` and live against the running server.
 - [ ] **IA7 — Keyless catalog preview (audit F-1).** Owned. Next action: make `syncProviderModels`
   read the public catalog when no key is configured, without enabling a provider.
 - [x] **IA8 — Provider key operability and sync on enable (operator report 2026-11-22).**

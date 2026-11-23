@@ -10,77 +10,19 @@ import { Button, Card, Chip, Spinner } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { responseError } from "@/components/dashboard/format";
-import { microsToPrice } from "@/lib/pricing";
+import { EligibilityBulkActions } from "@/components/admin/eligibility-bulk-actions";
+import {
+  dollars,
+  EvidenceSummary,
+  usd,
+} from "@/components/admin/eligibility-evidence";
+import { formatNumber, responseError } from "@/components/dashboard/format";
 
 const DECISIONS: Array<{ value: EligibilityDecision; label: string }> = [
   { value: "chat", label: "Chat" },
   { value: "unsupported", label: "Unsupported" },
   { value: "unknown", label: "Unknown" },
 ];
-
-function dollars(micros: number) {
-  return `$${microsToPrice(micros).toFixed(3)}`;
-}
-
-function usd(value: number | null) {
-  if (value === null) return "—";
-
-  return `$${value.toFixed(value > 0 && value < 1 ? 4 : 3)}`;
-}
-
-function EvidenceSummary({ evidence }: { evidence: RouterCheapEvidence }) {
-  const plan = [
-    evidence.reseller.planId === null
-      ? null
-      : `plan ${evidence.reseller.planId}`,
-    evidence.reseller.planVersion === null
-      ? null
-      : `v${evidence.reseller.planVersion}`,
-    evidence.reseller.unit,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-
-  return (
-    <div className="mb-3 grid gap-2 rounded-xl border border-default-200 p-3 text-[11px] text-muted sm:grid-cols-2">
-      <div>
-        <p className="font-medium text-foreground">Reseller plan (read-only)</p>
-        {evidence.reseller.state === "ok" ? (
-          <p>
-            {Object.keys(evidence.reseller.rows).length} rows
-            {plan ? ` · ${plan}` : ""}
-            {" · observed "}
-            <span className="mono">{evidence.reseller.observedAt}</span>
-          </p>
-        ) : (
-          <p>{evidence.reseller.detail ?? "Unavailable."}</p>
-        )}
-      </div>
-      <div>
-        <p className="font-medium text-foreground">
-          Public pricing (read-only)
-        </p>
-        {evidence.public.state === "ok" ? (
-          <p>
-            {Object.keys(evidence.public.rows).length} rows
-            {evidence.public.pricingVersion
-              ? ` · ${evidence.public.pricingVersion}`
-              : ""}
-            {" · observed "}
-            <span className="mono">{evidence.public.observedAt}</span>
-          </p>
-        ) : (
-          <p>{evidence.public.detail ?? "Unavailable."}</p>
-        )}
-      </div>
-      <p className="sm:col-span-2">
-        Reference only. These feeds never set a cost or sell price; the manual
-        cost below remains the only billing basis.
-      </p>
-    </div>
-  );
-}
 
 export function ProviderEligibility({
   slug,
@@ -96,6 +38,7 @@ export function ProviderEligibility({
   const [evidence, setEvidence] = useState<RouterCheapEvidence | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -166,6 +109,72 @@ export function ProviderEligibility({
     }
   }
 
+  /**
+   * One decision for a whole list.
+   *
+   * The count is confirmed before anything is written, and the answer reports
+   * what was written and what the provider does not serve, so a bulk press is as
+   * reportable as a single one.
+   */
+  async function decideMany(
+    label: string,
+    selection: ProviderReviewModel[],
+    decision: EligibilityDecision,
+  ) {
+    if (selection.length === 0) return;
+
+    if (
+      !window.confirm(
+        `Record "${decision}" for ${selection.length} ${selection.length === 1 ? "model" : "models"} (${label})? This is an operator decision and publishes what the prices allow.`,
+      )
+    ) {
+      return;
+    }
+
+    setBusy(`bulk:${decision}`);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/admin/providers/${slug}/eligibility`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          upstreamIds: selection.map((model) => model.upstreamId),
+          decision,
+          source: "operator",
+        }),
+      });
+
+      if (!response.ok) throw new Error(await responseError(response));
+
+      const data = (await response.json()) as {
+        written?: number;
+        skipped?: string[];
+        models?: ProviderReviewModel[];
+      };
+
+      setModels(data.models ?? []);
+      setNotice(
+        `${formatNumber(data.written ?? 0)} recorded as ${decision}` +
+          (data.skipped?.length
+            ? `; ${formatNumber(data.skipped.length)} not served by ${slug}`
+            : "") +
+          ".",
+      );
+      router.refresh();
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : "The decision failed.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const undecided = (models ?? []).filter(
+    (model) => model.decision !== "chat" && model.decision !== "unsupported",
+  );
+
   return (
     <Card>
       <Card.Header>
@@ -189,7 +198,21 @@ export function ProviderEligibility({
             {error}
           </p>
         ) : null}
+        {notice ? (
+          <p className="mb-3 rounded-xl border border-success/30 bg-success/10 px-3 py-2 text-xs text-success">
+            {notice}
+          </p>
+        ) : null}
         {evidence ? <EvidenceSummary evidence={evidence} /> : null}
+        {models && models.length > 0 ? (
+          <EligibilityBulkActions
+            busy={busy}
+            models={models}
+            slug={slug}
+            undecided={undecided}
+            onDecide={decideMany}
+          />
+        ) : null}
         {models === null ? (
           <p className="flex items-center gap-2 text-sm text-muted">
             <Spinner size="sm" /> Loading the provider catalog…

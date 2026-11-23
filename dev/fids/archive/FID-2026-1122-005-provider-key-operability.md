@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1122-005-provider-key-operability.md`
 **ID:** FID-2026-1122-005
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Priority:** high
 **Created:** 2026-11-22 24:40 EST
 **Updated:** 2026-11-22 24:40 EST
@@ -139,13 +139,49 @@ Two defects follow, and one missing automation:
 
 | # | Step | Status |
 | --- | --- | --- |
-| 1 | Paste detection in `readProviderInput` | planned |
-| 2 | `syncAfterSave` helper | planned |
-| 3 | Create and patch routes sync on the rule | planned |
-| 4 | Form and table copy naming `.env.local` | planned |
-| 5 | Notice renders the sync result | planned |
-| 6 | Tests: decision table, both messages, failure path | planned |
-| 7 | Docs, CHANGELOG, SCOPE | planned |
+| 1 | Paste detection in `readProviderInput` | implemented |
+| 2 | `syncAfterSave` helper | implemented |
+| 3 | Create and patch routes sync on the rule | implemented |
+| 4 | Form and table copy naming `.env.local` | implemented |
+| 5 | Notice renders the sync result | implemented |
+| 6 | Tests: decision table, both messages, failure path | implemented |
+| 7 | Docs, CHANGELOG, SCOPE | implemented |
+
+### Verification Receipt
+
+- verified: 2026-11-22T24:55:00Z
+- `npm run verify`: **PASS**, 12/12 gates, 173.7s
+- test: exit 0 — **1240/1240 pass, 0 skipped**
+- test:postgres: exit 0 — 20/20
+- quality: exit 0 (704 files)
+- repository:check: exit 0 (13 active FIDs)
+- build, test:http, test:recovery, test:visual-builds-browser, deployment:receipt: exit 0
+- summary: `.verify/summary.json`
+
+### Implementation Evidence
+
+- [x] **Commit SHA:** `ce6cad7` (`fix(admin): name the key field's purpose and sync on
+  enable`), pushed to `main`; pre-push gates passed.
+- [x] **File:line ranges:** `lib/providers/registry.ts:128-146` (message) and `:190` (call site);
+  `lib/providers/enable-sync.ts:1-52` (decision); `app/api/admin/providers/[slug]/route.ts:57,68-79`;
+  `app/api/admin/providers/route.ts:66,79-97`; `components/admin/provider-form.tsx` (label, hint);
+  `components/admin/providers-panel.tsx:100,135,144-158` (notice), table hint and card copy.
+- [x] **Live verification** (dev runtime, admin session, `.scratch/probe-enable-sync.mjs`):
+  pasted key → `400` naming the mistake; disable → no sync; enable → `200` with
+  `imported: 277` and the 245 alias / 14 media refusals; unreachable base URL → `200`, `ok: true`,
+  `syncError: "The catalog could not be read; the configuration was saved. Retry with Sync."` and the
+  row kept the saved configuration; restoring the address re-read 277.
+- [x] **Reproducibility:** `grep -rn "syncAfterSave" lib app` returns the helper and both call sites;
+  `grep -rn keyEnvVarError lib` returns the message and its one caller.
+
+### Code Verification Evidence
+
+- [x] Files referenced in Affected Components exist and carry the change.
+- [x] Implementation matches the Proposed Solution step by step.
+- [x] Lint (zero warnings), typecheck and tests pass with the pasted output above.
+- [x] Production call-graph evidence: admin `PATCH` → `updateProvider` → `syncAfterSave` →
+  `syncProvider` → `fetchProviderUrl` → catalog import; the notice reads the response's `sync`.
+- [x] FID status reflects the implementation state.
 
 ## Loop 1 — RED / GREEN / AUDIT / ADVERSARIAL
 
@@ -161,10 +197,58 @@ Two defects follow, and one missing automation:
   only for a provider whose key this runtime already holds.
 - **CHANGE DELTA:** 0% — first convergence pass.
 
+## Loop 2 — Independent audit and self-correction
+
+- **RED:** The first `npm run verify` after implementation **FAILED** `repository:check` twice in a
+  row, and both failures were mine: the record had no `**ID:**` metadata line, and
+  `dev/fids/README.md` did not register the FID. A third defect came from reading the live output
+  rather than the code: a failed sync returned `syncError: "Sync failed"`, which tells the operator
+  nothing to do. `sanitizeError` is right to withhold exception text — an upstream can echo the
+  credential — but the fixed message it substitutes has to carry the next step.
+- **GREEN:** Added the ID and filename metadata; registered the FID row with the new counts; both
+  routes now pass "The catalog could not be read; the configuration was saved. Retry with Sync."
+  (create path: "the provider was saved").
+- **AUDIT:** `npm run repository:check` PASS with 13 active FIDs; `npm run verify` PASS, 12/12,
+  1240/1240 with 0 skipped; the live probe reprinted the new message verbatim.
+- **ADVERSARIAL:** "Does the save now hide a broken key?" No: the paste message fires before any
+  write, the enable refusal still names the missing variable, and the row keeps reporting whether
+  this runtime sees the key.
+- **CHANGE DELTA:** ~15% of the record text (two gate failures, one message change, this loop).
+
+## Loop 3 — Final convergence
+
+- **RED:** Residual limits, named: the sync runs inside the admin request, so a very slow vendor
+  delays that response (the same call the **Sync** button already made); the decision helper treats
+  a header set that only re-orders keys as unchanged, which is right for HTTP but means an
+  operator who re-orders headers without changing them gets no read; and a provider enabled while
+  this runtime lacks the key is refused, so the enable-time read can never be the first thing that
+  discovers a missing secret.
+- **GREEN:** No code change; the first is inherent to the operator action and documented in
+  `docs/provider-scheduler.md`, the second is intentional, the third is the existing refusal.
+- **AUDIT:** `docs/providers.md` and `docs/provider-scheduler.md` describe the behavior as built;
+  no document claims a scheduler change.
+- **ADVERSARIAL:** "Can a non-admin trigger an upstream read?" No: `guardAdminApi` runs first in both
+  routes, before any body is read.
+- **CHANGE DELTA:** 0% (documentation only).
+
 ## Resolution
 
-- **Closed Date:** (filled at closure)
-- **Fix Description:** (filled at closure)
-- **Tests Added:** (filled at closure)
-- **Verification Evidence:** (filled at closure)
-- **Archived:** (filled at closure)
+- **Closed Date:** 2026-11-22 25:05
+- **Fix Description:** A pasted key is refused with a message that names the mistake and where the
+  value belongs; the form and the providers table state that the value lives in `.env.local` and
+  that the runtime must be restarted; each row reports whether this runtime sees the key; and a save
+  that makes a provider able to serve reads its catalog once in that request, reporting the imported
+  count, while a failed read keeps the saved configuration and says what to do next.
+- **Tests Added:** Yes — `tests/provider-enable-sync.test.mjs` (8 cases: enable, create, missing key,
+  disabled, unrelated edit, address moves, header order, dropped URL) and the paste-detection case
+  in `tests/providers.test.mjs` (24 tests in that file's suite pass).
+- **Verification Evidence:** `npm run verify` PASS — 12/12 gates, 1240/1240 tests, 0 skipped; plus
+  the live admin probe quoted above (`imported: 277` in the enable response).
+- **Archived:** 2026-11-22 25:10 EST — implementation `ce6cad7`, pushed to `main`.
+
+## Lessons Learned
+The operator said "the key never sticks" and the code said "that field is not a key field". Both
+were accurate, and the product was the thing that failed to say so. Two habits are worth keeping:
+reproduce an operator report against the running server before theorising, and read the response
+the operator actually receives — `syncError: "Sync failed"` passed every gate and still would have
+left him stuck.

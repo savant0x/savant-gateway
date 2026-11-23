@@ -99,7 +99,34 @@ Instruction: "resume."
 Remaining: IA7 (keyless catalog preview); IA3 stays blocked on the deposit and the provenance
 ruling.
 
+## IA8 — the key that "never sticks" (same session)
+
+Instruction: "i loaded the site, for some reason im having an issue adding my key for InferHub —
+when i add the key it never sticks."
+
+1. **Reproduced before theorising.** A probe script against the running dev server, with a real
+   admin session, showed: a pasted key → `400 keyEnvVar must be an upper-snake-case environment
+   variable name.`; enabling with the variable present → `200`; enabling without it → `409`. The
+   code was right; the page never said what the field takes.
+2. **FID first.** `FID-2026-1122-005-provider-key-operability.md` written and converged, then built.
+3. **Build.** The rejection names the mistake and where the value belongs; the form and the table
+   state that the value lives in `.env.local` and needs a restart; each row says whether this
+   runtime sees the key; and `syncAfterSave` reads the catalog once for a save that makes a provider
+   able to serve or moves its address, never for a rename.
+4. **Gates between steps.** `npm run lint` and `npm run typecheck` clean; the first
+   `npm run verify` **FAILED** `repository:check` twice (no `**ID:**` line, FID unregistered), both
+   fixed and recorded in Loop 2. Live probe showed `syncError: "Sync failed"` — useless to the
+   operator — replaced with an actionable sentence. Second verify: PASS, 12/12, 1240/1240.
+5. **Shipped and closed.** `ce6cad7` pushed; record archived with the residual limits (the read runs
+   inside the admin request) written down.
+
+Live result on this machine: enabling InferHub imported **277** models in the enable response, with
+245 alias and 14 media refusals; the row then showed `active`, 277 models, and a fresh `synced_at`.
+It was disabled again afterwards, because a call against an unfunded wallet returns our 503 and
+nothing should look purchasable until it is funded.
+
 ## Next
 
-IA7 is the open item; it gets a FID before code. IA3 remains blocked on the deposit and the
-provenance ruling, and the funded-call evidence cannot be produced without it.
+IA7 (keyless catalog preview) is the open work item; it gets a FID before code. IA3 remains blocked
+on the deposit and the provenance ruling, and the funded-call evidence cannot be produced without
+it.

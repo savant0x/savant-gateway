@@ -20,6 +20,10 @@ distinguish verified behavior from unverified claims.
   rows with 245 alias and 14 media refusals in the same response — by
   `tests/provider-enable-sync.test.mjs` (8 cases) and the paste-detection case in
   `tests/providers.test.mjs`.
+- **FID-2026-1122-005 — medium — closed and archived.** Implementation `ce6cad7`. The record keeps
+  the two `repository:check` failures (missing ID metadata, unregistered FID) and the
+  `syncError: "Sync failed"` the live probe exposed — fixed to say the catalog could not be read and
+  to retry with **Sync**.
 
 ## 2026-11-22 — Vendor catalog groups (1122-004)
 

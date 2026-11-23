@@ -1,8 +1,8 @@
 # FID register
 
-**Last folder audit:** 2026-11-23 (FID-2026-1123-001 registration). This page
+**Last folder audit:** 2026-11-23 (FID-2026-1123-001 closure). This page
 indexes the working set; each FID owns its own status, evidence and resolution.
-Current counts: 13 active / 21, 188 archived, 197 allocated.
+Current counts: 12 active / 21, 189 archived, 197 allocated.
 
 ## Layout
 
@@ -32,7 +32,18 @@ Current counts: 13 active / 21, 188 archived, 197 allocated.
 | [2026-1122-005](archive/FID-2026-1122-005-provider-key-operability.md) | Provider key operability and sync on enable | closed | Archived at `ce6cad7`: the paste message, the two `.env.local` statements and the enable-time catalog read, with 1240/1240 tests. |
 | [2026-1122-006](archive/FID-2026-1122-006-next-security-upgrade.md) | Next.js security upgrade 16.4.3 → 16.4.6 | closed | `next upgrade --agent=security`; duplicate checks empty, 12/12 gates and 1240/1240 tests in the upgrade worktree. |
 | [2026-1122-007](archive/FID-2026-1122-007-bulk-chat-decisions.md) | Bulk chat decisions for a review-required provider | closed | One request records a decision for the whole catalog; 5 postgres cases, 12/12 gates and 1245/1245 tests. |
-| [2026-1123-001](FID-2026-1123-001-content-model-link-precision.md) | Content-to-model linking precision and readability | converged | Measured: 7/14 realistic headlines link nothing, 83/234 alias keys are prefixes (wrong generation), one headline yields up to 10 duplicate cards, 43/507 rows have no alias. Implementation starts with the committed evaluation corpus. |
+| [2026-1123-001](archive/FID-2026-1123-001-content-model-link-precision.md) | Content-to-model linking precision and readability | closed | 21/21 labelled headlines at recall 1.00 and precision 1.00 (was 11/21), one card per underlying model, body evidence for every kind; 1251/1251 tests in 12/12 gates. |
+
+### Closed in the 2026-11-23 content-linking commit
+
+[2026-1123-001](archive/FID-2026-1123-001-content-model-link-precision.md) is `closed`. The
+matcher was literal, unmeasured and wrong in two directions: older generations linked whenever a
+newer one was discussed, and one headline produced up to ten near-identical cards for one model
+sold under several provider prefixes. A committed 21-headline corpus measured 11/21 failures at
+RED and passes 21/21 today; longest-match suppression, a version-continuation guard,
+family-derived alias forms, body evidence for every kind and read-time grouping by
+`canonicalModelKey` did the work. Live render: seven links produced three cards. `npm run verify`
+PASS, 1251/1251 tests.
 
 ### Closed in the 2026-11-22 provider-key commit
 

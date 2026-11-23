@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1123-001-content-model-link-precision.md`
 **ID:** FID-2026-1123-001
 **Severity:** high
-**Status:** converged
+**Status:** fixed
 **Created:** 2026-11-23 19:40
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -216,3 +216,83 @@ exists.
   "Does window matching turn prose into links?" Filler is capped at two tokens and
   a negative corpus row pins it.
 - **CHANGE DELTA:** 0% — first convergence pass.
+
+## Loop 2 — implementation records
+
+**Step 1, corpus first. RED measured, then GREEN.** The fixture and test were
+written before the matcher changed and run against the shipped code:
+
+```text
+11 of 21 labelled cases failed (recall 0.65, precision 0.65)
+```
+
+Each failure named its own mechanism: `GLM-5.3` also linking `glm-5`,
+`GLM-5.7` linking `glm-5`, `Claude 4.6 Opus` and `Sonnet 4.5` linking nothing,
+`HY3` and `DeepSeek Flash` linking nothing, `Kimi K2.5 Thinking` also linking
+`kimi-k2.5`. After the implementation the same fixture passes with **recall 1.00,
+precision 1.00**, and the fixture was not edited to get there.
+
+**One prediction failed and was corrected by the corpus.** The first suppression
+pass reported 20/21: `Claude Opus 4.6 vs GPT-5.5` also linked `gpt-5.5-mini`,
+because a weak `gpt 5 5` phrase from the mini row survived beside the strong
+`gpt 5 5` of the base row. The rule was wrong, not the fixture: a weak phrase is
+dropped when any *other* model proves the same place, strong or weak, and only
+sharing the provider-neutral key saves it. That is the rule now.
+
+**File ceiling.** `lib/content/linking.ts` reached 501 lines against the 400
+ceiling, so the work was split along its seams: alias generation moved to
+`lib/content/model-aliases.ts` (188), the positional scan and both suppression
+rules to `lib/content/link-scan.ts` (146), and `linking.ts` kept the public entry
+(199). `npm run quality` reports PASS over 709 files.
+
+**One deliberate test change.** `tests/content-description-matching.test.mjs`
+asserted that a non-YouTube description never matches. That assertion encoded the
+defect this FID fixes, so it now asserts the opposite: an RSS body links at
+confidence 0.70, is never auto-published, and stops matching when
+`matchBodyText: false`. The change is recorded here rather than made silently.
+
+**Grouping bug found by its own test.** The first `groupLinkedModels` dropped the
+previous representative when the incoming row was unresolved, so a group whose
+first link was gone and whose second resolved lost the gone id. The test for that
+case failed; the fix moves the previous representative into `providers`
+unconditionally.
+
+## Resolution
+
+- **Closed Date:** 2026-11-23
+- **Fix Description:** the matcher is now three files with one job each.
+  `lib/content/model-aliases.ts` derives alias phrases from the catalog row: the
+  last segments of the id and upstream id, the display name, plus family-derived
+  forms (`opus 4 6 thinking`, `claude 4 6 opus`, `claude 4 6` as weak evidence),
+  keeps digit-bearing single tokens (`hy3`, `o3`) and keeps a version-less id
+  whose phrase has two tokens (`deepseek flash`). `lib/content/link-scan.ts`
+  tokenizes the text, matches phrases positionally and applies the three
+  precision rules: longest match at a position wins within a family, a version
+  must not continue into another numeral, and a weak phrase shared by two models
+  at the same place proves neither unless their provider-neutral keys match.
+  `lib/content/linking.ts` orchestrates evidence (title, exact tag, excerpt, body)
+  and confidence. `lib/content/store/match-stored-item.ts` now passes excerpt and
+  body description for every kind, not only YouTube. `lib/content/link-groups.ts`
+  groups links by `canonicalModelKey` at read time, quotes the cheapest provider
+  row, names the others, and keeps a card whose catalog row is gone; the Signal
+  page renders that through `components/content/model-module.tsx`. New operator
+  documentation is [docs/content-matching.md](docs/content-matching.md).
+- **Tests Added:** `tests/content-link-eval.test.mjs` over the committed
+  `tests/fixtures/content-link-eval.json` (21 labelled headlines, exact expected
+  and forbidden key sets), `tests/content-link-groups.test.mjs` (4 cases: provider
+  rows fold into one card quoting the cheapest, another provider is named, a
+  vanished catalog row stays visible, a group with no resolved row still appears),
+  and a rewritten `tests/content-description-matching.test.mjs` body-evidence case.
+  Suite total 1245 → 1251.
+- **Verification Evidence:** `npm run verify` PASS — 12/12 gates, 1251/1251 tests, 0
+  skipped, 180.2s (`.verify/summary.json`). The evaluation corpus is 21/21 with
+  recall 1.00 and precision 1.00, against 11/21 (recall 0.65, precision 0.65) at
+  RED. Live render against the running server and the development database: one
+  piece linking seven catalog rows (four `claude-sonnet-5-5` provider rows and two
+  `deepseek-v4.1-flash` rows) plus one link to a model the catalog no longer
+  carries rendered **three** cards — `claude-sonnet-5.5` with "Same model from 3
+  other providers", `inferhub/cb/deepseek-v4.1-flash` with "Same model from 1 other
+  provider", and `gone/kimi-k2.5` as "Not currently sold here" — where the old read
+  path rendered one card per link. Fixture rows were removed afterwards and the
+  content tables returned to their prior counts (1671 items, 1137 links).
+- **Archived:** 2026-11-23

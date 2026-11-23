@@ -1,8 +1,8 @@
 # FID register
 
-**Last folder audit:** 2026-11-22 (FID-2026-1122-007 closure). This page
+**Last folder audit:** 2026-11-23 (FID-2026-1123-001 registration). This page
 indexes the working set; each FID owns its own status, evidence and resolution.
-Current counts: 12 active / 21, 188 archived, 196 allocated.
+Current counts: 13 active / 21, 188 archived, 197 allocated.
 
 ## Layout
 
@@ -32,6 +32,7 @@ Current counts: 12 active / 21, 188 archived, 196 allocated.
 | [2026-1122-005](archive/FID-2026-1122-005-provider-key-operability.md) | Provider key operability and sync on enable | closed | Archived at `ce6cad7`: the paste message, the two `.env.local` statements and the enable-time catalog read, with 1240/1240 tests. |
 | [2026-1122-006](archive/FID-2026-1122-006-next-security-upgrade.md) | Next.js security upgrade 16.4.3 → 16.4.6 | closed | `next upgrade --agent=security`; duplicate checks empty, 12/12 gates and 1240/1240 tests in the upgrade worktree. |
 | [2026-1122-007](archive/FID-2026-1122-007-bulk-chat-decisions.md) | Bulk chat decisions for a review-required provider | closed | One request records a decision for the whole catalog; 5 postgres cases, 12/12 gates and 1245/1245 tests. |
+| [2026-1123-001](FID-2026-1123-001-content-model-link-precision.md) | Content-to-model linking precision and readability | converged | Measured: 7/14 realistic headlines link nothing, 83/234 alias keys are prefixes (wrong generation), one headline yields up to 10 duplicate cards, 43/507 rows have no alias. Implementation starts with the committed evaluation corpus. |
 
 ### Closed in the 2026-11-22 provider-key commit
 

@@ -1,8 +1,8 @@
 # FID register
 
-**Last folder audit:** 2026-11-23 (FID-2026-1123-001 closure). This page
+**Last folder audit:** 2026-11-23 (FID-2026-1123-002 registration). This page
 indexes the working set; each FID owns its own status, evidence and resolution.
-Current counts: 12 active / 21, 189 archived, 197 allocated.
+Current counts: 13 active / 21, 189 archived, 198 allocated.
 
 ## Layout
 
@@ -33,6 +33,7 @@ Current counts: 12 active / 21, 189 archived, 197 allocated.
 | [2026-1122-006](archive/FID-2026-1122-006-next-security-upgrade.md) | Next.js security upgrade 16.4.3 → 16.4.6 | closed | `next upgrade --agent=security`; duplicate checks empty, 12/12 gates and 1240/1240 tests in the upgrade worktree. |
 | [2026-1122-007](archive/FID-2026-1122-007-bulk-chat-decisions.md) | Bulk chat decisions for a review-required provider | closed | One request records a decision for the whole catalog; 5 postgres cases, 12/12 gates and 1245/1245 tests. |
 | [2026-1123-001](archive/FID-2026-1123-001-content-model-link-precision.md) | Content-to-model linking precision and readability | closed | 21/21 labelled headlines at recall 1.00 and precision 1.00 (was 11/21), one card per underlying model, body evidence for every kind; 1251/1251 tests in 12/12 gates. |
+| [2026-1123-002](FID-2026-1123-002-provider-catalog-preview.md) | Keyless provider catalog preview | converged | Preview reads a catalog with or without a key and reports what an import would do, writing nothing; live on InferHub 531 rows → 272 importable, keyed and keyless. |
 
 ### Closed in the 2026-11-23 content-linking commit
 

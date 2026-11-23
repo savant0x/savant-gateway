@@ -26,7 +26,10 @@ the provider key remains on the server.
    initial enabled toggle; creating a row defaults to enabled and requires a
    configured key. Enabling can affect automatic sync and route selection. Use
    a disposable fixture to validate a new provider first. **Test** reads the
-   catalog and reports the count; it does not import it or test inference.
+   catalog and reports the count; it does not import it or test inference, and it
+   needs the key because proving the credential is its job. **Preview** answers
+   the other question — *what would this add?* — and works with no key at all;
+   see [Preview a catalog without a key](#preview-a-catalog-without-a-key).
    **Enabling reads the catalog once, in the same request**, and the notice
    reports the imported count; a save that only renames a label does not, so an
    unrelated edit never costs a vendor round trip. A save that changes the key
@@ -49,6 +52,27 @@ the provider key remains on the server.
    is created, so nothing can be published, priced or served by accident. The
    default is `1` (`NOT NULL DEFAULT 1` on the column), so an upgrade cannot
    silently delete an existing provider's free rows.
+
+## Preview a catalog without a key
+
+**Preview** on `/admin/providers` reads the provider's catalog and reports what
+an import would do, without importing, enabling, pricing or reading a balance.
+It sends the provider's credential when this runtime has one and omits it when it
+does not, so a provider whose `/models` is public — InferHub answers `200` with
+531 rows unauthenticated on 2026-11-23 — can be evaluated *before* the operator
+buys a key.
+
+The card states which read it was, because they prove different things: *read
+with the key* proves the account answers, *read without a key* proves only that
+the catalog is public. Either way it shows the upstream row count, how many rows
+would import, the free/paid split, the refusals an import would report
+(alias-only ids, non-text output, free-pool rows when resale is not permitted)
+and a cost sample per 1M tokens for the first twelve rows. Nothing is written:
+the preview takes no database handle, `synced_at` does not move and no leasing
+row is created.
+
+A preview row is not a servable model. The import path keeps its hard key gate,
+so an unconfigured provider still publishes nothing and cannot serve a call.
 
 ## What routing does
 

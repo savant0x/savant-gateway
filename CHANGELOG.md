@@ -3,6 +3,23 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-23 — Keyless provider catalog preview (1123-002)
+
+- **FID-2026-1123-002 — medium —** an operator could not see what an upstream
+  would add before paying for it: every catalog read required the key variable,
+  so a provider with a public `/models` still showed nothing. `/admin/providers`
+  now offers **Preview**, which reads the catalog with the credential when one is
+  configured and without it when not, and reports the upstream row count, the
+  importable count, the free/paid split, the refusals an import would report and
+  a per-1M cost sample. It writes nothing: no import, no enable, no `synced_at`,
+  no sync lease, no balance read. The import path keeps its hard key gate, so a
+  preview row is never a servable model. Verified live on the InferHub row —
+  531 upstream rows, 272 importable, 245 alias and 14 media refusals — in a
+  keyed read through the admin API and in a keyless read in a process with no
+  `INFERHUB_API_KEY`, with the database unchanged (465 rows, `synced_at`
+  untouched, zero leases). Documented in
+  [docs/providers.md](docs/providers.md#preview-a-catalog-without-a-key).
+
 ## 2026-11-23 — Content-to-model linking precision (1123-001)
 
 - **FID-2026-1123-001 — high —** linking was literal, unmeasured and produced

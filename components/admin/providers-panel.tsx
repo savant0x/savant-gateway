@@ -14,6 +14,7 @@ import {
   type ProviderDraft,
 } from "@/components/admin/provider-form";
 import { ProviderEligibility } from "@/components/admin/provider-eligibility";
+import { ProviderPreview } from "@/components/admin/provider-preview";
 import { StatusChip } from "@/components/dashboard/chips";
 import { formatNumber, responseError } from "@/components/dashboard/format";
 import { LocalTime } from "@/components/local-time";
@@ -31,6 +32,10 @@ export function AdminProvidersPanel({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [reviewing, setReviewing] = useState<{
+    slug: string;
+    label: string;
+  } | null>(null);
+  const [previewing, setPreviewing] = useState<{
     slug: string;
     label: string;
   } | null>(null);
@@ -262,6 +267,19 @@ export function AdminProvidersPanel({
                           isDisabled={busy !== null}
                           size="sm"
                           variant="secondary"
+                          onPress={() =>
+                            setPreviewing({
+                              slug: provider.slug,
+                              label: provider.label,
+                            })
+                          }
+                        >
+                          Preview
+                        </Button>
+                        <Button
+                          isDisabled={busy !== null || !provider.configured}
+                          size="sm"
+                          variant="secondary"
                           onPress={() => test(provider.slug)}
                         >
                           Test
@@ -328,6 +346,14 @@ export function AdminProvidersPanel({
           label={reviewing.label}
           slug={reviewing.slug}
           onClose={() => setReviewing(null)}
+        />
+      ) : null}
+
+      {previewing ? (
+        <ProviderPreview
+          label={previewing.label}
+          slug={previewing.slug}
+          onClose={() => setPreviewing(null)}
         />
       ) : null}
 

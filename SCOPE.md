@@ -88,8 +88,15 @@ changed.
   panel now counts undecided rows and offers bulk actions that write one row per model in a single
   transaction with one republish, still operator-sourced and individually overridable. Verified by
   `tests/model-eligibility-bulk-postgres.test.mjs` and live against the running server.
-- [ ] **IA7 — Keyless catalog preview (audit F-1).** Owned. Next action: make `syncProviderModels`
-  read the public catalog when no key is configured, without enabling a provider.- [x] **IA8 — Provider key operability and sync on enable (operator report 2026-11-22).**
+- [x] **IA7 — Keyless catalog preview (audit F-1).**
+  **Completed** as `dev/fids/FID-2026-1123-002-provider-catalog-preview.md`. Every
+  catalog read required the provider's key, so a provider whose `/v1/models` is
+  public still showed nothing before purchase. `POST
+  /api/admin/providers/{slug}/preview` now reads the catalog with the credential
+  when it exists and keyless when it does not, reports the row/import/refusal
+  counts from the same builder the importer uses, and writes nothing. Verified
+  live on InferHub (531 rows → 272 importable, keyed through the admin API and
+  keyless in a process without the variable) with the database unchanged.- [x] **IA8 — Provider key operability and sync on enable (operator report 2026-11-22).**
   **Completed** as `dev/fids/FID-2026-1122-005-provider-key-operability.md`. The operator reported
   that adding the InferHub key "never sticks". Nothing stores a secret by design, but no surface
   said that, and a pasted key was refused by a rule rather than by name. The message now names the

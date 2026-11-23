@@ -39,13 +39,28 @@ export function providerHeaders(
   );
 }
 
-export function providerFetch(
+/**
+ * Headers for a read that is allowed to run without a credential. A provider
+ * whose catalog is public can be previewed before the operator buys a key, so
+ * the account headers are omitted when this runtime has no key — the provider's
+ * own headers and the wire version stay. Nothing here reports whether a key
+ * exists beyond that omission, and no value is ever read into a response.
+ */
+export function providerPreviewHeaders(
   provider: ProviderRecord,
+): Record<string, string> {
+  const key = process.env[provider.keyEnvVar]?.trim() || null;
+
+  return authHeaders(provider.kind, key, provider.defaultHeaders);
+}
+
+/** One fetch for both transports: only the header set differs. */
+function providerRequest(
+  provider: ProviderRecord,
+  headers: Record<string, string>,
   path: string,
   init: RequestInit = {},
 ) {
-  const headers = providerHeaders(provider);
-
   if (
     init.headers &&
     !(init.headers instanceof Headers) &&
@@ -63,6 +78,28 @@ export function providerFetch(
     redirect: init.redirect ?? "error",
     signal: init.signal ?? AbortSignal.timeout(20_000),
   });
+}
+
+export function providerFetch(
+  provider: ProviderRecord,
+  path: string,
+  init: RequestInit = {},
+) {
+  return providerRequest(provider, providerHeaders(provider), path, init);
+}
+
+/** The keyless-capable transport; used by the catalog preview only. */
+export function providerPreviewFetch(
+  provider: ProviderRecord,
+  path: string,
+  init: RequestInit = {},
+) {
+  return providerRequest(
+    provider,
+    providerPreviewHeaders(provider),
+    path,
+    init,
+  );
 }
 
 export async function fetchProviderBalance(

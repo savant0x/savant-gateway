@@ -3,6 +3,19 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-22 — Next.js 16.4.6 (1122-006)
+
+- **Next.js 16.4.3 → 16.4.6**, the version `next upgrade --agent=security`
+  resolves for the published advisory, with `experimental.agentUpgrade:
+  "security"` declared in `next.config.mjs` so the policy lives in the tree. No
+  application code changed; `npm run verify` PASS, 12/12 gates, 1240/1240 tests,
+  0 skipped. The duplicate check (branches, commits, `gh pr list`) found no
+  equivalent work. FID-2026-1122-006 records an npm observation the upgrade did
+  not cause and does not fix: this npm gates dependency install scripts, so a
+  clean install needs `npm install-scripts approve` for `better-sqlite3`,
+  `@embedded-postgres/windows-x64` and `unrs-resolver` before the native-backed
+  test suites can run.
+
 ## 2026-11-22 — Provider key operability and sync on enable (1122-005)
 
 - **FID-2026-1122-005 — medium —** an operator who pasted a key value into the

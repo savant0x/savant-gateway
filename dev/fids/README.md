@@ -1,8 +1,8 @@
 # FID register
 
-**Last folder audit:** 2026-11-22 (FID-2026-1122-005 closure). This page
+**Last folder audit:** 2026-11-22 (FID-2026-1122-006 closure). This page
 indexes the working set; each FID owns its own status, evidence and resolution.
-Current counts: 12 active / 21, 186 archived, 195 allocated.
+Current counts: 12 active / 21, 187 archived, 196 allocated.
 
 ## Layout
 
@@ -30,6 +30,7 @@ Current counts: 12 active / 21, 186 archived, 195 allocated.
 | [2026-1110-002](FID-2026-1110-002-identity-calibration-lab.md) | Identity calibration lab and measured certificate | converged | Steps 1–4 are committed (`d66a538`, `b884984`, `1f75c44`; step 4 in `495e8b3`, plus its proxy script under [2026-1122-001](archive/FID-2026-1122-001-commit-calibration-proxy.md)). Step 5, collection, is next and needs an operator-supplied upstream; then the certificate path. |
 | [2026-1120-001](FID-2026-1120-001-inferhub-upstream-onboarding.md) | InferHub upstream onboarding | fixed | Steps 1, 2, 3, 4 and 8 are done (`ed8812a`, `495e8b3`, `b159ba0`): the row is seeded disabled, review-required and resale-restricted. Steps 5–7 stay blocked on funding and a measured figure. |
 | [2026-1122-005](archive/FID-2026-1122-005-provider-key-operability.md) | Provider key operability and sync on enable | closed | Archived at `ce6cad7`: the paste message, the two `.env.local` statements and the enable-time catalog read, with 1240/1240 tests. |
+| [2026-1122-006](archive/FID-2026-1122-006-next-security-upgrade.md) | Next.js security upgrade 16.4.3 → 16.4.6 | closed | `next upgrade --agent=security`; duplicate checks empty, 12/12 gates and 1240/1240 tests in the upgrade worktree. |
 
 ### Closed in the 2026-11-22 provider-key commit
 

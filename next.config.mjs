@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // The upgrade policy this tree was taken through: `next upgrade` follows the
+  // same setting, and the CLI and build nudge read it instead of guessing.
+  experimental: {
+    agentUpgrade: "security",
+  },
   // PGlite is the local development engine. It must load from Node, not from a
   // Turbopack RSC bundle: its loader resolves WASM against `import.meta.url`,
   // and a bundled module URL is not a filesystem path.

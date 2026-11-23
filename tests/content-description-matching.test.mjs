@@ -35,12 +35,23 @@ test("YouTube description matches require review and exclude URLs", () => {
   assert.match(result[0].reason, /Description matches/);
   assert.doesNotMatch(description, /example\.test/);
   assert.doesNotMatch(descriptionEvidence("//example.test/gpt-6-luna", ""), /gpt-6-luna/);
-  assert.equal(suggestModelLinks(
-    { title: "A video", tags: [], kind: "video", sourceKind: "rss", description }, [model],
-  ).length, 0);
+  // FID-2026-1123-001 widened body matching from YouTube to every kind: a
+  // model named in an RSS body is the same evidence as one named in a video
+  // description, and it stays below the auto-publish bar either way.
+  const rss = suggestModelLinks(
+    { title: "A video", tags: [], kind: "video", sourceKind: "rss", description },
+    [model], { autoPublish: true },
+  );
+  assert.equal(rss.length, 1);
+  assert.equal(rss[0].reviewed, false);
+  assert.equal(rss[0].confidence, 0.7);
   assert.equal(suggestModelLinks(
     { title: "A video", tags: [], kind: "video", sourceKind: "youtube", description },
     [model], { matchYouTubeDescriptions: false },
+  ).length, 0);
+  assert.equal(suggestModelLinks(
+    { title: "A video", tags: [], kind: "video", sourceKind: "rss", description },
+    [model], { matchBodyText: false },
   ).length, 0);
 });
 

@@ -3,6 +3,24 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-23 — Content-to-model linking precision (1123-001)
+
+- **FID-2026-1123-001 — high —** linking was literal, unmeasured and produced
+  wrong-generation links and wall-of-cards pages. Measured before the change
+  against the 507-id vendor catalog: 7 of 14 realistic headlines linked nothing,
+  83 of 234 alias keys were a strict prefix of another (so a `GLM-5.3` headline
+  also linked `GLM-5`), one headline produced up to ten near-identical price
+  cards for one model sold under several provider prefixes, and 43 of 507 rows
+  could never link at all. Now: a committed 21-case evaluation corpus
+  (`tests/content-link-eval.test.mjs` + `tests/fixtures/content-link-eval.json`)
+  passes with recall 1.00 and precision 1.00; longest-match suppression and a
+  version-continuation guard remove wrong-generation links; family-derived alias
+  forms, single-token and non-versioned ids, and excerpt/body evidence for every
+  kind raise recall; `groupLinkedModels` renders one card per underlying model
+  quoting the cheapest provider; and a link whose catalog row disappeared now
+  renders as unavailable instead of vanishing. Documented in
+  [docs/content-matching.md](docs/content-matching.md).
+
 ## 2026-11-22 — Bulk chat decisions (1122-007)
 
 - **FID-2026-1122-007 — medium —** a review-required provider publishes nothing

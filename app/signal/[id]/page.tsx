@@ -27,6 +27,7 @@ import {
 import { contentEnabled } from "@/lib/content/policy";
 import { ensureArticleBody } from "@/lib/content/reader";
 import { ensureGithubRepo } from "@/lib/content/repo-reader";
+import { groupLinkedModels } from "@/lib/content/link-groups";
 import { countComments, listComments } from "@/lib/content/store/comments";
 import { listLinksForItem } from "@/lib/content/store/links";
 import { getItem, listRelatedItems } from "@/lib/content/store/items";
@@ -107,13 +108,14 @@ export default async function SignalDetailPage({ params }: PageProps) {
   }
 
   const modelsById = new Map(catalog.models.map((model) => [model.id, model]));
-  const linkedModels = links
-    .map((link) => {
-      const model = modelsById.get(link.modelId);
-
-      return model ? { model, reason: link.reason } : null;
-    })
-    .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+  // One card per underlying model, and a card survives its catalog row
+  // disappearing: the piece did discuss it (FID-2026-1123-001).
+  const linkedModels = groupLinkedModels(links, modelsById).map((group) => ({
+    model: group.model,
+    modelId: group.modelId,
+    reason: group.reason,
+    providers: group.providers,
+  }));
   const isVideo = item.kind === "video";
   const embedUrl = videoEmbedUrl(item.videoId);
 

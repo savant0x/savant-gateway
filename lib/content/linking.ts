@@ -1,14 +1,18 @@
 /**
- * Content-to-model matching (FID-2026-1102-089).
+ * Content-to-model matching (FID-2026-1102-089, FID-2026-1123-001).
  *
- * This is a product-claim boundary, so the matcher is deliberately literal:
- * a model is linked only when its alias appears as a contiguous token sequence
- * in the title, an exact publisher tag or a YouTube description. There is no
- * fuzzy score or family match. `GPT is useful` must not link to every GPT
- * model, and `GPT-4o` must not satisfy an alias for `GPT-4`.
+ * This is a product-claim boundary, so the matcher is deliberate rather than
+ * clever: a model links only when a phrase derived from it appears as a
+ * contiguous token sequence in the title, an exact tag, the excerpt or a bounded
+ * body window. There is no fuzzy score, no family-only match and no embedding.
+ * `GPT is useful` must not link every GPT model, and `GPT-4o` must not satisfy an
+ * alias for `GPT-4`.
  *
  * Tokens rather than substrings are the load-bearing choice: `gpt-6.1-sol`
  * becomes `gpt 6 1 sol`, which matches `GPT 6.1 Sol` but not `gpt-61-sol`.
+ *
+ * Alias generation lives in `model-aliases.ts` and the positional precision rules
+ * in `link-scan.ts`; both are covered by `tests/content-link-eval.test.mjs`.
  */
 
 import type {
@@ -17,105 +21,35 @@ import type {
   LinkSuggestion,
   LinkableModel,
 } from "./types.ts";
+import type { Evidence, Hit } from "./link-scan.ts";
 
+import { matchForms, tokenize } from "./model-aliases.ts";
+import { scanText } from "./link-scan.ts";
 import { normalizeTag } from "./taxonomy.ts";
 
-type Alias = {
-  label: string;
-  tokens: string[];
-  versioned: boolean;
+export { modelAliases } from "./model-aliases.ts";
+
+const EVIDENCE_CONFIDENCE: Record<Evidence, number> = {
+  title: 1,
+  tag: 0.85,
+  excerpt: 0.7,
+  description: 0.7,
 };
 
-const MIN_ALIAS_TOKENS = 2;
+const EVIDENCE_REASON: Record<Evidence, string> = {
+  title: "Title matches",
+  tag: "Tag matches",
+  excerpt: "Excerpt matches",
+  description: "Description matches",
+};
 
-const GENERIC_LAST_SEGMENTS = new Set([
-  "latest",
-  "default",
-  "chat",
-  "instruct",
-  "base",
-]);
-
-function tokenize(value: string): string[] {
-  return value
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/\+/g, " plus ")
-    .replace(/&/g, " and ")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-}
-
-function hasVersion(tokens: string[]): boolean {
-  return tokens.some((token) => /\d/.test(token));
-}
-
-function aliasFrom(value: string, requireVersion = true): Alias | null {
-  const tokens = tokenize(value);
-
-  if (tokens.length < MIN_ALIAS_TOKENS) return null;
-  if (requireVersion && !hasVersion(tokens)) return null;
-  if (tokens.every((token) => !/[a-z]/.test(token))) return null;
-
-  return { label: value.trim(), tokens, versioned: hasVersion(tokens) };
-}
-
-function lastSegment(value: string): string {
-  const parts = value.split("/").filter(Boolean);
-
-  return parts.at(-1) ?? value;
-}
-
-/** Public and operator aliases, deduplicated and precision-filtered. */
-export function modelAliases(
-  model: LinkableModel,
-  extraAliases: string[] = [],
-): Alias[] {
-  const candidates = [
-    ...extraAliases.map((alias) => ({ value: alias, operator: true })),
-    { value: lastSegment(model.id), operator: false },
-    { value: model.name, operator: false },
-    { value: lastSegment(model.upstreamId), operator: false },
-  ];
-  const seen = new Set<string>();
-  const aliases: Alias[] = [];
-
-  for (const candidate of candidates) {
-    const alias = aliasFrom(candidate.value, !candidate.operator);
-
-    if (!alias) continue;
-
-    const key = alias.tokens.join(" ");
-
-    if (seen.has(key) || GENERIC_LAST_SEGMENTS.has(key)) continue;
-
-    seen.add(key);
-    aliases.push(alias);
-  }
-
-  return aliases;
-}
-
-function containsSequence(haystack: string[], needle: string[]): boolean {
-  if (needle.length === 0 || needle.length > haystack.length) return false;
-
-  for (let start = 0; start <= haystack.length - needle.length; start += 1) {
-    let matched = true;
-
-    for (let offset = 0; offset < needle.length; offset += 1) {
-      if (haystack[start + offset] !== needle[offset]) {
-        matched = false;
-        break;
-      }
-    }
-
-    if (matched) return true;
-  }
-
-  return false;
-}
+/** Order in which evidence is preferred when a model matches more than once. */
+const EVIDENCE_RANK: Record<Evidence, number> = {
+  title: 0,
+  tag: 1,
+  excerpt: 2,
+  description: 3,
+};
 
 export function inferRelation(
   kind: ContentKind,
@@ -152,129 +86,122 @@ export type LinkInput = {
   tags: string[];
   kind: ContentKind;
   sourceKind?: string;
+  /** Visible body text; the stored matcher passes it for every kind. */
   description?: string;
+  /** Publisher summary, which is usually the first place a model is named. */
+  excerpt?: string;
 };
 
 export type LinkOptions = {
   aliases?: Record<string, string[]>;
   autoPublish?: boolean;
   matchYouTubeDescriptions?: boolean;
+  /** Off only when the operator wants title and tag matching alone. */
+  matchBodyText?: boolean;
 };
 
-function descriptionMatches(
-  input: LinkInput,
-  models: LinkableModel[],
-  options: LinkOptions,
-): Set<string> {
-  const found = new Set<string>();
-
-  if (
-    input.sourceKind !== "youtube" ||
-    !input.description ||
-    options.matchYouTubeDescriptions === false
-  )
-    return found;
-
-  const aliases = new Map<string, string[][]>();
-
-  for (const model of models) {
-    for (const alias of modelAliases(
-      model,
-      options.aliases?.[model.id] ?? [],
-    )) {
-      const entries = aliases.get(alias.tokens[0]) ?? [];
-
-      entries.push(alias.tokens);
-      aliases.set(alias.tokens[0], entries);
-    }
-  }
-
-  const tokens = tokenize(input.description);
-
-  for (let index = 0; index < tokens.length; index += 1) {
-    let longest = 0;
-    const matches: string[][] = [];
-
-    for (const alias of aliases.get(tokens[index]) ?? []) {
-      if (!alias.every((token, offset) => tokens[index + offset] === token))
-        continue;
-      if (alias.length > longest) {
-        longest = alias.length;
-        matches.length = 0;
-      }
-      if (alias.length === longest) matches.push(alias);
-    }
-
-    for (const match of matches) found.add(match.join(" "));
-  }
-
-  return found;
-}
-
 /**
- * Returns at most one suggestion per model. A title match outranks a tag match;
- * a tag match is exact because tags are normalized at ingest.
+ * Returns at most one suggestion per model.
+ *
+ * Evidence is ranked title, tag, excerpt, description; a title match outranks a
+ * tag match, and a tag match is exact because tags are normalized at ingest.
  */
 export function suggestModelLinks(
   input: LinkInput,
   models: LinkableModel[],
   options: LinkOptions = {},
 ): LinkSuggestion[] {
-  const titleTokens = tokenize(input.title);
-  const descriptionKeys = descriptionMatches(input, models, options);
+  const forms = new Map(
+    models.map((model) => [
+      model.id,
+      matchForms(model, options.aliases?.[model.id] ?? []),
+    ]),
+  );
+  const relation = inferRelation(input.kind, input.title, input.tags);
   const tagKeys = new Set(
     input.tags.map((tag) => tokenize(normalizeTag(tag)).join(" ")),
   );
-  const relation = inferRelation(input.kind, input.title, input.tags);
-  const suggestions = new Map<string, LinkSuggestion>();
+  const bodyAllowed =
+    options.matchBodyText !== false &&
+    !(
+      input.sourceKind === "youtube" &&
+      options.matchYouTubeDescriptions === false
+    );
+
+  const hits: Hit[] = [
+    ...scanText(tokenize(input.title), models, forms, "title"),
+  ];
 
   for (const model of models) {
-    let best: LinkSuggestion | null = null;
-    let bestVersioned = false;
+    const alias = (forms.get(model.id) ?? []).find((entry) =>
+      tagKeys.has(entry.tokens.join(" ")),
+    );
 
-    for (const alias of modelAliases(
+    if (!alias) continue;
+
+    hits.push({
       model,
-      options.aliases?.[model.id] ?? [],
-    )) {
-      const key = alias.tokens.join(" ");
-      const titleMatch = containsSequence(titleTokens, alias.tokens);
-      const tagMatch = tagKeys.has(key);
-      const descriptionMatch = descriptionKeys.has(key);
-
-      if (!titleMatch && !tagMatch && !descriptionMatch) continue;
-
-      const confidence = titleMatch ? 1 : tagMatch ? 0.85 : 0.7;
-      const reason = titleMatch
-        ? `Title matches “${alias.label}”`
-        : tagMatch
-          ? `Tag matches “${alias.label}”`
-          : `Description matches “${alias.label}”`;
-
-      if (
-        !best ||
-        confidence > best.confidence ||
-        (!bestVersioned && alias.versioned && confidence === best.confidence)
-      ) {
-        bestVersioned = alias.versioned;
-        best = {
-          modelId: model.id,
-          relation,
-          confidence,
-          reason,
-          reviewed:
-            (options.autoPublish ?? false) && bestVersioned && confidence > 0.7,
-        };
-      }
-
-      if (titleMatch && alias.versioned) break;
-    }
-
-    if (best) suggestions.set(model.id, best);
+      key: model.id,
+      family: model.family.trim().toLowerCase(),
+      alias,
+      evidence: "tag",
+      start: 0,
+    });
   }
 
-  return Array.from(suggestions.values()).sort(
+  if (bodyAllowed) {
+    hits.push(
+      ...scanText(tokenize(input.excerpt ?? ""), models, forms, "excerpt"),
+      ...scanText(
+        tokenize(input.description ?? ""),
+        models,
+        forms,
+        "description",
+      ),
+    );
+  }
+
+  const best = new Map<string, Hit>();
+
+  for (const hit of hits) {
+    const current = best.get(hit.model.id);
+
+    if (!current || outranks(hit, current)) best.set(hit.model.id, hit);
+  }
+
+  const suggestions: LinkSuggestion[] = [];
+
+  for (const hit of Array.from(best.values())) {
+    suggestions.push({
+      modelId: hit.model.id,
+      relation,
+      confidence: EVIDENCE_CONFIDENCE[hit.evidence],
+      reason: `${EVIDENCE_REASON[hit.evidence]} “${hit.alias.label}”`,
+      reviewed:
+        (options.autoPublish ?? false) &&
+        hit.alias.versioned &&
+        !hit.alias.weak &&
+        hit.evidence === "title",
+    });
+  }
+
+  return suggestions.sort(
     (left, right) =>
       right.confidence - left.confidence ||
       left.modelId.localeCompare(right.modelId),
   );
+}
+
+function outranks(candidate: Hit, current: Hit): boolean {
+  if (candidate.evidence !== current.evidence) {
+    return EVIDENCE_RANK[candidate.evidence] < EVIDENCE_RANK[current.evidence];
+  }
+
+  if (candidate.alias.weak !== current.alias.weak) return !candidate.alias.weak;
+
+  if (candidate.alias.tokens.length !== current.alias.tokens.length) {
+    return candidate.alias.tokens.length > current.alias.tokens.length;
+  }
+
+  return candidate.start < current.start;
 }

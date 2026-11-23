@@ -22,6 +22,7 @@ against, not automatically today's behavior.
 | Handle a support or deletion request | [support-runbook.md](support-runbook.md) |
 | Configure alerts, pause admission and respond to incidents | [operations-runbook.md](operations-runbook.md) |
 | Schedule and verify content source fetching | [content-scheduler.md](content-scheduler.md) |
+| Understand how Signal items link to catalog models | [content-matching.md](content-matching.md) |
 | Schedule and verify provider catalog refresh | [provider-scheduler.md](provider-scheduler.md) |
 | Measure capacity and rehearse load/failure recovery | [load-acceptance.md](load-acceptance.md) |
 | Configure verification and password recovery | [account-email.md](account-email.md) |
@@ -75,6 +76,9 @@ same answer data the page renders.
 - [content-scheduler.md](content-scheduler.md) — authenticated GET/POST content
   heartbeat, supported scheduler options, policy controls and the activation
   receipt, including the Vercel plan limitation.
+- [content-matching.md](content-matching.md) — the content-to-model matcher: alias
+  forms, the three precision rules, evidence confidences, one card per model, and
+  the labelled evaluation corpus that measures it.
 - [provider-scheduler.md](provider-scheduler.md) — authenticated due-only
   provider heartbeat, the committed Hobby daily cron, the manual AIO override,
   response shape, activation receipt and failure semantics.

@@ -85,10 +85,11 @@ export async function matchStoredItem(
         kind: item.kind,
         tags: tags.map((entry) => entry.tag),
         sourceKind: item.source_kind,
-        description:
-          item.source_kind === "youtube"
-            ? descriptionEvidence(item.body_html, item.excerpt)
-            : undefined,
+        // FID-2026-1123-001: the excerpt and a bounded body window are searched
+        // for every kind. A model named in an article body is the same evidence
+        // as one named in a video description, and neither is auto-published.
+        excerpt: item.excerpt,
+        description: descriptionEvidence(item.body_html, item.excerpt),
       },
       models,
       matching.policy,

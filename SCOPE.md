@@ -1,5 +1,29 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-23 (content-to-model linking quality: CL)
+
+Operator instruction: "review and greatly enhance our linking system between content and
+models. It seems very low quality — review it and give me some options." Automation level 3;
+strict; single agent. Measurements against the 507-id vendor catalog and 21 labelled headlines.
+
+- [x] **IA10 — Content-to-model linking precision and readability.**
+  **Completed** as `dev/fids/FID-2026-1123-001-content-model-link-precision.md`. Measured before
+  the change: 7 of 14 realistic headlines linked nothing, 83 of 234 alias keys were a strict token
+  prefix of another (so `GLM-5.3` headlines also linked `GLM-5`), one headline produced up to ten
+  near-identical price cards for one model sold under many provider prefixes, and 43 of 507 rows
+  could never link at all. After: the committed 21-case corpus passes with recall 1.00 and
+  precision 1.00; longest-match suppression, the version-continuation guard, family-derived alias
+  forms, excerpt/body evidence for every kind, one card per underlying model, and a card that
+  survives its catalog row disappearing. Verified by
+  `tests/content-link-eval.test.mjs`, `tests/content-link-groups.test.mjs`, the existing literal
+  precision suites and `npm run verify`.
+- [ ] **IA11 — Near-miss suggestion tier for linking (CL1).** Owned. Next action: after IA10 lands,
+  generate family+version candidates that are never public, rank them in the admin review queue,
+  and record every promotion as a dated operator decision.
+- [ ] **IA12 — Measure linking quality against a real corpus (CL2).** Owned. Next action: extend
+  `tests/fixtures/content-link-eval.json` with headlines from a running content source; the local
+  database currently holds zero items, so the corpus is the only measurement.
+
 ## Session — 2026-11-22 (InferHub upstream audit: IA)
 
 Operator instruction: "read single agent echo 0-end, ground yourself. Then i want you to
@@ -65,8 +89,7 @@ changed.
   transaction with one republish, still operator-sourced and individually overridable. Verified by
   `tests/model-eligibility-bulk-postgres.test.mjs` and live against the running server.
 - [ ] **IA7 — Keyless catalog preview (audit F-1).** Owned. Next action: make `syncProviderModels`
-  read the public catalog when no key is configured, without enabling a provider.
-- [x] **IA8 — Provider key operability and sync on enable (operator report 2026-11-22).**
+  read the public catalog when no key is configured, without enabling a provider.- [x] **IA8 — Provider key operability and sync on enable (operator report 2026-11-22).**
   **Completed** as `dev/fids/FID-2026-1122-005-provider-key-operability.md`. The operator reported
   that adding the InferHub key "never sticks". Nothing stores a secret by design, but no surface
   said that, and a pasted key was refused by a rule rather than by name. The message now names the

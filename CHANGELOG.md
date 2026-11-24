@@ -3,6 +3,49 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-24 — Upstream provider deletion, and console clarity (1124-001)
+
+- **FID-2026-1124-001 — medium —** a read-only pass over all 17 `/admin` routes
+  fixed seven presentation and payload faults, none of which touched a price,
+  markup, guard or settlement rule.
+  - **Removing an upstream was impossible from the panel.** The Delete button
+    rendered `null` for the default provider and read as "this provider cannot
+    be removed" for no stated reason; `deleteProvider` itself was already correct
+    (models, eligibility and catalog-group rows cascade, then routes reconcile).
+    Every row now shows Delete, the default provider's is disabled with a
+    sentence saying it owns the published catalog identity, and the action cell
+    moved to `components/admin/provider-actions.tsx`.
+  - **A rail entry that answered 404.** `/admin/showcase` left `notFound()` when
+    `VISUAL_BUILDS_ENABLED` was off while the rail always listed it. The rail now
+    omits the item and the page explains the switch, how to turn it on and what
+    it would show.
+  - **The overview tiles now name what they count.** `Catalog 116`
+    (`PUBLIC_MODEL_SCOPE`) sat above `133 disabled · 470 rows total`; it reads
+    **Published models** with `133 disabled · 470 rows total`. **Available
+    credit** carried an *input margin* detail; it carries granted/held. **Total
+    revenue** matches `/admin/analytics`, and the margin detail lives on the
+    pricing snapshot card that already shows margin.
+  - **The admission fact was invisible.** A review-required provider imports,
+    prices and enables its catalog while serving only rows recorded `chat`. That
+    count now exists in the provider catalog summary
+    (`needsChatDecisionCount`), appears beside the model count on
+    `/admin/providers` and in the overview sync card: InferHub `273 · 5 need a
+    chat decision`, router.cheap `83 · 83`. It is information, not a gate:
+    enabling is configuration, serving is the admission rule.
+  - **`/admin/pricing` shipped a megabyte.** 1,104,372 B of HTML, 422 `<tr>`, and
+    the same 470-row array handed to three client components. Both tables now
+    page (20 and 15) and the client receives only `PricingModelRow`
+    (id, name, family, access, group, catalog flag, providers, cost source and
+    timestamps, cost/sell/margin) via `toPricingRows`; 347,304 B.
+  - **One home, one name for money.** The realized-money chart stays on
+    `/admin/analytics` alone and `/admin/pricing` links to it; the 30-day total is
+    **Total revenue** on `/admin` and `/admin/analytics`. `/admin/economics`
+    keeps **Customer contribution** because it is a different quantity (settled
+    credit spend and plan invoices, excluding upstream cost) with its own
+    definition.
+  Verified with three new disposable-database cases and a re-run page probe; 12/12
+  gates, 1267/1267 tests, 0 skipped.
+
 ## 2026-11-23 — Provider-scoped model switches (1123-003)
 
 - **FID-2026-1123-003 — medium —** switching a provider's catalog meant one

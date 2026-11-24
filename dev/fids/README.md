@@ -2,7 +2,7 @@
 
 **Last folder audit:** 2026-11-24 (admin surface review). This page
 indexes the working set; each FID owns its own status, evidence and resolution.
-Current counts: 13 active / 22, 191 archived, 199 allocated.
+Current counts: 12 active / 22, 192 archived, 199 allocated.
 
 ## Layout
 
@@ -30,7 +30,7 @@ Current counts: 13 active / 22, 191 archived, 199 allocated.
 | [2026-1110-002](FID-2026-1110-002-identity-calibration-lab.md) | Identity calibration lab and measured certificate | converged | Steps 1–4 are committed (`d66a538`, `b884984`, `1f75c44`; step 4 in `495e8b3`, plus its proxy script under [2026-1122-001](archive/FID-2026-1122-001-commit-calibration-proxy.md)). Step 5, collection, is next and needs an operator-supplied upstream; then the certificate path. |
 | [2026-1120-001](FID-2026-1120-001-inferhub-upstream-onboarding.md) | InferHub upstream onboarding | fixed | Steps 1, 2, 3, 4 and 8 are done (`ed8812a`, `495e8b3`, `b159ba0`): the row is seeded disabled, review-required and resale-restricted. Steps 5–7 stay blocked on funding and a measured figure. |
 | [2026-1123-003](archive/FID-2026-1123-003-provider-model-switches.md) | Provider-scoped switches for individual models | closed | Selection and a bulk Enable/Disable on `/admin/catalog` under the same per-row guard, and the `/admin/providers` status column reporting the switch instead of the stored health; 5 disposable-database cases, 12/12 gates and 1264/1264 tests. |
-| [2026-1124-001](FID-2026-1124-001-admin-console-clarity.md) | Admin console clarity, attention signals and payload | converged | Review baseline at [audit/2026-11-24-admin-surface-review.md](audit/2026-11-24-admin-surface-review.md): six presentation and payload changes, starting with the awaiting-decision count and the two mislabelled overview tiles. Nothing implemented yet. |
+| [2026-1124-001](archive/FID-2026-1124-001-admin-console-clarity.md) | Admin console clarity, attention signals and payload | closed | Review baseline at [audit/2026-11-24-admin-surface-review.md](audit/2026-11-24-admin-surface-review.md): `/admin/showcase` explains its switch instead of 404ing, the overview tiles name the quantities they count, a review-required provider's chat-decision backlog appears on its row, `/admin/pricing` pages both tables and ships a trimmed row shape (1,104 kB → 347 kB), and the 30-day total has one name; 3 new cases, 12/12 gates and 1267/1267 tests. |
 | [2026-1122-005](archive/FID-2026-1122-005-provider-key-operability.md) | Provider key operability and sync on enable | closed | Archived at `ce6cad7`: the paste message, the two `.env.local` statements and the enable-time catalog read, with 1240/1240 tests. |
 | [2026-1122-006](archive/FID-2026-1122-006-next-security-upgrade.md) | Next.js security upgrade 16.4.3 → 16.4.6 | closed | `next upgrade --agent=security`; duplicate checks empty, 12/12 gates and 1240/1240 tests in the upgrade worktree. |
 | [2026-1122-007](archive/FID-2026-1122-007-bulk-chat-decisions.md) | Bulk chat decisions for a review-required provider | closed | One request records a decision for the whole catalog; 5 postgres cases, 12/12 gates and 1245/1245 tests. |

@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1124-001-admin-console-clarity.md`
 **ID:** FID-2026-1124-001
 **Severity:** medium
-**Status:** converged
+**Status:** fixed
 **Created:** 2026-11-24 19:20
 
 ## Summary
@@ -44,9 +44,9 @@ The console is honest about its definitions but not about its quantities:
 1. A rail entry always opens a page; a disabled feature says it is disabled.
 2. Every overview tile's label names the quantity its value is, and its detail
    describes the same quantity.
-3. A provider row and the overview state how many imported rows await a decision
-   when the provider requires model review, because that count is what stands
-   between "enabled" and "serving".
+3. A provider row and the overview state how many imported rows have no `chat`
+   decision when the provider requires model review, because that count is what
+   stands between "enabled" and "serving".
 4. `/admin/pricing` lists prices in pages, and the client receives only the
    fields it renders.
 5. One `Daily money` surface, and one name for the 30-day total.
@@ -74,8 +74,8 @@ $ node .scratch/probe-admin-pages.mjs
 
 - `components/admin/admin-nav.tsx`, `app/admin/(panel)/showcase/page.tsx`
 - `components/admin/admin-panel.tsx` (tiles), `components/admin/provider-eligibility.tsx`
-- `lib/provider-catalog.ts`, `lib/storage/store/provider-catalog.ts`,
-  `lib/provider-catalog` summary select (add an awaiting-decision count)
+- `lib/provider-catalog.ts`, `lib/storage/store/provider-catalog.ts` (add a
+  needs-chat-decision count)
 - `app/admin/(panel)/pricing/page.tsx`, `components/admin/pricing-table.tsx`,
   `components/admin/pricing-chart.tsx`, `components/admin/pricing-recommendations.tsx`
 - `app/admin/(panel)/analytics/page.tsx` (single `Daily money` home)
@@ -96,10 +96,10 @@ $ node .scratch/probe-admin-pages.mjs
 2. Overview tiles: rename the catalog tile to the quantity it counts and rewrite
    the credit tile's detail to the credit facts (granted, held, available); move
    the margin detail to the pricing snapshot card that already shows margin.
-3. Add `awaitingDecisionCount` to the provider catalog summary (rows of a
-   `requires_model_review` provider without a `chat` decision), show it on the
-   providers row, and add one overview line when any provider has a backlog.
-   Tests: a review-required provider with three undecided rows reports 3, a
+3. Add a per-provider count of imported in-catalog rows with no `chat` decision
+   (final name `needsChatDecisionCount`, including rows recorded `unsupported`),
+   show it on the providers row, and add one line per provider in the overview
+   sync card when any provider has a backlog. Tests: a review-required provider with three undecided rows reports 3, a
    decided row leaves the count, a non-review provider always reports 0.
 4. Pricing: page the table (same `Pagination` primitive as the catalog) and pass
    a trimmed row shape to the client components (id, name, family, group, cost,
@@ -132,10 +132,22 @@ tiles naming one quantity each.
 
 ### Verification Receipt
 
-- verified: not started.
+- verified: 2026-11-24, `npm run verify` PASS — 12/12 gates, 1267/1267 tests,
+  0 skipped, 177.6s (`.verify/summary.json`).
+- verified: `node .scratch/probe-admin-pages.mjs` — `/admin/showcase` 200 (was
+  404), `/admin/pricing` 347,304 B (was 1,104,372 B), `/admin` 84,627 B.
+- verified: `/admin/pricing` renders `Page 1 of 21` and `Page 1 of 30`; the page
+  still lists 272 priced models.
+- verified: `/admin/providers` — InferHub row reads `273` with `5 need a chat
+  decision`, router.cheap `83` with `83 need a chat decision`; `/admin` sync card
+  repeats the sentence per provider.
+- verified: `tests/provider-catalog-summary.test.mjs` 3/3; the two legacy
+  `providerCatalogSummaryIn` suites still pass with the fixture extended to the
+  real schema (`models.upstream_id`, `providers.requires_model_review`,
+  `model_eligibility`).
+- verified: lint zero warnings, `npm run quality` PASS (718 files).
 
 ## Perfection Loop
-
 ### Loop 1 — RED
 
 - **RED:** measured above; `/admin/showcase` 404, the credit tile's margin
@@ -162,10 +174,69 @@ tiles naming one quantity each.
    formulas it applies; the outcome stays one link away and already carries its
    own definitions there.
 
+### Loop 2 — Implementation audit
+
+- **RED (measured after the first build attempt):** `npm run typecheck` failed
+  twice — `Button` has no `title` prop in HeroUI v3
+  (`components/admin/providers-panel.tsx`), and `ProviderSummary` has no
+  `needsChatDecisionCount` because the count belongs to the catalog summary, not
+  the provider record.
+- **GREEN:** the Delete explanation moved to the paragraph that already renders
+  beneath the row (a `title` would never show on a disabled button anyway), and
+  the providers page joins `listProviderCatalogSummary()` by slug instead of
+  widening `ProviderSummary`.
+- **AUDIT:** `npm run quality` failed twice — `lib/types.ts` 423 lines and
+  `components/admin/pricing-recommendations.tsx` 416 lines. Resolved by
+  extraction, not compression: `PricingModelRow` moved next to its only
+  projector (`lib/pricing-view.ts`), and the recommendation row became
+  `components/admin/pricing-recommendation-row.tsx`. A third ceiling breach
+  (`providers-panel.tsx` 404) was resolved the same way:
+  `components/admin/provider-actions.tsx` now owns the action cell, including the
+  default-provider Delete notice.
+- **ADVERSARIAL:** the new count could have been named for what it does not
+  measure. `awaitingDecisionCount` was wrong — a row recorded `unsupported` has a
+  decision and still cannot serve. Renamed to `needsChatDecisionCount`, and the
+  test asserts that an `unsupported` row keeps counting.
+- **CHANGE DELTA:** +4 files (`pricing-recommendation-row.tsx`,
+  `provider-actions.tsx`, `pricing-view.ts` already existed,
+  `tests/provider-catalog-summary.test.mjs`), −1 duplicated money chart, −731 kB
+  of pricing HTML.
+
+### Loop 3 — Boundary checks
+
+- **A row not in the catalog is not a backlog item.** `in_catalog = 0` is
+  excluded from the count, and a test pins it: delisting one of three undecided
+  rows reports 2.
+- **A provider that does not require review never reports a backlog,** even with
+  eligibility rows present, and a test pins that too.
+- **The count is a read.** It is computed in the summary select the providers
+  page and the overview already call; no new query, no new write, no guard.
+- **The pricing payload is trimmed at the server boundary,** so no client
+  component can reach a field it does not render; `toPricingRows` is the only
+  producer of `PricingModelRow`.
+- **The showcase page keeps its real behaviour.** It says the feature is off, how
+  to turn it on and what it would show; it does not pretend to be a build list.
+- **A-7 is resolved for the one figure that was renamed twice.** The 30-day total
+  is `Total revenue` on `/admin` and `/admin/analytics`. `/admin/economics` keeps
+  `Customer contribution` because it is a different quantity — settled credit
+  spend and plan invoices excluding upstream cost, not revenue — and its own
+  copy defines it. Renaming it to `Total revenue` would make two different
+  figures share a name, which is the fault A-7 reports.
+
 ## Resolution
 
-- **Closed Date:** not started
-- **Fix Description:** not started
-- **Tests Added:** none yet
-- **Verification Evidence:** the measurements in the audit baseline
-- **Archived:** not started
+- **Closed Date:** 2026-11-24
+- **Fix Description:** A rail entry that could not open now explains itself
+  instead of 404ing; the overview tiles name the quantities they count; a
+  review-required provider's decision backlog appears on its row, in the sync
+  card and on the providers table; `/admin/pricing` pages both tables and ships
+  only the pricing fields (1,104 kB → 347 kB); the realized-money chart has one
+  home (`/admin/analytics`) and the 30-day total one name (`Total revenue`).
+- **Tests Added:** `tests/provider-catalog-summary.test.mjs` (3) — the count
+  tracks decisions, ignores providers that do not require review, and ignores
+  delisted rows; `tests/provider-catalog.test.mjs` fixture extended to the real
+  schema.
+- **Verification Evidence:** `npm run verify` PASS 12/12, 1267/1267;
+  `.scratch/admin-pages.json` before/after byte counts; `Page 1 of 21` /
+  `Page 1 of 30` in the rendered pricing page.
+- **Archived:** 2026-11-24 → `dev/fids/archive/`

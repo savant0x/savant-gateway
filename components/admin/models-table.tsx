@@ -2,22 +2,14 @@
 
 import type { AdminModelSummary, ModelGroupSummary } from "@/lib/types";
 
-import { Button, Card, Chip, Input, Spinner } from "@heroui/react";
+import { Button, Card, Chip, Input } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
-import { GroupSelect } from "@/components/admin/group-select";
-import { ModelCostEditor } from "@/components/admin/model-cost-editor";
-import { StatusChip } from "@/components/dashboard/chips";
-import {
-  formatMarginPercent,
-  formatPricePer1M,
-  formatSignedMicros,
-} from "@/components/dashboard/format";
+import { ModelBulkActions } from "@/components/admin/model-bulk-actions";
+import { MODEL_ROW_SCENARIO, ModelRow } from "@/components/admin/model-row";
 import { Pagination } from "@/components/ui/pagination";
 import { adminLoginHref } from "@/lib/admin-return";
-import { catalogEconomics, scenarioLabel } from "@/lib/catalog-economics";
-import { priceToMicros } from "@/lib/pricing";
 
 type Filter =
   "all" | "active" | "disabled" | "free" | "paid" | "unpriced" | "delisted";
@@ -31,16 +23,6 @@ const FILTERS: Array<{ key: Filter; label: string }> = [
   { key: "unpriced", label: "Unpriced" },
   { key: "delisted", label: "Delisted" },
 ];
-
-function price(model: AdminModelSummary) {
-  if (model.access === "free") return "Free";
-
-  if (model.inputPricePer1M === 0 && model.outputPricePer1M === 0) {
-    return model.access === "subscription" ? "Subscription" : "Unpriced";
-  }
-
-  return `${formatPricePer1M(model.inputPricePer1M)} / ${formatPricePer1M(model.outputPricePer1M)}`;
-}
 
 export function AdminModelsTable({
   models,
@@ -58,6 +40,7 @@ export function AdminModelsTable({
   const [page, setPage] = useState(1);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string[]>([]);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -150,7 +133,20 @@ export function AdminModelsTable({
   function applyFilter(next: () => void) {
     next();
     setPage(1);
+    setSelected([]);
   }
+
+  function selectOne(id: string, on: boolean) {
+    setSelected((previous) =>
+      on
+        ? Array.from(new Set([...previous, id]))
+        : previous.filter((value) => value !== id),
+    );
+  }
+
+  const pageIds = rows.map((model) => model.id);
+  const pageSelected =
+    pageIds.length > 0 && pageIds.every((id) => selected.includes(id));
 
   return (
     <Card>
@@ -159,11 +155,13 @@ export function AdminModelsTable({
           <div>
             <Card.Title>Catalog controls</Card.Title>
             <Card.Description>
-              Disabled models leave the public catalog and the gateway. A
-              delisted row vanished from one provider but keeps its prices and
-              history. Paid rows need a known upstream cost before they can be
-              enabled. Margin and profit use the serving route&apos;s cost and a
-              labelled 1M in + 1M out scenario; they are not realized revenue.
+              Disabled models leave the public catalog and the gateway. Select
+              rows to switch several at once — the bulk action applies the same
+              rules as the single button, so a row that needs a chat decision or
+              a cost stays off and is reported. A delisted row vanished from one
+              provider but keeps its prices and history. Margin and profit use
+              the serving route&apos;s cost and a labelled 1M in + 1M out
+              scenario; they are not realized revenue.
             </Card.Description>
           </div>
           <Chip color="default" size="sm" variant="soft">
@@ -213,6 +211,12 @@ export function AdminModelsTable({
               </Button>
             ))}
           </div>
+          <ModelBulkActions
+            matching={filtered.length}
+            selected={selected}
+            onClear={() => setSelected([])}
+            onSelectMatching={() => setSelected(filtered.map((row) => row.id))}
+          />
         </div>
 
         {error ? (
@@ -230,15 +234,25 @@ export function AdminModelsTable({
             <table className="data-table">
               <caption className="sr-only">
                 Catalog rows with upstream cost, customer sell price, and the
-                resulting margin for{" "}
-                {scenarioLabel({
-                  inputTokens: 1_000_000,
-                  outputTokens: 1_000_000,
-                })}
-                .
+                resulting margin for {MODEL_ROW_SCENARIO}.
               </caption>
               <thead>
                 <tr>
+                  <th scope="col">
+                    <input
+                      aria-label="Select this page"
+                      checked={pageSelected}
+                      className="size-4 accent-current"
+                      type="checkbox"
+                      onChange={(event) =>
+                        setSelected((previous) =>
+                          event.target.checked
+                            ? Array.from(new Set([...previous, ...pageIds]))
+                            : previous.filter((id) => !pageIds.includes(id)),
+                        )
+                      }
+                    />
+                  </th>
                   <th scope="col">Model</th>
                   <th scope="col">Provider</th>
                   <th scope="col">Family</th>
@@ -258,124 +272,17 @@ export function AdminModelsTable({
                 </tr>
               </thead>
               <tbody>
-                {rows.map((model) => {
-                  const economics = catalogEconomics({
-                    access: model.access,
-                    costInputMicros: priceToMicros(model.costInputPer1M),
-                    costOutputMicros: priceToMicros(model.costOutputPer1M),
-                    sellInputMicros: priceToMicros(model.inputPricePer1M),
-                    sellOutputMicros: priceToMicros(model.outputPricePer1M),
-                    costSource: model.costSource,
-                    costObservedAt: model.costObservedAt,
-                  });
-
-                  return (
-                    <tr key={model.id}>
-                      <td className="max-w-[22rem]">
-                        <div className="flex items-center gap-2">
-                          <span className="truncate font-medium">
-                            {model.name}
-                          </span>
-                          {!model.inCatalog ? (
-                            <Chip color="warning" size="sm" variant="soft">
-                              delisted
-                            </Chip>
-                          ) : null}
-                        </div>
-                        <div className="mono mt-0.5 truncate text-[11px] text-muted">
-                          {model.id}
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap text-muted">
-                        {model.servedProviderSlug ?? model.upstreamSlug}
-                        {model.servedProviderSlug &&
-                        model.servedProviderSlug !== model.upstreamSlug ? (
-                          <p className="text-[11px] text-accent">
-                            cheapest of {model.routes.length}
-                          </p>
-                        ) : (
-                          <p className="text-[11px]">{model.protocol}</p>
-                        )}
-                        {model.routes.length > 1 ? (
-                          <p className="text-[11px]">
-                            {model.routes
-                              .map((route) => route.providerSlug)
-                              .join(" · ")}
-                          </p>
-                        ) : null}
-                      </td>
-                      <td className="text-muted">{model.family}</td>
-                      <td>
-                        <GroupSelect
-                          groupSlug={model.groupSlug}
-                          groups={groups}
-                          modelId={model.id}
-                        />
-                        <p className="mt-1 text-[11px] text-muted">
-                          {model.access} billing · {model.groupSource}
-                        </p>
-                      </td>
-                      <td>
-                        <StatusChip status={model.status} />
-                      </td>
-                      <td className="whitespace-nowrap text-right align-middle tabular-nums">
-                        {price(model)}
-                      </td>
-                      <td className="text-right align-middle">
-                        <ModelCostEditor model={model} />
-                      </td>
-                      <td className="whitespace-nowrap text-right align-middle tabular-nums">
-                        {model.access === "free" ? (
-                          <span className="text-success">Free group</span>
-                        ) : (
-                          <>
-                            <span>
-                              {formatMarginPercent(economics.inputMarginBps)} /{" "}
-                              {formatMarginPercent(economics.outputMarginBps)}
-                            </span>
-                            <p
-                              className={
-                                economics.blendedProfitMicros >= 0
-                                  ? "text-[11px] text-success"
-                                  : "text-[11px] text-danger"
-                              }
-                            >
-                              {formatSignedMicros(
-                                economics.blendedProfitMicros,
-                              )}
-                            </p>
-                          </>
-                        )}
-                        {economics.warnings.length > 0 ? (
-                          <p
-                            className="max-w-[14rem] text-[11px] leading-4 text-warning"
-                            title={economics.warnings.join(" ")}
-                          >
-                            {economics.warnings[0]}
-                          </p>
-                        ) : null}
-                      </td>
-                      <td className="align-middle text-muted">
-                        {model.contextWindow}
-                      </td>
-                      <td>
-                        <Button
-                          isDisabled={busyId === model.id || !model.inCatalog}
-                          size="sm"
-                          variant={
-                            model.status === "active"
-                              ? "danger-soft"
-                              : "secondary"
-                          }
-                          onPress={() => toggle(model)}
-                        >
-                          {busyId === model.id ? <Spinner size="sm" /> : null}
-                          {model.status === "active" ? "Disable" : "Enable"}
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {rows.map((model) => (
+                  <ModelRow
+                    key={model.id}
+                    busy={busyId === model.id}
+                    groups={groups}
+                    model={model}
+                    selected={selected.includes(model.id)}
+                    onSelect={(on) => selectOne(model.id, on)}
+                    onToggle={() => toggle(model)}
+                  />
+                ))}
               </tbody>
             </table>
           </div>

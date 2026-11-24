@@ -1,11 +1,13 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
 import { readPriceInput } from "@/lib/pricing";
 import { readJsonObject, requestBodyError } from "@/lib/request-limits";
+import { MAX_BULK_STATUS } from "@/lib/storage/store/models";
 import {
   assignModelGroup,
   listAllModels,
   setModelCost,
   setModelStatus,
+  setModelStatusBulk,
 } from "@/lib/store";
 
 export const runtime = "nodejs";
@@ -31,6 +33,7 @@ export async function PATCH(request: Request) {
 
   let body: {
     id?: unknown;
+    ids?: unknown;
     status?: unknown;
     groupSlug?: unknown;
     costInputPer1M?: unknown;
@@ -50,12 +53,41 @@ export async function PATCH(request: Request) {
   const hasGroup = body.groupSlug !== undefined;
   const hasCost =
     body.costInputPer1M !== undefined || body.costOutputPer1M !== undefined;
-
-  if (!id) return adminError(400, "A model id is required.");
+  const ids = Array.isArray(body.ids)
+    ? body.ids.filter((value): value is string => typeof value === "string")
+    : null;
 
   if (status && !STATUSES.has(status)) {
     return adminError(400, "status must be active or disabled.");
   }
+
+  // A selection arrives as `ids`; one row arrives as `id`. Both carry the same
+  // status contract, and a selection can only change status (FID-2026-1123-003).
+  if (ids) {
+    if (!status) {
+      return adminError(400, "A status is required for a selection.");
+    }
+
+    const outcome = await setModelStatusBulk(
+      ids,
+      status as "active" | "disabled",
+    );
+
+    if (outcome === "empty") {
+      return adminError(400, "At least one model id is required.");
+    }
+
+    if (outcome === "too_many") {
+      return adminError(
+        400,
+        `Select at most ${MAX_BULK_STATUS} models at once.`,
+      );
+    }
+
+    return Response.json({ ok: true, ...outcome }, { headers: NO_STORE });
+  }
+
+  if (!id) return adminError(400, "A model id is required.");
 
   if (hasGroup) {
     if (!groupSlug) return adminError(400, "groupSlug is required.");
@@ -84,6 +116,12 @@ export async function PATCH(request: Request) {
       return adminError(
         400,
         "Set positive input and output costs and a sell price before enabling this model.",
+      );
+    }
+    if (result === "delisted") {
+      return adminError(
+        400,
+        "This model is no longer in the provider's catalog. Sync the provider before enabling it.",
       );
     }
   }

@@ -57,6 +57,7 @@ export const replaceModels = bound(modelSync.replaceModels);
 export const setModelCost = bound(models.setModelCost);
 export const setModelPricing = bound(models.setModelPricing);
 export const setModelStatus = bound(models.setModelStatus);
+export const setModelStatusBulk = bound(models.setModelStatusBulk);
 
 export const listProviderReviewModels = bound(
   eligibility.listProviderReviewModels,

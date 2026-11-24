@@ -23,10 +23,20 @@ Do these once, in order, before inviting a customer:
 
 1. **Providers** — `/admin/providers`. Confirm the base URL, wire protocol,
    credential variable name and capabilities. Run **Test**, then **Sync**. A
-   provider row stores a variable name, never the secret value.
+   provider row stores a variable name, never the secret value. The **Status**
+   column is the switch (enabled/disabled); a provider's sync health appears
+   under it as `health:` only when it is not the ordinary value, because the
+   stored status is written by the quota probe and does not follow the switch.
 2. **Catalog** — `/admin/catalog`. Confirm the synced models and their
    `in_catalog` state. A model that vanished upstream is delisted, not deleted,
-   so its prices and history remain.
+   so its prices and history remain. Each row has its own Enable/Disable; to
+   switch a provider's rows together, filter by provider, tick the rows (or the
+   header to take the page), then use **Enable selected** / **Disable selected**.
+   The bulk action applies the same rules as the single button: enabling is
+   refused while the provider requires model review and the row has no `chat`
+   decision, and refused while a paid row has no positive upstream cost and sell
+   price. Refused rows stay as they were and are reported with counts and
+   reasons — nothing is skipped silently.
 3. **Groups** — `/admin/groups`. Put each model in exactly one billing tier:
    `free`, `paid` or `subscription`. A manual assignment survives a later sync.
 4. **Pricing** — `/admin/pricing`. Set sell prices or a markup for paid rows.

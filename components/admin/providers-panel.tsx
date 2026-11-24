@@ -15,7 +15,6 @@ import {
 } from "@/components/admin/provider-form";
 import { ProviderEligibility } from "@/components/admin/provider-eligibility";
 import { ProviderPreview } from "@/components/admin/provider-preview";
-import { StatusChip } from "@/components/dashboard/chips";
 import { formatNumber, responseError } from "@/components/dashboard/format";
 import { LocalTime } from "@/components/local-time";
 import { adminLoginHref } from "@/lib/admin-return";
@@ -214,11 +213,6 @@ export function AdminProvidersPanel({
                     <td className="max-w-[22rem]">
                       <p className="font-medium">
                         {provider.label}{" "}
-                        {!provider.enabled ? (
-                          <Chip color="default" size="sm" variant="soft">
-                            disabled
-                          </Chip>
-                        ) : null}{" "}
                         {provider.requiresModelReview ? (
                           <Chip color="warning" size="sm" variant="soft">
                             review required
@@ -244,7 +238,22 @@ export function AdminProvidersPanel({
                       </p>
                     </td>
                     <td>
-                      <StatusChip status={provider.status} />
+                      {/* The switch, not the health column: `provider.status` is
+                          written by the quota probe, so a disabled provider kept
+                          reading "active" here (reported 2026-11-23). Health
+                          shows only when it is not the ordinary value. */}
+                      <Chip
+                        color={provider.enabled ? "success" : "default"}
+                        size="sm"
+                        variant="soft"
+                      >
+                        {provider.enabled ? "enabled" : "disabled"}
+                      </Chip>
+                      {provider.status !== "active" ? (
+                        <p className="mt-1 text-[11px] text-muted">
+                          health: {provider.status}
+                        </p>
+                      ) : null}
                     </td>
                     <td className="text-right">{provider.modelCount}</td>
                     <td className="whitespace-nowrap text-muted">

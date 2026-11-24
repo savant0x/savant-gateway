@@ -3,6 +3,30 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-23 — Provider-scoped model switches (1123-003)
+
+- **FID-2026-1123-003 — medium —** switching a provider's catalog meant one
+  press per row, and a press that was refused explained itself only in a toast.
+  `/admin/catalog` now has a selection checkbox on every row and in the header,
+  and a bulk bar that states how many rows match the current filter with
+  **Enable selected** / **Disable selected** / **Clear**. One request carries the
+  selection; one transaction writes it; one route reconciliation follows. Bulk
+  enable runs the same `enableBlocker` as the single button, so a row that needs
+  a `chat` decision (`not_eligible`), a positive upstream cost and sell price
+  (`cost_unknown`), a live catalog row (`delisted`) or that no longer exists
+  (`not_found`) is left exactly as it was and reported with counts and wording
+  the operator can act on. A selection is capped at 1000 ids and de-duplicated.
+  The same review found the `/admin/providers` **Status** column reading `active`
+  after a disable: that column rendered the quota probe's stored status, not the
+  operator's switch, so a persisted disable looked like it did nothing. The
+  column now reports enabled/disabled and shows `health: <status>` only when the
+  stored health is not the ordinary value. The row and the bar were extracted to
+  `components/admin/model-row.tsx` and `model-bulk-actions.tsx` to keep the table
+  under the 400-line ceiling. Verified with five disposable-database cases and a
+  live admin probe (`400` empty selection, `400` over the cap, `400` selection
+  without a status, `200 {written:0, skipped:[not_found]}` for an absent id — no
+  row written).
+
 ## 2026-11-23 — Keyless provider catalog preview (1123-002)
 
 - **FID-2026-1123-002 — medium —** an operator could not see what an upstream

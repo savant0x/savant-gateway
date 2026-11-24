@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 import { Card } from "@heroui/react";
+import Link from "next/link";
 
-import { AnalyticsChart } from "@/components/admin/analytics-chart";
 import { MarkupForm } from "@/components/admin/markup-form";
 import { PricingChart } from "@/components/admin/pricing-chart";
 import { PricingCommand } from "@/components/admin/pricing-command";
@@ -14,8 +14,8 @@ import {
   formatNumber,
 } from "@/components/dashboard/format";
 import { normalizePricingWindow } from "@/lib/pricing-command";
+import { toPricingRows } from "@/lib/pricing-view";
 import {
-  getAnalyticsData,
   getPricingCommand,
   getPricingSummary,
   listAllModels,
@@ -39,14 +39,16 @@ export default async function AdminPricingPage({
   const windowDays = normalizePricingWindow(
     Array.isArray(params.window) ? params.window[0] : params.window,
   );
-  const [models, groups, decisions, analytics, command] = await Promise.all([
+  const [models, groups, decisions, command] = await Promise.all([
     listAllModels(),
     listModelGroups(),
     listPricingDecisions(200),
-    getAnalyticsData(30),
     getPricingCommand(windowDays),
   ]);
   const data = { models, summary: await getPricingSummary(models) };
+  // The client components get the pricing fields only; the full summary (routes,
+  // health, sync stamps) stays on the server (FID-2026-1124-001).
+  const rows = toPricingRows(models);
   const volumeById = Object.fromEntries(
     command.rows.map((row) => [
       row.modelId,
@@ -112,27 +114,25 @@ export default async function AdminPricingPage({
 
       <PricingCommand data={command} />
 
-      <PricingChart decisions={decisions} models={data.models} />
+      <PricingChart decisions={decisions} models={rows} />
 
       <PricingRecommendations
-        models={data.models}
+        models={rows}
         volumeById={volumeById}
         windowDays={command.rangeDays}
       />
 
-      <PricingTable groups={groups} models={data.models} />
+      <PricingTable groups={groups} models={rows} />
 
-      <div>
-        <h2 className="text-sm font-semibold">Realized economics</h2>
-        <p className="mt-1 max-w-3xl text-xs leading-5 text-muted">
-          Approved prices are the plan. This chart is the outcome: credit and
-          plan revenue against upstream cost for settled calls in the last 30
-          days. The analytics page has the full range and model breakdown.
-        </p>
-        <div className="mt-3">
-          <AnalyticsChart series={analytics.series} />
-        </div>
-      </div>
+      <p className="text-xs leading-5 text-muted">
+        Realized revenue and upstream cost are the outcome of these prices, not
+        the prices themselves, so they live on{" "}
+        <Link className="text-accent hover:underline" href="/admin/analytics">
+          analytics
+        </Link>
+        , which carries the definition of each clock. This page does not repeat
+        them.
+      </p>
 
       <Card variant="secondary">
         <Card.Header>

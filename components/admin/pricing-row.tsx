@@ -1,4 +1,5 @@
-import type { AdminModelSummary, ModelGroupSummary } from "@/lib/types";
+import type { ModelGroupSummary } from "@/lib/types";
+import type { PricingModelRow } from "@/lib/pricing-view";
 import type { PriceDraft } from "./pricing-draft";
 
 import { Button, Chip, Spinner } from "@heroui/react";
@@ -29,7 +30,7 @@ export function PricingRow({
   onChange,
   onSave,
 }: {
-  model: AdminModelSummary;
+  model: PricingModelRow;
   groups: ModelGroupSummary[];
   draft: PriceDraft;
   dirty: boolean;

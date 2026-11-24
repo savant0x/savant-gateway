@@ -27,12 +27,28 @@ const ITEMS = [
   { href: "/admin/diagnostics", icon: "fa-stethoscope", label: "Diagnostics" },
 ] as const;
 
-export function AdminNav() {
+/**
+ * A rail entry must open a page. Showcase reads a build corpus that only exists
+ * when the feature is switched on, so the entry is omitted rather than pointing
+ * at a 404; the page itself explains the flag for a bookmarked URL
+ * (FID-2026-1124-001).
+ */
+function visibleItems(visualBuildsEnabled: boolean) {
+  return ITEMS.filter(
+    (item) => visualBuildsEnabled || item.href !== "/admin/showcase",
+  );
+}
+
+export function AdminNav({
+  visualBuildsEnabled = false,
+}: {
+  visualBuildsEnabled?: boolean;
+}) {
   const pathname = usePathname();
 
   return (
     <nav aria-label="Admin navigation" className="admin-tabs">
-      {ITEMS.map((item) => {
+      {visibleItems(visualBuildsEnabled).map((item) => {
         const active =
           item.href === "/admin"
             ? pathname === "/admin"

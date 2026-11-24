@@ -1,4 +1,4 @@
-import type { AdminModelSummary } from "./types.ts";
+import type { PricingModelRow } from "./pricing-view.ts";
 import type { PricingDecision } from "./storage/store/pricing-decisions.ts";
 
 import { catalogEconomics } from "./catalog-economics.ts";
@@ -28,7 +28,7 @@ const MARGIN_BUCKETS = [
   { label: "40%+", min: 4_000, max: Infinity },
 ] as const;
 
-export function marginBuckets(models: AdminModelSummary[]): MarginBucket[] {
+export function marginBuckets(models: PricingModelRow[]): MarginBucket[] {
   const buckets = MARGIN_BUCKETS.map((bucket) => ({
     label: bucket.label,
     count: 0,
@@ -105,7 +105,7 @@ export type RouteMixEntry = {
 };
 
 /** Catalog rows per provider, and how many of them currently serve. */
-export function routeMix(models: AdminModelSummary[]): RouteMixEntry[] {
+export function routeMix(models: PricingModelRow[]): RouteMixEntry[] {
   const entries = new Map<string, RouteMixEntry>();
   const catalog = models.filter((model) => model.inCatalog);
 

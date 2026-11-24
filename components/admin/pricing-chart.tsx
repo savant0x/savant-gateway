@@ -1,4 +1,4 @@
-import type { AdminModelSummary } from "@/lib/types";
+import type { PricingModelRow } from "@/lib/pricing-view";
 import type { PricingDecision } from "@/lib/storage/store/pricing-decisions.ts";
 
 import { formatDay, formatPricePer1M } from "@/components/dashboard/format";
@@ -69,7 +69,7 @@ export function PricingChart({
   models,
   decisions,
 }: {
-  models: AdminModelSummary[];
+  models: PricingModelRow[];
   decisions: PricingDecision[];
 }) {
   const buckets = marginBuckets(models);

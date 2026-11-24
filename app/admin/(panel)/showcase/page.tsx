@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { notFound } from "next/navigation";
+import { Card } from "@heroui/react";
 
 import { ShowcaseReview } from "@/components/admin/showcase-review";
 import {
@@ -22,7 +22,45 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminShowcasePage() {
-  if (!visualBuildsEnabled()) notFound();
+  // A bookmarked URL should explain itself rather than answer 404: the feature
+  // exists, it is switched off, and the flag is the whole difference
+  // (FID-2026-1124-001).
+  if (!visualBuildsEnabled()) {
+    return (
+      <>
+        <div>
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent">
+            Showcase
+          </p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-[-0.03em]">
+            Visual builds are switched off
+          </h1>
+        </div>
+
+        <Card variant="secondary">
+          <Card.Header>
+            <Card.Title>This feature is off in this runtime</Card.Title>
+            <Card.Description>
+              No build corpus is read and nothing is published while the flag is
+              off. The rail hides this entry for the same reason.
+            </Card.Description>
+          </Card.Header>
+          <Card.Content className="space-y-3 text-sm leading-6 text-muted">
+            <p>
+              Set{" "}
+              <span className="mono text-foreground">
+                VISUAL_BUILDS_ENABLED=true
+              </span>{" "}
+              in <span className="mono">.env.local</span> (or in the hosting
+              project for the environment you are viewing) and restart the
+              runtime. Turning the flag on does not publish anything by itself:
+              the review still requires the rights and binding facts.
+            </p>
+          </Card.Content>
+        </Card>
+      </>
+    );
+  }
 
   const [sources, builds] = await Promise.all([
     listShowcaseSources(),

@@ -1,6 +1,7 @@
 "use client";
 
-import type { AdminModelSummary, ModelGroupSummary } from "@/lib/types";
+import type { ModelGroupSummary } from "@/lib/types";
+import type { PricingModelRow } from "@/lib/pricing-view";
 import type { PriceDraft } from "./pricing-draft";
 
 import { Button, Card, Chip, Input } from "@heroui/react";
@@ -28,7 +29,7 @@ export function PricingTable({
   groups,
   pageSize = 15,
 }: {
-  models: AdminModelSummary[];
+  models: PricingModelRow[];
   groups: ModelGroupSummary[];
   pageSize?: number;
 }) {
@@ -79,7 +80,7 @@ export function PricingTable({
     currentPage * pageSize,
   );
 
-  function draftFor(model: AdminModelSummary): PriceDraft {
+  function draftFor(model: PricingModelRow): PriceDraft {
     return (
       drafts[model.id] ?? {
         input: initialPrice(model.inputPricePer1M),
@@ -88,14 +89,14 @@ export function PricingTable({
     );
   }
 
-  function updateDraft(model: AdminModelSummary, patch: Partial<PriceDraft>) {
+  function updateDraft(model: PricingModelRow, patch: Partial<PriceDraft>) {
     setDrafts((previous) => ({
       ...previous,
       [model.id]: { ...draftFor(model), ...patch },
     }));
   }
 
-  async function save(model: AdminModelSummary) {
+  async function save(model: PricingModelRow) {
     const draft = draftFor(model);
     const input = parseDraftPrice(draft.input);
     const output = parseDraftPrice(draft.output);

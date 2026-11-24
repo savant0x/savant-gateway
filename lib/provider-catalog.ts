@@ -16,6 +16,14 @@ export type ProviderCatalogSummary = {
   pricedCount: number;
   unknownCostCount: number;
   servingCount: number;
+  /**
+   * In-catalog rows of a review-required provider that do not carry a `chat`
+   * decision. They are imported, priced and enabled-looking, and they cannot
+   * serve: eligibility is an admission rule, not a list filter
+   * (FID-2026-1124-001). A row recorded `unsupported` is counted too, because
+   * the operator needs to see that it cannot serve either.
+   */
+  needsChatDecisionCount: number;
 };
 
 export type ProviderCatalogSummaryRow = ProviderCatalogSummary & {
@@ -33,6 +41,7 @@ export type ProviderCatalogSummarySource = {
   priced_count: number | string | null;
   unknown_cost_count: number | string | null;
   serving_count: number | string;
+  needs_chat_decision_count: number | string | null;
 };
 
 /**
@@ -52,9 +61,15 @@ export const PROVIDER_CATALOG_SUMMARY_SELECT = `
                   THEN 1 ELSE 0 END) AS unknown_cost_count,
          (SELECT COUNT(*) FROM models s
           WHERE s.is_primary = 1 AND s.served_provider_slug = p.slug)
-           AS serving_count
+           AS serving_count,
+         SUM(CASE WHEN p.requires_model_review = 1 AND m.in_catalog = 1
+                   AND (me.decision IS NULL OR me.decision <> 'chat')
+                  THEN 1 ELSE 0 END) AS needs_chat_decision_count
   FROM providers p
   LEFT JOIN models m ON m.upstream_slug = p.slug
+  LEFT JOIN model_eligibility me
+    ON me.provider_slug = m.upstream_slug
+   AND me.upstream_id = m.upstream_id
   GROUP BY p.slug
   ORDER BY p.sort_order ASC, p.label ASC
 `;
@@ -77,6 +92,7 @@ export function toProviderCatalogSummary(
     pricedCount: Number(row.priced_count ?? 0),
     unknownCostCount: Number(row.unknown_cost_count ?? 0),
     servingCount: Number(row.serving_count),
+    needsChatDecisionCount: Number(row.needs_chat_decision_count ?? 0),
     keyEnvVar: row.key_env_var,
   };
 }

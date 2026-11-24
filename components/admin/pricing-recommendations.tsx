@@ -1,31 +1,26 @@
 "use client";
 
-import type { AdminModelSummary } from "@/lib/types";
+import type { PricingModelRow } from "@/lib/pricing-view";
 import type {
   PriceRecommendation,
   RoundingPolicy,
 } from "@/lib/price-recommendation";
 import type { HistoricalVolume } from "@/lib/pricing-command";
 
-import { Button, Card, Chip, Spinner } from "@heroui/react";
+import { Card, Chip } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
-import {
-  formatMarginPercent,
-  formatPricePer1M,
-  formatSignedMicros,
-  responseError,
-} from "@/components/dashboard/format";
-import { PricingVolumeCell } from "@/components/admin/pricing-volume-cell";
+import { PricingRecommendationRow } from "@/components/admin/pricing-recommendation-row";
+import { responseError } from "@/components/dashboard/format";
+import { Pagination } from "@/components/ui/pagination";
 import { StatePanel } from "@/components/ui/state-panel";
 import { adminLoginHref } from "@/lib/admin-return";
-import { microsToPrice, priceToMicros } from "@/lib/pricing";
-import { projectPricingVolume } from "@/lib/pricing-command";
+import { priceToMicros } from "@/lib/pricing";
 import { recommendPrices } from "@/lib/price-recommendation";
 
 function recommendationFor(
-  model: AdminModelSummary,
+  model: PricingModelRow,
   targetMarginBps: number,
   rounding: RoundingPolicy,
 ): PriceRecommendation {
@@ -47,11 +42,13 @@ export function PricingRecommendations({
   volumeById = {},
   windowDays = 30,
   defaultTargetPercent = 30,
+  pageSize = 20,
 }: {
-  models: AdminModelSummary[];
+  models: PricingModelRow[];
   volumeById?: Record<string, HistoricalVolume>;
   windowDays?: number;
   defaultTargetPercent?: number;
+  pageSize?: number;
 }) {
   const router = useRouter();
   const [target, setTarget] = useState(String(defaultTargetPercent));
@@ -60,6 +57,7 @@ export function PricingRecommendations({
   const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   const targetBps = Math.round(Number(target) * 100);
   const targetValid =
@@ -80,7 +78,7 @@ export function PricingRecommendations({
     [models, rounding, targetBps],
   );
 
-  async function approve(model: AdminModelSummary) {
+  async function approve(model: PricingModelRow) {
     setSavingId(model.id);
     setError(null);
     setNotice(null);
@@ -130,6 +128,13 @@ export function PricingRecommendations({
       setSavingId(null);
     }
   }
+
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const visible = rows.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
 
   return (
     <Card>
@@ -260,125 +265,18 @@ export function PricingRecommendations({
                 </tr>
               </thead>
               <tbody>
-                {rows.map(({ model, recommendation }) => {
-                  const eligible = recommendation.eligible;
-                  const warning = recommendation.warnings.join(" ");
-                  const volume = volumeById[model.id];
-                  const projected = eligible
-                    ? projectPricingVolume(
-                        volume,
-                        {
-                          inputMicros: recommendation.inputMicros,
-                          outputMicros: recommendation.outputMicros,
-                        },
-                        {
-                          inputMicros: priceToMicros(model.costInputPer1M),
-                          outputMicros: priceToMicros(model.costOutputPer1M),
-                        },
-                        model.costSource !== "unknown",
-                      )
-                    : null;
-
-                  return (
-                    <tr key={model.id}>
-                      <td className="max-w-[18rem] align-middle">
-                        <p className="truncate font-medium">{model.name}</p>
-                        <p className="mono mt-0.5 truncate text-[11px] text-muted">
-                          {model.id}
-                        </p>
-                      </td>
-                      <td className="whitespace-nowrap align-middle text-muted">
-                        {model.costSource}
-                        {model.servedProviderSlug ? (
-                          <p className="text-[11px]">
-                            via {model.servedProviderSlug}
-                          </p>
-                        ) : null}
-                      </td>
-                      <td className="whitespace-nowrap text-right align-middle tabular-nums">
-                        {formatPricePer1M(model.inputPricePer1M)} /{" "}
-                        {formatPricePer1M(model.outputPricePer1M)}
-                      </td>
-                      <td className="whitespace-nowrap text-right align-middle tabular-nums">
-                        {eligible ? (
-                          <>
-                            {formatPricePer1M(
-                              microsToPrice(recommendation.inputMicros),
-                            )}{" "}
-                            /{" "}
-                            {formatPricePer1M(
-                              microsToPrice(recommendation.outputMicros),
-                            )}
-                          </>
-                        ) : (
-                          <span className="text-muted">—</span>
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap text-right align-middle">
-                        {eligible ? (
-                          <>
-                            {formatMarginPercent(recommendation.inputMarginBps)}{" "}
-                            /{" "}
-                            {formatMarginPercent(
-                              recommendation.outputMarginBps,
-                            )}
-                          </>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap text-right align-middle tabular-nums">
-                        {eligible ? (
-                          <span title={warning || undefined}>
-                            {formatSignedMicros(
-                              recommendation.inputMicros +
-                                recommendation.outputMicros -
-                                priceToMicros(model.costInputPer1M) -
-                                priceToMicros(model.costOutputPer1M),
-                            )}
-                          </span>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <PricingVolumeCell
-                        hadVolume={Boolean(volume)}
-                        projected={projected}
-                        requests={volume?.requests ?? 0}
-                      />
-                      <td className="align-middle">
-                        {eligible ? (
-                          <div className="space-y-1">
-                            <Button
-                              isDisabled={
-                                savingId !== null ||
-                                !reasonValid ||
-                                !targetValid
-                              }
-                              size="sm"
-                              variant="secondary"
-                              onPress={() => approve(model)}
-                            >
-                              {savingId === model.id ? (
-                                <Spinner size="sm" />
-                              ) : null}
-                              Approve
-                            </Button>
-                            {warning ? (
-                              <p className="max-w-[16rem] text-[11px] leading-4 text-warning">
-                                {warning}
-                              </p>
-                            ) : null}
-                          </div>
-                        ) : (
-                          <p className="max-w-[16rem] text-[11px] leading-4 text-muted">
-                            {recommendation.reason}
-                          </p>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {visible.map(({ model, recommendation }) => (
+                  <PricingRecommendationRow
+                    key={model.id}
+                    canApprove={reasonValid && targetValid}
+                    model={model}
+                    recommendation={recommendation}
+                    savingId={savingId}
+                    volume={volumeById[model.id]}
+                    windowDays={windowDays}
+                    onApprove={approve}
+                  />
+                ))}
               </tbody>
             </table>
           </div>
@@ -391,6 +289,13 @@ export function PricingRecommendations({
           the same route and the same upstream cost. A row with an unknown cost
           basis shows no projection.
         </p>
+
+        <Pagination
+          page={currentPage}
+          pageCount={pageCount}
+          total={rows.length}
+          onChange={setPage}
+        />
       </Card.Content>
     </Card>
   );

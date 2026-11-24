@@ -5,6 +5,7 @@ import { LogoutButton } from "@/components/admin/logout-button";
 import { BrandMark } from "@/components/brand-mark";
 import { siteConfig } from "@/config/site";
 import { requireAdminPage } from "@/lib/admin-auth";
+import { visualBuildsEnabled } from "@/lib/visual-builds/types";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,7 @@ export default async function AdminPanelLayout({
           <span className="admin-rail-label">Control plane</span>
         </div>
 
-        <AdminNav />
+        <AdminNav visualBuildsEnabled={visualBuildsEnabled()} />
 
         <div className="admin-rail-footer">
           <Link

@@ -104,13 +104,13 @@ export function AdminPanel({
         <StatCard
           detail={`${disabled} disabled · ${data.models.length} rows total`}
           icon="fa-layer-group"
-          label="Catalog"
+          label="Published models"
           value={formatNumber(data.stats.modelCount)}
         />
         <StatCard
           detail={`${data.stats.paidModelCount} priced · ${data.stats.subscriptionModelCount} subscription-only`}
           icon="fa-tag"
-          label="Non-free"
+          label="Non-free published"
           value={formatNumber(
             data.stats.paidModelCount + data.stats.subscriptionModelCount,
           )}
@@ -118,11 +118,11 @@ export function AdminPanel({
         <StatCard
           detail={`${formatMicros(analytics.totals.chargedMicros)} credit · ${formatMicros(analytics.totals.planRevenueMicros)} plans`}
           icon="fa-sack-dollar"
-          label="30d revenue"
+          label="Total revenue"
           value={formatMicros(analytics.totals.totalRevenueMicros)}
         />
         <StatCard
-          detail={`${formatMarginPercent(data.pricing.averageInputMarginBps)} average input margin`}
+          detail={`${formatMicros(data.account.creditMicros)} granted · ${formatMicros(data.account.heldMicros)} held`}
           icon="fa-wallet"
           label="Available credit"
           value={formatMicros(data.account.availableMicros)}

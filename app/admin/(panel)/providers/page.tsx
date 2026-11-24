@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 
 import { ProviderCapitalPanel } from "@/components/admin/provider-capital";
 import { AdminProvidersPanel } from "@/components/admin/providers-panel";
-import { getProviderCapital, listProviders } from "@/lib/store";
+import {
+  getProviderCapital,
+  listProviderCatalogSummary,
+  listProviders,
+} from "@/lib/store";
 import { refreshEnabledProviderAccounts } from "@/lib/providers/runtime";
 
 export const dynamic = "force-dynamic";
@@ -15,10 +19,17 @@ export const metadata: Metadata = {
 export default async function AdminProvidersPage() {
   await refreshEnabledProviderAccounts();
 
-  const [providers, capital] = await Promise.all([
+  const [providers, capital, summaries] = await Promise.all([
     listProviders(),
     getProviderCapital(),
+    listProviderCatalogSummary(),
   ]);
+  // The decision backlog is an admission fact: a review-required provider serves
+  // nothing for a row until a chat decision is recorded, so it belongs beside
+  // the model count rather than only inside the review modal (FID-2026-1124-001).
+  const backlog = new Map(
+    summaries.map((row) => [row.slug, row.needsChatDecisionCount]),
+  );
 
   return (
     <>
@@ -42,7 +53,7 @@ export default async function AdminProvidersPage() {
         </div>
       </div>
 
-      <AdminProvidersPanel providers={providers} />
+      <AdminProvidersPanel backlog={backlog} providers={providers} />
 
       <ProviderCapitalPanel data={capital} />
     </>

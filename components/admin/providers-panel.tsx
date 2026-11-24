@@ -2,10 +2,11 @@
 
 import type { ProviderSummary } from "@/lib/providers/types";
 
-import { Button, Card, Chip, Spinner } from "@heroui/react";
+import { Card, Chip } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { ProviderActions } from "@/components/admin/provider-actions";
 import {
   draftFromProvider,
   EMPTY_PROVIDER,
@@ -21,8 +22,10 @@ import { adminLoginHref } from "@/lib/admin-return";
 
 export function AdminProvidersPanel({
   providers,
+  backlog,
 }: {
   providers: ProviderSummary[];
+  backlog: Map<string, number>;
 }) {
   const router = useRouter();
   const [draft, setDraft] = useState<ProviderDraft>(EMPTY_PROVIDER);
@@ -255,92 +258,39 @@ export function AdminProvidersPanel({
                         </p>
                       ) : null}
                     </td>
-                    <td className="text-right">{provider.modelCount}</td>
+                    <td className="text-right">
+                      {provider.modelCount}
+                      {(backlog.get(provider.slug) ?? 0) > 0 ? (
+                        <p className="text-[11px] text-warning">
+                          {backlog.get(provider.slug)} need a chat decision
+                        </p>
+                      ) : null}
+                    </td>
                     <td className="whitespace-nowrap text-muted">
                       <LocalTime value={provider.syncedAt} />
                     </td>
                     <td>
-                      <div className="flex flex-wrap gap-1.5">
-                        <Button
-                          isDisabled={busy !== null || !provider.enabled}
-                          size="sm"
-                          variant="primary"
-                          onPress={() => sync(provider.slug)}
-                        >
-                          {busy === `sync:${provider.slug}` ? (
-                            <Spinner size="sm" />
-                          ) : null}
-                          Sync
-                        </Button>
-                        <Button
-                          isDisabled={busy !== null}
-                          size="sm"
-                          variant="secondary"
-                          onPress={() =>
-                            setPreviewing({
-                              slug: provider.slug,
-                              label: provider.label,
-                            })
-                          }
-                        >
-                          Preview
-                        </Button>
-                        <Button
-                          isDisabled={busy !== null || !provider.configured}
-                          size="sm"
-                          variant="secondary"
-                          onPress={() => test(provider.slug)}
-                        >
-                          Test
-                        </Button>
-                        {provider.requiresModelReview ? (
-                          <Button
-                            isDisabled={busy !== null}
-                            size="sm"
-                            variant="secondary"
-                            onPress={() =>
-                              setReviewing({
-                                slug: provider.slug,
-                                label: provider.label,
-                              })
-                            }
-                          >
-                            Review
-                          </Button>
-                        ) : null}
-                        <Button
-                          isDisabled={busy !== null}
-                          size="sm"
-                          variant="secondary"
-                          onPress={() => edit(provider)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          isDisabled={
-                            busy !== null ||
-                            (!provider.enabled && !provider.configured)
-                          }
-                          size="sm"
-                          variant="secondary"
-                          onPress={() => toggle(provider)}
-                        >
-                          {provider.enabled ? "Disable" : "Enable"}
-                        </Button>
-                        {provider.slug === "savant" ? null : (
-                          <Button
-                            isDisabled={busy !== null}
-                            size="sm"
-                            variant="danger-soft"
-                            onPress={() => remove(provider)}
-                          >
-                            {busy === `delete:${provider.slug}` ? (
-                              <Spinner size="sm" />
-                            ) : null}
-                            Delete
-                          </Button>
-                        )}
-                      </div>
+                      <ProviderActions
+                        busy={busy}
+                        provider={provider}
+                        onEdit={() => edit(provider)}
+                        onPreview={() =>
+                          setPreviewing({
+                            slug: provider.slug,
+                            label: provider.label,
+                          })
+                        }
+                        onRemove={() => remove(provider)}
+                        onReview={() =>
+                          setReviewing({
+                            slug: provider.slug,
+                            label: provider.label,
+                          })
+                        }
+                        onSync={() => sync(provider.slug)}
+                        onTest={() => test(provider.slug)}
+                        onToggle={() => toggle(provider)}
+                      />
                     </td>
                   </tr>
                 ))}

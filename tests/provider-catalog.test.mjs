@@ -14,12 +14,20 @@ function database() {
       label TEXT NOT NULL,
       key_env_var TEXT NOT NULL,
       enabled INTEGER NOT NULL DEFAULT 1,
+      requires_model_review INTEGER NOT NULL DEFAULT 0,
       sort_order INTEGER NOT NULL DEFAULT 0,
       synced_at TEXT
+    );
+    CREATE TABLE model_eligibility (
+      provider_slug TEXT NOT NULL,
+      upstream_id TEXT NOT NULL,
+      decision TEXT NOT NULL,
+      PRIMARY KEY (provider_slug, upstream_id)
     );
     CREATE TABLE models (
       id TEXT PRIMARY KEY,
       upstream_slug TEXT NOT NULL,
+      upstream_id TEXT,
       status TEXT NOT NULL DEFAULT 'active',
       in_catalog INTEGER NOT NULL DEFAULT 1,
       allow_free INTEGER NOT NULL DEFAULT 0,

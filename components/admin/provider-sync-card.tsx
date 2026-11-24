@@ -58,6 +58,12 @@ export function ProviderSyncCard({
                   {provider.unknownCostCount} without cost ·{" "}
                   {provider.servingCount} serving
                 </p>
+                {provider.needsChatDecisionCount > 0 ? (
+                  <p className="text-warning">
+                    {provider.needsChatDecisionCount} of those rows have no chat
+                    decision and cannot serve until the review records one.
+                  </p>
+                ) : null}
                 <p>
                   {provider.enabled ? "enabled" : "disabled"} ·{" "}
                   {provider.configured ? "key present" : "no key"} · last sync{" "}

@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1123-002-provider-catalog-preview.md`
 **ID:** FID-2026-1123-002
 **Severity:** medium
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-23 21:10
 **Automation level:** 3
 **YAGNI-Compliance:** Verified

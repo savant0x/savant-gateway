@@ -29,12 +29,23 @@ Current counts: 12 active / 21, 190 archived, 198 allocated.
 | [2026-1104-018](FID-2026-1104-018-content-automation-master.md) | Content automation and persistent matching master | converged | Children 015–017 are implemented (`dbaa033`, `3f5a045`, `6cb7486`, `1c4c2a5`) and still owe their closure proofs. The master closes on those plus the operator's scheduler backend, secret and hosted-tick authorization. |
 | [2026-1110-002](FID-2026-1110-002-identity-calibration-lab.md) | Identity calibration lab and measured certificate | converged | Steps 1–4 are committed (`d66a538`, `b884984`, `1f75c44`; step 4 in `495e8b3`, plus its proxy script under [2026-1122-001](archive/FID-2026-1122-001-commit-calibration-proxy.md)). Step 5, collection, is next and needs an operator-supplied upstream; then the certificate path. |
 | [2026-1120-001](FID-2026-1120-001-inferhub-upstream-onboarding.md) | InferHub upstream onboarding | fixed | Steps 1, 2, 3, 4 and 8 are done (`ed8812a`, `495e8b3`, `b159ba0`): the row is seeded disabled, review-required and resale-restricted. Steps 5–7 stay blocked on funding and a measured figure. |
-| [2026-1123-003](FID-2026-1123-003-provider-model-switches.md) | Provider-scoped switches for individual models | converged | Selection and a bulk Enable/Disable on `/admin/catalog` under the same per-row guard, plus the `/admin/providers` status column reporting the switch instead of the stored health. |
+| [2026-1123-003](archive/FID-2026-1123-003-provider-model-switches.md) | Provider-scoped switches for individual models | closed | Selection and a bulk Enable/Disable on `/admin/catalog` under the same per-row guard, and the `/admin/providers` status column reporting the switch instead of the stored health; 5 disposable-database cases, 12/12 gates and 1264/1264 tests. |
 | [2026-1122-005](archive/FID-2026-1122-005-provider-key-operability.md) | Provider key operability and sync on enable | closed | Archived at `ce6cad7`: the paste message, the two `.env.local` statements and the enable-time catalog read, with 1240/1240 tests. |
 | [2026-1122-006](archive/FID-2026-1122-006-next-security-upgrade.md) | Next.js security upgrade 16.4.3 → 16.4.6 | closed | `next upgrade --agent=security`; duplicate checks empty, 12/12 gates and 1240/1240 tests in the upgrade worktree. |
 | [2026-1122-007](archive/FID-2026-1122-007-bulk-chat-decisions.md) | Bulk chat decisions for a review-required provider | closed | One request records a decision for the whole catalog; 5 postgres cases, 12/12 gates and 1245/1245 tests. |
 | [2026-1123-001](archive/FID-2026-1123-001-content-model-link-precision.md) | Content-to-model linking precision and readability | closed | 21/21 labelled headlines at recall 1.00 and precision 1.00 (was 11/21), one card per underlying model, body evidence for every kind; 1251/1251 tests in 12/12 gates. |
 | [2026-1123-002](archive/FID-2026-1123-002-provider-catalog-preview.md) | Keyless provider catalog preview | closed | Preview reads a catalog with or without a key and reports what an import would do, writing nothing; live on InferHub 531 rows → 272 importable, keyed and keyless, 1259/1259 tests. |
+
+### Closed in the 2026-11-23 provider-switch commit
+
+[2026-1123-003](archive/FID-2026-1123-003-provider-model-switches.md) is `closed` at
+`f875bb9`. Switching a provider's catalog meant one press per row and a refusal
+spoken one toast at a time. `/admin/catalog` now selects rows and applies a bulk
+Enable/Disable through the same guard the single button uses, reporting every
+refused row with its reason. The same review found the `/admin/providers`
+**Status** column rendering the quota probe's stored status, so a persisted
+disable still read `active`; the column now reports the switch and names health
+separately.
 
 ### Closed in the 2026-11-23 catalog-preview commit
 

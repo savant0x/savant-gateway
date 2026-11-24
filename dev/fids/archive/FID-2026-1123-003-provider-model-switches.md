@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1123-003-provider-model-switches.md`
 **ID:** FID-2026-1123-003
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-23 23:20
 **Automation level:** 3
 **YAGNI-Compliance:** Verified

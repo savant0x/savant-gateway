@@ -38,6 +38,7 @@ export type ProviderRow = {
   balance_url: string | null;
   catalog_url: string | null;
   enabled: number;
+  is_default: number;
   sort_order: number;
   status: ProviderStatus["status"];
   balance_usd: number | null;
@@ -100,6 +101,7 @@ export function toRecord(row: ProviderRow): ProviderRecord {
     balanceUrl: row.balance_url ?? null,
     catalogUrl: row.catalog_url ?? null,
     enabled: Number(row.enabled) === 1,
+    isDefault: Number(row.is_default) === 1,
     sortOrder: Number(row.sort_order),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -192,6 +194,7 @@ export function emptyRow(slug: string): ProviderRow {
     balance_url: null,
     catalog_url: null,
     enabled: 0,
+    is_default: 0,
     sort_order: 0,
     status: "unconfigured",
     balance_usd: null,

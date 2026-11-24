@@ -74,6 +74,7 @@ function costMicros(model: NormalizedModel, side: "input" | "output") {
 
 function toRow(
   provider: ProviderRecord,
+  defaultSlug: string | null,
   model: NormalizedModel,
 ): Omit<SyncedModel, "sortOrder"> | null {
   const protocol = inferModelProtocol({
@@ -86,7 +87,7 @@ function toRow(
   if (!protocol) return null;
 
   return {
-    id: publicModelId(provider.slug, model.upstreamId),
+    id: publicModelId(defaultSlug, provider.slug, model.upstreamId),
     upstreamId: model.upstreamId,
     upstreamSlug: provider.slug,
     routeGroup: canonicalModelKey(model.upstreamId),
@@ -118,6 +119,7 @@ export function buildSyncedCatalog(
   provider: ProviderRecord,
   models: UpstreamModel[],
   metadata: Map<string, ModelSpec>,
+  defaultSlug: string | null,
 ): {
   rows: SyncedModel[];
   skippedAliases: string[];
@@ -130,7 +132,7 @@ export function buildSyncedCatalog(
   const rows: Omit<SyncedModel, "sortOrder">[] = [];
 
   for (const model of normalized.models) {
-    const row = toRow(provider, model);
+    const row = toRow(provider, defaultSlug, model);
 
     if (row) rows.push(row);
   }
@@ -157,6 +159,7 @@ export function buildSyncedModels(
   provider: ProviderRecord,
   models: UpstreamModel[],
   metadata: Map<string, ModelSpec>,
+  defaultSlug: string | null,
 ): SyncedModel[] {
-  return buildSyncedCatalog(provider, models, metadata).rows;
+  return buildSyncedCatalog(provider, models, metadata, defaultSlug).rows;
 }

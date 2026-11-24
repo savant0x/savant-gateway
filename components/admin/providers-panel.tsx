@@ -108,6 +108,36 @@ export function AdminProvidersPanel({
     });
   }
 
+  function makeDefault(provider: ProviderSummary) {
+    if (
+      !window.confirm(
+        `Make ${provider.label} the default provider?\n\n` +
+          "The default publishes the unprefixed model ids and the public balance badge. " +
+          "Existing ids keep working until each provider syncs; the next sync of " +
+          "the outgoing default prefixes its ids and the next sync of this provider " +
+          "drops the prefix.",
+      )
+    ) {
+      return Promise.resolve();
+    }
+
+    return run(`default:${provider.slug}`, async () => {
+      const result = await send(
+        `/api/admin/providers/${provider.slug}`,
+        "POST",
+        { action: "make-default" },
+      );
+      const moved = Number(result?.previousPublishedIds ?? 0);
+      const incoming = Number(result?.publishedIds ?? 0);
+
+      return (
+        `${provider.label} is now the default. ` +
+        `${formatNumber(moved)} published ids lose their bare form and ` +
+        `${formatNumber(incoming)} gain it, at each provider's next sync.`
+      );
+    });
+  }
+
   function remove(provider: ProviderSummary) {
     if (
       !window.confirm(
@@ -252,6 +282,11 @@ export function AdminProvidersPanel({
                       >
                         {provider.enabled ? "enabled" : "disabled"}
                       </Chip>
+                      {provider.isDefault ? (
+                        <Chip color="warning" size="sm" variant="soft">
+                          default
+                        </Chip>
+                      ) : null}
                       {provider.status !== "active" ? (
                         <p className="mt-1 text-[11px] text-muted">
                           health: {provider.status}
@@ -274,6 +309,7 @@ export function AdminProvidersPanel({
                         busy={busy}
                         provider={provider}
                         onEdit={() => edit(provider)}
+                        onMakeDefault={() => makeDefault(provider)}
                         onPreview={() =>
                           setPreviewing({
                             slug: provider.slug,

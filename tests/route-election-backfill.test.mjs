@@ -47,7 +47,7 @@ async function fixture() {
 
   await replaceModels(
     db,
-    buildSyncedModels(PROVIDER, UPSTREAM, new Map()),
+    buildSyncedModels(PROVIDER, UPSTREAM, new Map(), "savant"),
     2_500,
     PROVIDER.slug,
   );

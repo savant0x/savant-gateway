@@ -16,6 +16,7 @@ import { providerKeyConfigured } from "../../providers/registry.ts";
 import { replaceModels } from "../store/model-sync.ts";
 import { replaceProviderCatalogGroups } from "../store/provider-catalog-groups.ts";
 import {
+  getDefaultProviderSlug,
   getProvider,
   listProviderRecords,
   saveProviderCatalogSync,
@@ -182,7 +183,12 @@ export async function syncProvider(
     skippedAliases,
     skippedMedia,
     skippedFreePool,
-  } = buildSyncedCatalog(provider, models, metadata);
+  } = buildSyncedCatalog(
+    provider,
+    models,
+    metadata,
+    await getDefaultProviderSlug(db),
+  );
 
   await replaceModels(db, synced, await getMarkupBps(db), slug);
 

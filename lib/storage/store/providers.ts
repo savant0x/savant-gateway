@@ -1,11 +1,7 @@
 import type { PostgresDatabase } from "../pg-adapter.ts";
 import type { ProviderSummary } from "../../providers/types.ts";
 import type { ProviderStatus } from "../../types.ts";
-
-import {
-  DEFAULT_PROVIDER_SLUG,
-  type ProviderInput,
-} from "../../providers/registry.ts";
+import type { ProviderInput } from "../../providers/registry.ts";
 
 import {
   emptyRow,
@@ -49,10 +45,114 @@ export async function listProviderRecords(db: PostgresDatabase) {
 }
 
 export async function getDefaultProvider(db: PostgresDatabase) {
-  return (
-    (await getProvider(db, DEFAULT_PROVIDER_SLUG)) ??
-    (await listProviderRecords(db)).find((provider) => provider.enabled)
-  );
+  const slug = await getDefaultProviderSlug(db);
+
+  if (slug) {
+    const provider = await getProvider(db, slug);
+
+    if (provider) return provider;
+  }
+
+  return (await listProviderRecords(db)).find((provider) => provider.enabled);
+}
+
+/**
+ * The slug that owns the unprefixed public id namespace and the published
+ * balance badge.
+ *
+ * It is stored (`providers.is_default`, one holder enforced by a partial unique
+ * index), not compiled. The ordering fallback exists for a database whose column
+ * was added outside the migration: choosing a row is better than returning null,
+ * and the result is still deterministic, so two processes agree.
+ */
+export async function getDefaultProviderSlug(
+  db: PostgresDatabase,
+): Promise<string | null> {
+  const flagged = await db
+    .prepare("SELECT slug FROM providers WHERE is_default = 1 LIMIT 1")
+    .get<{ slug: string }>();
+
+  if (flagged?.slug) return flagged.slug;
+
+  const fallback = await db
+    .prepare(
+      `SELECT slug FROM providers
+        ORDER BY enabled DESC, sort_order ASC, slug ASC
+        LIMIT 1`,
+    )
+    .get<{ slug: string }>();
+
+  return fallback?.slug ?? null;
+}
+
+/** In-catalog rows of one provider: the ids a switch would republish. */
+export async function countPublishedProviderModels(
+  db: PostgresDatabase,
+  slug: string,
+) {
+  const row = await db
+    .prepare(
+      "SELECT COUNT(*) AS total FROM models WHERE upstream_slug = ? AND in_catalog = 1",
+    )
+    .get<{ total: number }>(slug);
+
+  return Number(row?.total ?? 0);
+}
+
+export type DefaultProviderChange = {
+  previousSlug: string | null;
+  slug: string;
+  /** The outgoing default's published rows: their ids gain the slug prefix. */
+  previousPublishedIds: number;
+  /** The incoming default's published rows: their ids lose the slug prefix. */
+  publishedIds: number;
+};
+
+/**
+ * Moves the default. One transaction, so no reader sees two holders or none.
+ *
+ * Existing rows are not rewritten: a published id is what customers send, and
+ * history keeps the ids it was sold under. The next sync of each provider
+ * publishes under the new rule, which is why the change reports how many rows of
+ * each provider that will be.
+ */
+export async function setDefaultProvider(
+  db: PostgresDatabase,
+  slug: string,
+  now = new Date().toISOString(),
+): Promise<DefaultProviderChange | null> {
+  const target = await getProvider(db, slug);
+
+  if (!target) return null;
+
+  const previousSlug = await getDefaultProviderSlug(db);
+
+  if (previousSlug === slug) {
+    return {
+      previousSlug,
+      slug,
+      previousPublishedIds: 0,
+      publishedIds: await countPublishedProviderModels(db, slug),
+    };
+  }
+
+  const previousPublishedIds = previousSlug
+    ? await countPublishedProviderModels(db, previousSlug)
+    : 0;
+  const publishedIds = await countPublishedProviderModels(db, slug);
+
+  await db
+    .transaction(async () => {
+      await db.prepare("UPDATE providers SET is_default = 0").run();
+      await db
+        .prepare(
+          "UPDATE providers SET is_default = 1, updated_at = ? WHERE slug = ?",
+        )
+        .run(now, slug);
+    })
+    .immediate();
+
+  return { previousSlug, slug, previousPublishedIds, publishedIds };
 }
 
 export async function getProviderStatusBySlug(
@@ -193,7 +293,7 @@ export async function setProviderEnabled(
 
 /** Removes a non-default provider and its catalog rows in one transaction. */
 export async function deleteProvider(db: PostgresDatabase, slug: string) {
-  if (slug === DEFAULT_PROVIDER_SLUG) return false;
+  if (slug === (await getDefaultProviderSlug(db))) return false;
 
   const removed = await db
     .transaction(async () => {

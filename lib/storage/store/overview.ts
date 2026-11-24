@@ -9,6 +9,7 @@ import type {
 } from "../../types.ts";
 
 import { ensureProvidersFresh } from "../providers/freshness.ts";
+import { DEFAULT_PROVIDER_SLUG } from "../../providers/registry.ts";
 
 import { PUBLIC_MODEL_SCOPE } from "./model-sql.ts";
 import { getAccountSummary, listCreditLedger } from "./billing.ts";
@@ -16,7 +17,10 @@ import { listModels } from "./catalog.ts";
 import { listApiKeys } from "./keys.ts";
 import { listAllModels } from "./models.ts";
 import { getPricingSummary } from "./pricing.ts";
-import { getProviderStatusBySlug } from "./providers.ts";
+import {
+  getDefaultProviderSlug,
+  getProviderStatusBySlug,
+} from "./providers.ts";
 import { listAdminUsage, listUsage } from "./usage.ts";
 
 /**
@@ -34,7 +38,18 @@ import { listAdminUsage, listUsage } from "./usage.ts";
  * stale-while-revalidate contract already promised.
  */
 
-const DEFAULT_PROVIDER_SLUG = "savant";
+/**
+ * The public badge and the admin header describe the default provider — the row
+ * that owns the unprefixed public id namespace. Which row that is comes from the
+ * database (`providers.is_default`), not from a constant, so an operator can
+ * move it (FID-2026-1124-002).
+ */
+
+async function defaultProviderStatus(db: PostgresDatabase) {
+  const slug = await getDefaultProviderSlug(db);
+
+  return getProviderStatusBySlug(db, slug ?? DEFAULT_PROVIDER_SLUG);
+}
 
 export async function getOverviewStats(
   db: PostgresDatabase,
@@ -102,7 +117,7 @@ function toPublicProvider(
 }
 
 export async function getOverview(db: PostgresDatabase): Promise<Overview> {
-  const provider = await getProviderStatusBySlug(db, DEFAULT_PROVIDER_SLUG);
+  const provider = await defaultProviderStatus(db);
 
   return {
     provider,
@@ -122,9 +137,7 @@ export async function getLandingData(
   ensureProvidersFresh(db, { sync });
 
   return {
-    provider: toPublicProvider(
-      await getProviderStatusBySlug(db, DEFAULT_PROVIDER_SLUG),
-    ),
+    provider: toPublicProvider(await defaultProviderStatus(db)),
     models: await listModels(db),
     stats: await getOverviewStats(db),
   };
@@ -139,9 +152,7 @@ export async function getCatalogData(
   return {
     models: await listModels(db),
     stats: await getOverviewStats(db),
-    provider: toPublicProvider(
-      await getProviderStatusBySlug(db, DEFAULT_PROVIDER_SLUG),
-    ),
+    provider: toPublicProvider(await defaultProviderStatus(db)),
   };
 }
 
@@ -151,7 +162,7 @@ export async function getAdminOverview(
   const models = await listAllModels(db);
 
   return {
-    provider: await getProviderStatusBySlug(db, DEFAULT_PROVIDER_SLUG),
+    provider: await defaultProviderStatus(db),
     account: await getAccountSummary(db),
     models,
     keys: await listApiKeys(db),

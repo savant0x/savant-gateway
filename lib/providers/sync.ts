@@ -5,6 +5,7 @@ import type { ModelSpec } from "./catalog.ts";
 import type { ProviderSyncDeps } from "../storage/providers/sync.ts";
 
 import { getDatabase } from "../storage/runtime.ts";
+import { getDefaultProviderSlug } from "../storage/store/providers.ts";
 import {
   fetchUpstreamModels as portedFetchUpstreamModels,
   syncAllEnabled as portedSyncAllEnabled,
@@ -18,7 +19,6 @@ import {
   fetchProviderUrl,
   providerFetch,
 } from "./request.ts";
-import { DEFAULT_PROVIDER_SLUG } from "./registry.ts";
 import { readCatalogGroups } from "./catalog-groups.ts";
 
 /**
@@ -81,12 +81,13 @@ function deps(): ProviderSyncDeps {
 
       return readCatalogGroups(await response.json());
     },
-    // The overlay describes one catalog. Every other provider gets no overlay,
-    // so an id that happens to collide cannot inherit this provider's price.
-    fetchMetadata: (provider) =>
-      provider.slug === DEFAULT_PROVIDER_SLUG
+    // The overlay describes one catalog: the default provider's. Which row that
+    // is comes from the database, so moving the default moves the overlay with
+    // it and no other provider can inherit this map.
+    fetchMetadata: async (provider) =>
+      provider.slug === (await getDefaultProviderSlug(await getDatabase()))
         ? fetchPublicMetadata()
-        : Promise.resolve(new Map<string, ModelSpec>()),
+        : new Map<string, ModelSpec>(),
   };
 }
 

@@ -91,6 +91,11 @@ export const listProviderCatalogGroups = bound(
 export const listProviders = bound(providers.listProviders);
 export const getProvider = bound(providers.getProvider);
 export const getDefaultProvider = bound(providers.getDefaultProvider);
+export const getDefaultProviderSlug = bound(providers.getDefaultProviderSlug);
+export const setDefaultProvider = bound(providers.setDefaultProvider);
+export const countPublishedProviderModels = bound(
+  providers.countPublishedProviderModels,
+);
 export const getProviderStatusBySlug = bound(providers.getProviderStatusBySlug);
 export const createProvider = bound(providers.createProvider);
 export const updateProvider = bound(providers.updateProvider);

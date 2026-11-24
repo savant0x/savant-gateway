@@ -2,7 +2,7 @@ import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
 import { sanitizeError } from "@/lib/http";
 import { previewProviderCatalog } from "@/lib/providers/preview";
 import { providerPreviewFetch } from "@/lib/providers/request";
-import { getProvider } from "@/lib/store";
+import { getDefaultProviderSlug, getProvider } from "@/lib/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,6 +27,7 @@ export async function POST(request: Request, context: Context) {
   try {
     const preview = await previewProviderCatalog(provider, {
       request: providerPreviewFetch,
+      defaultSlug: await getDefaultProviderSlug(),
     });
 
     return Response.json({ ok: true, ...preview }, { headers: NO_STORE });

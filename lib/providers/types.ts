@@ -33,6 +33,11 @@ export type ProviderRecord = {
   /** The vendor's prefix-group document, when it publishes one. */
   catalogUrl: string | null;
   enabled: boolean;
+  /**
+   * Whether this provider owns the unprefixed public id namespace and the
+   * published balance badge. Exactly one row holds it.
+   */
+  isDefault: boolean;
   sortOrder: number;
   createdAt: string;
   updatedAt: string;

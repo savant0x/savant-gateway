@@ -53,6 +53,39 @@ the provider key remains on the server.
    default is `1` (`NOT NULL DEFAULT 1` on the column), so an upgrade cannot
    silently delete an existing provider's free rows.
 
+## The default provider
+
+The default provider owns the **unprefixed public id namespace**: its rows are
+published under the bare upstream id (`glm-5.3`) and every other provider's rows
+are namespaced (`inferhub/glm-5.3`). It is also the row whose balance, quota and
+sync time the landing page and `/admin` publish, and the only provider whose
+catalog receives the public metadata overlay.
+
+It is one stored fact — `providers.is_default`, with a partial unique index that
+allows at most one holder — not a compiled constant, so it can be moved.
+
+**Make default** on any other row moves it. Two consequences follow, and the
+console states both counts before you confirm:
+
+1. **Published ids change at the next sync of each provider.** The outgoing
+default's rows stop being bare and become `slug/id`; the incoming default's rows
+stop being prefixed and become bare. Existing rows are never rewritten in
+place — a public id is what customers send, and `usage_events` keeps the id it
+was sold under — so until you press **Sync** the old ids keep working.
+2. **The published badge moves.** The landing page and `/admin` describe the new
+default's balance and quota from then on; a disabled default publishes an honest
+`unconfigured` badge rather than disappearing.
+
+The current default cannot be deleted, because deleting it would leave the public
+namespace undefined. Make another provider the default first, then delete the old
+one: a row that used to be the default is deletable, and its catalog rows go with
+it while usage history stays.
+
+A database that has never been told which row is the default picks one once, at
+migration time: the legacy `savant` seed if it exists, otherwise the enabled row
+with the lowest `sort_order`, otherwise the lowest `sort_order`. The pick only
+runs while nothing is flagged, so a later choice is never overwritten.
+
 ## Preview a catalog without a key
 
 **Preview** on `/admin/providers` reads the provider's catalog and reports what

@@ -1,6 +1,8 @@
 import type { ModelProtocol, ProviderKind } from "./types";
 
 export const DEFAULT_PROVIDER_SLUG = "savant";
+/** Kept for the seeds and for a registry that has no row to name. Which row owns
+ *  the public namespace is `providers.is_default`; see `lib/storage/store/providers.ts`. */
 export const PROVIDER_KINDS: ProviderKind[] = ["openai", "anthropic", "both"];
 
 export type ProviderInput = {
@@ -233,8 +235,20 @@ export function readProviderInput(value: unknown) {
   } as const;
 }
 
-export function publicModelId(providerSlug: string, upstreamId: string) {
-  return providerSlug === DEFAULT_PROVIDER_SLUG
+/**
+ * The published id for one upstream model.
+ *
+ * The default provider owns the unprefixed namespace, so its rows keep the bare
+ * upstream id and every other provider's rows are namespaced as `slug/id`. The
+ * owner is passed in rather than read from a constant: it is one stored fact and
+ * an operator can move it (FID-2026-1124-002).
+ */
+export function publicModelId(
+  defaultSlug: string | null,
+  providerSlug: string,
+  upstreamId: string,
+) {
+  return defaultSlug === providerSlug
     ? upstreamId
     : `${providerSlug}/${upstreamId}`;
 }

@@ -2,7 +2,7 @@
 
 **Last folder audit:** 2026-11-24 (admin surface review). This page
 indexes the working set; each FID owns its own status, evidence and resolution.
-Current counts: 12 active / 22, 192 archived, 199 allocated.
+Current counts: 12 active / 22, 193 archived, 200 allocated.
 
 ## Layout
 
@@ -29,6 +29,7 @@ Current counts: 12 active / 22, 192 archived, 199 allocated.
 | [2026-1104-018](FID-2026-1104-018-content-automation-master.md) | Content automation and persistent matching master | converged | Children 015–017 are implemented (`dbaa033`, `3f5a045`, `6cb7486`, `1c4c2a5`) and still owe their closure proofs. The master closes on those plus the operator's scheduler backend, secret and hosted-tick authorization. |
 | [2026-1110-002](FID-2026-1110-002-identity-calibration-lab.md) | Identity calibration lab and measured certificate | converged | Steps 1–4 are committed (`d66a538`, `b884984`, `1f75c44`; step 4 in `495e8b3`, plus its proxy script under [2026-1122-001](archive/FID-2026-1122-001-commit-calibration-proxy.md)). Step 5, collection, is next and needs an operator-supplied upstream; then the certificate path. |
 | [2026-1120-001](FID-2026-1120-001-inferhub-upstream-onboarding.md) | InferHub upstream onboarding | fixed | Steps 1, 2, 3, 4 and 8 are done (`ed8812a`, `495e8b3`, `b159ba0`): the row is seeded disabled, review-required and resale-restricted. Steps 5–7 stay blocked on funding and a measured figure. |
+| [2026-1124-002](archive/FID-2026-1124-002-default-provider.md) | Persisted, switchable default provider | closed | The default is `providers.is_default` with a partial unique index, not a constant; **Make default** moves it and reports the published ids that change at each provider's next sync; the guard refuses only the current default, so a demoted row becomes deletable. 10 new cases, 12/12 gates and 1277/1277 tests, plus a live probe of the route's 404/400/401 answers. |
 | [2026-1123-003](archive/FID-2026-1123-003-provider-model-switches.md) | Provider-scoped switches for individual models | closed | Selection and a bulk Enable/Disable on `/admin/catalog` under the same per-row guard, and the `/admin/providers` status column reporting the switch instead of the stored health; 5 disposable-database cases, 12/12 gates and 1264/1264 tests. |
 | [2026-1124-001](archive/FID-2026-1124-001-admin-console-clarity.md) | Admin console clarity, attention signals and payload | closed | Review baseline at [audit/2026-11-24-admin-surface-review.md](audit/2026-11-24-admin-surface-review.md): `/admin/showcase` explains its switch instead of 404ing, the overview tiles name the quantities they count, a review-required provider's chat-decision backlog appears on its row, `/admin/pricing` pages both tables and ships a trimmed row shape (1,104 kB → 347 kB), and the 30-day total has one name; 3 new cases, 12/12 gates and 1267/1267 tests. |
 | [2026-1122-005](archive/FID-2026-1122-005-provider-key-operability.md) | Provider key operability and sync on enable | closed | Archived at `ce6cad7`: the paste message, the two `.env.local` statements and the enable-time catalog read, with 1240/1240 tests. |

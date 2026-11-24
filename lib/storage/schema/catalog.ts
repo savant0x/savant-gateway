@@ -29,6 +29,7 @@ export async function catalogSchema(db: PostgresDatabase) {
       balance_url TEXT,
       catalog_url TEXT,
       enabled INTEGER NOT NULL DEFAULT 1,
+      is_default INTEGER NOT NULL DEFAULT 0,
       sort_order INTEGER NOT NULL DEFAULT 0,
       status TEXT NOT NULL DEFAULT 'unconfigured',
       balance_usd DOUBLE PRECISION,
@@ -135,6 +136,30 @@ export async function catalogSchema(db: PostgresDatabase) {
   await benchmarkColumns(db);
 
   await catalogSeeds(db);
+  await pickDefaultProvider(db);
+}
+
+/**
+ * A database that has never been told which row is the default picks one
+ * deterministically: the legacy seed when present, then any enabled row, then any
+ * row. It runs only while nothing is flagged, so an operator's choice is never
+ * overwritten by a later boot.
+ *
+ * It runs after the seeds, because the pick is about rows and an empty table has
+ * none to choose from.
+ */
+async function pickDefaultProvider(db: PostgresDatabase) {
+  await db
+    .prepare(
+      `UPDATE providers SET is_default = 1
+        WHERE slug = (
+          SELECT slug FROM providers
+           ORDER BY (slug = 'savant') DESC, enabled DESC, sort_order ASC, slug ASC
+           LIMIT 1
+        )
+        AND NOT EXISTS (SELECT 1 FROM providers WHERE is_default = 1)`,
+    )
+    .run();
 }
 
 async function providerColumns(db: PostgresDatabase) {
@@ -151,9 +176,18 @@ async function providerColumns(db: PostgresDatabase) {
     ["resale_free_pool", "INTEGER NOT NULL DEFAULT 1"],
     ["balance_url", "TEXT"],
     ["catalog_url", "TEXT"],
+    ["is_default", "INTEGER NOT NULL DEFAULT 0"],
   ] as const) {
     await ensureColumn(db, "providers", column, definition);
   }
+
+  // The default provider owns the unprefixed public id namespace and the
+  // published balance badge. It is one stored fact with exactly one holder, not
+  // a code constant, and the database is what enforces the "one".
+  await db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS providers_default_idx
+      ON providers(is_default) WHERE is_default = 1;
+  `);
 
   for (const [column, definition] of [
     ["upstream_slug", "TEXT NOT NULL DEFAULT 'savant'"],

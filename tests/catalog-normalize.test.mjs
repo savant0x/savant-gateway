@@ -73,7 +73,12 @@ test("a non-text output row is dropped and reported, never imported as chat", ()
 });
 
 test("a free-pool row stays a weighted $0 free row", () => {
-  const { rows } = buildSyncedCatalog(PROVIDER, [{ id: "free/tiny" }], new Map());
+  const { rows } = buildSyncedCatalog(
+    PROVIDER,
+    [{ id: "free/tiny" }],
+    new Map(),
+    "savant",
+  );
   const row = rows[0];
 
   assert.equal(row.allowFree, true);
@@ -89,6 +94,7 @@ test("the flat-usd shape imports a priced active row", () => {
     PROVIDER,
     [{ id: "gpt-6-luna", dollarsPer1M: 0.4, outputDollarsPer1M: 1.6 }],
     new Map(),
+    "savant",
   );
   const row = rows[0];
 
@@ -110,6 +116,7 @@ test("a declared $0 output is a missing figure and falls back to the input rate"
     PROVIDER,
     [{ id: "m", dollarsPer1M: 2, outputDollarsPer1M: 0 }],
     new Map(),
+    "savant",
   );
 
   assert.equal(rows[0].costOutputMicros, 2000000);
@@ -117,7 +124,12 @@ test("a declared $0 output is a missing figure and falls back to the input rate"
 });
 
 test("an unpriced row imports unknown and disabled, and importing it again keeps it", () => {
-  const { rows } = buildSyncedCatalog(PROVIDER, [{ id: "naked" }], new Map());
+  const { rows } = buildSyncedCatalog(
+    PROVIDER,
+    [{ id: "naked" }],
+    new Map(),
+    "savant",
+  );
 
   assert.equal(rows[0].costSource, "unknown");
   assert.equal(
@@ -169,7 +181,12 @@ test("the recorded default-provider payload imports exactly as it did before", (
   const payload = JSON.parse(
     readFileSync(new URL("./fixtures/catalog-parity.json", import.meta.url)),
   );
-  const { rows } = buildSyncedCatalog(PROVIDER, payload.models, new Map());
+  const { rows } = buildSyncedCatalog(
+    PROVIDER,
+    payload.models,
+    new Map(),
+    "savant",
+  );
 
   assert.deepEqual(
     JSON.parse(JSON.stringify(rows)),
@@ -208,6 +225,7 @@ test("a provider that forbids free-pool resale imports no free/ row at all", () 
     restricted,
     entries,
     new Map(),
+    "savant",
   );
 
   assert.deepEqual(
@@ -225,6 +243,7 @@ test("a provider that permits free-pool resale keeps its free rows", () => {
     permissive,
     [{ id: "free/tiny" }, { id: "free/alpha", weight: 2 }],
     new Map(),
+    "savant",
   );
 
   assert.equal(rows.length, 2);

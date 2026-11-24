@@ -53,6 +53,12 @@ export type ProviderCatalogPreview = {
 export type PreviewDeps = {
   /** Transport, injected so the tests exercise the real validation. */
   request: ProviderRequest;
+  /**
+   * The provider that owns the unprefixed public id namespace, so the sample
+   * shows the ids an import would actually publish. Supplied by the caller,
+   * which holds the database handle: this module still takes none.
+   */
+  defaultSlug?: string | null;
   /** Overrides the shipped paginated reader; the tests use it to stay offline. */
   readCatalog?: (
     provider: ProviderRecord,
@@ -68,7 +74,7 @@ export async function previewProviderCatalog(
   const models = await read(provider, deps.request);
 
   const { rows, skippedAliases, skippedMedia, skippedFreePool } =
-    buildSyncedCatalog(provider, models, new Map());
+    buildSyncedCatalog(provider, models, new Map(), deps.defaultSlug ?? null);
 
   const free = rows.filter(
     (model) => model.allowFree && model.tokenWeight > 0,

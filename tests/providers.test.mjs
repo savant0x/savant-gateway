@@ -110,9 +110,12 @@ test("normalizeBaseUrl removes trailing slashes", () => {
 });
 
 test("public model ids are scoped for non-default providers", () => {
-  assert.equal(publicModelId("savant", "free/gpt-6-luna"), "free/gpt-6-luna");
   assert.equal(
-    publicModelId("commandcode", "claude-sonnet-4-6"),
+    publicModelId("savant", "savant", "free/gpt-6-luna"),
+    "free/gpt-6-luna",
+  );
+  assert.equal(
+    publicModelId("savant", "commandcode", "claude-sonnet-4-6"),
     "commandcode/claude-sonnet-4-6",
   );
 });

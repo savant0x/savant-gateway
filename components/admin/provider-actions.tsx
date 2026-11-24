@@ -10,12 +10,9 @@ import { Button, Spinner } from "@heroui/react";
  * Every row shows the same controls, including Delete on the default provider,
  * because an absent button reads as "this provider cannot be removed" with no
  * explanation. The default provider owns the published catalog identity, so its
- * Delete is disabled and says so (reported 2026-11-24).
+ * Delete is disabled and says so (reported 2026-11-24), and any other row can be
+ * made the default instead (FID-2026-1124-002).
  */
-
-/** Mirrors `DEFAULT_PROVIDER_SLUG` in `lib/providers/registry.ts`, which reads
- *  the environment and therefore cannot be imported into a client component. */
-const DEFAULT_PROVIDER = "savant";
 
 export function ProviderActions({
   provider,
@@ -27,6 +24,7 @@ export function ProviderActions({
   onEdit,
   onToggle,
   onRemove,
+  onMakeDefault,
 }: {
   provider: ProviderSummary;
   busy: string | null;
@@ -37,8 +35,9 @@ export function ProviderActions({
   onEdit: () => void;
   onToggle: () => void;
   onRemove: () => void;
+  onMakeDefault: () => void;
 }) {
-  const isDefault = provider.slug === DEFAULT_PROVIDER;
+  const isDefault = provider.isDefault;
 
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -95,6 +94,17 @@ export function ProviderActions({
       >
         {provider.enabled ? "Disable" : "Enable"}
       </Button>
+      {isDefault ? null : (
+        <Button
+          isDisabled={busy !== null}
+          size="sm"
+          variant="secondary"
+          onPress={onMakeDefault}
+        >
+          {busy === `default:${provider.slug}` ? <Spinner size="sm" /> : null}
+          Make default
+        </Button>
+      )}
       <Button
         isDisabled={busy !== null || isDefault}
         size="sm"
@@ -107,7 +117,7 @@ export function ProviderActions({
       {isDefault ? (
         <p className="w-full text-[11px] text-muted">
           The default provider cannot be deleted: it owns the published catalog
-          identity. Disable it instead, and its models leave the catalog.
+          identity. Make another provider the default, then delete this one.
         </p>
       ) : null}
     </div>

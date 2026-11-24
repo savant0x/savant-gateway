@@ -78,7 +78,7 @@ test("the preview counts what the importer would count, and says it read keyless
       request: async () => new Response("{}"),
       readCatalog: async () => ENTRIES,
     });
-    const imported = buildSyncedCatalog(PROVIDER, ENTRIES, new Map());
+    const imported = buildSyncedCatalog(PROVIDER, ENTRIES, new Map(), "savant");
 
     assert.equal(preview.keyless, true);
     assert.equal(preview.upstreamRows, ENTRIES.length);
@@ -127,7 +127,12 @@ test("a provider that forbids free-pool resale shows the refusal it would get", 
       request: async () => new Response("{}"),
       readCatalog: async () => ENTRIES,
     });
-    const imported = buildSyncedCatalog(restricted, ENTRIES, new Map());
+    const imported = buildSyncedCatalog(
+      restricted,
+      ENTRIES,
+      new Map(),
+      "savant",
+    );
 
     assert.equal(preview.refused.freePool, imported.skippedFreePool.length);
     assert.ok(preview.refused.freePool > 0, "the free row is refused");

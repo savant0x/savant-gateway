@@ -8,7 +8,13 @@ import {
   readProviderInput,
 } from "@/lib/providers/registry";
 import { readJsonObject, requestBodyError } from "@/lib/request-limits";
-import { deleteProvider, getProvider, updateProvider } from "@/lib/store";
+import {
+  deleteProvider,
+  getDefaultProviderSlug,
+  getProvider,
+  setDefaultProvider,
+  updateProvider,
+} from "@/lib/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -79,6 +85,41 @@ async function readCatalogOnce(slug: string) {
   }
 }
 
+/**
+ * Moves the default provider.
+ *
+ * The default owns the unprefixed public id namespace, so this is the one action
+ * in the registry that changes what a future sync publishes. It answers with the
+ * measured number of published rows on each side, and the UI states them before
+ * the operator confirms instead of leaving the consequence to be discovered after
+ * a sync.
+ */
+export async function POST(request: Request, context: Context) {
+  const blocked = await guardAdminApi(request);
+
+  if (blocked) return blocked;
+
+  const { slug } = await context.params;
+
+  let body: Record<string, unknown>;
+
+  try {
+    body = await readJsonObject(request);
+  } catch (error) {
+    return requestBodyError(error);
+  }
+
+  if (body.action !== "make-default") {
+    return adminError(400, 'action must be "make-default".');
+  }
+
+  const change = await setDefaultProvider(slug);
+
+  if (!change) return adminError(404, "Provider not found.");
+
+  return Response.json({ ok: true, ...change }, { headers: NO_STORE });
+}
+
 export async function DELETE(request: Request, context: Context) {
   const blocked = await guardAdminApi(request);
 
@@ -86,8 +127,11 @@ export async function DELETE(request: Request, context: Context) {
 
   const { slug } = await context.params;
 
-  if (slug === "savant") {
-    return adminError(400, "The default provider cannot be deleted.");
+  if (slug === (await getDefaultProviderSlug())) {
+    return adminError(
+      400,
+      "The default provider cannot be deleted: it owns the published catalog identity. Make another provider the default first, then delete this one.",
+    );
   }
 
   if (!(await deleteProvider(slug))) {

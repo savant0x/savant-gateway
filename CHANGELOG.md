@@ -3,6 +3,30 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-24 — A default provider that can be changed (1124-002)
+
+- **FID-2026-1124-002 — medium —** "the default provider" was the constant
+  `DEFAULT_PROVIDER_SLUG = "savant"`, copied as a literal in three more places.
+  It decided which rows keep unprefixed public ids, whose balance badge the
+  landing page publishes, which catalog receives the metadata overlay, and which
+  row could never be deleted — so the operator's legacy seed row (labelled
+  `apinex`, slugged `savant`, disabled, 44 models) was immortal and no other
+  provider could take the namespace.
+  The default is now `providers.is_default`, with a partial unique index that
+  allows at most one holder; a migration picks one row once (the legacy seed,
+  else the enabled row with the lowest `sort_order`) and never overwrites a choice
+  made later. `/admin/providers` shows a `default` chip and **Make default** on
+  the other rows; the action returns the measured number of published rows on
+  each side and the confirmation states them, because switching changes what the
+  next sync publishes — the outgoing default's ids gain the slug prefix and the
+  incoming default's lose it. Nothing is rewritten in place: a public id is what
+  customers send, and `usage_events` keeps the id it was sold under. The delete
+  guard now refuses only the **current** default, so a demoted row can be removed.
+  `publicModelId` takes the default as an argument, sync and preview read it from
+  the store, and `docs/providers.md` documents the consequence. Verified with 10
+  new cases, a live route probe (404 unknown slug, 400 wrong action, 401 without a
+  session) and 12/12 gates, 1277/1277 tests.
+
 ## 2026-11-24 — Upstream provider deletion, and console clarity (1124-001)
 
 - **FID-2026-1124-001 — medium —** a read-only pass over all 17 `/admin` routes

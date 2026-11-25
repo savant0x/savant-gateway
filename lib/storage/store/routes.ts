@@ -47,6 +47,12 @@ type RouteRow = {
   requires_model_review: number;
   eligibility_decision: EligibilityDecision | null;
   cost_observed_at: string | null;
+  is_primary: number;
+  served_provider_slug: string | null;
+  served_upstream_id: string | null;
+  served_protocol: string | null;
+  served_cost_input_micros: number | string | null;
+  served_cost_output_micros: number | string | null;
 };
 
 const ROUTE_SELECT = `
@@ -57,7 +63,9 @@ const ROUTE_SELECT = `
          COALESCE(g.billing_mode, 'paid') AS group_billing_mode,
          p.enabled AS provider_enabled, p.sort_order AS provider_sort_order,
          p.requires_model_review, me.decision AS eligibility_decision,
-         m.cost_observed_at
+         m.cost_observed_at, m.is_primary, m.served_provider_slug,
+         m.served_upstream_id, m.served_protocol,
+         m.served_cost_input_micros, m.served_cost_output_micros
   FROM models m
   JOIN providers p ON p.slug = m.upstream_slug
   LEFT JOIN model_eligibility me
@@ -133,13 +141,40 @@ export async function reconcileRoutesIn(
           // Only the published row carries the winning route. A pinned
           // `provider/model` id must answer from its own provider, so the other
           // rows keep a null served route and resolve to themselves.
-          await update.run(
+          const next = [
             primary ? 1 : 0,
             primary ? (serving?.upstream_slug ?? null) : null,
             primary ? (serving?.upstream_id ?? null) : null,
             primary ? (serving?.protocol ?? null) : null,
             primary ? (serving?.input_price_micros ?? null) : null,
             primary ? (serving?.output_price_micros ?? null) : null,
+          ];
+          const stored = [
+            Number(member.is_primary),
+            member.served_provider_slug,
+            member.served_upstream_id,
+            member.served_protocol,
+            member.served_cost_input_micros === null
+              ? null
+              : Number(member.served_cost_input_micros),
+            member.served_cost_output_micros === null
+              ? null
+              : Number(member.served_cost_output_micros),
+          ];
+
+          // A stable catalog must not be rewritten on every edit: at catalog
+          // size the unconditional write cost rows(models) round trips inside
+          // one transaction (FID-2026-1124-005). ROUTE_SELECT already reads
+          // every compared column, so the diff costs no extra read.
+          if (next.every((value, index) => value === stored[index])) continue;
+
+          await update.run(
+            next[0],
+            next[1],
+            next[2],
+            next[3],
+            next[4],
+            next[5],
             member.id,
           );
         }

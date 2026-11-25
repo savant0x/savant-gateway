@@ -17,6 +17,7 @@ import { catalogSkuName } from "@/lib/catalog-skus";
 import { betterSide, resolveComparePair } from "@/lib/compare";
 import { AA_ATTRIBUTION_URL } from "@/lib/benchmarks";
 import { getOpenRouterModels } from "@/lib/openrouter-prices";
+import { displayModelId } from "@/lib/model-identity";
 import { buildCatalogComparison, blendedPer1M } from "@/lib/price-comparison";
 import {
   getBenchmarkStatus,
@@ -127,14 +128,17 @@ export default async function ComparePage({
                   can measure. A dash is a missing measurement, never a zero.
                 </p>
                 <ModelPicker
-                  leftId={pair.left.id}
+                  leftId={displayModelId(pair.left.id, pair.left.upstreamSlug)}
                   models={data.models.map((model) => ({
-                    id: model.id,
+                    id: displayModelId(model.id, model.upstreamSlug),
                     name: model.name,
                     family: model.family,
                     access: model.access,
                   }))}
-                  rightId={pair.right.id}
+                  rightId={displayModelId(
+                    pair.right.id,
+                    pair.right.upstreamSlug,
+                  )}
                 />
               </>
             ) : (

@@ -7,13 +7,18 @@ import { ModelClickLink } from "./model-click-link";
 import { AccessChip } from "@/components/dashboard/chips";
 import { formatPricePer1M } from "@/components/dashboard/format";
 import { purchaseCta } from "@/lib/content/format";
+import { displayModelId, modelIdLeaf, modelPath } from "@/lib/model-identity";
 
 export type LinkedModel = {
   model: ModelSummary | null;
   /** The catalog id this card quotes, or the last known id when it is gone. */
   modelId: string;
   reason: string;
-  /** Other provider rows selling the same weights. */
+  /**
+   * Other catalog rows selling the same weights. Used for the count only: a row
+   * id carries its upstream account slug, so none of them is printed
+   * (FID-2026-1125-002).
+   */
   providers: string[];
 };
 
@@ -61,7 +66,9 @@ export function ModelModule({
                 key={modelId}
                 className="rounded-lg border border-dashed border-black/10 p-3 dark:border-white/10"
               >
-                <p className="mono text-xs text-muted">{modelId}</p>
+                <p className="mono text-xs text-muted">
+                  {modelIdLeaf(modelId)}
+                </p>
                 <p className="mt-1 text-xs text-muted">
                   Not currently sold here. This piece named it; the catalog does
                   not carry it today.
@@ -72,6 +79,7 @@ export function ModelModule({
           }
 
           const cta = purchaseCta(model.access, signedIn);
+          const detailHref = modelPath(model.id, model.upstreamSlug);
 
           return (
             <div
@@ -83,13 +91,13 @@ export function ModelModule({
                   <ModelClickLink
                     className="font-semibold underline-offset-4 hover:underline"
                     contentId={contentId}
-                    href={`/models/${model.id}`}
+                    href={detailHref}
                     modelId={model.id}
                   >
                     {model.name}
                   </ModelClickLink>
                   <p className="mono mt-0.5 text-[11px] text-muted">
-                    {model.id}
+                    {displayModelId(model.id, model.upstreamSlug)}
                   </p>
                 </div>
                 <AccessChip model={model} />
@@ -116,10 +124,9 @@ export function ModelModule({
 
               {providers.length > 0 ? (
                 <p className="mt-3 text-[11px] text-muted">
-                  Same model from {providers.length} other provider
-                  {providers.length === 1 ? "" : "s"}:{" "}
-                  {providers.slice(0, 3).join(", ")}
-                  {providers.length > 3 ? ` +${providers.length - 3}` : ""}
+                  The same weights are listed in {providers.length} other
+                  catalog{providers.length === 1 ? " entry" : " entries"}; this
+                  card quotes the lowest sell price.
                 </p>
               ) : null}
 
@@ -133,7 +140,7 @@ export function ModelModule({
                 <ModelClickLink
                   className="rounded-lg border border-black/10 px-3 py-2 text-xs font-medium transition-colors hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
                   contentId={contentId}
-                  href={`/models/${model.id}`}
+                  href={detailHref}
                   modelId={model.id}
                 >
                   Model details

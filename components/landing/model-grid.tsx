@@ -2,6 +2,7 @@ import type { LandingData } from "@/lib/types";
 import type { PriceComparison } from "@/lib/price-comparison";
 
 import { ModelCatalogTable } from "@/components/catalog/model-catalog-table";
+import { catalogTableData } from "@/lib/catalog-payload";
 
 export function ModelGrid({
   data,
@@ -12,6 +13,8 @@ export function ModelGrid({
   comparisons?: Record<string, PriceComparison>;
   benchmarkFetchedAt?: string | null;
 }) {
+  const table = catalogTableData(data.models, {}, comparisons);
+
   return (
     <section className="border-t border-border" id="models">
       <div className="landing-section mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -31,9 +34,9 @@ export function ModelGrid({
         </div>
         <ModelCatalogTable
           benchmarkFetchedAt={benchmarkFetchedAt}
-          comparisons={comparisons}
-          models={data.models}
-          pageSize={Math.max(1, data.models.length)}
+          comparisons={table.comparisons}
+          models={table.models}
+          pageSize={Math.max(1, table.models.length)}
         />
         <p className="mt-4 font-mono text-[10px] leading-6 text-muted">
           All enabled models, with configured retail prices. Subscription models

@@ -35,7 +35,8 @@ export const MODEL_FIELDS = [
   {
     name: "id",
     type: "string",
-    description: "Public model id. Send this value as model in a completion.",
+    description:
+      "Public model id. Send this value as model in a completion. It is the model's own name, prefixed only by a billing tier (free/ or subscription/), and it never names the supplier.",
     example: "gpt-6.1-sol",
   },
   {

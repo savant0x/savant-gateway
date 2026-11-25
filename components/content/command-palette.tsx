@@ -59,7 +59,7 @@ function entriesFor(results: Results): Entry[] {
       key: `model:${model.id}`,
       label: model.name,
       detail: `${model.family} · ${model.id}`,
-      href: `/models/${model.id}`,
+      href: `/models/${model.id.split("/").map(encodeURIComponent).join("/")}`,
     })),
     ...results.topics.map((topic) => ({
       group: "Topics" as const,

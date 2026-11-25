@@ -53,8 +53,19 @@ function modelIdFrom(segments: string[]) {
 async function findModel(segments: string[]) {
   const id = modelIdFrom(segments);
   const catalog = await getCatalogData();
+  const exact = catalog.models.find((model) => model.id === id);
 
-  return catalog.models.find((model) => model.id === id) ?? null;
+  if (exact) return exact;
+
+  // Links are built from the display id (`modelPath`), so the page answers to
+  // it as well as to the stored key an older link may still carry. A leaf two
+  // rows share answers with neither: guessing would show one seller's row under
+  // the other's link (FID-2026-1125-002).
+  const matches = catalog.models.filter(
+    (model) => displayModelId(model.id, model.upstreamSlug) === id,
+  );
+
+  return matches.length === 1 ? matches[0] : null;
 }
 
 export async function generateMetadata({

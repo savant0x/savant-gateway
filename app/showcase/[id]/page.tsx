@@ -7,6 +7,7 @@ import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
 import { VisualBuildViewer } from "@/components/showcase/visual-build-viewer";
 import { getPublishedVisualBuild, getPublishedVisualBundle } from "@/lib/store";
+import { modelPath } from "@/lib/model-identity";
 import { visualBuildsEnabled } from "@/lib/visual-builds/types";
 
 export const dynamic = "force-dynamic";
@@ -74,7 +75,7 @@ export default async function VisualBuildPage({ params }: PageProps) {
                   <dd className="mt-0.5 font-medium">
                     <Link
                       className="text-accent underline-offset-4 hover:underline"
-                      href={`/models/${build.modelId}`}
+                      href={modelPath(build.modelId, null)}
                     >
                       {build.modelName}
                     </Link>

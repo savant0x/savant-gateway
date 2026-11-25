@@ -271,8 +271,10 @@ export function ApiReference() {
                 title="Retrieve one published model"
               >
                 Returns the same model object the list publishes, or a 404 with
-                code model_not_found. The id may contain a slash; encode it or
-                send the literal provider/model path. The same key is required.
+                code model_not_found. The id is the one the list published: a
+                model name, or a name behind free/ or subscription/. Send it
+                literally; a slash in an id only ever separates a billing tier.
+                The same key is required.
               </SectionHeading>
 
               <CodeSample code={MODEL_RETRIEVE_REQUEST} label="Request" />

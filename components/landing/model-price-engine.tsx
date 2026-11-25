@@ -1,6 +1,6 @@
 "use client";
 
-import type { ModelSummary } from "@/lib/types";
+import type { PriceEngineModel } from "@/lib/catalog-payload";
 
 import { Button } from "@heroui/react";
 import Image from "next/image";
@@ -13,7 +13,7 @@ import {
 } from "@/components/dashboard/format";
 import { brandImages } from "@/config/images";
 
-export function ModelPriceEngine({ models }: { models: ModelSummary[] }) {
+export function ModelPriceEngine({ models }: { models: PriceEngineModel[] }) {
   const priced = models.filter(
     (model) =>
       model.access === "paid" &&

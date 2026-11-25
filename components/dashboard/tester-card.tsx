@@ -1,13 +1,13 @@
 "use client";
 
-import type { ModelSummary } from "@/lib/types";
+import type { TesterModel } from "@/lib/catalog-payload";
 
 import { Button, Card, Input, Spinner, TextArea } from "@heroui/react";
 import { useState } from "react";
 
 import { formatPricePer1M, formatUsage, responseError } from "./format";
 
-export function TesterCard({ models }: { models: ModelSummary[] }) {
+export function TesterCard({ models }: { models: TesterModel[] }) {
   const [testKey, setTestKey] = useState("");
   const [testModel, setTestModel] = useState("");
   const [prompt, setPrompt] = useState(

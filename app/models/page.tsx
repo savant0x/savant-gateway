@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { ModelCatalogTable } from "@/components/catalog/model-catalog-table";
+import { catalogTableData } from "@/lib/catalog-payload";
 import { formatNumber } from "@/components/dashboard/format";
 import { primaryCta, secondaryCta } from "@/components/landing/cta";
 import { SiteFooter } from "@/components/landing/site-footer";
@@ -74,6 +75,11 @@ export default async function ModelsPage() {
   // The headline counts published SKUs: a free allocation and its paid
   // counterpart are separate products with separate ids and detail pages.
   const counts = catalogSkuCounts(catalogSkuRows(data.models));
+  const table = catalogTableData(
+    data.models,
+    benchmarks,
+    comparison.comparisons,
+  );
 
   return (
     <div className="site-shell">
@@ -245,10 +251,10 @@ export default async function ModelsPage() {
           <ModelCatalogTable
             benchmarkFetchedAt={benchmarkFetchedAt}
             benchmarkStatus={benchmarkStatus}
-            benchmarks={benchmarks}
-            comparisons={comparison.comparisons}
-            models={data.models}
-            pageSize={Math.max(1, data.models.length)}
+            benchmarks={table.benchmarks}
+            comparisons={table.comparisons}
+            models={table.models}
+            pageSize={Math.max(1, table.models.length)}
           />
         </section>
       </main>

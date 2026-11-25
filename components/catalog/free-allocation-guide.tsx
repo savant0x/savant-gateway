@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { formatNumber } from "@/components/dashboard/format";
 import { siteOrigin } from "@/config/site";
+import { displayModelId } from "@/lib/model-identity";
 
 export type FreeAllocationMode = "daily" | "lifetime";
 
@@ -77,8 +78,11 @@ function faqItems(mode: FreeAllocationMode, weight: number) {
 export function FreeAllocationGuide({ mode, model, signedIn }: Props) {
   const weight = Math.max(1, Math.floor(model.tokenWeight) || 1);
   const items = faqItems(mode, weight);
+  // The example is copied verbatim into a request, so it carries the published
+  // id: `/v1/models` and the resolver both answer to the display id
+  // (FID-2026-1125-002).
   const body = JSON.stringify({
-    model: model.id,
+    model: displayModelId(model.id, model.upstreamSlug),
     messages: [{ role: "user", content: "Hello" }],
   });
   const request = `curl ${siteOrigin}/v1/chat/completions \\

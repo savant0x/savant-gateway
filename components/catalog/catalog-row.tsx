@@ -14,7 +14,7 @@ import {
 
 import { AccessChip } from "@/components/dashboard/chips";
 import { catalogAccessPath } from "@/lib/catalog-skus";
-import { displayModelId } from "@/lib/model-identity";
+import { displayModelId, modelPath } from "@/lib/model-identity";
 import {
   formatContextWindow,
   formatPricePer1M,
@@ -25,10 +25,6 @@ const PATH_ICON: Record<ModelAccess, string> = {
   paid: "fa-bolt",
   subscription: "fa-key",
 };
-
-function modelHref(id: string) {
-  return `/models/${id.split("/").map(encodeURIComponent).join("/")}`;
-}
 
 /**
  * One table row for one SKU. The free allocation, the metered id and a
@@ -54,7 +50,7 @@ export function CatalogRow({
       <td className="catalog-model">
         <Link
           className="block truncate font-medium underline-offset-4 hover:underline"
-          href={modelHref(model.id)}
+          href={modelPath(model.id, model.upstreamSlug)}
         >
           {row.name}
         </Link>
@@ -62,7 +58,7 @@ export function CatalogRow({
           {model.family} · {formatContextWindow(model.contextWindow)} ·{" "}
           <Link
             className="hover:text-accent hover:underline"
-            href={modelHref(model.id)}
+            href={modelPath(model.id, model.upstreamSlug)}
           >
             {shownId}
           </Link>

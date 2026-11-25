@@ -14,6 +14,7 @@ import {
 } from "@/lib/content/store/engagement";
 import { listItems } from "@/lib/content/store/items";
 import { getCustomerSession } from "@/lib/customer-auth";
+import { displayModelId, modelIdLeaf, modelPath } from "@/lib/model-identity";
 import { getCatalogData, recordActivityBestEffort } from "@/lib/store";
 import { getDatabase } from "@/lib/storage/runtime";
 
@@ -132,21 +133,27 @@ export default async function SignalBriefingPage() {
           ) : (
             groups.map((group) => {
               const model = modelsById.get(group.modelId);
+              // A model id is a storage key, so it carries the upstream account
+              // slug; the briefing prints the leaf instead (FID-2026-1125-002).
+              const displayId = model
+                ? displayModelId(model.id, model.upstreamSlug)
+                : modelIdLeaf(group.modelId);
+              const href = model
+                ? modelPath(model.id, model.upstreamSlug)
+                : modelPath(displayId, null);
 
               return (
                 <section key={group.modelId}>
                   <div className="flex flex-wrap items-end justify-between gap-2">
                     <div>
                       <h2 className="text-lg font-semibold">
-                        {model?.name ?? group.modelId}
+                        {model?.name ?? displayId}
                       </h2>
-                      <p className="mono text-[11px] text-muted">
-                        {group.modelId}
-                      </p>
+                      <p className="mono text-[11px] text-muted">{displayId}</p>
                     </div>
                     <Link
                       className="text-xs text-accent hover:underline"
-                      href={`/models/${group.modelId}`}
+                      href={href}
                     >
                       Model page →
                     </Link>

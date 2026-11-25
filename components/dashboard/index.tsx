@@ -12,6 +12,7 @@ import { TesterCard } from "./tester-card";
 import { UsageCard } from "./usage-card";
 
 import { ModelCatalogTable } from "@/components/catalog/model-catalog-table";
+import { catalogTableData, testerModels } from "@/lib/catalog-payload";
 
 export function Dashboard({ initial }: { initial: Overview }) {
   return (
@@ -69,12 +70,15 @@ export function Dashboard({ initial }: { initial: Overview }) {
             <i aria-hidden className="fa-solid fa-arrow-right text-accent" />
           </Link>
         </div>
-        <ModelCatalogTable models={initial.models} pageSize={10} />
+        <ModelCatalogTable
+          models={catalogTableData(initial.models).models}
+          pageSize={10}
+        />
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2" id="keys">
         <KeysCard keys={initial.keys} />
-        <TesterCard models={initial.models} />
+        <TesterCard models={testerModels(initial.models)} />
       </section>
 
       <section id="usage">

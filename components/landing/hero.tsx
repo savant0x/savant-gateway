@@ -5,6 +5,8 @@ import Link from "next/link";
 import { primaryCta, secondaryCta } from "./cta";
 import { ModelPriceEngine } from "./model-price-engine";
 
+import { priceEngineModels } from "@/lib/catalog-payload";
+
 export function Hero({ data }: { data: LandingData }) {
   return (
     <section className="landing-hero">
@@ -37,7 +39,7 @@ export function Hero({ data }: { data: LandingData }) {
               OpenAI-compatible · Your tools. Your workflow.
             </p>
           </div>
-          <ModelPriceEngine models={data.models} />
+          <ModelPriceEngine models={priceEngineModels(data.models)} />
         </div>
         <div className="landing-strip">
           <span>

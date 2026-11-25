@@ -2,7 +2,7 @@
 
 **Last folder audit:** 2026-11-25 (post-implementation audit). This page
 indexes the working set; each FID owns its own status, evidence and resolution.
-Current counts: 11 active, 200 archived, 211 records. The figures are counted
+Current counts: 10 active, 201 archived, 211 records. The figures are counted
 from the folder at each audit; an earlier line carried a date fragment in place
 of the active count.
 
@@ -37,7 +37,6 @@ or a proof that needs a real browser, job snapshot or deployment.
 | [2026-1104-018](FID-2026-1104-018-content-automation-master.md) | Content automation and persistent matching master | converged | Child 015 is `closed` and 016 is `closed`; 017 is `fixed` (`6cb7486`, `1c4c2a5`) and still owes proof. The master closes on that plus the operator's scheduler backend, secret and hosted-tick authorization. |
 | [2026-1110-002](FID-2026-1110-002-identity-calibration-lab.md) | Identity calibration lab and measured certificate | converged | Steps 1–4 are committed (`d66a538`, `b884984`, `1f75c44`; step 4 in `495e8b3`, plus its proxy script under [2026-1122-001](archive/FID-2026-1122-001-commit-calibration-proxy.md)). Step 5, collection, is next and needs an operator-supplied upstream; then the certificate path. |
 | [2026-1120-001](FID-2026-1120-001-inferhub-upstream-onboarding.md) | InferHub upstream onboarding | fixed | Steps 1, 2, 3, 4 and 8 are done (`ed8812a`, `495e8b3`, `b159ba0`): the row is seeded disabled, review-required and resale-restricted. Steps 5–7 stay blocked on funding and a measured figure. |
-| [2026-1125-002](FID-2026-1125-002-upstream-identity-hidden.md) | The upstream provider's name is never customer-facing | fixed | Implemented, gated and verified (`19ded1a`, `012bb6a`, `feb53d4`); a second loop on a model page's serialized props is in flight before it archives. |
 
 ### Closed in the 2026-11-24 admin and default-provider commits
 
@@ -67,7 +66,8 @@ routing key, the model page carries the benchmark score and the list rate, and
 verify` PASS 12/12 gates, 1310/1310 tests, PostgreSQL 20/20.
 
 [2026-1125-002](archive/FID-2026-1125-002-upstream-identity-hidden.md)
-is `closed` at `19ded1a`, `012bb6a`, `feb53d4` and `7a34180`. The stored id —
+is `closed` at `19ded1a`, `012bb6a`, `feb53d4`, `7a34180`, `aa0984d` and
+`f0ca239`. The stored id —
 the routing key, which carries the upstream account slug and the upstream's
 publisher path — was also the public identity, so the home page printed
 `inferhub/alicn/deepseek-v4-flash-0731` and six other surfaces repeated it.
@@ -78,7 +78,10 @@ payload carries the display id. The "same weights from N providers" line states
 a count instead of listing them. The blind spot is closed by a gate that reads
 the public pages, their model links, the published list and a model page against
 the provider rows in the database: `npm run verify` PASS 12/12 gates, 1318/1318
-tests, PostgreSQL 20/20, 789 HTTP checks.
+tests, PostgreSQL 20/20, 791 HTTP checks. A second loop caught the two client
+components on a model page whose props carried the stored key, so the follow and
+click actions now send the display id and their routes resolve it; that is what
+made the gate read a model page's text rather than only its status.
 
 ### Closed in the 2026-11-25 browser-proof commit
 

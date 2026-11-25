@@ -32,9 +32,10 @@ distinguish verified behavior from unverified claims.
   reads the public pages, their model links, the published list and a model page
   against the provider rows in the database and fails if an upstream slug appears
   or a published id carries a namespace.
-- Verified at `19ded1a`, `012bb6a`, `feb53d4` and `7a34180`, closed on a 12/12
-  `npm run verify` (1318/1318 tests, PostgreSQL 20/20, 789 HTTP checks) and
-  archived.
+- Verified at `19ded1a`, `012bb6a`, `feb53d4` and `7a34180`, then closed on a
+  second loop (`aa0984d`, `f0ca239`) that moved the model page's follow and click
+  props onto the display id and taught the gate to read a model page's text. 12/12
+  `npm run verify` (1318/1318 tests, PostgreSQL 20/20, 791 HTTP checks); archived.
 
 ## 2026-11-25 — Catalog columns and content tags tell the truth
 

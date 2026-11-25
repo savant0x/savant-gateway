@@ -29,8 +29,10 @@ copy-paste example change too, because all three are things a customer reads.
   ambiguous leaf), the provider-free published id, the URL change, the label
   change on every surface the scan found and the trimmed client payloads are
   implemented at `19ded1a` and `012bb6a`; the gate that reads rendered output is
-  in at `feb53d4`. `npm run verify` PASS 12/12 gates, 1318/1318 tests,
-  PostgreSQL 20/20, 789 HTTP checks, and the record is archived.
+  in at `feb53d4`, and a second loop (`aa0984d`, `f0ca239`) moved the follow and
+  click actions onto the display id and made the gate read a model page's text.
+  `npm run verify` PASS 12/12 gates, 1318/1318 tests, PostgreSQL 20/20, 791 HTTP
+  checks, and the record is archived.
 
 ## Session — 2026-11-25 (protocol review and the public surface: PC)
 

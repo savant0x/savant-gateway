@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1125-002-upstream-identity-hidden.md`
 **ID:** FID-2026-1125-002
 **Severity:** high
-**Status:** fixed
+**Status:** COMPLETE
 **Created:** 2026-11-25 16:20
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -439,7 +439,7 @@ status, so D12 survived the first closure. Reading the page's own HTML found
 - **Verification Evidence:** `npm run verify` PASS 12/12, 1318/1318 tests,
   PostgreSQL 20/20, 789 HTTP checks, build, recovery, deployment receipt.
 - **Archived:** 2026-11-25 → `dev/fids/archive/`; commits `19ded1a`, `012bb6a`,
-  `feb53d4`, `7a34180`.
+  `feb53d4`, `7a34180`, `aa0984d`, `f0ca239`, `9062072`.
 
 ## Lessons Learned
 

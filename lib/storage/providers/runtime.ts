@@ -7,13 +7,13 @@ import type {
 
 import { randomUUID } from "node:crypto";
 
-import { quotaIsCurrent } from "../../provider-quota.ts";
+import { providerObservationIsCurrent } from "../../provider-quota.ts";
 import { redactSecrets } from "../../redaction.ts";
 import { providerKeyConfigured } from "../../providers/registry.ts";
 import { claimRuntimeLease, completeRuntimeCheck } from "../ledger/quota.ts";
 import {
   getProvider,
-  getProviderStatusBySlug,
+  getProviderObservation,
   listProviderRecords,
 } from "../store/providers.ts";
 
@@ -100,9 +100,7 @@ async function readRuntime(
   const quotaError =
     quotaResult.status === "rejected"
       ? redactSecrets(quotaResult.reason).slice(0, 500)
-      : provider.capabilities.subscription
-        ? null
-        : "Provider does not expose quota.";
+      : null;
 
   if (balanceResult.status === "rejected") {
     warnings.push(
@@ -162,26 +160,30 @@ export async function refreshProviderRuntime(
 /**
  * A current observation, refreshing once when the stored one has expired.
  *
- * The stored reading counts as current for only `QUOTA_MAX_AGE_MS`; past that
- * every counter reads as null because an expired observation is not evidence.
- * Refreshing here makes an idle gateway cost one upstream check instead of
- * refusing every call until someone opens an operator page.
+ * Which clock judges the stored reading is the provider's capability: a metered
+ * subscription needs a current quota, a wallet-only account only a recent
+ * balance, and an account that publishes neither is never stale. Refreshing
+ * here makes an idle gateway cost one upstream check instead of refusing every
+ * call until someone opens an operator page.
  */
 export async function ensureProviderObservation(
   db: PostgresDatabase,
   slug: string,
   deps: ProviderRuntimeDeps = {},
 ) {
-  const status = await getProviderStatusBySlug(db, slug);
+  const observed = await getProviderObservation(db, slug);
 
   if (
-    quotaIsCurrent({
-      quota: status.quota,
-      subscriptionMode: status.subscriptionMode,
-      subscriptionExpiresAt: status.subscriptionExpiresAt,
+    providerObservationIsCurrent({
+      supportsSubscription: observed.supportsSubscription,
+      supportsBalance: observed.supportsBalance,
+      quota: observed.status.quota,
+      balanceObservedAt: observed.status.balanceObservedAt,
+      subscriptionMode: observed.status.subscriptionMode,
+      subscriptionExpiresAt: observed.status.subscriptionExpiresAt,
     })
   ) {
-    return status;
+    return observed.status;
   }
 
   try {
@@ -190,7 +192,7 @@ export async function ensureProviderObservation(
     // Left stale on purpose; the returned status reports the truth.
   }
 
-  return getProviderStatusBySlug(db, slug);
+  return (await getProviderObservation(db, slug)).status;
 }
 
 export async function refreshEnabledProviderAccounts(

@@ -3,9 +3,9 @@
 **Filename:** `FID-2026-1124-003-non-subscription-provider-health.md`
 **ID:** FID-2026-1124-003
 **Severity:** high
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-24 23:40
-**Automation level:** 2
+**Automation level:** 3
 **YAGNI-Compliance:** Verified
 
 ---
@@ -238,13 +238,13 @@ provider followed by `grep`-free inspection of `providers.runtime_lease_id`
 - gate: lint
 - gate: typecheck
 - gate: test tests/provider-runtime-freshness.test.mjs
-- gate: test tests/operations-snapshot.test.mjs
+- gate: test tests/operations-postgres.test.mjs (snapshot scoping; the planned separate suite was folded into the existing snapshot suite)
 - gate: quality
 - gate: build
 
 ### Verification Receipt
 
-Not yet run: this FID is `converged`, not implemented. No gate output is claimed.
+`npm run verify` PASS 12/12 gates in 179.6 s at the implementation tree: 1287/1287 tests, 0 skipped, PostgreSQL 20/20, quality 719 files, build PASS, both HTTP suites, recovery 15/15, finished 2026-11-25T02:41:31Z and recorded in `.verify/summary.json`. `tsc --noEmit` and `eslint` on the changed files exit 0; the three affected suites are 27/27. No live upstream probe is claimed.
 
 ### Convergence Receipt (read-only)
 
@@ -329,12 +329,34 @@ Not yet run: this FID is `converged`, not implemented. No gate output is claimed
 
 ## Resolution
 
-- **Closed Date:** not closed
-- **Fix Description:** pending implementation
-- **Tests Added:** planned — `tests/provider-runtime-freshness.test.mjs`,
-  `tests/operations-snapshot.test.mjs`
-- **Verification Evidence:** none claimed; design convergence only
-- **Archived:** not archived
+- **Closed Date:** 2026-11-25
+- **Fix Description:** `readRuntime` now writes `quota_error` only for a rejected
+  fetch; absence of the capability is carried by `supports_subscription` alone.
+  `providerObservationIsCurrent` picks the clock — subscription quota, recent
+  balance, or nothing to observe — and `ensureProviderObservation` reads the
+  status and both capability flags from one row (`getProviderObservation`), so a
+  wallet-only account between checks is served with no lease claim, no outbound
+  balance request and no pair of `providers` writes on the completion path. The
+  operations snapshot selects `supports_subscription`, excludes those rows from
+  `current`, `stale`, `unknown`, `errored` and `lowReserve`, and reports them in
+  `quota.unsupported`; the panel's denominator is the quota-reporting count and
+  it names how many providers report no quota. The SQLite-era sync copy that
+  `lib/operations.ts` re-exports received the same rule so both read models
+  agree.
+- **Tests Added:** 5 cases in `tests/provider-runtime-freshness.test.mjs` (the
+  three capability cases, an expired balance, error/in-flight, subscription
+  precedence, and a store proof that a wallet-only check stores no error and is
+  not repeated) plus a wallet-only row in the
+  `tests/operations-postgres.test.mjs` snapshot fixture asserting
+  `unsupported: 1` with every other counter unchanged. The planned
+  `tests/operations-snapshot.test.mjs` was folded into that existing suite
+  rather than duplicated.
+- **Verification Evidence:** `npm run verify` PASS 12/12 gates, 1287/1287 tests,
+  PostgreSQL 20/20, 179.6 s; focused `tsc --noEmit`, changed-file `eslint` and
+  the three affected suites 27/27 all exit 0. No live upstream probe is
+  claimed.
+- **Archived:**
+  `dev/fids/archive/FID-2026-1124-003-non-subscription-provider-health.md`
 
 ## Lessons Learned
 

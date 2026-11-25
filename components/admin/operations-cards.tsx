@@ -103,12 +103,20 @@ export function OperationsCards({
           </p>
           <p className="mt-2 text-2xl font-semibold">
             {formatNumber(snapshot.quota.current)} /{" "}
-            {formatNumber(snapshot.quota.enabledProviders)}
+            {formatNumber(
+              Math.max(
+                0,
+                snapshot.quota.enabledProviders - snapshot.quota.unsupported,
+              ),
+            )}
           </p>
           <p className="mt-1 text-xs text-muted">
             current · {formatNumber(snapshot.quota.stale)} stale ·{" "}
             {formatNumber(snapshot.quota.unknown)} unknown ·{" "}
             {formatNumber(snapshot.quota.errored)} error
+            {snapshot.quota.unsupported > 0
+              ? ` · ${formatNumber(snapshot.quota.unsupported)} report no quota`
+              : ""}
           </p>
         </Card.Content>
       </Card>

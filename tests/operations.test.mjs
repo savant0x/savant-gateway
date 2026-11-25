@@ -45,6 +45,7 @@ function createDatabase() {
       enabled INTEGER NOT NULL DEFAULT 1,
       status TEXT NOT NULL DEFAULT 'active',
       sort_order INTEGER NOT NULL DEFAULT 0,
+      supports_subscription INTEGER NOT NULL DEFAULT 0,
       quota_unlimited INTEGER NOT NULL DEFAULT 0,
       subscription_tokens_remaining INTEGER,
       quota_observed_at TEXT,
@@ -177,15 +178,15 @@ test("snapshot reports no traffic separately and reads durable state", () => {
   ).run(old, old, recent);
   db.prepare(
     `INSERT INTO providers
-      (slug, label, enabled, status, quota_unlimited, subscription_tokens_remaining,
-       quota_observed_at, quota_error)
+      (slug, label, enabled, status, supports_subscription, quota_unlimited,
+       subscription_tokens_remaining, quota_observed_at, quota_error)
      VALUES
-      ('alpha', 'Alpha', 1, 'active', 0, 50, ?, NULL),
-      ('stale', 'Stale', 1, 'active', 0, 500, ?, NULL),
-      ('unknown', 'Unknown', 1, 'active', 0, NULL, NULL, NULL),
-      ('unconfigured', 'Unconfigured', 1, 'unconfigured', 0, NULL, NULL, NULL),
-      ('broken', 'Broken', 1, 'active', 0, NULL, NULL, 'quota fetch failed'),
-      ('off', 'Off', 0, 'active', 0, 10, ?, NULL)`,
+      ('alpha', 'Alpha', 1, 'active', 1, 0, 50, ?, NULL),
+      ('stale', 'Stale', 1, 'active', 1, 0, 500, ?, NULL),
+      ('unknown', 'Unknown', 1, 'active', 1, 0, NULL, NULL, NULL),
+      ('unconfigured', 'Unconfigured', 1, 'unconfigured', 1, 0, NULL, NULL, NULL),
+      ('broken', 'Broken', 1, 'active', 1, 0, NULL, NULL, 'quota fetch failed'),
+      ('off', 'Off', 0, 'active', 1, 0, 10, ?, NULL)`,
   ).run(recent, old, recent);
   db.prepare("INSERT INTO credit_holds (id, hold_micros) VALUES ('h1', 400)").run();
   db.prepare(

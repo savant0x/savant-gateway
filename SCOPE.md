@@ -19,6 +19,20 @@ and severity order; each record closes only on its own gates and a commit.
   `npm run verify` PASS 12/12 gates, 1282/1282 tests, PostgreSQL 20/20, plus a
   5-case focused suite.
 
+- [x] **OF2 — FID-2026-1124-003, non-subscription provider health.**
+  **Completed.** A provider with `supports_subscription = 0` carried the
+  sentinel `"Provider does not expose quota."` in `quota_error`, so freshness
+  could never be true: every completion paid a lease claim, a live balance
+  request and two `providers` writes, and the snapshot counted the row
+  `errored`, holding a permanent critical incident. The sentinel is removed;
+  `providerObservationIsCurrent` judges metered accounts by quota, wallet-only
+  accounts by a recent error-free balance, and accounts that publish neither as
+  never stale; `getProviderObservation` returns status plus flags from one row.
+  The snapshot scopes all four counters and `lowReserve` to reporting providers
+  and adds `quota.unsupported`; the panel divides by that count. 5 new cases and
+  a wallet-only fixture; `npm run verify` PASS 12/12 gates, 1287/1287 tests,
+  PostgreSQL 20/20, 179.6 s. No live upstream probe is claimed.
+
 ## Session — 2026-11-24 (FID folder audit and pending-work register: PR)
 
 Operator instruction: "audit/update the fids folder, move the completed work to

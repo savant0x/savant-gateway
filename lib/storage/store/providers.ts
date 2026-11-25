@@ -6,6 +6,7 @@ import type { ProviderInput } from "../../providers/registry.ts";
 import { rekeyProviderIds } from "./provider-rekey.ts";
 import {
   emptyRow,
+  toObservation,
   toRecord,
   toStatus,
   type ProviderRow,
@@ -174,6 +175,16 @@ export async function getProviderStatusBySlug(
   const row = await getProviderRow(db, slug);
 
   return toStatus(db, row ?? emptyRow(slug));
+}
+
+/** Status plus capabilities from the same row, for freshness decisions. */
+export async function getProviderObservation(
+  db: PostgresDatabase,
+  slug: string,
+) {
+  const row = await getProviderRow(db, slug);
+
+  return toObservation(db, row ?? emptyRow(slug));
 }
 
 async function modelCount(db: PostgresDatabase, slug: string) {

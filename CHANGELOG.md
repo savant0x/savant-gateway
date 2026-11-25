@@ -3,6 +3,32 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-25 — Capability, not failure: provider quota health (1124-003)
+
+- **FID-2026-1124-003 — high —** a provider registered with
+  `supports_subscription = 0` was treated as a failed check. `readRuntime` wrote
+  the sentinel `"Provider does not expose quota."` into `quota_error` on every
+  observation, so `quotaIsCurrent` could never be true for that row: each
+  completion routed to it paid a lease claim, a live outbound balance request
+  and two `providers` writes on the critical path, while the operations
+  snapshot counted it `errored` and raised a permanent critical incident for a
+  provider working exactly as designed.
+  The sentinel is gone; absence of the capability is carried by the flag alone.
+  `providerObservationIsCurrent` applies the clock the provider actually keeps —
+  a current quota for metered accounts, a recent error-free balance for
+  wallet-only accounts, and nothing to refresh for an account that publishes
+  neither — and `ensureProviderObservation` takes the status and both flags
+  from one row. The snapshot selects `supports_subscription`, keeps those rows
+  out of `current`, `stale`, `unknown`, `errored` and `lowReserve`, and reports
+  them as `quota.unsupported`; the panel divides by the quota-reporting count and
+  names how many providers report no quota. The SQLite-era sync copy behind
+  `lib/operations.ts` carries the same rule so the two read models agree.
+  Verified with 5 new cases (three-way predicate, expired balance,
+  error/in-flight, subscription precedence, and a store proof that a wallet-only
+  check stores no error and is not repeated) plus a wallet-only snapshot fixture
+  asserting `unsupported: 1`; `npm run verify` PASS 12/12 gates, 1287/1287 tests,
+  PostgreSQL 20/20. No live upstream probe is claimed.
+
 ## 2026-11-25 — A default switch that leaves the catalog syncable (1124-004)
 
 - **FID-2026-1124-004 — critical —** the switch added by 1124-002 moved one

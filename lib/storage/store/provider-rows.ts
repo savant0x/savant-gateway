@@ -178,6 +178,28 @@ export async function toStatus(
   };
 }
 
+/**
+ * A status plus the capabilities that decide whether it is current.
+ *
+ * Both come from one row, so a freshness check never has to read the provider a
+ * second time just to learn which clock to apply (FID-2026-1124-003).
+ */
+export async function toObservation(
+  db: PostgresDatabase,
+  row: ProviderRow,
+  now = Date.now(),
+): Promise<{
+  status: ProviderStatus;
+  supportsSubscription: boolean;
+  supportsBalance: boolean;
+}> {
+  return {
+    status: await toStatus(db, row, now),
+    supportsSubscription: Number(row.supports_subscription) === 1,
+    supportsBalance: Number(row.supports_balance) === 1,
+  };
+}
+
 export function emptyRow(slug: string): ProviderRow {
   return {
     slug,

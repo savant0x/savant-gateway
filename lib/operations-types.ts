@@ -43,6 +43,8 @@ export type OperationsSnapshot = {
   };
   quota: {
     enabledProviders: number;
+    /** Enabled providers that publish no subscription quota at all. */
+    unsupported: number;
     current: number;
     stale: number;
     unknown: number;

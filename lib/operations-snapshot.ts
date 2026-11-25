@@ -56,6 +56,10 @@ export function readAdmissionControl(database: DatabaseHandle): {
  * Reads durable counters plus the operator's storage observation. It never
  * calls an upstream or treats a missing timeline as an empty success: a window
  * with no calls is reported as `noTraffic` and rendered as such.
+ *
+ * A provider that publishes no subscription quota is counted separately, so an
+ * account with no quota endpoint is not read as unknown capacity forever
+ * (FID-2026-1124-003).
  */
 export function readOperationsSnapshot(
   database: DatabaseHandle,
@@ -104,19 +108,21 @@ export function readOperationsSnapshot(
 
   const providers = database
     .prepare(
-      `SELECT slug, status, quota_unlimited, subscription_tokens_remaining,
-              quota_observed_at, quota_error
+      `SELECT slug, status, supports_subscription, quota_unlimited,
+              subscription_tokens_remaining, quota_observed_at, quota_error
        FROM providers WHERE enabled = 1 ORDER BY sort_order, label`,
     )
     .all() as Array<{
     slug: string;
     status: string;
+    supports_subscription: number;
     quota_unlimited: number;
     subscription_tokens_remaining: number | null;
     quota_observed_at: string | null;
     quota_error: string | null;
   }>;
 
+  let unsupported = 0;
   let current = 0;
   let stale = 0;
   let unknown = 0;
@@ -125,6 +131,13 @@ export function readOperationsSnapshot(
   const lowReserve: OperationsSnapshot["quota"]["lowReserve"] = [];
 
   for (const provider of providers) {
+    // A wallet-only provider has no quota endpoint; leaving it in the counters
+    // made every such account read as unknown capacity for its whole life.
+    if (provider.supports_subscription !== 1) {
+      unsupported += 1;
+      continue;
+    }
+
     const observedAge = ageSeconds(provider.quota_observed_at, now);
 
     if (observedAge !== null) {
@@ -197,6 +210,7 @@ export function readOperationsSnapshot(
     },
     quota: {
       enabledProviders: providers.length,
+      unsupported,
       current,
       stale,
       unknown,

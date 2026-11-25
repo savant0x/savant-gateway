@@ -66,6 +66,7 @@ function snapshot(overrides = {}) {
     },
     quota: {
       enabledProviders: 0,
+      unsupported: 0,
       current: 0,
       stale: 0,
       unknown: 0,
@@ -240,6 +241,7 @@ test("a failing webhook backs off, then stops and stays visible", async () => {
   const staleQuota = snapshot({
     quota: {
       enabledProviders: 1,
+      unsupported: 0,
       current: 0,
       stale: 1,
       unknown: 0,
@@ -320,6 +322,7 @@ test("an unconfigured transport records the incident and sends nothing", async (
       snapshot: snapshot({
         quota: {
           enabledProviders: 1,
+          unsupported: 0,
           current: 0,
           stale: 0,
           unknown: 1,
@@ -413,22 +416,38 @@ test("the snapshot counts traffic, money and quota age without inventing health"
     await db.prepare("UPDATE providers SET enabled = 0").run();
 
     const providers = [
-      ["prov_a", "active", 0, 500, T0, null],
-      ["prov_b", "active", 0, 9_000, "2026-10-31T10:00:00.000Z", null],
-      ["prov_c", "active", 0, null, null, null],
-      ["prov_d", "error", 0, null, null, "upstream 401"],
+      ["prov_a", "active", 0, 500, T0, null, 1],
+      ["prov_b", "active", 0, 9_000, "2026-10-31T10:00:00.000Z", null, 1],
+      ["prov_c", "active", 0, null, null, null, 1],
+      ["prov_d", "error", 0, null, null, "upstream 401", 1],
+      // Publishes a wallet balance only: counted, never judged as quota.
+      ["prov_e", "active", 0, null, null, null, 0],
     ];
 
-    for (const [slug, status, unlimited, remaining, observedAt, error] of providers) {
+    for (const row of providers) {
+      const [slug, status, unlimited, remaining, observedAt, error, metered] =
+        row;
+
       await db
         .prepare(
           `INSERT INTO providers
             (slug, label, base_url, key_env_var, status, enabled, sort_order,
              quota_unlimited, subscription_tokens_remaining, quota_observed_at,
-             quota_error, created_at, updated_at)
-           VALUES (?, ?, 'https://example.test', 'KEY', ?, 1, 0, ?, ?, ?, ?, ?, ?)`,
+             quota_error, supports_subscription, created_at, updated_at)
+           VALUES (?, ?, 'https://example.test', 'KEY', ?, 1, 0, ?, ?, ?, ?, ?, ?, ?)`,
         )
-        .run(slug, slug, status, unlimited, remaining, observedAt, error, T0, T0);
+        .run(
+          slug,
+          slug,
+          status,
+          unlimited,
+          remaining,
+          observedAt,
+          error,
+          metered,
+          T0,
+          T0,
+        );
     }
 
     const result = await readOperationsSnapshot(db, {
@@ -445,7 +464,12 @@ test("the snapshot counts traffic, money and quota age without inventing health"
     assert.equal(result.settlements.oldestUnresolvedAgeSeconds, 900);
     assert.equal(result.payments.claimed, 1);
     assert.equal(result.payments.oldestClaimedAgeSeconds, 1_800);
-    assert.equal(result.quota.enabledProviders, 4);
+    assert.equal(result.quota.enabledProviders, 5);
+    assert.equal(
+      result.quota.unsupported,
+      1,
+      "a wallet-only provider is counted separately, not as unknown quota",
+    );
     assert.equal(result.quota.current, 1);
     assert.equal(result.quota.stale, 1);
     assert.equal(result.quota.unknown, 1);
@@ -522,9 +546,9 @@ test("the store monitor observes the volume and records what it cannot deliver",
       .prepare(
         `INSERT INTO providers
           (slug, label, base_url, key_env_var, status, enabled, sort_order,
-           created_at, updated_at)
+           supports_subscription, created_at, updated_at)
          VALUES ('monitor_test', 'Monitor', 'https://example.test', 'KEY',
-                 'active', 1, 0, ?, ?)`,
+                 'active', 1, 0, 1, ?, ?)`,
       )
       .run(T0, T0);
 
@@ -534,6 +558,7 @@ test("the store monitor observes the volume and records what it cannot deliver",
     assert.equal(observed.storage.backupCount, 0);
     assert.equal(observed.storage.backupAgeSeconds, null);
     assert.equal(observed.quota.unknown, 1);
+    assert.equal(observed.quota.unsupported, 0);
 
     const result = await runOperationsMonitor(db);
 

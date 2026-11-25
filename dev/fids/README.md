@@ -2,7 +2,7 @@
 
 **Last folder audit:** 2026-11-24 (FID folder audit). This page
 indexes the working set; each FID owns its own status, evidence and resolution.
-Current counts: 14 active / 22, 195 archived, 200 allocated.
+Current counts: 13 active / 22, 196 archived, 200 allocated.
 
 ## Layout
 
@@ -19,7 +19,6 @@ Current counts: 14 active / 22, 195 archived, 200 allocated.
 | --- | --- | --- | --- |
 | [2026-1124-006](FID-2026-1124-006-provider-registration-surface.md) | Provider registration surface cannot express what a provider needs | converged | Implement: conservative capability defaults, `requiresModelReview` in the input and console, editable headers, delete hygiene. |
 | [2026-1124-005](FID-2026-1124-005-catalog-gateway-query-cost.md) | Catalog and gateway query cost after multi-provider onboarding | converged | Implement the five measured slices; each has its own test and commit. |
-| [2026-1124-003](FID-2026-1124-003-non-subscription-provider-health.md) | Non-subscription provider freshness and operations health | converged | Implement: separate "unsupported" from "failed", capability-aware freshness, capability-scoped operations counters. |
 | [043](FID-2026-1030-043-launch-master.md) | Master launch contract and dependency register | converged | Keep coverage, ordering and release decisions current. |
 | [062](FID-2026-1030-062-launch-acceptance-and-rollout.md) | Real launch acceptance, controlled rollout and rollback | converged | Discharge the dated external receipt items 1–8; launch remains no-go. Item 1 (NOWPayments payment/IPN) is operator-accepted as an assumption, not verified. |
 | [068](FID-2026-1030-068-usdc-receive-lane.md) | Direct-to-wallet USDC receive lane | fixed | Operator inputs still gate the receive lane; re-read the record before acting. |
@@ -43,6 +42,23 @@ Current counts: 14 active / 22, 195 archived, 200 allocated.
 [2026-1122-006](archive/FID-2026-1122-006-next-security-upgrade.md) is `closed`. `next upgrade --agent=security` moved 16.4.3 → 16.4.6; duplicate checks were empty, and 12/12 gates with 1240/1240 tests passed in the upgrade worktree.
 
 [2026-1122-007](archive/FID-2026-1122-007-bulk-chat-decisions.md) is `closed`. The review panel wrote one decision per click, so a 281-row catalog could not realistically be decided; bulk actions now record one row per model in a single transaction with one republish, still operator-sourced and individually overridable. 5 PostgreSQL cases, 12/12 gates and 1245/1245 tests.
+
+### Closed in the 2026-11-25 provider-health commit
+
+[2026-1124-003](archive/FID-2026-1124-003-non-subscription-provider-health.md) is
+`closed`. A provider registered with `supports_subscription = 0` was treated as a
+failed check: `readRuntime` wrote the sentinel `"Provider does not expose
+quota."` into `quota_error` on every observation, `quotaIsCurrent` therefore
+refused forever, and every completion routed to that provider paid a lease
+claim, a live balance request and two `providers` writes on the critical path.
+The same row was counted `errored`, so `/admin/operations` raised a permanent
+critical incident for a provider working as designed. Absence of the capability
+is now carried only by the capability flag; `providerObservationIsCurrent`
+judges metered providers by quota, wallet-only providers by a recent error-free
+balance, and an account that publishes neither as never stale. The snapshot
+counts those rows in `quota.unsupported` instead of `unknown`/`errored`, and the
+panel divides by the quota-reporting count. 5 new cases; `npm run verify` PASS
+12/12 gates with 1287/1287 tests and PostgreSQL 20/20.
 
 ### Closed in the 2026-11-25 provider re-key commit
 

@@ -215,3 +215,46 @@ export function quotaIsCurrent(
 
   return true;
 }
+
+/**
+ * Whether the stored observation is one this provider can actually make.
+ *
+ * `quotaIsCurrent` answers for subscription metering. A provider that only
+ * publishes a wallet balance has no quota endpoint at all, so judging it by the
+ * subscription clock reported every wallet-only account as permanently unknown
+ * and, before FID-2026-1124-003, stored a fabricated `quota_error` on each check.
+ * The capability decides which clock applies; an account that publishes neither
+ * is never stale, because there is nothing to refresh.
+ */
+export function providerObservationIsCurrent(
+  input: {
+    supportsSubscription: boolean;
+    supportsBalance: boolean;
+    quota: QuotaObservation;
+    balanceObservedAt: string | null;
+    subscriptionMode: string | null;
+    subscriptionExpiresAt: string | null;
+  },
+  now = Date.now(),
+) {
+  if (input.supportsSubscription) {
+    return quotaIsCurrent(
+      {
+        quota: input.quota,
+        subscriptionMode: input.subscriptionMode,
+        subscriptionExpiresAt: input.subscriptionExpiresAt,
+      },
+      now,
+    );
+  }
+
+  if (input.supportsBalance) {
+    return (
+      !input.quota.error &&
+      !input.quota.checking &&
+      observationIsRecent(input.balanceObservedAt, now)
+    );
+  }
+
+  return true;
+}

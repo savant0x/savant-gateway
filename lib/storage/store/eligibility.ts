@@ -81,6 +81,9 @@ export type BulkEligibilityResult =
 /** The largest list one call may carry; the panel never approaches it. */
 export const MAX_BULK_ELIGIBILITY = 1000;
 
+/** Six parameters per row; 200 rows stays far below any driver limit. */
+const BULK_ELIGIBILITY_CHUNK = 200;
+
 /**
  * The same decision for many models, written once.
  *
@@ -129,26 +132,33 @@ export async function setModelEligibilityBulk(
   const note = input.note?.trim().slice(0, 500) || null;
 
   await db.transaction(async () => {
-    const write = db.prepare(
-      `INSERT INTO model_eligibility
-        (provider_slug, upstream_id, decision, source, observed_at, note)
-       VALUES (?, ?, ?, ?, ?, ?)
-       ON CONFLICT (provider_slug, upstream_id) DO UPDATE SET
-         decision = excluded.decision,
-         source = excluded.source,
-         observed_at = excluded.observed_at,
-         note = excluded.note`,
-    );
-
-    for (const row of known) {
-      await write.run(
+    // One multi-row upsert per 200 models instead of one statement per model
+    // (FID-2026-1124-005). The conflict clause is unchanged, so re-deciding a
+    // row still overwrites its evidence exactly as before.
+    for (let start = 0; start < known.length; start += BULK_ELIGIBILITY_CHUNK) {
+      const batch = known.slice(start, start + BULK_ELIGIBILITY_CHUNK);
+      const tuples = batch.map(() => "(?, ?, ?, ?, ?, ?)").join(", ");
+      const params = batch.flatMap((row) => [
         input.providerSlug,
         row.upstream_id,
         input.decision,
         source,
         now,
         note,
-      );
+      ]);
+
+      await db
+        .prepare(
+          `INSERT INTO model_eligibility
+            (provider_slug, upstream_id, decision, source, observed_at, note)
+           VALUES ${tuples}
+           ON CONFLICT (provider_slug, upstream_id) DO UPDATE SET
+             decision = excluded.decision,
+             source = excluded.source,
+             observed_at = excluded.observed_at,
+             note = excluded.note`,
+        )
+        .run(...params);
     }
   })();
 

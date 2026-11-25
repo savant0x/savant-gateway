@@ -200,6 +200,56 @@ test("a later single decision overrides its row without touching the rest", asyn
   }
 });
 
+test("a bulk decision is one write, not one per model", async () => {
+  const db = await fixture();
+
+  try {
+    await replaceModels(db, [0, 1, 2].map((i) => model(i)), 2_500, "p1");
+
+    const prepared = [];
+    const handle = new Proxy(db, {
+      get(target, key, receiver) {
+        if (key === "prepare") {
+          return (sql) => {
+            prepared.push(sql);
+
+            return target.prepare(sql);
+          };
+        }
+
+        const value = Reflect.get(target, key, receiver);
+
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+    const result = await setModelEligibilityBulk(
+      handle,
+      {
+        providerSlug: "p1",
+        upstreamIds: ["m0", "m1", "m2"],
+        decision: "chat",
+      },
+      NOW,
+    );
+
+    assert.deepEqual(result, { written: 3, skipped: [] });
+    assert.equal(
+      prepared.filter((sql) => sql.includes("INSERT INTO model_eligibility"))
+        .length,
+      1,
+      "three rows, one statement",
+    );
+
+    const rows = await db
+      .prepare("SELECT COUNT(*) AS total FROM model_eligibility")
+      .get();
+
+    assert.equal(Number(rows.total), 3);
+  } finally {
+    await db.close();
+  }
+});
+
 test("a bulk decision survives a delisting, like a single one", async () => {
   const db = await fixture();
 

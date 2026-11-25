@@ -193,15 +193,17 @@ export async function setModelStatusBulk(
   let written = 0;
 
   if (writable.length > 0) {
-    const update = db.prepare("UPDATE models SET status = ? WHERE id = ?");
+    // One statement for the selection: the per-id loop cost rows × RTT inside
+    // one transaction at catalog size (FID-2026-1124-005).
+    const placeholders = writable.map(() => "?").join(", ");
+    const result = await db
+      .prepare(
+        `UPDATE models SET status = ?
+          WHERE id IN (${placeholders})`,
+      )
+      .run(status, ...writable);
 
-    await db.transaction(async () => {
-      for (const id of writable) {
-        const result = await update.run(status, id);
-
-        written += result.changes;
-      }
-    })();
+    written = Number(result.changes);
   }
 
   if (written > 0) await reconcileRoutes(db);

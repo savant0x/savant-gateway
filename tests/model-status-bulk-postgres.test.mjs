@@ -244,6 +244,45 @@ test("a switched-off row stays off after the next sync", async () => {
   }
 });
 
+test("a bulk switch issues one write for the whole selection", async () => {
+  const db = await fixture();
+
+  try {
+    await replaceModels(db, [0, 1, 2].map((i) => model(i)), 2_500, "p1");
+
+    const prepared = [];
+    const handle = new Proxy(db, {
+      get(target, key, receiver) {
+        if (key === "prepare") {
+          return (sql) => {
+            prepared.push(sql);
+
+            return target.prepare(sql);
+          };
+        }
+
+        const value = Reflect.get(target, key, receiver);
+
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+    const result = await setModelStatusBulk(
+      handle,
+      ["p1/m0", "p1/m1", "p1/m2"],
+      "disabled",
+    );
+
+    assert.deepEqual(result, { written: 3, skipped: [] });
+    assert.equal(
+      prepared.filter((sql) => sql.includes("UPDATE models SET status")).length,
+      1,
+      "three rows, one statement",
+    );
+  } finally {
+    await db.close();
+  }
+});
+
 test("the single switch refuses a delisted row by name", async () => {
   const db = await fixture();
 

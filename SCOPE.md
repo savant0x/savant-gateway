@@ -30,10 +30,21 @@ text.
   believed four fixes were unimplemented. A dated note now records which state
   the table describes, the same pattern this file already uses for the
   2026-10-31 storage entry.
-- [ ] **PC3 — FID-2026-1125-001, the public surface and the content tags.**
-  Open at registration: the eight display and identity faults and the tag merge
-  are in the working tree, `npm test` is 1310 tests / 1294 pass / 0 fail, and
-  the gate set and closure commit are owed before this item is complete.
+- [x] **PC3 — FID-2026-1125-001, the public surface and the content tags.**
+  **Completed** at `e09e736` and `28ad18f`, registered at `12fc462`. The AA
+  Benchmark and “vs OpenRouter” columns always render and a dash names its
+  reason; the comparison key is the canonical leaf on both sides, so
+  `cc/claude-fable-5` matches `anthropic/claude-fable-5`; `displayModelId` prints
+  the model's own name while the stored id stays the routing key;
+  `formatContextWindow` prints `1M`/`256K`; the model page carries the benchmark
+  score and the list rate; the Weight column and its sort key are gone; and the
+  operator's source tags reach every ingest kind, with an exact tag match able to
+  auto-publish under the same versioned, non-weak guard as a title. `npm run
+  verify` PASS 12/12 gates in 184.2 s, 1310/1310 tests, 0 skipped, PostgreSQL
+  20/20, quality 720 files, build and both HTTP suites PASS. A plain `npm test`
+  on the same tree is 1310 tests / 1294 pass / 0 fail / 16 skipped. Not claimed:
+  a visual browser review of the catalog and model page, and a live OpenRouter or
+  Artificial Analysis fetch. The record is `closed` and archived.
 
 ## Session — 2026-11-25 (open-FID implementation: OF)
 

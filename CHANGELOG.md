@@ -3,6 +3,55 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-25 — Catalog columns and content tags tell the truth
+
+- **FID-2026-1125-001 — medium —** eight presentation and identity faults on the
+  public model surface and one on the content ingest path, fixed at `e09e736`
+  and `28ad18f`, registered at `12fc462`, closed on a 12/12 `npm run verify`
+  (1310/1310 tests, PostgreSQL 20/20) and archived.
+- The public catalog dropped its Weight column. The free-pool multiplier sat
+  beside a rate column that already says “Free pool”, and it spent a column on
+  every row to repeat a number the detail page still states.
+- The AA Benchmark and vs OpenRouter columns no longer disappear when no row is
+  measured or matched. A hidden column read as a missing feature; the cells now
+  show a dash and the footnote says whether the source is unconfigured, still
+  syncing, or unreachable.
+- A model's detail page carries the same two facts: the AA Intelligence Index
+  with its measurement date and provenance, and the OpenRouter list rate with
+  the blended delta, or a dash and the reason it is missing.
+- Operator source tags now reach every ingested kind, not only RSS and YouTube.
+  Hacker News, HuggingFace and Trendshift items were arriving untagged, so they
+  could never match a model by tag. Publisher tags stay first so a long source
+  list cannot crowd out a model name the matcher needs.
+- An exact tag match can auto-publish when the operator has enabled the policy,
+  on the same versioned, non-weak terms as a title match; excerpt and body text
+  still never auto-publish. Coverage lists on a model page now show the tags
+  each piece carries.
+- Model entries show the model's own name, never a provider tag. `cx/gpt-5.6-luna`
+  reads `gpt-5.6-luna` in the catalog and on the model page, and
+  `inferhub/cc/claude-fable-5` reads `claude-fable-5`. The `free/` tier stays in
+  the display id because the free and paid SKUs of one model must remain
+  distinguishable; the stored id is unchanged and still what the gateway
+  resolves.
+- **Every “vs OpenRouter” cell read a dash.** The match key kept the upstream's
+  publisher prefix (`cc/claude-fable-5`) while the public list was reduced to
+  its vendor-stripped leaf (`anthropic/claude-fable-5`), so no row matched. Both
+  sides now compare the canonical leaf: separators folded and a build or date
+  stamp dropped, so `z-ai/glm-5.3` matches `glm-5.3` and `cx/gpt-6.1-sol`
+  matches `gpt-6-1-sol`.
+- Context windows print as readers say them. `1000000` read as `1M`, `256000`
+  as `256K`, on the catalog row, the model page (heading, description and
+  capabilities), the comparison table and the landing price engine. An
+  unparseable value is left exactly as published.
+- The public catalog and model page no longer print an upstream provider's
+  namespace. A row sold from a non-default provider keeps its stored id
+  (`inferhub/cc/claude-fable-5`) as the primary and routing key, but the page
+  reads `cc/claude-fable-5`, and a payload that echoes its path as the model
+  name now falls back to a title built from the leaf. `/v1/models` still returns
+  the stored id, because that is the string the gateway resolves and the key
+  entitlements are recorded under; publishing a bare id there needs a rename
+  across `models`, `plan_models` and the live association tables.
+
 ## 2026-11-25 — Content decisions proven in a real browser (1104-016)
 
 - **FID-2026-1104-016 — high —** the durable content-to-model decision states,

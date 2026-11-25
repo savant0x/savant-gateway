@@ -2,18 +2,17 @@
 
 **Last folder audit:** 2026-11-25 (post-implementation audit). This page
 indexes the working set; each FID owns its own status, evidence and resolution.
-Current counts: 11 active, 199 archived, 210 records. The previous line
-carried a date fragment in place of a count; the figures above are counted from
-the folder.
+Current counts: 10 active, 200 archived, 210 records. The figures are counted
+from the folder at each audit; an earlier line carried a date fragment in place
+of the active count.
 
 The four implementation records opened on 2026-11-24 are `closed` and archived
 (`003`–`006`). Every remaining active record is launch or acceptance work:
 operator-blocked masters and receipts (`043`, `062`, `137`, `018`, `127`), a
 credential, funding or publication step (`011`, `068`, `1110-002`, `1120-001`),
 and the content record (`017`) whose code is in but whose job proofs are
-outstanding. Apart from `1125-001`, no active record is implementation-ready
-without an operator input or a proof that needs a real browser, job snapshot or
-deployment.
+outstanding. No active record is implementation-ready without an operator input
+or a proof that needs a real browser, job snapshot or deployment.
 
 ## Layout
 
@@ -38,7 +37,6 @@ deployment.
 | [2026-1104-018](FID-2026-1104-018-content-automation-master.md) | Content automation and persistent matching master | converged | Child 015 is `closed` and 016 is `closed`; 017 is `fixed` (`6cb7486`, `1c4c2a5`) and still owes proof. The master closes on that plus the operator's scheduler backend, secret and hosted-tick authorization. |
 | [2026-1110-002](FID-2026-1110-002-identity-calibration-lab.md) | Identity calibration lab and measured certificate | converged | Steps 1–4 are committed (`d66a538`, `b884984`, `1f75c44`; step 4 in `495e8b3`, plus its proxy script under [2026-1122-001](archive/FID-2026-1122-001-commit-calibration-proxy.md)). Step 5, collection, is next and needs an operator-supplied upstream; then the certificate path. |
 | [2026-1120-001](FID-2026-1120-001-inferhub-upstream-onboarding.md) | InferHub upstream onboarding | fixed | Steps 1, 2, 3, 4 and 8 are done (`ed8812a`, `495e8b3`, `b159ba0`): the row is seeded disabled, review-required and resale-restricted. Steps 5–7 stay blocked on funding and a measured figure. |
-| [2026-1125-001](FID-2026-1125-001-catalog-and-content-display-truth.md) | The public catalog and content tags tell the reader the truth | converged | Eight presentation and identity faults on the public model surface plus the tag merge on ingest; verification and the closure commit are owed. |
 
 ### Closed in the 2026-11-24 admin and default-provider commits
 
@@ -51,6 +49,22 @@ deployment.
 [2026-1122-006](archive/FID-2026-1122-006-next-security-upgrade.md) is `closed`. `next upgrade --agent=security` moved 16.4.3 → 16.4.6; duplicate checks were empty, and 12/12 gates with 1240/1240 tests passed in the upgrade worktree.
 
 [2026-1122-007](archive/FID-2026-1122-007-bulk-chat-decisions.md) is `closed`. The review panel wrote one decision per click, so a 281-row catalog could not realistically be decided; bulk actions now record one row per model in a single transaction with one republish, still operator-sourced and individually overridable. 5 PostgreSQL cases, 12/12 gates and 1245/1245 tests.
+
+### Closed in the 2026-11-25 public-surface commits
+
+[2026-1125-001](archive/FID-2026-1125-001-catalog-and-content-display-truth.md)
+is `closed` at `e09e736` and `28ad18f`. A column no row could fill was hidden
+rather than dashed, so a fetch failure was indistinguishable from a feature that
+does not exist; every “vs OpenRouter” cell read a dash because the two sides keyed
+on different publisher prefixes; the page printed the storage id, so a row sold
+from a non-default provider read `inferhub/cc/claude-fable-5`; a million-token
+window printed as `1000000`; and the operator's tags reached neither HuggingFace
+nor Trendshift items, so those could never match a model by tag. The columns now
+always render with a stated reason for a dash, both sides compare the canonical
+leaf, `displayModelId` prints the model's own name while the stored id stays the
+routing key, the model page carries the benchmark score and the list rate, and
+`applySourceTags` merges publisher tags first on every ingest kind. `npm run
+verify` PASS 12/12 gates, 1310/1310 tests, PostgreSQL 20/20.
 
 ### Closed in the 2026-11-25 browser-proof commit
 

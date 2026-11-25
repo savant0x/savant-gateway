@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1125-001-catalog-and-content-display-truth.md`
 **ID:** FID-2026-1125-001
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-25 15:10
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -245,7 +245,9 @@ Unit coverage for the pure rules, and the full gate set for the surfaces:
 - `npm run lint` exit 0; `npm run typecheck` exit 0 (`next typegen` + `tsc --noEmit`).
 - `npm run quality` PASS, 400-line ceiling, 720 files scanned.
 - `npm test` 1310 tests, 1294 pass, 0 fail, 16 skipped, 104.4 s.
-- `npm run verify` and `npm run build` are recorded below at closure.
+- `npm run verify` PASS 12/12 gates in 184.2 s: 1310/1310 tests, 0 skipped,
+  PostgreSQL 20/20, quality PASS (720 files), build exit 0, both HTTP suites,
+  recovery, `.verify/summary.json` written.
 
 ## Perfection Loop
 
@@ -318,13 +320,68 @@ Unit coverage for the pure rules, and the full gate set for the surfaces:
   every other column of the same table.
 - **CHANGE DELTA:** <2% — converged.
 
+## Implementation Evidence (REQUIRED for `closed`)
+
+- [x] **Commit SHAs:** `12fc462` (registration and the four repaired records),
+      `e09e736` (catalog and model surface), `28ad18f` (content tag merge).
+- [x] **File:line ranges:** `lib/model-identity.ts:75-97`,
+      `lib/price-comparison.ts:84-85`, `components/dashboard/format.ts:21-43`,
+      `lib/projections.ts:237`, `lib/types.ts:44`, `lib/providers/catalog.ts:25-36`,
+      `components/catalog/model-catalog-table.tsx:151-256`,
+      `components/catalog/model-benchmark-card.tsx:1-60`,
+      `app/models/[...id]/page.tsx:90-100,221-226`,
+      `lib/content/taxonomy.ts:105-112`, `lib/content/ingest-source.ts:253-262`,
+      `lib/content/linking.ts:180-188`.
+- [x] **Gate output:** `npm run verify` PASS 12/12 and `npm test` 0 fail, both
+      pasted in the verification receipt above.
+- [x] **Reproducibility:** `grep -rn "displayModelId\|formatContextWindow\|applySourceTags" app components lib`
+      finds each definition plus every call site named above.
+- [x] **Step statuses:** steps 1-9 `implemented`. No step is blocked; the two
+      non-goals are scope boundaries stated before implementation, not trimmed
+      work.
+
 ## Resolution
 
-- **Closed Date:**
-- **Fix Description:**
-- **Tests Added:**
-- **Verification Evidence:**
-- **Archived:**
+- **Closed Date:** 2026-11-25 15:40
+- **Fix Description:** The public model surface now states what it knows and what
+  it does not. The AA Benchmark and “vs OpenRouter” columns always render, and a
+  dash is explained by the footnote as unmeasured, unmatched, first-sync-pending
+  or list-unreachable, so an empty column can no longer be mistaken for a
+  missing feature. `upstreamSlug` routes through `canonicalModelKey` on both
+  sides of the comparison, which is what makes `cc/claude-fable-5` match the
+  public list's `anthropic/claude-fable-5` and `cx/gpt-6.1-sol` match
+  `gpt-6-1-sol`; before this, every comparison cell read a dash. `displayModelId`
+  prints the model's own name from the stored id plus the row's `upstream_slug`,
+  keeping a `free/` or `subscription/` tier so two SKUs of one weights family stay
+  apart, and `publicName` stops a payload that echoes its path from publishing
+  that path as a product name. `formatContextWindow` renders `1M`/`256K` in the
+  catalog row, the model page heading, description and capability list, the
+  comparison table and the landing price engine, and passes an unparseable value
+  through unchanged. The model page gained `ModelBenchmarkCard`, which reads the
+  two sources the table already reads and fails open to a stated reason. The
+  Weight column and the `weight` sort key are gone. On the content path,
+  `applySourceTags` merges publisher tags first and the operator's tags after,
+  and `ingestSource` applies it after any fetch shape, so Hacker News,
+  HuggingFace and Trendshift items can match a model by tag; an exact tag match
+  joins a title match as auto-publishable evidence under the same versioned and
+  non-weak guard, and `CoveragePanel` shows up to three matched tags. No price,
+  markup, settlement, entitlement, routing rule or stored value changed.
+- **Tests Added:** 4 `displayModelId` cases in `tests/model-display-id.test.mjs`;
+  2 comparison cases in `tests/price-comparison.test.mjs` (a publisher prefix is
+  not part of the key, and a namespaced catalog row matches the public list);
+  3 `applySourceTags` cases in `tests/content-source-tags.test.mjs`; 1 tag
+  auto-publish case in `tests/content-link-eval.test.mjs`; and the removed
+  `weight` sort key drops its case from `tests/catalog-sort.test.mjs`.
+- **Verification Evidence:** `npm run verify` PASS 12/12 gates in 184.2 s with
+  1310/1310 tests and 0 skipped, PostgreSQL 20/20, quality PASS (720 files),
+  build PASS, both HTTP suites PASS, recovery PASS, recorded in
+  `.verify/summary.json`. `npm run lint` and `npm run typecheck` exit 0, and a
+  plain `npm test` on the same tree is 1310 tests / 1294 pass / 0 fail / 16
+  skipped. Not claimed: a visual browser review of the catalog and model page,
+  and a live OpenRouter or Artificial Analysis fetch.
+- **Commit SHAs:** `e09e736` (the model surface) and `28ad18f` (the content tag
+  merge), registered at `12fc462`.
+- **Archived:** 2026-11-25 → `dev/fids/archive/`
 
 ## Lessons Learned
 

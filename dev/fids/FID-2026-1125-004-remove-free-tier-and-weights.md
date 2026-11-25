@@ -146,6 +146,11 @@ and the UI. Every slice keeps the tree gated; nothing is left half-wired.
    flag rather than keep a control that changes nothing. Tests:
    `tests/catalog-normalize.test.mjs`, `tests/provider-inferhub-sync.test.mjs`,
    `tests/provider-catalog-preview.test.mjs`, `tests/store-providers-postgres.test.mjs`.
+1c. **The sync summary stops reporting a free count.** `free` is gone from
+   `ProviderSyncSummary` and `SyncAllSummary`; `subscriptionOnly` becomes
+   `unpriced`, which is what it always counted, and the admin sync line prints
+   `N priced · N unpriced`. Tests: `tests/provider-sync-postgres.test.mjs`,
+   `tests/provider-inferhub-sync.test.mjs`.
 2. **Price math loses the free branches.** `costMicros` drops the `freePool → 0`
    shortcut, `importedModelStatus` drops its `isFree` argument, `pricesForGroup`
    loses its zeroing branch, and `PricingSummary.freeCount` /
@@ -194,6 +199,8 @@ free-tier route.
 - `npm run quality`: PASS (400-line ceiling, 721 files)
 - step 1b, `node --test tests/catalog-normalize.test.mjs tests/provider-catalog-preview.test.mjs tests/provider-inferhub-sync.test.mjs tests/provider-public-id.test.mjs tests/store-providers-postgres.test.mjs tests/provider-form.test.mjs`: exit 0, 36 pass / 0 fail
 - step 1b, `npm run lint` exit 0, `npm run typecheck` exit 0, `npm run quality` PASS (721 files)
+- step 1c, `node --test tests/provider-sync-postgres.test.mjs tests/provider-inferhub-sync.test.mjs tests/provider-catalog-preview.test.mjs`: exit 0, 22 pass / 0 fail
+- step 1c, `npm run typecheck` exit 0, `npm run lint` exit 0
 - `npm run repository:check`: PASS (12 gates, 12 active FIDs)
 
 ## Perfection Loop
@@ -241,8 +248,8 @@ free-tier route.
 - [x] **Gate output:** receipt above
 - [x] **Reproducibility:** `grep -rn "tokenWeight" lib/providers` returns only the
       `toRow` constant and the `SyncedModel` field
-- [x] **Step statuses:** 1a implemented; 1b implemented; 2–8 unimplemented and
-      unblocked — the ordered remainder of this record
+- [x] **Step statuses:** 1a implemented; 1b implemented; 1c implemented; 2–8
+      unimplemented and unblocked — the ordered remainder of this record
 
 ### Code Verification Evidence
 

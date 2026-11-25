@@ -35,6 +35,24 @@ price, that's how it always was." Automation level 3; strict; single agent.
   tokens, customer UI, admin UI, docs. The Free group is converted and then
   deleted only when no model or plan references it, so no entitlement is cascaded
   away.
+- [x] **PT5 — Sync summary stops reporting a free count.** **Completed.** The
+  count could only ever be zero once free rows stopped importing, and the line it
+  shared a label with called every unpriced row `subscription-only`. The summary
+  now reports `paid` and `unpriced` per provider and in aggregate, and the sync
+  warning names free-pool rows as `never imported` rather than `resale not
+  permitted`.
+- [ ] **PT6 — Gateway: no call may be admitted as free.** Open. Measured
+  footprint before starting: 50 files touch `reserveTrialRoute`, `reserveFreeCall`,
+  `isFreeCall`, `freeReservation`, `free_pool_*`, `FREE_*` or `TRIAL_*` — the
+  admission entry, the trial route, the allocation ledger, two table families in
+  the schema, the trial/allocation API reads, the env envelope, and 14 test
+  suites plus two HTTP suites. Removing the entry point alone would leave the
+  ledgers and configuration dead, so the removal has to land with its dependents.
+- [ ] **PT7 — Retire the seeded Free group.** Open. Depends on PT6: converting
+  members to `paid` while the free admission path still exists leaves an
+  advertised free tier reachable by group. `legacyAccessFor` and
+  `backfillModelGroups` still derive `free`, and the systems still seed the
+  group.
 
 ## Session — 2026-11-25 (InferHub as a router: IR)
 

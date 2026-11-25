@@ -1,6 +1,7 @@
 import { customerError, requireCustomerApi } from "@/lib/customer-auth";
 import { isWatching, setWatch } from "@/lib/content/store/engagement";
 import { readJsonObject, requestBodyError } from "@/lib/request-limits";
+import { getPublishedModel } from "@/lib/storage/store/catalog.ts";
 import { getDatabase } from "@/lib/storage/runtime";
 import { recordActivityBestEffort } from "@/lib/store";
 
@@ -20,21 +21,22 @@ export async function POST(request: Request) {
     return requestBodyError(error);
   }
 
-  const modelId = typeof body.modelId === "string" ? body.modelId.trim() : "";
+  const requestedId =
+    typeof body.modelId === "string" ? body.modelId.trim() : "";
   const watched = body.watched;
 
-  if (!modelId || typeof watched !== "boolean") {
+  if (!requestedId || typeof watched !== "boolean") {
     return customerError(400, "modelId and watched are required.");
   }
 
   const db = await getDatabase();
-  const model = await db
-    .prepare(
-      "SELECT 1 AS present FROM models WHERE id = ? AND in_catalog = 1 AND status = 'active'",
-    )
-    .get<{ present: number }>(modelId);
+  // The page sends the id it displays; the watch table keeps the stored key,
+  // because that is what a re-key or a plan edit moves (FID-2026-1125-002).
+  const model = await getPublishedModel(db, requestedId);
 
   if (!model) return customerError(404, "That model is not in the catalog.");
+
+  const modelId = model.id;
 
   try {
     const existing = await isWatching(db, customer.id, modelId);

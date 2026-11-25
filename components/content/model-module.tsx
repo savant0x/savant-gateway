@@ -92,7 +92,7 @@ export function ModelModule({
                     className="font-semibold underline-offset-4 hover:underline"
                     contentId={contentId}
                     href={detailHref}
-                    modelId={model.id}
+                    modelId={displayModelId(model.id, model.upstreamSlug)}
                   >
                     {model.name}
                   </ModelClickLink>
@@ -141,7 +141,7 @@ export function ModelModule({
                   className="rounded-lg border border-black/10 px-3 py-2 text-xs font-medium transition-colors hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
                   contentId={contentId}
                   href={detailHref}
-                  modelId={model.id}
+                  modelId={displayModelId(model.id, model.upstreamSlug)}
                 >
                   Model details
                 </ModelClickLink>

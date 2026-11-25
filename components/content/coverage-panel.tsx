@@ -7,6 +7,7 @@ import { ContentMedia } from "@/components/content/content-media";
 import { WatchButton } from "@/components/content/watch-button";
 import { contentDate, relationLabel, tagPillClass } from "@/lib/content/format";
 import { CONTENT_RELATIONS } from "@/lib/content/types";
+import { displayModelId } from "@/lib/model-identity";
 
 export function CoveragePanel({
   model,
@@ -37,7 +38,7 @@ export function CoveragePanel({
           </p>
         </div>
         <WatchButton
-          modelId={model.id}
+          modelId={displayModelId(model.id, model.upstreamSlug)}
           signedIn={signedIn}
           watching={watching}
         />

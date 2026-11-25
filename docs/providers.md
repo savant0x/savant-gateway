@@ -67,11 +67,13 @@ allows at most one holder — not a compiled constant, so it can be moved.
 **Make default** on any other row moves it. Two consequences follow, and the
 console states both counts before you confirm:
 
-1. **Published ids change at the next sync of each provider.** The outgoing
-default's rows stop being bare and become `slug/id`; the incoming default's rows
-stop being prefixed and become bare. Existing rows are never rewritten in
-place — a public id is what customers send, and `usage_events` keeps the id it
-was sold under — so until you press **Sync** the old ids keep working.
+1. **Published ids change immediately.** The outgoing default's rows stop being
+bare and become `slug/id`; the incoming default's rows stop being prefixed and
+become bare. The switch re-keys both affected providers in one transaction —
+plan and subscription entitlements, saved-model watches, content links and
+showcase bindings move with the model, while `usage_events`, pricing decisions
+and link-decision history keep the id they were recorded under. A client holding
+an old id receives `404 model_not_found`.
 2. **The published badge moves.** The landing page and `/admin` describe the new
 default's balance and quota from then on; a disabled default publishes an honest
 `unconfigured` badge rather than disappearing.

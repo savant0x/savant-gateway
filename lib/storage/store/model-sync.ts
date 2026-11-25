@@ -28,6 +28,12 @@ import { reconcileRoutes } from "./routes.ts";
  * 5. A row that vanished upstream is delisted (`in_catalog = 0`), never deleted,
  *    and only for the provider being synced.
  *
+ * Overrides are matched on `(upstream_slug, upstream_id)`, not on the published
+ * id: a default-provider switch rewrites ids, and keying the lookup on `id`
+ * would apply one model's manual group and prices to a different row
+ * (FID-2026-1124-004). The preload is scoped to the provider for the same
+ * reason it always should have been — a sync touches only its own rows.
+ *
  * The upsert text is the one large statement that needed no dialect change:
  * `ON CONFLICT (id) DO UPDATE SET ... excluded.column` is spelled identically in
  * SQLite and PostgreSQL, so it moved across verbatim.
@@ -40,8 +46,10 @@ export async function replaceModels(
 ) {
   const existing = new Map<string, ModelRow>();
 
-  for (const row of await db.prepare("SELECT * FROM models").all<ModelRow>()) {
-    existing.set(row.id, row);
+  for (const row of await db
+    .prepare("SELECT * FROM models WHERE upstream_slug = ?")
+    .all<ModelRow>(upstreamSlug)) {
+    existing.set(`${row.upstream_slug}\u0000${row.upstream_id}`, row);
   }
 
   const groupModes = new Map<string, ModelAccess>();
@@ -96,7 +104,9 @@ export async function replaceModels(
       .run(upstreamSlug);
 
     for (const model of models) {
-      const current = existing.get(model.id);
+      const current = existing.get(
+        `${model.upstreamSlug}\u0000${model.upstreamId}`,
+      );
       const defaultSlug = defaultGroupSlug({
         allowFree: model.allowFree,
         tokenWeight: model.tokenWeight,

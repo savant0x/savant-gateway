@@ -113,9 +113,9 @@ export function AdminProvidersPanel({
       !window.confirm(
         `Make ${provider.label} the default provider?\n\n` +
           "The default publishes the unprefixed model ids and the public balance badge. " +
-          "Existing ids keep working until each provider syncs; the next sync of " +
-          "the outgoing default prefixes its ids and the next sync of this provider " +
-          "drops the prefix.",
+          "Switching re-keys both affected providers immediately, including plan and " +
+          "subscription entitlements. Ids a client already holds stop resolving; " +
+          "usage history keeps the ids it was sold under.",
       )
     ) {
       return Promise.resolve();
@@ -132,8 +132,8 @@ export function AdminProvidersPanel({
 
       return (
         `${provider.label} is now the default. ` +
-        `${formatNumber(moved)} published ids lose their bare form and ` +
-        `${formatNumber(incoming)} gain it, at each provider's next sync.`
+        `${formatNumber(moved)} published ids lost their bare form and ` +
+        `${formatNumber(incoming)} gained it. Usage history keeps the old ids.`
       );
     });
   }

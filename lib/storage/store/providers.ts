@@ -3,6 +3,7 @@ import type { ProviderSummary } from "../../providers/types.ts";
 import type { ProviderStatus } from "../../types.ts";
 import type { ProviderInput } from "../../providers/registry.ts";
 
+import { rekeyProviderIds } from "./provider-rekey.ts";
 import {
   emptyRow,
   toRecord,
@@ -111,10 +112,12 @@ export type DefaultProviderChange = {
 /**
  * Moves the default. One transaction, so no reader sees two holders or none.
  *
- * Existing rows are not rewritten: a published id is what customers send, and
- * history keeps the ids it was sold under. The next sync of each provider
- * publishes under the new rule, which is why the change reports how many rows of
- * each provider that will be.
+ * The switch re-keys the two affected providers' rows here rather than leaving
+ * it to their next sync: `models` is keyed by published id while
+ * `models_upstream_idx` is unique on the upstream tuple, so a flag-only switch
+ * makes the next sync fail with `23505` and roll back (FID-2026-1124-004).
+ * Entitlements follow the ids; `usage_events`, pricing decisions and link
+ * decision history keep the string they were recorded under.
  */
 export async function setDefaultProvider(
   db: PostgresDatabase,
@@ -143,6 +146,11 @@ export async function setDefaultProvider(
 
   await db
     .transaction(async () => {
+      await rekeyProviderIds(
+        db,
+        slug,
+        previousSlug ? [previousSlug, slug] : [slug],
+      );
       await db.prepare("UPDATE providers SET is_default = 0").run();
       await db
         .prepare(
@@ -151,6 +159,10 @@ export async function setDefaultProvider(
         .run(now, slug);
     })
     .immediate();
+
+  // The published row of a group moved with its id, so republish the serving
+  // route from the rows that now exist.
+  await reconcileRoutes(db);
 
   return { previousSlug, slug, previousPublishedIds, publishedIds };
 }

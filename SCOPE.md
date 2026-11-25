@@ -1,5 +1,40 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-25 (protocol review and the public surface: PC)
+
+Operator instruction: "Re-read the single-agent ECHO protocol from line 0 to end
+to confirm prior work was done correctly, review that work for compliance with
+the protocol, then proceed with the work." Automation level 3; strict; single
+agent. The protocol was read 0-EOF before any edit; this review is against that
+text.
+
+- [x] **PC1 — Compliance review of the 2026-11-24/25 records.** **Completed.**
+  Three defects in the closed records, repaired in place, because a closed
+  record that cannot name its implementation commit is not a closure under the
+  FID lifecycle: FID-2026-1124-003, -005 and -006 carried an empty
+  `**Archived:**` field and no commit reference, and now name `cbfd07e`,
+  `e497824`/`034b9ed`/`e49996f`/`692ceb2`/`f018d33`/`08119ad` and `b9256da`;
+  FID-2026-1124-004's `YAGNI-Compliance: Pending` is resolved to `Verified`.
+  FID-2026-1124-005 carried an "Also noted, not scheduled" section, which is
+  prohibited disposition vocabulary under Law 2; it is rewritten as an
+  evaluated-and-not-adopted design decision with its reason. FID-2026-1124-004's
+  options table called option B "Deferred" for what is a rejected alternative,
+  and now says so. One review claim is corrected: `scripts/scope-register-check.ts`
+  and `validate:repository`'s `scope.unregistered-item` check are not present in
+  this repository, so the coverage rule those names enforce was verified by
+  hand - every active record is named in `dev/fids/README.md`, and the four
+  2026-11-24 records are OF1-OF4 above.
+- [x] **PC2 — The register's stale status table.** **Completed.** The 2026-11-24
+  audit's table still read "1124-003 ... converged, implementation not started"
+  for records that are closed and archived, so a reader of this file would have
+  believed four fixes were unimplemented. A dated note now records which state
+  the table describes, the same pattern this file already uses for the
+  2026-10-31 storage entry.
+- [ ] **PC3 — FID-2026-1125-001, the public surface and the content tags.**
+  Open at registration: the eight display and identity faults and the tag merge
+  are in the working tree, `npm test` is 1310 tests / 1294 pass / 0 fail, and
+  the gate set and closure commit are owed before this item is complete.
+
 ## Session — 2026-11-25 (open-FID implementation: OF)
 
 Operator instruction: "complete all open fids in logical order with automation
@@ -106,6 +141,11 @@ named so no record is invisible:
 | 1124-004 | converged | Implementation not started; blocks any switch-then-sync. |
 | 1124-005 | converged | Implementation not started. |
 | 1124-006 | converged | Implementation not started. |
+
+**Later (2026-11-25):** the four rows above describe the 2026-11-24 state only.
+`1124-003`, `-004`, `-005` and `-006` are `closed` and archived; their
+implementation and gate receipts are in the OF session at the top of this file
+and in their own records. This table is not a current status list.
 
 ## Session — 2026-11-23 (content-to-model linking quality: CL)
 

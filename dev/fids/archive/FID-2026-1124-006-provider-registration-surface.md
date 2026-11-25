@@ -295,8 +295,9 @@ start from the conservative default the schema already chose.
   PostgreSQL 20/20, 179.5 s; focused typecheck, `eslint --max-warnings=0` and the
   six affected suites 48/48 all exit 0. No live console probe or browser
   exercise is claimed.
-- **Archived:**
-  `dev/fids/archive/FID-2026-1124-006-provider-registration-surface.md`
+- **Commit SHA:** `b9256da` (`feat(providers): let the console declare what a
+  provider actually supports (FID-2026-1124-006)`).
+- **Archived:** 2026-11-25 → `dev/fids/archive/`
 
 ## Lessons Learned
 

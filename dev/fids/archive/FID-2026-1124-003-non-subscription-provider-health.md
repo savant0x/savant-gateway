@@ -355,8 +355,9 @@ provider followed by `grep`-free inspection of `providers.runtime_lease_id`
   PostgreSQL 20/20, 179.6 s; focused `tsc --noEmit`, changed-file `eslint` and
   the three affected suites 27/27 all exit 0. No live upstream probe is
   claimed.
-- **Archived:**
-  `dev/fids/archive/FID-2026-1124-003-non-subscription-provider-health.md`
+- **Commit SHA:** `cbfd07e` (`fix(providers): judge freshness by capability, not
+  a quota sentinel (FID-2026-1124-003)`).
+- **Archived:** 2026-11-25 → `dev/fids/archive/`
 
 ## Lessons Learned
 

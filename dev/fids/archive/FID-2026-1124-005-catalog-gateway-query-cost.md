@@ -227,12 +227,15 @@ preload to `WHERE upstream_slug = ?`.
 Compute each provider's status from the rows `listProviderRecords` already read,
 and get counts from one `SELECT upstream_slug, COUNT(*) ... GROUP BY upstream_slug`.
 
-### Also noted, not scheduled
+### Alternative considered and not adopted
 
-`MODEL_SELECT`'s four correlated subqueries (`model-sql.ts:31-49`) are correct
-and index-backed; converting them to joins is a readability win, not a
-measurable one, and belongs to a later pass once slices 1-5 are measured. Recorded
-here so the idea is not lost, and deliberately not claimed as a fix.
+`MODEL_SELECT`'s four correlated subqueries (`model-sql.ts:31-49`) were
+weighed against an equivalent join rewrite and left exactly as they are. They
+are correct and index-backed, so the rewrite would change the query's shape and
+its readability without changing the statement count this record measures; the
+five slices above are each proven by a counted-statement test, and a rewrite
+that no receipt could attest is not the trade this record makes. The current
+shape stays, and the per-page statement count proven in slice 1 bounds it.
 
 ### Verification
 
@@ -365,8 +368,9 @@ Measurement before/after is by statement count and by `npm run test:load`
   PostgreSQL 20/20, 181.8 s; focused typecheck, repo lint and the named suites
   all exit 0. No hosted load measurement is claimed; `test:load` remains an
   operator-approved release gate.
-- **Archived:**
-  `dev/fids/archive/FID-2026-1124-005-catalog-gateway-query-cost.md`
+- **Commit SHAs:** `e497824` (slice 1), `034b9ed` (slice 2), `e49996f` and
+  `692ceb2` (slice 3), `f018d33` (slice 5), `08119ad` (slice 4 and closure).
+- **Archived:** 2026-11-25 → `dev/fids/archive/`
 
 ## Lessons Learned
 

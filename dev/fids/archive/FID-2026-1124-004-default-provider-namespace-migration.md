@@ -6,7 +6,7 @@
 **Status:** closed
 **Created:** 2026-11-24 23:55
 **Automation level:** 2
-**YAGNI-Compliance:** Pending
+**YAGNI-Compliance:** Verified
 
 ---
 
@@ -167,7 +167,7 @@ foreign key at all, so it would dangle silently.
 | Option | Shape | Verdict |
 | --- | --- | --- |
 | **A. Switch-time re-key** | `setDefaultProvider` migrates the two affected providers' ids in one transaction | **Recommended** |
-| B. Decoupled namespace flag | a second stored flag owns the namespace; `is_default` only owns the badge/overlay | Deferred: two flags whose relationship has to be re-explained everywhere, and the original operator complaint was that the namespace owner is invisible |
+| B. Decoupled namespace flag | a second stored flag owns the namespace; `is_default` only owns the badge/overlay | Rejected: two flags whose relationship has to be re-explained everywhere, and the original operator complaint was that the namespace owner is invisible |
 | C. Always prefix every provider | remove bare ids entirely | Rejected: breaks every existing customer key at once |
 
 ### Approach

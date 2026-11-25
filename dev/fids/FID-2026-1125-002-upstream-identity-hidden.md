@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1125-002-upstream-identity-hidden.md`
 **ID:** FID-2026-1125-002
 **Severity:** high
-**Status:** COMPLETE
+**Status:** fixed
 **Created:** 2026-11-25 16:20
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -102,6 +102,15 @@ serialized into the HTML a visitor downloads. The home page shipped
 payload: a `View source` reader saw the supplier even where nothing printed it.
 The stored ids inside the `benchmarks` and `comparisons` lookup maps (§`key`) were
 serialized the same way.
+
+**D12 — the action props carry the stored key.** Found when the gate was extended
+to a model detail page, which it had only fetched for its status. The coverage
+panel and the content module hand `modelId` to two client components — the follow
+button and the click tracker — so `/models/claude-fable-5` serialized
+`"modelId":"inferhub/cc/claude-fable-5"` into the page while printing nothing,
+and the watch and click endpoints looked the row up by that stored key. The link
+is where the leak is cheapest to read: the page's own visible id, the address
+bar and the payload disagreed.
 
 ### Expected Behavior
 
@@ -219,7 +228,7 @@ primary key, the entitlement key and the usage key.
 
 ### Verification
 
-- `tests/public-identity.test.mjs` — the pure rules: a namespaced id is a
+- `tests/public-model-identity.test.mjs` — the pure rules: a namespaced id is a
   problem, a tier prefix is not, a slug hit is found in text and not inside a
   longer word.
 - `tests/model-retrieve.test.mjs` — a namespaced row publishes its leaf id by
@@ -245,7 +254,7 @@ primary key, the entitlement key and the usage key.
 
 - gate: lint
 - gate: typecheck
-- gate: test tests/public-identity.test.mjs
+- gate: test tests/public-model-identity.test.mjs
 - gate: test tests/model-retrieve.test.mjs
 - gate: quality
 - gate: build
@@ -253,7 +262,7 @@ primary key, the entitlement key and the usage key.
 
 ### Verification Receipt
 
-`npm run verify` — PASS, 12/12 gates, 178.0 s:
+`npm run verify` — PASS, 12/12 gates, 178.6 s:
 
 ```text
 PASS check                        exit 0
@@ -265,14 +274,16 @@ PASS test:postgres                exit 0 · 20/20 tests, 0 skipped
 PASS quality                      exit 0
 PASS build                        exit 0
 PASS test:visual-builds-browser   exit 0
-PASS test:http                    exit 0 · 789 checks
+PASS test:http                    exit 0 · 791 checks
 PASS test:recovery                exit 0
 PASS deployment:receipt           exit 0
 ```
 
-`npm run test:http` states its own count (`789 checks PASS`) plus the trial suite
-(`all checks PASS`). Commits: `19ded1a` (resolution and published id),
-`012bb6a` (surfaces), `feb53d4` (gates and tests), `7a34180` (records).
+`npm run test:http` states its own count (`791 checks PASS`) plus the trial suite
+(`all checks PASS`), and the identity checks are 25 of them. Commits: `19ded1a`
+(resolution and published id), `012bb6a` (surfaces), `feb53d4` (gates and tests),
+`7a34180` (records), then the Loop 6 pair (follow and click actions plus the
+model-page scan).
 
 ## Perfection Loop
 
@@ -382,6 +393,26 @@ PASS deployment:receipt           exit 0
   destruction rather than correction.
 - **CHANGE DELTA:** 0% to the code; the deviation is disclosed, not multiplied.
 
+### Loop 6 — The page the gate had not read
+
+- **RED:** the gate fetched each published model page but only asserted its
+status, so D12 survived the first closure. Reading the page's own HTML found
+  `"modelId":"inferhub/cc/claude-fable-5"` in the serialized props of the follow
+  and click components.
+- **GREEN:** `coverage-panel.tsx` and `model-module.tsx` pass the display id; the
+  watch and click routes resolve it through `getPublishedModel` and keep writing
+  the stored key, because that is what a re-key moves; the gate now scans a model
+  page's text, not just its status.
+- **AUDIT:** the two routes lost their ad-hoc `SELECT 1 FROM models` and share the
+  published read, so a row the catalog withholds can no longer be followed or
+  clicked into a funnel row.
+- **ADVERSARIAL:** "let the follow button keep the stored key; nobody reads a
+  page source." Rejected: the payload is on the same page as the address bar, and
+  the rule the operator stated is that the supplier is never shown — not that it
+  is never rendered visibly.
+- **CHANGE DELTA:** ~4% of this record, and it is the loop that proves the gate
+  is doing the work rather than the reader.
+
 ## Resolution
 
 - **Status:** COMPLETE
@@ -394,13 +425,17 @@ PASS deployment:receipt           exit 0
   the stored key prints the display id instead, including the client payloads via
   `lib/catalog-payload.ts`, and the "same weights from N providers" line states a
   count instead of naming them. A gate over rendered output fails when a provider
-  slug appears on a public page or a published id carries a namespace.
+  slug appears on a public page or a published id carries a namespace. The
+  follow and click actions send the display id, and their routes resolve it.
+  Admin surfaces keep the stored key and the provider slug, because the operator
+  has to know which account serves a row.
 - **Tests Added:** `tests/public-model-identity.test.mjs` (7 cases: display id,
   namespace rule, slug rule, published/retrieved/resolved display id, stored-key
   precedence, ambiguous-leaf refusal, trimmed client payload); one case added to
-  `tests/compare.test.mjs`; `scripts/http-suite/identity-checks.mjs` (23 checks
-  over pages, links, published ids and retrieval); `tests/openai-model-list.test.mjs`
-  statement budget updated for the bounded leaf read.
+  `tests/compare.test.mjs`; `scripts/http-suite/identity-checks.mjs` (25 checks
+  over pages, links, published ids, retrieval and a model page);
+  `tests/openai-model-list.test.mjs` statement budget updated for the bounded
+  leaf read.
 - **Verification Evidence:** `npm run verify` PASS 12/12, 1318/1318 tests,
   PostgreSQL 20/20, 789 HTTP checks, build, recovery, deployment receipt.
 - **Archived:** 2026-11-25 → `dev/fids/archive/`; commits `19ded1a`, `012bb6a`,

@@ -187,31 +187,37 @@ export async function getProviderObservation(
   return toObservation(db, row ?? emptyRow(slug));
 }
 
-async function modelCount(db: PostgresDatabase, slug: string) {
-  const row = await db
-    .prepare(
-      "SELECT COUNT(*) AS total FROM models WHERE upstream_slug = ? AND in_catalog = 1",
-    )
-    .get<{ total: number }>(slug);
-
-  return Number(row?.total ?? 0);
-}
-
+/**
+ * The registry page in two statements.
+ *
+ * The list already read every provider row, then re-read each one by slug and
+ * counted its catalog one query at a time — `1 + 2N` statements for a page that
+ * held the rows already (FID-2026-1124-005). Status is derived from the row the
+ * record came from, and the counts arrive in one grouped read.
+ */
 export async function listProviders(
   db: PostgresDatabase,
 ): Promise<ProviderSummary[]> {
-  const records = await listProviderRecords(db);
+  const rows = await db
+    .prepare("SELECT * FROM providers ORDER BY sort_order ASC, label ASC")
+    .all<ProviderRow>();
+  const counts = await db
+    .prepare(
+      `SELECT upstream_slug, COUNT(*) AS total
+         FROM models WHERE in_catalog = 1
+        GROUP BY upstream_slug`,
+    )
+    .all<{ upstream_slug: string; total: number | string }>();
+  const modelCounts = new Map(
+    counts.map((row) => [row.upstream_slug, Number(row.total)]),
+  );
 
   return Promise.all(
-    records.map(async (provider) => {
-      const row = await getProviderRow(db, provider.slug);
-
-      return {
-        ...provider,
-        ...(await toStatus(db, row ?? emptyRow(provider.slug))),
-        modelCount: await modelCount(db, provider.slug),
-      };
-    }),
+    rows.map(async (row) => ({
+      ...toRecord(row),
+      ...(await toStatus(db, row)),
+      modelCount: modelCounts.get(row.slug) ?? 0,
+    })),
   );
 }
 

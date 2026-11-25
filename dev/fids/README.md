@@ -2,7 +2,7 @@
 
 **Last folder audit:** 2026-11-24 (FID folder audit). This page
 indexes the working set; each FID owns its own status, evidence and resolution.
-Current counts: 15 active / 22, 194 archived, 200 allocated.
+Current counts: 14 active / 22, 195 archived, 200 allocated.
 
 ## Layout
 
@@ -19,7 +19,6 @@ Current counts: 15 active / 22, 194 archived, 200 allocated.
 | --- | --- | --- | --- |
 | [2026-1124-006](FID-2026-1124-006-provider-registration-surface.md) | Provider registration surface cannot express what a provider needs | converged | Implement: conservative capability defaults, `requiresModelReview` in the input and console, editable headers, delete hygiene. |
 | [2026-1124-005](FID-2026-1124-005-catalog-gateway-query-cost.md) | Catalog and gateway query cost after multi-provider onboarding | converged | Implement the five measured slices; each has its own test and commit. |
-| [2026-1124-004](FID-2026-1124-004-default-provider-namespace-migration.md) | Default-provider switch breaks the next catalog sync | converged | Implement the switch-time re-key before any default switch is followed by a sync. |
 | [2026-1124-003](FID-2026-1124-003-non-subscription-provider-health.md) | Non-subscription provider freshness and operations health | converged | Implement: separate "unsupported" from "failed", capability-aware freshness, capability-scoped operations counters. |
 | [043](FID-2026-1030-043-launch-master.md) | Master launch contract and dependency register | converged | Keep coverage, ordering and release decisions current. |
 | [062](FID-2026-1030-062-launch-acceptance-and-rollout.md) | Real launch acceptance, controlled rollout and rollback | converged | Discharge the dated external receipt items 1–8; launch remains no-go. Item 1 (NOWPayments payment/IPN) is operator-accepted as an assumption, not verified. |
@@ -44,6 +43,10 @@ Current counts: 15 active / 22, 194 archived, 200 allocated.
 [2026-1122-006](archive/FID-2026-1122-006-next-security-upgrade.md) is `closed`. `next upgrade --agent=security` moved 16.4.3 → 16.4.6; duplicate checks were empty, and 12/12 gates with 1240/1240 tests passed in the upgrade worktree.
 
 [2026-1122-007](archive/FID-2026-1122-007-bulk-chat-decisions.md) is `closed`. The review panel wrote one decision per click, so a 281-row catalog could not realistically be decided; bulk actions now record one row per model in a single transaction with one republish, still operator-sourced and individually overridable. 5 PostgreSQL cases, 12/12 gates and 1245/1245 tests.
+
+### Closed in the 2026-11-25 provider re-key commit
+
+[2026-1124-004](archive/FID-2026-1124-004-default-provider-namespace-migration.md) is `closed` at implementation `a629d38`. A flag-only switch left `models.id` disagreeing with `models_upstream_idx`, so the next sync of either provider raised `23505` and rolled back, and the override lookup could apply one model's manual group and prices to another. The switch now re-keys both providers inside the existing transaction through a temporary namespace, moves plan and subscription entitlements, watches, content links and showcase bindings with the model, keeps usage and decision history under the recorded id, and republishes routes; override preservation is keyed on `(upstream_slug, upstream_id)` and scoped to the syncing provider. 5 new cases; `npm run verify` PASS 12/12 gates with 1282/1282 tests and PostgreSQL 20/20.
 
 ### Closed in the 2026-11-24 register audit
 

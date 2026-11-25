@@ -1,5 +1,24 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-25 (open-FID implementation: OF)
+
+Operator instruction: "complete all open fids in logical order with automation
+level 3." Automation level 3; strict; single agent. Work proceeds in dependency
+and severity order; each record closes only on its own gates and a commit.
+
+- [x] **OF1 — FID-2026-1124-004, switch-time id migration.** **Completed** at
+  `a629d38`. The flag-only switch left `models.id` disagreeing with
+  `models_upstream_idx`, so the next sync of either provider raised `23505` and
+  rolled back, and override preservation keyed on `id` could move manual prices
+  onto another model. The switch now re-keys both providers in the flag's
+  transaction through a `U+0001` namespace, moves `plan_models` in the same
+  statement as `models` (immediate foreign key), carries entitlements, watches,
+  content links and showcase bindings, refuses a foreign target id before
+  writing, and republishes routes; overrides are keyed on
+  `(upstream_slug, upstream_id)` and the preload is scoped to the provider.
+  `npm run verify` PASS 12/12 gates, 1282/1282 tests, PostgreSQL 20/20, plus a
+  5-case focused suite.
+
 ## Session — 2026-11-24 (FID folder audit and pending-work register: PR)
 
 Operator instruction: "audit/update the fids folder, move the completed work to

@@ -3,6 +3,30 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-25 — A default switch that leaves the catalog syncable (1124-004)
+
+- **FID-2026-1124-004 — critical —** the switch added by 1124-002 moved one
+  column and nothing else, while `models` is keyed by the published id and
+  `models_upstream_idx` is unique on `(upstream_slug, upstream_id)`. The first
+  sync after a switch therefore raised `23505` and rolled the whole sync back,
+  freezing that provider's catalog; the same sync read preserved overrides by
+  `id`, so a switch that did succeed could have applied one model's manual group
+  and prices to another.
+  The switch now re-keys both affected providers inside the flag's transaction.
+  Rows move to a temporary `U+0001` namespace and then to their final ids, which
+  makes the bare/prefixed swap collision-free; `plan_models` moves in the same
+  statement as `models` so the immediate foreign key never sees a dangling id.
+  Plan and subscription entitlements, saved-model watches, content links,
+  showcase bindings and aliases follow the model, while `usage_events`,
+  `pricing_decisions` and `content.link_decisions` keep the id they were
+  recorded under. A target id owned by a third provider is refused before any
+  write, routes are republished after the swap, and override preservation is
+  keyed on the upstream tuple and scoped to the syncing provider. Verified with
+  5 new cases (collision-free swap, entitlement movement with history intact,
+  sync after switch with overrides kept, switch-back restoration, foreign-target
+  refusal) and `npm run verify` PASS 12/12 gates, 1282/1282 tests, PostgreSQL
+  20/20.
+
 ## 2026-11-24 — FID folder audit and the 015 closure (1104-015)
 
 - **FID-2026-1104-015 — high —** content fetch automation was implemented at

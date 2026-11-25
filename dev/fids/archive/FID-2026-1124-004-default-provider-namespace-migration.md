@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1124-004-default-provider-namespace-migration.md`
 **ID:** FID-2026-1124-004
 **Severity:** critical
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-24 23:55
 **Automation level:** 2
 **YAGNI-Compliance:** Pending
@@ -247,7 +247,10 @@ switch, and (g) switching back restores the original ids. Plus the existing
 
 ### Verification Receipt
 
-Not yet run: this FID is `converged`, not implemented. No gate output is claimed.
+- verified: 2026-11-25 — `npm run verify` PASS, 12/12 gates.
+- `node --test tests/provider-default-rekey-postgres.test.mjs tests/provider-default-postgres.test.mjs tests/provider-public-id.test.mjs`: 15/15 pass, 0 skipped.
+- `npm test`: 1282/1282 pass, 0 skipped. `npm run test:postgres`: 20/20.
+- `npm run check`, `npm run quality` (719 files), `npm run build`: exit 0.
 
 ### Convergence Receipt (read-only)
 
@@ -327,13 +330,21 @@ Not yet run: this FID is `converged`, not implemented. No gate output is claimed
   costs instead of pretending the coupling is free.
 - **CHANGE DELTA:** <2% — converged.
 
+## Implementation Evidence (REQUIRED for `closed`)
+
+- **Commit SHA:** `a629d38` (`fix(providers): re-key public ids on a default switch (FID-2026-1124-004)`).
+- **File:line ranges:** `lib/storage/store/provider-rekey.ts` (plan, collision refusal, temporary-namespace swap, dependent migration); `lib/storage/store/providers.ts` — `setDefaultProvider` re-keys inside the flag transaction and republishes routes; `lib/storage/store/model-sync.ts` — `replaceModels` preserves overrides by `(upstream_slug, upstream_id)` and preloads only the syncing provider; `components/admin/providers-panel.tsx` and `docs/providers.md` state the immediate consequence.
+- **Gate output:** `npm run verify` PASS 12/12 gates — check, storage:check, config:check, repository:check, test 1282/1282, test:postgres 20/20, quality, build, visual builds, HTTP, recovery, deployment receipt. Focused rekey suite 5/5; the three-file provider suite 15/15.
+- **Reproducibility:** `grep -rn rekeyProviderIds lib` returns the definition and the `setDefaultProvider` call; `tests/provider-default-rekey-postgres.test.mjs` seeds two providers with one overlapping upstream id and one provider-only id, so the `23505` path is exercised rather than described.
+- **Step statuses:** steps 1–7 `implemented`.
+
 ## Resolution
 
-- **Closed Date:** not closed
-- **Fix Description:** pending implementation
-- **Tests Added:** planned — `tests/provider-default-rekey-postgres.test.mjs`
-- **Verification Evidence:** none claimed; design convergence only
-- **Archived:** not archived
+- **Closed Date:** 2026-11-25
+- **Fix Description:** a switch now re-keys both affected providers in the flag's transaction. Rows move to a temporary `U+0001` namespace, then to their final ids; `plan_models` moves in the same statement as `models` through a data-modifying CTE so the immediate foreign key never sees a dangling id. Subscription entitlements, saved-model watches, content links, showcase bindings and aliases follow the model; `usage_events`, `pricing_decisions` and `content.link_decisions` keep the id they were recorded under. A target id owned by a third provider is refused before any write, and routes are republished after the swap.
+- **Tests Added:** Yes — `tests/provider-default-rekey-postgres.test.mjs`, 5 cases: collision-free re-key, entitlement migration with usage history intact, sync after switch with manual overrides kept, switch-back restoration, and refusal on a foreign target id.
+- **Verification Evidence:** the receipt above; `npm run verify` PASS on the implementation tree.
+- **Archived:** 2026-11-25 — moved to `dev/fids/archive/`.
 
 ## Lessons Learned
 

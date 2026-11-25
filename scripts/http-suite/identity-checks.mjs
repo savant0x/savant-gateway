@@ -103,6 +103,23 @@ export async function runPublicIdentityChecks(context, key) {
 
   check("identity /v1/models publishes models", published.length > 0);
 
+  // A model page carries the same rule, plus the props of its client components
+  // (watch, click tracking) — those are serialized into the HTML too.
+  const [first] = published;
+
+  if (first) {
+    const path = first.id.split("/").map(encodeURIComponent).join("/");
+    const detail = await request(context.baseUrl, `/models/${path}`);
+    const hits = slugHits(detail.text, slugs);
+
+    checkEqual(`identity /models/${path} serves`, detail.status, 200);
+    check(
+      `identity /models/${path} names no upstream provider`,
+      hits.length === 0,
+      slugContexts(detail.text, hits).join(" | "),
+    );
+  }
+
   for (const model of published) {
     const problem = idNamespaceProblem(model.id);
 

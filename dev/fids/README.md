@@ -1,8 +1,8 @@
 # FID register
 
-**Last folder audit:** 2026-11-24 (admin surface review). This page
+**Last folder audit:** 2026-11-24 (FID folder audit). This page
 indexes the working set; each FID owns its own status, evidence and resolution.
-Current counts: 12 active / 22, 193 archived, 200 allocated.
+Current counts: 15 active / 22, 194 archived, 200 allocated.
 
 ## Layout
 
@@ -17,26 +17,46 @@ Current counts: 12 active / 22, 193 archived, 200 allocated.
 
 | ID | Title | Status | Next action |
 | --- | --- | --- | --- |
+| [2026-1124-006](FID-2026-1124-006-provider-registration-surface.md) | Provider registration surface cannot express what a provider needs | converged | Implement: conservative capability defaults, `requiresModelReview` in the input and console, editable headers, delete hygiene. |
+| [2026-1124-005](FID-2026-1124-005-catalog-gateway-query-cost.md) | Catalog and gateway query cost after multi-provider onboarding | converged | Implement the five measured slices; each has its own test and commit. |
+| [2026-1124-004](FID-2026-1124-004-default-provider-namespace-migration.md) | Default-provider switch breaks the next catalog sync | converged | Implement the switch-time re-key before any default switch is followed by a sync. |
+| [2026-1124-003](FID-2026-1124-003-non-subscription-provider-health.md) | Non-subscription provider freshness and operations health | converged | Implement: separate "unsupported" from "failed", capability-aware freshness, capability-scoped operations counters. |
 | [043](FID-2026-1030-043-launch-master.md) | Master launch contract and dependency register | converged | Keep coverage, ordering and release decisions current. |
 | [062](FID-2026-1030-062-launch-acceptance-and-rollout.md) | Real launch acceptance, controlled rollout and rollback | converged | Discharge the dated external receipt items 1–8; launch remains no-go. Item 1 (NOWPayments payment/IPN) is operator-accepted as an assumption, not verified. |
 | [068](FID-2026-1030-068-usdc-receive-lane.md) | Direct-to-wallet USDC receive lane | fixed | Operator inputs still gate the receive lane; re-read the record before acting. |
 | [127](FID-2026-1103-127-real-launch-acceptance-receipt.md) | Real launch acceptance receipt | fixed | Operator records the five observations (`payment`, `recovery`, `alert`, `load`, `rollback`) and a go pinned to the release SHA, then runs `npm run receipt:launch`. |
 | [137](FID-2026-1103-137-product-hardening-and-install-order-master.md) | Product hardening and install-order master | converged | Children 126, 128–136 and 141 are closed and archived; only 127 remains, so the master closes after its operator observations and go decision. |
 | [2026-1104-011](FID-2026-1104-011-policy-v1-2-publication.md) | Policy v1.2 for the current service surface | converged | Operator approves the recipient inventory; worker drafts v1.2 and the acceptance bump. |
-| [2026-1104-015](FID-2026-1104-015-content-fetch-automation-and-history.md) | Dashboard-configured fetching and durable history | fixed | Implementation landed at `dbaa033` (policy, durable runs, lease/budget, GET/POST heartbeat, paged history). Closure awaits the disposable-PostgreSQL ownership proof, a full HTTP gate pass and the operator's scheduler backend; no hosted heartbeat exists. |
-| [2026-1104-016](FID-2026-1104-016-persistent-content-model-decisions.md) | Persistent content/model acceptance and dismissal | fixed | Implementation landed at `3f5a045` (durable states, revision-guarded decisions, decision log, one visibility predicate). Closure awaits the two-connection link-decision race (`TEST_DATABASE_URL`) and a real-browser exercise. |
+| [2026-1104-016](FID-2026-1104-016-persistent-content-model-decisions.md) | Persistent content/model acceptance and dismissal | fixed | Implementation landed at `3f5a045` (durable states, revision-guarded decisions, decision log, one visibility predicate); the two-connection link-decision race passes on 2026-11-24. Closure awaits a real-browser exercise of accept/dismiss/restore. |
 | [2026-1104-017](FID-2026-1104-017-content-matching-controls-and-review.md) | Full linked-content management, settings and rematch | fixed | Implementation landed at `6cb7486` and `1c4c2a5` (keyset inventory, policy/aliases, cancellable rematch, invalidation). Closure still needs pinned job snapshots, per-item retry scopes and HTTP/browser receipts. |
-| [2026-1104-018](FID-2026-1104-018-content-automation-master.md) | Content automation and persistent matching master | converged | Children 015–017 are implemented (`dbaa033`, `3f5a045`, `6cb7486`, `1c4c2a5`) and still owe their closure proofs. The master closes on those plus the operator's scheduler backend, secret and hosted-tick authorization. |
+| [2026-1104-018](FID-2026-1104-018-content-automation-master.md) | Content automation and persistent matching master | converged | Child 015 is `closed`; 016 and 017 are `fixed` (`3f5a045`, `6cb7486`, `1c4c2a5`) and still owe proof. The master closes on those plus the operator's scheduler backend, secret and hosted-tick authorization. |
 | [2026-1110-002](FID-2026-1110-002-identity-calibration-lab.md) | Identity calibration lab and measured certificate | converged | Steps 1–4 are committed (`d66a538`, `b884984`, `1f75c44`; step 4 in `495e8b3`, plus its proxy script under [2026-1122-001](archive/FID-2026-1122-001-commit-calibration-proxy.md)). Step 5, collection, is next and needs an operator-supplied upstream; then the certificate path. |
 | [2026-1120-001](FID-2026-1120-001-inferhub-upstream-onboarding.md) | InferHub upstream onboarding | fixed | Steps 1, 2, 3, 4 and 8 are done (`ed8812a`, `495e8b3`, `b159ba0`): the row is seeded disabled, review-required and resale-restricted. Steps 5–7 stay blocked on funding and a measured figure. |
-| [2026-1124-002](archive/FID-2026-1124-002-default-provider.md) | Persisted, switchable default provider | closed | The default is `providers.is_default` with a partial unique index, not a constant; **Make default** moves it and reports the published ids that change at each provider's next sync; the guard refuses only the current default, so a demoted row becomes deletable. 10 new cases, 12/12 gates and 1277/1277 tests, plus a live probe of the route's 404/400/401 answers. |
-| [2026-1123-003](archive/FID-2026-1123-003-provider-model-switches.md) | Provider-scoped switches for individual models | closed | Selection and a bulk Enable/Disable on `/admin/catalog` under the same per-row guard, and the `/admin/providers` status column reporting the switch instead of the stored health; 5 disposable-database cases, 12/12 gates and 1264/1264 tests. |
-| [2026-1124-001](archive/FID-2026-1124-001-admin-console-clarity.md) | Admin console clarity, attention signals and payload | closed | Review baseline at [audit/2026-11-24-admin-surface-review.md](audit/2026-11-24-admin-surface-review.md): `/admin/showcase` explains its switch instead of 404ing, the overview tiles name the quantities they count, a review-required provider's chat-decision backlog appears on its row, `/admin/pricing` pages both tables and ships a trimmed row shape (1,104 kB → 347 kB), and the 30-day total has one name; 3 new cases, 12/12 gates and 1267/1267 tests. |
-| [2026-1122-005](archive/FID-2026-1122-005-provider-key-operability.md) | Provider key operability and sync on enable | closed | Archived at `ce6cad7`: the paste message, the two `.env.local` statements and the enable-time catalog read, with 1240/1240 tests. |
-| [2026-1122-006](archive/FID-2026-1122-006-next-security-upgrade.md) | Next.js security upgrade 16.4.3 → 16.4.6 | closed | `next upgrade --agent=security`; duplicate checks empty, 12/12 gates and 1240/1240 tests in the upgrade worktree. |
-| [2026-1122-007](archive/FID-2026-1122-007-bulk-chat-decisions.md) | Bulk chat decisions for a review-required provider | closed | One request records a decision for the whole catalog; 5 postgres cases, 12/12 gates and 1245/1245 tests. |
-| [2026-1123-001](archive/FID-2026-1123-001-content-model-link-precision.md) | Content-to-model linking precision and readability | closed | 21/21 labelled headlines at recall 1.00 and precision 1.00 (was 11/21), one card per underlying model, body evidence for every kind; 1251/1251 tests in 12/12 gates. |
-| [2026-1123-002](archive/FID-2026-1123-002-provider-catalog-preview.md) | Keyless provider catalog preview | closed | Preview reads a catalog with or without a key and reports what an import would do, writing nothing; live on InferHub 531 rows → 272 importable, keyed and keyless, 1259/1259 tests. |
+
+### Closed in the 2026-11-24 admin and default-provider commits
+
+[2026-1124-001](archive/FID-2026-1124-001-admin-console-clarity.md) is `closed`. A read-only pass over all 17 `/admin` routes fixed seven presentation and payload faults without touching a price, markup, guard or settlement rule, against the review baseline at [audit/2026-11-24-admin-surface-review.md](audit/2026-11-24-admin-surface-review.md): `/admin/showcase` explains its switch instead of 404ing, the overview tiles name the quantities they count, a review-required provider's chat-decision backlog appears on its row, Delete is offered on every non-default row, `/admin/pricing` pages both tables and ships a trimmed row shape (1,104 kB → 347 kB), and the 30-day total has one name; 3 new cases, 12/12 gates and 1267/1267 tests.
+
+[2026-1124-002](archive/FID-2026-1124-002-default-provider.md) is `closed` at implementation `f2e1a53`. The default is `providers.is_default` with a partial unique index that allows at most one holder, not a constant; **Make default** moves it and reports the measured published-row count on each side, the delete guard refuses only the current default, and the write path is unchanged. 10 new cases, 12/12 gates and 1277/1277 tests, plus a live probe of the route's 404/400/401 answers. Its "published at the next sync" consequence is retracted by [2026-1124-004](FID-2026-1124-004-default-provider-namespace-migration.md): the first sync after a switch collides on `models_upstream_idx` until the switch-time re-key lands.
+
+### Closed in the 2026-11-22 security and bulk-decision commits
+
+[2026-1122-006](archive/FID-2026-1122-006-next-security-upgrade.md) is `closed`. `next upgrade --agent=security` moved 16.4.3 → 16.4.6; duplicate checks were empty, and 12/12 gates with 1240/1240 tests passed in the upgrade worktree.
+
+[2026-1122-007](archive/FID-2026-1122-007-bulk-chat-decisions.md) is `closed`. The review panel wrote one decision per click, so a 281-row catalog could not realistically be decided; bulk actions now record one row per model in a single transaction with one republish, still operator-sourced and individually overridable. 5 PostgreSQL cases, 12/12 gates and 1245/1245 tests.
+
+### Closed in the 2026-11-24 register audit
+
+[2026-1104-015](archive/FID-2026-1104-015-content-fetch-automation-and-history.md) is
+`closed` at implementation `dbaa033`. The record had held closure on a
+disposable-PostgreSQL ownership proof, a full HTTP gate pass and a hosted
+heartbeat. The first two now exist: `npm run test:postgres` PASS on a disposable
+PostgreSQL 17.11.0 cluster with `tests/content-job-concurrency.test.mjs` running
+under `CONTENT_CONCURRENCY_REQUIRED=1` ("two connections cannot claim one due
+source twice", 1 test, 0 skipped), and the 2026-11-24T20:29Z `npm run verify`
+receipt is 12/12 gates with 1277/1277 tests, PostgreSQL 20/20 and both HTTP
+suites PASS. The hosted heartbeat is an operator activation input and is tracked
+as `FID-2026-1104-015-LIVE`; no automatic fetching is claimed in production.
 
 ### Closed in the 2026-11-23 provider-switch commit
 

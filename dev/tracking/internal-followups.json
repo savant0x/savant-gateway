@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-11-06",
+  "updated": "2026-11-24",
   "policy": "Archived implementations do not claim live acceptance. These are observation, operator-input or revisit items linked to archived records; they do not hold implementation closure.",
   "items": [
     {
@@ -244,6 +244,15 @@
       "detail": "Eligibility enforcement is closed at 6cdfc80 and the read-only three-source review evidence at 192b7b0. The review shows the account catalog, reseller availability/cost and public endpoint/billing metadata with observation times and plan/pricing versions. No feed price is imported or used for admission. Operator ruling 2026-11-06: resale permission is clear because access is key-authenticated and gated; that item is closed. Root-key billing basis, model mapping/serving source and request-time charge remain unobserved. The provider remains seeded disabled and every model starts unknown until an operator decision.",
       "evidence": "dev/fids/archive/FID-2026-1105-003-router-cheap-provider.md; dev/audits/2026-11-05-router-cheap-model-census.md; docs/providers.md; tests/router-cheap-provider.test.mjs",
       "next_action": "Record a dated operator attestation that the root model key has no model-mapping rule and that each family's serving source is intended, plus the billing basis. Resale permission is already confirmed by the 2026-11-06 ruling. If funded calls are later authorized, record request-time price and settlement. Do not infer these from the model list or the reference feeds."
+    },
+    {
+      "id": "FID-2026-1104-015-LIVE",
+      "fid": "FID-2026-1104-015",
+      "state": "blocked",
+      "title": "Hosted scheduler backend, secret and first observed heartbeats",
+      "detail": "Content fetch automation is implemented at dbaa033 and closed 2026-11-24; the PostgreSQL ownership proof and the HTTP content probes pass. No scheduler backend or tier is confirmed, no scheduler secret is provisioned, nothing is deployed for this feature, and no hosted heartbeat has been observed. A saved enabled policy is not a heartbeat, and no automatic fetching is claimed in production.",
+      "evidence": "dev/fids/archive/FID-2026-1104-015-content-fetch-automation-and-history.md; app/api/cron/content/route.ts; lib/content/automation.ts; scripts/http-suite/content-checks.mjs; npm run test:postgres (2026-11-24 PASS)",
+      "next_action": "Confirm the scheduler backend and tier, provision CRON_SECRET or the content secret outside the tree, deploy under explicit operator approval, and record two authenticated heartbeats with their persisted run rows and a public freshness change. Paused and overdue states must be observed, not inferred."
     }
   ]
 }

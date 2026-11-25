@@ -103,7 +103,7 @@ routing, credit, subscription, prices or the model identity rules.
 
 | Child | Owns | Depends on | Implementation order |
 | --- | --- | --- | --- |
-| [015](FID-2026-1104-015-content-fetch-automation-and-history.md) | Scheduling, fetch policy, execution budget, source/run history | Existing ingestion/claims | First |
+| [015](archive/FID-2026-1104-015-content-fetch-automation-and-history.md) | Scheduling, fetch policy, execution budget, source/run history | Existing ingestion/claims | First |
 | [016](FID-2026-1104-016-persistent-content-model-decisions.md) | Link states, accept/dismiss/restore, migration, reconciliation, public visibility | Existing content ids/catalog | Second |
 | [017](FID-2026-1104-017-content-matching-controls-and-review.md) | Full inventory, matching policy/aliases, rematch and catalog invalidation | 015 execution; 016 decisions | Third |
 
@@ -277,11 +277,11 @@ or hosted activation is inferred from document convergence.
 
 - **Closed Date:** — (not closed)
 - **Design:** complete and converged 2026-11-04; this record authored no code.
-- **Children:** 015, 016 and 017 are implemented and committed (`dbaa033`,
-  `3f5a045`, `6cb7486`, `1c4c2a5`) and now sit at `fixed`, not `converged`. None
-  is closed: 015 needs the PostgreSQL ownership proof and a full HTTP gate pass,
-  016 the two-connection link-decision race and a browser exercise, 017 the
-  pinned job snapshots, per-item retry scopes and HTTP/browser receipts.
+- **Children:** 015 is `closed` at `dbaa033` and archived 2026-11-24 (the
+  PostgreSQL ownership proof and the HTTP content probes pass). 016 and 017 are
+  implemented and committed (`3f5a045`, `6cb7486`, `1c4c2a5`) and remain `fixed`:
+  016 owes a real-browser exercise of the controls, and 017 the pinned job
+  snapshots, per-item retry scopes and HTTP/browser receipts.
 - **Step 5 (activation):** blocked on the operator's scheduler backend/tier,
   secret provisioning and deployment authorization. No hosted heartbeat has been
   observed, so no automatic fetching is claimed in production.

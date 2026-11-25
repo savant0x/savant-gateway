@@ -3,6 +3,25 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-24 — FID folder audit and the 015 closure (1104-015)
+
+- **FID-2026-1104-015 — high —** content fetch automation was implemented at
+  `dbaa033` but held at `fixed` for three proofs. Two now exist:
+  `npm run test:postgres` PASS on a disposable PostgreSQL 17.11.0 cluster with
+  `tests/content-job-concurrency.test.mjs` running under
+  `CONTENT_CONCURRENCY_REQUIRED=1` ("two connections cannot claim one due source
+  twice", 1 test, 0 skipped), and the 2026-11-24T20:29Z `npm run verify` receipt
+  is 12/12 gates with 1277/1277 tests, PostgreSQL 20/20 and both HTTP suites
+  PASS. The third is not code: no scheduler backend, secret or hosted heartbeat
+  exists, so it is tracked as `FID-2026-1104-015-LIVE` in
+  `dev/tracking/internal-followups.json` and no automatic fetching is claimed in
+  production. The record is `closed` and archived.
+- **Register audit —** `npm run repository:check` failed before this pass with
+  `dev/fids/README.md does not register active FID-2026-1124-003` through
+  `-006`. All four are now in the active queue with status and next action; the
+  folder and the index agree at 15 active, 194 archived and 200 allocated, and
+  `SCOPE.md` records the 2026-11-24 session with every pending record's blocker.
+
 ## 2026-11-24 — A default provider that can be changed (1124-002)
 
 - **FID-2026-1124-002 — medium —** "the default provider" was the constant
@@ -26,6 +45,14 @@ distinguish verified behavior from unverified claims.
   the store, and `docs/providers.md` documents the consequence. Verified with 10
   new cases, a live route probe (404 unknown slug, 400 wrong action, 401 without a
   session) and 12/12 gates, 1277/1277 tests.
+
+- **Correction (2026-11-24 audit) —** this entry says a switch is published by
+  "the next sync of each provider". FID-2026-1124-004 shows that sentence is
+  unimplementable against the current keys: `replaceModels` upserts
+  `ON CONFLICT (id)` while `models_upstream_idx` is unique on
+  `(upstream_slug, upstream_id)`, so the first sync after a switch raises `23505`
+  and rolls back. The switch and its flag are implemented and tested; the
+  follow-on sync is not safe until 1124-004 lands.
 
 ## 2026-11-24 — Upstream provider deletion, and console clarity (1124-001)
 

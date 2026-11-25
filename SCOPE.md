@@ -1,5 +1,50 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-24 (FID folder audit and pending-work register: PR)
+
+Operator instruction: "audit/update the fids folder, move the completed work to
+archive, update the changelog and ensure it's accurate. The only fids that should
+be there the ones that are pending work." Automation level 3; strict; single
+agent. FIDs, register, archive, CHANGELOG and this record only: no application
+code, schema, test or provider row changed.
+
+- [x] **PR1 — Audit every active record against code, commits and gates.**
+  **Completed.** Every commit cited by an active record exists (`git cat-file -e`:
+  `dbaa033`, `3f5a045`, `6cb7486`, `1c4c2a5`, `35c1d35`, `b2790d1`, `ed8812a`,
+  `495e8b3`, `b159ba0`). One record could close: FID-2026-1104-015, held only on
+  the PostgreSQL ownership proof and a full HTTP pass. `npm run test:postgres`
+  PASS 2026-11-24 with `tests/content-job-concurrency.test.mjs` running under
+  `CONTENT_CONCURRENCY_REQUIRED=1` (1 test, 0 skipped, "two connections cannot
+  claim one due source twice"), and `.verify/summary.json` records 12/12 gates,
+  1277/1277 tests and both HTTP suites PASS. Archived with a dated resolution;
+  the hosted heartbeat moved to `FID-2026-1104-015-LIVE`.
+- [x] **PR2 — Register the four 2026-11-24 records and repair the index.**
+  **Completed.** `npm run repository:check` failed before this pass
+  (`dev/fids/README.md does not register active FID-2026-1124-003/-004/-005/-006`);
+  all four are now in the queue with status and next action, the counts read
+  15 active / 194 archived / 200 allocated, and `CHANGELOG.md` carries this audit
+  plus the correction that FID-2026-1124-002's "published at the next sync"
+  sentence is retracted by FID-2026-1124-004.
+
+The 15 records in `dev/fids/` are all pending; none is complete. Their blockers,
+named so no record is invisible:
+
+| Record | State | Specific blocker |
+| --- | --- | --- |
+| 043, 062, 137 | converged / fixed | Operator acceptance: real payment, restore/alert/load receipts and an explicit public GO; 137 also waits on 127. |
+| 127 | fixed | The five operator observations and the go decision do not exist; `npm run receipt:launch` reports INCOMPLETE by design. |
+| 068 | fixed | Chain/token contract, hardware-wallet xpub, RPC endpoint and screening ruling are operator inputs; steps 2, 3 and 5–7 are unimplemented. |
+| 011 | converged | Operator approval of the v1.2 recipient inventory and publication date. |
+| 016 | fixed | Code at `3f5a045` and the link race passes; no real-browser exercise of accept/dismiss/restore exists. |
+| 017 | fixed | Code at `6cb7486`/`1c4c2a5`; pinned job snapshots, per-item retry scopes and HTTP/browser receipts are absent from the tree. |
+| 018 | converged | Child proofs above plus the operator's scheduler backend, secret and hosted-tick authorization. |
+| 1110-002 | converged | Step 5 collection needs an operator-supplied upstream; steps 1–4 are committed. |
+| 1120-001 | fixed | Steps 5–7 need a funded wallet and per-model bid decisions; the row is seeded disabled. |
+| 1124-003 | converged | Implementation not started. |
+| 1124-004 | converged | Implementation not started; blocks any switch-then-sync. |
+| 1124-005 | converged | Implementation not started. |
+| 1124-006 | converged | Implementation not started. |
+
 ## Session — 2026-11-23 (content-to-model linking quality: CL)
 
 Operator instruction: "review and greatly enhance our linking system between content and

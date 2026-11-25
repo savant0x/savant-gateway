@@ -16,7 +16,7 @@ chat exports remain untouched. No FID is closed or archived by this pass.
 
 | Record | Status | Coding-session responsibility |
 | --- | --- | --- |
-| [015](../fids/FID-2026-1104-015-content-fetch-automation-and-history.md) | converged, design only | Fixed authenticated heartbeat, dashboard policy, bounded/resumable fetching, durable source/run history and honest health |
+| [015](../fids/archive/FID-2026-1104-015-content-fetch-automation-and-history.md) | converged, design only | Fixed authenticated heartbeat, dashboard policy, bounded/resumable fetching, durable source/run history and honest health |
 | [016](../fids/FID-2026-1104-016-persistent-content-model-decisions.md) | converged, design only | Durable acceptance/dismissal/restore, atomic reconciliation, legacy migration and consistent public visibility |
 | [017](../fids/FID-2026-1104-017-content-matching-controls-and-review.md) | converged, design only | Complete link inventory, matching policy/aliases, stored-content rematch and durable catalog invalidation |
 | [018](../fids/FID-2026-1104-018-content-automation-master.md) | converged, design only | Implementation order, ownership, integrated acceptance and external activation boundaries |

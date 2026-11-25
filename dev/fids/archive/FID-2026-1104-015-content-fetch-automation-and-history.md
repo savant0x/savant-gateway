@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-015-content-fetch-automation-and-history.md`
 **ID:** FID-2026-1104-015
 **Severity:** high
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-04 23:20 America/New_York
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -156,9 +156,9 @@ upstream errors using the existing redaction authority; never store URL tokens.
 1. **implemented:** additive policy/history schema and store APIs (`dbaa033`).
 2. **implemented:** bounded shared runner, ownership and cron/API (`dbaa033`).
 3. **implemented:** dashboard policy, source timing and history (`dbaa033`).
-4. **implemented; proofs partial:** backend artifacts and runbook landed in
-   `dbaa033`; the two-connection ownership proof and a full HTTP gate pass are
-   recorded as open in the resolution.
+4. **implemented:** backend artifacts and runbook landed in
+   `dbaa033`; the two-connection ownership proof passed on 2026-11-24 and the
+   HTTP content probes pass inside the 2026-11-24 verify receipt.
 5. **blocked — operator activation inputs:** confirm backend/tier, provision its
    secret and authorize hosted deployment; observe two heartbeats without a
    browser. This observation is distinct from committed implementation closure.
@@ -262,19 +262,21 @@ passes and their hashes/deltas are recorded in the planning session receipt.
 
 ## Resolution
 
-- **Closed Date:** — (not closed)
+- **Closed Date:** 2026-11-24
 - **Implementation:** `dbaa033` (2026-11-04). Policy, durable runs, owner lease,
   whole-run budget, shared GET/POST heartbeat and paged history are in the tree.
-- **Verification:** recorded in the 2026-11-04 CHANGELOG — `npm test` 1,019
-  pass / 0 fail / 5 PostgreSQL-only skips; build, `config:check`, lint,
-  typecheck and quality pass. Focused suites re-run 2026-11-22:
-  `node --test tests/content-automation.test.mjs tests/content-policy.test.mjs
-  tests/content-fetch-all.test.mjs` is 10/10.
-- **Not verified:** the disposable-PostgreSQL ownership proof, a full HTTP gate
-  pass, and any hosted heartbeat. No scheduler is activated; "enabled" is not a
-  heartbeat.
-- **Archived:** no — closure awaits those proofs and the operator's scheduler
-  backend/tier ruling.
+- **Verification:** 2026-11-24 — `npm run test:postgres` PASS on a disposable
+  PostgreSQL 17.11.0 cluster; `tests/content-job-concurrency.test.mjs` prints
+  "two connections cannot claim one due source twice", 1 test / 0 fail /
+  0 skipped under `CONTENT_CONCURRENCY_REQUIRED=1`. The last full `npm run
+  verify` (2026-11-24T20:29Z, `.verify/summary.json`) is 12/12 gates,
+  1277/1277 tests, PostgreSQL 20/20 and both HTTP suites PASS;
+  `scripts/http-suite.mjs` imports and runs `runContentChecks`. Focused suites:
+  `npm test` passes `tests/content-automation.test.mjs`.
+- **Live obligation:** no scheduler backend, secret or hosted heartbeat exists.
+  That is an operator activation input, not implementation work, and is now
+  `FID-2026-1104-015-LIVE` in `dev/tracking/internal-followups.json`.
+- **Archived:** 2026-11-24 — moved to `dev/fids/archive/`.
 
 ## Lessons Learned
 

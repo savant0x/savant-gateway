@@ -17,7 +17,7 @@ instruction. Hosted deployment and scheduler activation remain separate boundari
 2. `protocol.config.yaml`, `SCOPE.md`, and `dev/fids/README.md`. Session autonomy
    is 3 and strict mode is true; preserve operator rulings and unrelated work.
 3. [Master FID-018](../fids/FID-2026-1104-018-content-automation-master.md).
-4. [Fetch automation FID-015](../fids/FID-2026-1104-015-content-fetch-automation-and-history.md).
+4. [Fetch automation FID-015](../fids/archive/FID-2026-1104-015-content-fetch-automation-and-history.md).
 5. [Persistent decisions FID-016](../fids/FID-2026-1104-016-persistent-content-model-decisions.md).
 6. [Matching management FID-017](../fids/FID-2026-1104-017-content-matching-controls-and-review.md).
 7. [Planning receipt](2026-11-04-content-automation-planning.md), including the

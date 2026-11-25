@@ -89,10 +89,10 @@ next action and evidence edges; this table is the current summary.
 | [127](../dev/fids/FID-2026-1103-127-real-launch-acceptance-receipt.md) | fixed | `npm run receipt:launch` reports INCOMPLETE until the operator records the five required observations (`payment`, `recovery`, `alert`, `load`, `rollback`) and a go decision pinned to the release SHA. |
 | [137](../dev/fids/FID-2026-1103-137-product-hardening-and-install-order-master.md) | converged | Sequencing register; closes only after FID-127 has its operator evidence. FID-126 is already closed. |
 | [011](../dev/fids/FID-2026-1104-011-policy-v1-2-publication.md) | converged | Operator approves the recipient inventory; draft and publish policy `v1.2` with the acceptance bump. |
-| [015](../dev/fids/FID-2026-1104-015-content-fetch-automation-and-history.md) | converged | Planning only; coding is reserved and the scheduler backend is unconfirmed. |
-| [016](../dev/fids/FID-2026-1104-016-persistent-content-model-decisions.md) | converged | Planning only; accepted links must remain attached across automatic work. |
-| [017](../dev/fids/FID-2026-1104-017-content-matching-controls-and-review.md) | converged | Implement after 015 and 016; management, settings and rematch are not shipped. |
-| [018](../dev/fids/FID-2026-1104-018-content-automation-master.md) | converged | Planning handoff ready; no coding or hosted activation is authorized. |
+| [015](../dev/fids/archive/FID-2026-1104-015-content-fetch-automation-and-history.md) | closed | Archived 2026-11-24 at implementation `dbaa033`; the PostgreSQL ownership proof and HTTP content probes pass. A hosted scheduler heartbeat remains `FID-2026-1104-015-LIVE`. |
+| [016](../dev/fids/FID-2026-1104-016-persistent-content-model-decisions.md) | fixed | Implementation `3f5a045`; the two-connection link-decision race passes. A real-browser exercise of accept/dismiss/restore is the remaining proof. |
+| [017](../dev/fids/FID-2026-1104-017-content-matching-controls-and-review.md) | fixed | Implementation `6cb7486`, `1c4c2a5`; pinned job snapshots, per-item retry scopes and HTTP/browser receipts remain. |
+| [018](../dev/fids/FID-2026-1104-018-content-automation-master.md) | converged | Children 015 (closed), 016 and 017 (fixed). The master closes on their proofs plus the operator's scheduler activation. |
 
 The free/paid SKU split, content sources, Signal engagement work and the pricing
 console are implemented and covered by the gates above. They are public product

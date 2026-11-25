@@ -61,9 +61,9 @@ export type UpstreamModel = {
 export type ProviderSyncSummary = {
   slug: string;
   imported: number;
-  free: number;
   paid: number;
-  subscriptionOnly: number;
+  /** Imported rows with no cost: they stay disabled until an operator prices them. */
+  unpriced: number;
   warnings: string[];
   balance: unknown;
   subscription: unknown;
@@ -71,9 +71,8 @@ export type ProviderSyncSummary = {
 
 export type SyncAllSummary = {
   imported: number;
-  free: number;
   paid: number;
-  subscriptionOnly: number;
+  unpriced: number;
   warnings: string[];
   providers: ProviderSyncSummary[];
 };

@@ -29,9 +29,8 @@ export function ProviderSyncButton({
       const response = await fetch(url, { method: "POST" });
       const payload = (await response.json().catch(() => null)) as {
         imported?: number;
-        free?: number;
         paid?: number;
-        subscriptionOnly?: number;
+        unpriced?: number;
         providers?: Array<{ slug: string }>;
         warnings?: string[];
         error?: string;
@@ -58,7 +57,7 @@ export function ProviderSyncButton({
           : "Synced ";
 
       setNotice(
-        `${prefix}${payload?.imported ?? 0} models · ${payload?.free ?? 0} free · ${payload?.paid ?? 0} priced · ${payload?.subscriptionOnly ?? 0} subscription-only.${
+        `${prefix}${payload?.imported ?? 0} models · ${payload?.paid ?? 0} priced · ${payload?.unpriced ?? 0} unpriced.${
           payload?.warnings?.length ? ` ${payload.warnings.join(" ")}` : ""
         }`,
       );

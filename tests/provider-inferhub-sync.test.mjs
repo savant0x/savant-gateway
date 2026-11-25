@@ -82,7 +82,7 @@ test("the seeded InferHub row imports priced rows and refuses everything else", 
     const warnings = summary.warnings.join(" | ");
 
     assert.match(warnings, /1 upstream alias row/);
-    assert.match(warnings, /1 upstream free-pool \(resale not permitted\) row/);
+    assert.match(warnings, /1 upstream free-pool \(never imported\) row/);
     assert.match(warnings, /1 upstream non-text output row/);
 
     const rows = await db
@@ -145,7 +145,8 @@ test("the same catalog refuses the free row, with no flag to restore it", async 
     });
 
     assert.equal(summary.imported, 2, "the free row is refused");
-    assert.equal(summary.free, 0);
+    assert.equal(summary.paid, 1, "one imported row carries a price");
+    assert.equal(summary.unpriced, 1, "the other imports disabled until priced");
     assert.match(summary.warnings.join(" "), /free/i);
 
     const stored = await db

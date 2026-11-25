@@ -145,9 +145,8 @@ function unconfiguredSummary(provider: ProviderRecord): ProviderSyncSummary {
   return {
     slug: provider.slug,
     imported: 0,
-    free: 0,
     paid: 0,
-    subscriptionOnly: 0,
+    unpriced: 0,
     warnings: [`${provider.keyEnvVar} is not configured.`],
     balance: null,
     subscription: null,
@@ -192,13 +191,7 @@ export async function syncProvider(
 
   await replaceModels(db, synced, await getMarkupBps(db), slug);
 
-  const free = synced.filter(
-    (model) => model.allowFree && model.tokenWeight > 0,
-  ).length;
-  const paid = synced.filter(
-    (model) =>
-      !(model.allowFree && model.tokenWeight > 0) && model.costInputMicros > 0,
-  ).length;
+  const paid = synced.filter((model) => model.costInputMicros > 0).length;
 
   await saveProviderCatalogSync(db, slug);
 
@@ -235,17 +228,13 @@ export async function syncProvider(
   return {
     slug,
     imported: synced.length,
-    free,
     paid,
-    subscriptionOnly: synced.length - free - paid,
+    unpriced: synced.length - paid,
     warnings: [
       ...warnings,
       ...droppedRowsWarning("alias", skippedAliases),
       ...droppedRowsWarning("non-text output", skippedMedia),
-      ...droppedRowsWarning(
-        "free-pool (resale not permitted)",
-        skippedFreePool,
-      ),
+      ...droppedRowsWarning("free-pool (never imported)", skippedFreePool),
       ...groupWarnings,
     ],
     balance,
@@ -269,9 +258,8 @@ export async function syncAllEnabled(
       results.push({
         slug: provider.slug,
         imported: 0,
-        free: 0,
         paid: 0,
-        subscriptionOnly: 0,
+        unpriced: 0,
         warnings: [
           redactSecrets(
             error instanceof Error ? error.message : "Provider sync failed",
@@ -285,12 +273,8 @@ export async function syncAllEnabled(
 
   return {
     imported: results.reduce((total, row) => total + row.imported, 0),
-    free: results.reduce((total, row) => total + row.free, 0),
     paid: results.reduce((total, row) => total + row.paid, 0),
-    subscriptionOnly: results.reduce(
-      (total, row) => total + row.subscriptionOnly,
-      0,
-    ),
+    unpriced: results.reduce((total, row) => total + row.unpriced, 0),
     warnings: results.flatMap((row) =>
       row.warnings.map((warning) => `${row.slug}: ${warning}`),
     ),

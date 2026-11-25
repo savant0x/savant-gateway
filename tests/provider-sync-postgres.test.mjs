@@ -327,27 +327,22 @@ test("a sync imports the catalog and preserves the provider scope", async () => 
       fetchSubscription: async () => SUBSCRIPTION,
     });
 
-    assert.equal(summary.imported, 2);
-    assert.equal(summary.free, 1);
+    assert.equal(summary.imported, 1, "the free row is refused");
     assert.equal(summary.paid, 1);
-    assert.equal(summary.subscriptionOnly, 0);
+    assert.equal(summary.unpriced, 0);
 
     const rows = await db
       .prepare("SELECT * FROM models WHERE upstream_slug = 'p1' ORDER BY id")
       .all();
 
-    assert.equal(rows.length, 2);
     assert.deepEqual(
       rows.map((row) => row.id),
-      ["p1/beta", "p1/free/alpha"],
-      "a non-default provider is namespaced",
+      ["p1/beta"],
+      "a non-default provider is namespaced and its free row is refused",
     );
 
-    const freeRow = rows.find((row) => row.id === "p1/free/alpha");
-    const paidRow = rows.find((row) => row.id === "p1/beta");
+    const paidRow = rows[0];
 
-    assert.equal(Number(freeRow.allow_free), 1);
-    assert.equal(Number(freeRow.input_price_micros), 0);
     assert.equal(paidRow.price_source, "auto");
     assert.equal(Number(paidRow.input_price_micros), 1_000_000);
     assert.equal(Number(paidRow.sell_input_micros), 1_250_000, "25% default markup");

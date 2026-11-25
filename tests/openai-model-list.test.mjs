@@ -167,7 +167,9 @@ test("the published retrieve is one statement and keeps the public scope", async
     const missing = await getPublishedModel(handle, "free/luna-1");
 
     assert.equal(missing, null);
-    assert.equal(state.statements, 2, "one read per id, not one per row");
+    // One exact read, plus the bounded leaf read a display id needs
+    // (FID-2026-1125-002) — never one read per catalog row.
+    assert.equal(state.statements, 3, "one read per id, not one per row");
   } finally {
     await db.close();
   }

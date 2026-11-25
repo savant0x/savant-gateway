@@ -18,6 +18,7 @@ import {
   seedClaimedPaymentEvent,
   seedPendingTopup,
 } from "./seed.mjs";
+import { runPublicIdentityChecks } from "./identity-checks.mjs";
 import { runShowcaseChecks } from "./showcase-checks.mjs";
 import { runSystemsChecks } from "./systems-checks.mjs";
 
@@ -2029,6 +2030,9 @@ export async function runChecks(context) {
   await runKeyIsolationChecks(context, alpha, beta);
   await runWebhookChecks(context, alpha);
   await runSettlementChecks(context, alpha, beta);
+  // Reads public pages and the published list with a real key, so it runs while
+  // the catalog, the provider rows and alpha's credential are all intact.
+  await runPublicIdentityChecks(context, alpha);
   await runNowpaymentsChecks(context, alpha);
   const adminCookie = await runAdminChecks(context);
 

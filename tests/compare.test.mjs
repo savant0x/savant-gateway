@@ -117,3 +117,29 @@ test("a side only matches its own winner", () => {
   assert.equal(isBetter("right", "left"), false);
   assert.equal(isBetter("left", null), false);
 });
+
+test("the query string resolves the display id, and a shared leaf is not guessed", () => {
+  // Two rows answer to `gpt-6-luna`, so the link falls back the way an unknown
+  // id already does instead of showing one seller's row under the other's id.
+  const ambiguous = [
+    model("glm-5-air"),
+    model("inferhub/alicn/gpt-6-luna", { upstreamSlug: "inferhub" }),
+    model("other/cc/gpt-6-luna", { upstreamSlug: "other" }),
+    model("claude-opus-4.7"),
+  ];
+  const fallback = resolveComparePair(ambiguous, "gpt-6-luna", "claude-opus-4.7");
+
+  assert.equal(fallback.left.id, "glm-5-air");
+
+  const single = [model("inferhub/alicn/gpt-6-luna", { upstreamSlug: "inferhub" }), model("glm-5-air")];
+  const pair = resolveComparePair(single, "gpt-6-luna", "glm-5-air");
+
+  assert.equal(pair.left.id, "inferhub/alicn/gpt-6-luna");
+  assert.equal(pair.right.id, "glm-5-air");
+
+  // The stored key keeps resolving, because an older link may carry one.
+  assert.equal(
+    resolveComparePair(single, "inferhub/alicn/gpt-6-luna", "glm-5-air").left.id,
+    "inferhub/alicn/gpt-6-luna",
+  );
+});

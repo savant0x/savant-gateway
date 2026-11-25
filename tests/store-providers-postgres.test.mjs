@@ -41,6 +41,7 @@ function input(overrides = {}) {
     keyEnvVar: "EXTRA_KEY",
     defaultHeaders: { "x-source": "gateway" },
     capabilities: { balance: false, subscription: false, pricing: false },
+    requiresModelReview: false,
     enabled: true,
     sortOrder: 40,
     ...overrides,
@@ -221,6 +222,55 @@ test("free-pool resale is recorded, defaults to permitted, and can be revoked", 
     (await getProvider(db, "savant"))?.resaleFreePool,
     true,
     "the seeded default provider still permits its free pool",
+  );
+});
+
+test("the review gate is recorded and a delete leaves no lease behind", async () => {
+  const db = await fixture();
+
+  const reviewed = await createProvider(
+    db,
+    input({ slug: "reviewed", requiresModelReview: true }),
+    NOW,
+  );
+
+  assert.equal(reviewed?.requiresModelReview, true);
+
+  const plain = await createProvider(db, input({ slug: "plain" }), NOW);
+
+  assert.equal(
+    plain?.requiresModelReview,
+    false,
+    "a new row starts without the gate",
+  );
+
+  const flipped = await updateProvider(
+    db,
+    "plain",
+    input({ slug: "plain", requiresModelReview: true }),
+    NOW,
+  );
+
+  assert.equal(flipped?.requiresModelReview, true);
+
+  await db
+    .prepare(
+      `INSERT INTO provider_sync_leases
+        (slug, owner_token, claimed_at, expires_at)
+       VALUES ('reviewed', 'owner', ?, '2026-10-30T12:10:00.000Z')`,
+    )
+    .run(NOW);
+
+  assert.equal(await deleteProvider(db, "reviewed"), true);
+
+  const leases = await db
+    .prepare("SELECT COUNT(*) AS total FROM provider_sync_leases WHERE slug = ?")
+    .get("reviewed");
+
+  assert.equal(
+    Number(leases.total),
+    0,
+    "a re-registered slug inherits no lease row",
   );
 });
 

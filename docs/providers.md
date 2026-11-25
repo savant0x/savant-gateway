@@ -53,6 +53,33 @@ the provider key remains on the server.
    default is `1` (`NOT NULL DEFAULT 1` on the column), so an upgrade cannot
    silently delete an existing provider's free rows.
 
+## What the registration form can declare
+
+A new provider starts with every capability unchecked, which is the schema
+default (`0`). The three boxes mean:
+
+- **Balance endpoint** — the gateway may poll the provider's balance URL
+  (`/balance`, or `balanceUrl` when it lives on another host) for the account
+  balance and RPM. Leaving it off means no balance badge and no observed RPM.
+- **Subscription endpoint** — the gateway may poll the quota endpoint for
+  metered allowance. Leaving it off means no quota observation: admission then
+  needs a configured ceiling or `PROVIDER_SHARED_RPM`, and the account is
+  reported in the operations snapshot as `quota.unsupported` rather than as a
+  failed check.
+- **Published pricing** — the sync may trust per-token prices the catalog
+  publishes. Leaving it off leaves cost unknown, and an unpriced row imports
+  disabled until an operator sets a cost.
+
+**Require a decision per imported model** sets `requires_model_review` for this
+provider, the flag the shipped router.cheap preset carries: every imported row
+stays unpublished until an operator records a dated decision for it. It is an
+operator declaration stored on the row and is never inferred from the catalog.
+
+**Default headers** are editable in the form and shown read-only on the row.
+They are sent with every request to that provider and must never carry a
+credential; the key stays an environment variable and the field above takes only
+its name.
+
 ## The default provider
 
 The default provider owns the **unprefixed public id namespace**: its rows are
@@ -217,7 +244,9 @@ nor the publisher prefix itself.
 
 A provider whose catalog proves only identifiers — not chat capability — is
 seeded with `providers.requires_model_review = 1`. router.cheap is the shipped
-preset. Every model starts `unknown` and is neither published nor served.In `/admin/providers`, **Review** lists the catalog rows with their current cost,
+preset. The registration form sets the same flag for any new provider
+(**Require a decision per imported model**). Every model starts `unknown` and
+is neither published nor served. In `/admin/providers`, **Review** lists the catalog rows with their current cost,
 sell price and decision, plus a read-only side-by-side view of the account
 catalog, reseller availability/cost and public endpoint/billing metadata. The
 feed observation time, plan id/version and pricing version are shown. These

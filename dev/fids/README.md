@@ -2,7 +2,7 @@
 
 **Last folder audit:** 2026-11-24 (FID folder audit). This page
 indexes the working set; each FID owns its own status, evidence and resolution.
-Current counts: 13 active / 22, 196 archived, 200 allocated.
+Current counts: 12 active / 22, 197 archived, 200 allocated.
 
 ## Layout
 
@@ -17,7 +17,6 @@ Current counts: 13 active / 22, 196 archived, 200 allocated.
 
 | ID | Title | Status | Next action |
 | --- | --- | --- | --- |
-| [2026-1124-006](FID-2026-1124-006-provider-registration-surface.md) | Provider registration surface cannot express what a provider needs | converged | Implement: conservative capability defaults, `requiresModelReview` in the input and console, editable headers, delete hygiene. |
 | [2026-1124-005](FID-2026-1124-005-catalog-gateway-query-cost.md) | Catalog and gateway query cost after multi-provider onboarding | converged | Implement the five measured slices; each has its own test and commit. |
 | [043](FID-2026-1030-043-launch-master.md) | Master launch contract and dependency register | converged | Keep coverage, ordering and release decisions current. |
 | [062](FID-2026-1030-062-launch-acceptance-and-rollout.md) | Real launch acceptance, controlled rollout and rollback | converged | Discharge the dated external receipt items 1–8; launch remains no-go. Item 1 (NOWPayments payment/IPN) is operator-accepted as an assumption, not verified. |
@@ -42,6 +41,25 @@ Current counts: 13 active / 22, 196 archived, 200 allocated.
 [2026-1122-006](archive/FID-2026-1122-006-next-security-upgrade.md) is `closed`. `next upgrade --agent=security` moved 16.4.3 → 16.4.6; duplicate checks were empty, and 12/12 gates with 1240/1240 tests passed in the upgrade worktree.
 
 [2026-1122-007](archive/FID-2026-1122-007-bulk-chat-decisions.md) is `closed`. The review panel wrote one decision per click, so a 281-row catalog could not realistically be decided; bulk actions now record one row per model in a single transaction with one republish, still operator-sourced and individually overridable. 5 PostgreSQL cases, 12/12 gates and 1245/1245 tests.
+
+### Closed in the 2026-11-25 registration-surface commit
+
+[2026-1124-006](archive/FID-2026-1124-006-provider-registration-surface.md) is
+`closed`. The console is the only sanctioned registration path and could not
+state three facts the gateway acts on: a new row claimed balance, quota and
+published pricing by default; `requiresModelReview` existed in the schema and
+route election but not in `ProviderInput`, so only seeds could enable the review
+gate; and `defaultHeaders` was accepted by the API with no control anywhere.
+[Read more →](archive/FID-2026-1124-006-provider-registration-surface.md)
+
+- **FID-2026-1124-006 — medium —** `EMPTY_PROVIDER` starts every capability
+  unchecked, matching the schema default, and each box states what it enables
+  and what leaving it off costs. `requiresModelReview` is validated, persisted
+  and rendered with its consequence; default headers gained an ordered editor
+  using the API's own validator, and the row summary shows the effective set.
+  A delete re-reads the default flag inside its transaction and removes the
+  slug's `provider_sync_leases` row. 2 new cases; `npm run verify` PASS 12/12
+  gates with 1289/1289 tests and PostgreSQL 20/20.
 
 ### Closed in the 2026-11-25 provider-health commit
 

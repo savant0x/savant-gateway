@@ -224,10 +224,10 @@ export async function createProvider(
     .prepare(
       `INSERT INTO providers
         (slug, label, kind, base_url, key_env_var, default_headers,
-         supports_balance, supports_subscription, supports_pricing, enabled,
-         resale_free_pool, balance_url, catalog_url, sort_order, status,
-         created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unconfigured', ?, ?)`,
+         supports_balance, supports_subscription, supports_pricing,
+         requires_model_review, enabled, resale_free_pool, balance_url,
+         catalog_url, sort_order, status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unconfigured', ?, ?)`,
     )
     .run(
       input.slug,
@@ -239,6 +239,7 @@ export async function createProvider(
       input.capabilities.balance ? 1 : 0,
       input.capabilities.subscription ? 1 : 0,
       input.capabilities.pricing ? 1 : 0,
+      input.requiresModelReview ? 1 : 0,
       input.enabled ? 1 : 0,
       input.resaleFreePool === false ? 0 : 1,
       input.balanceUrl ?? null,
@@ -262,7 +263,8 @@ export async function updateProvider(
       `UPDATE providers
           SET label = ?, kind = ?, base_url = ?, key_env_var = ?,
               default_headers = ?, supports_balance = ?,
-              supports_subscription = ?, supports_pricing = ?, enabled = ?,
+              supports_subscription = ?, supports_pricing = ?,
+              requires_model_review = ?, enabled = ?,
               resale_free_pool = ?, balance_url = ?, catalog_url = ?,
               sort_order = ?,
               updated_at = ?,
@@ -279,6 +281,7 @@ export async function updateProvider(
       input.capabilities.balance ? 1 : 0,
       input.capabilities.subscription ? 1 : 0,
       input.capabilities.pricing ? 1 : 0,
+      input.requiresModelReview ? 1 : 0,
       input.enabled ? 1 : 0,
       input.resaleFreePool === false ? 0 : 1,
       input.balanceUrl ?? null,
@@ -314,12 +317,24 @@ export async function setProviderEnabled(
   return result.changes > 0;
 }
 
-/** Removes a non-default provider and its catalog rows in one transaction. */
+/**
+ * Removes a non-default provider, its catalog rows and its sync lease in one
+ * transaction.
+ *
+ * The default check happens inside the transaction: outside it, a concurrent
+ * switch could flag the row being deleted, and the switch now re-keys ids rather
+ * than writing one column. `provider_sync_leases` declares no foreign key, so
+ * its row would otherwise outlive the provider and be inherited by a
+ * re-registration of the same slug (FID-2026-1124-006).
+ */
 export async function deleteProvider(db: PostgresDatabase, slug: string) {
-  if (slug === (await getDefaultProviderSlug(db))) return false;
-
   const removed = await db
     .transaction(async () => {
+      if (slug === (await getDefaultProviderSlug(db))) return false;
+
+      await db
+        .prepare("DELETE FROM provider_sync_leases WHERE slug = ?")
+        .run(slug);
       await db.prepare("DELETE FROM models WHERE upstream_slug = ?").run(slug);
 
       const result = await db

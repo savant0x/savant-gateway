@@ -20,6 +20,12 @@ import { formatNumber, responseError } from "@/components/dashboard/format";
 import { LocalTime } from "@/components/local-time";
 import { adminLoginHref } from "@/lib/admin-return";
 
+function capabilitiesLine(provider: ProviderSummary) {
+  const on = (value: boolean) => (value ? "on" : "off");
+
+  return `balance ${on(provider.capabilities.balance)} · quota ${on(provider.capabilities.subscription)} · pricing ${on(provider.capabilities.pricing)}`;
+}
+
 export function AdminProvidersPanel({
   providers,
   backlog,
@@ -255,6 +261,17 @@ export function AdminProvidersPanel({
                       <p className="mono truncate text-[11px] text-muted">
                         {provider.slug} · {provider.baseUrl}
                       </p>
+                      <p className="mt-1 text-[11px] text-muted">
+                        {capabilitiesLine(provider)}
+                      </p>
+                      {Object.keys(provider.defaultHeaders).length > 0 ? (
+                        <p className="mono mt-1 break-all text-[11px] text-muted">
+                          headers:{" "}
+                          {Object.entries(provider.defaultHeaders)
+                            .map(([name, value]) => `${name}=${value}`)
+                            .join(", ")}
+                        </p>
+                      ) : null}
                       {provider.error ? (
                         <p className="mt-1 text-[11px] text-warning">
                           {provider.error}

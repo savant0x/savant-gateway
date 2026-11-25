@@ -15,6 +15,8 @@ export type ProviderInput = {
   capabilities: { balance: boolean; subscription: boolean; pricing: boolean };
   /** Whether the provider's terms allow reselling free-pool ids. */
   resaleFreePool: boolean;
+  /** Whether an imported row stays unpublished until a dated decision. */
+  requiresModelReview: boolean;
   /** Absolute balance URL when the provider publishes it off-base; null = default. */
   balanceUrl: string | null;
   catalogUrl: string | null;
@@ -204,6 +206,16 @@ export function readProviderInput(value: unknown) {
 
   if (!catalogUrl.ok) return catalogUrl;
 
+  if (
+    input.requiresModelReview !== undefined &&
+    typeof input.requiresModelReview !== "boolean"
+  ) {
+    return {
+      ok: false,
+      error: "requiresModelReview must be a boolean.",
+    } as const;
+  }
+
   const capabilities =
     input.capabilities && typeof input.capabilities === "object"
       ? (input.capabilities as Record<string, unknown>)
@@ -225,6 +237,7 @@ export function readProviderInput(value: unknown) {
       },
       enabled: input.enabled !== false,
       resaleFreePool: input.resaleFreePool !== false,
+      requiresModelReview: input.requiresModelReview === true,
       balanceUrl: balanceUrl.value,
       catalogUrl: catalogUrl.value,
       sortOrder:

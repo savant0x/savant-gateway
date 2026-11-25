@@ -3,10 +3,10 @@
 **Filename:** `FID-2026-1124-006-provider-registration-surface.md`
 **ID:** FID-2026-1124-006
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-25 00:25
-**Automation level:** 2
-**YAGNI-Compliance:** Pending
+**Automation level:** 3
+**YAGNI-Compliance:** Verified
 
 ---
 
@@ -191,15 +191,15 @@ start from the conservative default the schema already chose.
 
 - gate: lint
 - gate: typecheck
-- gate: test tests/provider-input.test.mjs
-- gate: test tests/provider-delete-postgres.test.mjs
+- gate: test tests/providers.test.mjs (input contract)
+- gate: test tests/store-providers-postgres.test.mjs (create, update, delete, lease hygiene)
 - gate: test tests/provider-enable-sync.test.mjs
 - gate: quality
 - gate: build
 
 ### Verification Receipt
 
-Not yet run: this FID is `converged`, not implemented. No gate output is claimed.
+`npm run verify` PASS 12/12 gates in 179.5 s: 1289/1289 tests, 0 skipped, PostgreSQL 20/20, quality 719 files, build PASS, both HTTP suites, recovery 15/15, finished 2026-11-25 and recorded in `.verify/summary.json`. `tsc --noEmit` exit 0; `eslint --max-warnings=0` on the changed files exit 0; the six affected suites are 48/48. The live console probe in §Verification was not performed: no browser exercise is claimed.
 
 ## Perfection Loop
 
@@ -273,12 +273,30 @@ Not yet run: this FID is `converged`, not implemented. No gate output is claimed
 
 ## Resolution
 
-- **Closed Date:** not closed
-- **Fix Description:** pending implementation
-- **Tests Added:** planned — `tests/provider-input.test.mjs`,
-  `tests/provider-delete-postgres.test.mjs`
-- **Verification Evidence:** none claimed; design convergence only
-- **Archived:** not archived
+- **Closed Date:** 2026-11-25
+- **Fix Description:** `EMPTY_PROVIDER` now starts every capability unchecked, so
+  a new row no longer claims balance, quota or published pricing the operator
+  never declared; each checkbox states what it enables, and the form says what
+  leaving them off costs (no probe, no observed RPM, cost unknown and imported
+  rows disabled). `requiresModelReview` is now part of `ProviderInput`, parsed
+  strictly and persisted by `createProvider` and `updateProvider`, so the review
+  gate is settable from the console for any provider instead of only the seeds;
+  the form renders it with its consequence, and the row summary shows each
+  capability on/off plus the effective header set. `defaultHeaders` gained an
+  ordered key/value editor that reuses the API's own validator on submit. A
+  delete now re-reads the default flag inside its transaction and removes the
+  slug's `provider_sync_leases` row, because that table declares no foreign key
+  and a re-registered slug would otherwise inherit a live lease.
+- **Tests Added:** one input case (`requiresModelReview` round-trips, defaults
+  false, refuses a non-boolean) and one store case (the gate is recorded on
+  create and update; deleting a provider leaves no lease row), with the existing
+  default and enable-sync proofs re-run.
+- **Verification Evidence:** `npm run verify` PASS 12/12 gates, 1289/1289 tests,
+  PostgreSQL 20/20, 179.5 s; focused typecheck, `eslint --max-warnings=0` and the
+  six affected suites 48/48 all exit 0. No live console probe or browser
+  exercise is claimed.
+- **Archived:**
+  `dev/fids/archive/FID-2026-1124-006-provider-registration-surface.md`
 
 ## Lessons Learned
 

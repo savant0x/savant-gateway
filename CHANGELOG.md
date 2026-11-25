@@ -3,6 +3,30 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-25 — A registration surface that states what it means (1124-006)
+
+- **FID-2026-1124-006 — medium —** `/admin/providers` is the only sanctioned
+  way to register an upstream, and it could not express three facts the gateway
+  acts on. A new row started claiming balance, quota and published pricing
+  because the form's empty draft set all three true over a schema that defaults
+  them to `0`, so the first probe hit endpoints that were never there. The
+  per-model review gate existed in the schema, the route election and the model
+  status guard, but not in `ProviderInput`, so only the seed rows could ever
+  enable it. And `defaultHeaders` was validated, persisted and sent on every
+  request while having no control in the console at all.
+  The empty draft now starts unchecked and each box states what it enables and
+  what leaving it off costs. `requiresModelReview` is part of the input
+  contract, parsed strictly, persisted on create and update, and rendered with
+  its consequence — every imported row stays unpublished until a dated
+  decision. Default headers gained an ordered key/value editor that submits
+  through the existing validator, and the row summary shows the effective set
+  plus each capability's on/off state. Separately, `deleteProvider` now re-reads
+  the default flag inside its transaction and removes the slug's
+  `provider_sync_leases` row, which declares no foreign key and would be
+  inherited by a re-registration. Verified with 2 new cases and `npm run verify`
+  PASS 12/12 gates, 1289/1289 tests, PostgreSQL 20/20. No live console probe is
+  claimed.
+
 ## 2026-11-25 — Capability, not failure: provider quota health (1124-003)
 
 - **FID-2026-1124-003 — high —** a provider registered with

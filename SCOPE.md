@@ -33,6 +33,15 @@ and severity order; each record closes only on its own gates and a commit.
   a wallet-only fixture; `npm run verify` PASS 12/12 gates, 1287/1287 tests,
   PostgreSQL 20/20, 179.6 s. No live upstream probe is claimed.
 
+- [x] **OF3 — FID-2026-1124-006, provider registration surface.**
+  **Completed.** New rows no longer claim balance, quota and pricing by default;
+  `requiresModelReview` travels through `ProviderInput`, the store and the
+  console with its consequence; default headers are editable through the API's
+  own validator and visible on the row; a delete re-reads the default flag
+  inside its transaction and removes the slug's sync lease. 2 new cases and six
+  affected suites re-run; `npm run verify` PASS 12/12 gates, 1289/1289 tests,
+  PostgreSQL 20/20, 179.5 s. No live console probe is claimed.
+
 ## Session — 2026-11-24 (FID folder audit and pending-work register: PR)
 
 Operator instruction: "audit/update the fids folder, move the completed work to

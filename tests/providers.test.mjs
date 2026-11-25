@@ -93,6 +93,28 @@ test("a vendor document URL is optional, absolute and credential-free", () => {
   }
 });
 
+test("the review gate round-trips and refuses a non-boolean", () => {
+  const off = readProviderInput(VALID);
+
+  assert.equal(
+    off.value.requiresModelReview,
+    false,
+    "a new row starts without the gate",
+  );
+
+  const on = readProviderInput({ ...VALID, requiresModelReview: true });
+
+  assert.equal(on.ok, true);
+  assert.equal(on.value.requiresModelReview, true);
+
+  for (const requiresModelReview of ["yes", 1, null]) {
+    const result = readProviderInput({ ...VALID, requiresModelReview });
+
+    assert.equal(result.ok, false, String(requiresModelReview));
+    assert.match(result.error, /requiresModelReview must be a boolean/);
+  }
+});
+
 test("provider input rejects non-string header values", () => {
   const result = readProviderInput({
     ...VALID,

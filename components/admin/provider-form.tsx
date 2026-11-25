@@ -18,6 +18,7 @@ export type ProviderDraft = {
   balance: boolean;
   subscription: boolean;
   pricing: boolean;
+  requiresModelReview: boolean;
   resaleFreePool: boolean;
 };
 
@@ -30,9 +31,10 @@ export const EMPTY_PROVIDER: ProviderDraft = {
   defaultHeaders: {},
   balanceUrl: "",
   catalogUrl: "",
-  balance: true,
-  subscription: true,
-  pricing: true,
+  balance: false,
+  subscription: false,
+  pricing: false,
+  requiresModelReview: false,
   resaleFreePool: true,
 };
 
@@ -49,6 +51,7 @@ export function draftFromProvider(provider: ProviderSummary): ProviderDraft {
     balance: provider.capabilities.balance,
     subscription: provider.capabilities.subscription,
     pricing: provider.capabilities.pricing,
+    requiresModelReview: provider.requiresModelReview,
     resaleFreePool: provider.resaleFreePool,
   };
 }
@@ -64,6 +67,7 @@ export function providerPayload(draft: ProviderDraft) {
     balanceUrl: draft.balanceUrl.trim(),
     catalogUrl: draft.catalogUrl.trim(),
     resaleFreePool: draft.resaleFreePool,
+    requiresModelReview: draft.requiresModelReview,
     capabilities: {
       balance: draft.balance,
       subscription: draft.subscription,
@@ -97,6 +101,40 @@ export function ProviderForm({
         onChange={(event) => onChange({ ...draft, [key]: event.target.value })}
       />
     );
+  }
+
+  function setHeader(next: Record<string, string>) {
+    onChange({ ...draft, defaultHeaders: next });
+  }
+
+  function renameHeader(from: string, to: string) {
+    const next: Record<string, string> = {};
+
+    for (const [name, value] of Object.entries(draft.defaultHeaders)) {
+      next[name === from ? to : name] = value;
+    }
+
+    setHeader(next);
+  }
+
+  function removeHeader(name: string) {
+    const next = { ...draft.defaultHeaders };
+
+    delete next[name];
+    setHeader(next);
+  }
+
+  /** The placeholder name is unique so two new rows cannot collapse into one. */
+  function addHeader() {
+    let index = Object.keys(draft.defaultHeaders).length + 1;
+    let name = `header-${index}`;
+
+    while (name in draft.defaultHeaders) {
+      index += 1;
+      name = `header-${index}`;
+    }
+
+    setHeader({ ...draft.defaultHeaders, [name]: "" });
   }
 
   return (
@@ -153,9 +191,18 @@ export function ProviderForm({
         <div className="flex flex-wrap gap-4 text-xs text-muted">
           {(
             [
-              ["balance", "Balance endpoint"],
-              ["subscription", "Subscription endpoint"],
-              ["pricing", "Published pricing"],
+              [
+                "balance",
+                "Balance endpoint (polls the balance URL for balance and RPM)",
+              ],
+              [
+                "subscription",
+                "Subscription endpoint (polls quota; enables quota admission)",
+              ],
+              [
+                "pricing",
+                "Published pricing (syncs upstream cost into the price table)",
+              ],
             ] as const
           ).map(([key, label]) => (
             <label key={key} className="flex items-center gap-2">
@@ -171,6 +218,19 @@ export function ProviderForm({
           ))}
           <label className="flex items-center gap-2">
             <input
+              checked={draft.requiresModelReview}
+              type="checkbox"
+              onChange={(event) =>
+                onChange({
+                  ...draft,
+                  requiresModelReview: event.target.checked,
+                })
+              }
+            />
+            Require a decision per imported model
+          </label>
+          <label className="flex items-center gap-2">
+            <input
               checked={draft.resaleFreePool}
               type="checkbox"
               onChange={(event) =>
@@ -180,6 +240,18 @@ export function ProviderForm({
             Free-pool resale permitted
           </label>
         </div>
+        <p className="text-xs text-muted">
+          Every capability starts unchecked because the schema starts there. A
+          provider with none checked still serves calls; it reports no balance,
+          no quota and no upstream cost. Cost then stays unknown, so imported
+          rows arrive disabled until you price them, and admission needs a
+          configured ceiling or <code>PROVIDER_SHARED_RPM</code>.
+        </p>
+        <p className="text-xs text-muted">
+          With <strong>Require a decision</strong> on, every imported row stays
+          unpublished until an operator records a dated decision for it. That is
+          the gate for a provider whose terms require per-model approval.
+        </p>
         <p className="text-xs text-muted">
           Uncheck <strong>Free-pool resale permitted</strong> when the
           provider&apos;s terms forbid reselling its free allocation. No
@@ -192,6 +264,45 @@ export function ProviderForm({
           is called with this provider&apos;s key and must not carry a
           credential of its own.
         </p>
+
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-foreground">Default headers</p>
+          <p className="text-xs text-muted">
+            Sent with every request to this provider. Names must be unique and
+            values are exact. A credential never belongs here; it is read from
+            the key variable above.
+          </p>
+          {Object.entries(draft.defaultHeaders).length === 0 ? (
+            <p className="text-xs text-muted">No default headers.</p>
+          ) : null}
+          {Object.entries(draft.defaultHeaders).map(([name, value], index) => (
+            <div key={index} className="flex flex-wrap items-center gap-2">
+              <Input
+                aria-label="Header name"
+                placeholder="Header name"
+                value={name}
+                onChange={(event) => renameHeader(name, event.target.value)}
+              />
+              <Input
+                aria-label={`Value for ${name}`}
+                placeholder="Value"
+                value={value}
+                onChange={(event) =>
+                  setHeader({
+                    ...draft.defaultHeaders,
+                    [name]: event.target.value,
+                  })
+                }
+              />
+              <Button variant="secondary" onPress={() => removeHeader(name)}>
+                Remove
+              </Button>
+            </div>
+          ))}
+          <Button variant="secondary" onPress={addHeader}>
+            Add header
+          </Button>
+        </div>
 
         <div className="flex flex-wrap gap-2">
           <Button

@@ -2,7 +2,7 @@ import type { DatabaseHandle } from "./schema/columns.ts";
 import type { ModelAccess, ModelRouteSummary } from "./types.ts";
 import type { EligibilityDecision } from "./providers/eligibility.ts";
 
-import { routeGroupKey } from "./model-identity.ts";
+import { publisherFromModelId, routeGroupKey } from "./model-identity.ts";
 import { pricesForGroup } from "./model-groups.ts";
 import { planModelRoutes, type RouteCandidate } from "./model-routing.ts";
 import { defaultSellMicros, microsToPrice } from "./pricing.ts";
@@ -73,6 +73,7 @@ export function routesByGroup(
     list.push({
       providerSlug: row.upstream_slug,
       upstreamId: row.upstream_id,
+      publisher: publisherFromModelId(row.upstream_id, row.upstream_slug),
       costInputPer1M: microsToPrice(row.input_price_micros),
       costOutputPer1M: microsToPrice(row.output_price_micros),
       primary: row.is_primary === 1,

@@ -13,6 +13,7 @@ import {
   formatSignedMicros,
 } from "@/components/dashboard/format";
 import { catalogEconomics, scenarioLabel } from "@/lib/catalog-economics";
+import { publisherFromModelId } from "@/lib/model-identity";
 import { priceToMicros } from "@/lib/pricing";
 
 function price(model: AdminModelSummary) {
@@ -55,6 +56,19 @@ export function ModelRow({
     costObservedAt: model.costObservedAt,
   });
   const active = model.status === "active";
+  // A marketplace sells one model from many publishers under one account. The
+  // winning route is identified by its upstream id, because every route's
+  // provider slug is the same account (`inferhub`).
+  const servingRoute =
+    model.routes.find((route) => route.upstreamId === model.servedUpstreamId) ??
+    null;
+  const servingPublisher =
+    servingRoute?.publisher ??
+    publisherFromModelId(model.upstreamId, model.upstreamSlug);
+  const offerPublishers = Array.from(
+    new Set(model.routes.map((route) => route.publisher ?? route.providerSlug)),
+  );
+  const competing = model.routes.length > 1;
 
   return (
     <tr>
@@ -75,6 +89,11 @@ export function ModelRow({
               delisted
             </Chip>
           ) : null}
+          {model.isPrimary && competing ? (
+            <Chip color="success" size="sm" variant="soft">
+              published
+            </Chip>
+          ) : null}
         </div>
         <div className="mono mt-0.5 truncate text-[11px] text-muted">
           {model.id}
@@ -82,17 +101,20 @@ export function ModelRow({
       </td>
       <td className="whitespace-nowrap text-muted">
         {model.servedProviderSlug ?? model.upstreamSlug}
-        {model.servedProviderSlug &&
-        model.servedProviderSlug !== model.upstreamSlug ? (
+        {servingPublisher ? (
           <p className="text-[11px] text-accent">
-            cheapest of {model.routes.length}
+            {model.isPrimary ? "served by" : "offer from"} {servingPublisher}
           </p>
         ) : (
           <p className="text-[11px]">{model.protocol}</p>
         )}
-        {model.routes.length > 1 ? (
-          <p className="text-[11px]">
-            {model.routes.map((route) => route.providerSlug).join(" · ")}
+        {competing ? (
+          <p className="text-[11px]" title={offerPublishers.join(" · ")}>
+            {model.routes.length} offers ·{" "}
+            {offerPublishers.slice(0, 3).join(" · ")}
+            {offerPublishers.length > 3
+              ? ` +${offerPublishers.length - 3}`
+              : ""}
           </p>
         ) : null}
       </td>

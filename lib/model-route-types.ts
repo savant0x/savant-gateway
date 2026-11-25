@@ -2,6 +2,13 @@
 export type ModelRouteSummary = {
   providerSlug: string;
   upstreamId: string;
+  /**
+   * The marketplace publisher inside the upstream id (`cc`, `cb`, `zai`), or
+   * null when the id names no publisher. One provider row can sell the same
+   * weights from many publishers, so the account slug alone cannot tell two
+   * offers apart.
+   */
+  publisher: string | null;
   costInputPer1M: number;
   costOutputPer1M: number;
   primary: boolean;

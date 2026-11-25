@@ -34,3 +34,28 @@ test("a real upstream family label is preserved", () => {
   assert.equal(normalizeFamilyName("jev-model", "Jev Group"), "Jev Group");
   assert.equal(normalizeFamilyName("custom-model", "  Claude  "), "Claude");
 });
+
+/**
+ * A marketplace spells one model line several ways. Each pair below was a
+ * separate public family before the prefix table existed, which made one model
+ * look like two products in the catalog and its filter (FID-2026-1125-003).
+ */
+test("publisher spellings of one model line share a family", () => {
+  assert.equal(familyFromModelId("mm/MiniMax-M3"), "MiniMax");
+  assert.equal(familyFromModelId("cb/minimax-m3"), "MiniMax");
+  assert.equal(familyFromModelId("kcai/k3.1-pro"), "Kimi");
+  assert.equal(familyFromModelId("cb/kimi-k3"), "Kimi");
+  assert.equal(familyFromModelId("zai/glm-5.3"), "GLM");
+  assert.equal(familyFromModelId("cbcn/hy4std"), "Hy4");
+  assert.equal(familyFromModelId("cbcn/hy4flash-free"), "Hy4");
+  assert.equal(familyFromModelId("ali/qwen3.8-max"), "Qwen");
+  assert.equal(familyFromModelId("ocg/qwen3.8-flash"), "Qwen");
+});
+
+test("a publisher label is not a family on a tier-prefixed id", () => {
+  assert.equal(
+    normalizeFamilyName("free/grok/grok-4.5", "grok"),
+    "Grok",
+    "the publisher under a tier is stripped, not published",
+  );
+});

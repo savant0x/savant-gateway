@@ -18,6 +18,9 @@ import type { ModelAccess } from "./types.ts";
 const BUILD_TAIL = /-(?:backup|v?\d{4,8})$/;
 const DATE_TAIL = /-(?:19|20)\d{2}-\d{2}-\d{2}$/;
 
+/** A path segment that is a billing tier, never a marketplace publisher. */
+const BILLING_TIERS = new Set(["free", "subscription"]);
+
 export function canonicalModelKey(upstreamId: string) {
   const trimmed = upstreamId.trim().toLowerCase();
   const leaf = trimmed.includes("/")
@@ -62,6 +65,44 @@ export function isNamespacedModelId(id: string, providerSlug: string) {
   return id.startsWith(`${providerSlug}/`);
 }
 
+/** Drops the account scope, which is a storage fact rather than part of a name. */
+function unscopedModelId(id: string, upstreamSlug: string | null | undefined) {
+  const scope = upstreamSlug ? `${upstreamSlug}/` : "";
+
+  return scope && id.startsWith(scope) ? id.slice(scope.length) : id;
+}
+
+/**
+ * The marketplace publisher behind one upstream id (`cc`, `cmc`, `zai`).
+ *
+ * A router provider sells the same weights from many publishers, and its ids
+ * carry the publisher as the first path segment (`cc/claude-opus-5-5`,
+ * `cmc/deepseek/deepseek-v4-flash`). Neither the account slug nor a billing tier
+ * is a publisher, so both are skipped. Null means the id names no publisher: a
+ * flat id (`glm-5.3`) or a tier with a single segment under it
+ * (`free/grok-4.5`).
+ *
+ * Derived, not authoritative. It labels an admin column and feeds a filter; it is
+ * never a route key, so a two-segment id that is really a legacy `family-rest`
+ * alias can mislabel a cell but cannot change which row serves a call.
+ */
+export function publisherFromModelId(
+  id: string,
+  upstreamSlug: string | null | undefined,
+) {
+  const parts = unscopedModelId(id.trim(), upstreamSlug)
+    .split("/")
+    .filter(Boolean);
+
+  if (parts.length < 2) return null;
+
+  if (BILLING_TIERS.has(parts[0])) {
+    return parts.length >= 3 ? parts[1] : null;
+  }
+
+  return parts[0];
+}
+
 /**
  * The leaf of a stored id, keeping a billing tier prefix.
  *
@@ -76,8 +117,7 @@ export function modelIdLeaf(id: string) {
   if (parts.length === 0) return "";
   if (parts.length === 1) return parts[0];
 
-  const tier =
-    parts[0] === "free" || parts[0] === "subscription" ? `${parts[0]}/` : "";
+  const tier = BILLING_TIERS.has(parts[0]) ? `${parts[0]}/` : "";
 
   return `${tier}${parts[parts.length - 1]}`;
 }
@@ -99,10 +139,7 @@ export function displayModelId(
   id: string,
   upstreamSlug: string | null | undefined,
 ) {
-  const scope = upstreamSlug ? `${upstreamSlug}/` : "";
-  const scoped = scope && id.startsWith(scope) ? id.slice(scope.length) : id;
-
-  return modelIdLeaf(scoped);
+  return modelIdLeaf(unscopedModelId(id, upstreamSlug));
 }
 
 /** The one public detail URL for a model, built from its display id. */

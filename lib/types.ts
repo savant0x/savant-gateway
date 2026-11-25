@@ -78,6 +78,8 @@ export type AdminModelSummary = ModelSummary & {
   routeGroup: string;
   isPrimary: boolean;
   servedProviderSlug: string | null;
+  /** The exact upstream id the winning route sends; null when nothing serves. */
+  servedUpstreamId: string | null;
   routes: ModelRouteSummary[];
   inputMarginBps: number | null;
   outputMarginBps: number | null;

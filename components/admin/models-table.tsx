@@ -10,9 +10,17 @@ import { ModelBulkActions } from "@/components/admin/model-bulk-actions";
 import { MODEL_ROW_SCENARIO, ModelRow } from "@/components/admin/model-row";
 import { Pagination } from "@/components/ui/pagination";
 import { adminLoginHref } from "@/lib/admin-return";
+import { publisherFromModelId } from "@/lib/model-identity";
 
 type Filter =
-  "all" | "active" | "disabled" | "free" | "paid" | "unpriced" | "delisted";
+  | "all"
+  | "active"
+  | "disabled"
+  | "free"
+  | "paid"
+  | "unpriced"
+  | "delisted"
+  | "published";
 
 const FILTERS: Array<{ key: Filter; label: string }> = [
   { key: "all", label: "All" },
@@ -21,6 +29,7 @@ const FILTERS: Array<{ key: Filter; label: string }> = [
   { key: "free", label: "Free" },
   { key: "paid", label: "Paid" },
   { key: "unpriced", label: "Unpriced" },
+  { key: "published", label: "Published" },
   { key: "delisted", label: "Delisted" },
 ];
 
@@ -37,6 +46,7 @@ export function AdminModelsTable({
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [providerFilter, setProviderFilter] = useState("all");
+  const [publisherFilter, setPublisherFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -46,9 +56,18 @@ export function AdminModelsTable({
     const needle = query.trim().toLowerCase();
 
     return models.filter((model) => {
+      const publisher = publisherFromModelId(
+        model.upstreamId,
+        model.upstreamSlug,
+      );
+
       if (providerFilter !== "all" && model.upstreamSlug !== providerFilter) {
         return false;
       }
+      if (publisherFilter !== "all" && publisher !== publisherFilter) {
+        return false;
+      }
+      if (filter === "published" && !model.isPrimary) return false;
       if (filter === "active" && model.status !== "active") return false;
       if (filter === "disabled" && model.status !== "disabled") return false;
       if (filter === "free" && model.access !== "free") return false;
@@ -68,15 +87,38 @@ export function AdminModelsTable({
         model.id.toLowerCase().includes(needle) ||
         model.name.toLowerCase().includes(needle) ||
         model.family.toLowerCase().includes(needle) ||
-        model.upstreamSlug.toLowerCase().includes(needle)
+        model.upstreamSlug.toLowerCase().includes(needle) ||
+        (publisher ?? "").toLowerCase().includes(needle)
       );
     });
-  }, [filter, models, providerFilter, query]);
+  }, [filter, models, providerFilter, publisherFilter, query]);
 
   const providers = useMemo(
     () => Array.from(new Set(models.map((model) => model.upstreamSlug))).sort(),
     [models],
   );
+
+  // Publisher chips are scoped to the selected account: a single-publisher
+  // provider contributes nothing, and a marketplace contributes its prefixes
+  // (`cc`, `cb`, `zai`) instead of one indistinguishable account name.
+  const publishers = useMemo(() => {
+    const found = new Set<string>();
+
+    for (const model of models) {
+      if (providerFilter !== "all" && model.upstreamSlug !== providerFilter) {
+        continue;
+      }
+
+      const publisher = publisherFromModelId(
+        model.upstreamId,
+        model.upstreamSlug,
+      );
+
+      if (publisher) found.add(publisher);
+    }
+
+    return Array.from(found).sort();
+  }, [models, providerFilter]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, pageCount);
@@ -158,10 +200,13 @@ export function AdminModelsTable({
               Disabled models leave the public catalog and the gateway. Select
               rows to switch several at once — the bulk action applies the same
               rules as the single button, so a row that needs a chat decision or
-              a cost stays off and is reported. A delisted row vanished from one
-              provider but keeps its prices and history. Margin and profit use
-              the serving route&apos;s cost and a labelled 1M in + 1M out
-              scenario; they are not realized revenue.
+              a cost stays off and is reported. A model a marketplace sells from
+              several publishers is one published row and N competing offers, so
+              each row names its publisher and only the elected row is marked
+              published. A delisted row vanished from one provider but keeps its
+              prices and history. Margin and profit use the serving route&apos;s
+              cost and a labelled 1M in + 1M out scenario; they are not realized
+              revenue.
             </Card.Description>
           </div>
           <Chip color="default" size="sm" variant="soft">
@@ -184,7 +229,12 @@ export function AdminModelsTable({
             <Button
               size="sm"
               variant={providerFilter === "all" ? "primary" : "secondary"}
-              onPress={() => applyFilter(() => setProviderFilter("all"))}
+              onPress={() =>
+                applyFilter(() => {
+                  setProviderFilter("all");
+                  setPublisherFilter("all");
+                })
+              }
             >
               All providers
             </Button>
@@ -193,12 +243,42 @@ export function AdminModelsTable({
                 key={provider}
                 size="sm"
                 variant={providerFilter === provider ? "primary" : "secondary"}
-                onPress={() => applyFilter(() => setProviderFilter(provider))}
+                onPress={() =>
+                  applyFilter(() => {
+                    setProviderFilter(provider);
+                    setPublisherFilter("all");
+                  })
+                }
               >
                 {provider}
               </Button>
             ))}
           </div>
+          {publishers.length > 1 ? (
+            <div className="flex flex-wrap gap-1.5">
+              <Button
+                size="sm"
+                variant={publisherFilter === "all" ? "primary" : "secondary"}
+                onPress={() => applyFilter(() => setPublisherFilter("all"))}
+              >
+                All publishers
+              </Button>
+              {publishers.map((publisher) => (
+                <Button
+                  key={publisher}
+                  size="sm"
+                  variant={
+                    publisherFilter === publisher ? "primary" : "secondary"
+                  }
+                  onPress={() =>
+                    applyFilter(() => setPublisherFilter(publisher))
+                  }
+                >
+                  {publisher}
+                </Button>
+              ))}
+            </div>
+          ) : null}
           <div className="flex flex-wrap gap-1.5">
             {FILTERS.map((item) => (
               <Button
@@ -254,7 +334,7 @@ export function AdminModelsTable({
                     />
                   </th>
                   <th scope="col">Model</th>
-                  <th scope="col">Provider</th>
+                  <th scope="col">Provider / publisher</th>
                   <th scope="col">Family</th>
                   <th scope="col">Group</th>
                   <th scope="col">Status</th>

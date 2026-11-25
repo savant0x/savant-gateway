@@ -282,6 +282,7 @@ export function toAdminModelSummary(
     routeGroup: row.route_group ?? canonicalModelKey(row.upstream_id),
     isPrimary: row.is_primary === 1,
     servedProviderSlug: row.served_provider_slug,
+    servedUpstreamId: row.served_upstream_id,
     routes,
     inputMarginBps: marginBps(costInput, row.sell_input_micros),
     outputMarginBps: marginBps(costOutput, row.sell_output_micros),

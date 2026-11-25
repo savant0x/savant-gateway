@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   canonicalModelKey,
   isNamespacedModelId,
+  publisherFromModelId,
   routeGroupKey,
 } from "../lib/model-identity.ts";
 
@@ -89,4 +90,39 @@ test("namespaced ids are recognised only for their own provider", () => {
   assert.equal(isNamespacedModelId("apixo/gpt-6-astra", "apixo"), true);
   assert.equal(isNamespacedModelId("free/gpt-6-luna", "savant"), false);
   assert.equal(isNamespacedModelId("gpt-6-astra", "savant"), false);
+});
+
+/**
+ * The publisher is what tells two offers of one model apart when the account
+ * slug is identical for both (FID-2026-1125-003). Everything that is not a
+ * publisher must stay null, or the admin column invents a vendor.
+ */
+test("the publisher is the marketplace prefix, not the account or a tier", () => {
+  assert.equal(publisherFromModelId("cc/claude-opus-5-5", null), "cc");
+  assert.equal(
+    publisherFromModelId("inferhub/cc/claude-opus-5-5", "inferhub"),
+    "cc",
+  );
+  assert.equal(
+    publisherFromModelId("inferhub/cmc/deepseek/deepseek-v4-flash", "inferhub"),
+    "cmc",
+    "a nested publisher path keeps its first segment",
+  );
+  assert.equal(publisherFromModelId("zai/glm-5.3", "savant"), "zai");
+});
+
+test("a billing tier is not a publisher", () => {
+  assert.equal(
+    publisherFromModelId("inferhub/free/grok/grok-4.5", "inferhub"),
+    "grok",
+    "the tier is skipped and the prefix under it wins",
+  );
+  assert.equal(publisherFromModelId("free/claude-opus-4.6", null), null);
+  assert.equal(publisherFromModelId("subscription/gpt-6", null), null);
+});
+
+test("an id that names no publisher reports null", () => {
+  assert.equal(publisherFromModelId("glm-5.3", "savant"), null);
+  assert.equal(publisherFromModelId("savant/glm-5.3", "savant"), null);
+  assert.equal(publisherFromModelId("", null), null);
 });

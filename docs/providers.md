@@ -183,6 +183,32 @@ provider enable/disable/delete:
   directly, which is how you test one upstream in isolation. It is a stored key,
   not a published one: `/v1/models` publishes the display id.
 
+### Publishers, and what one provider row can hide
+
+A marketplace is one provider row selling the same weights from many
+publishers: `inferhub` carries `cc/claude-opus-5-5`, `cb/claude-opus-5-5` and
+seven more offers of that model, all under one account slug. Every route in a
+group would therefore print the same provider name, which is why each route
+carries its **publisher** — the first path segment of the upstream id after the
+account scope and after any billing tier, so `inferhub/cmc/deepseek/x` is `cmc`
+and `inferhub/free/grok/grok-4.5` is `grok`. `/admin/catalog` shows the serving
+publisher, the number of competing offers, a `published` mark on the row
+reconciliation elected, and publisher and published filters. Publisher is a
+console fact only: `/v1/models` still publishes the display id and `owned_by`
+stays the gateway's own slug.
+
+The normalized identity merges publisher spellings, but not every spelling a
+marketplace invents. On the 2026-11-22 InferHub capture the 265 offers fold to
+123 route groups while the committed
+[price sheet](research/inferhub-price-sheet.md) counts 135 identities: twelve
+identities (`ds/deepseek-flash` vs `alicn/deepseek-v4-flash`,
+`fw/deepseek-v4p1-flash` vs `cb/deepseek-v4.1-flash`,
+`cb/deepseek-v4.1-flash-sg`, `cmc/...-fast`) publish as separate rows. A wrong
+merge would serve one model under another's name, so the fix is an
+operator-authored identity alias, not a wider heuristic; it is not implemented
+and waits on that ruling
+([FID-2026-1125-003](../dev/fids/FID-2026-1125-003-inferhub-router-catalog-review.md)).
+
 Auto-priced published rows are recalculated from the serving cost and markup;
 the resulting customer sell price can change. Manual sell prices are preserved.
 
@@ -307,6 +333,15 @@ public catalog stays white-label, so provider identity never appears there.
   verify capabilities before treating imported rows as usable chat models.
 - **Price import where the upstream publishes none.** Apixo is the example:
   costs are manual and can drift from their public price.
+- **Stable published row for a marketplace-only model.** A group with no
+  unscoped row publishes its cheapest offer, so `is_primary` moves when the
+  market moves and a plan that includes that model by id can drop it from the
+  catalog. Electing a stable representative is a routing decision that needs a
+  ruling; see
+  [FID-2026-1125-003](../dev/fids/FID-2026-1125-003-inferhub-router-catalog-review.md).
+- **Identity aliases.** A name the canonical key cannot fold
+  (`fw/deepseek-v4p1-flash` vs `cb/deepseek-v4.1-flash`) stays a separate
+  published row until an operator records the merge; the same record covers it.
 
 ## Provider onboarding review
 

@@ -1,3 +1,5 @@
+import { publisherFromModelId } from "./model-identity.ts";
+
 const FAMILY_LABELS: Record<string, string> = {
   claude: "Claude",
   deepseek: "DeepSeek",
@@ -13,6 +15,21 @@ const FAMILY_LABELS: Record<string, string> = {
 };
 
 const GROUP_LABELS = new Set(["free", "paid", "subscription"]);
+
+/**
+ * Family prefixes a marketplace id does not spell the same way twice.
+ *
+ * `mm/MiniMax-M3` and `cb/minimax-m3` are one line, `kcai/k3.1-pro` is Kimi,
+ * `zai/glm-5.3` is GLM and `qwen3.8` is Qwen. Exact labels are consulted first,
+ * so a prefix can never shadow a declared family like `gpt`.
+ */
+const FAMILY_PREFIXES: ReadonlyArray<readonly [string, string]> = [
+  ["qwen", "Qwen"],
+  ["hy4", "Hy4"],
+  ["minimax", "MiniMax"],
+  ["zai", "GLM"],
+  ["k3", "Kimi"],
+];
 
 function titleCase(value: string) {
   return value
@@ -30,13 +47,6 @@ function leafId(modelId: string) {
     : trimmed;
 }
 
-/** The path segment a marketplace catalog puts its publisher in (`cc/`, `ag/`). */
-function publisherPrefix(modelId: string) {
-  const index = modelId.indexOf("/");
-
-  return index === -1 ? "" : modelId.slice(0, index).trim().toLowerCase();
-}
-
 /**
  * Derives the model family from an upstream id. The `free/` prefix is the
  * provider's price-group scope and a marketplace prefix is a publisher, so the
@@ -46,9 +56,15 @@ function publisherPrefix(modelId: string) {
 export function familyFromModelId(modelId: string) {
   const leaf = leafId(modelId);
   const segment = leaf.split("-")[0]?.trim().toLowerCase() ?? "";
-  const fallback = titleCase(leaf.split("-")[0] ?? "") || "Other";
+  const exact = FAMILY_LABELS[segment];
 
-  return FAMILY_LABELS[segment] ?? fallback;
+  if (exact) return exact;
+
+  const prefix = FAMILY_PREFIXES.find(([value]) => segment.startsWith(value));
+
+  if (prefix) return prefix[1];
+
+  return titleCase(leaf.split("-")[0] ?? "") || "Other";
 }
 
 /**
@@ -66,7 +82,9 @@ export function normalizeFamilyName(
     return familyFromModelId(modelId);
   }
 
-  if (trimmed.toLowerCase() === publisherPrefix(modelId)) {
+  const publisher = publisherFromModelId(modelId, null);
+
+  if (publisher && trimmed.toLowerCase() === publisher.toLowerCase()) {
     return familyFromModelId(modelId);
   }
 

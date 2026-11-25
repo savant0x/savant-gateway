@@ -174,8 +174,9 @@ Free allowance divided evenly: at **1** activated account it is 18,000,000 weigh
    and the environment variable that will hold the key. Keep it disabled until
    the key exists.
 3. Put the key in `.env.local` only, restart, then sync. A sync imports only
-   that provider's rows and namespaces their public ids (`apixo/<model>`), so it
-   cannot touch the default catalog.
+   that provider's rows and namespaces their stored ids (`apixo/<model>`), so it
+   cannot touch the default catalog. The slug stays internal: every
+   customer-facing id is the display id.
 4. Compare the synced cost with the incumbent before routing traffic: the pivot
    table in the generated section shows where the new upstream is cheaper.
 5. Leave the row disabled if the catalog arrives without prices. A model with

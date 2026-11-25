@@ -3,6 +3,31 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-25 — The upstream supplier is never customer-facing
+
+- **FID-2026-1125-002 — high —** the stored model id, which encodes the upstream
+  account slug and the upstream's publisher path, was printed, linked and
+  published on seven customer-facing surfaces. Registered at `cb8e287`.
+- `/v1/models` now publishes the display id: the model's own name, with a
+  `free/` or `subscription/` tier kept when the SKU has one. `GET /v1/models/{id}`,
+  the chat route and the model page all accept it, and they try the stored key
+  first, so an integration that already sends one keeps resolving to the row it
+  always did. A leaf id that two rows share is refused rather than guessed.
+- The home price engine, the content model module, the command palette, the
+  console's model picker label and the `curl` example on a free model page print
+  the display id. The example's claim that its id is the value to send is now
+  true: it is the id the gateway publishes.
+- Model links are built by one helper from the display id, so the address bar of
+  a model page, a compare URL and a briefing link no longer carry the supplier.
+  The detail page and the compare pair resolve either form.
+- A linked model the catalog no longer carries prints its leaf, which needs no
+  provider row, and the "same weights elsewhere" line states the count instead
+  of naming the other rows — the sentence that literally listed other sellers.
+- The blind spot is closed by a gate over rendered output: the HTTP suite now
+  reads the public pages, the published list and a model page against the
+  provider rows in the database and fails if an upstream slug appears or a
+  published id carries a namespace.
+
 ## 2026-11-25 — Catalog columns and content tags tell the truth
 
 - **FID-2026-1125-001 — medium —** eight presentation and identity faults on the

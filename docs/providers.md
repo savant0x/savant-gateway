@@ -82,11 +82,19 @@ its name.
 
 ## The default provider
 
-The default provider owns the **unprefixed public id namespace**: its rows are
-published under the bare upstream id (`glm-5.3`) and every other provider's rows
-are namespaced (`inferhub/glm-5.3`). It is also the row whose balance, quota and
-sync time the landing page and `/admin` publish, and the only provider whose
+The default provider owns the **unprefixed stored id namespace**: its rows are
+keyed by the bare upstream id (`glm-5.3`) and every other provider's rows are
+keyed as `slug/id` (`inferhub/glm-5.3`). It is also the row whose balance, quota
+and sync time the landing page and `/admin` publish, and the only provider whose
 catalog receives the public metadata overlay.
+
+That namespace is a storage fact, not a publication one. Nothing customer-facing
+prints it: `/v1/models`, the catalog table, the model page, the compare URL and
+every example publish the **display id** — the model's own name, with a billing
+tier (`free/`, `subscription/`) kept when the SKU has one — so a customer never
+learns which upstream account supplies a model (FID-2026-1125-002). The gateway
+and the published read both accept the display id, and both try the stored key
+first, so an existing integration keeps resolving to the row it always did.
 
 It is one stored fact — `providers.is_default`, with a partial unique index that
 allows at most one holder — not a compiled constant, so it can be moved.
@@ -94,13 +102,15 @@ allows at most one holder — not a compiled constant, so it can be moved.
 **Make default** on any other row moves it. Two consequences follow, and the
 console states both counts before you confirm:
 
-1. **Published ids change immediately.** The outgoing default's rows stop being
+1. **Stored ids are re-keyed immediately.** The outgoing default's rows stop being
 bare and become `slug/id`; the incoming default's rows stop being prefixed and
 become bare. The switch re-keys both affected providers in one transaction —
 plan and subscription entitlements, saved-model watches, content links and
 showcase bindings move with the model, while `usage_events`, pricing decisions
-and link-decision history keep the id they were recorded under. A client holding
-an old id receives `404 model_not_found`.
+and link-decision history keep the id they were recorded under. Published ids do
+not change, so a client that copied one from `/v1/models` keeps working; a client
+that hard-coded a stored key receives `404 model_not_found` unless the display id
+it maps to is unambiguous.
 2. **The published badge moves.** The landing page and `/admin` describe the new
 default's balance and quota from then on; a disabled default publishes an honest
 `unconfigured` badge rather than disappearing.
@@ -164,12 +174,14 @@ provider enable/disable/delete:
 - **Cost and protocol** come from the serving provider and are stored on the
   published row (`served_*`), so settlement, margin and analytics record what
   was actually paid, not the incumbent's rate.
-- **A model only the new provider sells** is published under its namespaced id
-  (`apixo/<id>`) once it has a cost.
+- **A model only the new provider sells** is stored under its namespaced key
+  (`apixo/<id>`) once it has a cost, and published as the display id, so the
+  slug never reaches a customer page.
 - **The operator's disable wins.** Disabling the published row hides the whole
   group; another provider is not promoted under a name that was taken down.
 - **Pinned ids still work.** `apixo/<id>` resolves to that provider's row
-  directly, which is how you test one upstream in isolation.
+  directly, which is how you test one upstream in isolation. It is a stored key,
+  not a published one: `/v1/models` publishes the display id.
 
 Auto-priced published rows are recalculated from the serving cost and markup;
 the resulting customer sell price can change. Manual sell prices are preserved.

@@ -217,6 +217,33 @@ export async function getModelForGateway(
 }
 
 /**
+ * Reads several gateway models in one statement.
+ *
+ * `/v1/models` needs a row and its paid counterpart for every model on the page;
+ * one query per model exhausted the ten-connection pool at catalog size
+ * (FID-2026-1124-005). The result is keyed by id because callers look rows up
+ * pairwise, not positionally.
+ */
+export async function getModelsForGateway(
+  db: PostgresDatabase,
+  modelIds: string[],
+): Promise<Map<string, GatewayModel>> {
+  const ids = Array.from(new Set(modelIds));
+
+  if (ids.length === 0) return new Map();
+
+  const placeholders = ids.map(() => "?").join(", ");
+  const rows = await db
+    .prepare(
+      `${MODEL_SELECT}
+       WHERE m.id IN (${placeholders})`,
+    )
+    .all<ModelRow>(...(ids as []));
+
+  return new Map(rows.map((row) => [row.id, toGatewayModel(row)]));
+}
+
+/**
  * Resolves an unscoped upstream id only when exactly one provider publishes it.
  * Ambiguous ids must use the namespaced public id.
  */

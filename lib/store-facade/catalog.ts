@@ -40,6 +40,7 @@ export const getBannerConfig = bound(banner.getBannerConfig);
 export const saveBannerConfig = bound(banner.saveBannerConfig);
 
 export const listModels = bound(catalog.listModels);
+export const getPublishedModel = bound(catalog.getPublishedModel);
 export const clearPublicCatalogCache = bound(catalog.clearPublicCatalogCache);
 
 export const listModelGroups = bound(groups.listModelGroups);
@@ -106,3 +107,4 @@ export const reconcileRoutes = bound(routes.reconcileRoutes);
 
 /** Published next to every catalog row, so it belongs with the catalog reads. */
 export const trialOffer = bound(trialOfferModule.trialOffer);
+export const trialOffers = bound(trialOfferModule.trialOffers);

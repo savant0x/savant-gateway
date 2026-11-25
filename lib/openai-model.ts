@@ -8,18 +8,23 @@
  */
 
 import type { ModelSummary } from "./types.ts";
+import type { TrialOffer } from "./storage/store/trial-offer.ts";
 
 import { siteConfig } from "../config/site.ts";
 
 import { catalogSkuName } from "./catalog-skus.ts";
 import { extractApiKey, jsonError } from "./http.ts";
 import { authenticateApiKey } from "./store-facade/access.ts";
-import { listModels, trialOffer } from "./store-facade/catalog.ts";
+import { getPublishedModel, trialOffer } from "./store-facade/catalog.ts";
 
-export async function openAiModelObject(model: ModelSummary) {
+export async function openAiModelObject(
+  model: ModelSummary,
+  offer?: TrialOffer | null,
+) {
   return {
     id: model.id,
-    trial_paid_transition: await trialOffer(model.id),
+    trial_paid_transition:
+      offer === undefined ? await trialOffer(model.id) : offer,
     object: "model",
     owned_by: siteConfig.provider.slug,
     name: catalogSkuName(model),
@@ -41,9 +46,9 @@ export async function openAiModelObject(model: ModelSummary) {
   };
 }
 
-/** Only a row the list endpoint would publish can be retrieved. */
+/** Only a row the list endpoint would publish can be retrieved, in one read. */
 export async function findPublishedModel(id: string) {
-  return (await listModels()).find((model) => model.id === id) ?? null;
+  return getPublishedModel(id);
 }
 
 export function modelNotFound(id: string) {

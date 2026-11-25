@@ -48,6 +48,29 @@ export function clearPublicCatalogCache(db: PostgresDatabase) {
   cacheFor(db).clear();
 }
 
+const PUBLISHED_READ = `${MODEL_SELECT}
+       JOIN providers p ON p.slug = m.upstream_slug AND p.enabled = 1
+       WHERE ${PUBLIC_MODEL_SCOPE}`;
+
+/**
+ * One published row by id.
+ *
+ * The retrieve endpoint used to load the whole catalog and scan it in memory,
+ * so a single-id request cost the catalog's row count (FID-2026-1124-005). It
+ * applies the same scope and projection as the list, so a row that the list
+ * withholds cannot be retrieved either.
+ */
+export async function getPublishedModel(
+  db: PostgresDatabase,
+  id: string,
+): Promise<ModelSummary | null> {
+  const row = await db
+    .prepare(`${PUBLISHED_READ} AND m.id = ?`)
+    .get<ModelRow>(id);
+
+  return row ? toModelSummary(row) : null;
+}
+
 export async function listModels(
   db: PostgresDatabase,
 ): Promise<ModelSummary[]> {
@@ -58,9 +81,7 @@ export async function listModels(
 
   const rows = await db
     .prepare(
-      `${MODEL_SELECT}
-       JOIN providers p ON p.slug = m.upstream_slug AND p.enabled = 1
-       WHERE ${PUBLIC_MODEL_SCOPE}
+      `${PUBLISHED_READ}
        ORDER BY CASE WHEN g.billing_mode = 'free' THEN 0 ELSE 1 END,
                 COALESCE(g.sort_order, 9999) ASC, m.provider ASC,
                 m.sort_order ASC, m.name ASC`,

@@ -177,11 +177,14 @@ export function suggestModelLinks(
       relation,
       confidence: EVIDENCE_CONFIDENCE[hit.evidence],
       reason: `${EVIDENCE_REASON[hit.evidence]} “${hit.alias.label}”`,
+      // An exact tag is as deliberate as a title: tags are normalized at
+      // ingest and must equal a full alias, so both may auto-publish once the
+      // operator turns the policy on. Excerpt and body text never do.
       reviewed:
         (options.autoPublish ?? false) &&
         hit.alias.versioned &&
         !hit.alias.weak &&
-        hit.evidence === "title",
+        (hit.evidence === "title" || hit.evidence === "tag"),
     });
   }
 

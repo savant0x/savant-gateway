@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { ContentMedia } from "@/components/content/content-media";
 import { WatchButton } from "@/components/content/watch-button";
-import { contentDate, relationLabel } from "@/lib/content/format";
+import { contentDate, relationLabel, tagPillClass } from "@/lib/content/format";
 import { CONTENT_RELATIONS } from "@/lib/content/types";
 
 export function CoveragePanel({
@@ -97,6 +97,19 @@ export function CoveragePanel({
                     <p className="mt-1 text-[11px] leading-5 text-muted">
                       {item.reason}
                     </p>
+                    {item.tags.length > 0 ? (
+                      <div className="mt-1 flex flex-wrap gap-1.5">
+                        {item.tags.slice(0, 3).map((tag) => (
+                          <Link
+                            key={tag}
+                            className={`rounded-full border px-2 py-0.5 text-[10px] transition-colors hover:brightness-125 ${tagPillClass(tag)}`}
+                            href={`/signal/topics/${encodeURIComponent(tag)}`}
+                          >
+                            #{tag}
+                          </Link>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </li>

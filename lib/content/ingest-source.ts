@@ -40,7 +40,7 @@ import {
 import { enrichOspImpressions } from "./osp-impressions.ts";
 import { CONTENT_LIMITS, youtubeApiKey } from "./policy.ts";
 import { SourceConfigError, type SourceFailureKind } from "./source-error.ts";
-import { normalizeTags } from "./taxonomy.ts";
+import { applySourceTags, normalizeTags } from "./taxonomy.ts";
 import { parseTrendshiftListing } from "./trendshift.ts";
 import {
   clearSourceCheckpoint,
@@ -250,6 +250,15 @@ export async function ingestSource(
       items = fetched.items;
       skipped = fetched.skipped;
       seen = items.length;
+
+      // Only the RSS/YouTube parser merges source tags itself. Applying them
+      // here makes the operator's tags true for every kind, so Hacker News,
+      // HuggingFace and Trendshift items can match a model by tag too.
+      if (source.config.tags.length > 0) {
+        for (const item of items) {
+          item.tags = applySourceTags(item.tags, source.config.tags);
+        }
+      }
       options.budget?.check();
     }
 

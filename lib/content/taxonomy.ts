@@ -97,6 +97,18 @@ export function normalizeTags(values: unknown, limit = MAX_TAGS): string[] {
   return Array.from(seen);
 }
 
+/**
+ * The source's operator tags belong on every item it produces, whatever the
+ * feed parser did with publisher categories. Publisher tags stay first so a
+ * long source list cannot crowd out a model name that the tag matcher needs.
+ */
+export function applySourceTags(
+  tags: string[],
+  sourceTags: string[],
+): string[] {
+  return normalizeTags([...tags, ...sourceTags]);
+}
+
 /** Parses the comma/line separated operator tag field. */
 export function parseTagInput(value: string): string[] {
   return normalizeTags(value.split(/[,\n]/));

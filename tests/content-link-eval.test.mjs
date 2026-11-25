@@ -98,3 +98,19 @@ test("each suggestion names its evidence and a relation", () => {
     }
   }
 });
+
+test("an exact tag match can auto-publish once the policy allows it", () => {
+  const model = models.find((entry) => /\d/.test(entry.upstreamId));
+
+  assert.ok(model, "the corpus needs a versioned model");
+
+  const [suggestion] = suggestModelLinks(
+    { title: "A quiet week", tags: [model.upstreamId], kind: "article" },
+    models,
+    { autoPublish: true },
+  );
+
+  assert.ok(suggestion, "the tag should link the model");
+  assert.match(suggestion.reason, /^Tag matches/);
+  assert.equal(suggestion.reviewed, true);
+});

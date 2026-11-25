@@ -1,5 +1,34 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-25 (upstream identity hidden: PK)
+
+Operator instruction: "looking at the home page i see
+'inferhub/alicn/deepseek-v4-flash-0731' … this is showing my upstream provider.
+We need to scan the entire site and remove all upstream sources written in the
+open that is customer facing. It makes no sense to show the name of the provider
+we're reselling." Then, asked to choose between a labels-only fix and a
+provider-free public id: "i don't know what changes on the site, i just don't
+want my upstream provider ever shown." Automation level 3; strict; single agent.
+That answer settles the choice: the published id, the model-page URL and every
+copy-paste example change too, because all three are things a customer reads.
+
+- [x] **PK1 — Repo-wide scan of customer-facing surfaces.** **Completed.** Five
+  surfaces printed the stored id and a sixth put it in a shareable URL, on top of
+  the two `FID-2026-1125-001` fixed: the landing price engine
+  (`components/landing/model-price-engine.tsx:88`), the content model module
+  (`components/content/model-module.tsx:60,92,136`) which also named other
+  sellers (`:145`), the command palette
+  (`components/content/command-palette.tsx:61-62`), the console model picker
+  (`components/dashboard/tester-card.tsx:185`), the `curl` example on a free
+  model page (`components/catalog/free-allocation-guide.tsx:81`), the catalog
+  row's href (`components/catalog/catalog-row.tsx:57,65`), and the published id
+  itself (`lib/openai-model.ts:23`). The finding, its root cause and the gate
+  that closes the class are `FID-2026-1125-002`.
+- [ ] **PK2 — FID-2026-1125-002 implementation and closure.** Open: the display
+  identity, the display-id resolver, the published id, the URL change, the
+  label change everywhere the scan found one, and the new rendered-surface gate
+  are not implemented or verified yet.
+
 ## Session — 2026-11-25 (protocol review and the public surface: PC)
 
 Operator instruction: "Re-read the single-agent ECHO protocol from line 0 to end

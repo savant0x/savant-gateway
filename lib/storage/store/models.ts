@@ -1,7 +1,7 @@
 import type { PostgresDatabase } from "../pg-adapter.ts";
 import type { AdminModelSummary } from "../../types.ts";
 
-import { routeGroupKey } from "../../model-identity.ts";
+import { displayModelId, routeGroupKey } from "../../model-identity.ts";
 import { pricesForGroup } from "../../model-groups.ts";
 import { defaultSellMicros } from "../../pricing.ts";
 import {
@@ -259,6 +259,37 @@ export async function getModelByUpstreamId(
     .all<ModelRow>(upstreamId);
 
   return rows.length === 1 ? toGatewayModel(rows[0]) : undefined;
+}
+
+/**
+ * Resolves the display id a customer read, when exactly one row owns it.
+ *
+ * `/v1/models` publishes `displayModelId` (FID-2026-1125-002), so the ids in a
+ * copied example are leaves. A leaf is not unique — two upstreams can sell the
+ * same weights — so this narrows by leaf and then requires an exact display
+ * match, and refuses when two rows answer. The stored id is tried before this,
+ * which keeps every existing request resolving to the row it always did.
+ */
+export async function getModelByDisplayId(
+  db: PostgresDatabase,
+  displayId: string,
+): Promise<GatewayModel | undefined> {
+  const leaf = displayId.split("/").filter(Boolean).pop() ?? "";
+
+  if (!leaf) return undefined;
+
+  const escaped = leaf.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+  const rows = await db
+    .prepare(
+      `${MODEL_SELECT}
+       WHERE m.id = ? OR m.id LIKE ? ESCAPE '\\'`,
+    )
+    .all<ModelRow>(leaf, `%/${escaped}`);
+  const matches = rows.filter(
+    (row) => displayModelId(row.id, row.upstream_slug) === displayId,
+  );
+
+  return matches.length === 1 ? toGatewayModel(matches[0]) : undefined;
 }
 
 export async function applyCatalogMarkup(

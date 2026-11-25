@@ -63,6 +63,26 @@ export function isNamespacedModelId(id: string, providerSlug: string) {
 }
 
 /**
+ * The leaf of a stored id, keeping a billing tier prefix.
+ *
+ * `inferhub/alicn/deepseek-v4-flash` reads `deepseek-v4-flash`, and
+ * `inferhub/free/gpt-6-luna` reads `free/gpt-6-luna`: a tier is a product, not a
+ * publisher, so it stays. This form needs no provider row, which is what lets a
+ * page describe a model the catalog no longer carries.
+ */
+export function modelIdLeaf(id: string) {
+  const parts = id.trim().split("/").filter(Boolean);
+
+  if (parts.length === 0) return "";
+  if (parts.length === 1) return parts[0];
+
+  const tier =
+    parts[0] === "free" || parts[0] === "subscription" ? `${parts[0]}/` : "";
+
+  return `${tier}${parts[parts.length - 1]}`;
+}
+
+/**
  * The id a reader sees: the model's own name, never a provider tag.
  *
  * The stored id keeps both scopes because it is the primary key and the route
@@ -71,6 +91,9 @@ export function isNamespacedModelId(id: string, providerSlug: string) {
  * `gpt-5.6-luna`. `free/` (and a subscription scope) are the exception: they are
  * billing tiers, not publishers, and two SKUs of the same weights must stay
  * distinguishable.
+ *
+ * This is also what `/v1/models` publishes and what a request body carries, so
+ * it must resolve (`resolveModel`, `getPublishedModel`).
  */
 export function displayModelId(
   id: string,
@@ -78,12 +101,13 @@ export function displayModelId(
 ) {
   const scope = upstreamSlug ? `${upstreamSlug}/` : "";
   const scoped = scope && id.startsWith(scope) ? id.slice(scope.length) : id;
-  const parts = scoped.split("/").filter(Boolean);
 
-  if (parts.length <= 1) return scoped;
+  return modelIdLeaf(scoped);
+}
 
-  const tier =
-    parts[0] === "free" || parts[0] === "subscription" ? `${parts[0]}/` : "";
+/** The one public detail URL for a model, built from its display id. */
+export function modelPath(id: string, upstreamSlug: string | null | undefined) {
+  const display = displayModelId(id, upstreamSlug);
 
-  return `${tier}${parts[parts.length - 1]}`;
+  return `/models/${display.split("/").map(encodeURIComponent).join("/")}`;
 }

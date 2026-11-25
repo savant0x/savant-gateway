@@ -2,6 +2,7 @@ import type { PostgresDatabase } from "../pg-adapter.ts";
 import type { ModelSummary } from "../../types.ts";
 
 import { createTtlCache } from "../../cache.ts";
+import { displayModelId } from "../../model-identity.ts";
 import { toModelSummary, type ModelRow } from "../../projections.ts";
 
 import { MODEL_SELECT, PUBLIC_MODEL_SCOPE } from "./model-sql.ts";
@@ -68,7 +69,40 @@ export async function getPublishedModel(
     .prepare(`${PUBLISHED_READ} AND m.id = ?`)
     .get<ModelRow>(id);
 
-  return row ? toModelSummary(row) : null;
+  if (row) return toModelSummary(row);
+
+  return getPublishedModelByDisplayId(db, id);
+}
+
+/**
+ * The published row a display id names, when exactly one row owns it.
+ *
+ * `/v1/models` publishes display ids (FID-2026-1125-002), so the retrieve path
+ * has to answer to them as well as to the stored key. The leaf narrows the scan
+ * to physical rows; the exact display comparison decides, and a collision returns
+ * nothing rather than another seller's row. A stored id keeps its own answer: the
+ * caller tries the exact read first.
+ */
+export async function getPublishedModelByDisplayId(
+  db: PostgresDatabase,
+  displayId: string,
+): Promise<ModelSummary | null> {
+  const leaf = displayId.split("/").filter(Boolean).pop() ?? "";
+
+  if (!leaf) return null;
+
+  const escaped = leaf.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+  const rows = await db
+    .prepare(`${PUBLISHED_READ} AND (m.id = ? OR m.id LIKE ? ESCAPE '\\')`)
+    .all<ModelRow>(leaf, `%/${escaped}`);
+
+  const matches = rows
+    .map(toModelSummary)
+    .filter(
+      (model) => displayModelId(model.id, model.upstreamSlug) === displayId,
+    );
+
+  return matches.length === 1 ? matches[0] : null;
 }
 
 export async function listModels(

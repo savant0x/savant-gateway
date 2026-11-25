@@ -14,6 +14,7 @@ import { siteConfig } from "../config/site.ts";
 
 import { catalogSkuName } from "./catalog-skus.ts";
 import { extractApiKey, jsonError } from "./http.ts";
+import { displayModelId } from "./model-identity.ts";
 import { authenticateApiKey } from "./store-facade/access.ts";
 import { getPublishedModel, trialOffer } from "./store-facade/catalog.ts";
 
@@ -21,8 +22,12 @@ export async function openAiModelObject(
   model: ModelSummary,
   offer?: TrialOffer | null,
 ) {
+  // The published id is the display id, not the storage key: the key carries the
+  // upstream account and the upstream's publisher path, and this endpoint is
+  // where a client copies ids from (FID-2026-1125-002). The trial offer is still
+  // read by stored id, because that is what it is stored under.
   return {
-    id: model.id,
+    id: displayModelId(model.id, model.upstreamSlug),
     trial_paid_transition:
       offer === undefined ? await trialOffer(model.id) : offer,
     object: "model",

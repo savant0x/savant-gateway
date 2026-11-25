@@ -2,7 +2,11 @@ import type { PostgresDatabase } from "../pg-adapter.ts";
 import type { GatewayModel } from "../../projections.ts";
 
 import { modelAdmissionRefusal } from "../../providers/eligibility.ts";
-import { getModelByUpstreamId, getModelForGateway } from "../store/models.ts";
+import {
+  getModelByDisplayId,
+  getModelByUpstreamId,
+  getModelForGateway,
+} from "../store/models.ts";
 
 export {
   failureStatus,
@@ -16,9 +20,11 @@ export {
  *
  * The alias rules are the synchronous module's, unchanged: an exact public id
  * wins, then the two legacy free aliases, then a `family-rest` split into
- * `family/rest`, and only then an upstream id. Keeping the order matters —
- * resolving an upstream id first would let a delisted public id answer from a
- * row the customer never asked for.
+ * `family/rest`, then an upstream id, and last the display id `/v1/models`
+ * publishes. Keeping the order matters — resolving an upstream id first would let
+ * a delisted public id answer from a row the customer never asked for, and
+ * resolving a display id first would let a leaf shadow a stored key an existing
+ * integration already sends.
  */
 export async function resolveModel(db: PostgresDatabase, publicId: string) {
   const exact = await getModelForGateway(db, publicId);
@@ -45,7 +51,11 @@ export async function resolveModel(db: PostgresDatabase, publicId: string) {
     if (model) return model;
   }
 
-  return getModelByUpstreamId(db, publicId);
+  const upstream = await getModelByUpstreamId(db, publicId);
+
+  if (upstream) return upstream;
+
+  return getModelByDisplayId(db, publicId);
 }
 
 /** The gateway's refusal for a resolved model, before admission or dispatch. */

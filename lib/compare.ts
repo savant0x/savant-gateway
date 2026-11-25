@@ -5,6 +5,8 @@
  */
 import type { ModelSummary } from "./types";
 
+import { displayModelId } from "./model-identity.ts";
+
 export type CompareSide = "left" | "right";
 
 export type ComparePair = {
@@ -20,6 +22,11 @@ export type ComparePair = {
  *
  * The fallback prefers priced rows: a default comparison of two free models
  * would open on "Not priced" twice and say nothing about the catalog.
+ *
+ * The query string is a public URL, so it carries display ids rather than stored
+ * keys (FID-2026-1125-002). A stored id still resolves, and a display id that two
+ * rows share resolves to neither — the fallback then picks one, which is the same
+ * answer an unknown id already gets.
  */
 export function resolveComparePair(
   models: ModelSummary[],
@@ -31,13 +38,22 @@ export function resolveComparePair(
   const priced = models.filter((model) => model.access === "paid");
   const pool = priced.length >= 2 ? priced : models;
   const byId = new Map(models.map((model) => [model.id, model]));
-  const left = (leftId ? byId.get(leftId) : undefined) ?? pool[0];
+  const byDisplay = new Map<string, ModelSummary | null>();
+
+  for (const model of models) {
+    const display = displayModelId(model.id, model.upstreamSlug);
+
+    byDisplay.set(display, byDisplay.has(display) ? null : model);
+  }
+
+  const requested = (id?: string | null) =>
+    id ? (byId.get(id) ?? byDisplay.get(id) ?? undefined) : undefined;
+  const left = requested(leftId) ?? pool[0];
   const fallbackRight = (exclude: string) =>
     pool.find((model) => model.id !== exclude) ??
     models.find((model) => model.id !== exclude) ??
     null;
-  const right =
-    (rightId ? byId.get(rightId) : undefined) ?? fallbackRight(left.id);
+  const right = requested(rightId) ?? fallbackRight(left.id);
 
   if (!right) return null;
 

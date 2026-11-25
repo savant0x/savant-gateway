@@ -1,8 +1,17 @@
 # FID register
 
-**Last folder audit:** 2026-11-24 (FID folder audit). This page
+**Last folder audit:** 2026-11-25 (post-implementation audit). This page
 indexes the working set; each FID owns its own status, evidence and resolution.
-Current counts: 11 active / 22, 198 archived, 200 allocated.
+Current counts: 10 active / 22, 199 archived, 200 allocated.
+
+The four implementation records opened on 2026-11-24 are `closed` and archived
+(`003`–`006`). Every remaining active record is launch or acceptance work:
+operator-blocked masters and receipts (`043`, `062`, `137`, `018`, `127`), a
+credential, funding or publication step (`011`, `068`, `1110-002`, `1120-001`),
+and the two content records (`016`, `017`) whose code is in but whose browser
+and job proofs are outstanding. No active record is implementation-ready
+without an operator input or a proof that needs a real browser, job snapshot or
+deployment.
 
 ## Layout
 
@@ -23,9 +32,8 @@ Current counts: 11 active / 22, 198 archived, 200 allocated.
 | [127](FID-2026-1103-127-real-launch-acceptance-receipt.md) | Real launch acceptance receipt | fixed | Operator records the five observations (`payment`, `recovery`, `alert`, `load`, `rollback`) and a go pinned to the release SHA, then runs `npm run receipt:launch`. |
 | [137](FID-2026-1103-137-product-hardening-and-install-order-master.md) | Product hardening and install-order master | converged | Children 126, 128–136 and 141 are closed and archived; only 127 remains, so the master closes after its operator observations and go decision. |
 | [2026-1104-011](FID-2026-1104-011-policy-v1-2-publication.md) | Policy v1.2 for the current service surface | converged | Operator approves the recipient inventory; worker drafts v1.2 and the acceptance bump. |
-| [2026-1104-016](FID-2026-1104-016-persistent-content-model-decisions.md) | Persistent content/model acceptance and dismissal | fixed | Implementation landed at `3f5a045` (durable states, revision-guarded decisions, decision log, one visibility predicate); the two-connection link-decision race passes on 2026-11-24. Closure awaits a real-browser exercise of accept/dismiss/restore. |
 | [2026-1104-017](FID-2026-1104-017-content-matching-controls-and-review.md) | Full linked-content management, settings and rematch | fixed | Implementation landed at `6cb7486` and `1c4c2a5` (keyset inventory, policy/aliases, cancellable rematch, invalidation). Closure still needs pinned job snapshots, per-item retry scopes and HTTP/browser receipts. |
-| [2026-1104-018](FID-2026-1104-018-content-automation-master.md) | Content automation and persistent matching master | converged | Child 015 is `closed`; 016 and 017 are `fixed` (`3f5a045`, `6cb7486`, `1c4c2a5`) and still owe proof. The master closes on those plus the operator's scheduler backend, secret and hosted-tick authorization. |
+| [2026-1104-018](FID-2026-1104-018-content-automation-master.md) | Content automation and persistent matching master | converged | Child 015 is `closed` and 016 is `closed`; 017 is `fixed` (`6cb7486`, `1c4c2a5`) and still owes proof. The master closes on that plus the operator's scheduler backend, secret and hosted-tick authorization. |
 | [2026-1110-002](FID-2026-1110-002-identity-calibration-lab.md) | Identity calibration lab and measured certificate | converged | Steps 1–4 are committed (`d66a538`, `b884984`, `1f75c44`; step 4 in `495e8b3`, plus its proxy script under [2026-1122-001](archive/FID-2026-1122-001-commit-calibration-proxy.md)). Step 5, collection, is next and needs an operator-supplied upstream; then the certificate path. |
 | [2026-1120-001](FID-2026-1120-001-inferhub-upstream-onboarding.md) | InferHub upstream onboarding | fixed | Steps 1, 2, 3, 4 and 8 are done (`ed8812a`, `495e8b3`, `b159ba0`): the row is seeded disabled, review-required and resale-restricted. Steps 5–7 stay blocked on funding and a measured figure. |
 
@@ -40,6 +48,17 @@ Current counts: 11 active / 22, 198 archived, 200 allocated.
 [2026-1122-006](archive/FID-2026-1122-006-next-security-upgrade.md) is `closed`. `next upgrade --agent=security` moved 16.4.3 → 16.4.6; duplicate checks were empty, and 12/12 gates with 1240/1240 tests passed in the upgrade worktree.
 
 [2026-1122-007](archive/FID-2026-1122-007-bulk-chat-decisions.md) is `closed`. The review panel wrote one decision per click, so a 281-row catalog could not realistically be decided; bulk actions now record one row per model in a single transaction with one republish, still operator-sourced and individually overridable. 5 PostgreSQL cases, 12/12 gates and 1245/1245 tests.
+
+### Closed in the 2026-11-25 browser-proof commit
+
+[2026-1104-016](archive/FID-2026-1104-016-persistent-content-model-decisions.md)
+is `closed`. Its durable decision states, revision-guarded writes, append-only
+decision log and single public visibility predicate shipped at `3f5a045`; what
+remained was evidence. The two-connection Accept-versus-reconcile race now runs
+inside `npm run test:postgres` (20/20, no skips), and `npm run test:browser` adds
+an admin journey that accepts a suggested pair, reloads, dismisses it, reloads,
+restores it, reloads, and reads the public model page after each decision. 16
+checks pass across light and dark.
 
 ### Closed in the 2026-11-25 query-cost commits
 

@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1104-016-persistent-content-model-decisions.md`
 **ID:** FID-2026-1104-016
 **Severity:** high
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-04 23:20 America/New_York
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -157,11 +157,11 @@ Do not duplicate model links in topic tags or use the recent list as storage.
 3. **implemented:** guarded APIs and explicit Accept/Dismiss/Restore (`3f5a045`).
 4. **implemented:** common public projections and all callers (`3f5a045`:
    `lib/content/visibility.ts`).
-5. **blocked:** migration, persistence and race proofs. The migration and
-   decision suites pass; the two-connection race
-   (`tests/content-link-concurrency.test.mjs`, 2 cases) needs
-   `TEST_DATABASE_URL` and skips without it, and no real-browser exercise of the
-   controls exists.
+5. **complete:** migration, persistence, race and browser proofs. The migration
+   and decision suites pass; the two-connection race
+   (`tests/content-link-concurrency.test.mjs`, 2 cases) now runs inside
+   `npm run test:postgres` with 0 skips, and `npm run test:browser` drives
+   accept, dismiss and restore in an installed browser for both themes.
 
 ### Verification
 
@@ -195,8 +195,16 @@ explicitly, since it currently lacks the reviewed filter.
 
 ### Verification Receipt
 
-Planning evidence only, recorded in master/session summary. No new state/API,
-race proof, migration or accepted link behavior is implemented by this pass.
+`npm run test:postgres` PASS 20/20 with `tests/content-link-concurrency.test.mjs`
+registered and 0 skips. `npm run test:browser` PASS 16 journey checks, 8 per
+theme (light and dark), on build `QSpzu8bCcaRpIQUvuGTAo` with Microsoft Edge via
+Playwright; receipt `.scratch/browser-matrix/result.json`. The new journey signs
+in at `/admin/login`, accepts a suggested pair, reloads a fresh server render and
+still reads `accepted`, sees the item on `/models/browser-decision-model`,
+dismisses it, reloads and still reads `dismissed` while the public page no longer
+shows the item, then restores the pair, reloads, reads `suggested`, finds Accept
+available again, and confirms the restored suggestion is not published.
+`npm run lint` exit 0 and `tsc --noEmit` exit 0 on the closure tree.
 
 ## Perfection Loop
 
@@ -230,8 +238,10 @@ planning pass, which had recorded all five steps as reserved. That commit adds
 `lib/content/visibility.ts`, the guarded decision path and
 `tests/content-link-decisions.test.mjs` plus `tests/content-link-concurrency.test.mjs`.
 The 2026-11-04 CHANGELOG records `npm test` 1,021 pass / 0 fail / 6 PostgreSQL-only skips
-with build, lint, typecheck and quality green. The two-connection race and a real-browser
-exercise remain unrun, so the record is `fixed`, not `closed`.
+with build, lint, typecheck and quality green. The two-connection race passed on
+2026-11-24 inside `test:postgres`, and the real-browser exercise landed on
+2026-11-25 as the "content accept, dismiss and restore persist" journey, so the
+record is `closed`.
 
 ### Code Verification Evidence
 
@@ -260,20 +270,22 @@ passes and their hashes/deltas are recorded in the planning session receipt.
 
 ## Resolution
 
-- **Closed Date:** — (not closed)
+- **Closed Date:** 2026-11-25
 - **Implementation:** `3f5a045` (2026-11-05). Durable `suggested` /
   `auto_published` / `accepted` / `dismissed` / `retired` states, revision-guarded
   decisions, an append-only decision log, machine-only reconciliation and one
-  shared public visibility predicate are in the tree.
-- **Verification:** recorded in the 2026-11-04 CHANGELOG — `npm test` 1,021 pass
-  / 0 fail / 6 PostgreSQL-only skips; build, lint, typecheck and quality pass.
-  Focused suites re-run 2026-11-22 with FID-017's: 7/7 across
-  `tests/content-link-decisions.test.mjs` and the two matching suites;
-  `tests/content-link-concurrency.test.mjs` skips its 2 cases without a real
-  database handle.
-- **Not verified:** the two-connection Accept/Dismiss-versus-reconcile race and a
-  real-browser exercise of the controls.
-- **Archived:** no — closure awaits those two proofs.
+  shared public visibility predicate are in the tree. This closure commit adds
+  only the browser proof and the fixture it needs; no decision behavior changed.
+- **Verification:** `npm run test:postgres` PASS 20/20 including
+  `tests/content-link-concurrency.test.mjs` (2 cases, 0 skipped);
+  `npm run test:browser` PASS 16 checks (8 per theme) driving accept, dismiss and
+  restore with a reload after each decision and a public-page read after accept,
+  dismiss and restore; `npm run lint` and `tsc --noEmit` exit 0; focused suites
+  7/7 across the decision and matching suites.
+- **Not verified:** no hosted deployment, no second upstream and no
+  multi-operator concurrency beyond the two-connection race.
+- **Archived:**
+  `dev/fids/archive/FID-2026-1104-016-persistent-content-model-decisions.md`
 - **Boundary:** FID-017 consumes these decision APIs; it must not ship a second
   interpretation of accepted or dismissed.
 

@@ -54,6 +54,14 @@ and severity order; each record closes only on its own gates and a commit.
   statement-count cases; `npm run verify` PASS 12/12 gates, 1301/1301 tests,
   PostgreSQL 20/20, 181.8 s. No hosted load measurement is claimed.
 
+- [x] **OF5 — FID-2026-1104-016, content decisions proven in a browser.**
+  **Completed.** `npm run test:postgres` 20/20 with the two-connection
+  Accept-versus-reconcile race and no skips; `npm run test:browser` 16 checks
+  (8 per theme, light and dark, Edge via Playwright) driving accept → reload →
+  public read → dismiss → reload → public hidden → restore → reload → still a
+  decidable suggestion that is not published. Lint and typecheck exit 0. The
+  record is `closed` and archived; no decision behavior changed.
+
 ## Session — 2026-11-24 (FID folder audit and pending-work register: PR)
 
 Operator instruction: "audit/update the fids folder, move the completed work to

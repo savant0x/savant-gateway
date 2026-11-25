@@ -54,6 +54,8 @@ const HOSTILE_BUILD_ID = "bld_browser_hostile";
 const HOSTILE_REVISION_ID = "rev_browser_hostile";
 const HOSTILE_TITLE = "Hostile browser probe";
 const COVERAGE_MODEL_ID = "mock-paid";
+const DECISION_MODEL_ID = "browser-decision-model";
+const DECISION_MODEL_NAME = "Browser Decision Model";
 const COVERAGE_EMPTY_MODEL_ID = "free/mock-free";
 const COVERAGE_FIXTURES = [
   {
@@ -380,6 +382,41 @@ async function seedContent(db, commenterId) {
        VALUES (?, ?, ?, NULL, ?, ?)`,
     )
     .run(COMMENT_ID, ITEM_ID, commenterId, COMMENT_BODY, now);
+}
+
+async function seedDecisionFixture(db) {
+  const now = new Date().toISOString();
+
+  await db
+    .prepare(
+      `INSERT INTO models
+        (id, upstream_id, name, provider, context_window, token_weight,
+         input_price_micros, output_price_micros, allow_free,
+         supports_tools, supports_vision, status, sort_order, synced_at,
+         upstream_slug, family, protocol, cost_source,
+         sell_input_micros, sell_output_micros, price_source, in_catalog,
+         group_slug, group_source)
+       VALUES (?, 'browser-decision-upstream', ?, 'Mock', '128000', 1,
+         500000, 1000000, 0, 0, 0, 'active', 0, ?, 'mock', 'Mock', 'chat',
+         'manual', 1000000, 2000000, 'manual', 1, 'paid', 'manual')
+       ON CONFLICT (id) DO NOTHING`,
+    )
+    .run(DECISION_MODEL_ID, DECISION_MODEL_NAME, now);
+
+  // A machine suggestion with no operator decision yet: the only state from
+  // which the admin controls offer Accept (FID-2026-1104-016).
+  await db
+    .prepare(
+      `INSERT INTO content.model_links
+        (item_id, model_id, relation, relation_source, confidence, reason,
+         reviewed, created_at, updated_at, state, decision_at,
+         decision_source, revision)
+       VALUES (?, ?, 'mention', 'auto', 0.8,
+         'Browser fixture: a machine suggestion awaiting an operator decision.',
+         0, ?, ?, 'suggested', NULL, NULL, 1)
+       ON CONFLICT (item_id, model_id) DO NOTHING`,
+    )
+    .run(ITEM_ID, DECISION_MODEL_ID, now, now);
 }
 
 async function seedCoverage(db) {
@@ -732,6 +769,112 @@ async function reactionJourney(page, baseUrl) {
     await relatedRows.locator("iframe").count(),
     0,
     "a text-only related row creates no iframe",
+  );
+}
+
+async function signInAsAdmin(page, baseUrl) {
+  await page.goto(`${baseUrl}/admin/login`, { waitUntil: "domcontentloaded" });
+  await page.getByLabel("Admin password").fill(ADMIN_PASSWORD);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.waitForURL(`**/admin`, { timeout: 20_000 });
+}
+
+function decisionRow(page) {
+  return page
+    .locator("tbody tr")
+    .filter({ hasText: ITEM_TITLE })
+    .filter({ hasText: DECISION_MODEL_ID });
+}
+
+async function assertNotPublished(page, baseUrl, reason) {
+  await page.goto(`${baseUrl}/models/${DECISION_MODEL_ID}`, {
+    waitUntil: "domcontentloaded",
+  });
+  await page.getByRole("heading", { level: 1 }).waitFor();
+  assert.equal(
+    await page.getByText(ITEM_TITLE, { exact: true }).count(),
+    0,
+    reason,
+  );
+}
+
+async function decisionJourney(page, baseUrl) {
+  await signInAsAdmin(page, baseUrl);
+  await page.goto(`${baseUrl}/admin/content`, { waitUntil: "domcontentloaded" });
+
+  const suggested = decisionRow(page);
+
+  await suggested.waitFor({ state: "visible" });
+  assert.ok(
+    (await suggested.getByText("suggested", { exact: true }).count()) >= 1,
+    "the fixture pair starts as a machine suggestion",
+  );
+
+  await suggested.getByRole("button", { name: "Accept", exact: true }).click();
+  await decisionRow(page)
+    .getByText("accepted", { exact: true })
+    .first()
+    .waitFor();
+
+  // A fresh server render, not the client-side refresh, proves durability.
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await decisionRow(page)
+    .getByText("accepted", { exact: true })
+    .first()
+    .waitFor({ timeout: 20_000 });
+
+  await page.goto(`${baseUrl}/models/${DECISION_MODEL_ID}`, {
+    waitUntil: "domcontentloaded",
+  });
+  await coverageSection(page)
+    .getByRole("link", { name: ITEM_TITLE, exact: true })
+    .waitFor({ timeout: 20_000 });
+
+  await page.goto(`${baseUrl}/admin/content`, { waitUntil: "domcontentloaded" });
+  await decisionRow(page)
+    .getByRole("button", { name: "Dismiss", exact: true })
+    .click();
+  await decisionRow(page)
+    .getByText("dismissed", { exact: true })
+    .first()
+    .waitFor();
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await decisionRow(page)
+    .getByText("dismissed", { exact: true })
+    .first()
+    .waitFor({ timeout: 20_000 });
+  await assertNotPublished(
+    page,
+    baseUrl,
+    "a dismissed pair disappears from the public model page",
+  );
+
+  await page.goto(`${baseUrl}/admin/content`, { waitUntil: "domcontentloaded" });
+  await decisionRow(page)
+    .getByRole("button", { name: "Restore", exact: true })
+    .click();
+  await decisionRow(page)
+    .getByText("suggested", { exact: true })
+    .first()
+    .waitFor();
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  const restored = decisionRow(page);
+
+  await restored
+    .getByText("suggested", { exact: true })
+    .first()
+    .waitFor({ timeout: 20_000 });
+  assert.equal(
+    await restored.getByRole("button", { name: "Accept", exact: true }).count(),
+    1,
+    "restore returns the pair to a decidable suggestion",
+  );
+  await assertNotPublished(
+    page,
+    baseUrl,
+    "a restored suggestion is not published as an accepted association",
   );
 }
 
@@ -1376,6 +1519,11 @@ async function runTheme(browser, baseUrl, theme, account) {
     });
     completed.push("model coverage rows and empty state");
 
+    await journey(theme, "content accept, dismiss and restore persist", page, errors, async () => {
+      await decisionJourney(page, baseUrl);
+    });
+    completed.push("content accept, dismiss and restore persist");
+
     return { theme, completed };
   } finally {
     await context.close();
@@ -1450,6 +1598,7 @@ async function main() {
 
       await seedContent(database, commenter.id);
       await seedCoverage(database);
+      await seedDecisionFixture(database);
 
       accounts = [
         {

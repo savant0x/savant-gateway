@@ -3,6 +3,22 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-25 — Content decisions proven in a real browser (1104-016)
+
+- **FID-2026-1104-016 — high —** the durable content-to-model decision states,
+  revision-guarded writes, append-only decision log and shared public visibility
+  predicate shipped at `3f5a045`, but nothing exercised the Accept, Dismiss and
+  Restore controls in a browser, and the Accept-versus-reconcile race only ran
+  when a database handle was supplied. Both proofs now exist: the race runs
+  inside `npm run test:postgres` with no skips, and `scripts/browser-matrix.mjs`
+  gained a "content accept, dismiss and restore persist" journey. It signs in as
+  the operator, accepts a suggested pair, reloads a fresh server render and still
+  reads `accepted`, sees the item on the public model page, dismisses it, reloads
+  and still reads `dismissed` while the public page hides it, then restores the
+  pair, reloads and finds it `suggested` with Accept available again — proof that
+  restore does not silently republish. 16 checks pass across light and dark
+  themes in an installed Edge via Playwright. No decision behavior changed.
+
 ## 2026-11-25 — Catalogue and completion cost bounded by row count (1124-005)
 
 - **FID-2026-1124-005 — high —** six paths stayed linear in catalogue size after

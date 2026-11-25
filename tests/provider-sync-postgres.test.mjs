@@ -470,6 +470,70 @@ test("one failing provider does not stop the others", async () => {
   }
 });
 
+test("a sync upserts the catalog in chunks, not one statement per model", async () => {
+  const db = await fixture();
+
+  process.env.KEY_P1 = "secret";
+
+  try {
+    await addProvider(db, "p1", { keyEnvVar: "KEY_P1" });
+
+    const prepared = [];
+    const handle = new Proxy(db, {
+      get(target, key, receiver) {
+        if (key === "prepare") {
+          return (sql) => {
+            prepared.push(sql);
+
+            return target.prepare(sql);
+          };
+        }
+
+        const value = Reflect.get(target, key, receiver);
+
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+    const models = Array.from({ length: 250 }, (_, index) => ({
+      id: `m${index}`,
+      name: `Model ${index}`,
+      dollarsPer1M: 1,
+      outputDollarsPer1M: 2,
+    }));
+
+    const summary = await syncProvider(handle, "p1", {
+      request: async () => catalog(models),
+      fetchBalance: async () => BALANCE,
+      fetchSubscription: async () => SUBSCRIPTION,
+    });
+
+    assert.equal(summary.imported, 250);
+
+    const inserts = prepared.filter((sql) =>
+      sql.includes("INSERT INTO models"),
+    );
+
+    assert.equal(
+      inserts.length,
+      2,
+      "250 rows is two chunked statements, not 250",
+    );
+    assert.ok(
+      inserts[0].includes("), ("),
+      "the statement carries many value tuples",
+    );
+
+    const rows = await db
+      .prepare("SELECT COUNT(*) AS n FROM models WHERE upstream_slug = 'p1'")
+      .get();
+
+    assert.equal(Number(rows.n), 250, "every row in the payload was written");
+  } finally {
+    await db.close();
+    delete process.env.KEY_P1;
+  }
+});
+
 test("a sync stores the vendor's group document and survives its failure", async () => {
   const db = await fixture();
 

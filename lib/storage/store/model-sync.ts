@@ -37,39 +37,18 @@ import { reconcileRoutes } from "./routes.ts";
  * The upsert text is the one large statement that needed no dialect change:
  * `ON CONFLICT (id) DO UPDATE SET ... excluded.column` is spelled identically in
  * SQLite and PostgreSQL, so it moved across verbatim.
+ *
+ * The write is set-based: each row is still computed one at a time — every
+ * preservation rule above runs per row — and the results flush as multi-row
+ * upserts of 200, because one statement per model made a 600-row catalog a
+ * multi-second lock-holding write (FID-2026-1124-005).
  */
-export async function replaceModels(
-  db: PostgresDatabase,
-  models: SyncedModel[],
-  markupBps: number,
-  upstreamSlug: string,
-) {
-  const existing = new Map<string, ModelRow>();
 
-  for (const row of await db
-    .prepare("SELECT * FROM models WHERE upstream_slug = ?")
-    .all<ModelRow>(upstreamSlug)) {
-    existing.set(`${row.upstream_slug}\u0000${row.upstream_id}`, row);
-  }
-
-  const groupModes = new Map<string, ModelAccess>();
-
-  for (const row of await db
-    .prepare("SELECT slug, billing_mode FROM model_groups")
-    .all<{ slug: string; billing_mode: ModelAccess }>()) {
-    groupModes.set(row.slug, row.billing_mode);
-  }
-
-  const upsert = db.prepare(`
-    INSERT INTO models
-      (id, upstream_id, upstream_slug, name, provider, family, protocol,
-       route_group, cost_source, context_window, token_weight,
-       input_price_micros, output_price_micros, sell_input_micros,
-       sell_output_micros, price_source, in_catalog, allow_free, group_slug,
-       group_source, supports_tools, supports_vision, health, status,
-       sort_order, synced_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT (id) DO UPDATE SET
+/** 25 placeholders per row; 200 rows stays below any driver parameter limit. */
+const UPSERT_CHUNK = 200;
+const UPSERT_TUPLE =
+  "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+const UPSERT_UPDATE = `ON CONFLICT (id) DO UPDATE SET
       upstream_id = excluded.upstream_id,
       upstream_slug = excluded.upstream_slug,
       route_group = excluded.route_group,
@@ -93,8 +72,43 @@ export async function replaceModels(
       supports_vision = excluded.supports_vision,
       health = excluded.health,
       sort_order = excluded.sort_order,
-      synced_at = excluded.synced_at
-  `);
+      synced_at = excluded.synced_at`;
+
+function upsertSql(rows: number) {
+  return `INSERT INTO models
+      (id, upstream_id, upstream_slug, name, provider, family, protocol,
+       route_group, cost_source, context_window, token_weight,
+       input_price_micros, output_price_micros, sell_input_micros,
+       sell_output_micros, price_source, in_catalog, allow_free, group_slug,
+       group_source, supports_tools, supports_vision, health, status,
+       sort_order, synced_at)
+    VALUES ${Array.from({ length: rows }, () => UPSERT_TUPLE).join(", ")}
+    ${UPSERT_UPDATE}`;
+}
+
+export async function replaceModels(
+  db: PostgresDatabase,
+  models: SyncedModel[],
+  markupBps: number,
+  upstreamSlug: string,
+) {
+  const existing = new Map<string, ModelRow>();
+
+  for (const row of await db
+    .prepare("SELECT * FROM models WHERE upstream_slug = ?")
+    .all<ModelRow>(upstreamSlug)) {
+    existing.set(`${row.upstream_slug}\u0000${row.upstream_id}`, row);
+  }
+
+  const groupModes = new Map<string, ModelAccess>();
+
+  for (const row of await db
+    .prepare("SELECT slug, billing_mode FROM model_groups")
+    .all<{ slug: string; billing_mode: ModelAccess }>()) {
+    groupModes.set(row.slug, row.billing_mode);
+  }
+
+  const pending = new Map<string, unknown[]>();
 
   const syncedAt = new Date().toISOString();
 
@@ -149,7 +163,9 @@ export async function replaceModels(
         current?.status ??
         importedModelStatus({ costSource: model.costSource, isFree });
 
-      await upsert.run(
+      // Keyed by id so a repeated id keeps the last row, exactly as the
+      // sequential upserts did, and one statement never affects a row twice.
+      pending.set(model.id, [
         model.id,
         model.upstreamId,
         model.upstreamSlug,
@@ -175,7 +191,15 @@ export async function replaceModels(
         status,
         model.sortOrder,
         syncedAt,
-      );
+      ]);
+    }
+
+    const rows = Array.from(pending.values());
+
+    for (let start = 0; start < rows.length; start += UPSERT_CHUNK) {
+      const batch = rows.slice(start, start + UPSERT_CHUNK);
+
+      await db.prepare(upsertSql(batch.length)).run(...(batch.flat() as []));
     }
   })();
 

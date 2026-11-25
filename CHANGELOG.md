@@ -23,10 +23,18 @@ distinguish verified behavior from unverified claims.
 - A linked model the catalog no longer carries prints its leaf, which needs no
   provider row, and the "same weights elsewhere" line states the count instead
   of naming the other rows — the sentence that literally listed other sellers.
+- The client components no longer receive a whole model summary. A client
+  component's props are serialized into the HTML a visitor downloads, so the home
+  page shipped `upstreamSlug` and its upstream model id in its own payload even
+  where nothing printed them; `lib/catalog-payload.ts` is now the only way those
+  payloads are built.
 - The blind spot is closed by a gate over rendered output: the HTTP suite now
-  reads the public pages, the published list and a model page against the
-  provider rows in the database and fails if an upstream slug appears or a
-  published id carries a namespace.
+  reads the public pages, their model links, the published list and a model page
+  against the provider rows in the database and fails if an upstream slug appears
+  or a published id carries a namespace.
+- Verified at `19ded1a`, `012bb6a`, `feb53d4` and `7a34180`, closed on a 12/12
+  `npm run verify` (1318/1318 tests, PostgreSQL 20/20, 789 HTTP checks) and
+  archived.
 
 ## 2026-11-25 — Catalog columns and content tags tell the truth
 

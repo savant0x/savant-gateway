@@ -24,10 +24,13 @@ copy-paste example change too, because all three are things a customer reads.
   row's href (`components/catalog/catalog-row.tsx:57,65`), and the published id
   itself (`lib/openai-model.ts:23`). The finding, its root cause and the gate
   that closes the class are `FID-2026-1125-002`.
-- [ ] **PK2 — FID-2026-1125-002 implementation and closure.** Open: the display
-  identity, the display-id resolver, the published id, the URL change, the
-  label change everywhere the scan found one, and the new rendered-surface gate
-  are not implemented or verified yet.
+- [x] **PK2 — FID-2026-1125-002 implementation and closure.** **Completed.** The
+  display identity, the display-id resolver (after the stored key, refusing an
+  ambiguous leaf), the provider-free published id, the URL change, the label
+  change on every surface the scan found and the trimmed client payloads are
+  implemented at `19ded1a` and `012bb6a`; the gate that reads rendered output is
+  in at `feb53d4`. `npm run verify` PASS 12/12 gates, 1318/1318 tests,
+  PostgreSQL 20/20, 789 HTTP checks, and the record is archived.
 
 ## Session — 2026-11-25 (protocol review and the public surface: PC)
 

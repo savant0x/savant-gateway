@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1125-002-upstream-identity-hidden.md`
 **ID:** FID-2026-1125-002
 **Severity:** high
-**Status:** converged
+**Status:** COMPLETE
 **Created:** 2026-11-25 16:20
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -253,7 +253,26 @@ primary key, the entitlement key and the usage key.
 
 ### Verification Receipt
 
-- Pending. Recorded at closure with the `npm run verify` output and the commit.
+`npm run verify` — PASS, 12/12 gates, 178.0 s:
+
+```text
+PASS check                        exit 0
+PASS storage:check                exit 0
+PASS config:check                 exit 0
+PASS repository:check             exit 0
+PASS test                         exit 0 · 1318/1318 tests, 0 skipped
+PASS test:postgres                exit 0 · 20/20 tests, 0 skipped
+PASS quality                      exit 0
+PASS build                        exit 0
+PASS test:visual-builds-browser   exit 0
+PASS test:http                    exit 0 · 789 checks
+PASS test:recovery                exit 0
+PASS deployment:receipt           exit 0
+```
+
+`npm run test:http` states its own count (`789 checks PASS`) plus the trial suite
+(`all checks PASS`). Commits: `19ded1a` (resolution and published id),
+`012bb6a` (surfaces), `feb53d4` (gates and tests), `7a34180` (records).
 
 ## Perfection Loop
 
@@ -365,11 +384,27 @@ primary key, the entitlement key and the usage key.
 
 ## Resolution
 
-- **Closed Date:**
-- **Fix Description:**
-- **Tests Added:**
-- **Verification Evidence:**
-- **Archived:**
+- **Status:** COMPLETE
+- **Closed Date:** 2026-11-25
+- **Fix Description:** The published identity is now the display id — the model's
+  own name with a billing tier kept — and `lib/model-identity.ts` is the only
+  place that computes it. `/v1/models` publishes it, `GET /v1/models/{id}`, the
+  chat resolver and the model page all resolve it *after* the stored key, and a
+  leaf two rows share resolves to neither. Every surface that printed or linked
+  the stored key prints the display id instead, including the client payloads via
+  `lib/catalog-payload.ts`, and the "same weights from N providers" line states a
+  count instead of naming them. A gate over rendered output fails when a provider
+  slug appears on a public page or a published id carries a namespace.
+- **Tests Added:** `tests/public-model-identity.test.mjs` (7 cases: display id,
+  namespace rule, slug rule, published/retrieved/resolved display id, stored-key
+  precedence, ambiguous-leaf refusal, trimmed client payload); one case added to
+  `tests/compare.test.mjs`; `scripts/http-suite/identity-checks.mjs` (23 checks
+  over pages, links, published ids and retrieval); `tests/openai-model-list.test.mjs`
+  statement budget updated for the bounded leaf read.
+- **Verification Evidence:** `npm run verify` PASS 12/12, 1318/1318 tests,
+  PostgreSQL 20/20, 789 HTTP checks, build, recovery, deployment receipt.
+- **Archived:** 2026-11-25 → `dev/fids/archive/`; commits `19ded1a`, `012bb6a`,
+  `feb53d4`, `7a34180`.
 
 ## Lessons Learned
 

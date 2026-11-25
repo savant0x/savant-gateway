@@ -86,11 +86,12 @@ test("the preview counts what the importer would count, and says it read keyless
     assert.deepEqual(preview.refused, {
       alias: imported.skippedAliases.length,
       media: imported.skippedMedia.length,
-      freePool: 0,
+      freePool: imported.skippedFreePool.length,
     });
+    assert.equal(preview.imported, imported.rows.length);
     assert.equal(
-      preview.free,
-      imported.rows.filter((row) => row.allowFree).length,
+      preview.paid,
+      imported.rows.filter((row) => row.costInputMicros > 0).length,
     );
     assert.equal(
       preview.sample.length,
@@ -118,25 +119,19 @@ test("a configured key makes the same read report itself as keyed", async () => 
   }
 });
 
-test("a provider that forbids free-pool resale shows the refusal it would get", async () => {
+test("every provider shows the free row it would refuse", async () => {
   const restore = withKey(undefined);
 
   try {
-    const restricted = { ...PROVIDER, resaleFreePool: false };
-    const preview = await previewProviderCatalog(restricted, {
+    const preview = await previewProviderCatalog(PROVIDER, {
       request: async () => new Response("{}"),
       readCatalog: async () => ENTRIES,
     });
-    const imported = buildSyncedCatalog(
-      restricted,
-      ENTRIES,
-      new Map(),
-      "savant",
-    );
+    const imported = buildSyncedCatalog(PROVIDER, ENTRIES, new Map(), "savant");
 
     assert.equal(preview.refused.freePool, imported.skippedFreePool.length);
     assert.ok(preview.refused.freePool > 0, "the free row is refused");
-    assert.equal(preview.free, 0);
+    assert.equal(preview.paid + preview.unpriced, preview.imported);
   } finally {
     restore();
   }

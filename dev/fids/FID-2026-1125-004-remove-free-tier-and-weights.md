@@ -4,9 +4,9 @@
 **ID:** FID-2026-1125-004
 **Severity:** high
 **Status:** fixed
-> Implementation started: step 1a (no weight multiplier) is in the tree and
-> gated. Steps 1b and 2–8 are blocked by the registry ruling this record names,
-> not by the plan.
+> Steps 1a and 1b are in the tree and gated: the importer reads no upstream
+> weight, refuses every `free/` row for every provider, and the registry no
+> longer carries a resale flag. Steps 2–8 are the ordered remainder.
 **Created:** 2026-11-25 00:00
 **Automation level:** 3
 **YAGNI-Compliance:** Pending — the removal deletes machinery rather than adding
@@ -138,13 +138,14 @@ and the UI. Every slice keeps the tree gated; nothing is left half-wired.
    `toRow` writes `tokenWeight: 1`, so no upstream can set a 2×/3× multiplier.
    Tests: `tests/catalog-normalize.test.mjs` (including the recorded parity
    fixture, whose inputs keep `weight: 3`, `2` and `0` on purpose).
-1b. **Catalog cannot produce a free offer.** Importer refuses every `free/` row
-   for every provider and reports it; `toRow` writes `allowFree: false`;
-   `defaultGroupSlug` returns `paid`. **Blocked:** this makes
-   `providers.resale_free_pool` read by nothing, so the registry needs a ruling
-   on whether the vendor's free-pool term stays as a compliance record or leaves
-   the provider form and schema with it. Tests: `tests/catalog-normalize.test.mjs`,
-   `tests/provider-inferhub-sync.test.mjs`.
+1b. **Catalog cannot produce a free offer.** The importer refuses every `free/`
+   row for every provider and reports it, with no option to allow one;
+   `providers.resale_free_pool` is gone from both schema paths (the PostgreSQL
+   one drops the column), from `ProviderRecord`, from create/update, from the
+   preview, and from the provider form. Operator ruling 2026-11-25: delete the
+   flag rather than keep a control that changes nothing. Tests:
+   `tests/catalog-normalize.test.mjs`, `tests/provider-inferhub-sync.test.mjs`,
+   `tests/provider-catalog-preview.test.mjs`, `tests/store-providers-postgres.test.mjs`.
 2. **Price math loses the free branches.** `costMicros` drops the `freePool → 0`
    shortcut, `importedModelStatus` drops its `isFree` argument, `pricesForGroup`
    loses its zeroing branch, and `PricingSummary.freeCount` /
@@ -191,7 +192,9 @@ free-tier route.
 - `npm run typecheck`: exit 0
 - `npm run lint`: exit 0
 - `npm run quality`: PASS (400-line ceiling, 721 files)
-- `npm run repository:check`: pending re-run after this status change
+- step 1b, `node --test tests/catalog-normalize.test.mjs tests/provider-catalog-preview.test.mjs tests/provider-inferhub-sync.test.mjs tests/provider-public-id.test.mjs tests/store-providers-postgres.test.mjs tests/provider-form.test.mjs`: exit 0, 36 pass / 0 fail
+- step 1b, `npm run lint` exit 0, `npm run typecheck` exit 0, `npm run quality` PASS (721 files)
+- `npm run repository:check`: PASS (12 gates, 12 active FIDs)
 
 ## Perfection Loop
 
@@ -238,7 +241,8 @@ free-tier route.
 - [x] **Gate output:** receipt above
 - [x] **Reproducibility:** `grep -rn "tokenWeight" lib/providers` returns only the
       `toRow` constant and the `SyncedModel` field
-- [ ] **Step statuses:** 1a implemented; 1b and 2–8 blocked on the registry ruling
+- [x] **Step statuses:** 1a implemented; 1b implemented; 2–8 unimplemented and
+      unblocked — the ordered remainder of this record
 
 ### Code Verification Evidence
 

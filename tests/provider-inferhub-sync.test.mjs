@@ -130,15 +130,12 @@ test("the seeded InferHub row imports priced rows and refuses everything else", 
   }
 });
 
-test("the same catalog on a provider that may resell its free pool keeps the free row", async () => {
+test("the same catalog refuses the free row, with no flag to restore it", async () => {
   const db = await fixture();
 
   process.env.INFERHUB_API_KEY = "test-secret";
 
   try {
-    await db
-      .prepare("UPDATE providers SET resale_free_pool = 1 WHERE slug = 'inferhub'")
-      .run();
     await setProviderEnabled(db, "inferhub", true);
 
     const summary = await syncProvider(db, "inferhub", {
@@ -147,23 +144,18 @@ test("the same catalog on a provider that may resell its free pool keeps the fre
       fetchSubscription: async () => null,
     });
 
-    assert.equal(summary.imported, 3, "the free row is imported too");
-    assert.equal(summary.free, 1);
-    assert.doesNotMatch(summary.warnings.join(" "), /free-pool/);
+    assert.equal(summary.imported, 2, "the free row is refused");
+    assert.equal(summary.free, 0);
+    assert.match(summary.warnings.join(" "), /free/i);
 
-    const free = await db
+    const stored = await db
       .prepare(
-        `SELECT id, cost_source, allow_free, token_weight, status
-           FROM models WHERE upstream_slug = 'inferhub' AND id LIKE '%free%'`,
+        `SELECT id FROM models
+           WHERE upstream_slug = 'inferhub' AND upstream_id LIKE 'free/%'`,
       )
       .all();
 
-    assert.equal(free.length, 1);
-    assert.equal(free[0].id, "inferhub/free/grok/grok-4.5");
-    assert.equal(free[0].cost_source, "synced");
-    assert.equal(Number(free[0].allow_free), 1);
-    assert.equal(Number(free[0].token_weight), 1);
-    assert.equal(free[0].status, "active");
+    assert.deepEqual(stored, [], "no free row is stored at all");
   } finally {
     delete process.env.INFERHUB_API_KEY;
     await db.close();

@@ -22,7 +22,6 @@ function provider(slug) {
     defaultHeaders: {},
     capabilities: { balance: false, subscription: false, pricing: false },
     requiresModelReview: false,
-    resaleFreePool: true,
     balanceUrl: null,
     catalogUrl: null,
     enabled: true,

@@ -49,7 +49,6 @@ export function providerSchema(database: DatabaseHandle) {
     ["runtime_lease_id", "TEXT"],
     ["runtime_lease_until", "TEXT"],
     ["requires_model_review", "INTEGER NOT NULL DEFAULT 0"],
-    ["resale_free_pool", "INTEGER NOT NULL DEFAULT 1"],
     ["balance_url", "TEXT"],
     ["catalog_url", "TEXT"],
   ]) {
@@ -214,21 +213,20 @@ function seedProviders(database: DatabaseHandle) {
     )
     .run(now, now);
 
-  // InferHub permits reselling its paid marketplace models and forbids its free
-  // pool, and proves identifiers but not chat capability. It starts disabled and
-  // with free-pool resale refused. Its wallet is readable, but not at
-  // `${baseUrl}/balance`: the account document lives on the vendor host, so the
-  // row names that URL instead of appending a path.
+  // InferHub proves identifiers but not chat capability, and it starts
+  // disabled. Its wallet is readable, but not at `${baseUrl}/balance`: the
+  // account document lives on the vendor host, so the row names that URL
+  // instead of appending a path.
   database
     .prepare(
       `INSERT OR IGNORE INTO providers
         (slug, label, kind, base_url, key_env_var, default_headers,
          supports_balance, supports_subscription, supports_pricing,
-         requires_model_review, resale_free_pool, balance_url, enabled,
+         requires_model_review, balance_url, enabled,
          sort_order, status, created_at, updated_at)
        VALUES ('inferhub', 'InferHub', 'openai',
                'https://api.inferhub.dev/v1', 'INFERHUB_API_KEY', ?,
-               1, 0, 0, 1, 0, 'https://inferhub.dev/api/me', 0, 50,
+               1, 0, 0, 1, 'https://inferhub.dev/api/me', 0, 50,
                'unconfigured', ?, ?)`,
     )
     .run(JSON.stringify({ "X-InferHub-No-Queue": "1" }), now, now);

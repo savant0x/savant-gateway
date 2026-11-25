@@ -9,7 +9,6 @@
 import type { UpstreamModel } from "../types.ts";
 import type {
   NormalizedModel,
-  NormalizeOptions,
   NormalizeResult,
   RawEntry,
   RawFacts,
@@ -109,15 +108,14 @@ function isAliasEntry(entry: RawEntry) {
  * are kept — dropping one would discard an operator's manual cost on the next
  * sync.
  *
- * A third class is conditional: a `free/` row is refused outright when the
- * operator records that the provider's terms forbid reselling its free-pool
- * allocation (`resaleFreePool: false`). The default is `true`, so a provider
- * whose terms are silent keeps today's behaviour.
+ * A third class is refused for every provider: a `free/` row. The gateway sells
+ * no free capacity, and the marketplaces forbid reselling theirs, so the row is
+ * dropped and counted rather than imported and then withheld
+ * (FID-2026-1125-004).
  */
 export function normalizeCatalog(
   entries: UpstreamModel[],
   overlay: Map<string, UpstreamModel> = new Map(),
-  options: NormalizeOptions = { resaleFreePool: true },
 ): NormalizeResult {
   const seen = new Set<string>();
   const models: NormalizedModel[] = [];
@@ -143,7 +141,7 @@ export function normalizeCatalog(
     const overlayEntry = recordOf(overlay.get(upstreamId)) ?? null;
     const facts = readFacts(entry, overlayEntry);
 
-    if (facts.freePool && !options.resaleFreePool) {
+    if (facts.freePool) {
       skippedFreePool.push(upstreamId);
       continue;
     }

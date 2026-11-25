@@ -41,9 +41,9 @@ export type ProviderCatalogPreview = {
   keyless: boolean;
   upstreamRows: number;
   imported: number;
-  free: number;
   paid: number;
-  subscriptionOnly: number;
+  /** Rows with no price: they import disabled until a cost is entered. */
+  unpriced: number;
   /** The same refusals a sync reports, counted. */
   refused: { alias: number; media: number; freePool: number };
   /** The largest families this provider would add, when nothing else explains it. */
@@ -76,22 +76,15 @@ export async function previewProviderCatalog(
   const { rows, skippedAliases, skippedMedia, skippedFreePool } =
     buildSyncedCatalog(provider, models, new Map(), deps.defaultSlug ?? null);
 
-  const free = rows.filter(
-    (model) => model.allowFree && model.tokenWeight > 0,
-  ).length;
-  const paid = rows.filter(
-    (model) =>
-      !(model.allowFree && model.tokenWeight > 0) && model.costInputMicros > 0,
-  ).length;
+  const paid = rows.filter((model) => model.costInputMicros > 0).length;
 
   return {
     slug: provider.slug,
     keyless: !providerKeyConfigured(provider.keyEnvVar),
     upstreamRows: models.length,
     imported: rows.length,
-    free,
     paid,
-    subscriptionOnly: rows.length - free - paid,
+    unpriced: rows.length - paid,
     refused: {
       alias: skippedAliases.length,
       media: skippedMedia.length,

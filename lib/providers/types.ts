@@ -20,12 +20,6 @@ export type ProviderRecord = {
   /** Only an explicit per-model `chat` decision may publish or serve. */
   requiresModelReview: boolean;
   /**
-   * Whether this provider's terms allow reselling its free-pool allocation.
-   * When false the importer refuses every `free/` row, because serving one
-   * would break the upstream contract regardless of what we charge.
-   */
-  resaleFreePool: boolean;
-  /**
    * Absolute URL for the balance read when the provider publishes it on another
    * host or path than its inference base URL. Null means `${baseUrl}/balance`.
    */

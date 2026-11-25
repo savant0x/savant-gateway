@@ -25,7 +25,6 @@ export async function catalogSchema(db: PostgresDatabase) {
       supports_subscription INTEGER NOT NULL DEFAULT 0,
       supports_pricing INTEGER NOT NULL DEFAULT 0,
       requires_model_review INTEGER NOT NULL DEFAULT 0,
-      resale_free_pool INTEGER NOT NULL DEFAULT 1,
       balance_url TEXT,
       catalog_url TEXT,
       enabled INTEGER NOT NULL DEFAULT 1,
@@ -173,13 +172,19 @@ async function providerColumns(db: PostgresDatabase) {
     ["runtime_lease_id", "TEXT"],
     ["runtime_lease_until", "TEXT"],
     ["requires_model_review", "INTEGER NOT NULL DEFAULT 0"],
-    ["resale_free_pool", "INTEGER NOT NULL DEFAULT 1"],
     ["balance_url", "TEXT"],
     ["catalog_url", "TEXT"],
     ["is_default", "INTEGER NOT NULL DEFAULT 0"],
   ] as const) {
     await ensureColumn(db, "providers", column, definition);
   }
+
+  // The free-pool resale declaration gated an import that no longer exists:
+  // every `free/` row is refused for every provider, because the gateway sells
+  // no free capacity and the marketplaces forbid reselling theirs
+  // (FID-2026-1125-004). Dropping the column is what keeps the provider form
+  // from offering a control that changes nothing.
+  await db.exec("ALTER TABLE providers DROP COLUMN IF EXISTS resale_free_pool");
 
   // The default provider owns the unprefixed public id namespace and the
   // published balance badge. It is one stored fact with exactly one holder, not

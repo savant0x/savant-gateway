@@ -222,11 +222,11 @@ async function seedProviders(db: PostgresDatabase) {
       `INSERT INTO providers
         (slug, label, kind, base_url, key_env_var, default_headers,
          supports_balance, supports_subscription, supports_pricing,
-         requires_model_review, resale_free_pool, balance_url, catalog_url,
+         requires_model_review, balance_url, catalog_url,
          enabled, sort_order, status, created_at, updated_at)
        VALUES ('inferhub', 'InferHub', 'openai',
                'https://api.inferhub.dev/v1', 'INFERHUB_API_KEY', ?,
-               1, 0, 0, 1, 0, 'https://inferhub.dev/api/me',
+               1, 0, 0, 1, 'https://inferhub.dev/api/me',
                'https://inferhub.dev/api/catalog', 0, 50,
                'unconfigured', ?, ?)
        ON CONFLICT DO NOTHING`,

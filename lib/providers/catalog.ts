@@ -145,9 +145,7 @@ export function buildSyncedCatalog(
   skippedMedia: string[];
   skippedFreePool: string[];
 } {
-  const normalized = normalizeCatalog(models, metadata, {
-    resaleFreePool: provider.resaleFreePool !== false,
-  });
+  const normalized = normalizeCatalog(models, metadata);
   const rows: Omit<SyncedModel, "sortOrder">[] = [];
 
   for (const model of normalized.models) {

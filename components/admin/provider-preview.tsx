@@ -128,8 +128,8 @@ function PreviewBody({ preview }: { preview: ProviderCatalogPreview }) {
           value={formatNumber(preview.upstreamRows)}
         />
         <Fact label="Would import" value={formatNumber(preview.imported)} />
-        <Fact label="Free-pool rows" value={formatNumber(preview.free)} />
         <Fact label="Paid rows" value={formatNumber(preview.paid)} />
+        <Fact label="Unpriced rows" value={formatNumber(preview.unpriced)} />
       </dl>
 
       <div className="text-xs text-muted">
@@ -138,12 +138,16 @@ function PreviewBody({ preview }: { preview: ProviderCatalogPreview }) {
         </p>
         <p className="mt-1">
           alias-only ids {formatNumber(refused.alias)} · non-text output{" "}
-          {formatNumber(refused.media)} · free-pool resale{" "}
+          {formatNumber(refused.media)} · free-pool rows{" "}
           {formatNumber(refused.freePool)}
         </p>
         <p className="mt-1">
-          {formatNumber(preview.subscriptionOnly)} imported row(s) carry no
-          price and would import disabled until a cost is set.
+          Free capacity is never imported: the gateway sells none, and these
+          terms forbid reselling it.
+        </p>
+        <p className="mt-1">
+          {formatNumber(preview.unpriced)} imported row(s) carry no price and
+          would import disabled until a cost is set.
         </p>
       </div>
 
@@ -166,12 +170,10 @@ function PreviewBody({ preview }: { preview: ProviderCatalogPreview }) {
                   </td>
                   <td className="text-muted">{row.family}</td>
                   <td className="text-right tabular-nums">
-                    {row.allowFree ? "free" : formatMicros(row.costInputMicros)}
+                    {formatMicros(row.costInputMicros)}
                   </td>
                   <td className="text-right tabular-nums">
-                    {row.allowFree
-                      ? "free"
-                      : formatMicros(row.costOutputMicros)}
+                    {formatMicros(row.costOutputMicros)}
                   </td>
                 </tr>
               ))}

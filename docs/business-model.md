@@ -51,8 +51,8 @@ margin can be attributed by upstream rather than guessed at.
   stay off and credit has to be checked in its dashboard.
 - **InferHub** — registered at install with base URL `https://api.inferhub.dev/v1`,
   OpenAI wire format, key variable `INFERHUB_API_KEY`. It ships **disabled**,
-  review-required, and with free-pool resale refused (`resale_free_pool = 0`)
-  because its terms permit reselling paid marketplace models only. Its wallet is readable
+  and review-required. Its terms permit reselling paid marketplace models only, and
+  the importer refuses every `free/` row for every provider. Its wallet is readable
   through a provider-level `balance_url` (`https://inferhub.dev/api/me`), because it is
   published on the vendor host rather than under the inference base URL; the balance is
   funded in USDC on Solana, and the price actually charged depends on a per-model bid set

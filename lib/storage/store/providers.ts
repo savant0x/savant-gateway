@@ -231,9 +231,9 @@ export async function createProvider(
       `INSERT INTO providers
         (slug, label, kind, base_url, key_env_var, default_headers,
          supports_balance, supports_subscription, supports_pricing,
-         requires_model_review, enabled, resale_free_pool, balance_url,
+         requires_model_review, enabled, balance_url,
          catalog_url, sort_order, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unconfigured', ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unconfigured', ?, ?)`,
     )
     .run(
       input.slug,
@@ -247,7 +247,6 @@ export async function createProvider(
       input.capabilities.pricing ? 1 : 0,
       input.requiresModelReview ? 1 : 0,
       input.enabled ? 1 : 0,
-      input.resaleFreePool === false ? 0 : 1,
       input.balanceUrl ?? null,
       input.catalogUrl ?? null,
       input.sortOrder,
@@ -271,7 +270,7 @@ export async function updateProvider(
               default_headers = ?, supports_balance = ?,
               supports_subscription = ?, supports_pricing = ?,
               requires_model_review = ?, enabled = ?,
-              resale_free_pool = ?, balance_url = ?, catalog_url = ?,
+              balance_url = ?, catalog_url = ?,
               sort_order = ?,
               updated_at = ?,
               quota_observed_at = NULL, balance_observed_at = NULL,
@@ -289,7 +288,6 @@ export async function updateProvider(
       input.capabilities.pricing ? 1 : 0,
       input.requiresModelReview ? 1 : 0,
       input.enabled ? 1 : 0,
-      input.resaleFreePool === false ? 0 : 1,
       input.balanceUrl ?? null,
       input.catalogUrl ?? null,
       input.sortOrder,

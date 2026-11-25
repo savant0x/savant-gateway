@@ -181,50 +181,6 @@ test("an unknown provider cannot be updated", async () => {
   assert.equal(await updateProvider(db, "missing", input(), NOW), undefined);
 });
 
-test("free-pool resale is recorded, defaults to permitted, and can be revoked", async () => {
-  const db = await fixture();
-
-  const permissive = await createProvider(db, input({ slug: "silent" }), NOW);
-
-  assert.equal(
-    permissive?.resaleFreePool,
-    true,
-    "a provider whose terms are silent keeps today's behaviour",
-  );
-
-  const restricted = await createProvider(
-    db,
-    input({ slug: "restricted", resaleFreePool: false }),
-    NOW,
-  );
-
-  assert.equal(restricted?.resaleFreePool, false);
-
-  const revoked = await updateProvider(
-    db,
-    "silent",
-    input({ slug: "silent", resaleFreePool: false }),
-    NOW,
-  );
-
-  assert.equal(revoked?.resaleFreePool, false);
-  assert.equal((await getProvider(db, "silent"))?.resaleFreePool, false);
-
-  const restored = await updateProvider(
-    db,
-    "silent",
-    input({ slug: "silent", resaleFreePool: true }),
-    NOW,
-  );
-
-  assert.equal(restored?.resaleFreePool, true);
-  assert.equal(
-    (await getProvider(db, "savant"))?.resaleFreePool,
-    true,
-    "the seeded default provider still permits its free pool",
-  );
-});
-
 test("the review gate is recorded and a delete leaves no lease behind", async () => {
   const db = await fixture();
 
@@ -274,7 +230,7 @@ test("the review gate is recorded and a delete leaves no lease behind", async ()
   );
 });
 
-test("InferHub is seeded disabled, review-required and without free-pool resale", async () => {
+test("InferHub is seeded disabled and review-required", async () => {
   const db = await fixture();
   const inferhub = await getProvider(db, "inferhub");
 
@@ -293,11 +249,6 @@ test("InferHub is seeded disabled, review-required and without free-pool resale"
     inferhub.requiresModelReview,
     true,
     "the catalog proves identifiers, not chat capability",
-  );
-  assert.equal(
-    inferhub.resaleFreePool,
-    false,
-    "the terms forbid reselling the free pool",
   );
   assert.equal(
     inferhub.capabilities.subscription,

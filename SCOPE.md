@@ -22,14 +22,19 @@ price, that's how it always was." Automation level 3; strict; single agent.
   free branches; gateway drops the `free` billing source and trial route; schema
   and ledgers drop the columns and tables; plans move to raw tokens; customer UI;
   admin UI; docs and FAQ.
-- [ ] **PT3 — Slice 1: the catalog cannot produce a free offer or a weight.**
-  Pending. Importer refuses every `free/` row for every provider, `tokenWeightOf`
-  returns 1, `toRow` writes `allowFree: false`, and `defaultGroupSlug` returns
-  `paid`; `tests/catalog-normalize.test.mjs` and
-  `tests/provider-inferhub-sync.test.mjs` move to the new rule.
-- [ ] **PT4 — Slices 2–8.** Pending, in the order the record states. The Free group
-  is converted and then deleted only when no model or plan references it, so no
-  entitlement is cascaded away.
+- [x] **PT3 — Slice 1: the catalog cannot produce a free offer or a weight.**
+  **Completed (1a and 1b).** The importer reads no upstream weight and every row
+  meters 1:1. Every `free/` row is refused for every provider and counted in the
+  sync warnings, with no option to allow one. `providers.resale_free_pool` left
+  both schema paths (the PostgreSQL migration drops the column), `ProviderRecord`,
+  create/update, the catalog preview and the provider form — operator ruling:
+  delete the flag rather than keep a control that changes nothing. The preview
+  now reports paid and unpriced rows instead of a free count it could never show.
+- [ ] **PT4 — Slices 2–8.** Open. Slice 2 (price math loses the free branches) is
+  next, then the gateway `free` billing source, schema and ledgers, plans in raw
+  tokens, customer UI, admin UI, docs. The Free group is converted and then
+  deleted only when no model or plan references it, so no entitlement is cascaded
+  away.
 
 ## Session — 2026-11-25 (InferHub as a router: IR)
 

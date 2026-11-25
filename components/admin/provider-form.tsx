@@ -19,7 +19,6 @@ export type ProviderDraft = {
   subscription: boolean;
   pricing: boolean;
   requiresModelReview: boolean;
-  resaleFreePool: boolean;
 };
 
 export const EMPTY_PROVIDER: ProviderDraft = {
@@ -35,7 +34,6 @@ export const EMPTY_PROVIDER: ProviderDraft = {
   subscription: false,
   pricing: false,
   requiresModelReview: false,
-  resaleFreePool: true,
 };
 
 export function draftFromProvider(provider: ProviderSummary): ProviderDraft {
@@ -52,7 +50,6 @@ export function draftFromProvider(provider: ProviderSummary): ProviderDraft {
     subscription: provider.capabilities.subscription,
     pricing: provider.capabilities.pricing,
     requiresModelReview: provider.requiresModelReview,
-    resaleFreePool: provider.resaleFreePool,
   };
 }
 
@@ -66,7 +63,6 @@ export function providerPayload(draft: ProviderDraft) {
     defaultHeaders: draft.defaultHeaders,
     balanceUrl: draft.balanceUrl.trim(),
     catalogUrl: draft.catalogUrl.trim(),
-    resaleFreePool: draft.resaleFreePool,
     requiresModelReview: draft.requiresModelReview,
     capabilities: {
       balance: draft.balance,
@@ -229,16 +225,6 @@ export function ProviderForm({
             />
             Require a decision per imported model
           </label>
-          <label className="flex items-center gap-2">
-            <input
-              checked={draft.resaleFreePool}
-              type="checkbox"
-              onChange={(event) =>
-                onChange({ ...draft, resaleFreePool: event.target.checked })
-              }
-            />
-            Free-pool resale permitted
-          </label>
         </div>
         <p className="text-xs text-muted">
           Every capability starts unchecked because the schema starts there. A
@@ -253,10 +239,10 @@ export function ProviderForm({
           the gate for a provider whose terms require per-model approval.
         </p>
         <p className="text-xs text-muted">
-          Uncheck <strong>Free-pool resale permitted</strong> when the
-          provider&apos;s terms forbid reselling its free allocation. No
-          <code className="mx-1">free/</code> row is imported for that provider,
-          and the sync warning reports how many were refused.
+          No <code className="mx-1">free/</code> row is imported from any
+          provider: the gateway sells no free capacity, and the marketplaces
+          forbid reselling theirs. The sync warning reports how many were
+          refused.
         </p>
         <p className="text-xs text-muted">
           Set <strong>Balance URL</strong> only when the provider publishes its

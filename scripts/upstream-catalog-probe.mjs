@@ -21,9 +21,9 @@ if (!Array.isArray(rows)) {
   process.exit(2);
 }
 
-// The operator's resale declaration, not the provider's: refuse free/ rows when
-// the provider's terms forbid reselling its free pool.
-const result = normalizeCatalog(rows, new Map(), { resaleFreePool: false });
+// The probe runs the shipped importer, so it refuses what a sync refuses:
+// `free/` rows, alias ids and non-text output.
+const result = normalizeCatalog(rows, new Map());
 
 const prices = result.models
   .filter((model) => model.inputPer1M !== null && model.outputPer1M !== null)

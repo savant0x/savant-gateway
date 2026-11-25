@@ -44,14 +44,11 @@ the provider key remains on the server.
    disabled and at `$0.00`; set a cost for each, then activate it. A synced row
    with an unknown cost is never published.
 
-   **Free-pool resale.** The registry carries `resale_free_pool` (default `1`).
-   Uncheck *Free-pool resale permitted* when the provider's terms forbid
-   reselling its free allocation — some marketplaces allow reselling paid models
-   and forbid the free pool in the same sentence. With the flag off the importer
-   refuses every `free/` row and reports the count in the sync warnings; no row
-   is created, so nothing can be published, priced or served by accident. The
-   default is `1` (`NOT NULL DEFAULT 1` on the column), so an upgrade cannot
-   silently delete an existing provider's free rows.
+   **Free-pool rows.** No `free/` row is imported from any provider, and there
+   is no registry flag to change that: the gateway sells no free capacity, and
+   the marketplaces allow reselling paid models while forbidding the free pool in
+   the same sentence. The importer drops the row and reports the count in the
+   sync warnings, so nothing can be published, priced or served by accident.
 
 ## What the registration form can declare
 
@@ -258,17 +255,18 @@ the shared builder.
 | Kind | Shape | Recognized by | Reads |
 | --- | --- | --- | --- |
 | primary | `ask-ladder` | numeric `pricing.min_ask_in` / `min_ask_out` | cheapest open ask as the cost; `official_in`/`official_out` are **not** used (list price, not the charge) |
-| primary | `free-pool` | an id under `free/`, or a declared `allowFree` | a $0 free row with a weighted allowance, weight 1 when the upstream gives none |
+| refusal | `free-pool` | an id under `free/`, or a declared `allowFree` | the row is refused and counted; free capacity is never imported |
 | primary | `flat-usd` | `dollarsPer1M` / `outputDollarsPer1M` | declared USD per 1M tokens |
 | enrichment | `declared-modalities` | `modality` / `output_modality` | vision support, and whether the row outputs text at all |
 | enrichment | `public-overlay` | a metadata map supplied for that provider | extra fields the envelope omits; wins over an envelope-declared figure |
 | label | `alias` | `owned_by: "alias"` | nothing — the row is dropped |
 
-Two classes are dropped and reported in the sync warnings rather than imported: an
+Three classes are dropped and reported in the sync warnings rather than imported: an
 **alias** (it shares a route key with the provider-pinned rows while naming no provider, so
-no budget can bound it) and a **non-text output** row (a chat gateway cannot serve image,
-audio or video output). A third class is conditional on the registry: a `free/` row is
-refused when the provider's `resale_free_pool` is `0`. Unpriced text rows are kept — they
+no budget can bound it), a **non-text output** row (a chat gateway cannot serve image,
+audio or video output), and every **`free/`** row — the gateway has no free tier, and the
+marketplaces forbid reselling their free pool, so the refusal applies to every provider
+with no override. Unpriced text rows are kept — they
 import disabled, and deleting
 them would discard an operator's manual cost on the next sync. The provider that owns a
 public overlay is chosen in `lib/providers/sync.ts`, where the URL lives, so a second
@@ -413,10 +411,10 @@ candidate. Follow these paths and the applicable FID before changing contracts.
   `owned_by: "alias"` rows with no price and no provider pin. The aliases are dropped at
   import and counted; nothing is published until a per-id `chat` decision exists. The
   public catalog on 2026-11-22 held 507 rows (265 priced, 242 aliases, 10 media).
-- **`resale_free_pool = 0`** — its Terms permit reselling paid marketplace models and
-  forbid reselling, sub-accounting or proxying the free pool. With the flag off no
-  `free/` row imports at all. This account's catalog currently exposes zero `free/` ids,
-  so the control is latent protection, not a live restriction.
+- **No `free/` rows import** — its Terms permit reselling paid marketplace models and
+  forbid reselling, sub-accounting or proxying the free pool. The importer refuses every
+  `free/` id for every provider, so this is protection the schema cannot be talked out
+  of. This account's catalog currently exposes zero `free/` ids.
 - **`default_headers: {"X-InferHub-No-Queue": "1"}** — without it a capacity-blocked
   request queues for up to 30 s. This gateway has no cross-provider failover, so a fast
   unbilled `429 capacity_saturated` (with `Retry-After: 2`) is the only failure our error

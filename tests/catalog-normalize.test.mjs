@@ -72,25 +72,16 @@ test("a non-text output row is dropped and reported, never imported as chat", ()
   assert.deepEqual(skippedMedia, ["cc/an-image-model"]);
 });
 
-test("a free-pool row stays a $0 free row and is never weighted", () => {
-  const { rows } = buildSyncedCatalog(
+test("a free-pool row is refused, not turned into a $0 row", () => {
+  const { rows, skippedFreePool } = buildSyncedCatalog(
     PROVIDER,
     [{ id: "free/tiny" }],
     new Map(),
     "savant",
   );
-  const row = rows[0];
 
-  assert.equal(row.allowFree, true);
-  assert.equal(row.costSource, "synced");
-  assert.equal(row.costInputMicros, 0);
-  assert.equal(row.costOutputMicros, 0);
-  assert.equal(
-    row.tokenWeight,
-    1,
-    "the gateway meters 1:1; there is no upstream weight multiplier",
-  );
-  assert.equal(row.family, "Tiny");
+  assert.deepEqual(rows, [], "no free capacity is imported");
+  assert.deepEqual(skippedFreePool, ["free/tiny"]);
 });
 
 test("the flat-usd shape imports a priced active row", () => {
@@ -218,15 +209,14 @@ test("the shape layer and the sync port carry no provider-name branches", () => 
     );
   }
 });
-test("a provider that forbids free-pool resale imports no free/ row at all", () => {
-  const restricted = { ...PROVIDER, resaleFreePool: false };
+test("a free/ row is refused for every provider, with no registry flag", () => {
   const entries = [
     { id: "free/tiny" },
     { id: "gpt-6-luna", dollarsPer1M: 0.4, outputDollarsPer1M: 1.6 },
   ];
 
   const { rows, skippedFreePool } = buildSyncedCatalog(
-    restricted,
+    PROVIDER,
     entries,
     new Map(),
     "savant",
@@ -238,23 +228,27 @@ test("a provider that forbids free-pool resale imports no free/ row at all", () 
     "the paid row is untouched and the free row is refused",
   );
   assert.deepEqual(skippedFreePool, ["free/tiny"]);
+  assert.equal(
+    rows.every((row) => row.allowFree === false),
+    true,
+    "no imported row can be marked free",
+  );
 });
 
-test("a provider that permits free-pool resale keeps its free rows", () => {
-  const permissive = { ...PROVIDER, resaleFreePool: true };
-
-  const { rows, skippedFreePool } = buildSyncedCatalog(
-    permissive,
-    [{ id: "free/tiny" }, { id: "free/alpha", weight: 2 }],
+test("a declared upstream weight is ignored on a priced row too", () => {
+  const { rows } = buildSyncedCatalog(
+    PROVIDER,
+    [
+      { id: "gpt-6-luna", weight: 3, dollarsPer1M: 0.4, outputDollarsPer1M: 1.6 },
+      { id: "gpt-6-sol", weight: 2, dollarsPer1M: 1, outputDollarsPer1M: 4 },
+    ],
     new Map(),
     "savant",
   );
 
-  assert.equal(rows.length, 2);
-  assert.equal(skippedFreePool.length, 0);
   assert.deepEqual(
     rows.map((row) => row.tokenWeight),
     [1, 1],
-    "a declared upstream weight is ignored; every row meters 1:1",
+    "every row meters 1:1",
   );
 });

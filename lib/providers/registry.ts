@@ -13,8 +13,6 @@ export type ProviderInput = {
   keyEnvVar: string;
   defaultHeaders: Record<string, string>;
   capabilities: { balance: boolean; subscription: boolean; pricing: boolean };
-  /** Whether the provider's terms allow reselling free-pool ids. */
-  resaleFreePool: boolean;
   /** Whether an imported row stays unpublished until a dated decision. */
   requiresModelReview: boolean;
   /** Absolute balance URL when the provider publishes it off-base; null = default. */
@@ -236,7 +234,6 @@ export function readProviderInput(value: unknown) {
         pricing: capabilities.pricing === true,
       },
       enabled: input.enabled !== false,
-      resaleFreePool: input.resaleFreePool !== false,
       requiresModelReview: input.requiresModelReview === true,
       balanceUrl: balanceUrl.value,
       catalogUrl: catalogUrl.value,

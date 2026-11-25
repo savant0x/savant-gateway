@@ -102,8 +102,11 @@ export async function resolveSubscriptionAccess(
 ): Promise<SubscriptionAccess> {
   const now = input.now ?? Date.now();
 
-  await sweepSubscriptions(db, now);
-
+  // The global sweep runs from the operations tick, not on every completion:
+  // it scans every subscription and quarantines expired holds, which is a
+  // bounded background job and not a per-request read (FID-2026-1124-005).
+  // The caller's own period boundary is still checked here and again under the
+  // lock, so a missed event cannot extend service for the account asking.
   const subscription = await activeSubscriptionRow(db, input.userId);
 
   if (!subscription) return { kind: "none" };
@@ -113,6 +116,10 @@ export async function resolveSubscriptionAccess(
       "subscription_past_due",
       "This subscription is past due. Update payment in the billing portal.",
     );
+  }
+
+  if (Date.parse(subscription.current_period_end) <= now) {
+    return { kind: "none" };
   }
 
   if (!(await coveredByPlan(db, subscription.id, input.modelId))) {
@@ -140,6 +147,10 @@ export async function resolveSubscriptionAccess(
       }
 
       if (lockedSubscription.status !== "active") {
+        return { kind: "none" as const };
+      }
+
+      if (Date.parse(lockedSubscription.current_period_end) <= now) {
         return { kind: "none" as const };
       }
 

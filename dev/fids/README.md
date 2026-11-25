@@ -2,7 +2,7 @@
 
 **Last folder audit:** 2026-11-24 (FID folder audit). This page
 indexes the working set; each FID owns its own status, evidence and resolution.
-Current counts: 12 active / 22, 197 archived, 200 allocated.
+Current counts: 11 active / 22, 198 archived, 200 allocated.
 
 ## Layout
 
@@ -17,7 +17,6 @@ Current counts: 12 active / 22, 197 archived, 200 allocated.
 
 | ID | Title | Status | Next action |
 | --- | --- | --- | --- |
-| [2026-1124-005](FID-2026-1124-005-catalog-gateway-query-cost.md) | Catalog and gateway query cost after multi-provider onboarding | converged | Implement the five measured slices; each has its own test and commit. |
 | [043](FID-2026-1030-043-launch-master.md) | Master launch contract and dependency register | converged | Keep coverage, ordering and release decisions current. |
 | [062](FID-2026-1030-062-launch-acceptance-and-rollout.md) | Real launch acceptance, controlled rollout and rollback | converged | Discharge the dated external receipt items 1–8; launch remains no-go. Item 1 (NOWPayments payment/IPN) is operator-accepted as an assumption, not verified. |
 | [068](FID-2026-1030-068-usdc-receive-lane.md) | Direct-to-wallet USDC receive lane | fixed | Operator inputs still gate the receive lane; re-read the record before acting. |
@@ -41,6 +40,20 @@ Current counts: 12 active / 22, 197 archived, 200 allocated.
 [2026-1122-006](archive/FID-2026-1122-006-next-security-upgrade.md) is `closed`. `next upgrade --agent=security` moved 16.4.3 → 16.4.6; duplicate checks were empty, and 12/12 gates with 1240/1240 tests passed in the upgrade worktree.
 
 [2026-1122-007](archive/FID-2026-1122-007-bulk-chat-decisions.md) is `closed`. The review panel wrote one decision per click, so a 281-row catalog could not realistically be decided; bulk actions now record one row per model in a single transaction with one republish, still operator-sourced and individually overridable. 5 PostgreSQL cases, 12/12 gates and 1245/1245 tests.
+
+### Closed in the 2026-11-25 query-cost commits
+
+[2026-1124-005](archive/FID-2026-1124-005-catalog-gateway-query-cost.md) is
+`closed` across five commits. Six paths were linear in row count and two sat on
+public or per-request paths: `/v1/models` issued a lookup per model for its trial
+offer, reconciliation rewrote every member of every group on every catalogue
+edit, bulk status and bulk eligibility looped one statement per row, the sync
+upserted one model at a time, every completion ran a global subscription sweep
+and re-read its provider, the banner read two settings in sequence, every
+authenticated request stamped `last_used_at`, and the provider list re-read each
+row and counted its catalogue separately. Each path now issues a bounded
+statement, and every slice has a test that counts statements. `npm run verify`
+PASS 12/12 gates with 1301/1301 tests and PostgreSQL 20/20.
 
 ### Closed in the 2026-11-25 registration-surface commit
 

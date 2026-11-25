@@ -3,6 +3,32 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-25 — Catalogue and completion cost bounded by row count (1124-005)
+
+- **FID-2026-1124-005 — high —** six paths stayed linear in catalogue size after
+  multi-provider onboarding, two of them on public or per-request paths.
+  `/v1/models` awaited a trial lookup per model — two for a paired model — from
+  one request against a ten-connection pool, and the single-id retrieve loaded
+  the whole catalogue to find one row. Reconciliation rewrote every member of
+  every group on every catalogue edit, whether or not the computed route had
+  changed. Bulk status and bulk eligibility wrote one statement per row, and the
+  sync upserted one model at a time. Every completion ran a global subscription
+  sweep, re-read the provider routing had just loaded, read the banner's two
+  settings in sequence, and stamped `last_used_at`; the provider list re-read
+  every row it already had and counted each catalogue separately.
+  The five slices are now in: trial offers are one statement per page and refuse
+  before I/O when disabled or unpaired; the retrieve reads one scoped row;
+  reconciliation diffs the six stored route columns and writes only what
+  changed; bulk status is one `UPDATE … WHERE id IN`, bulk eligibility and the
+  sync upsert are multi-row statements of 200 with every per-row preservation
+  rule unchanged; the subscription sweep runs from the operations tick while the
+  caller's own period boundary is still checked at admission and under the lock;
+  `callProvider` takes the loaded provider; the banner reads its pair once; and
+  `last_used_at` is written at most every five minutes. Verified with 12 new
+  cases that count statements, `npm run verify` PASS 12/12 gates, 1301/1301
+  tests, PostgreSQL 20/20. No wall-clock improvement or hosted load measurement
+  is claimed.
+
 ## 2026-11-25 — A registration surface that states what it means (1124-006)
 
 - **FID-2026-1124-006 — medium —** `/admin/providers` is the only sanctioned

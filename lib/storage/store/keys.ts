@@ -24,6 +24,15 @@ import {
 
 const DEV_USER = "user_dev";
 
+/**
+ * How stale `last_used_at` may get before another authentication writes it.
+ *
+ * The column exists so an operator can tell a live key from a dormant one; a
+ * per-request update is not needed for that, and it made every completion a
+ * write on a row the request only read (FID-2026-1124-005).
+ */
+const LAST_USED_REFRESH_MS = 5 * 60 * 1000;
+
 export async function listApiKeys(
   db: PostgresDatabase,
   userId = DEV_USER,
@@ -106,9 +115,19 @@ export async function authenticateApiKey(
   if (!row || row.key_status !== "active" || row.user_status !== "active")
     return null;
 
+  const now = Date.now();
+
   await db
-    .prepare("UPDATE api_keys SET last_used_at = ? WHERE id = ?")
-    .run(new Date().toISOString(), row.id);
+    .prepare(
+      `UPDATE api_keys SET last_used_at = ?
+        WHERE id = ?
+          AND (last_used_at IS NULL OR last_used_at <= ?)`,
+    )
+    .run(
+      new Date(now).toISOString(),
+      row.id,
+      new Date(now - LAST_USED_REFRESH_MS).toISOString(),
+    );
 
   return { keyId: row.id, userId: row.user_id, keyPrefix: row.prefix };
 }

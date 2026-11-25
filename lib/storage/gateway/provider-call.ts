@@ -1,5 +1,6 @@
 import type { PostgresDatabase } from "../pg-adapter.ts";
 import type { GatewayModel } from "../../projections.ts";
+import type { ProviderRecord } from "../../providers/types.ts";
 
 import { anthropicMessages } from "../../providers/anthropic.ts";
 import { openAiChat } from "../../providers/openai.ts";
@@ -16,14 +17,20 @@ import { getProvider } from "../store/providers.ts";
  * checked `enabled` during routing — reaching this with a disabled provider means
  * the row changed underneath the request, which is a configuration error worth
  * surfacing as one.
+ *
+ * The caller may pass the provider it already loaded for routing and admission.
+ * Re-reading it here was a second statement per completion for the same row
+ * (FID-2026-1124-005); the fallback read stays for callers that have not loaded
+ * it, and the checks below still guard both paths.
  */
 export async function callProvider(
   db: PostgresDatabase,
   model: GatewayModel,
   body: Record<string, unknown>,
   signal: AbortSignal,
+  loaded?: ProviderRecord,
 ) {
-  const provider = await getProvider(db, model.upstreamSlug);
+  const provider = loaded ?? (await getProvider(db, model.upstreamSlug));
 
   if (!provider) {
     throw new ProviderConfigError(`Unknown provider: ${model.upstreamSlug}`);

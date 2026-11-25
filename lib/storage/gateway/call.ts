@@ -337,6 +337,7 @@ export async function handleChatCompletions(request: Request) {
         settleModel,
         payload,
         AbortSignal.timeout(streaming ? 300_000 : 120_000),
+        provider,
       );
     } catch (error) {
       await settleCall(db, context, estimatedUsage(0, 0), "error", {

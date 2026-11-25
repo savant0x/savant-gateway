@@ -42,6 +42,18 @@ and severity order; each record closes only on its own gates and a commit.
   affected suites re-run; `npm run verify` PASS 12/12 gates, 1289/1289 tests,
   PostgreSQL 20/20, 179.5 s. No live console probe is claimed.
 
+- [x] **OF4 — FID-2026-1124-005, catalogue and gateway query cost.**
+  **Completed** across `e497824` (slice 1), `034b9ed` (slice 2), `e49996f` and
+  `692ceb2` (slice 3), `f018d33` (slice 5) and the closure commit (slice 4).
+  Trial offers are one statement per page and refuse before I/O when disabled or
+  unpaired; the retrieve reads one scoped row; reconciliation diffs the stored
+  route and writes only changes; bulk status, bulk eligibility and the sync
+  upsert are set-based; the subscription sweep runs from the operations tick
+  with the caller's boundary still enforced at admission and under the lock;
+  the banner reads its pair once; `last_used_at` is throttled. 12 new
+  statement-count cases; `npm run verify` PASS 12/12 gates, 1301/1301 tests,
+  PostgreSQL 20/20, 181.8 s. No hosted load measurement is claimed.
+
 ## Session — 2026-11-24 (FID folder audit and pending-work register: PR)
 
 Operator instruction: "audit/update the fids folder, move the completed work to

@@ -36,6 +36,7 @@ import {
 
 import { getEconomicAlertInput } from "./provider-capital.ts";
 import { saveSetting } from "./settings.ts";
+import { sweepSubscriptions } from "./subscription-access.ts";
 
 /**
  * Operations store, ported to the async handle (FID-086, Batch B).
@@ -142,6 +143,16 @@ export async function setAdmissionState(
 export async function runOperationsMonitor(
   db: PostgresDatabase,
 ): Promise<OperationsTickResult> {
+  // Subscription expiry and expired allowance holds are swept by the tick that
+  // already runs on a schedule, instead of from every completion
+  // (FID-2026-1124-005). A sweep failure must not stop the operational alerts,
+  // so it is reported by the absence of the sweep rather than by a dead tick.
+  try {
+    await sweepSubscriptions(db);
+  } catch {
+    // The traffic, settlement and payment guards below still run.
+  }
+
   const thresholds = getOperationsThresholds();
   const snapshot = await readOperationsSnapshot(db, {
     now: nowIso(),

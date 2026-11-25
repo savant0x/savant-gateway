@@ -3,10 +3,10 @@
 **Filename:** `FID-2026-1124-005-catalog-gateway-query-cost.md`
 **ID:** FID-2026-1124-005
 **Severity:** high
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-25 00:10
-**Automation level:** 2
-**YAGNI-Compliance:** Pending
+**Automation level:** 3
+**YAGNI-Compliance:** Verified
 
 ---
 
@@ -260,15 +260,14 @@ Measurement before/after is by statement count and by `npm run test:load`
 - gate: test tests/provider-list-queries.test.mjs
 - gate: test tests/model-status-bulk-postgres.test.mjs
 - gate: test tests/model-eligibility-bulk-postgres.test.mjs
-- gate: test tests/http.test.mjs
+- gate: test:http (both HTTP suites)
 - gate: quality
 - gate: build
 - gate: verify
 
 ### Verification Receipt
 
-Not yet run: this FID is `converged`, not implemented. No gate output is claimed.
-No timing number in this record is presented as measured.
+`npm run verify` PASS 12/12 gates in 181.8 s on the closure tree: 1301/1301 tests, 0 skipped, PostgreSQL 20/20, quality 719 files, build PASS, both HTTP suites, recovery 15/15, recorded in `.verify/summary.json`. Every slice also carries its own focused receipt: typecheck exit 0, `eslint . --max-warnings=0` exit 0, and the statement-count suites named below. No wall-clock number is claimed as a measured improvement; the acceptance test is statement count.
 
 ## Perfection Loop
 
@@ -341,13 +340,33 @@ No timing number in this record is presented as measured.
 
 ## Resolution
 
-- **Closed Date:** not closed
-- **Fix Description:** pending implementation, in five slices
-- **Tests Added:** planned — `tests/openai-model-list.test.mjs`,
-  `tests/route-reconcile-diff.test.mjs`, `tests/provider-list-queries.test.mjs`,
-  plus extensions to the two bulk suites and `tests/http.test.mjs`
-- **Verification Evidence:** none claimed; design convergence only
-- **Archived:** not archived
+- **Closed Date:** 2026-11-25
+- **Fix Description:** five slices, each shipped and tested separately.
+  **1** (`e497824`): a disabled trial and an unpaired id refuse before any I/O,
+  a page's offers are read in one statement, and the published retrieve reads
+  one scoped row instead of loading the catalogue. **2** (`034b9ed`):
+  reconciliation compares the six stored route columns it already reads and
+  writes only the rows that differ. **3** (`e49996f`, `692ceb2`): bulk status is
+  one `UPDATE … WHERE id IN`, bulk eligibility is one multi-row upsert per 200
+  rows, and the sync upsert flushes in chunks of 200 with the per-row
+  preservation rules unchanged. **5** (`f018d33`): the provider list reads its
+  rows once and takes every count from one grouped query. **4** (this closure
+  commit): `sweepSubscriptions` moved from every completion to the operations
+  tick, with the caller's own period boundary still checked at admission and
+  under the lock; the loaded provider is passed into `callProvider` instead of
+  re-read; the banner reads its text and switch in one statement; and
+  `last_used_at` is written at most once per five minutes.
+- **Tests Added:** 12 cases — four in `tests/openai-model-list.test.mjs`, one in
+  `tests/route-reconcile-diff.test.mjs`, two in
+  `tests/provider-list-queries.test.mjs`, one in the sync suite, one in each
+  bulk suite, and two in `tests/banner-read.test.mjs` — all asserting issued
+  statements rather than milliseconds.
+- **Verification Evidence:** `npm run verify` PASS 12/12 gates, 1301/1301 tests,
+  PostgreSQL 20/20, 181.8 s; focused typecheck, repo lint and the named suites
+  all exit 0. No hosted load measurement is claimed; `test:load` remains an
+  operator-approved release gate.
+- **Archived:**
+  `dev/fids/archive/FID-2026-1124-005-catalog-gateway-query-cost.md`
 
 ## Lessons Learned
 

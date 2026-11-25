@@ -25,6 +25,27 @@ export async function getSetting(
   return row?.value ?? null;
 }
 
+/**
+ * Several settings in one statement.
+ *
+ * A caller that needs a pair of keys — the banner needs its text and its
+ * switch — read them one after another, which is two round trips for one
+ * render (FID-2026-1124-005).
+ */
+export async function getSettings(
+  db: PostgresDatabase,
+  keys: string[],
+): Promise<Map<string, string>> {
+  if (keys.length === 0) return new Map();
+
+  const placeholders = keys.map(() => "?").join(", ");
+  const rows = await db
+    .prepare(`SELECT key, value FROM settings WHERE key IN (${placeholders})`)
+    .all<{ key: string; value: string }>(...(keys as []));
+
+  return new Map(rows.map((row) => [row.key, row.value]));
+}
+
 export async function saveSetting(
   db: PostgresDatabase,
   key: string,

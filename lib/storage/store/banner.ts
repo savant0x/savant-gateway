@@ -7,7 +7,7 @@ import {
   validateBannerText,
 } from "../../context-banner.ts";
 
-import { getSetting, saveSetting } from "./settings.ts";
+import { getSettings, saveSetting } from "./settings.ts";
 
 /**
  * Context banner settings, ported to the async handle (FID-086, Batch B).
@@ -25,14 +25,16 @@ const ENABLED_KEY = "gateway.context_banner.enabled";
 export async function getBannerConfig(
   db: PostgresDatabase,
 ): Promise<ContextBanner> {
-  const raw = (await getSetting(db, TEXT_KEY)) ?? "";
+  // One read for the pair: the text and its switch are always needed together.
+  const values = await getSettings(db, [TEXT_KEY, ENABLED_KEY]);
+  const raw = values.get(TEXT_KEY) ?? "";
   const validated = validateBannerText(raw);
   const text = validated.ok
     ? validated.text
     : normalizeBannerText(raw).slice(0, CONTEXT_BANNER_MAX_CHARS);
 
   return {
-    enabled: (await getSetting(db, ENABLED_KEY)) === "true",
+    enabled: values.get(ENABLED_KEY) === "true",
     text,
   };
 }

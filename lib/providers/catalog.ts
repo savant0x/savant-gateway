@@ -17,6 +17,22 @@ export type ModelSpec = UpstreamModel & {
   supported_endpoints?: unknown;
 };
 
+/**
+ * The provider's own name is not part of a model's name. A payload that echoes
+ * its path (`cc/claude-fable-5`) names no product, so it falls back to the leaf
+ * title; a declared name that merely starts with the provider slug loses it.
+ */
+function publicName(providerSlug: string, model: NormalizedModel) {
+  const declared = model.name.trim();
+  const stripped = declared.startsWith(`${providerSlug}/`)
+    ? declared.slice(providerSlug.length + 1)
+    : declared;
+
+  if (!stripped) return displayNameFromId(model.upstreamId);
+
+  return stripped.includes("/") ? displayNameFromId(stripped) : stripped;
+}
+
 function displayNameFromId(modelId: string) {
   const leaf = modelId.includes("/")
     ? modelId.slice(modelId.lastIndexOf("/") + 1)
@@ -91,7 +107,7 @@ function toRow(
     upstreamId: model.upstreamId,
     upstreamSlug: provider.slug,
     routeGroup: canonicalModelKey(model.upstreamId),
-    name: model.name.trim() || displayNameFromId(model.upstreamId),
+    name: publicName(provider.slug, model),
     family: model.family,
     protocol,
     costSource: model.freePool || isPriced(model) ? "synced" : "unknown",

@@ -40,6 +40,8 @@ export type ProviderStatus = {
  */
 export type ModelSummary = {
   id: string;
+  /** The provider row this model is sold from; never part of a display name. */
+  upstreamSlug: string;
   upstreamId: string;
   name: string;
   family: string;

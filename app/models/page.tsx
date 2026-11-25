@@ -232,10 +232,9 @@ export default async function ModelsPage() {
                 Full catalog and price comparison
               </h2>
               <p className="mt-1 max-w-3xl text-sm text-muted">
-                Every published SKU with its billing group, weighted free-pool
-                cost, Savant rate, and the OpenRouter list rate where an exact
-                counterpart exists. Free and paid rows link to their own detail
-                pages.
+                Every published SKU with its billing group, Savant rate, and the
+                OpenRouter list rate where an exact counterpart exists. Free and
+                paid rows link to their own detail pages.
               </p>
             </div>
             <span className="font-mono text-[11px] text-muted">

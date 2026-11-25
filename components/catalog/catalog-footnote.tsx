@@ -3,13 +3,11 @@ import type { BenchmarkStatus } from "@/lib/types";
 import { LocalTime } from "@/components/local-time";
 
 export function CatalogFootnote({
-  showComparison,
-  showBenchmarks,
+  comparisonLoaded,
   benchmarkFetchedAt,
   benchmarkStatus,
 }: {
-  showComparison: boolean;
-  showBenchmarks: boolean;
+  comparisonLoaded: boolean;
   benchmarkFetchedAt: string | null;
   benchmarkStatus: BenchmarkStatus | null;
 }) {
@@ -25,7 +23,7 @@ export function CatalogFootnote({
       </p>
       <p>
         <i aria-hidden className="fa-solid fa-arrow-right-arrow-left mr-1.5" />
-        {showComparison ? (
+        {comparisonLoaded ? (
           <>
             Hover a Savant rate for the OpenRouter list rate it is compared
             against, matched by exact upstream id and fetched
@@ -45,13 +43,14 @@ export function CatalogFootnote({
           </>
         ) : (
           <>
-            OpenRouter’s public list could not be fetched, so the comparison is
-            hidden rather than showing every row as unlisted. The catalog and
-            its own prices are unaffected.
+            OpenRouter’s public list could not be fetched, so every “vs
+            OpenRouter” cell shows a dash. A dash still means no exact
+            counterpart was listed, never a zero difference; the catalog and its
+            own prices are unaffected.
           </>
         )}
       </p>
-      {showBenchmarks ? (
+      {(benchmarkStatus?.matched ?? 0) > 0 ? (
         <p>
           <i aria-hidden className="fa-solid fa-gauge-high mr-1.5" />
           AA Benchmark is the{" "}
@@ -81,14 +80,14 @@ export function CatalogFootnote({
         <p>
           <i aria-hidden className="fa-solid fa-gauge-high mr-1.5" />
           The first benchmark sync has started. Scores appear on the next load;
-          the column stays hidden until at least one row is measured.
+          until then every row shows a dash, which means unmeasured rather than
+          zero.
         </p>
       ) : (
         <p>
           <i aria-hidden className="fa-solid fa-gauge-high mr-1.5" />
           Benchmark data is unavailable: no source key is configured on this
-          server, so the quality column is hidden rather than showing every row
-          as unmeasured.
+          server, so every row shows a dash rather than a zero score.
         </p>
       )}
     </div>

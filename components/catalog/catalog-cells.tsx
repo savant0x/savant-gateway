@@ -75,15 +75,6 @@ export function RateCell({
   );
 }
 
-/**
- * With 44 rows against a 456-entry public list, zero matches means the benchmark
- * could not be fetched, not that nothing overlaps. In that case the comparison
- * columns are hidden instead of printing "not listed" on every row.
- */
-export function comparisonAvailable(matched: number, models: number) {
-  return matched > 0 && models > 0;
-}
-
 /** Why a zero rate is zero, for the cell's title. */
 export function includedBilling(access: ModelAccess) {
   return access === "free"

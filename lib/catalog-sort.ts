@@ -9,13 +9,7 @@ import type { ModelAccess } from "./types.ts";
  * so a table cannot shuffle between renders.
  */
 export type CatalogSortKey =
-  | "model"
-  | "group"
-  | "weight"
-  | "features"
-  | "benchmark"
-  | "price"
-  | "comparison";
+  "model" | "group" | "features" | "benchmark" | "price" | "comparison";
 
 export type CatalogSortDirection = "asc" | "desc";
 
@@ -25,7 +19,6 @@ export type SortableCatalogRow = {
   family: string;
   groupLabel: string;
   groupBillingMode: ModelAccess;
-  tokenWeight: number;
   supportsTools: boolean;
   supportsVision: boolean;
   inputPricePer1M: number;
@@ -39,7 +32,6 @@ export type SortableCatalogRow = {
 const DEFAULT_DIRECTION: Record<CatalogSortKey, CatalogSortDirection> = {
   model: "asc",
   group: "asc",
-  weight: "desc",
   features: "desc",
   benchmark: "desc",
   price: "asc",
@@ -83,12 +75,6 @@ export function compareCatalogRows(
   } else if (key === "group") {
     primary = left.groupLabel.localeCompare(right.groupLabel);
     if (direction === "desc") primary = -primary;
-  } else if (key === "weight") {
-    primary = compareNumber(
-      left.tokenWeight > 0 ? left.tokenWeight : null,
-      right.tokenWeight > 0 ? right.tokenWeight : null,
-      direction,
-    );
   } else if (key === "features") {
     primary = compareNumber(
       featureScore(left) > 0 ? featureScore(left) : null,

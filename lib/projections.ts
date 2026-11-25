@@ -234,6 +234,7 @@ export function toModelSummary(row: ModelRow): ModelSummary {
 
   return {
     id: row.id,
+    upstreamSlug: row.upstream_slug,
     upstreamId: row.upstream_id,
     name: row.name,
     family: row.family ?? row.provider,

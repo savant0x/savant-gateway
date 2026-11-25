@@ -61,3 +61,29 @@ export function routeGroupKey(input: {
 export function isNamespacedModelId(id: string, providerSlug: string) {
   return id.startsWith(`${providerSlug}/`);
 }
+
+/**
+ * The id a reader sees: the model's own name, never a provider tag.
+ *
+ * The stored id keeps both scopes because it is the primary key and the route
+ * lookup. Neither belongs on a page: `inferhub/cc/claude-fable-5` reads
+ * `claude-fable-5`, and a default provider's `cx/gpt-5.6-luna` reads
+ * `gpt-5.6-luna`. `free/` (and a subscription scope) are the exception: they are
+ * billing tiers, not publishers, and two SKUs of the same weights must stay
+ * distinguishable.
+ */
+export function displayModelId(
+  id: string,
+  upstreamSlug: string | null | undefined,
+) {
+  const scope = upstreamSlug ? `${upstreamSlug}/` : "";
+  const scoped = scope && id.startsWith(scope) ? id.slice(scope.length) : id;
+  const parts = scoped.split("/").filter(Boolean);
+
+  if (parts.length <= 1) return scoped;
+
+  const tier =
+    parts[0] === "free" || parts[0] === "subscription" ? `${parts[0]}/` : "";
+
+  return `${tier}${parts[parts.length - 1]}`;
+}

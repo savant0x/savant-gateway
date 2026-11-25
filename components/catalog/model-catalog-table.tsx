@@ -9,7 +9,6 @@ import type { PriceComparison } from "@/lib/price-comparison";
 
 import { useMemo, useState } from "react";
 
-import { comparisonAvailable } from "./catalog-cells";
 import { CatalogFilters, type GroupOption } from "./catalog-filters";
 import { CatalogFootnote } from "./catalog-footnote";
 import { CatalogRow } from "./catalog-row";
@@ -106,7 +105,6 @@ export function ModelCatalogTable({
         family: row.model.family,
         groupLabel: row.model.groupLabel,
         groupBillingMode: row.model.groupBillingMode,
-        tokenWeight: row.model.tokenWeight,
         supportsTools: row.model.supportsTools,
         supportsVision: row.model.supportsVision,
         inputPricePer1M: row.model.inputPricePer1M,
@@ -146,20 +144,11 @@ export function ModelCatalogTable({
     [comparisons, skus],
   );
 
-  const showComparison = comparisonAvailable(matched, skus.length);
-  const measured = useMemo(
-    () => skus.filter((row) => benchmarks[row.model.id] !== undefined).length,
-    [benchmarks, skus],
-  );
-  const showBenchmarks = measured > 0;
+  const comparisonLoaded = matched > 0;
   // Identity, then one fact per column, then the money, then the verdict.
-  const columns = showComparison
-    ? showBenchmarks
-      ? ["30%", "8%", "6%", "7%", "9%", "13%", "12%", "12%"]
-      : ["36%", "9%", "7%", "8%", "15%", "12%", "13%"]
-    : showBenchmarks
-      ? ["40%", "10%", "7%", "9%", "7%", "14%", "13%"]
-      : ["46%", "12%", "8%", "9%", "12%", "13%"];
+  // The benchmark and list-rate columns stay visible even when no row has data:
+  // a dash says unmeasured, while a hidden column reads as a missing feature.
+  const columns = ["36%", "8%", "7%", "9%", "13%", "12%", "12%"];
 
   function resetPage(action: () => void) {
     action();
@@ -202,7 +191,7 @@ export function ModelCatalogTable({
         matched={matched}
         modelCount={skus.length}
         query={query}
-        showComparison={showComparison}
+        showComparison={comparisonLoaded}
         shownCount={filtered.length}
         onFamily={(value) => resetPage(() => setFamily(value))}
         onGroup={(value) => resetPage(() => setGroup(value))}
@@ -249,23 +238,18 @@ export function ModelCatalogTable({
               <tr>
                 {head("Model / SKU", "model")}
                 {head("Group", "group")}
-                {head("Weight", "weight", "text-right")}
                 {head(
                   "Features",
                   "features",
                   "catalog-col-features text-center",
                 )}
-                {showBenchmarks
-                  ? head(
-                      "AA Benchmark",
-                      "benchmark",
-                      "catalog-col-benchmark text-right",
-                    )
-                  : null}
+                {head(
+                  "AA Benchmark",
+                  "benchmark",
+                  "catalog-col-benchmark text-right",
+                )}
                 {head("Savant $/1M", "price", "text-right")}
-                {showComparison
-                  ? head("vs OpenRouter", "comparison", "text-right")
-                  : null}
+                {head("vs OpenRouter", "comparison", "text-right")}
                 <th className="text-right">Get access</th>
               </tr>
             </thead>
@@ -273,15 +257,9 @@ export function ModelCatalogTable({
               {rows.map(({ row }) => (
                 <CatalogRow
                   key={row.key}
-                  benchmark={
-                    showBenchmarks ? benchmarks[row.model.id] : undefined
-                  }
-                  comparison={
-                    showComparison ? comparisons[row.model.id] : undefined
-                  }
+                  benchmark={benchmarks[row.model.id]}
+                  comparison={comparisons[row.model.id]}
                   row={row}
-                  showBenchmarks={showBenchmarks}
-                  showComparison={showComparison}
                 />
               ))}
             </tbody>
@@ -301,8 +279,7 @@ export function ModelCatalogTable({
       <CatalogFootnote
         benchmarkFetchedAt={benchmarkFetchedAt}
         benchmarkStatus={benchmarkStatus}
-        showBenchmarks={showBenchmarks}
-        showComparison={showComparison}
+        comparisonLoaded={comparisonLoaded}
       />
     </div>
   );

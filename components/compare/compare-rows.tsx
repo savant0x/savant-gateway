@@ -6,6 +6,7 @@ import { betterSide, type CompareSide } from "@/lib/compare";
 import { blendedPer1M } from "@/lib/price-comparison";
 import {
   formatCalendarDay,
+  formatContextWindow,
   formatPricePer1M,
 } from "@/components/dashboard/format";
 import {
@@ -141,8 +142,8 @@ export function buildCompareGroups({
         },
         {
           label: "Context window",
-          left: left.contextWindow,
-          right: right.contextWindow,
+          left: formatContextWindow(left.contextWindow),
+          right: formatContextWindow(right.contextWindow),
         },
         {
           label: "Released",

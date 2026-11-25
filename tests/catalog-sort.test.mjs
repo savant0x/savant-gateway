@@ -14,7 +14,6 @@ function row(overrides = {}) {
     family: "GPT",
     groupLabel: "Paid",
     groupBillingMode: "paid",
-    tokenWeight: 0,
     supportsTools: false,
     supportsVision: false,
     inputPricePer1M: 1,
@@ -31,7 +30,6 @@ const ROWS = [
     name: "Alpha",
     family: "GPT",
     groupLabel: "Paid",
-    tokenWeight: 3,
     supportsTools: true,
     supportsVision: false,
     inputPricePer1M: 5,
@@ -45,7 +43,6 @@ const ROWS = [
     family: "Claude",
     groupLabel: "Free",
     groupBillingMode: "free",
-    tokenWeight: 0,
     supportsTools: true,
     supportsVision: true,
     inputPricePer1M: 0,
@@ -58,7 +55,6 @@ const ROWS = [
     name: "Charlie",
     family: "DeepSeek",
     groupLabel: "Paid",
-    tokenWeight: 1,
     inputPricePer1M: 1,
     outputPricePer1M: 1,
     benchmarkIndex: null,
@@ -77,12 +73,6 @@ test("model sorts by name in both directions with a family tiebreak", () => {
 
 test("group sorts by its label", () => {
   assert.deepEqual(ids(sortCatalogRows(ROWS, "group", "asc")), ["b", "a", "c"]);
-});
-
-test("weight sorts heavy first by default and missing weight last", () => {
-  assert.equal(defaultSortDirection("weight"), "desc");
-  assert.deepEqual(ids(sortCatalogRows(ROWS, "weight", "desc")), ["a", "c", "b"]);
-  assert.deepEqual(ids(sortCatalogRows(ROWS, "weight", "asc")), ["c", "a", "b"]);
 });
 
 test("features sorts by how many capabilities a row has", () => {

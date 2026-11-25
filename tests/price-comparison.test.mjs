@@ -68,6 +68,41 @@ test("the free pool prefix is not part of the match key", () => {
   assert.equal(upstreamSlug(" GPT-6-Luna "), "gpt-6-luna");
 });
 
+test("a publisher prefix is not part of the match key either", () => {
+  // Ours and the public list use different prefixes for the same weights.
+  assert.equal(upstreamSlug("cc/claude-fable-5"), "claude-fable-5");
+  assert.equal(upstreamSlug("anthropic/claude-fable-5"), "claude-fable-5");
+  assert.equal(upstreamSlug("z-ai/glm-5.3"), upstreamSlug("glm-5.3"));
+  assert.equal(upstreamSlug("cx/gpt-6.1-sol"), upstreamSlug("gpt-6-1-sol"));
+});
+
+test("a namespaced catalog row matches the public list", () => {
+  const result = buildCatalogComparison(
+    [
+      {
+        id: "inferhub/cc/claude-fable-5",
+        upstreamId: "cc/claude-fable-5",
+        inputPricePer1M: 5,
+        outputPricePer1M: 25,
+      },
+    ],
+    [
+      {
+        id: "anthropic/claude-fable-5",
+        name: "Anthropic: Claude Fable 5",
+        inputPer1M: 10,
+        outputPer1M: 50,
+      },
+    ],
+  );
+
+  assert.equal(result.matched, 1);
+  assert.equal(
+    result.comparisons["inferhub/cc/claude-fable-5"].openRouterId,
+    "anthropic/claude-fable-5",
+  );
+});
+
 test("only an exact slug matches, never a revision guess", () => {
   const result = buildCatalogComparison(
     [

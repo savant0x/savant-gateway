@@ -12,6 +12,32 @@ export function formatCompact(value: number | null | undefined) {
   return value == null ? "—" : compactFormatter.format(value);
 }
 
+/**
+ * A context window as a reader thinks of it: `1000000` is `1M`, `256000` is
+ * `256K`. The catalog stores whatever the provider published, which is often a
+ * bare digit string; printing it raw made a million-token window look like a
+ * typo. An unparseable value (an em dash, a note) is left exactly as published.
+ */
+export function formatContextWindow(value: string | number | null | undefined) {
+  if (value == null) return "—";
+
+  const text = String(value).trim();
+
+  if (!text) return "—";
+
+  const numeric = Number(text);
+
+  if (Number.isFinite(numeric) && numeric > 0) {
+    return compactFormatter.format(numeric).toUpperCase();
+  }
+
+  const suffixed = /^(\d+(?:\.\d+)?)\s*([kKmM])$/.exec(text);
+
+  if (suffixed) return `${suffixed[1]}${suffixed[2].toUpperCase()}`;
+
+  return text;
+}
+
 export function formatMoney(value: number | null | undefined) {
   if (value == null) return "—";
 

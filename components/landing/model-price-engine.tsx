@@ -7,7 +7,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
-import { formatPricePer1M } from "@/components/dashboard/format";
+import {
+  formatContextWindow,
+  formatPricePer1M,
+} from "@/components/dashboard/format";
 import { brandImages } from "@/config/images";
 
 export function ModelPriceEngine({ models }: { models: ModelSummary[] }) {
@@ -106,7 +109,7 @@ export function ModelPriceEngine({ models }: { models: ModelSummary[] }) {
                 <dl className="engine-details">
                   <div>
                     <dt>Context</dt>
-                    <dd>{selected.contextWindow}</dd>
+                    <dd>{formatContextWindow(selected.contextWindow)}</dd>
                   </div>
                   <div>
                     <dt>Billing</dt>

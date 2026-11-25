@@ -8,22 +8,30 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { FreeAllocationPanel } from "@/components/catalog/free-allocation-panel";
+import { ModelBenchmarkCard } from "@/components/catalog/model-benchmark-card";
 import { CoveragePanel } from "@/components/content/coverage-panel";
 import { ModelVisualBuilds } from "@/components/showcase/model-visual-builds";
 import { IdentityPanel } from "@/components/identity/identity-panel";
 import { SiteFooter } from "@/components/landing/site-footer";
 import { SiteHeader } from "@/components/landing/site-header";
 import { AccessChip } from "@/components/dashboard/chips";
-import { formatPricePer1M } from "@/components/dashboard/format";
+import {
+  formatContextWindow,
+  formatPricePer1M,
+} from "@/components/dashboard/format";
 import { catalogSkuName } from "@/lib/catalog-skus";
+import { displayModelId } from "@/lib/model-identity";
 import { contentEnabled } from "@/lib/content/policy";
 import { isWatching } from "@/lib/content/store/engagement";
 import { listContentForModel } from "@/lib/content/store/links";
 import { getCustomerSession } from "@/lib/customer-auth";
 import { readPublishedIdentity } from "@/lib/identity/reads";
+import { getOpenRouterModels } from "@/lib/openrouter-prices";
+import { buildCatalogComparison } from "@/lib/price-comparison";
 import {
   getCatalogData,
   getDailyTrialSummary,
+  listBenchmarks,
   listPublishedVisualBuilds,
 } from "@/lib/store";
 import { trialBalance } from "@/lib/storage/ledger/trials";
@@ -60,7 +68,9 @@ export async function generateMetadata({
 
   return {
     title: `${name} — price and identity`,
-    description: `${name} on Savant Gateway: ${model.family}, ${model.contextWindow} context, ${model.groupLabel} access, and the latest published identity check.`,
+    description: `${name} on Savant Gateway: ${model.family}, ${formatContextWindow(
+      model.contextWindow,
+    )} context, ${model.groupLabel} access, and the latest published identity check.`,
     twitter: { card: "summary_large_image", images: [] },
   };
 }
@@ -76,6 +86,17 @@ export default async function ModelDetailPage({ params }: PageProps) {
   const model = await findModel((await params).id);
 
   if (!model) notFound();
+
+  // The same two sources the catalog table reads. Both fail open: an empty
+  // benchmark list or an unreachable OpenRouter list leaves the card showing a
+  // dash, which reads as unmeasured rather than as a zero.
+  const [benchmarks, openRouter] = await Promise.all([
+    listBenchmarks(),
+    getOpenRouterModels(),
+  ]);
+  const benchmarkSummary = benchmarks[model.id];
+  const comparison = buildCatalogComparison([model], openRouter.models)
+    .comparisons[model.id];
 
   let identity: IdentityPublishedView | null = null;
   let unavailable = false;
@@ -158,14 +179,16 @@ export default async function ModelDetailPage({ params }: PageProps) {
                 <h1 className="text-4xl font-semibold tracking-[-0.04em]">
                   {catalogSkuName(model)}
                 </h1>
-                <p className="mono mt-2 text-sm text-muted">{model.id}</p>
+                <p className="mono mt-2 text-sm text-muted">
+                  {displayModelId(model.id, model.upstreamSlug)}
+                </p>
               </div>
               <AccessChip model={model} />
             </div>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-muted">
-              {model.family} · {model.contextWindow} context ·{" "}
-              {model.groupLabel} access · token weight {model.tokenWeight}×.
-              Prices below are the gateway&apos;s sell price per million tokens.
+              {`${model.family} · ${formatContextWindow(
+                model.contextWindow,
+              )} context · ${model.groupLabel} access · token weight ${model.tokenWeight}×. Prices below are the gateway's sell price per million tokens.`}
             </p>
           </div>
         </section>
@@ -194,6 +217,12 @@ export default async function ModelDetailPage({ params }: PageProps) {
                     : "Paid usage is settled from prepaid credit at the listed rate."}
               </p>
             </div>
+
+            <ModelBenchmarkCard
+              benchmark={benchmarkSummary}
+              comparison={comparison}
+              listLoaded={openRouter.models.length > 0}
+            />
 
             {model.access === "free" ? (
               <FreeAllocationPanel
@@ -239,7 +268,9 @@ export default async function ModelDetailPage({ params }: PageProps) {
                     aria-hidden
                     className="fa-solid fa-window-maximize text-xs"
                   />
-                  Advertised window {model.contextWindow} tokens
+                  {`Advertised window ${formatContextWindow(
+                    model.contextWindow,
+                  )} tokens`}
                 </li>
               </ul>
             </div>

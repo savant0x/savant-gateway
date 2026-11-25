@@ -4,6 +4,8 @@
  * expressing the difference in basis points so the UI can say "cheaper" or
  * "pricier" without floating-point drift in the display layer.
  */
+import { canonicalModelKey } from "./model-identity.ts";
+
 export type OpenRouterModel = {
   id: string;
   name: string;
@@ -69,12 +71,18 @@ function per1M(value: unknown): number | null {
   return Math.round(parsed * 1_000_000 * 1_000_000) / 1_000_000;
 }
 
-/** `free/gpt-6-luna` and `gpt-6-luna` both resolve to `gpt-6-luna`. */
+/**
+ * `free/gpt-6-luna`, `cx/gpt-6-luna` and the public list's `openai/gpt-6-luna`
+ * all resolve to `gpt-6-luna`.
+ *
+ * An upstream id carries the provider's own publisher prefix (`cc/claude-fable-5`)
+ * while the public list carries its vendor prefix (`anthropic/claude-fable-5`).
+ * Comparing the prefixes matched nothing, so every row read "—". Identity is the
+ * leaf, and the canonical key also folds the separators and drops a build or
+ * date stamp, which is what makes `gpt-6.1-sol` and `gpt-6-1-sol` the same model.
+ */
 export function upstreamSlug(upstreamId: string): string {
-  return upstreamId
-    .trim()
-    .toLowerCase()
-    .replace(/^free\//, "");
+  return canonicalModelKey(upstreamId.trim().replace(/^free\//, ""));
 }
 
 export function parseOpenRouterModels(raw: unknown): OpenRouterModel[] {
@@ -191,8 +199,7 @@ export function buildCatalogComparison(
   for (const model of [...openRouter].sort((a, b) =>
     a.id.localeCompare(b.id),
   )) {
-    const slug = upstreamSlug(model.id.split("/").slice(1).join("/"));
-    const key = slug || upstreamSlug(model.id);
+    const key = upstreamSlug(model.id);
 
     if (!bySlug.has(key)) bySlug.set(key, model);
   }

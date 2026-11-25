@@ -2,17 +2,24 @@
 
 **Last folder audit:** 2026-11-25 (post-implementation audit). This page
 indexes the working set; each FID owns its own status, evidence and resolution.
-Current counts: 10 active, 201 archived, 211 records. The figures are counted
+Current counts: 12 active, 201 archived, 213 records. The figures are counted
 from the folder at each audit; an earlier line carried a date fragment in place
 of the active count.
 
 The four implementation records opened on 2026-11-24 are `closed` and archived
-(`003`–`006`). Every remaining active record is launch or acceptance work:
+(`003`–`006`). Every active record but one is launch or acceptance work:
 operator-blocked masters and receipts (`043`, `062`, `137`, `018`, `127`), a
 credential, funding or publication step (`011`, `068`, `1110-002`, `1120-001`),
 and the content record (`017`) whose code is in but whose job proofs are
-outstanding. No active record is implementation-ready without an operator input
-or a proof that needs a real browser, job snapshot or deployment.
+outstanding. Two records are implementation work.
+[2026-1125-003](FID-2026-1125-003-inferhub-router-catalog-review.md) is `fixed`:
+its publisher, filter and family steps are implemented and gated, and four
+remaining steps wait on operator rulings its record names.
+[2026-1125-004](FID-2026-1125-004-remove-free-tier-and-weights.md) is
+`converged` on the operator's rulings that the free tier is removed and a price
+is a markup on cost; its eight slices are ordered and gated one at a time. No
+other active record is implementation-ready without an operator input or a proof
+that needs a real browser, job snapshot or deployment.
 
 ## Layout
 
@@ -37,6 +44,8 @@ or a proof that needs a real browser, job snapshot or deployment.
 | [2026-1104-018](FID-2026-1104-018-content-automation-master.md) | Content automation and persistent matching master | converged | Child 015 is `closed` and 016 is `closed`; 017 is `fixed` (`6cb7486`, `1c4c2a5`) and still owes proof. The master closes on that plus the operator's scheduler backend, secret and hosted-tick authorization. |
 | [2026-1110-002](FID-2026-1110-002-identity-calibration-lab.md) | Identity calibration lab and measured certificate | converged | Steps 1–4 are committed (`d66a538`, `b884984`, `1f75c44`; step 4 in `495e8b3`, plus its proxy script under [2026-1122-001](archive/FID-2026-1122-001-commit-calibration-proxy.md)). Step 5, collection, is next and needs an operator-supplied upstream; then the certificate path. |
 | [2026-1120-001](FID-2026-1120-001-inferhub-upstream-onboarding.md) | InferHub upstream onboarding | fixed | Steps 1, 2, 3, 4 and 8 are done (`ed8812a`, `495e8b3`, `b159ba0`): the row is seeded disabled, review-required and resale-restricted. Steps 5–7 stay blocked on funding and a measured figure. |
+| [2026-1125-003](FID-2026-1125-003-inferhub-router-catalog-review.md) | InferHub router catalog: duplicate identities, publisher visibility and filters | fixed | Commit and close the implemented steps; record the rulings on identity aliases, the election blend, failover and a stable published row. |
+| [2026-1125-004](FID-2026-1125-004-remove-free-tier-and-weights.md) | Remove the inherited free tier and token weights from pricing | converged | Implement slice 1 (catalog cannot produce a free offer or a weight), then slices 2–8 in the order the record states. |
 
 ### Closed in the 2026-11-24 admin and default-provider commits
 

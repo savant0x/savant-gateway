@@ -63,15 +63,6 @@ function priceSourceOf(facts: RawFacts): NormalizedModel["priceSource"] {
     : "absent";
 }
 
-function tokenWeightOf(facts: RawFacts) {
-  const declared = facts.tokenWeight;
-
-  if (declared !== null && declared > 0)
-    return Math.max(1, Math.round(declared));
-
-  return facts.freePool ? 1 : 0;
-}
-
 /** True when the upstream declares an output modality that is not text. */
 function outputsNonText(facts: RawFacts) {
   return (facts.outputModalities ?? []).some((modality) =>
@@ -98,7 +89,6 @@ function toModel(entry: RawEntry, facts: RawFacts): NormalizedModel {
     outputPer1M: facts.outputPer1M,
     priceSource: priceSourceOf(facts),
     freePool: facts.freePool,
-    tokenWeight: tokenWeightOf(facts),
     supportsTools: facts.supportsTools ?? false,
     supportsVision: declaresVision(facts),
     supportedEndpoints: facts.supportedEndpoints,

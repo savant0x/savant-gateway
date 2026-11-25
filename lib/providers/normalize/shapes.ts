@@ -21,7 +21,6 @@ function flatFacts(entry: RawEntry) {
   return {
     inputPer1M: asNumber(entry.dollarsPer1M),
     outputPer1M: asNumber(entry.outputDollarsPer1M),
-    tokenWeight: asNumber(entry.weight),
     familyLabel: asText(entry.provider ?? entry.family),
     supportsTools: asBool(entry.supportsTools),
     supportsVision: asBool(entry.supportsVision),
@@ -89,7 +88,6 @@ function freePoolFacts(entry: RawEntry) {
 
   return {
     freePool: freePrefix ? allowFree !== false : allowFree === true,
-    tokenWeight: asNumber(entry.weight),
   };
 }
 

@@ -1,5 +1,80 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-25 (pricing truth: PT)
+
+Operator instruction: "the price system is wrong, it was based on a different upstream
+provider system and not our new main/sole provider, we also do not have free offers
+anymore, no 2x, 3x,etc." Asked what should happen to the free tier and what the sell
+price should derive from: "Remove it entirely" and "it should be a markup on the base
+price, that's how it always was." Automation level 3; strict; single agent.
+
+- [x] **PT1 — Audit where the old upstream's pricing model is still encoded.**
+  **Completed.** The markup arithmetic is already provider-neutral
+  (`defaultSellMicros(cost, markupBps)`); the inherited parts are group
+  derivation (`legacyAccessFor`, `backfillModelGroups`), the seeded Free group,
+  `tokenWeightOf` (2×/3× weights), the free admission and trial path, plan
+  allowances in weighted tokens, and the free-tier UI and copy. Measured
+  footprint: 39 files `allow_free`, 47 `token_weight`, 51 `allocation`, 112
+  `weighted`, 97 describing the free tier. Record:
+  [`dev/fids/FID-2026-1125-004-remove-free-tier-and-weights.md`](dev/fids/FID-2026-1125-004-remove-free-tier-and-weights.md).
+- [x] **PT2 — Fix the removal order before cutting.** **Completed.** Eight slices,
+  each gated: catalog cannot produce free rows or weights; price math loses the
+  free branches; gateway drops the `free` billing source and trial route; schema
+  and ledgers drop the columns and tables; plans move to raw tokens; customer UI;
+  admin UI; docs and FAQ.
+- [ ] **PT3 — Slice 1: the catalog cannot produce a free offer or a weight.**
+  Pending. Importer refuses every `free/` row for every provider, `tokenWeightOf`
+  returns 1, `toRow` writes `allowFree: false`, and `defaultGroupSlug` returns
+  `paid`; `tests/catalog-normalize.test.mjs` and
+  `tests/provider-inferhub-sync.test.mjs` move to the new rule.
+- [ ] **PT4 — Slices 2–8.** Pending, in the order the record states. The Free group
+  is converted and then deleted only when no model or plan references it, so no
+  entitlement is cascaded away.
+
+## Session — 2026-11-25 (InferHub as a router: IR)
+
+Operator instruction: "inferhub is basically a router. So it uses multiple upstream
+providers and then offers all of the models. The issue is we have duplicate models, no
+filtering, no way to auto select the cheapest, and no way to differentiate between the
+upstream providers. Considering we will only be using inferhub moving forward, we will
+need to review this system in depth and iron out the issues found." Automation level 3;
+strict; single agent.
+
+- [x] **IR1 — Review the catalog and routing system against a router provider.**
+  **Completed.** The election is implemented and was invisible: `is_primary` was never
+  rendered, every route printed the account slug `inferhub`, and `ModelRouteSummary`
+  carried no publisher. The identity key was measured against the committed capture:
+  265 offers fold to 123 route groups, 66 of them with more than one offer, while the
+  price sheet counts 135 identities — twelve identities publish as duplicate rows
+  (`ds/deepseek-flash`, `fw/deepseek-v4p1-flash`, `cb/deepseek-v4.1-flash-sg`,
+  `cmc/...-fast`). Record:
+  [`dev/fids/FID-2026-1125-003-inferhub-router-catalog-review.md`](dev/fids/FID-2026-1125-003-inferhub-router-catalog-review.md).
+- [x] **IR2 — Make the publisher a route fact and an admin filter. Completed.**
+  `publisherFromModelId` derives the prefix after the account scope and any billing
+  tier; `ModelRouteSummary.publisher` and `AdminModelSummary.servedUpstreamId` carry
+  it; `/admin/catalog` shows `served by` / `offer from`, `N offers · publisher…`, a
+  `published` mark, a `Published` filter and publisher chips scoped to the account.
+- [x] **IR3 — Fold the publisher family spellings. Completed.** `qwen`, `hy4`,
+  `minimax`, `zai` and `k3` prefixes make one model line one family instead of two,
+  and a declared family is compared against the derived publisher rather than a
+  private prefix helper.
+- [x] **IR4 — Gate the change. Completed.** 17 module cases and 18 store/routing cases
+  pass; lint, typecheck, `quality` (400-line ceiling, 721 files) and `build` all exit
+  0. Not claimed: any live InferHub sync or funded call.
+- [ ] **IR5 — Merge the twelve split identities. Blocked on the operator's identity
+  ruling.** A wrong merge serves one model under another's name and misprices it, so
+  the alias list has to be an operator-authored, dated decision.
+- [ ] **IR6 — Choose the election blend. Blocked on the operator's ruling.**
+  `routeCostMicros` ranks at 3 input : 1 output; every price analysis in
+  `docs/research/` uses 1 input : 4 output, and on InferHub's output-heavy offers the
+  two orders disagree, so the choice changes which publisher serves.
+- [ ] **IR7 — Fail over to the next ranked route. Blocked on its own hot-path FID.** A
+  `429 capacity_saturated` from the elected publisher is returned to the customer;
+  `ranking` is computed and never tried.
+- [ ] **IR8 — Stable published row for a marketplace-only group. Blocked on a routing
+  ruling.** The cheapest offer is published, so `is_primary` moves with the market and
+  `plan_models.model_id` can stop matching the published row.
+
 ## Session — 2026-11-25 (upstream identity hidden: PK)
 
 Operator instruction: "looking at the home page i see

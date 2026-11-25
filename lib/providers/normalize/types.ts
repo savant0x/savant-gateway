@@ -12,7 +12,6 @@ export type RawFacts = {
   inputPer1M: number | null;
   outputPer1M: number | null;
   freePool: boolean;
-  tokenWeight: number | null;
   /** A declared family label (`provider` on a flat shape). Never a group word. */
   familyLabel: string;
   /** `null` means the upstream did not declare the capability. */
@@ -38,7 +37,6 @@ export type NormalizedModel = {
   outputPer1M: number | null;
   priceSource: "declared" | "free-pool" | "absent";
   freePool: boolean;
-  tokenWeight: number;
   supportsTools: boolean;
   supportsVision: boolean;
   supportedEndpoints: unknown;
@@ -77,7 +75,6 @@ export function emptyFacts(): RawFacts {
     inputPer1M: null,
     outputPer1M: null,
     freePool: false,
-    tokenWeight: null,
     familyLabel: "",
     supportsTools: null,
     supportsVision: null,

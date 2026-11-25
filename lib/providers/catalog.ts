@@ -112,7 +112,10 @@ function toRow(
     protocol,
     costSource: model.freePool || isPriced(model) ? "synced" : "unknown",
     contextWindow: model.contextWindow,
-    tokenWeight: model.tokenWeight,
+    // Weighted metering belonged to the previous upstream, which granted a
+    // per-model allowance. This gateway has no such allocation, so every row
+    // meters 1:1 and no upstream can set a 2x/3x multiplier (FID-2026-1125-004).
+    tokenWeight: 1,
     costInputMicros: costMicros(model, "input"),
     costOutputMicros: costMicros(model, "output"),
     allowFree: model.freePool,

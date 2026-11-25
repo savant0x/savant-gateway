@@ -72,7 +72,7 @@ test("a non-text output row is dropped and reported, never imported as chat", ()
   assert.deepEqual(skippedMedia, ["cc/an-image-model"]);
 });
 
-test("a free-pool row stays a weighted $0 free row", () => {
+test("a free-pool row stays a $0 free row and is never weighted", () => {
   const { rows } = buildSyncedCatalog(
     PROVIDER,
     [{ id: "free/tiny" }],
@@ -85,7 +85,11 @@ test("a free-pool row stays a weighted $0 free row", () => {
   assert.equal(row.costSource, "synced");
   assert.equal(row.costInputMicros, 0);
   assert.equal(row.costOutputMicros, 0);
-  assert.equal(row.tokenWeight, 1);
+  assert.equal(
+    row.tokenWeight,
+    1,
+    "the gateway meters 1:1; there is no upstream weight multiplier",
+  );
   assert.equal(row.family, "Tiny");
 });
 
@@ -249,8 +253,8 @@ test("a provider that permits free-pool resale keeps its free rows", () => {
   assert.equal(rows.length, 2);
   assert.equal(skippedFreePool.length, 0);
   assert.deepEqual(
-    rows.map((row) => row.tokenWeight).sort(),
-    [1, 2],
-    "the declared weight survives and an undeclared one defaults to 1",
+    rows.map((row) => row.tokenWeight),
+    [1, 1],
+    "a declared upstream weight is ignored; every row meters 1:1",
   );
 });

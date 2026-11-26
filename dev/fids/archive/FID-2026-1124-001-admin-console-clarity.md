@@ -3,13 +3,13 @@
 **Filename:** `FID-2026-1124-001-admin-console-clarity.md`
 **ID:** FID-2026-1124-001
 **Severity:** medium
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-24 19:20
 
 ## Summary
 
 A read-only review of every `/admin` route
-([audit baseline](audit/2026-11-24-admin-surface-review.md)) found seven items:
+([audit baseline](../audit/2026-11-24-admin-surface-review.md)) found seven items:
 two are mislabelled numbers on the landing page, one is a rail entry that
 answers 404, one is a missing admission fact (a review-required provider's
 decision backlog), one is a 1,078 kB page, and two are duplicated money
@@ -226,6 +226,7 @@ tiles naming one quantity each.
 ## Resolution
 
 - **Closed Date:** 2026-11-24
+- **Implementation commit:** `2e59b69`.
 - **Fix Description:** A rail entry that could not open now explains itself
   instead of 404ing; the overview tiles name the quantities they count; a
   review-required provider's decision backlog appears on its row, in the sync

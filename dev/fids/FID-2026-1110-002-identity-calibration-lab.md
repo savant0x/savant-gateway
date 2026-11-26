@@ -3,21 +3,23 @@
 **Filename:** `FID-2026-1110-002-identity-calibration-lab.md`
 **ID:** FID-2026-1110-002
 **Severity:** high
-**Status:** converged
+**Status:** fixed
 **Created:** 2026-11-10 19:32 EST
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
 
-> This record was **registered and converged before implementation**. The
-> defect inventory is complete and the calibration contract has passed the
-> Perfection Loop. **Steps 1–4 are now implemented**: the frozen
-> `aio-identity-v3` candidate, its manifest seal, the exact bounds, the power
-> proof, the per-cell betting e-process, the simulated drift calibration, the
-> arm registry and the loopback adversary exist. Steps 5–9 remain, so the status
-> stays `converged`; two of the four planned test paths exist yet, and the
-> repository contract exempts `converged`
-> records from the on-disk test-path rule. No inference, payment, provider
-> transfer or publication is authorized or claimed.
+> This record is **`fixed`, not `converged`**: steps 1–4 are implemented and
+> committed (`d66a538`, `b884984`, `1f75c44`, and step 4's arm registry and
+> loopback proxy at `495e8b3`, whose wrapper script landed under
+> FID-2026-1122-001). The `converged` metadata it carried until 2026-11-26 no
+> longer described the tree. The frozen `aio-identity-v3` candidate, its
+> manifest seal, the exact bounds, the power proof, the per-cell betting
+> e-process, the simulated drift calibration, the arm registry and the loopback
+> adversary exist. Steps 5–9 — collection, compute/issue,
+> activation/consumption and publication — do not, and none can start without an
+> operator-supplied upstream, credential and two declared routing model ids.
+> No inference, payment, provider transfer or publication is authorized or
+> claimed.
 
 ---
 
@@ -214,10 +216,10 @@ New:
 - `scripts/identity-calibration-proxy.mjs` — loopback adversary that forwards to
   a real upstream and applies one declared transform per arm.
 - `lib/identity/store/certificates.ts` — read/write/activate the certificate.
-- `tests/identity-calibration-bounds.test.mjs`
-- `tests/identity-calibration-certificate.test.mjs`
-- `tests/identity-calibration-consume.test.mjs`
-- `tests/identity-calibration-proxy.test.mjs`
+- `tests/identity-calibration-bounds.test.mjs` (exists)
+- `tests/identity-calibration-proxy.test.mjs` (exists)
+- the certificate suite (step 6) and the consumption suite (step 7) are named in
+  this plan but are not written
 
 Changed:
 
@@ -399,10 +401,10 @@ verdict path compares it against the reference provider at verdict time.
 
 - `tests/identity-calibration-bounds.test.mjs` recomputes 20/20 = 0.8389,
   35/35 = 0.9011, 0/299 = 0.00997, and rejects a 34-positive certificate.
-- `tests/identity-calibration-certificate.test.mjs` proves the manifest seal,
+- The certificate suite (step 6, not yet written) must prove the manifest seal,
   the held-out disjointness check, content-hash validation, scope matching and
   the refusal path for every mutated field.
-- `tests/identity-calibration-consume.test.mjs` proves that a `consistent`
+- The consumption suite (step 7, not yet written) must prove that a `consistent`
   verdict is impossible without an active certificate and that a stale,
   mismatched or wrong-scope certificate degrades to `inconclusive`.
 - `tests/identity-calibration-proxy.test.mjs` proves each transform is applied
@@ -479,13 +481,14 @@ Run for step 1 (2026-11-11, commit `d66a538`):
 - gate: verify — `npm run verify`, 12/12 gates PASS, 1,173/1,173 tests,
   PostgreSQL 20/20, 156.4 s at `52eab59` with the step-4 files in the tree.
 
-Pending for steps 5–9 (those paths do not exist yet):
+Pending for steps 5–9 (those paths do not exist yet, so they are not declared
+gates until the steps land):
 
-- gate: test tests/identity-calibration-certificate.test.mjs
-- gate: test tests/identity-calibration-consume.test.mjs
+- certificate suite (step 6) — not written.
+- consumption suite (step 7) — not written.
 - gate: build — required once the certificate path is wired into the app.
 - gate: verify — the full set, only after the matrix receipt and the feature
-gates both pass.
+  gates both pass.
 
 ### Verification Receipt
 
@@ -667,8 +670,8 @@ gates both pass.
   existing copy test stays green without weakening the list.
 - **ADVERSARIAL:** a reviewer could implement steps 1–8 and skip step 7's
   refusal path, leaving a publishable `consistent` without a certificate. No
-  gate detects that; it is a review obligation stated here and tested by
-  `tests/identity-calibration-consume.test.mjs`.
+  gate detects that; it is a review obligation stated here and its consumption
+  suite is step 7's first deliverable.
 - **CHANGE DELTA:** measured in the note below.
 
 > **Measured document delta.** The pre-audit draft was 29,979 bytes; the
@@ -681,9 +684,9 @@ gates both pass.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-Steps 1–4 are implemented; steps 5–9 are not started. The status stays
-`converged` until the certificate consumption gate and the remaining test paths
-land.
+Steps 1–4 are implemented; steps 5–9 are not started. The status is `fixed`
+for the landed slice and cannot become `closed` until the certificate
+consumption gate and the remaining test paths land.
 
 - [x] **Commit SHA:** step 1 is `d66a538`; step 2 is `b884984`; step 3 is
   `1f75c44`.
@@ -714,7 +717,7 @@ land.
   frozen δ is reproducible by command. The hash and both numbers are pinned in
   the tests, and `verifyFrozenDelta` refuses a manifest whose δ or simulation
   inputs disagree.
-- [ ] **Step statuses:** steps 1–4 `implemented` and committed; steps 5–9
+- [x] **Step statuses:** steps 1–4 `implemented` and committed; steps 5–9
   `blocked` on the operator-supplied upstream, credential and two routing model
   ids named in the resolution.
 - [x] **Step 4 files:** `lib/identity/calibration/arms.ts` (arm registry, one
@@ -737,9 +740,14 @@ land.
 - [x] Step 1 implementation audit: the frozen manifest hash, the sample sizes
   and the protocol seal were reproduced by command before the commit; the four
   published numbers are asserted by the new test.
+- [x] FID status reflects the actual implementation state: `fixed` for steps
+  1–4; steps 5–9 are unwritten, so this record is not a closure candidate.
 
 ## Resolution
 
+- **Status:** `fixed` since the 2026-11-26 house audit; the `converged` value
+  above the Summary described the pre-implementation state that ended at
+  `d66a538`.
 - **Convergence Date:** 2026-11-10 19:32 EST
 - **Next action:** steps 1–4 are implemented and committed. Steps 1–3 are at
   `d66a538`, `b884984` and `1f75c44`; step 4 is at `495e8b3` for `arms.ts`,

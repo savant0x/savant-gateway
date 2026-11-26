@@ -291,6 +291,14 @@ endpoint, screening ruling) remain unset, so steps 2, 3 and 5–7 remain
 step. The operator's NOWPayments decision still makes this lane a non-launch
 path. No money path was added and the lane remains unoffered.
 
+**Upstream pivot 2026-11-26.** The gateway now sells from InferHub only and has
+no free allocation. Neither change touches this record's mechanism, but they
+remove its remaining urgency: the customer USDC lane is still not a launch path,
+and it is still blocked on the same four operator inputs (chain and token
+contract, hardware-wallet xpub, RPC endpoint, screening ruling). Operator ruling
+needed: fund and schedule it, or record a dated non-pursuit. Until then the
+record stays active at `fixed` with step 4 `partial`; no money path exists.
+
 ## Lessons Learned
 
 Writing the spike first turned a design assertion ("we can derive addresses from

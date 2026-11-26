@@ -1,5 +1,6 @@
 # FID-2026-1031-079 — Lifecycle activity tracking
 
+- **Filename:** `FID-2026-1031-079-lifecycle-activity-tracking.md`
 - **ID:** FID-2026-1031-079
 - **Status:** closed
 - **Severity:** medium
@@ -169,7 +170,7 @@ checks + trial suite PASS; lint/typecheck/quality PASS. Login/logout writes are
 intentionally best-effort so an audit failure cannot block a session; money and
 account writes roll back with their event.
 
-## 11. Closure
+## Resolution
 
 Closed against `7996124` on 2026-10-31. Retention, export and production-size
 growth remain a watch item (`FID-2026-1031-079-RETENTION`), not part of this

@@ -1,5 +1,6 @@
 # FID-2026-1031-078 — Free-credit grants and promo codes
 
+- **Filename:** `FID-2026-1031-078-free-credit-grants-and-promo-codes.md`
 - **ID:** FID-2026-1031-078
 - **Status:** closed
 - **Severity:** high
@@ -183,7 +184,7 @@ build` 0; `npm run test:http` 750 checks + trial suite PASS; lint/typecheck/
 quality PASS. No live payment lane was involved: credit is granted from the
 operator-issued code, not from a purchase.
 
-## 11. Closure
+## Resolution
 
 Closed against `7996124` on 2026-10-31. The lane remains default-off; no code
 has been issued to a real customer and no delivery channel exists. Those are

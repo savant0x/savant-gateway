@@ -9,10 +9,10 @@
  * prose review; current claims still need human judgement.
  */
 
-import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
+import { checkFidRegister } from "./fid-register.mjs";
 import { VERIFY_GATES } from "./verify-summary.mjs";
 
 const ROOT = process.cwd();
@@ -111,80 +111,6 @@ function gateContract() {
   }
 }
 
-function testPaths(text) {
-  return Array.from(text.matchAll(/`(tests\/[A-Za-z0-9._/-]+\.test\.mjs)`/g))
-    .map((match) => match[1])
-    .filter((value, index, all) => all.indexOf(value) === index);
-}
-
-function activeFids() {
-  const directory = join(ROOT, "dev/fids");
-  const register = read("dev/fids/README.md");
-  const files = readdirSync(directory).filter((file) =>
-    /^FID-\d{4}-\d{4}-\d{3}-.+\.md$/.test(file),
-  );
-  const seen = new Set();
-  const allowed = new Set(["converged", "fixed"]);
-
-  for (const file of files) {
-    const text = read(`dev/fids/${file}`);
-    const fileId = /^FID-\d{4}-\d{4}-\d{3}/.exec(file)?.[0];
-    const id = /\*\*ID:\*\*\s*(FID-\d{4}-\d{4}-\d{3})/.exec(text)?.[1];
-    const status = /\*\*Status:\*\*\s*([^\s]+)/.exec(text)?.[1];
-
-    if (!fileId || !id) {
-      fail(`dev/fids/${file}: missing or malformed ID metadata`);
-      continue;
-    }
-    if (id !== fileId) fail(`dev/fids/${file}: ID ${id} does not match filename`);
-    if (seen.has(id)) fail(`dev/fids/${file}: duplicate active ID ${id}`);
-    seen.add(id);
-    if (!status || !allowed.has(status)) {
-      fail(`dev/fids/${file}: active status ${status ?? "missing"} is not allowed`);
-    }
-    if (!register.includes(`(${file})`)) {
-      fail(`dev/fids/README.md does not register active ${id}`);
-    }
-
-    // A converged design may name planned tests that do not exist yet. An
-    // implemented record may not: its promised focused suite must be present.
-    if (status !== "converged") {
-      for (const path of testPaths(text)) {
-        if (!existsSync(join(ROOT, path))) {
-          fail(`dev/fids/${file}: promised test path does not exist: ${path}`);
-        }
-      }
-    }
-  }
-
-  return files.length;
-}
-
-function archivedClosureCommits() {
-  const directory = join(ROOT, "dev/fids/archive");
-  const files = readdirSync(directory).filter((file) =>
-    /^FID-.*\.md$/.test(file),
-  );
-
-  for (const file of files) {
-    const text = read(`dev/fids/archive/${file}`);
-    const resolution = text.split("## Resolution")[1] ?? "";
-    const hashes = Array.from(
-      resolution.matchAll(/(?:commit|SHA)[^\n`]*`([0-9a-f]{7,40})`/gi),
-    ).map((match) => match[1]);
-
-    for (const hash of hashes) {
-      const exists = spawnSync(
-        "git",
-        ["-C", ROOT, "cat-file", "-e", `${hash}^{commit}`],
-        { stdio: "ignore" },
-      ).status === 0;
-
-      if (!exists) fail(`dev/fids/archive/${file}: closure commit ${hash} does not resolve`);
-    }
-  }
-}
-
 function rootDocumentLinks() {
   const documents = [
     "README.md",
@@ -254,9 +180,8 @@ function indexAndClaims() {
 
 runtimeContract();
 gateContract();
-const active = activeFids();
-
-archivedClosureCommits();
+const { active, errors: fidErrors } = checkFidRegister(ROOT);
+for (const error of fidErrors) fail(error);
 rootDocumentLinks();
 indexAndClaims();
 

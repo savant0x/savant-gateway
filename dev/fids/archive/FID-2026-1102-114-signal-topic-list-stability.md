@@ -92,6 +92,8 @@ out-of-list active chip only when needed, then a clear link when `tag` is set.
 
 ## Resolution
 
+- **Implementation commit:** `8a45c2f`.
+
 - **Closed Date:** 2026-11-02
 - **Fix Description:** The topics row now renders a stable ordered list, with the
   selected topic highlighted in place and a separate clear control.

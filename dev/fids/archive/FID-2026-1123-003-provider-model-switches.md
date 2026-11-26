@@ -274,6 +274,8 @@ PATCH /api/admin/models (no session)         → 401 Admin sign-in required.
 
 ## Resolution
 
+- **Implementation commit:** `f875bb9`.
+
 - **Closed Date:** 2026-11-23
 - **Fix Description:** `setModelStatusBulk` in
   `lib/storage/store/model-status.ts` with one shared `enableBlocker` and one

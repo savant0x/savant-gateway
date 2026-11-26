@@ -353,6 +353,8 @@ The implementation must prove all of the following:
 
 ## Resolution
 
+- **Implementation commit:** `b26da9f`.
+
 - **Closed Date:** 2026-11-02
 - **Fix Description:** Implemented the filtered Hacker News source with a
   bounded ranked-list adapter, deterministic topic filter, canonical discussion

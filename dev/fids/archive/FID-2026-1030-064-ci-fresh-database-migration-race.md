@@ -78,6 +78,11 @@ transaction, so check-then-write windows were open for every additive column.
   quality PASS, production build clean, `http-suite` 262 checks PASS,
   `trial-http-suite` all checks PASS.
 
+## Resolution
+
+- **Implementation commit:** `0eb775d`.
+- **Archived:** 2026-10-30. The verification output and CI run are recorded above.
+
 ## Remaining Limits
 
 - The cross-process race is proven by the CI failure and the unit-level race

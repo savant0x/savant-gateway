@@ -1,5 +1,18 @@
 # SCOPE.md — Gateway Project Review
 
+## Session — 2026-11-26 (InferHub consolidation and FID register repair)
+
+- [x] **FID-2026-1126-001, slices 1–2.** Automation level 3. The single
+  elected upstream and Apinex retirement landed in `d44694e`. Slices 3–7
+  remain registered with their owners in the
+  [consolidation FID](dev/fids/FID-2026-1126-001-inferhub-only-upstream-consolidation.md).
+- [ ] **FID-2026-1125-003 and FID-2026-1125-004.** The IR and PT sections
+  below record the router rulings and the remaining pricing work.
+- [ ] **FID-2026-1126-002 — FID register repair.** Automation level 3. Reconcile active and archived
+  status, links, closure evidence, and changelog coverage. Extend the repository
+  check to enforce the repaired register and distinguish historical records
+  from newly archived records. Verify against the working tree and test fixtures.
+
 ## Session — 2026-11-25 (pricing truth: PT)
 
 Operator instruction: "the price system is wrong, it was based on a different upstream
@@ -30,29 +43,26 @@ price, that's how it always was." Automation level 3; strict; single agent.
   create/update, the catalog preview and the provider form — operator ruling:
   delete the flag rather than keep a control that changes nothing. The preview
   now reports paid and unpriced rows instead of a free count it could never show.
-- [ ] **PT4 — Slices 2–8.** Open. Slice 2 (price math loses the free branches) is
-  next, then the gateway `free` billing source, schema and ledgers, plans in raw
-  tokens, customer UI, admin UI, docs. The Free group is converted and then
-  deleted only when no model or plan references it, so no entitlement is cascaded
-  away.
+- [ ] **PT4 — Slices 2–8.** Slices 2–4 and parts of 6–7 landed in `b5efd45`.
+  Finish raw-token plans, then reconcile the remaining customer and admin
+  surfaces, docs, and release tooling with the implemented billing model.
 - [x] **PT5 — Sync summary stops reporting a free count.** **Completed.** The
   count could only ever be zero once free rows stopped importing, and the line it
   shared a label with called every unpriced row `subscription-only`. The summary
   now reports `paid` and `unpriced` per provider and in aggregate, and the sync
   warning names free-pool rows as `never imported` rather than `resale not
   permitted`.
-- [ ] **PT6 — Gateway: no call may be admitted as free.** Open. Measured
+- [x] **PT6 — Gateway: no call may be admitted as free.** Implemented in
+  `b5efd45`. Measured
   footprint before starting: 50 files touch `reserveTrialRoute`, `reserveFreeCall`,
   `isFreeCall`, `freeReservation`, `free_pool_*`, `FREE_*` or `TRIAL_*` — the
   admission entry, the trial route, the allocation ledger, two table families in
   the schema, the trial/allocation API reads, the env envelope, and 14 test
   suites plus two HTTP suites. Removing the entry point alone would leave the
   ledgers and configuration dead, so the removal has to land with its dependents.
-- [ ] **PT7 — Retire the seeded Free group.** Open. Depends on PT6: converting
-  members to `paid` while the free admission path still exists leaves an
-  advertised free tier reachable by group. `legacyAccessFor` and
-  `backfillModelGroups` still derive `free`, and the systems still seed the
-  group.
+- [x] **PT7 — Retire the seeded Free group.** Implemented in `b5efd45`. The
+  migration converts auto-assigned members to paid and deletes the group only
+  after references are gone. Existing entitlement references are preserved.
 
 ## Session — 2026-11-25 (InferHub as a router: IR)
 

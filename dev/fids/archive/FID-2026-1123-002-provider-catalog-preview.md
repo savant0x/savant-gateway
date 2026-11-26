@@ -285,7 +285,7 @@ proof of the code path, not of a keyless deployment.
   `components/admin/provider-preview.tsx` renders the counts, refusals,
   keyed/keyless statement and a 12-row cost sample; the panel adds a Preview
   button and disables Test when this runtime has no key. Documented in
-  [docs/providers.md](docs/providers.md#preview-a-catalog-without-a-key).
+  [docs/providers.md](../../../docs/providers.md#preview-a-catalog-without-a-key).
 - **Tests Added:** `tests/provider-catalog-preview.test.mjs` (8 cases: keyless
   headers keep provider headers and drop both credential headers, an Anthropic
   read keeps the wire version, a configured key still produces credentials, the

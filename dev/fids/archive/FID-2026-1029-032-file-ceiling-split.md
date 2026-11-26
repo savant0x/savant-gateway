@@ -165,6 +165,8 @@ npm run test:http       http-suite 100 checks PASS; trial-http-suite PASS
 
 ## Resolution
 
+- **Implementation commit:** `891ee33`.
+
 - **Closed Date:** 2026-10-30
 - **Fix Description:** `lib/gateway.ts` 412 → 366 lines with the resolution and
   upstream-error helpers in `lib/gateway-resolution.ts`; the catalog table

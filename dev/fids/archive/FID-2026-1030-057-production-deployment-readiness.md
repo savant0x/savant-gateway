@@ -109,7 +109,7 @@ Implemented with deployment unexecuted, per operator instruction.
 - **Operator gate:** `npm run config:check:prod` forces production mode and
   enforces the inventory; `npm run config:check` remains the general form wired
   into `verify`.
-- **Runbook:** [`docs/deployment-runbook.md`](../../docs/deployment-runbook.md)
+- **Runbook:** [`docs/deployment-runbook.md`](../../../docs/deployment-runbook.md)
   — runtime contract, environment inventory, start/backup/restore, ingress and
   SSE requirements, `0 vulnerabilities` audit disposition, and the missing
   operator inputs.

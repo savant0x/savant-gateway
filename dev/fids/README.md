@@ -1,25 +1,23 @@
 # FID register
 
-**Last folder audit:** 2026-11-25 (post-implementation audit). This page
-indexes the working set; each FID owns its own status, evidence and resolution.
-Current counts: 12 active, 201 archived, 213 records. The figures are counted
-from the folder at each audit; an earlier line carried a date fragment in place
-of the active count.
+**Last folder audit:** 2026-11-26 (ground-truth house audit). This page indexes
+the working set; each FID owns its own status, evidence and resolution. Current
+counts: 14 active, 201 archived, 215 records. The figures are counted from the
+folder at each audit; an earlier line carried a date fragment in place of the
+active count.
 
 The four implementation records opened on 2026-11-24 are `closed` and archived
-(`003`–`006`). Every active record but one is launch or acceptance work:
-operator-blocked masters and receipts (`043`, `062`, `137`, `018`, `127`), a
-credential, funding or publication step (`011`, `068`, `1110-002`, `1120-001`),
-and the content record (`017`) whose code is in but whose job proofs are
-outstanding. Two records are implementation work.
-[2026-1125-003](FID-2026-1125-003-inferhub-router-catalog-review.md) is `fixed`:
-its publisher, filter and family steps are implemented and gated, and four
-remaining steps wait on operator rulings its record names.
-[2026-1125-004](FID-2026-1125-004-remove-free-tier-and-weights.md) is
-`converged` on the operator's rulings that the free tier is removed and a price
-is a markup on cost; its eight slices are ordered and gated one at a time. No
-other active record is implementation-ready without an operator input or a proof
-that needs a real browser, job snapshot or deployment.
+(`003`–`006`). **No active record was closure-ready at the 2026-11-26 audit.**
+Two are implemented slices with blocked remainders
+([2026-1125-003](FID-2026-1125-003-inferhub-router-catalog-review.md) at
+`11a75de`; [2026-1125-004](FID-2026-1125-004-remove-free-tier-and-weights.md)
+at `a3564ec`, `f2968ab` and `7ca19dc`), two are operator receipts or publication
+(`127`, `011`), one is a dormant payment lane (`068`), and the rest are masters
+or designs whose remaining steps wait on an operator input, a funded
+observation, or a proof that needs a real browser, job snapshot or deployment.
+[2026-1126-001](FID-2026-1126-001-inferhub-only-upstream-consolidation.md)
+registers the operator's 2026-11-26 ruling that InferHub is the only upstream
+and that the free allocation is gone.
 
 ## Layout
 
@@ -42,16 +40,82 @@ that needs a real browser, job snapshot or deployment.
 | [2026-1104-011](FID-2026-1104-011-policy-v1-2-publication.md) | Policy v1.2 for the current service surface | converged | Operator approves the recipient inventory; worker drafts v1.2 and the acceptance bump. |
 | [2026-1104-017](FID-2026-1104-017-content-matching-controls-and-review.md) | Full linked-content management, settings and rematch | fixed | Implementation landed at `6cb7486` and `1c4c2a5` (keyset inventory, policy/aliases, cancellable rematch, invalidation). Closure still needs pinned job snapshots, per-item retry scopes and HTTP/browser receipts. |
 | [2026-1104-018](FID-2026-1104-018-content-automation-master.md) | Content automation and persistent matching master | converged | Child 015 is `closed` and 016 is `closed`; 017 is `fixed` (`6cb7486`, `1c4c2a5`) and still owes proof. The master closes on that plus the operator's scheduler backend, secret and hosted-tick authorization. |
-| [2026-1110-002](FID-2026-1110-002-identity-calibration-lab.md) | Identity calibration lab and measured certificate | converged | Steps 1–4 are committed (`d66a538`, `b884984`, `1f75c44`; step 4 in `495e8b3`, plus its proxy script under [2026-1122-001](archive/FID-2026-1122-001-commit-calibration-proxy.md)). Step 5, collection, is next and needs an operator-supplied upstream; then the certificate path. |
-| [2026-1120-001](FID-2026-1120-001-inferhub-upstream-onboarding.md) | InferHub upstream onboarding | fixed | Steps 1, 2, 3, 4 and 8 are done (`ed8812a`, `495e8b3`, `b159ba0`): the row is seeded disabled, review-required and resale-restricted. Steps 5–7 stay blocked on funding and a measured figure. |
-| [2026-1125-003](FID-2026-1125-003-inferhub-router-catalog-review.md) | InferHub router catalog: duplicate identities, publisher visibility and filters | fixed | Commit and close the implemented steps; record the rulings on identity aliases, the election blend, failover and a stable published row. |
-| [2026-1125-004](FID-2026-1125-004-remove-free-tier-and-weights.md) | Remove the inherited free tier and token weights from pricing | converged | Implement slice 1 (catalog cannot produce a free offer or a weight), then slices 2–8 in the order the record states. |
+| [2026-1110-002](FID-2026-1110-002-identity-calibration-lab.md) | Identity calibration lab and measured certificate | fixed | Steps 1–4 are committed (`d66a538`, `b884984`, `1f75c44`; step 4 in `495e8b3`, plus its proxy script under [2026-1122-001](archive/FID-2026-1122-001-commit-calibration-proxy.md)). Step 5, collection, is next and needs an operator-supplied upstream; then the certificate path. |
+| [2026-1120-001](FID-2026-1120-001-inferhub-upstream-onboarding.md) | InferHub upstream onboarding | fixed | InferHub is now seeded enabled and elected under `d44694e`. Review remains required. Step 2 was superseded by `f2968ab`; steps 5–7 need bid-pinned cost, funded usage evidence and measured capacity. |
+| [2026-1125-003](FID-2026-1125-003-inferhub-router-catalog-review.md) | InferHub router catalog: duplicate identities, publisher visibility and filters | fixed | Close on the four operator rulings its record names; the InferHub-only pivot makes them launch-critical. |
+| [2026-1125-004](FID-2026-1125-004-remove-free-tier-and-weights.md) | Remove the inherited free tier and token weights from pricing | fixed | Slices 1–4 landed through `b5efd45`, which also removed parts of the customer and admin UI. Finish plain-token plans, remaining UI and documentation, and rebaseline release tooling. |
+| [2026-1126-001](FID-2026-1126-001-inferhub-only-upstream-consolidation.md) | InferHub-only upstream consolidation and free-allocation retirement | fixed | Default election and Apinex retirement landed in `d44694e`. Complete slices 3–7 through their owning FIDs. |
+| [2026-1126-002](FID-2026-1126-002-fid-register-integrity.md) | FID register integrity | fixed | Record the implementation commit and archive the verified repair. |
+
+## Order of work after the InferHub pivot
+
+1. Finish FID-2026-1125-004 in dependency order. Prove raw-token plan and subscription accounting for existing and new customers, then reconcile the remaining customer/admin surfaces, documentation, and release workload with paid-only behavior.
+2. Obtain the four router rulings in FID-2026-1125-003 and implement the resulting publication rules. In parallel, prepare the FID-2026-1120-001 cost snapshot and obtain operator authorization for the funded usage and capacity observations. Record measured limits before publishing offers.
+3. Confirm the recipient inventory and complete the FID-2026-1104-011 policy and acceptance-version update against the implemented product.
+4. Run the configured verification gates on the release candidate. Complete FID-2026-1030-062 and record the five FID-2026-1103-127 observations against that SHA. Require an explicit operator go decision and a passing launch receipt before rollout.
+5. Close each verified implementation with its commit, gate evidence and changelog entry. Record external observations separately when the governing FID permits implementation closure.
+
+Continue calibration and content proof work against their own FIDs and prerequisites. The USDC receive lane requires its recorded operator inputs.
+
+## 2026-11-26 house audit
+
+Ground-truth pass over all twelve active records and this register. `npm run
+repository:check` was already green, and that is the point: it checks presence —
+status ∈ {`converged`,`fixed`}, ID/filename equality, registration, promised test
+paths and archived closure commits — never a record's prose against the tree.
+Seven drifts passed it. All are corrected above; no record was archived, because
+none is complete.
+
+- **`1110-002` `converged` → `fixed`.** Steps 1–4 are implemented and committed
+  (`d66a538`, `b884984`, `1f75c44`, `495e8b3`) while the metadata still carried
+  the pre-implementation status, and the record relied on the `converged`
+  exemption from the on-disk test-path rule. The two unwritten suites are now
+  named as steps 6–7 instead of promised artifacts.
+- **`1125-004` `converged` → `fixed`.** The register said `converged` while the
+  file said `fixed` and the work was committed. Its `Resolution` said only step
+  1a had landed and "Verification Evidence: none"; it now records 1a–1c with the
+  receipt.
+- **`1120-001` self-contradiction.** Status `fixed`, but two sections called it
+  `converged` and claimed "no code, test, schema or provider row exists yet".
+  A dated correction block records the real state. Step 2
+  (`resale_free_pool`) is `superseded`, not done: `1125-004` step 1b deleted the
+  flag at `f2968ab`.
+- **`1125-003` claimed uncommitted work.** The implementation, its tests and the
+  FID itself are in `11a75de`. Commit evidence filled in; the four operator
+  rulings remain blocked.
+- **`018` pointed at a moved child.** Its `016` link resolved nowhere (016 is in
+  `archive/`), and it described 016 as `fixed` and "none is closed or archived"
+  after 015 and 016 had both closed with proofs. Link and child states
+  corrected.
+- **`017` described its own tests as planned.** The gate labels and verification
+  receipt said "planned"/"not implemented" for suites that exist and pass; step
+  5 is the real open item.
+- **`043` carried superseded decisions.** Its recorded offering answers — "free
+  share on `allow_free` only" and "2.5× markup confirmed" — are withdrawn by the
+  operator's 2026-11-25 and 2026-11-26 rulings, and its planning baseline still
+  said SQLite. A dated pivot block records all three without rewriting the
+  2026-11-01 history.
+
+**Operator ruling 2026-11-26, verbatim:** "switching focus to only use inferhub
+as our upstream, which means we no longer have free allocation and a lot of info
+has changed". Registered as
+[2026-1126-001](FID-2026-1126-001-inferhub-only-upstream-consolidation.md); its
+consequences are recorded in `043`, `062`, `068`, `011`, `1120-001` and
+`1125-003`.
+
+**Why nothing was archived.** Every active record still has a live step that its
+own text marks `blocked` or `partial`: operator rulings (`1125-003`), funding
+and a measured figure (`1120-001`), a funded upstream (`1110-002`), job proofs
+and a browser receipt (`017`), four operator inputs (`068`), policy publication
+(`011`), five external observations (`127`), or an open child (`018`, `137`) and
+the launch decision itself (`043`, `062`). Closing any of them would be the
+false-status move this audit exists to remove.
 
 ### Closed in the 2026-11-24 admin and default-provider commits
 
 [2026-1124-001](archive/FID-2026-1124-001-admin-console-clarity.md) is `closed`. A read-only pass over all 17 `/admin` routes fixed seven presentation and payload faults without touching a price, markup, guard or settlement rule, against the review baseline at [audit/2026-11-24-admin-surface-review.md](audit/2026-11-24-admin-surface-review.md): `/admin/showcase` explains its switch instead of 404ing, the overview tiles name the quantities they count, a review-required provider's chat-decision backlog appears on its row, Delete is offered on every non-default row, `/admin/pricing` pages both tables and ships a trimmed row shape (1,104 kB → 347 kB), and the 30-day total has one name; 3 new cases, 12/12 gates and 1267/1267 tests.
 
-[2026-1124-002](archive/FID-2026-1124-002-default-provider.md) is `closed` at implementation `f2e1a53`. The default is `providers.is_default` with a partial unique index that allows at most one holder, not a constant; **Make default** moves it and reports the measured published-row count on each side, the delete guard refuses only the current default, and the write path is unchanged. 10 new cases, 12/12 gates and 1277/1277 tests, plus a live probe of the route's 404/400/401 answers. Its "published at the next sync" consequence is retracted by [2026-1124-004](FID-2026-1124-004-default-provider-namespace-migration.md): the first sync after a switch collides on `models_upstream_idx` until the switch-time re-key lands.
+[2026-1124-002](archive/FID-2026-1124-002-default-provider.md) is `closed` at implementation `f2e1a53`. The default is `providers.is_default` with a partial unique index that allows at most one holder, not a constant; **Make default** moves it and reports the measured published-row count on each side, the delete guard refuses only the current default, and the write path is unchanged. 10 new cases, 12/12 gates and 1277/1277 tests, plus a live probe of the route's 404/400/401 answers. Its "published at the next sync" consequence is retracted by [2026-1124-004](archive/FID-2026-1124-004-default-provider-namespace-migration.md): the first sync after a switch collides on `models_upstream_idx` until the switch-time re-key lands.
 
 ### Closed in the 2026-11-22 security and bulk-decision commits
 

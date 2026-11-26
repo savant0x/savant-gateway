@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1125-002-upstream-identity-hidden.md`
 **ID:** FID-2026-1125-002
 **Severity:** high
-**Status:** COMPLETE
+**Status:** closed
 **Created:** 2026-11-25 16:20
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -415,7 +415,7 @@ status, so D12 survived the first closure. Reading the page's own HTML found
 
 ## Resolution
 
-- **Status:** COMPLETE
+- **Status:** closed
 - **Closed Date:** 2026-11-25
 - **Fix Description:** The published identity is now the display id — the model's
   own name with a billing tier kept — and `lib/model-identity.ts` is the only

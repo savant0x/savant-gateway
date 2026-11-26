@@ -1,5 +1,6 @@
 # FID-2026-1031-077 — A–Z quality audit and read-path performance
 
+- **Filename:** `FID-2026-1031-077-a-z-quality-audit-and-read-path-performance.md`
 - **ID:** FID-2026-1031-077
 - **Status:** closed
 - **Severity:** medium
@@ -167,7 +168,7 @@ PASS, `npm run test:load` 123 checks PASS. `npm audit --omit=dev` reports 0
 vulnerabilities. The load receipt remains candidate-only with no operator
 approval.
 
-## 11. Closure
+## Resolution
 
 Closed against `7996124` on 2026-10-31. The audit is
 `dev/audits/2026-10-31-a-z-quality-audit.md`; the archive copy keeps the same

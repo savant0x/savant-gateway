@@ -65,8 +65,9 @@ operator authority. This planning change edits documentation only.
 ### Approach and child register
 
 Each link below names a plan after the document audit. A `closed` link records
-committed implementation. Every child is now archived (044 `verified` with a
-2026-11-01 closure body, the other seventeen `closed`). All rows require
+committed implementation. Children 044–061 are archived (044 `verified` with a
+2026-11-01 closure body, the other seventeen `closed`); 062 is the active
+acceptance contract and is not archived. All rows require
 completion evidence; a disabled offering requires a tested safety branch rather
 than disappearing work.
 
@@ -245,6 +246,31 @@ tooling hardening. It created no payment, funded no upstream, restored no hosted
 database, delivered no alert, re-measured no PostgreSQL load envelope, published
 no `v1.2` policy and recorded no public GO. Every external obligation in this
 register and in FIDs 062/068 is unchanged, so launch remains no-go.
+
+**Upstream pivot 2026-11-26 — InferHub only, no free allocation.** Operator
+instruction, verbatim: "switching focus to only use inferhub as our upstream,
+which means we no longer have free allocation and a lot of info has changed".
+Three recorded decisions in this register are superseded and must not be read as
+current:
+
+1. The cutover answer "free share on `allow_free` only" is withdrawn. The
+   operator removed the free tier entirely on 2026-11-25; FID-2026-1125-004 owns
+   the removal, and `allow_free`, the daily trial and the allocation ledger are
+   being deleted, not tuned.
+2. The same answer's "rate card and 2.5× markup confirmed" is restated by the
+   operator as a markup on the imported base rate —
+   `sell = cost × (1 + markup)` (`lib/pricing.ts:defaultSellMicros`), with no
+   free or weight layer around it.
+3. The provider mix is no longer a mix. InferHub is the only upstream this
+   gateway will sell from; FID-2026-1126-001 owns the consolidation, and the
+   Apinex balance probe and capacity purchase recorded in FID-062 are
+   historical.
+
+The `Environment` baseline above is the 2026-10-30 planning baseline (SQLite,
+process-local limits). The delivered runtime is one PostgreSQL handle with
+database-backed admission; the historical line stays as the record of that
+session. Launch remains no-go: neither the external acceptance items in 062 nor
+the operator receipt in 127 is discharged by the pivot.
 
 ## Lessons Learned
 

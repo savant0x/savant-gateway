@@ -126,6 +126,8 @@ already-working single-source endpoint, showing progress and isolating failures.
 
 ## Resolution
 
+- **Implementation commit:** `8a45c2f`.
+
 - **Closed Date:** 2026-11-02
 - **Fix Description:** The admin content page now has a “Fetch all sources”
   action that refreshes every enabled source sequentially through the existing

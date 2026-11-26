@@ -3,7 +3,8 @@
 **Filename:** `FID-2026-1124-002-default-provider.md`
 **ID:** FID-2026-1124-002
 **Severity:** medium
-**Status:** fixed
+**Status:** closed
+**Created:** 2026-11-24
 
 ## Summary
 
@@ -271,6 +272,7 @@ and exactly one `is_default` row afterwards, then a check that the seeded
 ## Resolution
 
 - **Closed Date:** 2026-11-24
+- **Implementation commit:** `f2e1a53`.
 - **Fix Description:** The default provider is now `providers.is_default` — one
   holder enforced by a partial unique index, chosen once at migration and moved by
   **Make default** on `/admin/providers`. The id rule, the published badge, the

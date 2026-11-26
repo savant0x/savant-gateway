@@ -34,7 +34,7 @@ that's how it always was".
 - **OS:** win32 (Git Bash)
 - **Language/Runtime:** Node 24.x, TypeScript strict, Next.js 16 App Router
 - **Tool Versions:** npm; gates per `protocol.config.yaml`
-- **Commit/State:** `b76af36`, clean tree. This record is design only.
+- **Commit/State:** Design baseline `b76af36`. Slices 1–2 landed in `d44694e`.
 
 ## Detailed Description
 
@@ -217,7 +217,7 @@ above and stay with their owners.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [x] **Commit SHA:** recorded in the session's git log
+- [x] **Commit SHA:** `d44694e` implements slices 1–2.
 - [x] **File:line ranges:** `lib/storage/schema/catalog-seeds.ts` (`seedProviders`),
       `lib/storage/schema/catalog.ts` (`pickDefaultProvider`),
       `lib/storage/store/providers.ts` (`setDefaultProvider`,
@@ -241,7 +241,7 @@ above and stay with their owners.
 - [x] The records and files cited above exist and were read.
 - [x] `providers.resale_free_pool` deletion verified at
       `lib/storage/schema/catalog.ts:187` (`f2968ab`).
-- [x] Status reflects reality: `converged`, not implemented.
+- [x] Status is `fixed` for implemented slices 1–2. Slices 3–7 retain their separate evidence and approvals.
 
 ## Resolution
 

@@ -4,11 +4,13 @@
 **ID:** FID-2026-1125-003
 **Severity:** high
 **Status:** fixed
-> The implemented steps are in the tree and gated. `fixed` is the register's
-> active implemented status (`scripts/repository-contract-check.mjs` admits
-> `converged` or `fixed` for an active record); `closed` is a separate move that
-> still needs a commit, a CHANGELOG entry and a move to `archive/`, and four
-> steps need the operator rulings named in Step Statuses.
+> The implemented steps are committed at `11a75de` and gated. `fixed` is the
+> register's active implemented status
+> (`scripts/repository-contract-check.mjs` admits `converged` or `fixed` for an
+> active record); `closed` is a separate move that still needs a CHANGELOG entry
+> and a move to `archive/`, and four decisions need the operator rulings named in
+> Step Statuses. The 2026-11-26 ruling that InferHub is the only upstream makes
+> those four rulings launch-critical rather than optional.
 **Created:** 2026-11-25 00:00
 **Automation level:** 3
 **YAGNI-Compliance:** Verified — one derived field, one filter row, one prefix
@@ -33,8 +35,8 @@ and names the four decisions that a code change cannot make.
 - **OS:** win32 (Git Bash)
 - **Language/Runtime:** Node v24.21.0, TypeScript strict
 - **Tool Versions:** Next.js 16.4.6 (Turbopack), ESLint + Prettier, Node test runner
-- **Commit/State:** base `3b73d89`; the changes in this record are in the working
-  tree and uncommitted
+- **Commit/State:** implementation `11a75de` on top of `3b73d89`; the working
+  tree is clean
 
 ## Detailed Description
 
@@ -226,7 +228,8 @@ rulings those changes need.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [ ] **Commit SHA:** not yet committed — the working tree carries the change
+- [x] **Commit SHA:** `11a75de` (`feat(admin): show publisher and published
+      offers in the catalog`), which carries all twelve files in this record
 - [x] **File:line ranges:** `publisherFromModelId` and the scope helper in
       `lib/model-identity.ts`; `FAMILY_PREFIXES` and `familyFromModelId` in
       `lib/model-family.ts`; `publisher` in `lib/model-route-types.ts` and
@@ -288,6 +291,7 @@ rulings those changes need.
 ## Resolution
 
 - **Closed Date:** not closed
+- **Commit:** `11a75de`.
 - **Fix Description:** publisher derivation and display, published/offer state,
   publisher and published filters, family prefix folding, and measured
   documentation of the identity gap.

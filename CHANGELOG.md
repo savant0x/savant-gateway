@@ -3,6 +3,37 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-26 — Historical FID cross-references
+
+These entries index earlier resolutions and their recorded evidence.
+
+- **FID-2026-1030-066 — critical —** The operator superseded the libSQL plan
+  with managed PostgreSQL under FID-2026-1031-085 and FID-2026-1031-086.
+- **FID-2026-1102-089 — high —** Added model aliases, reviewed content
+  coverage, and linking that preserves operator decisions.
+- **FID-2026-1102-090 — high —** Added the public Signal hub, article and
+  topic pages, model coverage, navigation, and sitemap entries.
+- **FID-2026-1102-091 — medium —** Added model watches, saved items,
+  authenticated toggles, and the personalized briefing.
+- **FID-2026-1102-095 — medium —** Added Trendshift repository ingestion
+  with a parser that returns an empty result when its expected links disappear.
+- **FID-2026-1102-096 — medium —** Stored GitHub repository facts at ingest
+  time and displayed them from the stored snapshot.
+- **FID-2026-1102-097 — medium —** Added Signal search over titles and
+  excerpts with query preservation across filters.
+- **FID-2026-1102-098 — low —** Added the seven-day Signal digest and
+  per-UTC-day pages.
+- **FID-2026-1102-099 — medium —** Added native and clipboard sharing to
+  Signal detail pages.
+- **FID-2026-1102-103 — medium —** Added idempotent source presets with
+  manifest provenance and existing-source preservation.
+- **FID-2026-1104-005 — critical —** Bounded pool acquisition and discarded
+  connections after failed rollback in `e145413`. External capacity
+  measurements remain in FID-2026-1104-005-LIVE.
+- **FID-2026-1104-007 — high —** Restored certificate verification for
+  remote PostgreSQL provisioning. The live handshake remains tracked in
+  FID-2026-1104-007-LIVE.
+
 ## 2026-11-26 — One upstream: InferHub, with Apinex retired
 
 - **FID-2026-1126-001 — high —** the registry now has one elected upstream. The

@@ -7,7 +7,8 @@
 > Steps 1a, 1b and 1c are in the tree, committed and gated: the importer reads
 > no upstream weight, refuses every `free/` row for every provider, the registry
 > no longer carries a resale flag, and the sync summary reports priced/unpriced
-> instead of a free count. Steps 2–8 are the ordered remainder. `fixed` means
+> instead of a free count. Steps 2–4 landed in `b5efd45`, with parts of 6–7.
+> Finish step 5, then the outstanding parts of 6–7 and step 8. `fixed` means
 > the landed slice is implemented; it is not a closure of the removal.
 **Created:** 2026-11-25 00:00
 **Automation level:** 3
@@ -258,7 +259,7 @@ free-tier route.
 
 ### Implementation Evidence (REQUIRED for `closed`)
 
-- [x] **Commit SHA:** local commit recorded in the session's git log
+- [x] **Commit SHA:** `a3564ec`, `f2968ab`, `7ca19dc`, `b5efd45`.
 - [x] **File:line ranges:** `lib/providers/normalize/types.ts` (`RawFacts`,
       `NormalizedModel`, `emptyFacts`), `lib/providers/normalize/shapes.ts`
       (`flatFacts`, `freePoolFacts`), `lib/providers/normalize/index.ts`
@@ -266,9 +267,9 @@ free-tier route.
 - [x] **Gate output:** receipt above
 - [x] **Reproducibility:** `grep -rn "tokenWeight" lib/providers` returns only the
       `toRow` constant and the `SyncedModel` field
-- [x] **Step statuses:** 1a implemented; 1b implemented; 1c implemented;
-      2 implemented; 3 implemented; 4 implemented; 5–8 unimplemented and
-      unblocked — the ordered remainder of this record
+- [x] **Step statuses:** 1a–1c and 2–4 are implemented. Step 5 is next.
+      Steps 6–7 are partial because `b5efd45` already removed the trial and
+      allocation surfaces. Step 8 follows the remaining UI work.
 - [x] **Steps 2–4 file ranges:** `lib/providers/catalog.ts` (`importedModelStatus`,
       `costMicros`), `lib/model-groups.ts` (`SYSTEM_GROUP_DEFINITIONS`,
       `WRITABLE_MODES`, `pricesForGroup` deleted), `lib/storage/store/models.ts`,
@@ -287,8 +288,8 @@ free-tier route.
 - [ ] Implementation matches the Proposed Solution
 - [ ] Typecheck/tests/lint pass
 - [ ] Production call-graph evidence
-- [ ] FID status reflects closure state — `fixed` for steps 1a–1c; steps 2–8
-      are open, so this record is not a closure candidate
+- [x] FID status reflects implementation of steps 1–4 and parts of 6–7.
+      Step 5, the remaining UI work, and step 8 still require verification.
 
 ### Loop 2 — Independent audit and self-correction
 
@@ -321,13 +322,13 @@ free-tier route.
   removes the upstream weight from the import path and writes `1`; `f2968ab`
   refuses every `free/` row for every provider and deletes
   `providers.resale_free_pool` (the PostgreSQL path drops the column); `7ca19dc`
-  reports `priced`/`unpriced` instead of a free count. Steps 2–4 are implemented
-  in the working tree: price math has no free branch and no free count, the
+  reports `priced`/`unpriced` instead of a free count. `b5efd45` implements
+  steps 2–4. Price math has no free branch and no free count, the
   gateway's `billingSource` is exactly `subscription | credit`, the free
   reservation column and its rate-limit bucket are gone, and the migration drops
   `models.allow_free`, `models.token_weight` and the trial/allocation tables
-  after converting auto-assigned free rows to `paid`. Steps 5–8 — plain-token
-  plan units, customer UI, admin UI and docs — are unimplemented and unblocked.
+  after converting auto-assigned free rows to `paid`. Finish plain-token
+  plan units (5), the remaining customer and admin UI (6–7), and docs (8).
 - **Deviations:** step 4 could not drop the free stores without their readers,
   so the customer allocation/trial routes, the free allocation panels and the
   `/v1/models` trial fields left in this slice (parts of steps 6–7). The admin

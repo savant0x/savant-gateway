@@ -47,7 +47,7 @@ see it. `settleCall` then computes the upstream cost from the price table
 `grep -rn "provider_cost\|providerCost" lib app components tests` returns no match.
 
 The measured consequence is F-2 in
-[`docs/research/inferhub-upstream-audit.md`](../research/inferhub-upstream-audit.md): the operator
+[`docs/research/inferhub-upstream-audit.md`](../../../docs/research/inferhub-upstream-audit.md): the operator
 cannot tell a 1.0× tier from a 479× one after the fact, because both settle at the same
 price-table figure.
 

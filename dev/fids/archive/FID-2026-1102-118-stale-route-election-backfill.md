@@ -181,6 +181,8 @@ mis-elected is not served.
 
 ## Resolution
 
+- **Implementation commit:** `e58786d`.
+
 - **Closed Date:** 2026-11-03 09:45
 - **Fix Description:** a one-time, version-stamped route reconciliation at
   storage bootstrap re-elects stored catalogues under the tier-scoped rule.

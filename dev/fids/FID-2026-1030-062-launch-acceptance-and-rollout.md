@@ -229,6 +229,18 @@ targets: ramp p95 2,211 ms, steady 4.76 admitted rps, steady p95 1,974 ms / p99
 `finally`; the production `postgres` database was never reset. Item 5 therefore
 stays open with a real PostgreSQL result, and the envelope stays `candidate`.
 
+**Upstream pivot 2026-11-26 — InferHub only.** Operator instruction, verbatim:
+"switching focus to only use inferhub as our upstream, which means we no longer
+have free allocation and a lot of info has changed". Consequences for this
+record: the only serving upstream is now InferHub, so item 2's historical
+`https://api.apinex.bond/v1` balance probe (`balance_usd: 0`, `rpm: 15`,
+`rpm_plan: free`) describes a provider being retired and no longer measures the
+product. Item 5's capacity ceiling must now be stated against InferHub's own
+tiers rather than the 200 RPM subscription. Items 1 and 3–8 are unchanged and
+none is discharged: no paid invoice, provider-delivered IPN, hosted restore,
+delivered alert, PostgreSQL load rerun at target, published `v1.2`, or public GO
+exists.
+
 ## Lessons Learned
 
 Release approval and observed operational acceptance are evidence, not documentation statuses.

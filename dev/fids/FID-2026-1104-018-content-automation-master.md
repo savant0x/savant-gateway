@@ -104,7 +104,7 @@ routing, credit, subscription, prices or the model identity rules.
 | Child | Owns | Depends on | Implementation order |
 | --- | --- | --- | --- |
 | [015](archive/FID-2026-1104-015-content-fetch-automation-and-history.md) | Scheduling, fetch policy, execution budget, source/run history | Existing ingestion/claims | First |
-| [016](FID-2026-1104-016-persistent-content-model-decisions.md) | Link states, accept/dismiss/restore, migration, reconciliation, public visibility | Existing content ids/catalog | Second |
+| [016](archive/FID-2026-1104-016-persistent-content-model-decisions.md) | Link states, accept/dismiss/restore, migration, reconciliation, public visibility | Existing content ids/catalog | Second |
 | [017](FID-2026-1104-017-content-matching-controls-and-review.md) | Full inventory, matching policy/aliases, rematch and catalog invalidation | 015 execution; 016 decisions | Third |
 
 015 and 016 are logically independent but this single-agent implementation order
@@ -149,11 +149,11 @@ Capacity/freshness targets remain measurable claims, never invented guarantees.
 3. **implemented (design):** structure/reference/test-gate review passes 163
    checks; baseline check, tests, quality and build pass. The session receipt
    distinguishes four PostgreSQL-only skips and future implementation gates.
-4. **implemented (code); child closure not done:** children landed in the stated
-   order under their own records — 015 `dbaa033`, 016 `3f5a045`, 017 `6cb7486`
-   and `1c4c2a5`. Each child still owes the proofs named in its own resolution
-   (PostgreSQL ownership/link races, HTTP probes, browser receipts), so none is
-   closed or archived and this master stays active.
+4. **implemented (code); one child open:** children landed in the stated order
+   under their own records — 015 `dbaa033` and 016 `3f5a045` are `closed` and
+   archived with their PostgreSQL, HTTP and browser proofs; 017 is `fixed` at
+   `6cb7486`/`1c4c2a5` and still owes its step-5 proofs. The master stays
+   active on 017 and on the step-5 activation inputs.
 5. **blocked — external activation inputs:** operator confirms scheduler backend,
    secret provisioning and deployment permission; record two real hosted ticks
    independently of implementation closure. Never invent live acceptance.
@@ -277,11 +277,12 @@ or hosted activation is inferred from document convergence.
 
 - **Closed Date:** — (not closed)
 - **Design:** complete and converged 2026-11-04; this record authored no code.
-- **Children:** 015 is `closed` at `dbaa033` and archived 2026-11-24 (the
-  PostgreSQL ownership proof and the HTTP content probes pass). 016 and 017 are
-  implemented and committed (`3f5a045`, `6cb7486`, `1c4c2a5`) and remain `fixed`:
-  016 owes a real-browser exercise of the controls, and 017 the pinned job
-  snapshots, per-item retry scopes and HTTP/browser receipts.
+- **Children:** 015 is `closed` at `dbaa033` (the PostgreSQL ownership proof
+  and the HTTP content probes pass) and 016 is `closed` at `3f5a045` with the
+  admin browser journey (accept, reload, dismiss, reload, restore, reload)
+  recorded. Both are archived. 017 is `fixed` at `6cb7486`/`1c4c2a5` and still
+  owes the pinned job snapshots, per-item retry scopes, two-connection race and
+  HTTP/browser receipts named in its step 5.
 - **Step 5 (activation):** blocked on the operator's scheduler backend/tier,
   secret provisioning and deployment authorization. No hosted heartbeat has been
   observed, so no automatic fetching is claimed in production.

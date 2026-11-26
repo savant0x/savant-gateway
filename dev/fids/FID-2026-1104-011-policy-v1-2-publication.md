@@ -172,6 +172,13 @@ Pending. Text drafting and publication are operator-gated.
   `v1.2` and the acceptance bump; operator publishes with a date.
 - **Archived:** no.
 
+**Upstream pivot 2026-11-26.** `v1.2` must describe the product that now ships:
+InferHub as the only upstream and the removal of the free allocation, the daily
+trial and the weighted-token allowance (FID-2026-1125-004). The recipient
+inventory therefore loses Apinex, and no free-tier language may survive into the
+new text. Publication remains operator-gated at automation level 1, and `v1.2`
+still does not exist.
+
 ## Lessons Learned
 
 Policy versioning only works when a new data recipient triggers a version

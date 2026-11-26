@@ -207,9 +207,9 @@ otherwise capture an explicit equivalent receipt, not a claimed dependency pass.
 
 - gate: lint — `npm run lint`.
 - gate: typecheck — `npm run typecheck`.
-- gate: test tests/content-match-management.test.mjs — planned.
-- gate: test tests/content-rematch.test.mjs — planned.
-- gate: test tests/content-link-decisions.test.mjs — FID-016 planned dependency.
+- gate: test tests/content-match-management.test.mjs — added at `6cb7486`.
+- gate: test tests/content-rematch.test.mjs — added at `6cb7486`.
+- gate: test tests/content-link-decisions.test.mjs — FID-016, archived `closed`.
 - gate: test tests/content-linking.test.mjs — existing matcher.
 - gate: test tests/content-taxonomy.test.mjs — separate topic contract.
 - gate: test tests/catalog-skus.test.mjs — distinct catalog products.
@@ -219,8 +219,10 @@ otherwise capture an explicit equivalent receipt, not a claimed dependency pass.
 
 ### Verification Receipt
 
-Master/session summary hold planning receipts. Planned tests and UI/job behavior
-are not implemented or verified in this pass.
+Master/session summary hold planning receipts. The inventory, matching and
+rematch suites named in the gates exist and pass. The open proof for this record
+is step 5: pinned job snapshots, per-item retry scopes, the two-connection race,
+the shared HTTP probes inside a passing gate, and a browser receipt.
 
 ## Perfection Loop
 

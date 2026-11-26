@@ -110,7 +110,7 @@ collection with card top-ups gated off (NOWPayments is the launch lane); and a
 3000-bps default.
 
 **Fast-path decisions accepted 2026-11-01.** The operator accepted the eight
-recommended answers in [`launch-decision-form.md`](../../docs/launch-decision-form.md).
+recommended answers in [`launch-decision-form.md`](../../../docs/launch-decision-form.md).
 The four implementation questions are answered:
 
 1. **Free-share scope:** `allow_free` rows only. Current admission already
@@ -137,6 +137,8 @@ Five questions: bound spend at scale, account for every billing case, resist abu
 retain price provenance and use one financial truth rather than copied tables.
 
 ## Resolution
+
+- **Implementation commit:** `b5a0ba3`.
 
 Loop 2 AUDIT/ADVERSARIAL → SELF-CORRECT: revalidate dated rates/limits against
 the release candidate. A changed rate requires new evidence and explicit price

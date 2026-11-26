@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1122-007-bulk-chat-decisions.md`
 **ID:** FID-2026-1122-007
 **Severity:** medium
-**Status:** converged
+**Status:** closed
 **Created:** 2026-11-22 25:55
 **Automation level:** 3
 **YAGNI-Compliance:** Verified

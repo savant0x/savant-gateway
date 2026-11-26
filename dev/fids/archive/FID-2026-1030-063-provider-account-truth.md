@@ -203,6 +203,8 @@ trial-http-suite: all checks PASS
 
 ## Resolution
 
+- **Implementation commit:** `d31d9e0d6980245e2732b9f03ec9e69983acbcd5`.
+
 Implemented and verified; the live local check at 16:09:18 UTC returns HTTP 200,
 $0 balance, 0 used / 20M remaining, reset October 31 00:00 UTC.
 - **Closed Date:** 2026-10-30 16:17 UTC

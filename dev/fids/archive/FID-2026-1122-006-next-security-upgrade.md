@@ -77,6 +77,8 @@ version bump missed. Aligned to 16.4.6 on 2026-11-22; `npm run lint` clean and
 
 ## Resolution
 
+- **Implementation commit:** `e3955db` and `35ebeb2`.
+
 - **Closed Date:** 2026-11-22 25:35
 - **Fix Description:** Next.js raised from 16.4.3 to 16.4.6 for the published
   advisory, with `experimental.agentUpgrade: "security"` set so the upgrade

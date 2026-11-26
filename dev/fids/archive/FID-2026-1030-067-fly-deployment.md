@@ -12,9 +12,9 @@
 ## Summary
 
 The gateway is a single Node process writing a WAL-mode SQLite file. It has a
-verified local runtime contract ([deployment runbook](../../docs/deployment-runbook.md))
+verified local runtime contract ([deployment runbook](../../../docs/deployment-runbook.md))
 and no deployable artifact: no `Dockerfile`, no host configuration, no volume
-mount. The hosting decision ([hosting decision](../../docs/hosting-decision.md))
+mount. The hosting decision ([hosting decision](../../../docs/hosting-decision.md))
 selected one persistent process on a local volume over a libSQL port to Vercel,
 because the app already runs exactly that way and WAL requires every reader and
 writer on one host.

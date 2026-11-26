@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1123-001-content-model-link-precision.md`
 **ID:** FID-2026-1123-001
 **Severity:** high
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-23 19:40
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -260,6 +260,7 @@ unconditionally.
 ## Resolution
 
 - **Closed Date:** 2026-11-23
+- **Implementation commit:** `41ddac8`.
 - **Fix Description:** the matcher is now three files with one job each.
   `lib/content/model-aliases.ts` derives alias phrases from the catalog row: the
   last segments of the id and upstream id, the display name, plus family-derived
@@ -276,7 +277,7 @@ unconditionally.
   groups links by `canonicalModelKey` at read time, quotes the cheapest provider
   row, names the others, and keeps a card whose catalog row is gone; the Signal
   page renders that through `components/content/model-module.tsx`. New operator
-  documentation is [docs/content-matching.md](docs/content-matching.md).
+  documentation is [docs/content-matching.md](../../../docs/content-matching.md).
 - **Tests Added:** `tests/content-link-eval.test.mjs` over the committed
   `tests/fixtures/content-link-eval.json` (21 labelled headlines, exact expected
   and forbidden key sets), `tests/content-link-groups.test.mjs` (4 cases: provider

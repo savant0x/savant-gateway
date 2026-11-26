@@ -4,6 +4,7 @@ import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
 import { sanitizeError } from "@/lib/http";
 import { syncAfterSave } from "@/lib/providers/enable-sync";
 import {
+  providerElectionRefusal,
   providerEnableRefusal,
   providerKeyConfigured,
   readProviderInput,
@@ -11,7 +12,12 @@ import {
 import { refreshEnabledProviderAccounts } from "@/lib/providers/runtime";
 import { syncProvider } from "@/lib/providers/sync";
 import { readJsonObject, requestBodyError } from "@/lib/request-limits";
-import { createProvider, getProvider, listProviders } from "@/lib/store";
+import {
+  createProvider,
+  getDefaultProviderSlug,
+  getProvider,
+  listProviders,
+} from "@/lib/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,6 +55,15 @@ export async function POST(request: Request) {
   const refusal = providerEnableRefusal(input.value);
 
   if (refusal) return adminError(409, refusal);
+
+  if (input.value.enabled) {
+    const election = providerElectionRefusal(
+      await getDefaultProviderSlug(),
+      input.value.slug,
+    );
+
+    if (election) return adminError(409, election);
+  }
 
   if (await getProvider(input.value.slug)) {
     return adminError(409, "A provider with that slug already exists.");

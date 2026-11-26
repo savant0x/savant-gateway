@@ -4,11 +4,12 @@ import assert from "node:assert/strict";
  * HTTP probes for the scheduled provider heartbeat (FID-2026-1105-004).
  *
  * The fixture is disposable: one provider whose mock catalog is an explicit
- * `data: []` is the only due row, so `attempted` is unambiguous. `mock` and
- * `alloc` are pinned fresh first because an empty-catalog sync on them would
- * delist `mock-paid` and break every later catalog check. The mock mode and the
- * pinned timestamps are restored, and the fixture provider is deleted, in
- * `finally`.
+ * `data: []` is the only due row, so `attempted` is unambiguous. `mock` is
+ * pinned fresh first because an empty-catalog sync on it would delist
+ * `mock-paid` and break every later catalog check. The seeded InferHub row is
+ * the elected default and is disabled for the probe so it cannot also be due.
+ * The mock mode, flags and pinned timestamps are restored, and the fixture
+ * provider is deleted, in `finally`.
  */
 export async function runProviderCronChecks({ baseUrl, db, secret, mock }) {
   const SLUG = "cron";
@@ -30,12 +31,18 @@ export async function runProviderCronChecks({ baseUrl, db, secret, mock }) {
 
   const originalSyncedAt = new Map();
 
-  for (const slug of ["mock", "alloc"]) {
+  for (const slug of ["mock", "inferhub"]) {
     originalSyncedAt.set(slug, (await readProvider(slug))?.synced_at ?? null);
   }
 
+  const seededEnabled = (await readProvider("inferhub"))?.enabled ?? 0;
+
   try {
     const now = new Date().toISOString();
+
+    await db
+      .prepare("UPDATE providers SET enabled = 0 WHERE slug = 'inferhub'")
+      .run();
 
     await db
       .prepare(
@@ -48,13 +55,11 @@ export async function runProviderCronChecks({ baseUrl, db, secret, mock }) {
       )
       .run(SLUG, mock.baseUrl, KEY_ENV_VAR, now, now);
 
-    // Not due: the scheduler must not touch the seeded providers, whose mock
+    // Not due: the scheduler must not touch the seeded provider, whose mock
     // catalog is about to become empty.
-    for (const slug of ["mock", "alloc"]) {
-      await db
-        .prepare("UPDATE providers SET synced_at = ? WHERE slug = ?")
-        .run(now, slug);
-    }
+    await db
+      .prepare("UPDATE providers SET synced_at = ? WHERE slug = 'mock'")
+      .run(now);
 
     const anonymous = await call();
 

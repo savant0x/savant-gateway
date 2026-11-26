@@ -59,17 +59,18 @@ async function defaults(db) {
   return rows.map((row) => row.slug);
 }
 
-test("a fresh database holds exactly one default, the seeded legacy row", async () => {
+test("a fresh database holds exactly one default, the seeded InferHub row", async () => {
   const db = await fixture();
 
   try {
-    assert.deepEqual(await defaults(db), ["savant"]);
-    assert.equal(await getDefaultProviderSlug(db), "savant");
+    assert.deepEqual(await defaults(db), ["inferhub"]);
+    assert.equal(await getDefaultProviderSlug(db), "inferhub");
 
     const provider = await getDefaultProvider(db);
 
-    assert.equal(provider?.slug, "savant");
+    assert.equal(provider?.slug, "inferhub");
     assert.equal(provider?.isDefault, true, "the record carries the fact");
+    assert.equal(provider?.enabled, true, "the default is the enabled upstream");
   } finally {
     await db.close();
   }
@@ -82,18 +83,28 @@ test("making another provider default moves it and leaves one holder", async () 
     await replaceModels(db, [model("inferhub", "inferhub/glm-5.3", 1)], 2_500, "inferhub");
     await replaceModels(db, [model("savant", "gpt-6-astra", 2)], 2_500, "savant");
 
-    const change = await setDefaultProvider(db, "inferhub", NOW);
+    const change = await setDefaultProvider(db, "savant", NOW);
 
     assert.deepEqual(change, {
-      previousSlug: "savant",
-      slug: "inferhub",
+      previousSlug: "inferhub",
+      slug: "savant",
       previousPublishedIds: 1,
       publishedIds: 1,
     });
-    assert.deepEqual(await defaults(db), ["inferhub"]);
-    assert.equal(await getDefaultProviderSlug(db), "inferhub");
-    assert.equal((await getProvider(db, "savant"))?.isDefault, false);
-    assert.equal((await getProvider(db, "inferhub"))?.isDefault, true);
+    assert.deepEqual(await defaults(db), ["savant"]);
+    assert.equal(await getDefaultProviderSlug(db), "savant");
+    assert.equal((await getProvider(db, "inferhub"))?.isDefault, false);
+    assert.equal((await getProvider(db, "savant"))?.isDefault, true);
+    assert.equal(
+      (await getProvider(db, "savant"))?.enabled,
+      true,
+      "the election enables the target",
+    );
+    assert.equal(
+      (await getProvider(db, "inferhub"))?.enabled,
+      false,
+      "and disables the previous upstream",
+    );
   } finally {
     await db.close();
   }
@@ -106,11 +117,11 @@ test("the database refuses a second default", async () => {
     await assert.rejects(
       () =>
         db
-          .prepare("UPDATE providers SET is_default = 1 WHERE slug = 'inferhub'")
+          .prepare("UPDATE providers SET is_default = 1 WHERE slug = 'savant'")
           .run(),
       /unique|providers_default_idx/i,
     );
-    assert.deepEqual(await defaults(db), ["savant"]);
+    assert.deepEqual(await defaults(db), ["inferhub"]);
   } finally {
     await db.close();
   }
@@ -134,6 +145,8 @@ test("the change reports the rows whose ids move, counted from the catalog", asy
 
     assert.equal(await countPublishedProviderModels(db, "savant"), 2);
 
+    await setDefaultProvider(db, "savant", NOW);
+
     const change = await setDefaultProvider(db, "apixo", NOW);
 
     assert.equal(change?.previousPublishedIds, 2, "two bare ids gain a prefix");
@@ -147,19 +160,19 @@ test("the delete guard follows the stored default, not a slug", async () => {
   const db = await fixture();
 
   try {
-    assert.equal(await deleteProvider(db, "savant"), false, "the default stays");
-    assert.ok(await getProvider(db, "savant"));
+    assert.equal(await deleteProvider(db, "inferhub"), false, "the default stays");
+    assert.ok(await getProvider(db, "inferhub"));
 
-    await setDefaultProvider(db, "inferhub", NOW);
+    await setDefaultProvider(db, "savant", NOW);
 
     assert.equal(
-      await deleteProvider(db, "savant"),
+      await deleteProvider(db, "inferhub"),
       true,
       "once it is no longer the default it can be removed",
     );
-    assert.equal(await getProvider(db, "savant"), undefined);
+    assert.equal(await getProvider(db, "inferhub"), undefined);
     assert.equal(
-      await deleteProvider(db, "inferhub"),
+      await deleteProvider(db, "savant"),
       false,
       "the new default inherits the refusal",
     );
@@ -176,16 +189,18 @@ test("with no flag the fallback picks the enabled row with the lowest order", as
 
     assert.equal(
       await getDefaultProviderSlug(db),
-      "savant",
+      "inferhub",
       "the lowest sort_order enabled row",
     );
 
-    await db.prepare("UPDATE providers SET enabled = 0 WHERE slug = 'savant'").run();
+    await db
+      .prepare("UPDATE providers SET enabled = 0 WHERE slug = 'inferhub'")
+      .run();
 
     assert.equal(
       await getDefaultProviderSlug(db),
-      "commandcode",
-      "a disabled row is not chosen while an enabled one exists",
+      "savant",
+      "with nothing enabled, the lowest sort_order row is the deterministic pick",
     );
   } finally {
     await db.close();
@@ -196,11 +211,11 @@ test("switching to the current default is a no-op that reports no movement", asy
   const db = await fixture();
 
   try {
-    const change = await setDefaultProvider(db, "savant", NOW);
+    const change = await setDefaultProvider(db, "inferhub", NOW);
 
-    assert.equal(change?.previousSlug, "savant");
+    assert.equal(change?.previousSlug, "inferhub");
     assert.equal(change?.previousPublishedIds, 0);
-    assert.deepEqual(await defaults(db), ["savant"]);
+    assert.deepEqual(await defaults(db), ["inferhub"]);
     assert.ok((await listProviderRecords(db)).length > 0);
   } finally {
     await db.close();
@@ -212,7 +227,7 @@ test("an unknown slug is refused and changes nothing", async () => {
 
   try {
     assert.equal(await setDefaultProvider(db, "absent", NOW), null);
-    assert.deepEqual(await defaults(db), ["savant"]);
+    assert.deepEqual(await defaults(db), ["inferhub"]);
   } finally {
     await db.close();
   }

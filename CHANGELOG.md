@@ -3,6 +3,28 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-26 — One upstream: InferHub, with Apinex retired
+
+- **FID-2026-1126-001 — high —** the registry now has one elected upstream. The
+  seeded `inferhub` row is the only enabled provider and the `is_default` holder;
+  a fresh database elects the enabled row with the lowest sort order. **Make
+  default** enables the target and disables every other provider in one
+  transaction, a second enable is refused with a `409` that names *Make default*,
+  and the elected row cannot be disabled because it is the only source and owns
+  the published catalog identity.
+- Apinex is retired: the `savant` seed ships disabled, the compiled `savant`
+  default is `inferhub`, and the Apinex public metadata URL is no longer a
+  default — the overlay is opt-in via `PROVIDER_PUBLIC_MODELS_URL` and read only
+  for the elected default. A model only Apinex supplied is hidden by the enabled
+  provider publication gate rather than repriced.
+- `docs/providers.md` documents the election and the retirement;
+  `docs/business-model.md`, `docs/offering-evidence.md`,
+  `docs/launch-readiness.md` and `docs/upstream-speed-probe.md` carry historical
+  notes because their figures were measured against Apinex.
+- Verified: `npm test` 1242 tests / 1226 pass / 0 fail, `npm run lint` 0
+  warnings, `npm run typecheck`, `npm run quality` (701 files), `npm run build`
+  and `npm run test:http` 731 checks PASS.
+
 ## 2026-11-26 — No free tier and no token weights
 
 - **FID-2026-1125-004 — high —** price math no longer has a free shortcut:

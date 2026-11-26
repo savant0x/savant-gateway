@@ -1,11 +1,15 @@
 # Adding an upstream provider
 
-Status: **current** for the checked-in gateway as of 2026-11-05.
+Status: **current** for the checked-in gateway as of 2026-11-26.
 
-The gateway can register multiple providers and reuse its OpenAI Chat
-Completions and Anthropic Messages adapters. A compatible provider may need
-only a registry row, an environment key and a sync; a different catalog,
-pricing, authentication or billing contract can require additional work.
+Only one upstream is enabled at a time: the elected default. Since the
+InferHub-only ruling (FID-2026-1126-001) that row is `inferhub`; the retired
+Apinex row (`savant`), CommandCode and Apixo stay registered but disabled.
+**Make default** is the election: it enables the target and disables every other
+provider. The registry still reuses its OpenAI Chat Completions and Anthropic
+Messages adapters, and a compatible provider still needs only a registry row, an
+environment key and a sync; a different catalog, pricing, authentication or
+billing contract can require additional work.
 Savant authenticates its own customer keys and settles calls in its own ledger;
 the provider key remains on the server.
 
@@ -96,8 +100,14 @@ first, so an existing integration keeps resolving to the row it always did.
 It is one stored fact — `providers.is_default`, with a partial unique index that
 allows at most one holder — not a compiled constant, so it can be moved.
 
-**Make default** on any other row moves it. Two consequences follow, and the
-console states both counts before you confirm:
+**Make default** on any other row moves it and is the only way to change which
+upstream is enabled. The election enables the target and disables every other
+row in the same transaction, so the registry cannot hold two sources. Enabling a
+second row on its own is refused (`409`, with the message naming **Make
+default**), and the elected row cannot be disabled: that would leave the product
+with no source and no namespace owner, the same reason the default cannot be
+deleted. Two consequences follow the election, and the console states both
+counts before you confirm:
 
 1. **Stored ids are re-keyed immediately.** The outgoing default's rows stop being
 bare and become `slug/id`; the incoming default's rows stop being prefixed and
@@ -117,10 +127,36 @@ namespace undefined. Make another provider the default first, then delete the ol
 one: a row that used to be the default is deletable, and its catalog rows go with
 it while usage history stays.
 
-A database that has never been told which row is the default picks one once, at
-migration time: the legacy `savant` seed if it exists, otherwise the enabled row
-with the lowest `sort_order`, otherwise the lowest `sort_order`. The pick only
-runs while nothing is flagged, so a later choice is never overwritten.
+A database that has never been told which row is the default picks the enabled
+row with the lowest `sort_order`, otherwise the lowest `sort_order`. The seeds
+enable only `inferhub`, so a fresh database elects it. The pick only runs while
+nothing is flagged, so a later choice is never overwritten.
+
+## Retired upstream — Apinex
+
+Apinex (`savant`, `https://api.apinex.bond/v1`, `PROVIDER_KEY`) supplied the
+original catalog. The operator retired it on 2026-11-26 and named InferHub the
+only upstream (FID-2026-1126-001):
+
+- The seed row is **disabled** and is no longer the default. It is kept, not
+deleted, because provider records are the history of what was sold; its
+`usage_events` and settlement rows name it and must keep naming it.
+- A row that only Apinex supplied is hidden by the publication gate, because
+that gate joins `providers.enabled = 1`. It is not repriced and not republished
+through another provider; a model InferHub also carries stays published through
+InferHub's own row.
+- Its public metadata overlay is no longer a compiled default. The overlay read
+is opt-in: only an explicit `PROVIDER_PUBLIC_MODELS_URL` is fetched, and only for
+the elected default, so InferHub rows can never inherit Apinex figures by id
+collision.
+- `PROVIDER_BASE_URL` still seeds the retired row's stored base URL on first
+boot. It does not enable it.
+
+The dated documents measured against Apinex
+([business model](business-model.md), [offering evidence](offering-evidence.md),
+[launch readiness](launch-readiness.md), the
+[upstream speed probe](upstream-speed-probe.md)) carry a historical note and are
+not current product claims.
 
 ## Preview a catalog without a key
 

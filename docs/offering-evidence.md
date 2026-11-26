@@ -19,6 +19,11 @@ model. It does not approve an offering, a price, a limit or a spend budget.
 
 ## Current offering state
 
+> **Historical as of 2026-10-30.** The operator retired Apinex on 2026-11-26 and
+> named InferHub the only enabled upstream (FID-2026-1126-001), so the upstream
+> rows below are not the current offering. They are kept as the dated evidence
+> they are.
+
 | Item | Value | State | Source / date |
 | --- | --- | --- | --- |
 | Default upstream | Apinex, slug `savant`, `https://api.apinex.bond/v1`, key variable `PROVIDER_KEY` | Observed | local `data/gateway.db` providers row, updated 2026-10-29T21:15:21Z; `docs/business-model.md` |

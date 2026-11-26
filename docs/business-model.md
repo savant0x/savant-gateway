@@ -1,5 +1,12 @@
 # Business model, provider prices, and unit economics
 
+> **Historical (2026-10-29 – 2026-11-02).** Every figure below was measured
+> against the retired Apinex upstream while the free tier still existed. The
+> operator retired Apinex and the free allocation on 2026-11-26
+> (FID-2026-1126-001, FID-2026-1125-004); InferHub is the only enabled upstream.
+> Regenerate only after re-baselining the catalog and the report against
+> InferHub. Nothing here is a current price or offering.
+
 This is the operator's working document for the gateway's money. It answers four
 questions: what each upstream charges us, what we sell it for, what the free
 allowance costs, and how much paid revenue has to exist before the free tier

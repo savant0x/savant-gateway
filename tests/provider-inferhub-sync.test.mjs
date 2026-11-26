@@ -96,8 +96,8 @@ test("the seeded InferHub row imports priced rows and refuses everything else", 
 
     assert.deepEqual(
       rows.map((row) => row.id),
-      ["inferhub/cc/claude-opus-5-5", "inferhub/cc/unpriced-row"],
-      "a non-default provider is namespaced, and dropped ids leave no row",
+      ["cc/claude-opus-5-5", "cc/unpriced-row"],
+      "the default provider owns the bare ids, and dropped ids leave no row",
     );
 
     const priced = rows[0];

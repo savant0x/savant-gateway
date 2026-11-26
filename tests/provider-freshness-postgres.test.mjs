@@ -67,6 +67,11 @@ async function addProvider(db, slug, options = {}) {
 }
 
 async function addModel(db, id) {
+  // The Apinex seed ships disabled (FID-2026-1126-001); this suite uses its
+  // slug as a stand-in upstream, so the fixture enables it directly.
+  await db
+    .prepare("UPDATE providers SET enabled = 1 WHERE slug = 'savant'")
+    .run();
   await db
     .prepare(
       `INSERT INTO models

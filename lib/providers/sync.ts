@@ -38,11 +38,18 @@ import { readCatalogGroups } from "./catalog-groups.ts";
  * labelled by the default provider's map.
  */
 
-const DEFAULT_PUBLIC_MODELS_URL = "https://apinex.bond/api/public/models";
-
+/**
+ * The public metadata overlay is opt-in: it was Apinex's price sheet, and with
+ * that upstream retired there is no default URL to point at
+ * (FID-2026-1126-001). Only an explicit `PROVIDER_PUBLIC_MODELS_URL` is read, so
+ * the elected default's rows can never inherit a retired vendor's figures by id
+ * collision.
+ */
 async function fetchPublicMetadata(): Promise<Map<string, ModelSpec>> {
-  const url =
-    process.env.PROVIDER_PUBLIC_MODELS_URL?.trim() || DEFAULT_PUBLIC_MODELS_URL;
+  const url = process.env.PROVIDER_PUBLIC_MODELS_URL?.trim();
+
+  if (!url) return new Map<string, ModelSpec>();
+
   const response = await fetch(url, {
     headers: { Accept: "application/json", src: "gate" },
     signal: AbortSignal.timeout(10_000),

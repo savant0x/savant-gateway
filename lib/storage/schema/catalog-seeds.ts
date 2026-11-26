@@ -113,9 +113,11 @@ async function backfillRouteGroups(db: PostgresDatabase) {
 }
 
 /**
- * The default provider inherits the legacy environment triple and status row.
- * CommandCode is registered up front but stays unconfigured until its key
- * exists; Apixo ships disabled because its catalog sync needs a key.
+ * One upstream is enabled: InferHub, the operator's ruling for this product
+ * (FID-2026-1126-001). `savant` is the retired Apinex row and keeps its history
+ * disabled; CommandCode and Apixo stay registered but disabled. Enabling a row
+ * is the same action as electing it default, so a second enabled seed would
+ * contradict the registry guard.
  */
 async function seedProviders(db: PostgresDatabase) {
   const now = new Date().toISOString();
@@ -135,7 +137,7 @@ async function seedProviders(db: PostgresDatabase) {
          subscription_tokens_used, subscription_tokens_remaining,
          subscription_allowed, subscription_expires_at, synced_at, error,
          created_at, updated_at)
-       VALUES ('savant', 'Savant', 'openai', ?, 'PROVIDER_KEY', ?, 1, 1, 1, 1,
+       VALUES ('savant', 'Savant', 'openai', ?, 'PROVIDER_KEY', ?, 1, 1, 1, 0,
                10, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT DO NOTHING`,
     )
@@ -167,7 +169,7 @@ async function seedProviders(db: PostgresDatabase) {
          sort_order, status, created_at, updated_at)
        VALUES ('commandcode', 'CommandCode', 'both',
                'https://api.commandcode.ai/provider/v1',
-               'COMMANDCODE_API_KEY', '{}', 0, 0, 0, 1, 20,
+               'COMMANDCODE_API_KEY', '{}', 0, 0, 0, 0, 20,
                'unconfigured', ?, ?)
        ON CONFLICT DO NOTHING`,
     )
@@ -204,10 +206,11 @@ async function seedProviders(db: PostgresDatabase) {
     )
     .run(now, now);
 
-  // InferHub ships disabled, review-required and with free-pool resale refused:
-  // its Terms permit reselling paid marketplace models and forbid the free pool,
-  // its catalog proves identifiers but not chat capability, and enabling it
-  // before INFERHUB_API_KEY exists would fail every sync. The one default header
+  // InferHub ships enabled as the single upstream and is review-required: its
+  // Terms permit reselling paid marketplace models and forbid the free pool, and
+  // its catalog proves identifiers but not chat capability. A missing
+  // INFERHUB_API_KEY leaves it `unconfigured`, which skips sync rather than
+  // failing it. The one default header
   // is deliberate — without it a capacity-blocked request queues for up to 30s,
   // and this gateway has no cross-provider failover to spend that time on. Its
   // wallet is readable, but not at `${baseUrl}/balance`: the account document is
@@ -224,7 +227,7 @@ async function seedProviders(db: PostgresDatabase) {
        VALUES ('inferhub', 'InferHub', 'openai',
                'https://api.inferhub.dev/v1', 'INFERHUB_API_KEY', ?,
                1, 0, 0, 1, 'https://inferhub.dev/api/me',
-               'https://inferhub.dev/api/catalog', 0, 50,
+               'https://inferhub.dev/api/catalog', 1, 50,
                'unconfigured', ?, ?)
        ON CONFLICT DO NOTHING`,
     )

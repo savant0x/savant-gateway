@@ -43,6 +43,12 @@ async function fixture() {
 }
 
 async function seedModel(db, overrides = {}) {
+  // The fixture exercises several upstreams; the Apinex seed is retired and
+  // disabled, so it is enabled here directly (routing tests bypass the guard).
+  await db
+    .prepare("UPDATE providers SET enabled = 1 WHERE slug IN ('savant', 'commandcode')")
+    .run();
+
   const model = {
     id: "m1",
     upstreamId: "m1",

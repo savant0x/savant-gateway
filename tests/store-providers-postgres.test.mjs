@@ -10,6 +10,7 @@ import {
   getProviderStatusBySlug,
   listProviderRecords,
   listProviders,
+  setDefaultProvider,
   setProviderEnabled,
   updateProvider,
 } from "../lib/storage/store/providers.ts";
@@ -60,8 +61,28 @@ test("the seeded registry is listed in sort order", async () => {
   );
   assert.equal(records[0].label, "Savant");
   assert.equal(records[0].defaultHeaders.src, "gate");
+  assert.equal(
+    records[0].enabled,
+    false,
+    "Apinex is retired and its row is disabled",
+  );
   assert.equal(records[3].requiresModelReview, true);
   assert.equal(records[3].enabled, false);
+  assert.equal(
+    records[4].enabled,
+    true,
+    "InferHub is the single enabled upstream",
+  );
+  assert.equal(
+    records[4].isDefault,
+    true,
+    "the enabled row is also the elected default",
+  );
+  assert.equal(
+    records.filter((provider) => provider.enabled).length,
+    1,
+    "no second source is enabled",
+  );
 });
 
 test("the summary carries a model count and a status per provider", async () => {
@@ -105,14 +126,32 @@ test("an unknown provider reports unconfigured, not a stale balance", async () =
   assert.equal(legacy.status, (await getProviderStatusBySlug(db, "savant")).status);
 });
 
-test("enabling and disabling a provider is recorded", async () => {
+test("only the elected default can be enabled, and it cannot be disabled", async () => {
   const db = await fixture();
 
-  assert.equal(await setProviderEnabled(db, "apixo", true, NOW), true);
-  assert.equal((await getProvider(db, "apixo")).enabled, true);
-
-  assert.equal(await setProviderEnabled(db, "apixo", false, NOW), true);
+  assert.equal(
+    await setProviderEnabled(db, "apixo", true, NOW),
+    false,
+    "a second enabled row is refused",
+  );
   assert.equal((await getProvider(db, "apixo")).enabled, false);
+
+  assert.equal(
+    await setProviderEnabled(db, "inferhub", false, NOW),
+    false,
+    "the elected upstream cannot be disabled on its own",
+  );
+  assert.equal((await getProvider(db, "inferhub")).enabled, true);
+
+  await setDefaultProvider(db, "apixo", NOW);
+
+  assert.equal((await getProvider(db, "apixo")).enabled, true);
+  assert.equal(
+    (await getProvider(db, "inferhub")).enabled,
+    false,
+    "the election disabled the previous upstream",
+  );
+  assert.equal(await setProviderEnabled(db, "apixo", true, NOW), true);
 
   assert.equal(
     await setProviderEnabled(db, "missing", true, NOW),
@@ -168,11 +207,11 @@ test("deleting a provider removes its catalog but never the default", async () =
   assert.equal(Number(models.total), 0, "the provider's catalog rows are removed");
 
   assert.equal(
-    await deleteProvider(db, "savant"),
+    await deleteProvider(db, "inferhub"),
     false,
     "the default provider is not deletable",
   );
-  assert.ok(await getProvider(db, "savant"));
+  assert.ok(await getProvider(db, "inferhub"));
 });
 
 test("an unknown provider cannot be updated", async () => {
@@ -230,7 +269,7 @@ test("the review gate is recorded and a delete leaves no lease behind", async ()
   );
 });
 
-test("InferHub is seeded disabled and review-required", async () => {
+test("InferHub is seeded as the enabled default and review-required", async () => {
   const db = await fixture();
   const inferhub = await getProvider(db, "inferhub");
 
@@ -242,9 +281,10 @@ test("InferHub is seeded disabled and review-required", async () => {
   assert.deepEqual(inferhub.defaultHeaders, { "X-InferHub-No-Queue": "1" });
   assert.equal(
     inferhub.enabled,
-    false,
-    "enabling before the key exists would fail every sync",
+    true,
+    "the single enabled upstream elected by the operator ruling",
   );
+  assert.equal(inferhub.isDefault, true, "the enabled row owns the namespace");
   assert.equal(
     inferhub.requiresModelReview,
     true,

@@ -48,6 +48,12 @@ function synced(slug, upstreamId, id, index) {
 
 /** Two providers with one overlapping upstream id and one provider-only id. */
 async function seed(db) {
+  // Two living providers for the switch: the Apinex seed ships disabled, so the
+  // fixture enables it before serving a catalog through it.
+  await db
+    .prepare("UPDATE providers SET enabled = 1 WHERE slug = 'savant'")
+    .run();
+
   await replaceModels(db, [synced("savant", "gpt-5", "gpt-5", 1)], 2_500, "savant");
   await replaceModels(
     db,
@@ -144,6 +150,20 @@ async function seed(db) {
       "INSERT INTO content.watches (user_id, model_id, created_at) VALUES ('u1', 'gpt-5', ?)",
     )
     .run(THEN);
+
+  // The fixture starts from the pre-consolidation shape this suite exists to
+  // migrate: `savant` is the sole enabled default and InferHub is a stored,
+  // disabled second provider. The seeds now do the opposite (FID-2026-1126-001).
+  await db
+    .transaction(async () => {
+      await db.prepare("UPDATE providers SET is_default = 0, enabled = 0").run();
+      await db
+        .prepare(
+          "UPDATE providers SET is_default = 1, enabled = 1 WHERE slug = 'savant'",
+        )
+        .run();
+    })
+    .immediate();
 }
 
 async function ids(db) {

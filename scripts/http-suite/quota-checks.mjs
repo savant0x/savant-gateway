@@ -41,10 +41,15 @@ export async function runQuotaChecks(context) {
       500000, 1000000, 'active', ?, 'savant', 'Mock', 'chat', 'manual', 1,
       'paid', 'manual', 1000000, 2000000, 'manual')`)
     .run(now);
+  // `savant` is the retired Apinex seed row and ships disabled; this probe
+  // serves its catalog through that slug, so it elects the row for the run and
+  // restores the original record and the InferHub election in `finally`.
+  await db.prepare("UPDATE providers SET is_default = 0").run();
   await db.prepare(`UPDATE providers SET base_url = ?, key_env_var = 'HTTP_SUITE_PROVIDER_KEY',
     default_headers = '{}', subscription_mode = 'free',
     subscription_token_limit = 20000000, subscription_tokens_used = 19631919,
-    subscription_tokens_remaining = 368081, synced_at = '2026-10-29T21:15:21.452Z'
+    subscription_tokens_remaining = 368081, synced_at = '2026-10-29T21:15:21.452Z',
+    enabled = 1, is_default = 1
     WHERE slug = 'savant'`).run(mock.baseUrl);
   const login = await request(baseUrl, "/api/admin/session", {
     method: "POST", body: { password: context.adminPassword },
@@ -238,6 +243,9 @@ export async function runQuotaChecks(context) {
 
     await db.prepare(`INSERT INTO providers (${columns.join(",")}) VALUES (${columns.map(() => "?").join(",")})`)
       .run(...columns.map((key) => original[key]));
+    await db
+      .prepare("UPDATE providers SET is_default = 1, enabled = 1 WHERE slug = 'inferhub'")
+      .run();
     mock.reset();
   }
 }

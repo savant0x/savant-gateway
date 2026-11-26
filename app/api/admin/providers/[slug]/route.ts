@@ -3,6 +3,7 @@ import { sanitizeError } from "@/lib/http";
 import { syncAfterSave } from "@/lib/providers/enable-sync";
 import { syncProvider } from "@/lib/providers/sync";
 import {
+  providerElectionRefusal,
   providerEnableRefusal,
   providerKeyConfigured,
   readProviderInput,
@@ -53,6 +54,15 @@ export async function PATCH(request: Request, context: Context) {
   const refusal = providerEnableRefusal(input.value);
 
   if (refusal) return adminError(409, refusal);
+
+  if (input.value.enabled) {
+    const election = providerElectionRefusal(
+      await getDefaultProviderSlug(),
+      slug,
+    );
+
+    if (election) return adminError(409, election);
+  }
 
   const provider = await updateProvider(slug, input.value);
 

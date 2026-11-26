@@ -292,14 +292,31 @@ export async function runOperationsChecks(context) {
       String(unavailable.json?.error?.message ?? "").includes("unavailable"),
     );
 
+    // Only the elected upstream may be enabled (FID-2026-1126-001). Re-enabling
+    // a second provider is refused; electing it is the action that works and it
+    // disables every other row.
     const enabled = await act({
       action: "provider",
       slug: "mock",
       enabled: true,
     });
 
-    checkEqual("provider enable succeeds", enabled.status, 200);
-    checkEqual("inference works after provider enable", (await chat()).status, 200);
+    checkEqual("re-enabling a second provider is refused", enabled.status, 409);
+    check(
+      "the refusal names the election that does work",
+      String(enabled.json?.error?.message ?? enabled.json?.error ?? "").includes(
+        "Make default",
+      ),
+      enabled.text.slice(0, 200),
+    );
+
+    // Restore the fixture provider directly. The registry would require electing
+    // it first, which re-keys the catalog and is exercised by the store suite;
+    // this probe only needs the serving row back for the remaining checks.
+    await db
+      .prepare("UPDATE providers SET enabled = 1 WHERE slug = 'mock'")
+      .run();
+    checkEqual("inference works once the provider is restored", (await chat()).status, 200);
 
     const tick = await act({ action: "tick" });
 

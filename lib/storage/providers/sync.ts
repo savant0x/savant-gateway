@@ -242,6 +242,14 @@ export async function syncProvider(
   };
 }
 
+/**
+ * Refreshes every enabled provider.
+ *
+ * The registry keeps at most one enabled row and makes it the default
+ * (FID-2026-1126-001), so in a healthy database this is the elected upstream.
+ * The filter stays on `enabled` so a legacy row left enabled beside the default
+ * is reported by its own sync instead of being silently skipped.
+ */
 export async function syncAllEnabled(
   db: PostgresDatabase,
   deps: ProviderSyncDeps = {},

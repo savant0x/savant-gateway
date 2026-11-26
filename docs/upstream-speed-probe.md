@@ -1,5 +1,9 @@
 # Upstream speed probe — one-day plan
 
+> **Historical measurement.** The Apinex arm below measured an upstream the
+> operator retired on 2026-11-26 (FID-2026-1126-001); its free-pool rows no
+> longer exist. The tool still runs, but this plan is not a current benchmark.
+
 Status: **tool implemented; first free-pool smoke measurement recorded; paid
 comparison blocked.** Measured 2026-11-01 at 22:31 UTC. The savant-code harness
 timing telemetry is implemented separately under FID-2026-1101-001 (commit

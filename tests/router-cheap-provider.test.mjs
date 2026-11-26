@@ -299,7 +299,11 @@ test("activation and publication wait for an explicit chat decision", async () =
       "ok",
     );
 
-    await setProviderEnabled(db, "router-cheap", true);
+    // The registry enables only the elected default; this fixture needs a
+    // second provider's rows to publish, so it sets the flag directly.
+    await db
+      .prepare("UPDATE providers SET enabled = 1 WHERE slug = 'router-cheap'")
+      .run();
 
     assert.equal(
       await setModelStatus(db, "router-cheap/test-chat", "active"),

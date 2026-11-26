@@ -4,6 +4,8 @@
 > the [launch plan](launch-plan.md). Hosting, storage and backup details below are
 > superseded by the 2026-10-30 [Fly decision](hosting-decision.md) and the recovery
 > work; the lifetime-trial offering remains conditional and is not authorized.
+> Apinex was retired on 2026-11-26 and InferHub is the only enabled upstream
+> (FID-2026-1126-001); the APInex funding and balance items below are obsolete.
 
 Current execution order and acceptance gates:
 [full launch plan](launch-plan.md), prepared 2026-10-30. This document preserves

@@ -139,10 +139,11 @@ export async function catalogSchema(db: PostgresDatabase) {
 }
 
 /**
- * A database that has never been told which row is the default picks one
- * deterministically: the legacy seed when present, then any enabled row, then any
- * row. It runs only while nothing is flagged, so an operator's choice is never
- * overwritten by a later boot.
+ * A database that has never been told which row is the default picks the
+ * enabled row, then the lowest `sort_order`. The seeded InferHub row is the only
+ * enabled row, so a fresh database elects it; the legacy `savant` preference is
+ * gone with the Apinex retirement (FID-2026-1126-001). It runs only while nothing
+ * is flagged, so an operator's choice is never overwritten by a later boot.
  *
  * It runs after the seeds, because the pick is about rows and an empty table has
  * none to choose from.
@@ -150,10 +151,10 @@ export async function catalogSchema(db: PostgresDatabase) {
 async function pickDefaultProvider(db: PostgresDatabase) {
   await db
     .prepare(
-      `UPDATE providers SET is_default = 1
+      `UPDATE providers SET is_default = 1, enabled = 1
         WHERE slug = (
           SELECT slug FROM providers
-           ORDER BY (slug = 'savant') DESC, enabled DESC, sort_order ASC, slug ASC
+           ORDER BY enabled DESC, sort_order ASC, slug ASC
            LIMIT 1
         )
         AND NOT EXISTS (SELECT 1 FROM providers WHERE is_default = 1)`,

@@ -1,8 +1,9 @@
 import type { ModelProtocol, ProviderKind } from "./types";
 
-export const DEFAULT_PROVIDER_SLUG = "savant";
-/** Kept for the seeds and for a registry that has no row to name. Which row owns
- *  the public namespace is `providers.is_default`; see `lib/storage/store/providers.ts`. */
+export const DEFAULT_PROVIDER_SLUG = "inferhub";
+/** The seeded default since the InferHub-only ruling (FID-2026-1126-001). Kept
+ *  for a registry that has no row to name; which row owns the public namespace is
+ *  `providers.is_default`; see `lib/storage/store/providers.ts`. */
 export const PROVIDER_KINDS: ProviderKind[] = ["openai", "anthropic", "both"];
 
 export type ProviderInput = {
@@ -362,6 +363,19 @@ export function providerReadiness(input: {
  * The operator-facing refusal for a save that would leave a provider enabled
  * without a visible key. Null means the save is admissible.
  */
+/** Why enabling `slug` breaks the single-upstream election, or `null`. */
+export function providerElectionRefusal(
+  defaultSlug: string | null,
+  slug: string,
+): string | null {
+  if (!defaultSlug || defaultSlug === slug) return null;
+
+  return (
+    `Only the elected upstream may be enabled; ${defaultSlug} holds it. Use ` +
+    "Make default to elect this provider; that disables every other provider."
+  );
+}
+
 export function providerEnableRefusal(input: {
   label: string;
   keyEnvVar: string;

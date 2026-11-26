@@ -113,6 +113,11 @@ export type DefaultProviderChange = {
 /**
  * Moves the default. One transaction, so no reader sees two holders or none.
  *
+ * The switch is also the election of the one upstream this gateway sells from
+ * (FID-2026-1126-001, slice 1): the target becomes the only enabled provider and
+ * every other row is disabled. Enabling a second row is therefore not a separate
+ * action that could leave two sources; it is this election or nothing.
+ *
  * The switch re-keys the two affected providers' rows here rather than leaving
  * it to their next sync: `models` is keyed by published id while
  * `models_upstream_idx` is unique on the upstream tuple, so a flag-only switch
@@ -152,10 +157,14 @@ export async function setDefaultProvider(
         slug,
         previousSlug ? [previousSlug, slug] : [slug],
       );
-      await db.prepare("UPDATE providers SET is_default = 0").run();
+      await db
+        .prepare("UPDATE providers SET is_default = 0, enabled = 0")
+        .run();
       await db
         .prepare(
-          "UPDATE providers SET is_default = 1, updated_at = ? WHERE slug = ?",
+          `UPDATE providers
+              SET is_default = 1, enabled = 1, updated_at = ?
+            WHERE slug = ?`,
         )
         .run(now, slug);
     })
@@ -300,12 +309,25 @@ export async function updateProvider(
   return result.changes > 0 ? getProvider(db, slug) : undefined;
 }
 
+/**
+ * The one enabled provider is the elected default, and only it.
+ *
+ * Enabling is not a second switch beside the election: an operator who wants a
+ * different source makes it the default, which disables every other row. The
+ * elected upstream cannot be disabled on its own either, for the same reason the
+ * default cannot be deleted — it would leave the product with no source and no
+ * namespace owner. Returns `false` for an unknown slug or a refused change.
+ */
 export async function setProviderEnabled(
   db: PostgresDatabase,
   slug: string,
   enabled: boolean,
   now = new Date().toISOString(),
 ) {
+  const isDefault = (await getDefaultProviderSlug(db)) === slug;
+
+  if (enabled !== isDefault) return false;
+
   const result = await db
     .prepare(
       `UPDATE providers

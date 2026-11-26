@@ -33,6 +33,12 @@ async function fixture() {
   const { pool } = await createPgliteDatabase();
   const db = await createStorageDatabase({ env: {}, pool });
 
+  // The Apinex seed is disabled (FID-2026-1126-001); the fixture serves this
+  // catalog through that slug, so it enables the row directly.
+  await db
+    .prepare("UPDATE providers SET enabled = 1 WHERE slug = 'savant'")
+    .run();
+
   await replaceModels(
     db,
     buildSyncedModels(PROVIDER, UPSTREAM, new Map(), "savant"),

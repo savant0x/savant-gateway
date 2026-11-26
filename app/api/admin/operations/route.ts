@@ -1,7 +1,11 @@
 import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
 import { readAlertTransportConfig } from "@/lib/alert-transport";
 import { readJsonObject, requestBodyError } from "@/lib/request-limits";
-import { listProviders, setProviderEnabled } from "@/lib/store-facade/catalog";
+import {
+  getProvider,
+  listProviders,
+  setProviderEnabled,
+} from "@/lib/store-facade/catalog";
 import {
   acknowledgeOperationIncident,
   getAdmissionControl,
@@ -119,7 +123,16 @@ export async function POST(request: Request) {
     }
 
     if (!(await setProviderEnabled(slug, body.enabled))) {
-      return adminError(404, "Provider not found.");
+      if (!(await getProvider(slug))) {
+        return adminError(404, "Provider not found.");
+      }
+
+      return adminError(
+        409,
+        body.enabled
+          ? "Only the elected upstream may be enabled. Use Make default to elect this provider; that disables every other provider."
+          : "The elected upstream cannot be disabled: it is the only source and owns the published catalog identity. Make another provider the default first.",
+      );
     }
 
     return Response.json(

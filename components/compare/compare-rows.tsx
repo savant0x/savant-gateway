@@ -152,12 +152,6 @@ export function buildCompareGroups({
           right: released(rightBench),
           available: Boolean(leftBench?.releaseDate || rightBench?.releaseDate),
         },
-        {
-          label: "Token weight",
-          hint: "Billing weight applied to usage on this plan",
-          left: left.tokenWeight > 0 ? `${left.tokenWeight}×` : dash,
-          right: right.tokenWeight > 0 ? `${right.tokenWeight}×` : dash,
-        },
       ],
     },
     {

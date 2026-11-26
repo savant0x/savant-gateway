@@ -25,7 +25,6 @@ async function seed(db, overrides = {}) {
     upstreamSlug: "savant",
     name: "Model One",
     groupSlug: "paid",
-    allowFree: 0,
     costSource: "synced",
     costInput: 1_000,
     costOutput: 2_000,
@@ -38,11 +37,11 @@ async function seed(db, overrides = {}) {
     .prepare(
       `INSERT INTO models
         (id, upstream_id, upstream_slug, name, provider, context_window,
-         token_weight, input_price_micros, output_price_micros,
+         input_price_micros, output_price_micros,
          sell_input_micros, sell_output_micros, price_source, in_catalog,
-         allow_free, group_slug, cost_source, route_group, is_primary, status,
+         group_slug, cost_source, route_group, is_primary, status,
          sort_order, synced_at)
-       VALUES (?, ?, ?, ?, 'Family', '8k', 1, ?, ?, ?, ?, 'manual', 1, ?,
+       VALUES (?, ?, ?, ?, 'Family', '8k', ?, ?, ?, ?, 'manual', 1,
                ?, ?, 'm1', 1, 'active', 0, ?)`,
     )
     .run(
@@ -54,7 +53,6 @@ async function seed(db, overrides = {}) {
       model.costOutput,
       model.sellInput,
       model.sellOutput,
-      model.allowFree,
       model.groupSlug,
       model.costSource,
       NOW,
@@ -136,27 +134,6 @@ test("a plain price edit can be audited, and a free row cannot", async () => {
     assert.equal(decisions.length, 1);
     assert.equal(decisions[0].targetMarginBps, null);
 
-    await seed(db, {
-      id: "free-row",
-      upstreamId: "free-m1",
-      groupSlug: "free",
-      allowFree: 1,
-    });
-
-    const free = await setModelPricing(db, "free-row", 9_000, 9_000, {
-      actor: "admin-session",
-      reason: "Should not write",
-      modelName: "Free",
-      costSource: "synced",
-      costInputMicros: 0,
-      costOutputMicros: 0,
-      targetMarginBps: 3_000,
-      rounding: "micro",
-      recommendationJson: "{}",
-    });
-
-    assert.equal(free, false);
-    assert.equal((await listPricingDecisions(db, 10)).length, 1);
   } finally {
     await db.close();
   }

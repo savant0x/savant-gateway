@@ -51,12 +51,12 @@ async function fixture(options = {}) {
   await db
     .prepare(
       `INSERT INTO models
-        (id, upstream_id, upstream_slug, name, provider, context_window,
-         token_weight, in_catalog, group_slug, status, sort_order, synced_at)
-       VALUES ('m1', 'm1', 'savant', 'Covered', 'Family', '8k', 1, 1,
-               'subscription', 'active', 0, ?),
-              ('m2', 'm2', 'savant', 'Uncovered', 'Family', '8k', 1, 1,
-               'paid', 'active', 0, ?)`,
+                 (id, upstream_id, upstream_slug, name, provider, context_window,
+          in_catalog, group_slug, status, sort_order, synced_at)
+        VALUES ('m1', 'm1', 'savant', 'Covered', 'Family', '8k', 1,
+                'subscription', 'active', 0, ?),
+               ('m2', 'm2', 'savant', 'Uncovered', 'Family', '8k', 1,
+                'paid', 'active', 0, ?)`,
     )
     .run(NOW, NOW);
 

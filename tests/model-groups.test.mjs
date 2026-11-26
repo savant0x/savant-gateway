@@ -6,7 +6,6 @@ import {
   canDeleteGroup,
   defaultGroupSlug,
   GROUP_SLUG_PATTERN,
-  pricesForGroup,
   readGroupCreateInput,
   readGroupReassignment,
   readGroupUpdateInput,
@@ -21,11 +20,10 @@ const VALID = {
   sortOrder: 10,
 };
 
-test("system groups cover free, paid, and subscription with fixed modes", () => {
+test("system groups cover paid and subscription with fixed modes", () => {
   assert.deepEqual(
     SYSTEM_GROUP_DEFINITIONS.map((group) => [group.slug, group.billingMode]),
     [
-      ["free", "free"],
       ["paid", "paid"],
       ["subscription", "subscription"],
     ],
@@ -56,6 +54,7 @@ test("group creation rejects reserved slugs and invalid fields", () => {
     { label: "" },
     { label: "x".repeat(41) },
     { billingMode: "enterprise" },
+    { billingMode: "free" },
     { description: "x".repeat(201) },
     { sortOrder: 1.5 },
     { sortOrder: "10" },
@@ -76,9 +75,9 @@ test("slug rules accept lowercase dashed identifiers", () => {
 
 test("group updates accept every system slug and required fields", () => {
   const result = readGroupUpdateInput({
-    slug: "free",
-    label: "Free pool",
-    billingMode: "free",
+    slug: "paid",
+    label: "Paid",
+    billingMode: "paid",
     description: "",
     sortOrder: 0,
   });
@@ -88,56 +87,18 @@ test("group updates accept every system slug and required fields", () => {
   assert.equal(result.value.sortOrder, 0);
 });
 
-test("a free group zeroes both prices and other groups preserve them", () => {
-  assert.deepEqual(
-    pricesForGroup({
-      billingMode: "free",
-      sellInputMicros: 500,
-      sellOutputMicros: 900,
-    }),
-    { sellInputMicros: 0, sellOutputMicros: 0 },
-  );
-  assert.deepEqual(
-    pricesForGroup({
-      billingMode: "paid",
-      sellInputMicros: 500,
-      sellOutputMicros: 900,
-    }),
-    { sellInputMicros: 500, sellOutputMicros: 900 },
-  );
-});
-
 test("the group billing mode wins over the provider-derived fallback", () => {
   assert.equal(accessFromGroup("paid", "free"), "paid");
   assert.equal(accessFromGroup("free", "paid"), "free");
   assert.equal(accessFromGroup(null, "subscription"), "subscription");
 });
 
-test("provider flags only decide the default group", () => {
+test("the upstream id only decides the default group", () => {
   assert.equal(
-    defaultGroupSlug({
-      allowFree: true,
-      tokenWeight: 3,
-      upstreamId: "free/gpt-6-luna",
-    }),
-    "free",
-  );
-  assert.equal(
-    defaultGroupSlug({
-      allowFree: false,
-      tokenWeight: 0,
-      upstreamId: "free/claude-opus-4.6",
-    }),
+    defaultGroupSlug({ upstreamId: "free/claude-opus-4.6" }),
     "subscription",
   );
-  assert.equal(
-    defaultGroupSlug({
-      allowFree: false,
-      tokenWeight: 0,
-      upstreamId: "gpt-6-luna",
-    }),
-    "paid",
-  );
+  assert.equal(defaultGroupSlug({ upstreamId: "gpt-6-luna" }), "paid");
 });
 
 test("system groups are protected and custom groups can be deleted", () => {

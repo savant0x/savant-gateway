@@ -43,23 +43,17 @@ function database() {
       sell_input_micros INTEGER NOT NULL DEFAULT 0,
       sell_output_micros INTEGER NOT NULL DEFAULT 0,
       price_source TEXT NOT NULL DEFAULT 'auto',
-      allow_free INTEGER NOT NULL DEFAULT 0,
       cost_source TEXT NOT NULL DEFAULT 'unknown',
       cost_observed_at TEXT,
       status TEXT NOT NULL DEFAULT 'active',
       in_catalog INTEGER NOT NULL DEFAULT 1,
-      group_slug TEXT,
-      token_weight INTEGER NOT NULL DEFAULT 0
+      group_slug TEXT
     );
   `);
 
   db.prepare("INSERT INTO model_groups (slug, billing_mode) VALUES (?, ?)").run(
     "paid",
     "paid",
-  );
-  db.prepare("INSERT INTO model_groups (slug, billing_mode) VALUES (?, ?)").run(
-    "free",
-    "free",
   );
 
   return db;
@@ -92,13 +86,13 @@ function model(db, overrides) {
   db.prepare(`
     INSERT INTO models (id, upstream_id, upstream_slug, route_group,
       input_price_micros, output_price_micros, sell_input_micros,
-      sell_output_micros, price_source, allow_free, cost_source, status,
+      sell_output_micros, price_source, cost_source, status,
       in_catalog, group_slug)
     VALUES (@id, @upstream_id, @upstream_slug, @route_group,
       @input_price_micros, @output_price_micros, @sell_input_micros,
-      @sell_output_micros, @price_source, @allow_free, @cost_source, @status,
+      @sell_output_micros, @price_source, @cost_source, @status,
       @in_catalog, @group_slug)
-  `).run({ allow_free: 0, ...row });
+  `).run(row);
 
   return row;
 }
@@ -215,89 +209,3 @@ test("a model only the new provider sells becomes its own published row", () => 
   assert.equal(published.sell_output_micros, 250_000);
 });
 
-test("a free-pool row keeps its tier and the paid row stays published", () => {
-  const db = database();
-
-  provider(db, "savant");
-  provider(db, "apixo", { sortOrder: 30 });
-  model(db, {
-    id: "free/gpt-6-luna",
-    upstream_id: "free/gpt-6-luna",
-    route_group: "gpt-6-luna",
-    allow_free: 1,
-    group_slug: "free",
-    input_price_micros: 0,
-    output_price_micros: 0,
-    sell_input_micros: 0,
-    sell_output_micros: 0,
-    cost_source: "synced",
-  });
-  model(db, {
-    id: "apixo/gpt-6-luna",
-    upstream_id: "gpt-6-luna",
-    upstream_slug: "apixo",
-    route_group: "gpt-6-luna",
-    input_price_micros: 100_000,
-    output_price_micros: 100_000,
-  });
-
-  reconcileRoutesIn(db, 2500);
-
-  const published = row(db, "free/gpt-6-luna");
-
-  assert.equal(published.is_primary, 1);
-  assert.equal(published.served_provider_slug, "savant");
-  assert.equal(published.sell_input_micros, 0);
-
-  // The paid row is a different product, not a losing route: it publishes in
-  // its own tier instead of disappearing behind the free allocation.
-  const paid = row(db, "apixo/gpt-6-luna");
-
-  assert.equal(paid.is_primary, 1);
-  assert.equal(paid.served_provider_slug, "apixo");
-  assert.equal(paid.sell_input_micros, 125_000);
-});
-
-test("a free allocation and its paid counterpart publish side by side", () => {
-  const db = database();
-
-  provider(db, "savant");
-  model(db, {
-    id: "free/glm-5.3",
-    upstream_id: "free/glm-5.3",
-    route_group: "glm-5-3",
-    allow_free: 1,
-    group_slug: "free",
-    input_price_micros: 0,
-    output_price_micros: 0,
-    sell_input_micros: 0,
-    sell_output_micros: 0,
-    cost_source: "synced",
-  });
-  model(db, {
-    id: "glm-5.3",
-    upstream_id: "glm-5.3",
-    route_group: "glm-5-3",
-    group_slug: "paid",
-    input_price_micros: 400_000,
-    output_price_micros: 800_000,
-    sell_input_micros: 500_000,
-    sell_output_micros: 1_000_000,
-  });
-
-  reconcileRoutesIn(db, 2500);
-
-  const free = row(db, "free/glm-5.3");
-  const paid = row(db, "glm-5.3");
-
-  assert.equal(
-    free.is_primary,
-    1,
-    "the free allocation is its own published row",
-  );
-  assert.equal(free.sell_input_micros, 0);
-  assert.equal(paid.is_primary, 1, "the paid counterpart is published too");
-  assert.equal(paid.served_provider_slug, "savant");
-  assert.equal(paid.sell_input_micros, 500_000);
-  assert.equal(paid.sell_output_micros, 1_000_000);
-});

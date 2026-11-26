@@ -27,11 +27,10 @@ export default async function Image() {
     socialCard({
       eyebrow: "Model catalog",
       title: `${formatNumber(stats.modelCount)} SKUs. Priced apart.`,
-      subtitle:
-        "Each free, paid or subscription SKU with its rate and access path.",
+      subtitle: "Each paid or subscription SKU with its rate and access path.",
       lines: [
-        `${formatNumber(stats.freeModelCount)} free · ${formatNumber(stats.paidModelCount)} priced · ${formatNumber(stats.subscriptionModelCount)} subscription-only`,
-        "Weighted free pool · prepaid credit · plan allowance",
+        `${formatNumber(stats.paidModelCount)} priced · ${formatNumber(stats.subscriptionModelCount)} subscription-only`,
+        "Prepaid credit · plan allowance",
       ],
     }),
     { ...size },

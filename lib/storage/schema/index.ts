@@ -9,6 +9,7 @@ import { contentDecisionsSchema } from "./content-decisions.ts";
 import { contentMatchingSchema } from "./content-matching.ts";
 import { coreSchema } from "./core.ts";
 import { customerSchema } from "./customers.ts";
+import { dropLegacyFreeTier } from "./free-tier-removal.ts";
 import { identitySchema } from "./identity.ts";
 import { pricingSchema } from "./pricing.ts";
 import { showcaseSchema } from "./showcase.ts";
@@ -40,6 +41,11 @@ export async function applySchema(
   await contentMatchingSchema(db);
   await admissionSchema(db);
   await showcaseSchema(db);
+
+  // Runs after every table exists: it converts auto-assigned free rows, deletes
+  // the Free group only when nothing references it, and drops the retired
+  // columns and ledgers together (FID-2026-1125-004 step 4).
+  await dropLegacyFreeTier(db);
 
   // The seed belongs to the embedded engine, not to "not production". A dev
   // server pointed at a networked database is still a real database, and

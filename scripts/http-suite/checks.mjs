@@ -765,34 +765,18 @@ async function runAdminChecks(context) {
     { cookie: `sg_admin=${adminCookie}` },
   );
 
-  checkEqual("the operator gateway policy answers", gateway.status, 200);
+  checkEqual("the operator gateway settings answer", gateway.status, 200);
   check(
-    "the operator gateway policy is a resolved object",
-    gateway.json?.allocation !== null &&
-      typeof gateway.json?.allocation === "object" &&
-      !Array.isArray(gateway.json?.allocation),
-    gateway.text,
-  );
-  check(
-    "the operator gateway policy reports a numeric daily pool",
-    Number.isSafeInteger(gateway.json?.allocation?.dailyPoolTokens) &&
-      gateway.json.allocation.dailyPoolTokens >= 0,
+    "the operator gateway settings expose the context banner",
+    typeof gateway.json?.banner === "object" &&
+      gateway.json?.banner !== null &&
+      !Array.isArray(gateway.json?.banner),
     gateway.text,
   );
   checkEqual(
-    "the operator gateway policy reports its allocation basis",
-    gateway.json?.allocation?.allocationBps,
-    9_000,
-  );
-  checkEqual(
-    "the operator gateway policy reports the account cap",
-    gateway.json?.allocation?.accountDailyCapTokens,
-    100_000,
-  );
-  checkEqual(
-    "the operator gateway policy reports capacity state",
-    typeof gateway.json?.allocation?.capacityAvailable,
-    "boolean",
+    "the banner limit is published alongside it",
+    typeof gateway.json?.bannerMaxChars,
+    "number",
   );
 
   return adminCookie;

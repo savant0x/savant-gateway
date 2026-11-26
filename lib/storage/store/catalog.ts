@@ -116,8 +116,7 @@ export async function listModels(
   const rows = await db
     .prepare(
       `${PUBLISHED_READ}
-       ORDER BY CASE WHEN g.billing_mode = 'free' THEN 0 ELSE 1 END,
-                COALESCE(g.sort_order, 9999) ASC, m.provider ASC,
+       ORDER BY COALESCE(g.sort_order, 9999) ASC, m.provider ASC,
                 m.sort_order ASC, m.name ASC`,
     )
     .all<ModelRow>();

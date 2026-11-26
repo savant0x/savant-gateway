@@ -3,7 +3,6 @@ import type { ModelAccess } from "../../types.ts";
 import type { EligibilityDecision } from "../../providers/eligibility.ts";
 
 import { routeGroupKey } from "../../model-identity.ts";
-import { pricesForGroup } from "../../model-groups.ts";
 import { planModelRoutes, type RouteCandidate } from "../../model-routing.ts";
 import { defaultSellMicros } from "../../pricing.ts";
 
@@ -37,7 +36,6 @@ type RouteRow = {
   sell_input_micros: number;
   sell_output_micros: number;
   price_source: "auto" | "manual";
-  allow_free: number;
   cost_source: "synced" | "manual" | "unknown";
   status: string;
   in_catalog: number;
@@ -59,7 +57,7 @@ const ROUTE_SELECT = `
   SELECT m.id, m.route_group, m.upstream_slug, m.upstream_id, m.protocol,
          m.input_price_micros, m.output_price_micros,
          m.sell_input_micros, m.sell_output_micros, m.price_source,
-         m.allow_free, m.cost_source, m.status, m.in_catalog,
+         m.cost_source, m.status, m.in_catalog,
          COALESCE(g.billing_mode, 'paid') AS group_billing_mode,
          p.enabled AS provider_enabled, p.sort_order AS provider_sort_order,
          p.requires_model_review, me.decision AS eligibility_decision,
@@ -84,7 +82,6 @@ function toCandidate(row: RouteRow): RouteCandidate {
     costInputMicros: Number(row.input_price_micros),
     costOutputMicros: Number(row.output_price_micros),
     costSource: row.cost_source,
-    allowFree: row.allow_free === 1,
     status: row.status,
     inCatalog: row.in_catalog === 1,
     providerEnabled: row.provider_enabled === 1,
@@ -184,8 +181,7 @@ export async function reconcileRoutesIn(
         if (!published || !serving || published.price_source !== "auto")
           continue;
 
-        const priced = pricesForGroup({
-          billingMode: published.group_billing_mode,
+        const priced = {
           sellInputMicros: defaultSellMicros(
             serving.input_price_micros,
             markupBps,
@@ -194,7 +190,7 @@ export async function reconcileRoutesIn(
             serving.output_price_micros,
             markupBps,
           ),
-        });
+        };
 
         if (
           priced.sellInputMicros !== Number(published.sell_input_micros) ||

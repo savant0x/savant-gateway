@@ -359,7 +359,7 @@ export async function listSimulationModels(
 ): Promise<SimulationModel[]> {
   const rows = await db
     .prepare(
-      `SELECT id, name, group_slug, token_weight,
+      `SELECT id, name, group_slug,
               input_price_micros AS cost_input_micros,
               output_price_micros AS cost_output_micros,
               sell_input_micros, sell_output_micros,
@@ -374,7 +374,8 @@ export async function listSimulationModels(
     id: row.id,
     name: row.name,
     groupSlug: row.group_slug ?? "",
-    tokenWeight: Math.max(1, integer(row.token_weight)),
+    // The weight column is gone; metering is 1:1 for every row.
+    tokenWeight: 1,
     costInputMicros: number(row.cost_input_micros),
     costOutputMicros: number(row.cost_output_micros),
     sellInputMicros: number(row.sell_input_micros),

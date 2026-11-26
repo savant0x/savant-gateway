@@ -99,10 +99,10 @@ test("search caps items, models and topics and excludes unpublished rows", async
         .prepare(
           `INSERT INTO models
             (id, upstream_id, name, provider, family, context_window,
-             token_weight, input_price_micros, output_price_micros,
-             allow_free, supports_tools, supports_vision, status, sort_order,
+             input_price_micros, output_price_micros,
+             supports_tools, supports_vision, status, sort_order,
              synced_at, in_catalog)
-           VALUES (?, ?, ?, ?, ?, ?, 1, 0, 0, 0, 0, 0, ?, 0, ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, 0, ?, 0, ?, ?)`,
         )
         .run(
           `free/luna-${index}`,

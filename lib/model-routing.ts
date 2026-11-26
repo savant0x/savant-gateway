@@ -27,7 +27,6 @@ export type RouteCandidate = {
   costInputMicros: number;
   costOutputMicros: number;
   costSource: "synced" | "manual" | "unknown";
-  allowFree: boolean;
   status: string;
   inCatalog: boolean;
   providerEnabled: boolean;
@@ -86,16 +85,12 @@ export function isServableRoute(row: RouteCandidate, now = Date.now()) {
     return false;
   }
 
-  // A free-pool row is priced by its group, not by a per-token cost.
-  if (!row.allowFree && row.costSource === "unknown") return false;
+  // A row with no known cost cannot be priced, so it cannot be routed to.
+  if (row.costSource === "unknown") return false;
 
-  // A non-free row with no sell price answers `503 model_unpriced`; publishing
-  // it and then routing to it would be a promise the gateway does not keep.
-  return (
-    row.groupBillingMode === "free" ||
-    row.sellInputMicros > 0 ||
-    row.sellOutputMicros > 0
-  );
+  // A row with no sell price answers `503 model_unpriced`; publishing it and
+  // then routing to it would be a promise the gateway does not keep.
+  return row.sellInputMicros > 0 || row.sellOutputMicros > 0;
 }
 
 function compareRoutes(a: RouteCandidate, b: RouteCandidate) {

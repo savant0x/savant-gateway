@@ -4,7 +4,6 @@ import { formatNumber } from "@/components/dashboard/format";
 
 const STATS = [
   { label: "Active models", icon: "fa-layer-group" },
-  { label: "Free-pool models", icon: "fa-gift" },
   { label: "Paid & plan models", icon: "fa-tag" },
   { label: "Model families", icon: "fa-code-branch" },
 ] as const;
@@ -12,7 +11,6 @@ const STATS = [
 export function StatsStrip({ data }: { data: LandingData }) {
   const values = [
     data.stats.modelCount,
-    data.stats.freeModelCount,
     data.stats.paidModelCount + data.stats.subscriptionModelCount,
     new Set(data.models.map((model) => model.family)).size,
   ];

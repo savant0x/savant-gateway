@@ -49,11 +49,11 @@ test("two connections cannot commit conflicting link decisions", async (context)
     await first
       .prepare(
         `INSERT INTO models
-          (id, upstream_id, name, provider, family, context_window, token_weight,
-           input_price_micros, output_price_micros, allow_free, supports_tools,
+          (id, upstream_id, name, provider, family, context_window,
+           input_price_micros, output_price_micros, supports_tools,
            supports_vision, status, sort_order, synced_at, in_catalog)
-         VALUES (?, 'gpt-6-luna', 'GPT-6 Luna', 'GPT', 'GPT', '128000', 1, 0,
-                 0, 1, 0, 0, 'active', 0, ?, 1)
+         VALUES (?, 'gpt-6-luna', 'GPT-6 Luna', 'GPT', 'GPT', '128000', 0, 0,
+                 0, 0, 'active', 0, ?, 1)
          ON CONFLICT DO NOTHING`,
       )
       .run(MODEL_ID, new Date().toISOString());

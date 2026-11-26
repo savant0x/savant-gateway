@@ -23,7 +23,6 @@ export const EMPTY_GROUP_DRAFT: GroupDraft = {
 };
 
 const MODES: Array<{ value: ModelAccess; label: string }> = [
-  { value: "free", label: "Free — zero charge" },
   { value: "paid", label: "Paid — credit hold" },
   { value: "subscription", label: "Subscription — plan tier" },
 ];

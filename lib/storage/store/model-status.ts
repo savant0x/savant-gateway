@@ -3,7 +3,6 @@ import type { ModelRow } from "../../projections.ts";
 import type { EligibilityDecision } from "../../providers/eligibility.ts";
 
 import { isModelEligible } from "../../providers/eligibility.ts";
-import { accessFor } from "../../projections.ts";
 
 import { reconcileRoutes } from "./routes.ts";
 
@@ -16,56 +15,40 @@ import { reconcileRoutes } from "./routes.ts";
  * surface for turning a provider on (FID-2026-1123-003).
  */
 
-/** The columns `accessFor` needs, named once instead of inline three times. */
-type AccessRow = Pick<
+type StatusRow = Pick<
   ModelRow,
-  | "allow_free"
-  | "token_weight"
-  | "upstream_id"
-  | "group_slug"
-  | "group_billing_mode"
->;
-
-type StatusRow = AccessRow &
-  Pick<
-    ModelRow,
-    | "id"
-    | "cost_source"
-    | "in_catalog"
-    | "input_price_micros"
-    | "output_price_micros"
-    | "sell_input_micros"
-    | "sell_output_micros"
-  > & {
-    requires_model_review: number;
-    eligibility_decision: EligibilityDecision | null;
-  };
+  | "id"
+  | "cost_source"
+  | "in_catalog"
+  | "input_price_micros"
+  | "output_price_micros"
+  | "sell_input_micros"
+  | "sell_output_micros"
+> & {
+  requires_model_review: number;
+  eligibility_decision: EligibilityDecision | null;
+};
 
 /**
  * The columns a status decision reads. One query text, so the single switch and
  * the bulk switch cannot disagree about which facts decide a row (FID-2026-1123-003).
  */
-const STATUS_ROW_SELECT = `SELECT m.id, m.allow_free, m.token_weight,
-         m.upstream_id, m.group_slug, m.in_catalog, m.cost_source,
+const STATUS_ROW_SELECT = `SELECT m.id, m.in_catalog, m.cost_source,
          m.input_price_micros, m.output_price_micros,
          m.sell_input_micros, m.sell_output_micros,
-         p.requires_model_review, me.decision AS eligibility_decision,
-         g.billing_mode AS group_billing_mode
+         p.requires_model_review, me.decision AS eligibility_decision
     FROM models m
     JOIN providers p ON p.slug = m.upstream_slug
     LEFT JOIN model_eligibility me
       ON me.provider_slug = m.upstream_slug
-     AND me.upstream_id = m.upstream_id
-    LEFT JOIN model_groups g ON g.slug = m.group_slug`;
+     AND me.upstream_id = m.upstream_id`;
 
 /**
- * Why an *enable* is refused, in the order the operator can fix them. A free
- * row is priced by definition, so only paid access can be `cost_unknown`.
+ * Why an *enable* is refused, in the order the operator can fix them. Every row
+ * is sold per token, so a row without a cost or a sell price is `cost_unknown`.
  * Disabling is never refused: switching a model off is the safe direction.
  */
 function enableBlocker(row: StatusRow): "not_eligible" | "cost_unknown" | null {
-  const free = accessFor(row) === "free";
-
   if (Number(row.requires_model_review) === 1) {
     if (
       !isModelEligible({
@@ -77,11 +60,10 @@ function enableBlocker(row: StatusRow): "not_eligible" | "cost_unknown" | null {
     }
 
     if (
-      !free &&
-      (Number(row.input_price_micros) <= 0 ||
-        Number(row.output_price_micros) <= 0 ||
-        Number(row.sell_input_micros) <= 0 ||
-        Number(row.sell_output_micros) <= 0)
+      Number(row.input_price_micros) <= 0 ||
+      Number(row.output_price_micros) <= 0 ||
+      Number(row.sell_input_micros) <= 0 ||
+      Number(row.sell_output_micros) <= 0
     ) {
       return "cost_unknown";
     }
@@ -89,7 +71,7 @@ function enableBlocker(row: StatusRow): "not_eligible" | "cost_unknown" | null {
     return null;
   }
 
-  return !free && row.cost_source === "unknown" ? "cost_unknown" : null;
+  return row.cost_source === "unknown" ? "cost_unknown" : null;
 }
 
 export type ModelStatusResult =

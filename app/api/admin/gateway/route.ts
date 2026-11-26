@@ -2,12 +2,6 @@ import { adminError, guardAdminApi, NO_STORE } from "@/lib/admin-auth";
 import { CONTEXT_BANNER_MAX_CHARS } from "@/lib/context-banner";
 import { readJsonObject, requestBodyError } from "@/lib/request-limits";
 import { getBannerConfig, saveBannerConfig } from "@/lib/store-facade/catalog";
-import {
-  getAllocationSummary,
-  saveAllocationConfig,
-  utcDay,
-} from "@/lib/store-facade/operations";
-import { refreshProviderRuntime } from "@/lib/providers/runtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,23 +14,14 @@ function record(value: unknown): JsonRecord | null {
     : null;
 }
 
-function allocationProvider(request: Request) {
-  return new URL(request.url).searchParams.get("provider")?.trim() || "savant";
-}
-
 export async function GET(request: Request) {
   const blocked = await guardAdminApi(request);
 
   if (blocked) return blocked;
 
-  const provider = allocationProvider(request);
-
-  await refreshProviderRuntime(provider);
-
   return Response.json(
     {
-      allocation: await getAllocationSummary(utcDay(), provider),
-      banner: getBannerConfig(),
+      banner: await getBannerConfig(),
       bannerMaxChars: CONTEXT_BANNER_MAX_CHARS,
     },
     { headers: NO_STORE },
@@ -57,105 +42,29 @@ export async function PATCH(request: Request) {
   }
 
   const banner = body.banner === undefined ? null : record(body.banner);
-  const allocation =
-    body.allocation === undefined ? null : record(body.allocation);
 
-  if (body.banner !== undefined && !banner) {
+  if (!banner) {
     return adminError(400, "banner must be an object.");
   }
 
-  if (body.allocation !== undefined && !allocation) {
-    return adminError(400, "allocation must be an object.");
+  if (banner.enabled !== undefined && typeof banner.enabled !== "boolean") {
+    return adminError(400, "banner.enabled must be a boolean.");
   }
 
-  if (!banner && !allocation) {
-    return adminError(400, "Provide a banner or allocation update.");
+  if (banner.text !== undefined && typeof banner.text !== "string") {
+    return adminError(400, "banner.text must be a string.");
   }
 
-  if (banner) {
-    if (banner.enabled !== undefined && typeof banner.enabled !== "boolean") {
-      return adminError(400, "banner.enabled must be a boolean.");
-    }
+  const saved = await saveBannerConfig({
+    enabled: banner.enabled === undefined ? undefined : banner.enabled,
+    text: banner.text === undefined ? undefined : banner.text,
+  });
 
-    if (banner.text !== undefined && typeof banner.text !== "string") {
-      return adminError(400, "banner.text must be a string.");
-    }
-
-    const saved = await saveBannerConfig({
-      enabled: banner.enabled === undefined ? undefined : banner.enabled,
-      text: banner.text === undefined ? undefined : banner.text,
-    });
-
-    if (!saved.ok) return adminError(400, saved.error);
-  }
-
-  if (allocation) {
-    if (
-      allocation.enabled !== undefined &&
-      typeof allocation.enabled !== "boolean"
-    ) {
-      return adminError(400, "allocation.enabled must be a boolean.");
-    }
-
-    if (
-      allocation.dailyPoolTokens !== undefined &&
-      (typeof allocation.dailyPoolTokens !== "number" ||
-        !Number.isSafeInteger(allocation.dailyPoolTokens) ||
-        allocation.dailyPoolTokens < 0)
-    ) {
-      return adminError(
-        400,
-        "allocation.dailyPoolTokens must be a non-negative integer.",
-      );
-    }
-
-    if (
-      allocation.allocationBps !== undefined &&
-      (typeof allocation.allocationBps !== "number" ||
-        !Number.isInteger(allocation.allocationBps) ||
-        allocation.allocationBps < 0 ||
-        allocation.allocationBps > 10_000)
-    ) {
-      return adminError(
-        400,
-        "allocation.allocationBps must be an integer between 0 and 10000.",
-      );
-    }
-
-    if (
-      allocation.accountDailyCapTokens !== undefined &&
-      (typeof allocation.accountDailyCapTokens !== "number" ||
-        !Number.isSafeInteger(allocation.accountDailyCapTokens) ||
-        allocation.accountDailyCapTokens < 0)
-    ) {
-      return adminError(
-        400,
-        "allocation.accountDailyCapTokens must be a non-negative integer; 0 disables the cap.",
-      );
-    }
-
-    await saveAllocationConfig({
-      enabled:
-        allocation.enabled === undefined ? undefined : allocation.enabled,
-      dailyPoolTokens:
-        allocation.dailyPoolTokens === undefined
-          ? undefined
-          : allocation.dailyPoolTokens,
-      allocationBps:
-        allocation.allocationBps === undefined
-          ? undefined
-          : allocation.allocationBps,
-      accountDailyCapTokens:
-        allocation.accountDailyCapTokens === undefined
-          ? undefined
-          : allocation.accountDailyCapTokens,
-    });
-  }
+  if (!saved.ok) return adminError(400, saved.error);
 
   return Response.json(
     {
-      allocation: await getAllocationSummary(utcDay()),
-      banner: getBannerConfig(),
+      banner: await getBannerConfig(),
       bannerMaxChars: CONTEXT_BANNER_MAX_CHARS,
     },
     { headers: NO_STORE },

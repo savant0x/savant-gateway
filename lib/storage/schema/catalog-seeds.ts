@@ -49,8 +49,7 @@ async function seedSystemGroups(db: PostgresDatabase) {
   // order remain operator-editable.
   await db.exec(`
     UPDATE model_groups SET is_system = 1
-      WHERE slug IN ('free', 'paid', 'subscription');
-    UPDATE model_groups SET billing_mode = 'free' WHERE slug = 'free';
+      WHERE slug IN ('paid', 'subscription');
     UPDATE model_groups SET billing_mode = 'paid' WHERE slug = 'paid';
     UPDATE model_groups SET billing_mode = 'subscription'
       WHERE slug = 'subscription';
@@ -61,7 +60,6 @@ async function backfillModelGroups(db: PostgresDatabase) {
   await db.exec(`
     UPDATE models
        SET group_slug = CASE
-             WHEN allow_free = 1 AND token_weight > 0 THEN 'free'
              WHEN upstream_id LIKE 'free/%' THEN 'subscription'
              ELSE 'paid'
            END
@@ -73,7 +71,6 @@ async function backfillCostSource(db: PostgresDatabase) {
   await db.exec(`
     UPDATE models
        SET cost_source = CASE
-             WHEN allow_free = 1 AND token_weight > 0 THEN 'synced'
              WHEN input_price_micros > 0 OR output_price_micros > 0 THEN 'synced'
              ELSE 'unknown'
            END

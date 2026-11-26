@@ -1,5 +1,5 @@
 {
-  "note": "Recorded shape of the default provider's public catalog overlay (`provider`/`weight`/`allowFree`/`dollarsPer1M`), used as the parity fixture for the normalization refactor. `expected` is the row set the builder produces for these three entries. The upstream `weight` values are kept in the input on purpose: they must be ignored, so every expected row meters 1:1. The `free/` entry is kept too: it must be refused and counted, so it appears in no expected row (FID-2026-1125-004).",
+  "note": "Recorded shape of the default provider's public catalog overlay (`provider`/`weight`/`allowFree`/`dollarsPer1M` as the upstream sends them), used as the parity fixture for the normalization refactor. `expected` is the row set the builder produces for these three entries. The upstream `weight` values are kept in the input on purpose: they must be ignored, so every expected row meters 1:1. The `free/` entry is kept too: it must be refused and counted, so it appears in no expected row (FID-2026-1125-004).",
   "models": [
     {
       "id": "free/gpt-6-luna",
@@ -45,7 +45,6 @@
       "tokenWeight": 1,
       "costInputMicros": 500000,
       "costOutputMicros": 500000,
-      "allowFree": false,
       "supportsTools": false,
       "supportsVision": false,
       "health": null,
@@ -64,7 +63,6 @@
       "tokenWeight": 1,
       "costInputMicros": 1100000,
       "costOutputMicros": 4400000,
-      "allowFree": false,
       "supportsTools": false,
       "supportsVision": false,
       "health": null,

@@ -30,7 +30,6 @@ export type SyncedModel = {
   tokenWeight: number;
   costInputMicros: number;
   costOutputMicros: number;
-  allowFree: boolean;
   supportsTools: boolean;
   supportsVision: boolean;
   health: string | null;

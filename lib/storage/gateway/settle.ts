@@ -1,9 +1,5 @@
 import type { PostgresDatabase } from "../pg-adapter.ts";
-import type {
-  AuthenticatedKey,
-  FreePoolReservation,
-  GatewayModel,
-} from "../../projections.ts";
+import type { AuthenticatedKey, GatewayModel } from "../../projections.ts";
 import type { CreditHold } from "../store/credit.ts";
 import type { ResolvedUsage } from "../../usage.ts";
 
@@ -52,7 +48,6 @@ export type GatewaySettlementContext = {
   auth: AuthenticatedKey;
   model: GatewayModel;
   hold: CreditHold | null;
-  freeReservation: FreePoolReservation | null;
   subscription: SubscriptionCallContext | null;
   startedAt: number;
   promptTokens: number;
@@ -80,12 +75,12 @@ export async function settleCall(
           usage.outputTokens,
         )
       : 0;
+  // Every call is either included in a plan or paid from credit. There is no
+  // third billing source (FID-2026-1125-004 step 3).
   const billingSource =
     context.subscription?.kind === "included"
       ? ("subscription" as const)
-      : context.model.billingMode === "free"
-        ? ("free" as const)
-        : ("credit" as const);
+      : ("credit" as const);
   // A failed call with no provider counts has no usage to label. A successful
   // call without them is an estimate, and says so.
   const source = status === "ok" || usage.reported ? usageSource(usage) : null;
@@ -114,7 +109,6 @@ export async function settleCall(
     usageSource: source,
     settlementId: context.settlementId,
     hold: context.hold,
-    freeReservation: context.freeReservation,
     subscriptionHold:
       context.subscription?.kind === "included"
         ? { holdId: context.subscription.holdId }

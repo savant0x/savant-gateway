@@ -47,7 +47,6 @@ export type ModelSummary = {
   family: string;
   contextWindow: string;
   tokenWeight: number;
-  allowFree: boolean;
   access: ModelAccess;
   groupSlug: string;
   groupLabel: string;
@@ -124,7 +123,6 @@ export type AdminUsageSummary = UsageSummary & {
 
 export type OverviewStats = {
   modelCount: number;
-  freeModelCount: number;
   paidModelCount: number;
   subscriptionModelCount: number;
   keyCount: number;
@@ -160,7 +158,6 @@ export type PricingSummary = {
   markupBps: number;
   pricedCount: number;
   unpricedCount: number;
-  freeCount: number;
   averageInputMarginBps: number | null;
   averageOutputMarginBps: number | null;
 };

@@ -4,6 +4,14 @@ import { hashPassword } from "../../lib/password.ts";
 
 import { check, checkEqual, cookieValue, request } from "./harness.mjs";
 
+/**
+ * Provider-account observation and credit admission over HTTP.
+ *
+ * The free tier and its daily allowance were removed (FID-2026-1125-004), so
+ * every admitted call here is funded by credit. What remains under test is the
+ * account observation that gates admission, the shared provider ceiling, the
+ * durable settlement/payment read models and idempotent corrections.
+ */
 export async function runQuotaChecks(context) {
   const { db, mock, baseUrl } = context;
   const tomorrow = new Date();
@@ -15,26 +23,23 @@ export async function runQuotaChecks(context) {
     .get();
   const now = new Date().toISOString();
   const secret = "http-quota-consumer-secret-0123456789";
-  const session = "q".repeat(43);
 
   await db.prepare(`INSERT INTO users (id, email, name, status, created_at, password_hash)
     VALUES ('quota_user', 'quota@example.test', 'Quota account', 'active', ?, ?)`)
     .run(now, hashPassword("quota-suite-password"));
+  await db.prepare("UPDATE users SET credit_micros = 5000000 WHERE id = 'quota_user'").run();
   await db.prepare(`INSERT INTO api_keys
     (id, user_id, name, prefix, secret_hash, status, created_at)
     VALUES ('quota_key', 'quota_user', 'quota', 'sk-quota', ?, 'active', ?)`)
     .run(createHash("sha256").update(secret).digest("hex"), now);
-  await db.prepare(`INSERT INTO customer_sessions
-    (id, user_id, token_hash, created_at, expires_at)
-    VALUES ('quota_session', 'quota_user', ?, ?, ?)`)
-    .run(createHash("sha256").update(session).digest("hex"), now,
-      new Date(Date.now() + 60000).toISOString());
   await db.prepare(`INSERT INTO models
-    (id, upstream_id, name, provider, context_window, token_weight, allow_free,
-     status, synced_at, upstream_slug, family, protocol, cost_source, in_catalog,
-     group_slug, group_source)
-    VALUES ('quota-free', 'mock-free', 'Daily trial model', 'Mock', '128000',
-      1, 1, 'active', ?, 'savant', 'Mock', 'chat', 'synced', 1, 'free', 'manual')`)
+    (id, upstream_id, name, provider, context_window, input_price_micros,
+     output_price_micros, status, synced_at, upstream_slug, family, protocol,
+     cost_source, in_catalog, group_slug, group_source, sell_input_micros,
+     sell_output_micros, price_source)
+    VALUES ('quota-paid', 'mock-paid', 'Quota paid model', 'Mock', '128000',
+      500000, 1000000, 'active', ?, 'savant', 'Mock', 'chat', 'manual', 1,
+      'paid', 'manual', 1000000, 2000000, 'manual')`)
     .run(now);
   await db.prepare(`UPDATE providers SET base_url = ?, key_env_var = 'HTTP_SUITE_PROVIDER_KEY',
     default_headers = '{}', subscription_mode = 'free',
@@ -48,7 +53,7 @@ export async function runQuotaChecks(context) {
   const read = () => request(baseUrl, "/api/provider/runtime", { cookie });
   const chat = () => request(baseUrl, "/v1/chat/completions", {
     method: "POST", headers: { authorization: `Bearer ${secret}` },
-    body: { model: "quota-free", messages: [{ role: "user", content: "quota probe" }], max_tokens: 10 },
+    body: { model: "quota-paid", messages: [{ role: "user", content: "quota probe" }], max_tokens: 10 },
   });
 
   try {
@@ -64,6 +69,7 @@ export async function runQuotaChecks(context) {
     checkEqual("actual upstream reset is retained", fresh.json.provider.quota.resetsAt, tomorrow.toISOString());
     checkEqual("runtime check does not advance catalog clock", fresh.json.provider.syncedAt, "2026-10-29T21:15:21.452Z");
     check("account responses prohibit caching", fresh.headers.get("cache-control").includes("no-store"));
+
     mock.state.quota.tokens_used = 1234;
     mock.state.quota.tokens_remaining = 20_000_000 - 1234;
     const before = mock.state.accountChecks;
@@ -76,61 +82,12 @@ export async function runQuotaChecks(context) {
     checkEqual("admin initial render succeeds", page.status, 200);
     check("admin renders exact current remaining", page.text.includes("19,998,766"));
     check("admin renders observed reset and check time", page.text.includes("Upstream resets:") && page.text.includes("Account checked:"));
-    const admission = await chat();
 
-    check(
-      "fresh free admission succeeds after yesterday exhaustion",
-      admission.status === 200,
-      `got ${admission.status}: ${admission.text.slice(0, 200)}`,
-    );
-    checkEqual("daily trial usage settles as weighted tokens", (await db.prepare("SELECT weighted_tokens::int AS weighted_tokens FROM free_pool_usage WHERE user_id = 'quota_user'").get()).weighted_tokens, 150);
-    checkEqual("daily trial does not debit dollar credit", (await db.prepare("SELECT credit_micros::int AS credit_micros FROM users WHERE id = 'quota_user'").get()).credit_micros, 0);
-    checkEqual("daily trial releases its reservation", (await db.prepare("SELECT COUNT(*)::int AS n FROM free_pool_reservations WHERE user_id = 'quota_user'").get()).n, 0);
-    const trialRead = () => request(baseUrl, "/api/account/trial", {
-      cookie: `sg_session=${session}`,
-    });
-    const credits = await trialRead();
+    const admitted = await chat();
 
-    checkEqual("customer daily credits check succeeds", credits.status, 200);
-    checkEqual("daily credits enforce the actual 100k account cap", credits.json.trial.allocatedTokens, 100_000);
-    checkEqual("daily credits subtract settled user usage", credits.json.trial.remainingTokens, 99_850);
-    checkEqual("customer daily credits use the upstream reset", credits.json.trial.resetsAt, tomorrow.toISOString());
-    check("customer credits omit master account counters", !credits.text.includes("subscriptionTokensRemaining"));
-    checkEqual("anonymous customer credits require a session",
-      (await request(baseUrl, "/api/account/trial")).status, 401);
-    checkEqual("foreign origins cannot read customer credits",
-      (await request(baseUrl, "/api/account/trial", { cookie: `sg_session=${session}`,
-        origin: "http://evil.example" })).status, 403);
-    const scoped = await request(baseUrl, "/api/account/trial?userId=user_dev", {
-      cookie: `sg_session=${session}`,
-    });
-
-    checkEqual("customer identity comes from session, not query parameters",
-      scoped.json.trial.usedTokens, 150);
-    const customerPage = await request(baseUrl, "/account", { cookie: `sg_session=${session}` });
-
-    checkEqual("customer account renders daily trial credits", customerPage.status, 200);
-    check("customer account renders the actual allocated remainder", customerPage.text.includes("99,850 weighted-token credits available"));
-
-    // FID-049 disabled-trial branch: daily-free mode must never issue a
-    // lifetime grant, publish a paid transition, or advertise the one-time
-    // trial card. The enabled suite proves the mirror (no daily allocation in
-    // lifetime mode); these pin the reverse invariant and the truthful UI.
-    checkEqual("daily mode writes no lifetime trial grant",
-      (await db.prepare("SELECT COUNT(*)::int AS n FROM trial_grants WHERE user_id = 'quota_user'").get()).n, 0);
-    const catalog = await request(baseUrl, "/v1/models", {
-      headers: { authorization: `Bearer ${secret}` },
-    });
-
-    checkEqual("model API serves the catalog while disabled", catalog.status, 200);
-    check("model API publishes no trial transitions while disabled",
-      catalog.json.data.every((model) => model.trial_paid_transition === null));
-    check("customer account hides the one-time trial card",
-      !customerPage.text.includes("Your one-time trial"));
-    check("customer account shows the daily credits card",
-      customerPage.text.includes("Daily trial credits"));
-    check("customer credits omit lifetime grant fields",
-      !credits.text.includes("grantedTokens"));
+    checkEqual("a credit-funded call is admitted", admitted.status, 200);
+    check("a settled call debits credit, not a free allowance",
+      Number((await db.prepare("SELECT credit_micros::int AS credit_micros FROM users WHERE id = 'quota_user'").get()).credit_micros) < 5_000_000);
 
     mock.state.quotaFailure = true;
     const failed = await read();
@@ -138,15 +95,6 @@ export async function runQuotaChecks(context) {
     checkEqual("failed account check reports unavailable", failed.status, 503);
     checkEqual("failed check does not expose prior remaining", failed.json.provider.subscriptionTokensRemaining, null);
     check("provider error cannot expose its credential", !failed.text.includes("http-suite-provider-key"));
-    const calls = mock.state.calls;
-
-    checkEqual("free admission refuses unavailable upstream capacity", (await chat()).status, 503);
-    checkEqual("unavailable capacity never reaches inference", mock.state.calls, calls);
-    checkEqual("failed check creates no reservation", (await db.prepare("SELECT COUNT(*)::int AS n FROM free_pool_reservations WHERE user_id = 'quota_user'").get()).n, 0);
-    const failedCredits = await trialRead();
-
-    checkEqual("customer credits fail closed with upstream", failedCredits.status, 503);
-    checkEqual("customer credits never return stale availability", failedCredits.json.trial.remainingTokens, null);
     const unavailablePage = await request(baseUrl, "/admin", { cookie });
 
     check("failed admin render hides prior quota", !unavailablePage.text.includes("19,998,766"));
@@ -165,7 +113,6 @@ export async function runQuotaChecks(context) {
 
     checkEqual("explicit unlimited quota is a successful current observation", unlimited.status, 200);
     checkEqual("unlimited quota is not fabricated as a finite pool", unlimited.json.provider.subscriptionTokensRemaining, null);
-    checkEqual("explicit unlimited capacity still enforces daily user credits", (await chat()).status, 200);
     mock.state.quota.unlimited = false;
     mock.state.quota.token_limit = 20_000_000;
     mock.state.quota.tokens_remaining = 19_998_766;
@@ -174,16 +121,6 @@ export async function runQuotaChecks(context) {
 
     checkEqual("failed balance is unavailable rather than old zero", balanceFailed.json.provider.balanceUsd, null);
     mock.state.balanceFailure = false;
-    await db.prepare(`INSERT INTO free_pool_reservations
-      (id, user_id, api_key_id, model_id, provider_slug, day, weighted_tokens, created_at, expires_at)
-      VALUES ('quota_held', 'quota_user', 'quota_key', 'quota-free', 'savant', ?, 19000000, ?, ?)`)
-      .run(now.slice(0, 10), now, new Date(Date.now() + 60000).toISOString());
-    const held = await read();
-
-    checkEqual("raw upstream remains separate from local reservations", held.json.provider.subscriptionTokensRemaining, 19_998_766);
-    check("admission capacity subtracts outstanding reservations", held.json.provider.admissionRemainingTokens < 1_000_000);
-    checkEqual("a retained hold prevents oversubscription", (await chat()).status, 429);
-    await db.prepare("DELETE FROM free_pool_reservations WHERE id = 'quota_held'").run();
     mock.state.quotaDelay = 150;
     const concurrentBefore = mock.state.accountChecks;
     const concurrent = await Promise.all([read(), read(), read()]);
@@ -216,14 +153,6 @@ export async function runQuotaChecks(context) {
       (await db.prepare("SELECT quota_observed_at FROM providers WHERE slug='savant'").get()).quota_observed_at, null);
     mock.state.quotaDelay = 0;
     checkEqual("changed provider recovers only after a new check", (await read()).status, 200);
-    const account = await request(baseUrl, "/account", {
-      // Customer-page isolation is covered by the existing suite; daily credit
-      // readout here is verified below through its stored allocation.
-      redirect: "manual",
-    });
-
-    checkEqual("daily credits do not bypass customer authentication", account.status, 307);
-    check("daily allocation respects the per-account cap", (await db.prepare("SELECT allocated_tokens::int AS allocated_tokens FROM free_pool_allocations WHERE user_id = 'quota_user'").get()).allocated_tokens > 0);
 
     // FID-051: durable settlement identity and operator inspection.
     const settlements = await request(baseUrl, "/api/admin/settlements", { cookie });
@@ -284,11 +213,7 @@ export async function runQuotaChecks(context) {
     checkEqual("the restored ceiling is observed again", (await read()).status, 200);
     checkEqual("capacity recovers from the refreshed ceiling", (await chat()).status, 200);
 
-    // FID-069: idleness must not disable admission. The stored observation is
-    // only current for thirty seconds, and nothing refreshed it on the request
-    // path, so a quiet period answered the next call with "capacity unknown"
-    // until an operator page happened to refresh it. Backdating the row gives
-    // the same condition as sixty seconds of silence without sleeping.
+    // FID-069: idleness must not disable admission.
     const stale = new Date(Date.now() - 60_000).toISOString();
 
     await db.prepare(`UPDATE providers SET quota_observed_at = ?, balance_observed_at = ?
@@ -304,14 +229,10 @@ export async function runQuotaChecks(context) {
     mock.state.quotaFailure = false;
     mock.state.balanceFailure = false;
     mock.state.quotaDelay = 0;
-    await db.prepare("DELETE FROM free_pool_reservations WHERE user_id = 'quota_user'").run();
     await db.prepare("DELETE FROM usage_events WHERE user_id = 'quota_user'").run();
-    await db.prepare("DELETE FROM free_pool_usage WHERE user_id = 'quota_user'").run();
-    await db.prepare("DELETE FROM free_pool_allocations WHERE user_id = 'quota_user'").run();
     await db.prepare("DELETE FROM api_keys WHERE user_id = 'quota_user'").run();
-    await db.prepare("DELETE FROM customer_sessions WHERE user_id = 'quota_user'").run();
     await db.prepare("DELETE FROM users WHERE id = 'quota_user'").run();
-    await db.prepare("DELETE FROM models WHERE id = 'quota-free'").run();
+    await db.prepare("DELETE FROM models WHERE id = 'quota-paid'").run();
     await db.prepare("DELETE FROM providers WHERE slug = 'savant'").run();
     const columns = Object.keys(original);
 

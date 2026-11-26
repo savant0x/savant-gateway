@@ -227,10 +227,10 @@ async function postgresDatabase() {
       .prepare(
         `INSERT INTO models
           (id, upstream_id, upstream_slug, name, provider, context_window,
-           token_weight, in_catalog, group_slug, status, sort_order, synced_at,
+           in_catalog, group_slug, status, sort_order, synced_at,
            input_price_micros, output_price_micros, sell_input_micros,
            sell_output_micros)
-         VALUES (?, ?, 'savant', ?, ?, '8k', 1, 1, 'paid', 'active', ?, ?, 0, 0, 0, 0)`,
+         VALUES (?, ?, 'savant', ?, ?, '8k', 1, 'paid', 'active', ?, ?, 0, 0, 0, 0)`,
       )
       .run(model.id, model.id, model.name, model.family, index, STAMP);
   }

@@ -1,10 +1,9 @@
 /**
  * Completion rate limiting at the gateway boundary.
  *
- * The upstream free plan permits 15 requests per minute for the whole account,
- * shared by every customer. Nothing stopped one free key from spending all of
- * it, so free traffic draws from one shared bucket, while paid traffic shares a
- * bucket per customer across their keys.
+ * Every customer shares one bucket across all of their keys, so issuing another
+ * key cannot multiply dispatch capacity. The free shared bucket was removed
+ * with the free tier (FID-2026-1125-004).
  *
  * This module keeps bucket identity and the pure decision. The bucket state is
  * persisted in PostgreSQL by `lib/storage/admission.ts`, so the ceiling is one
@@ -17,16 +16,14 @@ import {
   type BucketConfig,
 } from "./token-bucket.ts";
 
-export const DEFAULT_FREE_SHARED_RPM = 12;
 export const DEFAULT_PAID_KEY_RPM = 60;
 
 export type RateLimitConfig = {
-  freeSharedRpm: number;
   paidKeyRpm: number;
 };
 
 export type CompletionBucket = {
-  scope: "free" | "paid";
+  scope: "paid";
   key: string;
   limit: number;
 };
@@ -38,7 +35,7 @@ export type CompletionRateDecision = {
 };
 
 export type RateLimitDecision = CompletionRateDecision & {
-  scope: "free" | "paid";
+  scope: "paid";
   limit: number;
   /** The shared store could not answer; the caller must fail closed. */
   unavailable?: true;
@@ -57,41 +54,30 @@ function positiveInteger(value: unknown, fallback: number) {
 }
 
 /**
- * `FREE_SHARED_RPM` defaults below the upstream 15 RPM allowance so that
- * operator probes and in-flight retries still fit; `PAID_KEY_RPM` is generous
- * because one paid key driving an agent legitimately bursts.
+ * `PAID_KEY_RPM` is generous because one paid key driving an agent legitimately
+ * bursts.
  */
 export function readRateLimitConfig(
   env: Record<string, string | undefined> = process.env,
 ): RateLimitConfig {
   return {
-    freeSharedRpm: positiveInteger(
-      env.FREE_SHARED_RPM,
-      DEFAULT_FREE_SHARED_RPM,
-    ),
     paidKeyRpm: positiveInteger(env.PAID_KEY_RPM, DEFAULT_PAID_KEY_RPM),
   };
 }
 
-/**
- * Free traffic has one key. Paid traffic is per customer, not per key, so
- * issuing another key cannot multiply dispatch capacity.
- */
+/** Paid traffic is per customer, not per key, so a second key shares the limit. */
 export function completionBucket(input: {
   keyId: string;
   userId?: string;
-  free: boolean;
   config?: RateLimitConfig;
 }): CompletionBucket {
   const config = input.config ?? readRateLimitConfig();
 
-  return input.free
-    ? { scope: "free", key: "free", limit: config.freeSharedRpm }
-    : {
-        scope: "paid",
-        key: `paid:${input.userId ?? input.keyId}`,
-        limit: config.paidKeyRpm,
-      };
+  return {
+    scope: "paid",
+    key: `paid:${input.userId ?? input.keyId}`,
+    limit: config.paidKeyRpm,
+  };
 }
 
 /**

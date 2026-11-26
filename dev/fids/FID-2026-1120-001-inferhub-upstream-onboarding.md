@@ -16,6 +16,30 @@
 > `converged` before implementation and close only after the code, the gates, and a local commit
 > exist.
 
+> **Ground-truth correction 2026-11-26.** Three statements below were stale and
+> are corrected here rather than rewritten in place.
+>
+> - **Status.** The metadata says `fixed` and the tree agrees: steps 1, 3, 4 and
+>   8 are implemented (`ed8812a`, `b159ba0`, `495e8b3`). The sentences in
+>   `Code Verification Evidence` and Loop 3 that call the status `converged`
+>   were written before implementation and are historical.
+> - **Step 2 no longer exists in the tree.** `resale_free_pool` and its importer
+>   gate were deleted by FID-2026-1125-004 step 1b (`f2968ab`;
+>   `lib/storage/schema/catalog.ts:187` now only drops the column). The importer
+>   refuses every `free/` row for every provider, so the resale-flag control is
+>   **superseded**, not done.
+> - **The free tier is gone.** `Expected Behavior` promised a customer-visible
+>   daily weighted allowance would survive. The operator removed the free tier
+>   entirely on 2026-11-25 (FID-2026-1125-004). That bullet is superseded.
+>
+> **Upstream pivot 2026-11-26.** Operator instruction, verbatim: "switching
+> focus to only use inferhub as our upstream, which means we no longer have free
+> allocation and a lot of info has changed". This record is now the onboarding
+> path for the only upstream rather than a fourth one, which makes steps 5–7
+> (bid-pinned cost snapshot, funded usage-frame observation, measured capacity
+> ceiling) launch-critical and still blocked on operator spend and a measured
+> figure.
+
 ---
 
 ## Summary
@@ -329,8 +353,8 @@ needs, **using the mechanisms the repository already has** rather than inventing
   provider with `1` keeps them; identity, protocol and cost mapping unchanged for Apinex.
 - `tests/catalog-economics.test.mjs` — manual-cost rows with an observation inside the window
   publish, outside it do not.
-- `tests/allocation.test.mjs` — the free tier remains a daily allowance; no code path presents
-  an unmetered free claim.
+- The free-tier allocation suite — retired together with the free tier by
+  FID-2026-1125-004; the unmetered claim it guarded no longer exists.
 - `tests/provider-inferhub-sync.test.mjs` (new, **exists and passes 2/2**) — a fixture with
   `free/…`, a priced ask-ladder row, an alias, a media row and an unpriced row through the real
   `syncProvider` on a disposable database, using the migration's seeded `inferhub` row: imports
@@ -345,7 +369,6 @@ needs, **using the mechanisms the repository already has** rather than inventing
 - gate: typecheck
 - gate: test tests/catalog-integrity.test.mjs
 - gate: test tests/catalog-economics.test.mjs
-- gate: test tests/allocation.test.mjs
 - gate: test tests/provider-inferhub-sync.test.mjs
 - gate: quality
 - gate: build
@@ -428,8 +451,9 @@ steps 1–4 and 8 are implemented, steps 5–7 remain blocked on funding and a m
   dump including `providers.resale_free_pool`
 - [ ] **Step statuses:** see below
 
-**Step statuses:** **1 `done`** (registry row seeded disabled, `ed8812a`), **2 `done`**
-(`resale_free_pool` gate, `495e8b3`), 3 `done by FID-2026-1120-002` (price shape
+**Step statuses:** **1 `done`** (registry row seeded disabled, `ed8812a`), **2 `superseded`**
+(the `resale_free_pool` gate at `495e8b3` was deleted by FID-2026-1125-004 step 1b at
+`f2968ab`), 3 `done by FID-2026-1120-002` (price shape
 adapter + alias rule), 4 `done` (admin form carries both review flags), 5 `blocked`
 (operator spend + per-model bids), 6 `blocked` (funding only; catalog shape is settled),
 7 `blocked` (needs a funded measurement), **8 `done`** (`ed8812a`). Nothing is dropped from
@@ -441,7 +465,8 @@ this record; every remaining block is money or a measured figure, not code.
 - [x] Cited line ranges match the quoted behaviour (read 0-EOF this session)
 - [ ] Typecheck/tests/lint pass with pasted tool output — no code written
 - [ ] Production call-graph evidence — n/a until implementation
-- [x] FID status reflects the actual implementation state (`converged`)
+- [x] FID status reflects the actual implementation state (`fixed`; steps 5–7
+  blocked)
 
 ### Loop 2 — Independent audit and self-correction
 
@@ -545,12 +570,13 @@ schema or provider row exists yet.
 ## Resolution
 
 - **Closed Date:** — (not closed)
-- **Fix Description:** steps 1, 2, 3, 4 and 8 are implemented: the registry row
-  is seeded disabled and review-required (`ed8812a`), the `resale_free_pool`
-  gate refuses `free/` rows when resale is prohibited (`495e8b3`), the catalog
-  price shape and alias rule are owned by the normalization layer
+- **Fix Description:** steps 1, 3, 4 and 8 are implemented: the registry row is
+  seeded disabled and review-required (`ed8812a`), the catalog price shape and
+  alias rule are owned by the normalization layer
   (FID-2026-1120-002, `b159ba0`), and the admin provider form carries both
-  review flags.
+  review flags. Step 2's `resale_free_pool` gate was superseded by
+  FID-2026-1125-004 step 1b (`f2968ab`), which deleted the flag and refuses
+  every `free/` row for every provider.
 - **Tests Added:** Yes — `tests/store-providers-postgres.test.mjs` asserts the
   seeded values, `tests/provider-inferhub-sync.test.mjs` pushes the real payload
   shape through the row, and the free-pool gate is covered by the catalog suite.

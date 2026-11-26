@@ -30,11 +30,11 @@ async function fixture() {
   await db
     .prepare(
       `INSERT INTO models
-        (id, upstream_id, upstream_slug, name, provider, context_window,
-         token_weight, input_price_micros, output_price_micros, in_catalog,
-         group_slug, status, sort_order, synced_at)
-       VALUES ('sub-model', 'sub-model', 'savant', 'Subscription Model',
-               'Family', '8k', 1, 1000, 2000, 1, 'subscription', 'active', 0, ?)`,
+                 (id, upstream_id, upstream_slug, name, provider, context_window,
+          input_price_micros, output_price_micros, in_catalog,
+          group_slug, status, sort_order, synced_at)
+        VALUES ('sub-model', 'sub-model', 'savant', 'Subscription Model',
+                'Family', '8k', 1000, 2000, 1, 'subscription', 'active', 0, ?)`,
     )
     .run(NOW);
 
@@ -113,18 +113,6 @@ test("the slug and the name are both unique", async () => {
   assert.equal(sameName.ok, false);
   assert.equal(sameName.status, 409);
   assert.match(sameName.error, /name is already in use/);
-});
-
-test("a free group cannot be sold inside a paid plan", async () => {
-  const db = await fixture();
-
-  const result = await createPlan(db, planInput({ groups: ["free"] }), NOW);
-
-  assert.deepEqual(result, {
-    ok: false,
-    status: 400,
-    error: "Free groups cannot be included in a paid plan.",
-  });
 });
 
 test("an unknown group or model is refused", async () => {

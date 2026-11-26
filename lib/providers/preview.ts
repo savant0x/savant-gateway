@@ -29,8 +29,7 @@ export type PreviewRow = {
   id: string;
   name: string;
   family: string;
-  allowFree: boolean;
-  /** Micro-dollars per 1M tokens; `0` for a free-pool row. */
+  /** Micro-dollars per 1M tokens; `0` when the provider published no cost. */
   costInputMicros: number;
   costOutputMicros: number;
 };
@@ -94,7 +93,6 @@ export async function previewProviderCatalog(
       id: model.id,
       name: model.name,
       family: model.family,
-      allowFree: model.allowFree,
       costInputMicros: model.costInputMicros,
       costOutputMicros: model.costOutputMicros,
     })),

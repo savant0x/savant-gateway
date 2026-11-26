@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
-  DEFAULT_FREE_SHARED_RPM,
   DEFAULT_PAID_KEY_RPM,
   completionBucket,
   evaluateCompletionRate,
@@ -76,64 +75,29 @@ test("a fresh bucket starts full so the first burst is never throttled", () => {
 
 test("limits default under the upstream ceiling and read overrides", () => {
   assert.deepEqual(readRateLimitConfig({}), {
-    freeSharedRpm: DEFAULT_FREE_SHARED_RPM,
     paidKeyRpm: DEFAULT_PAID_KEY_RPM,
   });
-  assert.ok(DEFAULT_FREE_SHARED_RPM < 15);
 
-  const overridden = readRateLimitConfig({
-    FREE_SHARED_RPM: "6",
-    PAID_KEY_RPM: "120",
-  });
+  const overridden = readRateLimitConfig({ PAID_KEY_RPM: "6" });
 
-  assert.deepEqual(overridden, { freeSharedRpm: 6, paidKeyRpm: 120 });
+  assert.deepEqual(overridden, { paidKeyRpm: 6 });
 });
 
 test("malformed limits fall back instead of disabling the control", () => {
   for (const value of ["", "0", "-5", "abc", "2.5"]) {
-    const config = readRateLimitConfig({
-      FREE_SHARED_RPM: value,
-      PAID_KEY_RPM: value,
-    });
+    const config = readRateLimitConfig({ PAID_KEY_RPM: value });
 
-    assert.equal(config.freeSharedRpm, DEFAULT_FREE_SHARED_RPM, value);
     assert.equal(config.paidKeyRpm, DEFAULT_PAID_KEY_RPM, value);
   }
 });
 
-test("free traffic shares one bucket identity across every key", () => {
-  assert.equal(
-    completionBucket({ keyId: "key-a", free: true }).key,
-    completionBucket({ keyId: "key-b", free: true }).key,
-  );
-
-  let state;
-  const run = () => {
-    const outcome = evaluateCompletionRate({ state, now: 0, limit: 2 });
-
-    state = outcome.state;
-
-    return outcome.decision;
-  };
-
-  assert.equal(run().allowed, true);
-  assert.equal(run().allowed, true);
-
-  const third = run();
-
-  assert.equal(third.allowed, false);
-  assert.equal(third.retryAfterSeconds, 30);
-});
-
-test("paid keys are isolated by account and from the free bucket", () => {
-  const alphaA = completionBucket({ keyId: "a1", userId: "alpha", free: false });
-  const alphaB = completionBucket({ keyId: "a2", userId: "alpha", free: false });
-  const beta = completionBucket({ keyId: "b1", userId: "beta", free: false });
-  const free = completionBucket({ keyId: "a1", userId: "alpha", free: true });
+test("completion buckets are isolated by account, not by key", () => {
+  const alphaA = completionBucket({ keyId: "a1", userId: "alpha" });
+  const alphaB = completionBucket({ keyId: "a2", userId: "alpha" });
+  const beta = completionBucket({ keyId: "b1", userId: "beta" });
 
   assert.equal(alphaA.key, alphaB.key);
   assert.notEqual(alphaA.key, beta.key);
-  assert.notEqual(alphaA.key, free.key);
   assert.equal(alphaA.limit, DEFAULT_PAID_KEY_RPM);
 
   let state;
@@ -149,7 +113,7 @@ test("paid keys are isolated by account and from the free bucket", () => {
   assert.equal(run().allowed, false);
 });
 
-test("a paid bucket recovers its allowance over the minute", () => {
+test("a bucket recovers its allowance over the minute", () => {
   const first = evaluateCompletionRate({
     state: undefined,
     now: 0,

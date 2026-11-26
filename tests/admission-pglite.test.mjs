@@ -92,64 +92,26 @@ test("an expired lease frees capacity without a sweeper", async () => {
   }
 });
 
-test("free completion tokens share one database bucket", async () => {
-  const db = await fixture();
-
-  try {
-    const config = { freeSharedRpm: 1, paidKeyRpm: 1 };
-    const first = await takeSharedCompletionRate(db, {
-      keyId: "key-a",
-      free: true,
-      config,
-      now: 0,
-    });
-    const second = await takeSharedCompletionRate(db, {
-      keyId: "key-b",
-      free: true,
-      config,
-      now: 0,
-    });
-
-    assert.equal(first.allowed, true);
-    assert.equal(second.allowed, false);
-    assert.equal(second.unavailable, undefined);
-
-    const later = await takeSharedCompletionRate(db, {
-      keyId: "key-a",
-      free: true,
-      config,
-      now: 60_000,
-    });
-
-    assert.equal(later.allowed, true);
-  } finally {
-    await db.close();
-  }
-});
-
 test("paid completion tokens are per customer, not per key", async () => {
   const db = await fixture();
 
   try {
-    const config = { freeSharedRpm: 10, paidKeyRpm: 1 };
+    const config = { paidKeyRpm: 1 };
     const alphaA = await takeSharedCompletionRate(db, {
       keyId: "a1",
       userId: "alpha",
-      free: false,
       config,
       now: 0,
     });
     const alphaB = await takeSharedCompletionRate(db, {
       keyId: "a2",
       userId: "alpha",
-      free: false,
       config,
       now: 0,
     });
     const beta = await takeSharedCompletionRate(db, {
       keyId: "b1",
       userId: "beta",
-      free: false,
       config,
       now: 0,
     });

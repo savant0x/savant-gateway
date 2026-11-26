@@ -36,14 +36,6 @@ export const SYSTEM_GROUP_LABELS: Record<ModelAccess, string> = {
 
 export const SYSTEM_GROUP_DEFINITIONS: readonly ModelGroupDefinition[] = [
   {
-    slug: "free",
-    label: "Free",
-    billingMode: "free",
-    description: "Weighted free pool. No credit hold and no charge.",
-    sortOrder: 0,
-    isSystem: true,
-  },
-  {
     slug: "paid",
     label: "Paid",
     billingMode: "paid",
@@ -62,6 +54,8 @@ export const SYSTEM_GROUP_DEFINITIONS: readonly ModelGroupDefinition[] = [
 ];
 
 const BILLING_MODES = new Set<ModelAccess>(["free", "paid", "subscription"]);
+/** `free` is readable for a legacy row but cannot be chosen for a group. */
+const WRITABLE_MODES = new Set<ModelAccess>(["paid", "subscription"]);
 
 export function isReservedGroupSlug(slug: string) {
   return RESERVED_GROUP_SLUGS.has(slug);
@@ -71,23 +65,20 @@ export function isSystemGroup(slug: string) {
   return isReservedGroupSlug(slug);
 }
 
-/** The provider-derived group used when an operator has not overridden it. */
-export function legacyAccessFor(row: {
-  allowFree: boolean;
-  tokenWeight: number;
-  upstreamId: string;
-}): ModelAccess {
-  if (row.allowFree && row.tokenWeight > 0) return "free";
+/**
+ * The provider-derived group used when an operator has not overridden it.
+ *
+ * The upstream flags that used to produce a `free` default are gone with the
+ * free tier; only the legacy `free/` prefix still maps to the subscription
+ * tier, and the importer now refuses those rows (FID-2026-1125-004).
+ */
+export function legacyAccessFor(row: { upstreamId: string }): ModelAccess {
   if (row.upstreamId.startsWith("free/")) return "subscription";
 
   return "paid";
 }
 
-export function defaultGroupSlug(row: {
-  allowFree: boolean;
-  tokenWeight: number;
-  upstreamId: string;
-}) {
+export function defaultGroupSlug(row: { upstreamId: string }) {
   return legacyAccessFor(row);
 }
 
@@ -97,25 +88,6 @@ export function accessFromGroup(
   fallback: ModelAccess,
 ): ModelAccess {
   return billingMode && BILLING_MODES.has(billingMode) ? billingMode : fallback;
-}
-
-/**
- * A free group is authoritative: both sell prices are zero. Every other group
- * keeps whatever prices the operator or markup pass already set.
- */
-export function pricesForGroup(input: {
-  billingMode: ModelAccess;
-  sellInputMicros: number;
-  sellOutputMicros: number;
-}) {
-  if (input.billingMode !== "free") {
-    return {
-      sellInputMicros: input.sellInputMicros,
-      sellOutputMicros: input.sellOutputMicros,
-    };
-  }
-
-  return { sellInputMicros: 0, sellOutputMicros: 0 };
 }
 
 export function canDeleteGroup(group: { isSystem: boolean }) {
@@ -131,7 +103,7 @@ function readLabel(value: unknown) {
 }
 
 function readBillingMode(value: unknown): ModelAccess | null {
-  return typeof value === "string" && BILLING_MODES.has(value as ModelAccess)
+  return typeof value === "string" && WRITABLE_MODES.has(value as ModelAccess)
     ? (value as ModelAccess)
     : null;
 }
@@ -178,7 +150,7 @@ function readCommon(input: unknown): GroupReadResult<GroupValues> {
   if (!billingMode) {
     return {
       ok: false,
-      error: "Billing mode must be free, paid, or subscription.",
+      error: "Billing mode must be paid or subscription.",
     };
   }
 

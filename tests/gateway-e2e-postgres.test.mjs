@@ -80,10 +80,10 @@ async function fixture() {
     .prepare(
       `INSERT INTO models
         (id, upstream_id, upstream_slug, name, provider, context_window,
-         token_weight, in_catalog, group_slug, status, sort_order, synced_at,
+         in_catalog, group_slug, status, sort_order, synced_at,
          sell_input_micros, sell_output_micros, input_price_micros,
          output_price_micros)
-       VALUES (?, 'upstream-m1', 'savant', 'Model', 'Family', '8k', 1, 1,
+       VALUES (?, 'upstream-m1', 'savant', 'Model', 'Family', '8k', 1,
                'paid', 'active', 0, ?, ?, ?, ?, ?)`,
     )
     .run(MODEL_ID, NOW, 1_000_000n.toString(), 2_000_000n.toString(), "600000", "900000");

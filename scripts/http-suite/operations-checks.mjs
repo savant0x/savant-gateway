@@ -51,10 +51,6 @@ async function cleanup(db) {
   await db.prepare("DELETE FROM settlements WHERE api_key_id = ?").run(KEY);
   await db.prepare("DELETE FROM credit_holds WHERE api_key_id = ?").run(KEY);
   await db.prepare("DELETE FROM credit_ledger WHERE user_id = ?").run(USER);
-  await db.prepare("DELETE FROM free_pool_usage WHERE user_id = ?").run(USER);
-  await db
-    .prepare("DELETE FROM free_pool_reservations WHERE user_id = ?")
-    .run(USER);
   await db.prepare("DELETE FROM users WHERE id = ?").run(USER);
   await db.prepare("DELETE FROM operations_incidents WHERE id = ?").run(
     "ops_http_incident",

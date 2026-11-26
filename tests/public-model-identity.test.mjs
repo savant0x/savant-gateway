@@ -34,12 +34,12 @@ async function seedRow(db, { id, upstreamSlug, upstreamId, sell = 1_000_000 }) {
     .prepare(
       `INSERT INTO models
          (id, upstream_id, upstream_slug, name, provider, family, protocol,
-          context_window, token_weight, input_price_micros, output_price_micros,
+          context_window, input_price_micros, output_price_micros,
           sell_input_micros, sell_output_micros, price_source, cost_source,
-          allow_free, supports_tools, supports_vision, status, sort_order,
+          supports_tools, supports_vision, status, sort_order,
           synced_at, in_catalog)
-       VALUES (?, ?, ?, ?, ?, ?, 'chat', '128000', 1, 500000, 1000000, ?, ?,
-               'manual', 'manual', 0, 0, 0, 'active', 0, ?, 1)`,
+        VALUES (?, ?, ?, ?, ?, ?, 'chat', '128000', 500000, 1000000, ?, ?,
+               'manual', 'manual', 0, 0, 'active', 0, ?, 1)`,
     )
     .run(
       id,

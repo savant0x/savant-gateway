@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { nextUtcReset } from "../lib/free-pool.ts";
+import { nextUtcReset } from "../lib/provider-quota.ts";
 import { createStorageDatabase } from "../lib/storage/database.ts";
 import {
   claimRuntimeLease,

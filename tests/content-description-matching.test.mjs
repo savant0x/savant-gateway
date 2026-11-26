@@ -83,10 +83,10 @@ test("ingestion and stored rematch find a model beyond the excerpt", async () =>
   try {
     await db.prepare(
       `INSERT INTO models
-       (id, upstream_id, name, provider, family, context_window, token_weight,
-        input_price_micros, output_price_micros, allow_free, supports_tools,
+       (id, upstream_id, name, provider, family, context_window,
+        input_price_micros, output_price_micros, supports_tools,
         supports_vision, status, sort_order, synced_at, in_catalog)
-       VALUES (?, ?, ?, 'GPT', 'GPT', '128000', 1, 0, 0, 1, 0, 0, 'active', 0, ?, 1)`,
+       VALUES (?, ?, ?, 'GPT', 'GPT', '128000', 0, 0, 0, 0, 'active', 0, ?, 1)`,
     ).run(model.id, model.upstreamId, model.name, "2026-11-05T00:00:00.000Z");
     const source = await createSource(db, {
       kind: "youtube", label: "Fixture", url: "https://youtube.com/channel/UCabcdefghijklmnopqrstuv",

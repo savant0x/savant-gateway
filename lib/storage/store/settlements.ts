@@ -33,7 +33,6 @@ export async function openCallSettlement(
     providerSlug: string;
     billingSource: SettlementBillingSource;
     creditHoldId: string | null;
-    freeReservationId: string | null;
     subscriptionHoldId: string | null;
     estimatedMicros: number;
   },

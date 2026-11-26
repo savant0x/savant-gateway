@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
 import type { IdentityPublishedView } from "@/lib/identity/types";
 import type { Coverage } from "@/lib/content/types";
-import type { DailyTrialSummary } from "@/lib/storage/store/daily-trial";
-import type { TrialBalance } from "@/lib/storage/ledger/trials";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { FreeAllocationPanel } from "@/components/catalog/free-allocation-panel";
 import { ModelBenchmarkCard } from "@/components/catalog/model-benchmark-card";
 import { CoveragePanel } from "@/components/content/coverage-panel";
 import { ModelVisualBuilds } from "@/components/showcase/model-visual-builds";
@@ -30,13 +27,10 @@ import { getOpenRouterModels } from "@/lib/openrouter-prices";
 import { buildCatalogComparison } from "@/lib/price-comparison";
 import {
   getCatalogData,
-  getDailyTrialSummary,
   listBenchmarks,
   listPublishedVisualBuilds,
 } from "@/lib/store";
-import { trialBalance } from "@/lib/storage/ledger/trials";
 import { getDatabase } from "@/lib/storage/runtime";
-import { readTrialConfig } from "@/lib/trials";
 import {
   type VisualBuildPublicRow,
   visualBuildsEnabled,
@@ -114,30 +108,9 @@ export default async function ModelDetailPage({ params }: PageProps) {
   let coverage: Coverage | null = null;
   let watching = false;
   let visualBuilds: VisualBuildPublicRow[] = [];
-  let dailyAllocation: DailyTrialSummary | null = null;
-  let lifetimeAllocation: TrialBalance | null = null;
-  let allocationUnavailable = false;
   const showContent = contentEnabled();
   const showVisualBuilds = visualBuildsEnabled();
   const customer = await getCustomerSession().catch(() => null);
-  const trialConfig = readTrialConfig();
-  const allocationMode = trialConfig.enabled ? "lifetime" : "daily";
-
-  if (model.access === "free" && customer) {
-    try {
-      if (trialConfig.enabled) {
-        lifetimeAllocation = await trialBalance(
-          await getDatabase(),
-          customer.id,
-          new Date().toISOString(),
-        );
-      } else {
-        dailyAllocation = await getDailyTrialSummary(customer.id);
-      }
-    } catch {
-      allocationUnavailable = true;
-    }
-  }
 
   try {
     const db = await getDatabase();
@@ -199,7 +172,7 @@ export default async function ModelDetailPage({ params }: PageProps) {
             <p className="mt-4 max-w-2xl text-sm leading-7 text-muted">
               {`${model.family} · ${formatContextWindow(
                 model.contextWindow,
-              )} context · ${model.groupLabel} access · token weight ${model.tokenWeight}×. Prices below are the gateway's sell price per million tokens.`}
+              )} context · ${model.groupLabel} access. Prices below are the gateway's sell price per million tokens.`}
             </p>
           </div>
         </section>
@@ -234,17 +207,6 @@ export default async function ModelDetailPage({ params }: PageProps) {
               comparison={comparison}
               listLoaded={openRouter.models.length > 0}
             />
-
-            {model.access === "free" ? (
-              <FreeAllocationPanel
-                daily={dailyAllocation}
-                lifetime={lifetimeAllocation}
-                mode={allocationMode}
-                model={model}
-                signedIn={Boolean(customer)}
-                unavailable={allocationUnavailable}
-              />
-            ) : null}
 
             <div className="rounded-xl border border-black/10 bg-surface p-5 dark:border-white/10">
               <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-muted">

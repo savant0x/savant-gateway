@@ -13,8 +13,6 @@ import { PromoCard } from "@/components/account/promo-card";
 import { SubscriptionCard } from "@/components/account/subscription-card";
 import { SupportCard } from "@/components/account/support-card";
 import { TopupCard, type TopupLane } from "@/components/account/topup-card";
-import { TrialCard } from "@/components/account/trial-card";
-import { DailyTrialCard } from "@/components/account/daily-trial-card";
 import { StatCard } from "@/components/dashboard/chips";
 import {
   formatCalendarDay,
@@ -192,9 +190,6 @@ export default async function AccountPage({
           verified={email.verified}
         />
 
-        <TrialCard userId={customer.id} />
-        <DailyTrialCard userId={customer.id} />
-
         {promo.enabled ? <PromoCard /> : null}
 
         <section className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
@@ -237,10 +232,9 @@ export default async function AccountPage({
               <a className="text-accent hover:underline" href="/docs/start">
                 newcomer guide
               </a>
-              . Access follows your trial allowance, available credit and plan
-              entitlements. Plan-only rows need a subscription that includes
-              them. Paid usage stops when available credit cannot cover a
-              request.
+              . Access follows your available credit and plan entitlements.
+              Plan-only rows need a subscription that includes them. Paid usage
+              stops when available credit cannot cover a request.
             </p>
           </Card.Content>
         </Card>

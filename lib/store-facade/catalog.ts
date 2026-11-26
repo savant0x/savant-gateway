@@ -14,7 +14,6 @@ import * as catalogGroups from "../storage/store/provider-catalog-groups.ts";
 import * as providers from "../storage/store/providers.ts";
 import * as routes from "../storage/store/routes.ts";
 import * as settings from "../storage/store/settings.ts";
-import * as trialOfferModule from "../storage/store/trial-offer.ts";
 
 import { bound } from "./bound.ts";
 
@@ -104,7 +103,3 @@ export const setProviderEnabled = bound(providers.setProviderEnabled);
 export const deleteProvider = bound(providers.deleteProvider);
 
 export const reconcileRoutes = bound(routes.reconcileRoutes);
-
-/** Published next to every catalog row, so it belongs with the catalog reads. */
-export const trialOffer = bound(trialOfferModule.trialOffer);
-export const trialOffers = bound(trialOfferModule.trialOffers);

@@ -1,17 +1,11 @@
-import type { GatewayModel } from "./projections.ts";
-
 /**
  * The gateway's refusals, separated from how a model is looked up.
  *
- * These four helpers were part of `lib/gateway-resolution.ts`, which imports the
+ * These helpers were part of `lib/gateway-resolution.ts`, which imports the
  * synchronous store. The PostgreSQL entry needs the same answers without that
- * dependency, and copying them would have created two definitions of what counts
- * as a free call or which upstream status may be passed through to a customer.
+ * dependency, and copying them would have created two definitions of which
+ * upstream status may be passed through to a customer.
  */
-
-export function isFreeCall(model: GatewayModel) {
-  return model.billingMode === "free";
-}
 
 /**
  * A provider's own text is only shown when it describes the customer's request.

@@ -65,11 +65,6 @@ export async function getOverviewStats(
          JOIN providers p ON p.slug = m.upstream_slug AND p.enabled = 1
          JOIN model_groups g ON g.slug = m.group_slug
          WHERE ${PUBLIC_MODEL_SCOPE}
-           AND g.billing_mode = 'free') AS free_model_count,
-        (SELECT COUNT(*) FROM models m
-         JOIN providers p ON p.slug = m.upstream_slug AND p.enabled = 1
-         JOIN model_groups g ON g.slug = m.group_slug
-         WHERE ${PUBLIC_MODEL_SCOPE}
            AND g.billing_mode = 'paid') AS paid_model_count,
         (SELECT COUNT(*) FROM models m
          JOIN providers p ON p.slug = m.upstream_slug AND p.enabled = 1
@@ -83,7 +78,6 @@ export async function getOverviewStats(
     )
     .get<{
       model_count: number | string;
-      free_model_count: number | string;
       paid_model_count: number | string;
       subscription_model_count: number | string;
       key_count: number | string;
@@ -93,7 +87,6 @@ export async function getOverviewStats(
 
   return {
     modelCount: Number(row?.model_count ?? 0),
-    freeModelCount: Number(row?.free_model_count ?? 0),
     paidModelCount: Number(row?.paid_model_count ?? 0),
     subscriptionModelCount: Number(row?.subscription_model_count ?? 0),
     keyCount: Number(row?.key_count ?? 0),

@@ -2,65 +2,28 @@
 
 import type { ContextBanner } from "@/lib/context-banner";
 
-import { Button, Card, Input, Spinner } from "@heroui/react";
+import { Button, Card, Spinner } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { adminLoginHref } from "@/lib/admin-return";
 
-export type AllocationSummaryPayload = {
-  day: string;
-  enabled: boolean;
-  dailyPoolTokens: number;
-  configuredDailyPoolTokens: number;
-  capacityAvailable: boolean;
-  allocationBps: number;
-  allocatableTokens: number;
-  reservedTokens: number;
-  activeAccounts: number;
-  allocatedTokens: number;
-  usedTokens: number;
-  perAccountTokens: number;
-  effectivePerAccountTokens: number;
-  accountDailyCapTokens: number;
-};
-
-function formatTokens(value: number) {
-  return value.toLocaleString("en-US");
-}
-
 export function GatewaySettings({
-  summary,
   banner,
   bannerMaxChars,
 }: {
-  summary: AllocationSummaryPayload;
   banner: ContextBanner;
   bannerMaxChars: number;
 }) {
   const router = useRouter();
-  const [allocationEnabled, setAllocationEnabled] = useState(summary.enabled);
-  const [dailyPool, setDailyPool] = useState(
-    String(summary.configuredDailyPoolTokens),
-  );
-  const [sharePercent, setSharePercent] = useState(
-    (summary.allocationBps / 100).toString(),
-  );
-  const [accountCap, setAccountCap] = useState(
-    String(summary.accountDailyCapTokens),
-  );
   const [bannerEnabled, setBannerEnabled] = useState(banner.enabled);
   const [bannerText, setBannerText] = useState(banner.text);
-  const [saving, setSaving] = useState<"allocation" | "banner" | null>(null);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  async function save(
-    kind: "allocation" | "banner",
-    payload: Record<string, unknown>,
-    message: string,
-  ) {
-    setSaving(kind);
+  async function saveBanner() {
+    setSaving(true);
     setError(null);
     setNotice(null);
 
@@ -68,7 +31,9 @@ export function GatewaySettings({
       const response = await fetch("/api/admin/gateway", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          banner: { enabled: bannerEnabled, text: bannerText },
+        }),
       });
       const result = (await response.json().catch(() => null)) as {
         error?: string;
@@ -90,193 +55,23 @@ export function GatewaySettings({
         );
       }
 
-      setNotice(message);
+      setNotice(
+        bannerEnabled
+          ? "Context banner saved and active on the next request."
+          : "Context banner saved; injection is off.",
+      );
       router.refresh();
     } catch (reason) {
       setError(
         reason instanceof Error ? reason.message : "Could not save the update.",
       );
     } finally {
-      setSaving(null);
+      setSaving(false);
     }
-  }
-
-  function saveAllocation() {
-    const pool = Number(dailyPool);
-    const percent = Number(sharePercent);
-    const cap = Number(accountCap);
-
-    if (!Number.isSafeInteger(pool) || pool < 0) {
-      setError("Daily pool must be a non-negative whole number of tokens.");
-      setNotice(null);
-
-      return;
-    }
-
-    if (!Number.isFinite(percent) || percent < 0 || percent > 100) {
-      setError("Share must be between 0 and 100 percent.");
-      setNotice(null);
-
-      return;
-    }
-
-    if (!Number.isSafeInteger(cap) || cap < 0) {
-      setError(
-        "The per-account cap must be a non-negative whole number of tokens, or 0 to disable it.",
-      );
-      setNotice(null);
-
-      return;
-    }
-
-    void save(
-      "allocation",
-      {
-        allocation: {
-          enabled: allocationEnabled,
-          dailyPoolTokens: pool,
-          allocationBps: Math.round(percent * 100),
-          accountDailyCapTokens: cap,
-        },
-      },
-      cap === 0
-        ? "Allocation updated: the per-account cap is off, so each account draws its full share."
-        : `Allocation updated: every account is capped at ${formatTokens(cap)} weighted tokens a day.`,
-    );
-  }
-
-  function saveBanner() {
-    void save(
-      "banner",
-      { banner: { enabled: bannerEnabled, text: bannerText } },
-      bannerEnabled
-        ? "Context banner saved and active on the next request."
-        : "Context banner saved; injection is off.",
-    );
   }
 
   return (
     <div className="space-y-4">
-      <Card variant="secondary">
-        <Card.Header>
-          <Card.Title>Daily trial-credit allocation</Card.Title>
-          <Card.Description>
-            The upstream free plan grants one weighted-token pool per UTC day.
-            This splits a share of it evenly across activated accounts — active
-            customers holding at least one active key — and holds the rest back.
-            The configured ceiling is capped by fresh upstream capacity. Unspent
-            allocations rebalance as accounts join or capacity shrinks,
-            preserving recorded usage and live holds. The per-account daily cap
-            limits what one identity may spend; credits do not carry over.
-          </Card.Description>
-        </Card.Header>
-        <Card.Content className="space-y-4">
-          <div className="flex flex-wrap items-end gap-3">
-            <label className="flex items-center gap-2 text-sm text-muted">
-              <input
-                checked={allocationEnabled}
-                className="h-4 w-4 accent-[var(--accent)]"
-                type="checkbox"
-                onChange={(event) => setAllocationEnabled(event.target.checked)}
-              />
-              Shared allocation enabled
-            </label>
-            <span className="flex items-center gap-2 text-sm text-muted">
-              Daily pool ceiling
-              <Input
-                aria-label="Daily pool weighted tokens"
-                className="w-40"
-                min={0}
-                step="1"
-                type="number"
-                value={dailyPool}
-                onChange={(event) => setDailyPool(event.target.value)}
-              />
-              tokens
-            </span>
-            <span className="flex items-center gap-2 text-sm text-muted">
-              Allocated share
-              <Input
-                aria-label="Allocated share percent"
-                className="w-24"
-                max={100}
-                min={0}
-                step="1"
-                type="number"
-                value={sharePercent}
-                onChange={(event) => setSharePercent(event.target.value)}
-              />
-              %
-            </span>
-            <span className="flex items-center gap-2 text-sm text-muted">
-              Per-account daily cap
-              <Input
-                aria-label="Per-account daily cap weighted tokens"
-                className="w-40"
-                min={0}
-                step="1"
-                type="number"
-                value={accountCap}
-                onChange={(event) => setAccountCap(event.target.value)}
-              />
-              tokens (0 = off)
-            </span>
-          </div>
-
-          <div className="grid gap-3 text-xs text-muted sm:grid-cols-2 lg:grid-cols-4">
-            <p>
-              Allocatable today:{" "}
-              <span className="text-foreground">
-                {summary.capacityAvailable
-                  ? formatTokens(summary.allocatableTokens)
-                  : "Unavailable"}
-              </span>
-            </p>
-            <p>
-              Allocated:{" "}
-              <span className="text-foreground">
-                {formatTokens(summary.allocatedTokens)}
-              </span>{" "}
-              across {summary.activeAccounts} activated{" "}
-              {summary.activeAccounts === 1 ? "account" : "accounts"}
-            </p>
-            <p>
-              Used:{" "}
-              <span className="text-foreground">
-                {formatTokens(summary.usedTokens)}
-              </span>{" "}
-              · reserved{" "}
-              <span className="text-foreground">
-                {formatTokens(summary.reservedTokens)}
-              </span>
-            </p>
-            <p>
-              Share per account:{" "}
-              <span className="text-foreground">
-                {summary.capacityAvailable
-                  ? formatTokens(summary.perAccountTokens)
-                  : "Unavailable"}
-              </span>{" "}
-              · effective{" "}
-              <span className="text-foreground">
-                {summary.capacityAvailable
-                  ? formatTokens(summary.effectivePerAccountTokens)
-                  : "Unavailable"}
-              </span>
-            </p>
-          </div>
-
-          <Button
-            isDisabled={saving !== null}
-            variant="primary"
-            onPress={saveAllocation}
-          >
-            {saving === "allocation" ? <Spinner size="sm" /> : null}
-            {saving === "allocation" ? "Saving" : "Save allocation"}
-          </Button>
-        </Card.Content>
-      </Card>
-
       <Card variant="secondary">
         <Card.Header>
           <Card.Title>Context banner</Card.Title>
@@ -307,13 +102,9 @@ export function GatewaySettings({
             {bannerText.length.toLocaleString("en-US")} /{" "}
             {bannerMaxChars.toLocaleString("en-US")} characters
           </p>
-          <Button
-            isDisabled={saving !== null}
-            variant="primary"
-            onPress={saveBanner}
-          >
-            {saving === "banner" ? <Spinner size="sm" /> : null}
-            {saving === "banner" ? "Saving" : "Save banner"}
+          <Button isDisabled={saving} variant="primary" onPress={saveBanner}>
+            {saving ? <Spinner size="sm" /> : null}
+            {saving ? "Saving" : "Save banner"}
           </Button>
         </Card.Content>
       </Card>

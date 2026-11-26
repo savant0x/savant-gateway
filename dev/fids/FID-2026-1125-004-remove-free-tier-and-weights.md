@@ -4,9 +4,11 @@
 **ID:** FID-2026-1125-004
 **Severity:** high
 **Status:** fixed
-> Steps 1a and 1b are in the tree and gated: the importer reads no upstream
-> weight, refuses every `free/` row for every provider, and the registry no
-> longer carries a resale flag. Steps 2–8 are the ordered remainder.
+> Steps 1a, 1b and 1c are in the tree, committed and gated: the importer reads
+> no upstream weight, refuses every `free/` row for every provider, the registry
+> no longer carries a resale flag, and the sync summary reports priced/unpriced
+> instead of a free count. Steps 2–8 are the ordered remainder. `fixed` means
+> the landed slice is implemented; it is not a closure of the removal.
 **Created:** 2026-11-25 00:00
 **Automation level:** 3
 **YAGNI-Compliance:** Pending — the removal deletes machinery rather than adding
@@ -32,6 +34,10 @@ gated on its own.
    always was" — `sell = cost × (1 + markup)`. The formula already does this
    (`lib/pricing.ts:defaultSellMicros`); what is wrong is the cost source and the
    free/weight layer around it, not the arithmetic.
+3. **Upstream (2026-11-26):** "switching focus to only use inferhub as our
+   upstream, which means we no longer have free allocation and a lot of info
+   has changed". The removal below is no longer conditional on a provider mix:
+   InferHub is the only upstream this gateway will sell from.
 
 ## Environment
 
@@ -202,6 +208,18 @@ free-tier route.
 - step 1c, `node --test tests/provider-sync-postgres.test.mjs tests/provider-inferhub-sync.test.mjs tests/provider-catalog-preview.test.mjs`: exit 0, 22 pass / 0 fail
 - step 1c, `npm run typecheck` exit 0, `npm run lint` exit 0
 - `npm run repository:check`: PASS (12 gates, 12 active FIDs)
+- steps 2–4 implemented 2026-11-26:
+  - `node --test "tests/*.test.mjs"`: exit 0, 1242 tests / 1226 pass / 0 fail
+  - `npm run lint`: exit 0 (0 warnings)
+  - `npm run typecheck`: exit 0
+  - `npm run quality`: PASS (400-line ceiling, 701 files scanned)
+  - `npm run build`: exit 0
+  - `npm run config:check`: PASS (non-production)
+  - `npm run test:http`: exit 0, 730 checks PASS
+  - `npm run attribution`: PASS (both guards)
+  - `grep -rn "allow_free\|token_weight\|free_pool" lib app components` returns no
+    live reference; the only remaining free-pool naming is the importer's
+    refusal path for upstream `free/` ids, which is unchanged by design (1b).
 
 ## Perfection Loop
 
@@ -248,8 +266,19 @@ free-tier route.
 - [x] **Gate output:** receipt above
 - [x] **Reproducibility:** `grep -rn "tokenWeight" lib/providers` returns only the
       `toRow` constant and the `SyncedModel` field
-- [x] **Step statuses:** 1a implemented; 1b implemented; 1c implemented; 2–8
-      unimplemented and unblocked — the ordered remainder of this record
+- [x] **Step statuses:** 1a implemented; 1b implemented; 1c implemented;
+      2 implemented; 3 implemented; 4 implemented; 5–8 unimplemented and
+      unblocked — the ordered remainder of this record
+- [x] **Steps 2–4 file ranges:** `lib/providers/catalog.ts` (`importedModelStatus`,
+      `costMicros`), `lib/model-groups.ts` (`SYSTEM_GROUP_DEFINITIONS`,
+      `WRITABLE_MODES`, `pricesForGroup` deleted), `lib/storage/store/models.ts`,
+      `lib/storage/store/routes.ts`, `lib/route-reconcile.ts`,
+      `lib/storage/store/model-sync.ts` (23-column UPSERT),
+      `lib/storage/gateway/call.ts`, `settle.ts`, `stream.ts`,
+      `lib/storage/store/usage.ts`, `lib/storage/ledger/settlements.ts`,
+      `lib/storage/schema/core.ts`, `lib/storage/schema/free-tier-removal.ts`
+      (new, last in `applySchema`), `lib/storage/schema/customers.ts`,
+      `lib/projections.ts`, `lib/types.ts`, `app/api/admin/gateway/route.ts`
 
 ### Code Verification Evidence
 
@@ -258,7 +287,8 @@ free-tier route.
 - [ ] Implementation matches the Proposed Solution
 - [ ] Typecheck/tests/lint pass
 - [ ] Production call-graph evidence
-- [ ] FID status reflects closure state — `converged`, not implemented
+- [ ] FID status reflects closure state — `fixed` for steps 1a–1c; steps 2–8
+      are open, so this record is not a closure candidate
 
 ### Loop 2 — Independent audit and self-correction
 
@@ -287,10 +317,43 @@ free-tier route.
 ## Resolution
 
 - **Closed Date:** not closed
-- **Fix Description:** step 1a implemented (weight multiplier removed from the
-  import path); the free-offer removal waits on the registry ruling.
-- **Tests Added:** no
-- **Verification Evidence:** none
+- **Fix Description:** steps 1a–1c are implemented and committed: `a3564ec`
+  removes the upstream weight from the import path and writes `1`; `f2968ab`
+  refuses every `free/` row for every provider and deletes
+  `providers.resale_free_pool` (the PostgreSQL path drops the column); `7ca19dc`
+  reports `priced`/`unpriced` instead of a free count. Steps 2–4 are implemented
+  in the working tree: price math has no free branch and no free count, the
+  gateway's `billingSource` is exactly `subscription | credit`, the free
+  reservation column and its rate-limit bucket are gone, and the migration drops
+  `models.allow_free`, `models.token_weight` and the trial/allocation tables
+  after converting auto-assigned free rows to `paid`. Steps 5–8 — plain-token
+  plan units, customer UI, admin UI and docs — are unimplemented and unblocked.
+- **Deviations:** step 4 could not drop the free stores without their readers,
+  so the customer allocation/trial routes, the free allocation panels and the
+  `/v1/models` trial fields left in this slice (parts of steps 6–7). The admin
+  gateway surface is now the context banner only. The legacy SQLite helpers
+  (`lib/settlement-ledger.ts`, `lib/schema/{groups,providers,settlements}.ts`)
+  still name `free_reservation_id`/`allow_free`; they are outside the PostgreSQL
+  app path and are tracked with the SQLite retirement, not with this FID.
+  `lib/business-model.ts` still counts rows whose group is `free` (always 0 now),
+  and the load-acceptance workload and the `npm run business-model` report still
+  model a free cohort; both are release tooling, not application paths, and are
+  not re-baselined here.
+- **Tests Added:** Yes — `tests/catalog-normalize.test.mjs`,
+  `tests/provider-inferhub-sync.test.mjs`,
+  `tests/provider-catalog-preview.test.mjs`,
+  `tests/provider-sync-postgres.test.mjs` and
+  `tests/store-providers-postgres.test.mjs` cover steps 1a–1c. Steps 2–4 change
+  `tests/rate-limit.test.mjs` (paid-only buckets), `tests/admission-pglite.test.mjs`,
+  `tests/gateway-settlement-postgres.test.mjs`, `tests/model-groups.test.mjs`,
+  `tests/store-admin-postgres.test.mjs`, `tests/store-catalog-postgres.test.mjs`,
+  `tests/store-groups-postgres.test.mjs`, `tests/route-reconcile.test.mjs`,
+  `tests/route-election-backfill.test.mjs`, `tests/pricing-decisions.test.mjs`,
+  `tests/admin-pricing-command.test.mjs` and the HTTP quota suite; the trial,
+  allocation, free-pool and trial-offer suites are removed with their subjects.
+- **Verification Evidence:** the receipt above — 26 focused cases at step 1a,
+  36 at step 1b, 22 at step 1c, with lint, typecheck, quality and
+  `npm run repository:check` PASS.
 - **Archived:** not archived
 
 ## Lessons Learned

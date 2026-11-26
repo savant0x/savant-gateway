@@ -6,11 +6,11 @@ import { clearPublicCatalogCache } from "./catalog.ts";
 /**
  * Model group store, ported to the async handle (FID-085 step 4).
  *
- * A group is a billing tier, so its edits move money. Three rules carry over
- * unchanged: a system group keeps its billing mode, a group a plan includes
- * cannot be deleted, and moving rows into a free group zeroes their sell prices
- * in the same transaction that moves them. A group that changed mode without
- * touching prices would answer a different price than the one the catalog shows.
+ * A group is a billing tier, so its edits move money. Two rules carry over
+ * unchanged: a system group keeps its billing mode, and a group a plan includes
+ * cannot be deleted. A group no longer changes a row's sell price: every row is
+ * priced per token, so the price the catalog shows is the price it charges
+ * (FID-2026-1125-004).
  *
  * One deliberate difference: the label-uniqueness check now compares
  * `lower(label)`. PostgreSQL's constraint is a unique index on `lower(label)`
@@ -181,34 +181,22 @@ export async function updateModelGroup(
 
   const now = input.now ?? new Date().toISOString();
 
-  await db.transaction(async () => {
-    await db
-      .prepare(
-        `UPDATE model_groups
-            SET label = ?, billing_mode = ?, description = ?, sort_order = ?,
-                hidden = ?, updated_at = ?
-          WHERE slug = ?`,
-      )
-      .run(
-        input.label,
-        input.billingMode,
-        input.description,
-        input.sortOrder,
-        input.hidden ? 1 : 0,
-        now,
-        slug,
-      );
-
-    if (input.billingMode === "free") {
-      await db
-        .prepare(
-          `UPDATE models
-              SET sell_input_micros = 0, sell_output_micros = 0
-            WHERE group_slug = ?`,
-        )
-        .run(slug);
-    }
-  })();
+  await db
+    .prepare(
+      `UPDATE model_groups
+          SET label = ?, billing_mode = ?, description = ?, sort_order = ?,
+              hidden = ?, updated_at = ?
+        WHERE slug = ?`,
+    )
+    .run(
+      input.label,
+      input.billingMode,
+      input.description,
+      input.sortOrder,
+      input.hidden ? 1 : 0,
+      now,
+      slug,
+    );
 
   clearPublicCatalogCache(db);
 
@@ -232,25 +220,13 @@ export async function assignModelGroup(
 
   if (!model) return "model_not_found";
 
-  await db.transaction(async () => {
-    await db
-      .prepare(
-        `UPDATE models
-            SET group_slug = ?, group_source = 'manual'
-          WHERE id = ?`,
-      )
-      .run(slug, modelId);
-
-    if (group.billing_mode === "free") {
-      await db
-        .prepare(
-          `UPDATE models
-              SET sell_input_micros = 0, sell_output_micros = 0
-            WHERE id = ?`,
-        )
-        .run(modelId);
-    }
-  })();
+  await db
+    .prepare(
+      `UPDATE models
+          SET group_slug = ?, group_source = 'manual'
+        WHERE id = ?`,
+    )
+    .run(slug, modelId);
 
   clearPublicCatalogCache(db);
 
@@ -316,16 +292,6 @@ export async function deleteModelGroup(
           WHERE group_slug = ?`,
       )
       .run(reassignTo, slug);
-
-    if (destination.billing_mode === "free") {
-      await db
-        .prepare(
-          `UPDATE models
-              SET sell_input_micros = 0, sell_output_micros = 0
-            WHERE group_slug = ?`,
-        )
-        .run(reassignTo);
-    }
 
     await db.prepare("DELETE FROM model_groups WHERE slug = ?").run(slug);
   })();

@@ -153,6 +153,6 @@ export function usagePrices(
     costMicros:
       computeTokenCostMicros(inputTokens, model.costInputMicros) +
       computeTokenCostMicros(outputTokens, model.costOutputMicros),
-    chargedMicros: model.billingMode === "free" ? 0 : listPrice,
+    chargedMicros: listPrice,
   };
 }

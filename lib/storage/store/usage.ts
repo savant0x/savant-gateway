@@ -1,10 +1,6 @@
 import type { PostgresDatabase } from "../pg-adapter.ts";
 import type { AdminUsageSummary, UsageSummary } from "../../types.ts";
-import type {
-  AuthenticatedKey,
-  FreePoolReservation,
-  GatewayModel,
-} from "../../projections.ts";
+import type { AuthenticatedKey, GatewayModel } from "../../projections.ts";
 import type { UsageRow } from "../../projections.ts";
 
 import { randomUUID } from "node:crypto";
@@ -13,7 +9,6 @@ import { toAdminUsageSummary, toUsageSummary } from "../../projections.ts";
 import { usageLedgerEntry } from "../../usage-ledger.ts";
 import { commitSettlement } from "../ledger/settlements.ts";
 
-import { settleFreeReservation } from "./free-pool.ts";
 import { settleSubscriptionHoldWithin } from "./subscription-access.ts";
 
 /**
@@ -26,10 +21,9 @@ import { settleSubscriptionHoldWithin } from "./subscription-access.ts";
  * 1. The durable settlement row is claimed first. A duplicate callback or a
  *    quarantined outcome stops here, so a replay cannot write a second usage
  *    row, debit twice, or release a hold twice.
- * 2. A free reservation whose trial row is already settled stops the same way.
- * 3. The recharge, its ledger row, the hold release, the subscription settle,
- *    the free-pool settle and the usage row all commit together — any failure
- *    rolls the whole settlement back, leaving the reservation for reconciliation.
+ * 2. The recharge, its ledger row, the hold release, the subscription settle
+ *    and the usage row all commit together — any failure rolls the whole
+ *    settlement back, leaving the reservation for reconciliation.
  *
  * Two deliberate differences from the synchronous version:
  *
@@ -55,12 +49,11 @@ export type UsageSettlement = {
   costMicros: number;
   estimated?: boolean;
   hold?: { id: string; holdMicros: number } | null;
-  freeReservation?: FreePoolReservation | null;
   subscriptionHold?: { holdId: string } | null;
   subscriptionId?: string | null;
   subscriptionPeriodId?: string | null;
   includedWeightedTokens?: number;
-  billingSource?: "free" | "subscription" | "credit";
+  billingSource?: "subscription" | "credit";
   /** Provider-reported subsets; null means the provider did not report it. */
   cachedInputTokens?: number | null;
   cacheWriteInputTokens?: number | null;
@@ -83,15 +76,12 @@ export async function recordUsage(
   const now = new Date().toISOString();
   const inputTokens = Math.max(0, Math.floor(input.inputTokens));
   const outputTokens = Math.max(0, Math.floor(input.outputTokens));
-  const totalTokens = inputTokens + outputTokens;
-  const weightedTokens =
-    input.model.billingMode === "free"
-      ? totalTokens * Math.max(1, input.model.tokenWeight)
-      : 0;
+  // Weighted metering was the free pool's unit. No call draws on a weighted
+  // allowance now, so this retired column records zero until the plan allowance
+  // is renamed to raw tokens (FID-2026-1125-004 step 5).
+  const weightedTokens = 0;
   const chargedMicros = Math.max(0, Math.round(input.chargedMicros));
-  const billingSource =
-    input.billingSource ??
-    (input.model.billingMode === "free" ? "free" : "credit");
+  const billingSource = input.billingSource ?? "credit";
   const includedWeightedTokens = Math.max(
     0,
     Math.floor(input.includedWeightedTokens ?? 0),
@@ -112,19 +102,6 @@ export async function recordUsage(
         !(await commitSettlement(db, input.settlementId, now, input.status))
       ) {
         return 0;
-      }
-
-      if (input.freeReservation) {
-        const settled = await db
-          .prepare(
-            "SELECT settled_at FROM trial_reservations WHERE id = ? AND user_id = ?",
-          )
-          .get<{ settled_at: string | null }>(
-            input.freeReservation.id,
-            input.auth.userId,
-          );
-
-        if (settled?.settled_at) return 0;
       }
 
       if (input.hold) {
@@ -203,15 +180,6 @@ export async function recordUsage(
             input.subscriptionHold.holdId,
             includedWeightedTokens,
           )) || subscriptionPeriodId;
-      }
-
-      if (input.freeReservation) {
-        await settleFreeReservation(db, {
-          reservation: input.freeReservation,
-          userId: input.auth.userId,
-          weightedTokens,
-          settledAt: now,
-        });
       }
 
       await db

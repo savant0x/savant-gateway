@@ -1,4 +1,11 @@
-import { nextUtcReset } from "./free-pool.ts";
+/** The next UTC midnight; the upstream quota window resets there. */
+export function nextUtcReset(now = Date.now()) {
+  const date = new Date(now);
+
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1),
+  );
+}
 
 export const QUOTA_MAX_AGE_MS = 30_000;
 export const RUNTIME_LEASE_MS = 25_000;

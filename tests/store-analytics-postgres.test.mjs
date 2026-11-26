@@ -47,10 +47,10 @@ async function fixture() {
   await db
     .prepare(
       `INSERT INTO models
-        (id, upstream_id, upstream_slug, name, provider, context_window,
-         token_weight, in_catalog, group_slug, status, sort_order, synced_at)
-       VALUES ('m1', 'm1', 'savant', 'Model One', 'Family', '8k', 1, 1,
-               'paid', 'active', 0, ?)`,
+                 (id, upstream_id, upstream_slug, name, provider, context_window,
+          in_catalog, group_slug, status, sort_order, synced_at)
+        VALUES ('m1', 'm1', 'savant', 'Model One', 'Family', '8k', 1,
+                'paid', 'active', 0, ?)`,
     )
     .run(STAMP);
 

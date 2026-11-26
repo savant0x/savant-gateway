@@ -79,11 +79,11 @@ async function fixture() {
       .prepare(
         `INSERT INTO models
           (id, upstream_id, upstream_slug, name, provider, family, protocol,
-           route_group, context_window, token_weight, in_catalog, group_slug,
+           route_group, context_window, in_catalog, group_slug,
            group_source, status, sort_order, synced_at, is_primary,
            cost_source, price_source, input_price_micros, output_price_micros,
            sell_input_micros, sell_output_micros)
-         VALUES (?, ?, 'savant', ?, 'Family', 'Family', 'chat', 'r1', '8k', 1,
+         VALUES (?, ?, 'savant', ?, 'Family', 'Family', 'chat', 'r1', '8k',
                  1, 'paid', 'auto', 'active', 0, ?, 0, 'manual', 'manual', ?, ?,
                  0, 0)`,
       )

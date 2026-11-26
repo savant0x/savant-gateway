@@ -70,10 +70,10 @@ test("the summary carries a model count and a status per provider", async () => 
   await db
     .prepare(
       `INSERT INTO models
-        (id, upstream_id, upstream_slug, name, provider, context_window,
-         token_weight, in_catalog, group_slug, status, sort_order, synced_at)
-       VALUES ('commandcode/m1', 'm1', 'commandcode', 'Model', 'Family', '8k',
-               1, 1, 'paid', 'active', 0, ?)`,
+                 (id, upstream_id, upstream_slug, name, provider, context_window,
+          in_catalog, group_slug, status, sort_order, synced_at)
+        VALUES ('commandcode/m1', 'm1', 'commandcode', 'Model', 'Family', '8k',
+                1, 'paid', 'active', 0, ?)`,
     )
     .run(NOW);
 
@@ -151,10 +151,10 @@ test("deleting a provider removes its catalog but never the default", async () =
   await db
     .prepare(
       `INSERT INTO models
-        (id, upstream_id, upstream_slug, name, provider, context_window,
-         token_weight, in_catalog, group_slug, status, sort_order, synced_at)
-       VALUES ('commandcode/gone', 'gone', 'commandcode', 'Model', 'Family',
-               '8k', 1, 1, 'paid', 'active', 0, ?)`,
+                 (id, upstream_id, upstream_slug, name, provider, context_window,
+          in_catalog, group_slug, status, sort_order, synced_at)
+        VALUES ('commandcode/gone', 'gone', 'commandcode', 'Model', 'Family',
+                '8k', 1, 'paid', 'active', 0, ?)`,
     )
     .run(NOW);
 

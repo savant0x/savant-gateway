@@ -55,14 +55,12 @@ export type ModelRow = {
   cost_source: "synced" | "manual" | "unknown";
   cost_observed_at: string | null;
   context_window: string;
-  token_weight: number;
   input_price_micros: number;
   output_price_micros: number;
   sell_input_micros: number;
   sell_output_micros: number;
   price_source: "auto" | "manual";
   in_catalog: number;
-  allow_free: number;
   group_slug: string | null;
   group_source: "auto" | "manual";
   group_label: string | null;
@@ -120,7 +118,6 @@ export type GatewayModel = {
   costOutputMicros: number;
   sellInputMicros: number;
   sellOutputMicros: number;
-  allowFree: boolean;
   groupSlug: string;
   groupLabel: string;
   groupSource: "auto" | "manual";
@@ -136,12 +133,6 @@ export type AuthenticatedKey = {
   keyId: string;
   userId: string;
   keyPrefix: string;
-};
-
-export type FreePoolReservation = {
-  id: string;
-  day: string;
-  weightedTokens: number;
 };
 
 export type ProviderStatusInput = {
@@ -160,24 +151,13 @@ export type ProviderStatusInput = {
 };
 
 export function accessFor(
-  row: Pick<
-    ModelRow,
-    | "allow_free"
-    | "token_weight"
-    | "upstream_id"
-    | "group_slug"
-    | "group_billing_mode"
-  >,
+  row: Pick<ModelRow, "upstream_id" | "group_billing_mode">,
 ): ModelAccess {
   // The `free/` scope belongs to the upstream id; a non-default provider's
   // public id is namespaced and must not change the fallback group.
   return accessFromGroup(
     row.group_billing_mode,
-    legacyAccessFor({
-      allowFree: row.allow_free === 1,
-      tokenWeight: row.token_weight,
-      upstreamId: row.upstream_id,
-    }),
+    legacyAccessFor({ upstreamId: row.upstream_id }),
   );
 }
 
@@ -211,12 +191,13 @@ export function toGatewayModel(row: ModelRow): GatewayModel {
     protocol: servedProtocol,
     costSource: row.served_cost_source ?? row.cost_source,
     contextWindow: row.context_window,
-    tokenWeight: row.token_weight,
+    // Metering is 1:1 for every row. The weight column is gone; the field
+    // survives until plans are expressed in raw tokens (FID-2026-1125-004).
+    tokenWeight: 1,
     costInputMicros,
     costOutputMicros,
     sellInputMicros: Number(row.sell_input_micros),
     sellOutputMicros: Number(row.sell_output_micros),
-    allowFree: row.allow_free === 1,
     groupSlug: row.group_slug ?? billingMode,
     groupLabel: row.group_label ?? SYSTEM_GROUP_LABELS[billingMode],
     groupSource: row.group_source ?? "auto",
@@ -239,8 +220,7 @@ export function toModelSummary(row: ModelRow): ModelSummary {
     name: row.name,
     family: row.family ?? row.provider,
     contextWindow: row.context_window,
-    tokenWeight: row.token_weight,
-    allowFree: row.allow_free === 1,
+    tokenWeight: 1,
     access,
     groupSlug: row.group_slug ?? access,
     groupLabel: row.group_label ?? SYSTEM_GROUP_LABELS[access],

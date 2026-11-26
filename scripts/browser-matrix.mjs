@@ -390,14 +390,14 @@ async function seedDecisionFixture(db) {
   await db
     .prepare(
       `INSERT INTO models
-        (id, upstream_id, name, provider, context_window, token_weight,
-         input_price_micros, output_price_micros, allow_free,
+        (id, upstream_id, name, provider, context_window,
+         input_price_micros, output_price_micros,
          supports_tools, supports_vision, status, sort_order, synced_at,
          upstream_slug, family, protocol, cost_source,
          sell_input_micros, sell_output_micros, price_source, in_catalog,
          group_slug, group_source)
-       VALUES (?, 'browser-decision-upstream', ?, 'Mock', '128000', 1,
-         500000, 1000000, 0, 0, 0, 'active', 0, ?, 'mock', 'Mock', 'chat',
+       VALUES (?, 'browser-decision-upstream', ?, 'Mock', '128000',
+         500000, 1000000, 0, 0, 'active', 0, ?, 'mock', 'Mock', 'chat',
          'manual', 1000000, 2000000, 'manual', 1, 'paid', 'manual')
        ON CONFLICT (id) DO NOTHING`,
     )

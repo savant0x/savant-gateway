@@ -13,9 +13,8 @@ import { getMarkupBps } from "./settings.ts";
  * split means the operator's pricing page can be reasoned about (and tested)
  * without a connection.
  *
- * `priced` and `unpriced` exclude free rows on purpose. A free model has no sell
- * price by definition, and counting it as unpriced would make the catalog look
- * like it has a pricing gap where it has a billing mode.
+ * Every catalog row is either priced or not. There is no free billing mode
+ * whose rows would have to be excluded from the counts (FID-2026-1125-004).
  */
 export function summarizePricing(
   models: AdminModelSummary[],
@@ -23,22 +22,16 @@ export function summarizePricing(
 ): PricingSummary {
   const catalog = models.filter((model) => model.inCatalog);
   const priced = catalog.filter(
-    (model) =>
-      model.access !== "free" &&
-      (model.inputPricePer1M > 0 || model.outputPricePer1M > 0),
+    (model) => model.inputPricePer1M > 0 || model.outputPricePer1M > 0,
   );
   const unpriced = catalog.filter(
-    (model) =>
-      model.access !== "free" &&
-      model.inputPricePer1M === 0 &&
-      model.outputPricePer1M === 0,
+    (model) => model.inputPricePer1M === 0 && model.outputPricePer1M === 0,
   );
 
   return {
     markupBps,
     pricedCount: priced.length,
     unpricedCount: unpriced.length,
-    freeCount: catalog.filter((model) => model.access === "free").length,
     averageInputMarginBps: averageMarginBps(
       priced.map((model) => ({ margin: model.inputMarginBps })),
     ),

@@ -25,7 +25,7 @@ import {
  *    as ISO-8601 text (decision D-13) and need an explicit cast to sort as time.
  */
 
-export type SettlementBillingSource = "free" | "subscription" | "credit";
+export type SettlementBillingSource = "subscription" | "credit";
 
 export type SettlementInput = {
   id: string;
@@ -35,12 +35,11 @@ export type SettlementInput = {
   providerSlug: string;
   billingSource: SettlementBillingSource;
   creditHoldId: string | null;
-  freeReservationId: string | null;
   subscriptionHoldId: string | null;
   estimatedMicros: number;
 };
 
-export type QuarantineKind = "credit" | "subscription" | "free";
+export type QuarantineKind = "credit" | "subscription";
 
 export async function openSettlement(
   db: PostgresDatabase,
@@ -51,9 +50,9 @@ export async function openSettlement(
     .prepare(
       `INSERT INTO settlements
         (id, user_id, api_key_id, model_id, provider_slug, billing_source,
-         credit_hold_id, free_reservation_id, subscription_hold_id,
+         credit_hold_id, subscription_hold_id,
          estimated_micros, status, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'admitted', ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'admitted', ?)`,
     )
     .run(
       input.id,
@@ -63,7 +62,6 @@ export async function openSettlement(
       input.providerSlug,
       input.billingSource,
       input.creditHoldId,
-      input.freeReservationId,
       input.subscriptionHoldId,
       Math.max(0, Math.floor(input.estimatedMicros)),
       createdAt,
@@ -146,9 +144,9 @@ export async function quarantineHold(
       .prepare(
         `UPDATE settlements SET status = 'quarantined'
           WHERE status = 'admitted'
-            AND (credit_hold_id = ? OR free_reservation_id = ? OR subscription_hold_id = ?)`,
+            AND (credit_hold_id = ? OR subscription_hold_id = ?)`,
       )
-      .run(input.id, input.id, input.id);
+      .run(input.id, input.id);
   }
 
   return inserted;
@@ -300,7 +298,7 @@ export async function listSettlements(db: PostgresDatabase, limit = 50) {
   return db
     .prepare(
       `SELECT id, user_id, api_key_id, model_id, provider_slug, billing_source,
-              credit_hold_id, free_reservation_id, subscription_hold_id,
+              credit_hold_id, subscription_hold_id,
               estimated_micros, status, detail, created_at, settled_at
          FROM settlements
         ORDER BY created_at::timestamptz DESC

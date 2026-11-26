@@ -72,14 +72,13 @@ export default async function AdminPricingPage({
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
             Prices are USD per 1M tokens. Cost comes from the synced provider
-            catalog; sell price is what this gateway charges. Free-group rows
-            are always zero — move the model to a paid group to charge for a
-            zero-cost model.
+            catalog; sell price is a markup on that cost, and is what this
+            gateway charges.
           </p>
         </div>
         <div className="rounded-xl border border-black/10 bg-surface px-3 py-2 text-xs text-muted dark:border-white/10">
           {data.summary.pricedCount} priced · {data.summary.unpricedCount}{" "}
-          unpriced · {data.summary.freeCount} free
+          unpriced
         </div>
       </div>
 

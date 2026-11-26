@@ -39,7 +39,6 @@ type CommandSqlRow = {
   family: string | null;
   group_slug: string | null;
   group_billing_mode: string | null;
-  allow_free: number | string | null;
   sell_input_micros: number | string | null;
   sell_output_micros: number | string | null;
   cost_input_micros: number | string | null;
@@ -66,7 +65,6 @@ const COMMAND_SELECT = `
          MAX(COALESCE(m.family, m.provider)) AS family,
          MAX(m.group_slug) AS group_slug,
          MAX(g.billing_mode) AS group_billing_mode,
-         MAX(m.allow_free) AS allow_free,
          MAX(m.sell_input_micros) AS sell_input_micros,
          MAX(m.sell_output_micros) AS sell_output_micros,
          MAX(m.input_price_micros) AS cost_input_micros,
@@ -95,7 +93,7 @@ function accessForRow(row: CommandSqlRow): ModelAccess {
     return row.group_billing_mode;
   }
 
-  return Number(row.allow_free ?? 0) === 1 ? "free" : "paid";
+  return "paid";
 }
 
 function costSourceForRow(row: CommandSqlRow): PricingCommandCostSource {

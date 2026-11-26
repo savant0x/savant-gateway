@@ -81,13 +81,6 @@ test("each provider reports its own contribution and serving count", () => {
   provider(db, "apixo", "Apixo", 30);
   model(db, { id: "gpt-6-astra", served_provider_slug: "apixo" });
   model(db, {
-    id: "free/gpt-6-luna",
-    allow_free: 1,
-    sell_input_micros: 0,
-    sell_output_micros: 0,
-    served_provider_slug: "savant",
-  });
-  model(db, {
     id: "apixo/glm-5.3",
     upstream_slug: "apixo",
     served_provider_slug: "apixo",
@@ -107,7 +100,7 @@ test("each provider reports its own contribution and serving count", () => {
       row.servingCount,
     ]),
     [
-      [2, 2, 2, 1],
+      [1, 1, 1, 0],
       [1, 1, 1, 2],
     ],
   );

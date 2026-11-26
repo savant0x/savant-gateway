@@ -21,7 +21,6 @@ export async function billingSchema(db: PostgresDatabase) {
       provider_slug TEXT NOT NULL,
       billing_source TEXT NOT NULL,
       credit_hold_id TEXT,
-      free_reservation_id TEXT,
       subscription_hold_id TEXT,
       estimated_micros BIGINT NOT NULL DEFAULT 0,
       status TEXT NOT NULL DEFAULT 'admitted',

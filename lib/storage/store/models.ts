@@ -2,10 +2,8 @@ import type { PostgresDatabase } from "../pg-adapter.ts";
 import type { AdminModelSummary } from "../../types.ts";
 
 import { displayModelId, routeGroupKey } from "../../model-identity.ts";
-import { pricesForGroup } from "../../model-groups.ts";
 import { defaultSellMicros } from "../../pricing.ts";
 import {
-  accessFor,
   type GatewayModel,
   type ModelRow,
   toAdminModelSummary,
@@ -38,7 +36,6 @@ export async function listAllModels(
       `${MODEL_SELECT}
        ORDER BY m.in_catalog DESC,
                 CASE WHEN m.status = 'active' THEN 0 ELSE 1 END,
-                CASE WHEN g.billing_mode = 'free' THEN 0 ELSE 1 END,
                 COALESCE(g.sort_order, 9999) ASC, m.provider ASC,
                 m.sort_order ASC, m.name ASC`,
     )
@@ -99,10 +96,6 @@ export async function setModelCost(
           sellInputMicros: defaultSellMicros(input, markupBps),
           sellOutputMicros: defaultSellMicros(output, markupBps),
         };
-  const priced = pricesForGroup({
-    billingMode: accessFor(row),
-    ...sell,
-  });
 
   await db
     .prepare(
@@ -115,8 +108,8 @@ export async function setModelCost(
     .run(
       input,
       output,
-      priced.sellInputMicros,
-      priced.sellOutputMicros,
+      sell.sellInputMicros,
+      sell.sellOutputMicros,
       new Date().toISOString(),
       modelId,
     );
@@ -157,7 +150,7 @@ export async function setModelPricing(
     )
     .get<ModelRow>(modelId);
 
-  if (!row || accessFor(row) === "free") return false;
+  if (!row) return false;
 
   const afterInput = Math.max(0, Math.round(sellInputMicros));
   const afterOutput = Math.max(0, Math.round(sellOutputMicros));
@@ -313,12 +306,6 @@ export async function applyCatalogMarkup(
 
   await db.transaction(async () => {
     for (const row of rows) {
-      if (accessFor(row) === "free") {
-        await update.run(0, 0, row.id);
-        changed += 1;
-        continue;
-      }
-
       if (!applyToAll && row.price_source === "manual") continue;
 
       await update.run(

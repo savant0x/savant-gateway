@@ -50,16 +50,13 @@ function displayNameFromId(modelId: string) {
  * The status a newly imported row starts with. A row the upstream did not
  * price cannot be sold, so it must not appear in the public catalog at $0.00
  * while every call would answer `model_unpriced`. It imports disabled and the
- * operator publishes it by setting a cost and activating it. Free-pool rows
- * are priced by definition and stay active.
+ * operator publishes it by setting a cost and activating it. There is no free
+ * billing mode to exempt: every row is sold per token (FID-2026-1125-004).
  */
 export function importedModelStatus(input: {
   costSource: "synced" | "unknown";
-  isFree: boolean;
 }): "active" | "disabled" {
-  return input.costSource === "unknown" && !input.isFree
-    ? "disabled"
-    : "active";
+  return input.costSource === "unknown" ? "disabled" : "active";
 }
 
 /**
@@ -81,8 +78,8 @@ function isPriced(model: NormalizedModel) {
 }
 
 function costMicros(model: NormalizedModel, side: "input" | "output") {
-  if (model.freePool) return 0;
-
+  // No row is free: a published cost is the only source of truth, and the
+  // sell price is a markup on it (FID-2026-1125-004 step 2).
   const usd = side === "input" ? model.inputPer1M : resolveOutputPer1M(model);
 
   return usd === null ? 0 : Math.max(0, priceToMicros(usd));
@@ -110,7 +107,7 @@ function toRow(
     name: publicName(provider.slug, model),
     family: model.family,
     protocol,
-    costSource: model.freePool || isPriced(model) ? "synced" : "unknown",
+    costSource: isPriced(model) ? "synced" : "unknown",
     contextWindow: model.contextWindow,
     // Weighted metering belonged to the previous upstream, which granted a
     // per-model allowance. This gateway has no such allocation, so every row
@@ -118,7 +115,6 @@ function toRow(
     tokenWeight: 1,
     costInputMicros: costMicros(model, "input"),
     costOutputMicros: costMicros(model, "output"),
-    allowFree: model.freePool,
     supportsTools: model.supportsTools,
     supportsVision: model.supportsVision,
     health: model.health,
@@ -154,15 +150,12 @@ export function buildSyncedCatalog(
     if (row) rows.push(row);
   }
 
-  rows.sort((a, b) => {
-    if (a.allowFree !== b.allowFree) return a.allowFree ? -1 : 1;
-
-    return (
+  rows.sort(
+    (a, b) =>
       a.upstreamSlug.localeCompare(b.upstreamSlug) ||
       a.family.localeCompare(b.family) ||
-      a.name.localeCompare(b.name)
-    );
-  });
+      a.name.localeCompare(b.name),
+  );
 
   return {
     rows: rows.map((row, index) => ({ ...row, sortOrder: (index + 1) * 10 })),

@@ -105,24 +105,10 @@ export const MODEL_FIELDS = [
     example: "1M",
   },
   {
-    name: "token_weight",
-    type: "integer",
-    description:
-      "Metering weight in a free-billing group. Zero for paid and subscription groups.",
-    example: "0",
-  },
-  {
-    name: "allow_free",
-    type: "boolean",
-    description:
-      "Upstream free-pool capability. It selects the default group during sync; the assigned group decides billing.",
-    example: "false",
-  },
-  {
     name: "input_price_per_1m",
     type: "number",
     description:
-      "Our sell price in USD per 1M input tokens. Zero for free and unpriced rows.",
+      "Our sell price in USD per 1M input tokens. Zero on an unpriced row.",
     example: "0.4",
   },
   {
@@ -286,30 +272,8 @@ export const MODELS_RESPONSE = `{
       "group_billing_mode": "paid",
       "requires_subscription": false,
       "context_window": "1M",
-      "token_weight": 0,
-      "allow_free": false,
       "input_price_per_1m": 0.4,
       "output_price_per_1m": 0.6,
-      "currency": "usd",
-      "supports_tools": true,
-      "supports_vision": true,
-      "health": "live"
-    },
-    {
-      "id": "free/gpt-6-luna",
-      "object": "model",
-      "owned_by": "savant-gateway",
-      "name": "Gpt 6 Luna",
-      "family": "GPT",
-      "group": "free",
-      "group_slug": "free",
-      "group_label": "Free",
-      "group_billing_mode": "free",
-      "context_window": "1M",
-      "token_weight": 3,
-      "allow_free": true,
-      "input_price_per_1m": 0,
-      "output_price_per_1m": 0,
       "currency": "usd",
       "supports_tools": true,
       "supports_vision": true,

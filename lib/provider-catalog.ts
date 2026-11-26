@@ -54,8 +54,7 @@ export const PROVIDER_CATALOG_SUMMARY_SELECT = `
          SUM(CASE WHEN m.status = 'active' AND m.in_catalog = 1
                   THEN 1 ELSE 0 END) AS active_count,
          SUM(CASE WHEN m.status = 'active' AND m.in_catalog = 1
-                   AND (m.allow_free = 1 OR m.sell_input_micros > 0
-                        OR m.sell_output_micros > 0)
+                   AND (m.sell_input_micros > 0 OR m.sell_output_micros > 0)
                   THEN 1 ELSE 0 END) AS priced_count,
          SUM(CASE WHEN m.cost_source = 'unknown'
                   THEN 1 ELSE 0 END) AS unknown_cost_count,

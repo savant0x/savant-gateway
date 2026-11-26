@@ -72,12 +72,12 @@ async function addModel(db, id) {
       `INSERT INTO models
         (id, upstream_id, upstream_slug, name, provider, family, protocol,
          route_group, cost_source, cost_observed_at, context_window,
-         token_weight, input_price_micros, output_price_micros,
+         input_price_micros, output_price_micros,
          sell_input_micros, sell_output_micros, price_source, in_catalog,
-         allow_free, group_slug, group_source, supports_tools,
+         group_slug, group_source, supports_tools,
          supports_vision, health, status, sort_order, synced_at, is_primary)
        VALUES (?, ?, 'savant', ?, 'Family', 'Family', 'chat', ?, 'manual', ?,
-               '8k', 1, 1000, 2000, 2000, 4000, 'manual', 1, 0, 'paid', 'auto',
+               '8k', 1000, 2000, 2000, 4000, 'manual', 1, 'paid', 'auto',
                0, 0, NULL, 'active', 0, ?, 1)`,
     )
     .run(id, id, id, id, NOW, NOW);

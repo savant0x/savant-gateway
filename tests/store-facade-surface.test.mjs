@@ -52,7 +52,6 @@ test("every façade group exposes a usable surface", () => {
 
   assert.ok(Array.isArray(insights.ANALYTICS_RANGES));
   assert.equal(typeof insights.normalizeAnalyticsRange("7"), "number");
-  assert.equal(typeof operations.utcDay(), "string");
 });
 
 test("wrapped functions resolve against one bound handle", async () => {

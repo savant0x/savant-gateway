@@ -121,9 +121,9 @@ test("the grouped count and the derived status agree with the single read", asyn
         .prepare(
           `INSERT INTO models
             (id, upstream_id, upstream_slug, name, provider, family, protocol,
-             context_window, token_weight, in_catalog, group_slug, status,
+             context_window, in_catalog, group_slug, status,
              sort_order, synced_at)
-           VALUES (?, ?, 'savant', ?, 'Family', 'Family', 'chat', '8k', 1, ?,
+           VALUES (?, ?, 'savant', ?, 'Family', 'Family', 'chat', '8k', ?,
                    'paid', 'active', 0, ?)`,
         )
         .run(id, id, id, inCatalog, NOW);

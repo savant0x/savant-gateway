@@ -57,9 +57,7 @@ export function completionRateError(rate: RateLimitDecision) {
 
   return jsonError(
     429,
-    rate.scope === "free"
-      ? `Free traffic is limited to ${rate.limit} requests per minute across all keys. Retry in ${rate.retryAfterSeconds}s, or add credit for a dedicated limit.`
-      : `This account is limited to ${rate.limit} requests per minute across its keys. Retry in ${rate.retryAfterSeconds}s.`,
+    `This account is limited to ${rate.limit} requests per minute across its keys. Retry in ${rate.retryAfterSeconds}s.`,
     "rate_limit_error",
     {
       "Retry-After": String(rate.retryAfterSeconds),

@@ -137,7 +137,6 @@ export function streamCompletion(
           keyId: context.auth.keyId,
           modelId: context.model.id,
           creditHoldId: context.hold?.id ?? null,
-          freeReservationId: context.freeReservation?.id ?? null,
           subscriptionHoldId:
             context.subscription?.kind === "included"
               ? context.subscription.holdId

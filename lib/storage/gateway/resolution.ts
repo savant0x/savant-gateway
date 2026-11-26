@@ -10,7 +10,6 @@ import {
 
 export {
   failureStatus,
-  isFreeCall,
   retryHeaders,
   safeUpstreamMessage,
 } from "../../gateway-refusal.ts";

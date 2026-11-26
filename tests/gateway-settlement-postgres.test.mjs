@@ -75,7 +75,6 @@ function context(settlementId, overrides = {}) {
     auth: { userId: USER, keyId: KEY },
     model: model(),
     hold: null,
-    freeReservation: null,
     subscription: null,
     startedAt: Date.now(),
     promptTokens: 10,
@@ -94,7 +93,6 @@ async function admit(db, overrides = {}) {
       providerSlug: "savant",
       billingSource: "credit",
       creditHoldId: null,
-      freeReservationId: null,
       subscriptionHoldId: null,
       estimatedMicros: 0,
       ...overrides,
@@ -212,100 +210,6 @@ test("a replayed settlement writes nothing and debits nothing", async () => {
       .get(USER);
 
     assert.equal(Number(user.credit_micros), 1_000_000 - first, "debited once");
-  } finally {
-    await db.close();
-  }
-});
-
-test("a free reservation settles its weighted usage and charges nothing", async () => {
-  const db = await fixture();
-  const freeModel = model({
-    billingMode: "free",
-    tokenWeight: 2,
-    sellInputMicros: 0,
-    sellOutputMicros: 0,
-  });
-  const reservation = { id: "free_1", day: "2026-10-31", weightedTokens: 500 };
-
-  try {
-    await db
-      .prepare(
-        `INSERT INTO trial_grants (user_id, granted_tokens, used_tokens, issued_at)
-         VALUES (?, 50000, 0, ?)`,
-      )
-      .run(USER, NOW);
-    await db
-      .prepare(
-        `INSERT INTO free_pool_reservations
-          (id, user_id, api_key_id, model_id, provider_slug, day,
-           weighted_tokens, created_at, expires_at)
-         VALUES ('free_1', ?, ?, 'm1', 'savant', '2026-10-31', 500, ?, ?)`,
-      )
-      .run(USER, KEY, NOW, "2026-10-31T12:15:00.000Z");
-    await db
-      .prepare(
-        `INSERT INTO trial_reservations
-          (id, user_id, reserved_tokens, created_at, expires_at)
-         VALUES ('free_1', ?, 500, ?, ?)`,
-      )
-      .run(USER, NOW, "2026-10-31T12:15:00.000Z");
-    const settlementId = await admit(db, {
-      billingSource: "free",
-      freeReservationId: "free_1",
-    });
-
-    const charged = await settleCall(
-      db,
-      context(settlementId, { model: freeModel, freeReservation: reservation }),
-      usage(1_000, 500),
-      "ok",
-    );
-
-    assert.equal(charged, 0, "a free call never touches the wallet");
-
-    const pool = await db
-      .prepare(
-        "SELECT weighted_tokens FROM free_pool_usage WHERE user_id = ? AND day = '2026-10-31'",
-      )
-      .get(USER);
-
-    assert.equal(Number(pool.weighted_tokens), 3_000, "(1000 + 500) × weight 2");
-
-    const held = await db
-      .prepare("SELECT COUNT(*) AS n FROM free_pool_reservations")
-      .get();
-
-    assert.equal(Number(held.n), 0);
-
-    const trial = await db
-      .prepare(
-        "SELECT settled_at, actual_tokens FROM trial_reservations WHERE id = 'free_1'",
-      )
-      .get();
-
-    assert.ok(trial.settled_at);
-    assert.equal(Number(trial.actual_tokens), 3_000);
-
-    const grant = await db
-      .prepare("SELECT used_tokens FROM trial_grants WHERE user_id = ?")
-      .get(USER);
-
-    assert.equal(Number(grant.used_tokens), 3_000, "the grant counts the usage");
-
-    const user = await db
-      .prepare("SELECT credit_micros FROM users WHERE id = ?")
-      .get(USER);
-
-    assert.equal(Number(user.credit_micros), 1_000_000);
-
-    const replay = await settleCall(
-      db,
-      context(settlementId, { model: freeModel, freeReservation: reservation }),
-      usage(1_000, 500),
-      "ok",
-    );
-
-    assert.equal(replay, 0);
   } finally {
     await db.close();
   }

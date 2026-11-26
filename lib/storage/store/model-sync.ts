@@ -47,7 +47,7 @@ import { reconcileRoutes } from "./routes.ts";
 /** 25 placeholders per row; 200 rows stays below any driver parameter limit. */
 const UPSERT_CHUNK = 200;
 const UPSERT_TUPLE =
-  "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+  "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?)";
 const UPSERT_UPDATE = `ON CONFLICT (id) DO UPDATE SET
       upstream_id = excluded.upstream_id,
       upstream_slug = excluded.upstream_slug,
@@ -58,14 +58,12 @@ const UPSERT_UPDATE = `ON CONFLICT (id) DO UPDATE SET
       protocol = excluded.protocol,
       cost_source = excluded.cost_source,
       context_window = excluded.context_window,
-      token_weight = excluded.token_weight,
       input_price_micros = excluded.input_price_micros,
       output_price_micros = excluded.output_price_micros,
       sell_input_micros = excluded.sell_input_micros,
       sell_output_micros = excluded.sell_output_micros,
       price_source = excluded.price_source,
       in_catalog = 1,
-      allow_free = excluded.allow_free,
       group_slug = excluded.group_slug,
       group_source = excluded.group_source,
       supports_tools = excluded.supports_tools,
@@ -77,9 +75,9 @@ const UPSERT_UPDATE = `ON CONFLICT (id) DO UPDATE SET
 function upsertSql(rows: number) {
   return `INSERT INTO models
       (id, upstream_id, upstream_slug, name, provider, family, protocol,
-       route_group, cost_source, context_window, token_weight,
+       route_group, cost_source, context_window,
        input_price_micros, output_price_micros, sell_input_micros,
-       sell_output_micros, price_source, in_catalog, allow_free, group_slug,
+       sell_output_micros, price_source, in_catalog, group_slug,
        group_source, supports_tools, supports_vision, health, status,
        sort_order, synced_at)
     VALUES ${Array.from({ length: rows }, () => UPSERT_TUPLE).join(", ")}
@@ -121,11 +119,7 @@ export async function replaceModels(
       const current = existing.get(
         `${model.upstreamSlug}\u0000${model.upstreamId}`,
       );
-      const defaultSlug = defaultGroupSlug({
-        allowFree: model.allowFree,
-        tokenWeight: model.tokenWeight,
-        upstreamId: model.upstreamId,
-      });
+      const defaultSlug = defaultGroupSlug({ upstreamId: model.upstreamId });
       const manualGroupSlug =
         current?.group_source === "manual" ? current.group_slug : null;
       let groupSlug = manualGroupSlug ?? defaultSlug;
@@ -136,7 +130,6 @@ export async function replaceModels(
         groupSource = "auto";
       }
 
-      const isFree = groupModes.get(groupSlug) === "free";
       const keepManualSell = current?.price_source === "manual";
       const keepManualCost = current?.cost_source === "manual";
       const costInput = keepManualCost
@@ -146,22 +139,18 @@ export async function replaceModels(
         ? Number(current.output_price_micros)
         : model.costOutputMicros;
       const costSource = keepManualCost ? "manual" : model.costSource;
-      const sellInput = isFree
-        ? 0
-        : keepManualSell
-          ? Number(current.sell_input_micros)
-          : defaultSellMicros(costInput, markupBps);
-      const sellOutput = isFree
-        ? 0
-        : keepManualSell
-          ? Number(current.sell_output_micros)
-          : defaultSellMicros(costOutput, markupBps);
+      const sellInput = keepManualSell
+        ? Number(current.sell_input_micros)
+        : defaultSellMicros(costInput, markupBps);
+      const sellOutput = keepManualSell
+        ? Number(current.sell_output_micros)
+        : defaultSellMicros(costOutput, markupBps);
       // A row that arrives without a cost has nothing to sell yet. It waits in
       // the admin catalog as disabled instead of being published at $0.00 and
       // answering `503 model_unpriced` on every call.
       const status =
         current?.status ??
-        importedModelStatus({ costSource: model.costSource, isFree });
+        importedModelStatus({ costSource: model.costSource });
 
       // Keyed by id so a repeated id keeps the last row, exactly as the
       // sequential upserts did, and one statement never affects a row twice.
@@ -176,13 +165,11 @@ export async function replaceModels(
         model.routeGroup,
         costSource,
         model.contextWindow,
-        model.tokenWeight,
         costInput,
         costOutput,
         sellInput,
         sellOutput,
         keepManualSell ? "manual" : "auto",
-        model.allowFree ? 1 : 0,
         groupSlug,
         groupSource,
         model.supportsTools ? 1 : 0,

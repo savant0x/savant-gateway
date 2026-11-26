@@ -81,7 +81,7 @@ test("an unknown cost is never servable even when it looks free", () => {
   assert.equal(plan.servingId, "apixo/gpt-6-astra");
 });
 
-test("an unpriced non-free row is not servable", () => {
+test("an unpriced row is not servable in any group", () => {
   assert.equal(
     isServableRoute(route({ sellInputMicros: 0, sellOutputMicros: 0 })),
     false,
@@ -91,13 +91,12 @@ test("an unpriced non-free row is not servable", () => {
       route({
         sellInputMicros: 0,
         sellOutputMicros: 0,
-        groupBillingMode: "free",
-        allowFree: true,
-        costInputMicros: 0,
-        costOutputMicros: 0,
+        groupBillingMode: "subscription",
+        costInputMicros: 400,
+        costOutputMicros: 800,
       }),
     ),
-    true,
+    false,
   );
 });
 

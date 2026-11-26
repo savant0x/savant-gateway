@@ -127,11 +127,7 @@ test("an unpriced row imports unknown and disabled, and importing it again keeps
   );
 
   assert.equal(rows[0].costSource, "unknown");
-  assert.equal(
-    importedModelStatus({ costSource: "unknown", isFree: false }),
-    "disabled",
-  );
-  assert.equal(rows[0].allowFree, false);
+  assert.equal(importedModelStatus({ costSource: "unknown" }), "disabled");
 });
 
 test("the overlay wins over an envelope-declared price, matching the old builder", () => {
@@ -228,11 +224,6 @@ test("a free/ row is refused for every provider, with no registry flag", () => {
     "the paid row is untouched and the free row is refused",
   );
   assert.deepEqual(skippedFreePool, ["free/tiny"]);
-  assert.equal(
-    rows.every((row) => row.allowFree === false),
-    true,
-    "no imported row can be marked free",
-  );
 });
 
 test("a declared upstream weight is ignored on a priced row too", () => {

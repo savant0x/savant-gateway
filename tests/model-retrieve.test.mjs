@@ -49,7 +49,6 @@ test("model retrieve returns the same public object shape as the list", async ()
     assert.equal(object.owned_by, "savant-gateway");
     assert.equal(object.group, "free");
     assert.equal(object.group_billing_mode, "free");
-    assert.equal(object.trial_paid_transition, null);
     assert.equal("upstream_id" in object, false);
     assert.equal("cost_input_micros" in object, false);
   } finally {

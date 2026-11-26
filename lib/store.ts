@@ -18,7 +18,6 @@ bindStoreRuntime(getDatabase);
 
 export type {
   AuthenticatedKey,
-  FreePoolReservation,
   GatewayModel,
   ProviderStatusInput,
 } from "./projections.ts";

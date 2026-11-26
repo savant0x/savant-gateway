@@ -216,7 +216,7 @@ export async function acquireSharedProviderAdmission(
 }
 
 /**
- * One completion token from the shared bucket. No lease is needed: a rate
+ * One completion token from the account's bucket. No lease is needed: a rate
  * limit is a token count, not an in-flight slot.
  */
 export async function takeSharedCompletionRate(
@@ -224,7 +224,6 @@ export async function takeSharedCompletionRate(
   input: {
     keyId: string;
     userId?: string;
-    free: boolean;
     config?: RateLimitConfig;
     now?: number;
   },

@@ -19,18 +19,12 @@ export function Dashboard({ initial }: { initial: Overview }) {
     <div className="space-y-6">
       <Hero provider={initial.provider} />
 
-      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <StatCard
           detail={`${initial.stats.paidModelCount} priced · ${initial.stats.subscriptionModelCount} subscription`}
           icon="fa-layer-group"
           label="Catalog"
           value={formatNumber(initial.stats.modelCount)}
-        />
-        <StatCard
-          detail="available on the free pool"
-          icon="fa-gift"
-          label="Free models"
-          value={formatNumber(initial.stats.freeModelCount)}
         />
         <StatCard
           detail={`${formatCompact(initial.stats.totalTokens)} tokens recorded`}

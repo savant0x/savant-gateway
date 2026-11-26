@@ -68,10 +68,10 @@ async function seed(first, options = {}) {
     .prepare(
       `INSERT INTO models
         (id, upstream_id, upstream_slug, name, provider, context_window,
-         token_weight, in_catalog, group_slug, status, sort_order, synced_at)
-       VALUES (?, ?, 'savant', 'Covered', 'Family', '8k', 1, 1,
+         in_catalog, group_slug, status, sort_order, synced_at)
+       VALUES (?, ?, 'savant', 'Covered', 'Family', '8k', 1,
                'subscription', 'active', 0, ?),
-              (?, ?, 'savant', 'Other', 'Family', '8k', 1, 1,
+              (?, ?, 'savant', 'Other', 'Family', '8k', 1,
                'subscription', 'active', 1, ?)`,
     )
     .run(ids.model, ids.model, NOW, ids.otherModel, ids.otherModel, NOW);

@@ -19,7 +19,6 @@ import {
   startDatabaseServer,
   waitForSchema,
 } from "./http-suite/db.mjs";
-import { runFreeAllocationChecks } from "./http-suite/free-allocation-checks.mjs";
 import { runMetadataChecks } from "./http-suite/metadata-checks.mjs";
 import { seedCatalog } from "./http-suite/seed.mjs";
 import { runOperationsChecks } from "./http-suite/operations-checks.mjs";
@@ -84,14 +83,6 @@ try {
       // start` also loads `.env.local`, so an operator override would change
       // this gate's meaning. Pin the value at spawn so the check is hermetic.
       PAID_KEY_RPM: "60",
-      TRIAL_ENABLED: "false",
-      // Pin the free-pool policy the allocation-page checks assert. These are
-      // the documented defaults; an operator override in `.env.local` must not
-      // change what the gate means.
-      FREE_POOL_ALLOCATION_ENABLED: "true",
-      FREE_POOL_DAILY_WEIGHTED_TOKENS: "20000000",
-      FREE_POOL_ALLOCATION_BPS: "9000",
-      FREE_ACCOUNT_DAILY_CAP: "100000",
       PROMO_CODES_ENABLED: "true",
       ADMIN_SESSION_SECRET: ADMIN_SECRET,
       STRIPE_SECRET_KEY: "sk_test_http_suite_placeholder",
@@ -182,14 +173,6 @@ try {
     db: database,
     mock,
     adminPassword: ADMIN_PASSWORD,
-  });
-
-  // Exercises the free SKU page in its signed-out, keyless, keyed and stale
-  // states. Its fixture restores the `savant` provider row before returning.
-  await runFreeAllocationChecks({
-    baseUrl,
-    db: database,
-    mockBaseUrl: mock.baseUrl,
   });
 
   // Must precede the destructive readiness block inside runChecks. The probes

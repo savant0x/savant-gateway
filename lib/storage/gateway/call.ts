@@ -1,5 +1,4 @@
 import type { CreditHold } from "../store/credit.ts";
-import type { FreePoolReservation } from "../../projections.ts";
 import type {
   GatewaySettlementContext,
   SubscriptionCallContext,
@@ -46,10 +45,7 @@ import { getAdmissionControl } from "../store/operations.ts";
 import { getProvider } from "../store/providers.ts";
 import { openCallSettlement } from "../store/settlements.ts";
 import { resolveSubscriptionAccess } from "../store/subscription-access.ts";
-import {
-  ensureProviderObservation,
-  refreshProviderRuntime,
-} from "../../providers/runtime.ts";
+import { ensureProviderObservation } from "../../providers/runtime.ts";
 import { getDatabase } from "../runtime.ts";
 
 import { reservePaidCall } from "./paid.ts";
@@ -57,7 +53,6 @@ import { upstreamPayload } from "./payload.ts";
 import { callProvider } from "./provider-call.ts";
 import {
   failureStatus,
-  isFreeCall,
   modelRefusal,
   resolveModel,
   retryHeaders,
@@ -65,7 +60,6 @@ import {
 } from "./resolution.ts";
 import { settleCall } from "./settle.ts";
 import { streamCompletion } from "./stream.ts";
-import { reserveTrialRoute } from "./trial.ts";
 
 /**
  * The chat-completions entry, ported to the async handle (FID-086).
@@ -80,7 +74,7 @@ import { reserveTrialRoute } from "./trial.ts";
  *    only, so payment webhooks and in-flight streams keep working while no new
  *    inference is admitted.
  * 3. **Rate limiting precedes reservations.** A throttled call must not hold
- *    credit, a free-pool slot or a subscription allowance.
+ *    credit or a subscription allowance.
  * 4. **The serving-account ceiling precedes the billing reservation.** A provider
  *    refusal must not strand money or allowance, and the release is idempotent.
  * 5. **Durable admission precedes dispatch.** The settlement row is written
@@ -170,7 +164,6 @@ export async function handleChatCompletions(request: Request) {
   const banner = await getBannerConfig(db);
   const bannerText = banner.enabled ? banner.text : "";
   const bannerTokens = bannerText ? estimateTokensFromText(bannerText) : 0;
-  const free = isFreeCall(model);
   const requestedBudget = readRequestedOutputBudget(body);
   const initialOutputBudget = requestedBudget ?? DEFAULT_OUTPUT_BUDGET;
 
@@ -181,7 +174,6 @@ export async function handleChatCompletions(request: Request) {
   const rate = await takeSharedCompletionRate(db, {
     keyId: auth.keyId,
     userId: auth.userId,
-    free,
   });
 
   if (!rate.allowed) return completionRateError(rate);
@@ -199,7 +191,6 @@ export async function handleChatCompletions(request: Request) {
 
   try {
     let hold: CreditHold | null = null;
-    let freeReservation: FreePoolReservation | null = null;
     let promptTokens =
       estimatePromptTokens(body.messages, body.tools) + bannerTokens;
     let outputBudget = initialOutputBudget;
@@ -240,23 +231,6 @@ export async function handleChatCompletions(request: Request) {
     if (subscription?.kind === "included") {
       // Included usage has no credit hold; the subscription hold is the
       // admission control and settles against the open allowance period.
-    } else if (access.kind === "none" && free) {
-      const reservationBudget =
-        readRequestedOutputBudget(body) ?? DEFAULT_OUTPUT_BUDGET;
-      const trial = await reserveTrialRoute(db, {
-        auth,
-        model,
-        promptTokens,
-        outputBudget: reservationBudget,
-        refreshProvider: refreshProviderRuntime,
-      });
-
-      if (trial.blocked) return trial.blocked;
-
-      freeReservation = trial.freeReservation;
-      hold = trial.hold;
-      settleModel = trial.model;
-      outputBudget = reservationBudget;
     } else if (access.kind === "none" && model.billingMode === "subscription") {
       return jsonError(
         403,
@@ -296,13 +270,8 @@ export async function handleChatCompletions(request: Request) {
       modelId: settleModel.id,
       providerSlug: settleModel.upstreamSlug,
       billingSource:
-        subscription?.kind === "included"
-          ? "subscription"
-          : freeReservation
-            ? "free"
-            : "credit",
+        subscription?.kind === "included" ? "subscription" : "credit",
       creditHoldId: hold?.id ?? null,
-      freeReservationId: freeReservation?.id ?? null,
       subscriptionHoldId:
         subscription?.kind === "included" ? subscription.holdId : null,
       estimatedMicros: hold?.holdMicros ?? 0,
@@ -321,7 +290,6 @@ export async function handleChatCompletions(request: Request) {
       auth,
       model: settleModel,
       hold,
-      freeReservation,
       subscription,
       settlementId,
       startedAt: Date.now(),

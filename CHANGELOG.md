@@ -3,6 +3,32 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-26 — No free tier and no token weights
+
+- **FID-2026-1125-004 — high —** price math no longer has a free shortcut:
+  `importedModelStatus` takes only the cost source, `costMicros` never zeroes a
+  `freePool` row, `pricesForGroup` is deleted, and `PricingSummary.freeCount` /
+  `OverviewStats.freeModelCount` are gone with their landing, overview,
+  Open Graph and pricing-page references.
+- Every gateway call now bills as `subscription` or `credit`. The free branch,
+  its reservation, `isFreeCall`, `free_reservation_id`, the quarantine kind and
+  the shared free rate-limit bucket are removed; `lib/storage/gateway/trial.ts`
+  is deleted.
+- The schema drops `models.allow_free`, `models.token_weight` and the trial,
+  free-pool and allocation tables. `lib/storage/schema/free-tier-removal.ts`
+  runs last: it converts auto-assigned free rows to `paid` and deletes the Free
+  group only when no model or plan references it. The writable group modes are
+  `paid` and `subscription`; `free` survives only as a legacy read value.
+- The customer allocation and trial routes, the allocation/trial panels and the
+  trial fields of `/v1/models` are removed with the stores they read; the admin
+  gateway surface is now the context banner only. The HTTP quota suite is
+  credit-only, and the plan, settlement and catalog fixtures seed no free rows.
+- Verified: `npm test` 1242 tests / 1226 pass / 0 fail, `npm run lint` 0
+  warnings, `npm run typecheck`, `npm run quality` (701 files), `npm run build`,
+  `npm run test:http` 730 checks PASS and both attribution guards PASS. Steps 5–8
+  of the FID — plain-token plan units, customer UI, admin UI and docs — remain
+  open, and the load-acceptance workload still models a free cohort.
+
 ## 2026-11-25 — The upstream supplier is never customer-facing
 
 - **FID-2026-1125-002 — high —** the stored model id, which encodes the upstream

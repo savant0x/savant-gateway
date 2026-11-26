@@ -38,7 +38,6 @@ const USER = "sandbox-chart-user";
 const KEY = "sandbox-chart-key";
 const PAID = "sandbox-chart-paid";
 const UNUSED = "sandbox-chart-unused";
-const FREE = "sandbox-chart-free";
 const OUT = resolve(
   process.argv.includes("--out-dir")
     ? process.argv[process.argv.indexOf("--out-dir") + 1]
@@ -157,28 +156,24 @@ async function seed(db, now) {
   const insertModel = db.prepare(
     `INSERT INTO models
       (id, upstream_id, upstream_slug, name, provider, context_window,
-       token_weight, input_price_micros, output_price_micros, allow_free,
+       input_price_micros, output_price_micros,
        supports_tools, supports_vision, status, sort_order, synced_at, family,
        protocol, cost_source, sell_input_micros, sell_output_micros,
        price_source, in_catalog, group_slug, group_source, route_group,
        is_primary)
-     VALUES (?, ?, 'savant', ?, 'Sandbox', '128000', ?, ?, ?, ?, 1, 0,
+     VALUES (?, ?, 'savant', ?, 'Sandbox', '128000', ?, ?, 1, 0,
              'active', ?, ?, 'Sandbox', 'chat', 'synced', ?, ?, 'auto', 1,
              ?, 'manual', ?, 1)
      ON CONFLICT DO NOTHING`,
   );
 
   await insertModel.run(
-    PAID, "sandbox-chart-paid-upstream", "Sandbox Paid", 1, 400_000, 800_000, 0,
-    0, now, 1_000_000, 2_000_000, "paid", PAID,
+    PAID, "sandbox-chart-paid-upstream", "Sandbox Paid", 400_000, 800_000,
+    now, 1_000_000, 2_000_000, "paid", PAID,
   );
   await insertModel.run(
-    UNUSED, "sandbox-chart-unused-upstream", "Sandbox Unused", 1, 300_000,
-    600_000, 0, 1, now, 750_000, 1_500_000, "paid", UNUSED,
-  );
-  await insertModel.run(
-    FREE, "sandbox-chart-free-upstream", "Sandbox Free", 2, 0, 0, 1, 2, now,
-    0, 0, "free", FREE,
+    UNUSED, "sandbox-chart-unused-upstream", "Sandbox Unused", 300_000,
+    600_000, now, 750_000, 1_500_000, "paid", UNUSED,
   );
 }
 
@@ -201,7 +196,6 @@ async function settleSandboxCalls(db) {
       providerSlug: "savant",
       billingSource: "credit",
       creditHoldId: null,
-      freeReservationId: null,
       subscriptionHoldId: null,
       estimatedMicros: 0,
     });
@@ -212,7 +206,6 @@ async function settleSandboxCalls(db) {
         auth,
         model: gatewayModel,
         hold: null,
-        freeReservation: null,
         subscription: null,
         startedAt: Date.now(),
         promptTokens: inputTokens,

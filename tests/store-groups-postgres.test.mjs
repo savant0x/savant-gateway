@@ -43,10 +43,10 @@ async function seedModel(db, overrides = {}) {
     .prepare(
       `INSERT INTO models
         (id, upstream_id, upstream_slug, name, provider, context_window,
-         token_weight, input_price_micros, output_price_micros,
-         sell_input_micros, sell_output_micros, in_catalog, allow_free,
+         input_price_micros, output_price_micros,
+         sell_input_micros, sell_output_micros, in_catalog,
          group_slug, status, sort_order, synced_at)
-       VALUES (?, ?, ?, 'Model', 'Family', '8k', 1, 1000, 2000, ?, ?, 1, 0,
+       VALUES (?, ?, ?, 'Model', 'Family', '8k', 1000, 2000, ?, ?, 1,
                ?, 'active', 0, ?)`,
     )
     .run(
@@ -62,14 +62,14 @@ async function seedModel(db, overrides = {}) {
   return model;
 }
 
-test("the three system groups are listed in order", async () => {
+test("the system groups are listed in order", async () => {
   const db = await fixture();
 
   const groups = await listModelGroups(db);
 
   assert.deepEqual(
     groups.map((group) => group.slug),
-    ["free", "paid", "subscription"],
+    ["paid", "subscription"],
     "ordered by the seeded sort_order, not alphabetically",
   );
   assert.ok(groups.every((group) => group.isSystem));
@@ -126,7 +126,7 @@ test("a system group keeps its billing mode", async () => {
 
   const result = await updateModelGroup(db, "paid", {
     label: "Paid",
-    billingMode: "free",
+    billingMode: "subscription",
     description: null,
     sortOrder: 10,
     hidden: false,
@@ -168,14 +168,14 @@ test("a custom group can change its label and mode", async () => {
   assert.equal(updated.group.modelCount, 0);
 });
 
-test("moving a row into a free group zeroes its sell price", async () => {
+test("moving a row into another group keeps its sell price", async () => {
   const db = await fixture();
-  await seedModel(db);
+  await seedModel(db, { sellInput: 1_500, sellOutput: 2_500 });
 
   await createModelGroup(db, {
     slug: "courtesy",
     label: "Courtesy",
-    billingMode: "free",
+    billingMode: "paid",
     description: null,
     sortOrder: 40,
     hidden: false,
@@ -196,8 +196,8 @@ test("moving a row into a free group zeroes its sell price", async () => {
     "manual",
     "a manual assignment must survive the next sync",
   );
-  assert.equal(Number(row.sell_input_micros), 0);
-  assert.equal(Number(row.sell_output_micros), 0);
+  assert.equal(Number(row.sell_input_micros), 1_500, "the price is per token");
+  assert.equal(Number(row.sell_output_micros), 2_500);
 
   const group = await getModelGroup(db, "courtesy");
 
@@ -215,7 +215,7 @@ test("assignment refuses an unknown model or group", async () => {
 test("system groups cannot be deleted", async () => {
   const db = await fixture();
 
-  const result = await deleteModelGroup(db, "free", "paid");
+  const result = await deleteModelGroup(db, "paid", "subscription");
 
   assert.deepEqual(result, {
     ok: false,

@@ -190,13 +190,12 @@ function model(overrides) {
   };
 }
 
-test("the pricing summary separates priced, unpriced and free", () => {
+test("the pricing summary separates priced and unpriced rows", () => {
   const summary = summarizePricing(
     [
       model({ id: "priced", inputPricePer1M: 2 }),
       model({ id: "output-only", outputPricePer1M: 3 }),
       model({ id: "unpriced" }),
-      model({ id: "free", access: "free", inputPricePer1M: 0 }),
       model({ id: "delisted", inCatalog: false, inputPricePer1M: 5 }),
     ],
     2_500,
@@ -204,7 +203,6 @@ test("the pricing summary separates priced, unpriced and free", () => {
 
   assert.equal(summary.pricedCount, 2);
   assert.equal(summary.unpricedCount, 1);
-  assert.equal(summary.freeCount, 1);
   assert.equal(summary.markupBps, 2_500);
   assert.equal(
     summary.averageInputMarginBps,

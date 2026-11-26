@@ -47,13 +47,11 @@ async function seedModel(db, overrides = {}) {
     name: "Model One",
     provider: "Family",
     contextWindow: "8k",
-    tokenWeight: 1,
     inputPrice: 0,
     outputPrice: 0,
     sellInput: 0,
     sellOutput: 0,
     inCatalog: 1,
-    allowFree: 0,
     groupSlug: "paid",
     costSource: "synced",
     costObservedAt: NOW,
@@ -67,11 +65,11 @@ async function seedModel(db, overrides = {}) {
     .prepare(
       `INSERT INTO models
         (id, upstream_id, upstream_slug, name, provider, context_window,
-         token_weight, input_price_micros, output_price_micros,
-         sell_input_micros, sell_output_micros, in_catalog, allow_free,
+         input_price_micros, output_price_micros,
+         sell_input_micros, sell_output_micros, in_catalog,
          group_slug, cost_source, cost_observed_at, is_primary, status,
          sort_order, synced_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       model.id,
@@ -80,13 +78,11 @@ async function seedModel(db, overrides = {}) {
       model.name,
       model.provider,
       model.contextWindow,
-      model.tokenWeight,
       model.inputPrice,
       model.outputPrice,
       model.sellInput,
       model.sellOutput,
       model.inCatalog,
-      model.allowFree,
       model.groupSlug,
       model.costSource,
       model.costObservedAt,
@@ -117,22 +113,6 @@ test("a paid row with no sell price is withheld, and published once priced", asy
   const published = await listModels(db);
 
   assert.deepEqual(published.map((model) => model.id), ["priced"]);
-});
-
-test("a free row publishes without any sell price", async () => {
-  const db = await fixture();
-
-  await seedModel(db, {
-    id: "free-model",
-    groupSlug: "free",
-    allowFree: 1,
-    costSource: "synced",
-  });
-
-  const published = await listModels(db);
-
-  assert.deepEqual(published.map((model) => model.id), ["free-model"]);
-  assert.equal(published[0].access, "free");
 });
 
 test("a stale manual cost withholds the row; a fresh one admits it", async () => {

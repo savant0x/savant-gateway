@@ -22,10 +22,10 @@ async function seed(db) {
   await db
     .prepare(
       `INSERT INTO models
-        (id, upstream_id, name, provider, family, context_window, token_weight,
-         input_price_micros, output_price_micros, allow_free, supports_tools,
+        (id, upstream_id, name, provider, family, context_window,
+         input_price_micros, output_price_micros, supports_tools,
          supports_vision, status, sort_order, synced_at, in_catalog)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', 0, ?, 1)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', 0, ?, 1)`,
     )
     .run(
       MODEL_ID,
@@ -34,10 +34,8 @@ async function seed(db) {
       "GPT",
       "GPT",
       "128000",
-      1,
       0,
       0,
-      1,
       0,
       0,
       "2026-11-02T00:00:00.000Z",

@@ -47,10 +47,8 @@ export async function coreSchema(db: PostgresDatabase) {
       name TEXT NOT NULL,
       provider TEXT NOT NULL,
       context_window TEXT NOT NULL,
-      token_weight INTEGER NOT NULL DEFAULT 0,
       input_price_micros BIGINT NOT NULL DEFAULT 0,
       output_price_micros BIGINT NOT NULL DEFAULT 0,
-      allow_free INTEGER NOT NULL DEFAULT 0,
       supports_tools INTEGER NOT NULL DEFAULT 0,
       supports_vision INTEGER NOT NULL DEFAULT 0,
       health TEXT,
@@ -198,11 +196,11 @@ export async function coreSchema(db: PostgresDatabase) {
     .prepare(
       `UPDATE models
           SET sell_input_micros = CASE
-                WHEN allow_free = 1 OR input_price_micros <= 0 THEN 0
+                WHEN input_price_micros <= 0 THEN 0
                 ELSE GREATEST(1, ROUND(input_price_micros * 1.25)::bigint)
               END,
               sell_output_micros = CASE
-                WHEN allow_free = 1 OR output_price_micros <= 0 THEN 0
+                WHEN output_price_micros <= 0 THEN 0
                 ELSE GREATEST(1, ROUND(output_price_micros * 1.25)::bigint)
               END
         WHERE price_source = 'auto'

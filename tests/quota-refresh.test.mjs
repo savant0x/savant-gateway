@@ -24,6 +24,8 @@ function observation(overrides = {}) {
 function database() {
   const db = new Database(":memory:");
 
+  // The legacy SQLite `providerSchema` still ALTERs these two columns by name;
+  // the PostgreSQL schema is the one that dropped them.
   db.exec(`CREATE TABLE models (id TEXT PRIMARY KEY, upstream_id TEXT, provider TEXT,
       allow_free INTEGER, token_weight INTEGER, input_price_micros INTEGER,
       output_price_micros INTEGER, in_catalog INTEGER, status TEXT);

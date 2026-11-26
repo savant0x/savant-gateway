@@ -99,13 +99,12 @@ export async function lockSettlementForHold(
   return db
     .prepare(
       `SELECT id FROM settlements
-        WHERE credit_hold_id = ? OR free_reservation_id = ?
-           OR subscription_hold_id = ?
+        WHERE credit_hold_id = ? OR subscription_hold_id = ?
         ORDER BY created_at::timestamptz
         LIMIT 1
         FOR NO KEY UPDATE`,
     )
-    .get<{ id: string }>(holdId, holdId, holdId);
+    .get<{ id: string }>(holdId, holdId);
 }
 
 export async function lockQuarantinedHold(
@@ -119,7 +118,7 @@ export async function lockQuarantinedHold(
     )
     .get<{
       id: string;
-      kind: "credit" | "subscription" | "free";
+      kind: "credit" | "subscription";
       user_id: string;
       period_id: string | null;
       reserved: number;

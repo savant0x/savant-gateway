@@ -205,7 +205,7 @@ test("providers and system groups are seeded once with ON CONFLICT DO NOTHING", 
     entry.sql.includes("INSERT INTO model_groups"),
   );
 
-  assert.equal(groups.length, 3, "free, paid and subscription are seeded");
+  assert.equal(groups.length, 2, "paid and subscription are seeded");
   assert.ok(groups.every((entry) => entry.sql.includes("ON CONFLICT DO NOTHING")));
 });
 

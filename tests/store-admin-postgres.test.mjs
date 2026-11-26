@@ -50,14 +50,12 @@ async function seedModel(db, overrides = {}) {
     name: "Model One",
     provider: "Family",
     contextWindow: "8k",
-    tokenWeight: 1,
     inputPrice: 1_000,
     outputPrice: 2_000,
     sellInput: 1_250,
     sellOutput: 2_500,
     priceSource: "auto",
     inCatalog: 1,
-    allowFree: 0,
     groupSlug: "paid",
     costSource: "synced",
     routeGroup: "shared/m1",
@@ -71,11 +69,11 @@ async function seedModel(db, overrides = {}) {
     .prepare(
       `INSERT INTO models
         (id, upstream_id, upstream_slug, name, provider, context_window,
-         token_weight, input_price_micros, output_price_micros,
+         input_price_micros, output_price_micros,
          sell_input_micros, sell_output_micros, price_source, in_catalog,
-         allow_free, group_slug, cost_source, route_group, is_primary, status,
+         group_slug, cost_source, route_group, is_primary, status,
          sort_order, synced_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       model.id,
@@ -84,14 +82,12 @@ async function seedModel(db, overrides = {}) {
       model.name,
       model.provider,
       model.contextWindow,
-      model.tokenWeight,
       model.inputPrice,
       model.outputPrice,
       model.sellInput,
       model.sellOutput,
       model.priceSource,
       model.inCatalog,
-      model.allowFree,
       model.groupSlug,
       model.costSource,
       model.routeGroup,
@@ -114,11 +110,9 @@ function synced(overrides = {}) {
     protocol: "chat",
     routeGroup: "shared/m1",
     contextWindow: "8k",
-    tokenWeight: 1,
     costInputMicros: 1_000,
     costOutputMicros: 2_000,
     costSource: "synced",
-    allowFree: false,
     supportsTools: false,
     supportsVision: false,
     health: null,
@@ -213,30 +207,15 @@ test("activating a row with no known cost is refused", async () => {
   assert.equal(await setModelStatus(db, "unknown-cost", "active"), "ok");
 });
 
-test("a free row cannot be given a sell price", async () => {
-  const db = await fixture();
-  await seedModel(db, { id: "free-row", groupSlug: "free", allowFree: 1 });
-
-  assert.equal(await setModelPricing(db, "free-row", 1_000, 1_000), false);
-
-  const row = await db
-    .prepare("SELECT sell_input_micros FROM models WHERE id = ?")
-    .get("free-row");
-
-  assert.equal(Number(row.sell_input_micros), 1_250, "unchanged");
-});
-
-test("applying a markup reprices auto rows and zeroes free rows", async () => {
+test("applying a markup reprices every auto row", async () => {
   const db = await fixture();
 
   await seedModel(db, { id: "auto-row" });
   await seedModel(db, {
-    id: "free-row",
+    id: "second-row",
     // A distinct upstream id: `models_upstream_idx` is unique on
     // (upstream_slug, upstream_id), so two rows cannot share both.
-    upstreamId: "free-m1",
-    groupSlug: "free",
-    allowFree: 1,
+    upstreamId: "second-m1",
     sellInput: 900,
     sellOutput: 900,
   });
@@ -259,7 +238,7 @@ test("applying a markup reprices auto rows and zeroes free rows", async () => {
   );
 
   assert.equal(byId["auto-row"], defaultSellMicros(1_000, 5_000));
-  assert.equal(byId["free-row"], 0);
+  assert.equal(byId["second-row"], defaultSellMicros(1_000, 5_000));
 });
 
 test("a sync preserves a manual sell price", async () => {

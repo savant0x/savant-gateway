@@ -41,7 +41,6 @@ async function fixture() {
       sellInput: 1_000_000,
       sellOutput: 2_000_000,
       group: "paid",
-      allowFree: 0,
     },
     {
       id: "m2",
@@ -52,29 +51,17 @@ async function fixture() {
       sellInput: 900_000,
       sellOutput: 900_000,
       group: "paid",
-      allowFree: 0,
-    },
-    {
-      id: "free-row",
-      name: "Free Model",
-      costSource: "synced",
-      costInput: 0,
-      costOutput: 0,
-      sellInput: 0,
-      sellOutput: 0,
-      group: "free",
-      allowFree: 1,
     },
   ]) {
     await db
       .prepare(
         `INSERT INTO models
           (id, upstream_id, upstream_slug, name, provider, context_window,
-           token_weight, input_price_micros, output_price_micros,
+           input_price_micros, output_price_micros,
            sell_input_micros, sell_output_micros, price_source, in_catalog,
-           allow_free, group_slug, cost_source, route_group, is_primary, status,
+           group_slug, cost_source, route_group, is_primary, status,
            sort_order, synced_at)
-         VALUES (?, ?, ?, ?, 'Family', '8k', 1, ?, ?, ?, ?, 'manual', 1, ?,
+         VALUES (?, ?, ?, ?, 'Family', '8k', ?, ?, ?, ?, 'manual', 1,
                  ?, ?, ?, 1, 'active', 0, ?)`,
       )
       .run(
@@ -86,7 +73,6 @@ async function fixture() {
         model.costOutput,
         model.sellInput,
         model.sellOutput,
-        model.allowFree,
         model.group,
         model.costSource,
         model.id,
@@ -285,22 +271,6 @@ test("a preview version must match the current price and served cost", async () 
     );
 
     assert.equal(missing.status, "not_found");
-
-    const free = await setModelPricingChecked(
-      db,
-      "free-row",
-      1,
-      1,
-      {
-        sellInputMicros: 0,
-        sellOutputMicros: 0,
-        costInputMicros: 0,
-        costOutputMicros: 0,
-      },
-      approval,
-    );
-
-    assert.equal(free.status, "free");
   } finally {
     await db.close();
   }

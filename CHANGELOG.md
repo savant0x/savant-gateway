@@ -3,6 +3,13 @@
 All notable changes are recorded here. Entries name the FID that drove them and
 distinguish verified behavior from unverified claims.
 
+## 2026-11-26 — FID register integrity
+
+- **FID-2026-1126-002 — medium —** Reconciled active status and scope, repaired
+  archive links and closure records, and added the missing changelog references.
+  The repository gate detects those failures and verifies archive commit
+  evidence. Implementation `1bc0caf`; `npm run verify` passed all 12 gates.
+
 ## 2026-11-26 — Historical FID cross-references
 
 These entries index earlier resolutions and their recorded evidence.

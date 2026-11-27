@@ -2,7 +2,7 @@
 
 **Last folder audit:** 2026-11-26 (ground-truth house audit). This page indexes
 the working set; each FID owns its own status, evidence and resolution. Current
-counts: 14 active, 201 archived, 215 records. The figures are counted from the
+counts: 13 active, 202 archived, 215 records. The figures are counted from the
 folder at each audit; an earlier line carried a date fragment in place of the
 active count.
 
@@ -45,7 +45,6 @@ and that the free allocation is gone.
 | [2026-1125-003](FID-2026-1125-003-inferhub-router-catalog-review.md) | InferHub router catalog: duplicate identities, publisher visibility and filters | fixed | Close on the four operator rulings its record names; the InferHub-only pivot makes them launch-critical. |
 | [2026-1125-004](FID-2026-1125-004-remove-free-tier-and-weights.md) | Remove the inherited free tier and token weights from pricing | fixed | Slices 1–4 landed through `b5efd45`, which also removed parts of the customer and admin UI. Finish plain-token plans, remaining UI and documentation, and rebaseline release tooling. |
 | [2026-1126-001](FID-2026-1126-001-inferhub-only-upstream-consolidation.md) | InferHub-only upstream consolidation and free-allocation retirement | fixed | Default election and Apinex retirement landed in `d44694e`. Complete slices 3–7 through their owning FIDs. |
-| [2026-1126-002](FID-2026-1126-002-fid-register-integrity.md) | FID register integrity | fixed | Record the implementation commit and archive the verified repair. |
 
 ## Order of work after the InferHub pivot
 
@@ -56,6 +55,13 @@ and that the free allocation is gone.
 5. Close each verified implementation with its commit, gate evidence and changelog entry. Record external observations separately when the governing FID permits implementation closure.
 
 Continue calibration and content proof work against their own FIDs and prerequisites. The USDC receive lane requires its recorded operator inputs.
+
+## 2026-11-26 register integrity repair
+
+[FID-2026-1126-002](archive/FID-2026-1126-002-fid-register-integrity.md) closed
+against `1bc0caf`. The repository gate now checks active row status, scope,
+metadata, relative Markdown links, archive closure commits and changelog
+coverage. Full verification passed 12/12 gates.
 
 ## 2026-11-26 house audit
 

@@ -3,7 +3,7 @@
 **Filename:** `FID-2026-1126-002-fid-register-integrity.md`
 **ID:** FID-2026-1126-002
 **Severity:** medium
-**Status:** fixed
+**Status:** closed
 **Created:** 2026-11-26
 **Automation level:** 3
 **YAGNI-Compliance:** Verified
@@ -37,8 +37,7 @@ read-only gate. Application behavior and persistence have no dependency on it.
 3. Recognize explicit commit evidence in current and historical forms. Require
    at least one resolving implementation reference for archived records except
    records with an explicit supersession or operator-approved no-code closure.
-   A baseline hash has no closure meaning. Require a closure section or a
-   dated archival declaration with a verification section for legacy records.
+   Exclude baseline hashes and require a closure section.
 4. Keep the current npm entry point and verify it on the real archive and with
    focused parser tests.
 
@@ -68,6 +67,8 @@ evidence, and the distinction between a design baseline and a closure commit.
 
 ## Resolution
 
+- **Closed Date:** 2026-11-26.
+- **Implementation commit:** `1bc0caf`.
 - **Implementation:** The active queue, scope registrations, archive metadata,
   relative links, and changelog entries reconcile. The repository check calls
   `checkFidRegister` in `scripts/fid-register.mjs` and resolves archive evidence
@@ -78,3 +79,4 @@ evidence, and the distinction between a design baseline and a closure commit.
   a separate `npm run repository:check` and
   `node --test tests/fid-register.test.mjs` (2/2).
 - **Step statuses:** Steps 1–4 implemented and verified.
+- **Archived:** 2026-11-26.

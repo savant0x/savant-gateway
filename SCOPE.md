@@ -8,10 +8,11 @@
   [consolidation FID](dev/fids/FID-2026-1126-001-inferhub-only-upstream-consolidation.md).
 - [ ] **FID-2026-1125-003 and FID-2026-1125-004.** The IR and PT sections
   below record the router rulings and the remaining pricing work.
-- [ ] **FID-2026-1126-002 — FID register repair.** Automation level 3. Reconcile active and archived
-  status, links, closure evidence, and changelog coverage. Extend the repository
-  check to enforce the repaired register and distinguish historical records
-  from newly archived records. Verify against the working tree and test fixtures.
+- [x] **FID-2026-1126-002 — FID register repair.** Automation level 3. Repaired
+  status, links, scope, closure evidence and changelog coverage in `1bc0caf`.
+  The strengthened repository check and fixtures passed, and full verification
+  passed 12/12 gates. See the
+  [archived FID](dev/fids/archive/FID-2026-1126-002-fid-register-integrity.md).
 
 ## Session — 2026-11-25 (pricing truth: PT)
 

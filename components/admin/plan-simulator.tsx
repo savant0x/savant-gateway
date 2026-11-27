@@ -161,9 +161,9 @@ export function PlanSimulator({ models }: { models: SimulationModel[] }) {
             </select>
           </div>
           <div className="space-y-1 text-xs text-muted">
-            <span className="block">Included weighted tokens</span>
+            <span className="block">Included tokens</span>
             <Input
-              aria-label="Simulated included weighted tokens"
+              aria-label="Simulated included tokens"
               inputMode="numeric"
               value={allowance}
               onChange={(event) => setAllowance(event.target.value)}
@@ -225,9 +225,8 @@ export function PlanSimulator({ models }: { models: SimulationModel[] }) {
 
       <p className="border-t border-black/10 px-5 py-3 text-[11px] leading-5 text-muted dark:border-white/10">
         Overage revenue is allocated across the entered model mix in proportion
-        to weighted usage. That is a simulation assumption, not a replay of the
-        gateway&apos;s per-call admission decision. Unknown or stale costs are
-        flagged and are not presented as reliable contribution.
+        to token usage. The gateway makes admission decisions per call. The
+        simulator flags unknown or stale costs.
       </p>
     </section>
   );

@@ -56,11 +56,11 @@ export function ScenarioCard({
 
       <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
         <Value
-          label="Weighted"
+          label="Total tokens"
           value={formatCompact(scenario.weightedTokens)}
         />
         <Value
-          label="Overage"
+          label="Overage tokens"
           value={formatCompact(scenario.overageWeightedTokens)}
         />
         <Value label="Revenue" value={formatMicros(scenario.revenueMicros)} />
@@ -151,7 +151,7 @@ export function ScenarioCard({
             <div key={row.modelId} className="flex justify-between gap-2">
               <span className="truncate">{row.modelName}</span>
               <span className="shrink-0">
-                {formatNumber(row.weightedTokens)} wt ·{" "}
+                {formatNumber(row.weightedTokens)} tokens ·{" "}
                 {row.costMicros === null
                   ? "unknown cost"
                   : formatMicros(row.costMicros)}

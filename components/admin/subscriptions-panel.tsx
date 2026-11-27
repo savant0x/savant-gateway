@@ -231,7 +231,7 @@ export function SubscriptionsPanel({
                         {formatCompact(
                           subscription.plan.includedWeightedTokens,
                         )}{" "}
-                        weighted tokens used ·{" "}
+                        tokens used ·{" "}
                         {subscription.cancelAtPeriodEnd
                           ? "cancels at period end"
                           : "renews"}

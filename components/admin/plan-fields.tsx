@@ -59,7 +59,7 @@ export function planBody(draft: PlanDraft) {
     status: draft.status,
     priceUsd: Number(draft.priceUsd),
     interval: draft.interval,
-    includedWeightedTokens: Number(draft.includedWeightedTokens),
+    includedTokens: Number(draft.includedWeightedTokens),
     overageMode: draft.overageMode,
     overageMarkupBps: Number(draft.overageMarkupBps),
     sortOrder: Number(draft.sortOrder),
@@ -166,11 +166,9 @@ export function PlanFields({
         </label>
 
         <div className="space-y-1">
-          <span className="text-xs text-muted">
-            Included weighted tokens / period
-          </span>
+          <span className="text-xs text-muted">Included tokens per period</span>
           <Input
-            aria-label="Included weighted tokens"
+            aria-label="Included tokens"
             inputMode="numeric"
             value={draft.includedWeightedTokens}
             onChange={(event) =>

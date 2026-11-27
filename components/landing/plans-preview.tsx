@@ -45,7 +45,7 @@ export function PlansPreview({ plans }: { plans: PlanSummary[] }) {
               </div>
               <h3 className="mt-2 text-sm font-semibold">{plan.name}</h3>
               <p className="mt-1 text-xs leading-5 text-muted">
-                {formatCompact(plan.includedWeightedTokens)} weighted tokens ·{" "}
+                {formatCompact(plan.includedWeightedTokens)} tokens ·{" "}
                 {plan.modelCount} models ·{" "}
                 {plan.overageMode === "block"
                   ? "stops at the limit"

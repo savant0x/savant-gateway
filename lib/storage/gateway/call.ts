@@ -25,7 +25,7 @@ import {
   completionRateError,
   providerAdmissionError,
 } from "../../gateway-provider-admission.ts";
-import { markupSellMicros, subscriptionWeightedTokens } from "../../plans.ts";
+import { markupSellMicros, subscriptionTokens } from "../../plans.ts";
 import {
   CORS_HEADERS,
   extractApiKey,
@@ -200,8 +200,7 @@ export async function handleChatCompletions(request: Request) {
       userId: auth.userId,
       keyId: auth.keyId,
       modelId: model.id,
-      estimateWeightedTokens: subscriptionWeightedTokens(
-        model.tokenWeight,
+      estimateWeightedTokens: subscriptionTokens(
         promptTokens,
         initialOutputBudget,
       ),

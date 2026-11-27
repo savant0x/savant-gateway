@@ -119,10 +119,7 @@ export function PlanGrid({
                 <dl className="space-y-2 text-xs">
                   <div className="flex justify-between gap-4">
                     <dt className="text-muted">Included allowance</dt>
-                    <dd>
-                      {formatCompact(plan.includedWeightedTokens)} weighted
-                      tokens
-                    </dd>
+                    <dd>{formatCompact(plan.includedWeightedTokens)} tokens</dd>
                   </div>
                   <div className="flex justify-between gap-4">
                     <dt className="text-muted">Models</dt>

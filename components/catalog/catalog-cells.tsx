@@ -4,17 +4,10 @@ import type { PriceComparison } from "@/lib/price-comparison";
 import { formatPricePer1M } from "@/components/dashboard/format";
 
 /**
- * A zero rate is not always "no price". Twenty-one of forty-four catalog rows
- * bill through the free pool or a plan, where a per-token rate is meaningless —
- * printing "—" there read as missing data for the cheapest rows on the page.
- * The access mode names the zero instead.
+ * Name the allowance that applies to a subscription-only model with no rate.
  */
 export function includedLabel(access: ModelAccess) {
-  return access === "free"
-    ? "Free pool"
-    : access === "subscription"
-      ? "In plan"
-      : null;
+  return access === "subscription" ? "In plan" : null;
 }
 
 /**
@@ -39,7 +32,10 @@ export function RateCell({
     const included = includedLabel(access);
 
     return included ? (
-      <span className="text-muted" title={includedBilling(access)}>
+      <span
+        className="text-muted"
+        title="Uses the included tokens in a subscription plan"
+      >
         {included}
       </span>
     ) : (
@@ -73,13 +69,6 @@ export function RateCell({
       <span className="text-muted">{formatPricePer1M(output)}</span>
     </span>
   );
-}
-
-/** Why a zero rate is zero, for the cell's title. */
-export function includedBilling(access: ModelAccess) {
-  return access === "free"
-    ? "Included in the free pool; usage is metered in weighted tokens, not dollars per 1M"
-    : "Included in a subscription plan; usage is metered in weighted tokens, not dollars per 1M";
 }
 
 export function formatDelta(bps: number | null) {

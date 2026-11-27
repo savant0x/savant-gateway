@@ -168,7 +168,11 @@ export function readPlanValues(input: unknown): ReadResult<PlanValues> {
     };
   }
 
-  const allowance = integer(raw.includedWeightedTokens);
+  const allowance = integer(
+    raw.includedTokens === undefined
+      ? raw.includedWeightedTokens
+      : raw.includedTokens,
+  );
 
   if (allowance === null || allowance < 0 || allowance > MAX_PLAN_ALLOWANCE) {
     return {
@@ -315,15 +319,8 @@ export function decideAllowance(input: {
   return { kind: "block", remaining: remainingWeightedTokens };
 }
 
-export function subscriptionWeightedTokens(
-  tokenWeight: number,
-  inputTokens: number,
-  outputTokens: number,
-) {
-  return (
-    (Math.max(0, inputTokens) + Math.max(0, outputTokens)) *
-    Math.max(1, tokenWeight)
-  );
+export function subscriptionTokens(inputTokens: number, outputTokens: number) {
+  return Math.max(0, inputTokens) + Math.max(0, outputTokens);
 }
 
 export function markupSellMicros(sellMicros: number, markupBps: number) {

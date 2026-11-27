@@ -4,7 +4,7 @@ import type { CreditHold } from "../store/credit.ts";
 import type { ResolvedUsage } from "../../usage.ts";
 
 import { usagePrices } from "../../gateway-usage.ts";
-import { subscriptionWeightedTokens } from "../../plans.ts";
+import { subscriptionTokens } from "../../plans.ts";
 import { redactSecrets } from "../../redaction.ts";
 import { usageSource } from "../../usage.ts";
 import { recordFirstCompletion } from "../store/activity.ts";
@@ -69,11 +69,7 @@ export async function settleCall(
   );
   const includedWeightedTokens =
     context.subscription?.kind === "included"
-      ? subscriptionWeightedTokens(
-          context.model.tokenWeight,
-          usage.inputTokens,
-          usage.outputTokens,
-        )
+      ? subscriptionTokens(usage.inputTokens, usage.outputTokens)
       : 0;
   // Every call is either included in a plan or paid from credit. There is no
   // third billing source (FID-2026-1125-004 step 3).

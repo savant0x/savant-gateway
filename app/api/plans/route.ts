@@ -14,6 +14,7 @@ function publicPlan(plan: PlanSummary) {
     priceUsd: plan.priceMicros / 1_000_000,
     currency: plan.currency,
     interval: plan.interval,
+    includedTokens: plan.includedWeightedTokens,
     includedWeightedTokens: plan.includedWeightedTokens,
     overageMode: plan.overageMode,
     overageMarkupBps: plan.overageMarkupBps,

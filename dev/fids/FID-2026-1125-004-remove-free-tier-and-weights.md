@@ -8,8 +8,10 @@
 > no upstream weight, refuses every `free/` row for every provider, the registry
 > no longer carries a resale flag, and the sync summary reports priced/unpriced
 > instead of a free count. Steps 2–4 landed in `b5efd45`, with parts of 6–7.
-> Finish step 5, then the outstanding parts of 6–7 and step 8. `fixed` means
-> the landed slice is implemented; it is not a closure of the removal.
+> The step 5 implementation counts each token once and exposes `includedTokens`
+> on the public plans API, with `includedWeightedTokens` retained as a compatibility
+> alias. The plan UI, FAQ, and API reference reflect the metering change.
+> Steps 6–8 also cover the remaining catalog copy and release tooling.
 **Created:** 2026-11-25 00:00
 **Automation level:** 3
 **YAGNI-Compliance:** Pending — the removal deletes machinery rather than adding
@@ -171,7 +173,10 @@ and the UI. Every slice keeps the tree gated; nothing is left half-wired.
    when no model or plan references it.
 5. **Plans in raw tokens.** `includedWeightedTokens` becomes raw included tokens
    (rename in the API, keep the column until a later migration), and
-   `subscriptionWeightedTokens` stops multiplying.
+   `subscriptionTokens` sums input and output for admission, settlement, and
+   simulation. Existing allowance amounts, usage counters, and reservations
+   retain their stored values. Keep the existing API field readable during the
+   rename so clients can migrate independently.
 6. **Customer UI.** Remove the free allocation panel, guide, trial cards,
    allocation and trial routes, and the free-pool branches of the catalog cells.
 7. **Admin UI.** Remove the free cohort panel, the gateway free-pool settings and
@@ -221,6 +226,13 @@ free-tier route.
   - `grep -rn "allow_free\|token_weight\|free_pool" lib app components` returns no
     live reference; the only remaining free-pool naming is the importer's
     refusal path for upstream `free/` ids, which is unchanged by design (1b).
+- Step 5, 2026-11-27: `npm run check` exit 0 after formatting corrections.
+  `npm run verify` recorded 1245/1245 tests, PostgreSQL 20/20, quality PASS,
+  build exit 0, HTTP 731 checks PASS, and browser and recovery gates PASS.
+  The early lint failure in that run was corrected and checked separately.
+- Reachability: `subscriptionTokens` is called by completion admission,
+  settlement, and plan simulation. The plan editor sends `includedTokens`,
+  `readPlanValues` validates it, and `GET /api/plans` serializes it.
 
 ## Perfection Loop
 
@@ -267,9 +279,10 @@ free-tier route.
 - [x] **Gate output:** receipt above
 - [x] **Reproducibility:** `grep -rn "tokenWeight" lib/providers` returns only the
       `toRow` constant and the `SyncedModel` field
-- [x] **Step statuses:** 1a–1c and 2–4 are implemented. Step 5 is next.
-      Steps 6–7 are partial because `b5efd45` already removed the trial and
-      allocation surfaces. Step 8 follows the remaining UI work.
+- [x] **Step statuses:** 1a–1c and 2–5 are implemented. Steps 6–8 are partial.
+      Plan surfaces, catalog price cells, newcomer guide, FAQ, and API reference
+      use raw-token and paid/subscription terminology. Remaining catalog copy,
+      operator documentation, and release tooling still need verification.
 - [x] **Steps 2–4 file ranges:** `lib/providers/catalog.ts` (`importedModelStatus`,
       `costMicros`), `lib/model-groups.ts` (`SYSTEM_GROUP_DEFINITIONS`,
       `WRITABLE_MODES`, `pricesForGroup` deleted), `lib/storage/store/models.ts`,

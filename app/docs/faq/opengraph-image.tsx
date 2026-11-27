@@ -16,7 +16,7 @@ export default function Image() {
       subtitle:
         "Access, billing, holds, top-ups, errors and the honest limits of the service.",
       lines: [
-        "Free pool · paid credit · plan allowance",
+        "Prepaid credit · plan allowance",
         "Start here · API reference · Support",
       ],
     }),

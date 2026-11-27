@@ -67,12 +67,12 @@ const REQUEST_ERRORS = [
   {
     status: "402",
     meaning: "Credit or allowance cannot cover the request.",
-    next: "Check the account page, or choose a free-pool model.",
+    next: "Check your credit balance and plan allowance on the account page.",
   },
   {
     status: "403",
     meaning: "The model needs a subscription that includes it.",
-    next: "Choose a free or paid row instead.",
+    next: "Choose a usage-based model or a model your plan includes.",
   },
   {
     status: "404",
@@ -82,7 +82,7 @@ const REQUEST_ERRORS = [
   {
     status: "429",
     meaning: "A rate limit is active.",
-    next: "Read Retry-After and wait; free traffic shares one bucket.",
+    next: "Check the Retry-After header before retrying.",
   },
   {
     status: "502",
@@ -91,8 +91,7 @@ const REQUEST_ERRORS = [
   },
   {
     status: "503",
-    meaning:
-      "The model is unpriced, disabled, or the shared pool is unavailable.",
+    meaning: "The model or gateway is unavailable.",
     next: "Read the error type, then retry or choose another row.",
   },
 ] as const;
@@ -194,12 +193,8 @@ export function NewcomerGuide() {
             you budget.
           </p>
 
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             {[
-              {
-                title: "Free pool",
-                body: "Zero charge. Metered in weighted tokens against a shared daily pool. Your account page shows the current allowance and reset time.",
-              },
               {
                 title: "Paid",
                 body: "Debits prepaid credit at the listed sell price after the request settles. A hold is reserved before dispatch.",
@@ -270,8 +265,7 @@ export function NewcomerGuide() {
           title="4. Understand what the first call costs"
         >
           <p className="text-sm leading-7 text-muted">
-            Free-pool calls never debit credit. A paid call reserves an
-            estimated hold before dispatch, then one settlement transaction
+            A paid call reserves an estimated hold before dispatch. Settlement
             releases the hold and debits the actual charge. Available credit is
             the balance minus holds, so it can be lower than the balance while
             calls are in flight.

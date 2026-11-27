@@ -9,7 +9,7 @@ import type {
 
 import { catalogEconomics } from "./catalog-economics.ts";
 import { monthlyRecurringMicros } from "./revenue.ts";
-import { markupSellMicros, subscriptionWeightedTokens } from "./plans.ts";
+import { markupSellMicros, subscriptionTokens } from "./plans.ts";
 
 /**
  * Read-only plan what-if (FID-2026-1105-007).
@@ -17,7 +17,7 @@ import { markupSellMicros, subscriptionWeightedTokens } from "./plans.ts";
  * The caller supplies operator-entered workloads. This function never reads or
  * writes a plan or subscription, and has no database handle.
  *
- * Overage revenue is allocated across models in proportion to their weighted
+ * Overage revenue is allocated across models in proportion to their token
  * usage. That proportional mix is a simulation assumption, not a replay of the
  * gateway's per-call admission decision; the UI labels it as simulated.
  */
@@ -46,11 +46,7 @@ function scenarioFor(
 
     const inputTokens = safeTokens(usage.inputTokens);
     const outputTokens = safeTokens(usage.outputTokens);
-    const weightedTokens = subscriptionWeightedTokens(
-      model.tokenWeight,
-      inputTokens,
-      outputTokens,
-    );
+    const weightedTokens = subscriptionTokens(inputTokens, outputTokens);
     const markedInput = markupSellMicros(
       model.sellInputMicros,
       terms.overageMarkupBps,

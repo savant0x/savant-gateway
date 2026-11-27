@@ -24,7 +24,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
       {
         question: "Do I need credit to make a first request?",
         answer:
-          "No, if you choose a model in the free-pool group. You still need an account and an active key. Free-pool calls are metered in weighted tokens against a shared daily allowance, so they can be unavailable when the pool is exhausted. Paid models require prepaid credit; subscription models require a plan that includes them, and plans are not currently sold.",
+          "Start with an account, an active API key, and prepaid credit. If you already have a subscription that includes the model, its allowance covers eligible requests.",
       },
       {
         question: "How do I get an API key?",
@@ -53,42 +53,24 @@ export const FAQ_GROUPS: FaqGroup[] = [
     ],
   },
   {
-    id: "free",
-    title: "Free access",
-    items: [
-      {
-        question: "How does free access work?",
-        answer:
-          "Free access is a separate catalog SKU, not a discount on a paid model: the free row has its own id and a name ending in “(Free)”. You need an account and an active scoped key to use it; in daily mode the split counts only activated accounts with an active key. When daily allocation is enabled, an activated account receives a daily share of weighted tokens that resets at 00:00 UTC and does not carry over. If the operator has enabled the one-time trial instead, the grant is a single balance that does not reset. Either way, every free model draws on that one balance at its own token weight. It is a share of shared upstream capacity, not a guaranteed quota: a missing or stale capacity observation, a provider that disallows free usage, or a pool near its safety floor makes the gateway refuse free-pool calls rather than overdraw the pool. Free-pool admission does not debit prepaid credit, but an active plan that includes the model applies its included or overage policy first, and a one-time trial can fall back to its configured paid pair when the trial cannot cover a request.",
-        link: { href: "/models", label: "Browse the free SKUs" },
-      },
-      {
-        question: "Where do I see my free balance and how do I start?",
-        answer:
-          "Open a free SKU's detail page from /models. It shows the current daily allocation or one-time trial balance, the model's weight, the raw-token equivalent, the reset or last-check context, a free-allocation FAQ and a copyable Chat Completions request. The account page shows the matching daily or one-time balance card, holds your scoped keys and usage table, and the daily card can request a fresh upstream check. Create the key on the account page first; a free model cannot be called with an inactive or missing key. If the detail page says capacity is unavailable, no new free-pool call is admitted until a fresh observation succeeds.",
-        link: { href: "/account", label: "Check your balance" },
-      },
-    ],
-  },
-  {
     id: "models",
     title: "Models and pricing",
     items: [
       {
-        question: "What do free, paid and subscription mean?",
+        question: "What do paid and subscription mean?",
         answer:
-          "The group field is the billing class. Free means zero charge, metered against the shared weighted pool. Paid debits prepaid credit at the listed sell price after settlement. Subscription is covered by a purchased plan snapshot; without a plan that includes the model, the call is refused with 403 subscription_required. The group is authoritative; the upstream model's free capability does not override it.",
+          "Paid models can be called with prepaid credit at the listed sell price. Subscription-only models require an active plan that includes the model. The gateway returns 403 subscription_required when that entitlement is missing.",
         link: { href: "/docs#identity", label: "Read the vocabulary" },
       },
       {
-        question: "What is a weighted token?",
+        question: "How does a request count toward my plan allowance?",
         answer:
-          "It is the upstream accounting unit for free and plan allowances. A model with weight 3 consumes three weighted tokens for each raw token. Free-pool and plan usage is metered in weighted tokens; paid rows are priced in US dollars per 1M raw input or output tokens. Your account page shows the remaining allowance and the reset time.",
+          "Each input and output token counts once toward your allowance. Your account page shows your remaining tokens and when the current period ends.",
       },
       {
         question: "Why is a price shown as zero?",
         answer:
-          "A zero price usually means the row belongs to a free-pool or subscription group, where a per-token dollar price would be misleading. Read the group before treating zero as unlimited: free usage still has a shared daily allowance, and a plan-only row still needs a subscription. A paid row with no sell price is unavailable, not free.",
+          "A subscription-only model without a sell rate uses its plan allowance. A paid model needs a sell rate before it can accept requests.",
       },
       {
         question: "Why did a model disappear from the catalog?",
@@ -117,7 +99,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
       {
         question: "When does a paid request charge me?",
         answer:
-          "A paid call reserves an estimated hold before dispatch. When the response finishes, fails or the stream closes, one settlement transaction releases the hold and debits the actual charge. Free calls do not touch credit, and included subscription usage does not debit credit; an exhausted plan follows its block or credit-overage policy.",
+          "A paid call reserves an estimated hold before dispatch. When the response finishes, fails, or the stream closes, one settlement transaction releases the hold and debits the actual charge. Included subscription usage draws from the plan allowance. When the allowance runs out, the plan blocks calls or charges prepaid credit according to its overage policy.",
         link: { href: "/docs#chat", label: "Read the request flow" },
       },
       {
@@ -167,17 +149,17 @@ export const FAQ_GROUPS: FaqGroup[] = [
       {
         question: "Why did I get a 402 or 403?",
         answer:
-          "402 means the request cannot be covered: insufficient credit, a past-due subscription, or an exhausted allowance under a block policy. 403 subscription_required means the model is plan-only and no active plan snapshot includes it. Choose a free or paid row, or resolve the account state.",
+          "402 means the request cannot be covered because credit is insufficient, a subscription is past due, or an allowance is exhausted under a block policy. 403 subscription_required means the model needs an active plan that includes it.",
       },
       {
         question: "Why did I get a 429?",
         answer:
-          "A rate limit is active. Free traffic shares one bucket across every key and is bounded below the upstream account ceiling; paid traffic shares one bucket per account across its keys. Read the Retry-After header and wait before retrying. A busy shared free pool is a capacity signal, not a key problem.",
+          "A rate or capacity limit is active. Calls from your keys count toward the account limit. Check the Retry-After header before retrying.",
       },
       {
         question: "Why did I get a 502 or 503?",
         answer:
-          "502 means the upstream provider failed or returned an invalid response. 503 means the model is unpriced, disabled or unavailable, or the shared pool is not admitting calls. Retry with backoff, or choose another model. There is no automatic rerouting to a different provider.",
+          "502 means the upstream provider failed or returned an invalid response. 503 means the model or gateway is unavailable. Retry with backoff or choose another model.",
       },
       {
         question: "Why did my stream fail after producing text?",

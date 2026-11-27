@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Plans",
   description:
-    "Subscription plans with included model groups, weighted-token allowances, and explicit overage policy.",
+    "Subscription plans with included model groups, token allowances, and explicit overage policy.",
 };
 
 export default async function PlansPage() {

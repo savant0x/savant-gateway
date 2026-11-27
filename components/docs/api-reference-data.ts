@@ -25,7 +25,7 @@ export const IDENTITIES = [
   },
   {
     label: "Price group",
-    value: "free · paid · subscription",
+    value: "paid · subscription",
     detail:
       "The billing class. This is the group field and the authoritative access signal.",
   },
@@ -35,8 +35,7 @@ export const MODEL_FIELDS = [
   {
     name: "id",
     type: "string",
-    description:
-      "Public model id. Send this value as model in a completion. It is the model's own name, prefixed only by a billing tier (free/ or subscription/), and it never names the supplier.",
+    description: "Public model id. Send this value as model in a completion.",
     example: "gpt-6.1-sol",
   },
   {
@@ -67,7 +66,7 @@ export const MODEL_FIELDS = [
   },
   {
     name: "group",
-    type: "free | paid | subscription",
+    type: "paid | subscription",
     description:
       "Billing mode of the assigned group. Read this field before routing or budgeting.",
     example: "paid",
@@ -87,7 +86,7 @@ export const MODEL_FIELDS = [
   },
   {
     name: "group_billing_mode",
-    type: "free | paid | subscription",
+    type: "paid | subscription",
     description: "Billing mode, duplicated additively for group-aware clients.",
     example: "paid",
   },
@@ -197,11 +196,6 @@ export const REQUEST_FIELDS = [
 
 export const GROUPS = [
   {
-    group: "free",
-    billing: "Zero charge. Metered in the provider's weighted units.",
-    routing: "Available without credit in any free-billing group.",
-  },
-  {
     group: "paid",
     billing:
       "Debits prepaid account credit at the listed sell price after settlement.",
@@ -210,7 +204,7 @@ export const GROUPS = [
   {
     group: "subscription",
     billing:
-      "Included usage is covered by a purchased plan without debiting credit; an exhausted plan follows its block or credit overage policy.",
+      "Each input and output token counts once toward the plan allowance. When the allowance runs out, the plan blocks calls or charges prepaid credit.",
     routing:
       "Requires an active subscription whose snapshot includes this model; otherwise 403 subscription_required.",
   },

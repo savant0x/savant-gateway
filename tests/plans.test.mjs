@@ -16,7 +16,7 @@ import {
   markupSellMicros,
   readPlanValues,
   subscriptionSnapshot,
-  subscriptionWeightedTokens,
+  subscriptionTokens,
 } from "../lib/plans.ts";
 
 const VALID = {
@@ -82,6 +82,14 @@ test("draft plans may have a zero price", () => {
   assert.equal(result.ok, true);
 });
 
+test("plan validation accepts the raw-token allowance field", () => {
+  const result = readPlanValues({ ...VALID, includedTokens: 200_000 });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.value?.includedWeightedTokens, 200_000);
+  assert.equal(readPlanValues({ ...VALID, includedTokens: null }).ok, false);
+});
+
 test("entitlements expand groups plus explicit models without duplicates", () => {
   const models = [
     { id: "a", groupSlug: "starter" },
@@ -140,13 +148,13 @@ test("exhausted block plans block and credit plans fall through", () => {
   });
 });
 
-test("overage markup applies to sell prices and weighted tokens respect a floor", () => {
+test("overage markup applies to sell prices and subscription tokens count one for one", () => {
   assert.equal(markupSellMicros(1000, 0), 1000);
   assert.equal(markupSellMicros(1000, 2500), 1250);
   assert.equal(markupSellMicros(1000, 100_000), 11_000);
   assert.equal(markupSellMicros(-10, 3000), 0);
-  assert.equal(subscriptionWeightedTokens(0, 100, 20), 120);
-  assert.equal(subscriptionWeightedTokens(3, 100, 20), 360);
+  assert.equal(subscriptionTokens(100, 20), 120);
+  assert.equal(subscriptionTokens(-1, 20), 20);
 });
 
 test("snapshots copy purchased values", () => {

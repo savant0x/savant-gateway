@@ -79,8 +79,8 @@ export function SubscriptionCard({
         </Card.Header>
         <Card.Content className="space-y-3 text-sm">
           <p className="text-xs leading-5 text-muted">
-            No plan is attached to this account. Prepaid credit and free-pool
-            models continue to work as before.
+            No plan is attached to this account. You can use usage-based models
+            with prepaid credit.
           </p>
           {salesEnabled ? (
             <Link
@@ -152,7 +152,7 @@ export function SubscriptionCard({
             <dt className="text-muted">Allowance</dt>
             <dd>
               {formatCompact(allowance.usedWeightedTokens)} /{" "}
-              {formatCompact(allowance.includedWeightedTokens)} weighted tokens
+              {formatCompact(allowance.includedWeightedTokens)} tokens
             </dd>
           </div>
           <div>
